@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" role="img" aria-label="Dark courtyard with unlit torches">
+  <defs>
+    <linearGradient id="yard" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2a3138"/>
+      <stop offset="100%" stop-color="#151311"/>
+    </linearGradient>
+  </defs>
+  <rect width="960" height="540" fill="url(#yard)"/>
+  <rect x="0" y="0" width="960" height="180" fill="#1a2228"/>
+  <rect x="80" y="70" width="800" height="250" fill="#3a342e"/>
+  <rect x="120" y="110" width="160" height="210" fill="#221c18"/>
+  <rect x="680" y="110" width="160" height="210" fill="#221c18"/>
+  <rect x="400" y="150" width="160" height="170" fill="#14110f"/>
+  <path d="M380 150 L480 70 L580 150 Z" fill="#4a4038"/>
+  <g fill="#2a241e">
+    <rect x="180" y="250" width="16" height="120"/>
+    <path d="M168 250 h40 v18 h-40 z"/>
+    <rect x="764" y="250" width="16" height="120"/>
+    <path d="M752 250 h40 v18 h-40 z"/>
+  </g>
+  <g fill="#3e342c">
+    <path d="M0 400 L960 360 L960 540 L0 540 Z"/>
+    <path d="M0 430 L960 400" stroke="#5a5048" stroke-width="3"/>
+    <path d="M0 470 L960 440" stroke="#5a5048" stroke-width="3"/>
+    <path d="M0 510 L960 480" stroke="#5a5048" stroke-width="3"/>
+  </g>
+  <ellipse cx="188" cy="242" rx="14" ry="8" fill="#1a1614"/>
+  <ellipse cx="772" cy="242" rx="14" ry="8" fill="#1a1614"/>
+</svg>
