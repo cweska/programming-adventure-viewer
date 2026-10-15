@@ -19,6 +19,7 @@ test("a teacher sees a student after they join and advance", async ({ page }) =>
   await expect(page.getByTestId("instructions")).toContainText("light_torch");
 
   await page.goto(`/classroom?code=${code}`);
+  await expect(page.getByRole("columnheader", { name: "Part" })).toBeVisible();
   const row = page.getByTestId("report-row");
   await expect(row).toContainText("Mira");
   await expect(row).toContainText("gate");

@@ -1,17 +1,28 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { emberkeepModule } from "../lib/lesson/emberkeep";
+import {
+  canGoBack,
+  canGoForward,
+  createPartNavigation,
+  goBack,
+  goForward,
+  navigationFromProgress,
+  partLabel,
+  recordPass,
+  setPartCode,
+  type PartNavigation,
+} from "../lib/lesson/navigation";
 import {
   commitProgress,
   gradeRun,
   initialTheater,
   nextTheaterState,
-  starterFor,
-  visibleLessons,
   type FailedCheck,
 } from "../lib/lesson/progression";
-import { moduleSchema, type Module } from "../lib/lesson/schema";
+import { moduleSchema, type Beat, type Module } from "../lib/lesson/schema";
+import { formatForTrigger, type FormatTrigger } from "../lib/languages/python/format-policy";
 import { pythonAdapter, PythonTimeoutError, whenPythonReady } from "../lib/languages/python";
 import type { Explanation } from "../lib/languages/types";
 import type { TheaterState } from "../lib/stage/bridge";
@@ -38,22 +49,23 @@ type StoredProgress = {
 };
 
 function lessonsFor(module: Module, preview: boolean) {
-  return preview ? module.lessons : visibleLessons(module);
+  return preview ? module.lessons : module.lessons.filter((lesson) => lesson.published);
 }
 
 export function Player() {
+  const initialLesson = emberkeepModule.lessons[0];
+  const initialNav = createPartNavigation(initialLesson.beats);
   const [preview, setPreview] = useState(false);
   const [lessonModule, setLessonModule] = useState<Module>(emberkeepModule);
   const [lessonIndex, setLessonIndex] = useState(0);
-  const [beatIndex, setBeatIndex] = useState(0);
-  const [code, setCode] = useState(starterFor(emberkeepModule.lessons[0].beats[0]));
-  const [theater, setTheater] = useState<TheaterState>(initialTheater(emberkeepModule.lessons[0].beats[0]));
+  const [nav, setNav] = useState<PartNavigation>(initialNav);
+  const [code, setCode] = useState(initialNav.code[0] ?? "");
+  const [theater, setTheater] = useState<TheaterState>(initialTheater(initialLesson.beats[0]));
   const [output, setOutput] = useState("");
   const [explainer, setExplainer] = useState<Explanation | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [failedChecks, setFailedChecks] = useState<FailedCheck[]>([]);
-  const [passed, setPassed] = useState(false);
-  const [finished, setFinished] = useState(false);
+  const [lessonCompleted, setLessonCompleted] = useState(false);
   const [pythonReady, setPythonReady] = useState(false);
   const [running, setRunning] = useState(false);
   const [student, setStudent] = useState<StudentSession | null>(null);
@@ -62,10 +74,70 @@ export function Player() {
   const [joinError, setJoinError] = useState("");
   const [joining, setJoining] = useState(false);
 
+  const navRef = useRef(nav);
+  const indexRef = useRef(0);
+  const codeRef = useRef(initialNav.code[0] ?? "");
+  const lessonIdRef = useRef(initialLesson.id);
+  const frontierRef = useRef(0);
+  const previewRef = useRef(false);
+  const studentRef = useRef<StudentSession | null>(null);
+  const moduleRef = useRef(lessonModule);
+
   const lessons = useMemo(() => lessonsFor(lessonModule, preview), [lessonModule, preview]);
   const lesson = lessons[lessonIndex];
-  const beat = lesson?.beats[beatIndex];
-  const continueUnlocked = Boolean(beat) && !finished && (!beat.activity || passed);
+  const beat = lesson?.beats[nav.index];
+  const atEnd = Boolean(lesson) && nav.index >= lesson.beats.length - 1;
+  const continueUnlocked = Boolean(beat) && !(lessonCompleted && atEnd) && (!beat.activity || nav.passed[nav.index] === true);
+
+  function writeNavigation(next: PartNavigation) {
+    navRef.current = next;
+    setNav(next);
+  }
+
+  function openIndex(next: PartNavigation, beats: Beat[], lessonId: string) {
+    const part = beats[next.index];
+    if (!part) return;
+    lessonIdRef.current = lessonId;
+    indexRef.current = next.index;
+    const source = next.code[next.index] ?? "";
+    codeRef.current = source;
+    writeNavigation(next);
+    setCode(source);
+    setTheater(initialTheater(part));
+    setOutput("");
+    setExplainer(null);
+    setFeedback(null);
+    setFailedChecks([]);
+    void formatPart("load", next.index, source, lessonId);
+  }
+
+  async function formatPart(trigger: FormatTrigger, index: number, source: string, lessonId: string): Promise<string> {
+    const snapshot = source;
+    let formatted = source;
+    try {
+      formatted = await formatForTrigger(trigger, source, (value) => pythonAdapter.format(value));
+    } catch {
+      formatted = source;
+    }
+    if (lessonIdRef.current !== lessonId) return formatted;
+    if (indexRef.current === index && codeRef.current !== snapshot) return codeRef.current;
+    writeNavigation(setPartCode(navRef.current, index, formatted));
+    if (indexRef.current === index) {
+      codeRef.current = formatted;
+      setCode(formatted);
+    }
+    return formatted;
+  }
+
+  function onCodeChange(value: string) {
+    codeRef.current = value;
+    setCode(value);
+    writeNavigation(setPartCode(navRef.current, indexRef.current, value));
+  }
+
+  function onEditorBlur() {
+    void formatPart("blur", indexRef.current, codeRef.current, lessonIdRef.current);
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -88,25 +160,27 @@ export function Player() {
   }, []);
 
   useEffect(() => {
+    void formatPart("load", 0, codeRef.current, lessonIdRef.current);
+  }, []);
+
+  useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const isPreview = params.get("preview") === "1";
+    previewRef.current = isPreview;
     if (isPreview) {
       setPreview(true);
       const raw = sessionStorage.getItem(PREVIEW_STORAGE_KEY);
       if (!raw) return;
       try {
         const parsed = moduleSchema.safeParse(JSON.parse(raw));
-        if (!parsed.success) return;
-        const first = parsed.data.lessons[0]?.beats[0];
+        if (!parsed.success || !parsed.data.lessons[0]) return;
+        const beats = parsed.data.lessons[0].beats;
         setLessonModule(parsed.data);
+        moduleRef.current = parsed.data;
         setLessonIndex(0);
-        setBeatIndex(0);
-        setFinished(false);
-        setPassed(false);
-        if (first) {
-          setCode(starterFor(first));
-          setTheater(initialTheater(first));
-        }
+        setLessonCompleted(false);
+        frontierRef.current = 0;
+        openIndex(createPartNavigation(beats), beats, parsed.data.lessons[0].id);
       } catch {
         setJoinError("The preview draft could not be read.");
       }
@@ -125,38 +199,30 @@ export function Player() {
     }
   }, []);
 
-  function resetRunState() {
-    setOutput("");
-    setExplainer(null);
-    setFeedback(null);
-    setFailedChecks([]);
-    setPassed(false);
-  }
-
   function applyProgress(progress: StoredProgress, module: Module, isPreview: boolean) {
     if (progress.moduleId !== module.id) return;
     const visible = lessonsFor(module, isPreview);
     const nextLesson = visible.findIndex((item) => item.id === progress.lessonId);
     if (nextLesson < 0) return;
-    const nextBeat = visible[nextLesson].beats.findIndex((item) => item.id === progress.beatId);
-    if (nextBeat < 0) return;
-    const beatToShow = visible[nextLesson].beats[nextBeat];
+    const beats = visible[nextLesson].beats;
+    const nextIndex = beats.findIndex((item) => item.id === progress.beatId);
+    if (nextIndex < 0) return;
+    const completed = progress.status === "completed";
+    const next = navigationFromProgress(beats, nextIndex, progress.latestCode, completed);
     setLessonIndex(nextLesson);
-    setBeatIndex(nextBeat);
-    setCode(progress.latestCode || starterFor(beatToShow));
-    setTheater(initialTheater(beatToShow));
-    setFinished(progress.status === "completed");
-    resetRunState();
+    setLessonCompleted(completed);
+    frontierRef.current = nextIndex;
+    openIndex(next, beats, visible[nextLesson].id);
   }
 
-  async function joinClass(name: string, code: string, module: Module, isPreview: boolean) {
+  async function joinClass(name: string, codeValue: string, module: Module, isPreview: boolean) {
     setJoining(true);
     setJoinError("");
     try {
       const response = await fetch("/api/classroom/join", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ displayName: name, joinCode: code }),
+        body: JSON.stringify({ displayName: name, joinCode: codeValue }),
       });
       const body = (await response.json()) as {
         error?: string;
@@ -171,8 +237,9 @@ export function Player() {
         id: body.student.id,
         displayName: body.student.displayName,
         classroomId: body.student.classroomId,
-        joinCode: code.trim(),
+        joinCode: codeValue.trim(),
       };
+      studentRef.current = session;
       setStudent(session);
       localStorage.setItem(
         STUDENT_STORAGE_KEY,
@@ -191,75 +258,63 @@ export function Player() {
     lessonId: string;
     beatId: string;
     latestCode: string;
+    index: number;
   }) {
-    if (!student) return;
-    await commitProgress(preview, async () => {
+    const currentStudent = studentRef.current;
+    if (!currentStudent) return;
+    if (args.status !== "completed" && args.index < frontierRef.current) return;
+    frontierRef.current = Math.max(frontierRef.current, args.index);
+    await commitProgress(previewRef.current, async () => {
       await fetch("/api/progress", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          studentId: student.id,
-          moduleId: lessonModule.id,
+          studentId: currentStudent.id,
+          moduleId: moduleRef.current.id,
           lessonId: args.lessonId,
           beatId: args.beatId,
           status: args.status,
           latestCode: args.latestCode,
-          preview,
+          preview: previewRef.current,
         }),
       });
     });
   }
 
-  async function onFormat() {
-    try {
-      const formatted = await pythonAdapter.format(code);
-      setCode(formatted);
-      setExplainer(null);
-    } catch (error) {
-      setExplainer({
-        title: "Could not format",
-        hint: "Ruff could not format this yet. Fix any syntax error, then try again.",
-        raw: error instanceof Error ? error.message : String(error),
-      });
-    }
-  }
-
   async function onRun() {
-    if (!beat || running) return;
+    const currentLesson = lessons[lessonIndex];
+    const current = navRef.current;
+    const part = currentLesson?.beats[current.index];
+    if (!currentLesson || !part || running) return;
     setRunning(true);
     setExplainer(null);
     setFeedback(null);
     setFailedChecks([]);
-    setPassed(false);
-    let source = code;
-    try {
-      const formatted = await pythonAdapter.format(code);
-      source = formatted;
-      if (formatted !== code) setCode(formatted);
-    } catch {
-      source = code;
-    }
+    const source = await formatPart("run", current.index, codeRef.current, currentLesson.id);
     try {
       const result = await pythonAdapter.run({
         code: source,
-        checks: beat.activity?.checks ?? [],
+        checks: part.activity?.checks ?? [],
       });
-      const printed = [result.stdout, result.stderr].filter((part) => part.trim().length > 0).join("");
+      const printed = [result.stdout, result.stderr].filter((chunk) => chunk.trim().length > 0).join("");
       setOutput(printed);
       if (!result.ok) setExplainer(pythonAdapter.explain(result.traceback));
-      const grade = gradeRun(beat, result);
+      const grade = gradeRun(part, result);
       setFeedback(grade.feedback);
       setFailedChecks(grade.failedChecks);
-      setPassed(Boolean(beat.activity) && grade.canContinue);
-      setTheater((current) => {
-        const next = nextTheaterState(beat, result.stageEvents);
-        return { ...next, flareToken: current.flareToken + next.flareToken };
+      if (part.activity && grade.canContinue) {
+        writeNavigation(recordPass(navRef.current, currentLesson.beats));
+      }
+      setTheater((previous) => {
+        const next = nextTheaterState(part, result.stageEvents);
+        return { ...next, flareToken: previous.flareToken + next.flareToken };
       });
       await persist({
         status: "in_progress",
-        lessonId: lesson.id,
-        beatId: beat.id,
+        lessonId: currentLesson.id,
+        beatId: part.id,
         latestCode: source,
+        index: current.index,
       });
     } catch (error) {
       if (error instanceof PythonTimeoutError) {
@@ -284,49 +339,60 @@ export function Player() {
     }
   }
 
+  function onBack() {
+    if (!lesson) return;
+    const next = goBack(navRef.current);
+    if (next === navRef.current) return;
+    openIndex(next, lesson.beats, lesson.id);
+  }
+
+  function onForward() {
+    if (!lesson) return;
+    const next = goForward(navRef.current, lesson.beats);
+    if (next === navRef.current) return;
+    openIndex(next, lesson.beats, lesson.id);
+  }
+
   async function onContinue() {
     if (!lesson || !beat) return;
-    const nextBeatIndex = beatIndex + 1;
-    if (nextBeatIndex < lesson.beats.length) {
-      const nextBeat = lesson.beats[nextBeatIndex];
+    if (beat.activity && navRef.current.passed[navRef.current.index] !== true) return;
+    const nextIndex = navRef.current.index + 1;
+    if (nextIndex < lesson.beats.length) {
+      const next = goForward(navRef.current, lesson.beats);
+      const latestCode = next.code[next.index] ?? "";
       await persist({
         status: "in_progress",
         lessonId: lesson.id,
-        beatId: nextBeat.id,
-        latestCode: starterFor(nextBeat),
+        beatId: lesson.beats[next.index].id,
+        latestCode,
+        index: next.index,
       });
-      setBeatIndex(nextBeatIndex);
-      setCode(starterFor(nextBeat));
-      setTheater(initialTheater(nextBeat));
-      setFinished(false);
-      resetRunState();
+      openIndex(next, lesson.beats, lesson.id);
       return;
     }
+    setLessonCompleted(true);
     await persist({
       status: "completed",
       lessonId: lesson.id,
       beatId: beat.id,
-      latestCode: code,
+      latestCode: codeRef.current,
+      index: navRef.current.index,
     });
     const nextLessonIndex = lessonIndex + 1;
     if (nextLessonIndex < lessons.length) {
       const nextLesson = lessons[nextLessonIndex];
-      const nextBeat = nextLesson.beats[0];
       setLessonIndex(nextLessonIndex);
-      setBeatIndex(0);
-      setCode(starterFor(nextBeat));
-      setTheater(initialTheater(nextBeat));
-      resetRunState();
+      setLessonCompleted(false);
+      frontierRef.current = 0;
+      openIndex(createPartNavigation(nextLesson.beats), nextLesson.beats, nextLesson.id);
       await persist({
         status: "in_progress",
         lessonId: nextLesson.id,
-        beatId: nextBeat.id,
-        latestCode: starterFor(nextBeat),
+        beatId: nextLesson.beats[0].id,
+        latestCode: navRef.current.code[0] ?? "",
+        index: 0,
       });
-      return;
     }
-    setFinished(true);
-    setPassed(false);
   }
 
   if (!lesson || !beat) {
@@ -344,7 +410,7 @@ export function Player() {
           Preview. This pass is not saved to a classroom.
         </p>
       ) : null}
-      {finished ? (
+      {lessonCompleted && atEnd ? (
         <p className="banner" data-testid="lesson-complete">
           The lesson is complete.
         </p>
@@ -357,6 +423,7 @@ export function Player() {
             data-testid="join-form"
             onSubmit={(event) => {
               event.preventDefault();
+              previewRef.current = preview;
               void joinClass(displayName, joinCode, lessonModule, preview);
             }}
           >
@@ -397,17 +464,27 @@ export function Player() {
 
       <section className="instructions" data-testid="instructions">
         <h1>{lesson.title}</h1>
-        <p className="beat-count">
-          Beat {beatIndex + 1} of {lesson.beats.length}
-        </p>
+        <div className="part-nav">
+          <button type="button" data-testid="back" onClick={onBack} disabled={!canGoBack(nav)}>
+            Back
+          </button>
+          <p className="part-count" data-testid="part-label">
+            {partLabel(nav.index, lesson.beats.length)}
+          </p>
+          <button
+            type="button"
+            data-testid="forward"
+            onClick={onForward}
+            disabled={!canGoForward(nav, lesson.beats.length)}
+          >
+            Forward
+          </button>
+        </div>
         <p>{beat.instructions}</p>
       </section>
 
       <section className="code-panel">
         <div className="toolbar">
-          <button type="button" data-testid="format" onClick={() => void onFormat()} disabled={running}>
-            Format
-          </button>
           <button
             type="button"
             data-testid="run"
@@ -420,7 +497,7 @@ export function Player() {
             {pythonReady ? "Python is ready" : "Python is loading"}
           </span>
         </div>
-        <PythonEditor code={code} onChange={setCode} />
+        <PythonEditor code={code} onChange={onCodeChange} onBlur={onEditorBlur} />
         <ConsolePanel
           output={output}
           explainer={explainer}

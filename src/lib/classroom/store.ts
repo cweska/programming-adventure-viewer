@@ -248,7 +248,7 @@ export function openClassroomStore(filename: string): ClassroomStore {
       classroom_id: student.classroom_id,
       module_id: required(input.moduleId, "Module"),
       lesson_id: required(input.lessonId, "Lesson"),
-      beat_id: required(input.beatId, "Beat"),
+      beat_id: required(input.beatId, "Part"),
       status: input.status,
       latest_code: input.latestCode ?? "",
       updated_at: updatedAt,
@@ -380,7 +380,7 @@ export function openClassroomStore(filename: string): ClassroomStore {
           `Student: ${student.display_name}`,
           `Module: ${saved.moduleId}`,
           `Lesson: ${saved.lessonId}`,
-          `Beat: ${saved.beatId}`,
+          `Part: ${saved.beatId}`,
           "The lesson is complete.",
         ].join("\n"),
       });

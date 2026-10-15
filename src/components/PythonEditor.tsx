@@ -8,9 +8,11 @@ import { plainDarkTheme, pythonHighlighting } from "./editor-theme";
 export function PythonEditor({
   code,
   onChange,
+  onBlur,
 }: {
   code: string;
   onChange: (value: string) => void;
+  onBlur?: () => void;
 }) {
   return (
     <div className="editor-shell" data-testid="editor">
@@ -30,6 +32,12 @@ export function PythonEditor({
           python(),
           pythonHighlighting,
           EditorView.contentAttributes.of({ "aria-label": "Python editor" }),
+          EditorView.domEventHandlers({
+            blur: () => {
+              onBlur?.();
+              return false;
+            },
+          }),
         ]}
         onChange={onChange}
       />

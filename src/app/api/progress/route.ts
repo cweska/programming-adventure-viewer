@@ -31,7 +31,7 @@ export async function POST(request: Request) {
     typeof body.beatId !== "string" ||
     (body.status !== "in_progress" && body.status !== "completed")
   ) {
-    return Response.json({ error: "Progress is missing a student, lesson, or beat." }, { status: 400 });
+    return Response.json({ error: "Progress is missing a student, lesson, or part." }, { status: 400 });
   }
   const latestCode = typeof body.latestCode === "string" ? body.latestCode : "";
   const store = getClassroomStore();

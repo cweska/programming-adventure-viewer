@@ -132,7 +132,7 @@ export default function ClassroomPage() {
                 <tr>
                   <th>Student</th>
                   <th>Lesson</th>
-                  <th>Beat</th>
+                  <th>Part</th>
                   <th>Completion</th>
                 </tr>
               </thead>

@@ -12,6 +12,11 @@ test.describe("emberkeep player", () => {
     await expect(page.getByTestId("editor")).toBeVisible();
     await expect(page.locator(".cm-lineNumbers")).toBeVisible();
     await expect(page.getByTestId("console")).toBeVisible();
+    await expect(page.getByTestId("part-label")).toHaveText("Part 1 of 3");
+    await expect(page.getByTestId("format")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Format" })).toHaveCount(0);
+    await expect(page.getByTestId("back")).toBeVisible();
+    await expect(page.getByTestId("forward")).toBeVisible();
 
     const duration = await page.evaluate(() => {
       for (const sheet of Array.from(document.styleSheets)) {
@@ -83,5 +88,56 @@ test.describe("emberkeep player", () => {
     await replaceEditor(page, 'stage.say("The gate knows my name.")\n');
     await page.getByTestId("run").click();
     await expect(page.getByTestId("caption")).toHaveText("The gate knows my name.");
+  });
+
+  test("formats on blur and not on each keystroke", async ({ page }) => {
+    await page.goto("/");
+    await replaceEditor(page, "value=1\n");
+    const editor = page.locator('[data-testid="editor"] .cm-content');
+    await expect(editor).toContainText("value=1");
+    await expect(editor).not.toContainText("value = 1");
+    await page.getByTestId("instructions").click();
+    await expect(editor).toContainText("value = 1");
+  });
+
+  test("Back restores the previous part and Forward stops at the furthest unlocked part", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.getByTestId("part-label")).toHaveText("Part 1 of 3");
+    await expect(page.getByTestId("back")).toBeDisabled();
+    await expect(page.getByTestId("forward")).toBeEnabled();
+
+    await page.getByTestId("forward").click();
+    await expect(page.getByTestId("part-label")).toHaveText("Part 2 of 3");
+    await expect(page.getByTestId("instructions")).toContainText("light_torch");
+    await expect(page.getByTestId("forward")).toBeDisabled();
+
+    await replaceEditor(page, 'draft = "courtyard"\n');
+    await page.getByTestId("back").click();
+    await expect(page.getByTestId("part-label")).toHaveText("Part 1 of 3");
+    await expect(page.getByTestId("editor")).toContainText("Listen to the scene");
+
+    await page.getByTestId("forward").click();
+    await expect(page.getByTestId("part-label")).toHaveText("Part 2 of 3");
+    await expect(page.getByTestId("editor")).toContainText('draft = "courtyard"');
+    await expect(page.getByTestId("forward")).toBeDisabled();
+
+    await pythonReady(page);
+    await replaceEditor(
+      page,
+      ["def light_torch(oil):", "    if oil:", '        return "lit"', '    return "dark"', ""].join("\n"),
+    );
+    await page.getByTestId("run").click();
+    await expect(page.getByTestId("continue")).toBeVisible();
+    await expect(page.getByTestId("forward")).toBeEnabled();
+
+    await page.getByTestId("back").click();
+    await expect(page.getByTestId("part-label")).toHaveText("Part 1 of 3");
+    await page.getByTestId("forward").click();
+    await expect(page.getByTestId("part-label")).toHaveText("Part 2 of 3");
+    await expect(page.getByTestId("continue")).toBeVisible();
+    await page.getByTestId("forward").click();
+    await expect(page.getByTestId("part-label")).toHaveText("Part 3 of 3");
+    await expect(page.getByTestId("forward")).toBeDisabled();
+    await expect(page.getByTestId("back")).toBeEnabled();
   });
 });
