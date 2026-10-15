@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" role="img" aria-label="Stone arch and iron portcullis">
+  <defs>
+    <linearGradient id="stone" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#6d6258"/>
+      <stop offset="100%" stop-color="#3a342f"/>
+    </linearGradient>
+    <linearGradient id="inner" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1a1418"/>
+      <stop offset="100%" stop-color="#09080a"/>
+    </linearGradient>
+  </defs>
+  <rect width="960" height="540" fill="#241e1c"/>
+  <rect x="70" y="40" width="820" height="460" rx="8" fill="url(#stone)"/>
+  <path d="M210 470 V230 C210 120 750 120 750 230 V470 Z" fill="url(#inner)"/>
+  <g stroke="#8d928f" stroke-width="6" opacity="0.8">
+    <path d="M250 150 V470"/>
+    <path d="M310 130 V470"/>
+    <path d="M370 120 V470"/>
+    <path d="M430 118 V470"/>
+    <path d="M490 118 V470"/>
+    <path d="M550 120 V470"/>
+    <path d="M610 130 V470"/>
+    <path d="M670 150 V470"/>
+    <path d="M250 200 H670"/>
+    <path d="M270 270 H650"/>
+    <path d="M250 340 H670"/>
+    <path d="M250 410 H670"/>
+  </g>
+  <rect x="150" y="70" width="70" height="40" fill="#2c2622"/>
+  <rect x="740" y="70" width="70" height="40" fill="#2c2622"/>
+  <path d="M180 250 h28 v90 h-28 z" fill="#3a3028"/>
+  <path d="M752 250 h28 v90 h-28 z" fill="#3a3028"/>
+  <circle cx="194" cy="242" r="10" fill="#241c18"/>
+  <circle cx="766" cy="242" r="10" fill="#241c18"/>
+</svg>

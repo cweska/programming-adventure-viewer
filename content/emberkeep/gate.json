@@ -1,0 +1,89 @@
+{
+  "id": "emberkeep",
+  "title": "Emberkeep",
+  "language": "python",
+  "lessons": [
+    {
+      "id": "gate",
+      "title": "The Gate",
+      "published": true,
+      "beats": [
+        {
+          "id": "arrive",
+          "instructions": "You are at the outer gate of Emberkeep. Read the scene. When you are ready, continue into the courtyard.",
+          "scene": {
+            "caption": "Rain ticks on the stones. The gate of Emberkeep is shut, and two cold torches wait in their sconces.",
+            "images": [
+              {
+                "id": "road",
+                "src": "/scenes/gate-road.svg",
+                "alt": "A wet road leading to a shut castle gate at dusk"
+              },
+              {
+                "id": "arch",
+                "src": "/scenes/gate-arch.svg",
+                "alt": "An iron-bound stone arch of the Emberkeep gate"
+              }
+            ]
+          }
+        },
+        {
+          "id": "courtyard",
+          "instructions": "The courtyard torches are dark. Define light_torch(oil) so it returns \"lit\" when oil is a non-empty string, and \"dark\" otherwise.",
+          "scene": {
+            "caption": "Inside the arch, the courtyard is all shadow. The gatekeeper will not speak until the torches catch.",
+            "images": [
+              {
+                "id": "courtyard",
+                "src": "/scenes/courtyard.svg",
+                "alt": "A dark courtyard with two unlit torch sconces"
+              }
+            ]
+          },
+          "activity": {
+            "kind": "challenge",
+            "starterCode": "def light_torch(oil):\n    \"\"\"Return 'lit' if oil is non-empty, else 'dark'.\"\"\"\n    return \"dark\"\n",
+            "passFeedback": "The torches catch. Warm light climbs the wet stone.",
+            "failFeedback": "The sconces stay cold. light_torch must return \"lit\" for oil and \"dark\" when the flask is empty.",
+            "checks": [
+              {
+                "name": "oil lights the torch",
+                "code": "assert light_torch(\"oil\") == \"lit\", \"Passing oil should return lit\""
+              },
+              {
+                "name": "empty flask stays dark",
+                "code": "assert light_torch(\"\") == \"dark\", \"An empty flask should return dark\""
+              }
+            ]
+          }
+        },
+        {
+          "id": "answer",
+          "instructions": "The gatekeeper asks who you are. Call stage.say with the words the hero speaks, or define answer(question) so it does.",
+          "scene": {
+            "caption": "A hooded gatekeeper steps into the new light. \"Who comes to Emberkeep?\"",
+            "images": [
+              {
+                "id": "keeper",
+                "src": "/scenes/gatekeeper.svg",
+                "alt": "A hooded gatekeeper standing in torchlight"
+              }
+            ]
+          },
+          "activity": {
+            "kind": "interactive",
+            "starterCode": "def answer(question):\n    stage.say(\"I am a traveler seeking the keep.\")\n",
+            "passFeedback": "The gatekeeper nods, and the gate begins to rise.",
+            "failFeedback": "The gatekeeper waits. Speak through stage.say, then define answer(question) so the check can call it.",
+            "checks": [
+              {
+                "name": "the hero answers",
+                "code": "answer(\"Who comes to Emberkeep?\")\nassert callable(answer)\n"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
