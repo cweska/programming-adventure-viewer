@@ -1,0 +1,368 @@
+{
+  "id": "emberkeep",
+  "title": "Emberkeep",
+  "language": "python",
+  "lessons": [
+    {
+      "id": "first-words",
+      "title": "First Words",
+      "published": true,
+      "beats": [
+        {
+          "id": "run-ember",
+          "instructions": "Press Run. The line print(\"ember\") is already written, and the wall will show that word.",
+          "scene": {
+            "caption": "Rain ticks on the road. The gate of Emberkeep is shut, and the wall is ready to show a word.",
+            "images": [
+              {
+                "id": "road",
+                "src": "/scenes/gate-road.svg",
+                "alt": "A wet road leading to the shut gate of Emberkeep"
+              }
+            ]
+          },
+          "activity": {
+            "kind": "challenge",
+            "starterCode": "print(\"ember\")\n",
+            "passFeedback": "The wall shows ember.",
+            "failFeedback": "Press Run so the word ember shows in the console.",
+            "checks": [
+              {
+                "name": "the console shows ember",
+                "code": "assert \"ember\" in _captured_stdout, \"The console should include the word ember.\""
+              }
+            ]
+          }
+        },
+        {
+          "id": "say-shut",
+          "instructions": "Type this line and press Run: print(\"The gate is shut.\")",
+          "scene": {
+            "caption": "Iron bars fill the arch. The wall is waiting for a sentence from you.",
+            "images": [
+              {
+                "id": "arch",
+                "src": "/scenes/gate-arch.svg",
+                "alt": "The iron-bound arch of the Emberkeep gate"
+              }
+            ]
+          },
+          "activity": {
+            "kind": "challenge",
+            "starterCode": "# Speak to the wall.\n",
+            "passFeedback": "The wall shows your sentence.",
+            "failFeedback": "Type print(\"The gate is shut.\") and press Run.",
+            "checks": [
+              {
+                "name": "the console shows the sentence",
+                "code": "assert _captured_stdout.strip() == \"The gate is shut.\", \"The console should show The gate is shut.\""
+              }
+            ]
+          }
+        },
+        {
+          "id": "say-keeper",
+          "instructions": "Type a different print and press Run: print(\"A keeper waits.\")",
+          "scene": {
+            "caption": "A hooded gatekeeper stands behind the bars and waits.",
+            "images": [
+              {
+                "id": "keeper",
+                "src": "/scenes/gatekeeper.svg",
+                "alt": "The gatekeeper waiting behind the gate"
+              }
+            ]
+          },
+          "activity": {
+            "kind": "challenge",
+            "starterCode": "# Speak a new sentence.\n",
+            "passFeedback": "The wall shows your new sentence.",
+            "failFeedback": "Type print(\"A keeper waits.\") and press Run.",
+            "checks": [
+              {
+                "name": "the console shows the new sentence",
+                "code": "assert _captured_stdout.strip() == \"A keeper waits.\", \"The console should show A keeper waits.\""
+              }
+            ]
+          }
+        },
+        {
+          "id": "two-lines",
+          "instructions": "Type these two lines and press Run: print(\"The left torch is dark.\") and print(\"The right torch is dark.\"). The console should show two lines.",
+          "scene": {
+            "caption": "Two torches stand in the dark, one on each side of the courtyard.",
+            "images": [
+              {
+                "id": "courtyard",
+                "src": "/scenes/courtyard.svg",
+                "alt": "Two dark torches in the Emberkeep courtyard"
+              }
+            ]
+          },
+          "activity": {
+            "kind": "challenge",
+            "starterCode": "# Say two lines.\n",
+            "passFeedback": "The wall shows both torch lines.",
+            "failFeedback": "Type both print lines so the console shows two lines.",
+            "checks": [
+              {
+                "name": "the console shows two lines",
+                "code": "lines = [line.strip() for line in _captured_stdout.splitlines() if line.strip()]\nassert lines == [\"The left torch is dark.\", \"The right torch is dark.\"], \"The console should show the two torch lines.\""
+              }
+            ]
+          }
+        },
+        {
+          "id": "wall-remembers",
+          "instructions": "The gatekeeper says the wall can remember a word. Press Continue.",
+          "scene": {
+            "caption": "The gatekeeper says the wall can remember a word.",
+            "images": [
+              {
+                "id": "keeper",
+                "src": "/scenes/gatekeeper.svg",
+                "alt": "The gatekeeper speaking at the gate"
+              }
+            ]
+          }
+        },
+        {
+          "id": "remember-ember",
+          "instructions": "A variable remembers a value. Type this line and press Run: word = \"ember\"",
+          "scene": {
+            "caption": "The stones of the arch can hold one word.",
+            "images": [
+              {
+                "id": "arch",
+                "src": "/scenes/gate-arch.svg",
+                "alt": "The stone arch that can remember a word"
+              }
+            ]
+          },
+          "activity": {
+            "kind": "challenge",
+            "starterCode": "# Remember one word.\n",
+            "passFeedback": "The wall remembers ember.",
+            "failFeedback": "Type word = \"ember\" and press Run.",
+            "checks": [
+              {
+                "name": "word remembers ember",
+                "code": "assert word == \"ember\", \"word should remember ember.\""
+              }
+            ]
+          }
+        },
+        {
+          "id": "change-word",
+          "instructions": "Change that same variable to a new word. Type word = \"keep\" and press Run.",
+          "scene": {
+            "caption": "The remembered word can change.",
+            "images": [
+              {
+                "id": "arch",
+                "src": "/scenes/gate-arch.svg",
+                "alt": "The stone arch after the remembered word changes"
+              }
+            ]
+          },
+          "activity": {
+            "kind": "challenge",
+            "starterCode": "word = \"ember\"\n",
+            "passFeedback": "The wall now remembers keep.",
+            "failFeedback": "Change word to \"keep\" and press Run.",
+            "checks": [
+              {
+                "name": "word remembers keep",
+                "code": "assert word == \"keep\", \"word should remember keep.\""
+              }
+            ]
+          }
+        },
+        {
+          "id": "not-the-same",
+          "instructions": "Remembering a word is not the same as speaking it. Press Continue.",
+          "scene": {
+            "caption": "The gatekeeper says remembering a word is not the same as speaking it.",
+            "images": [
+              {
+                "id": "keeper",
+                "src": "/scenes/gatekeeper.svg",
+                "alt": "The gatekeeper explaining remembering and speaking"
+              }
+            ]
+          }
+        },
+        {
+          "id": "say-name",
+          "instructions": "name holds Rowan. print(name) shows the value. print(\"name\") shows the word name. Add print(name) and press Run.",
+          "scene": {
+            "caption": "The gatekeeper asks you to speak the name the wall is holding.",
+            "images": [
+              {
+                "id": "keeper",
+                "src": "/scenes/gatekeeper.svg",
+                "alt": "The gatekeeper asking you to speak a name"
+              }
+            ]
+          },
+          "activity": {
+            "kind": "challenge",
+            "starterCode": "name = \"Rowan\"\n",
+            "passFeedback": "The wall says Rowan.",
+            "failFeedback": "Quotes around name make Python show the word name instead of the value, so use print(name).",
+            "checks": [
+              {
+                "name": "the console shows the value",
+                "code": "shown = _captured_stdout.strip()\nassert shown == str(name), \"The console should show the value of name, not the word name.\"\nassert shown != \"name\""
+              }
+            ]
+          }
+        },
+        {
+          "id": "say-place",
+          "instructions": "Make a different variable and print it. Type place = \"Emberkeep\" and then print(place), and press Run.",
+          "scene": {
+            "caption": "The road behind you leads to one place.",
+            "images": [
+              {
+                "id": "road",
+                "src": "/scenes/gate-road.svg",
+                "alt": "The road that leads to Emberkeep"
+              }
+            ]
+          },
+          "activity": {
+            "kind": "challenge",
+            "starterCode": "# Remember a place and say it.\n",
+            "passFeedback": "The wall says Emberkeep.",
+            "failFeedback": "Set place to \"Emberkeep\" and print it with print(place).",
+            "checks": [
+              {
+                "name": "the console shows the place",
+                "code": "shown = _captured_stdout.strip()\nassert place == \"Emberkeep\", \"place should remember Emberkeep.\"\nassert shown == \"Emberkeep\", \"The console should show Emberkeep.\""
+              }
+            ]
+          }
+        },
+        {
+          "id": "two-torches",
+          "instructions": "Two torches are dark. The gatekeeper asks what you get if you count both. Press Continue.",
+          "scene": {
+            "caption": "Two torches are dark. The gatekeeper asks what you get if you count both.",
+            "images": [
+              {
+                "id": "courtyard",
+                "src": "/scenes/courtyard.svg",
+                "alt": "Two dark torches waiting to be counted"
+              }
+            ]
+          }
+        },
+        {
+          "id": "torch-counts",
+          "instructions": "The left torch is 2 and the right torch is 3. Type left = 2 and right = 3, then press Run. Do not print yet.",
+          "scene": {
+            "caption": "The left torch counts as 2. The right torch counts as 3.",
+            "images": [
+              {
+                "id": "courtyard",
+                "src": "/scenes/courtyard.svg",
+                "alt": "The left and right torches in the dark courtyard"
+              }
+            ]
+          },
+          "activity": {
+            "kind": "challenge",
+            "starterCode": "# Remember both torch counts.\n",
+            "passFeedback": "The wall remembers 2 and 3.",
+            "failFeedback": "Type left = 2 and right = 3, then press Run.",
+            "checks": [
+              {
+                "name": "both torch counts are remembered",
+                "code": "assert left == 2, \"left should be 2.\"\nassert right == 3, \"right should be 3.\""
+              }
+            ]
+          }
+        },
+        {
+          "id": "say-counts",
+          "instructions": "Print each number on its own line. Keep left = 2 and right = 3, then type print(left) and print(right), and press Run.",
+          "scene": {
+            "caption": "Each torch count can be spoken on its own line.",
+            "images": [
+              {
+                "id": "courtyard",
+                "src": "/scenes/courtyard.svg",
+                "alt": "The courtyard torches ready to be spoken"
+              }
+            ]
+          },
+          "activity": {
+            "kind": "challenge",
+            "starterCode": "left = 2\nright = 3\n",
+            "passFeedback": "The console shows 2 and then 3.",
+            "failFeedback": "Use print(left) and print(right) so each number is on its own line.",
+            "checks": [
+              {
+                "name": "each count is on its own line",
+                "code": "lines = [line.strip() for line in _captured_stdout.splitlines() if line.strip()]\nassert lines == [str(left), str(right)], \"Print each number on its own line.\""
+              }
+            ]
+          }
+        },
+        {
+          "id": "say-sum",
+          "instructions": "Print the sum with print(left + right). Keep left = 2 and right = 3. Adding the numbers gives one total, which is not the same as sticking the two numbers together as text.",
+          "scene": {
+            "caption": "The gatekeeper waits for one number: both torches counted together.",
+            "images": [
+              {
+                "id": "courtyard",
+                "src": "/scenes/courtyard.svg",
+                "alt": "The courtyard while the two torches are counted together"
+              }
+            ]
+          },
+          "activity": {
+            "kind": "challenge",
+            "starterCode": "left = 2\nright = 3\n",
+            "passFeedback": "The console shows 5, the sum of the two torches.",
+            "failFeedback": "Use print(left + right) so the console shows the sum, not the two numbers stuck together.",
+            "checks": [
+              {
+                "name": "the console shows the sum",
+                "code": "shown = _captured_stdout.strip()\nassert left == 2, \"left should be 2.\"\nassert right == 3, \"right should be 3.\"\nassert shown == str(left + right), \"Print the sum of the two numbers.\"\nassert shown != str(left) + str(right), \"Print the sum, not the two numbers stuck together.\""
+              }
+            ]
+          }
+        },
+        {
+          "id": "gate-answers",
+          "instructions": "Put it together. The gate asks for 4 and 1. Type left = 4, then right = 1, then print(left + right), and press Run.",
+          "scene": {
+            "caption": "The gate will answer if you count 4 and 1 and say the sum.",
+            "images": [
+              {
+                "id": "arch",
+                "src": "/scenes/gate-arch.svg",
+                "alt": "The gate arch waiting to answer"
+              }
+            ]
+          },
+          "activity": {
+            "kind": "challenge",
+            "starterCode": "# Count two numbers and say their sum.\n",
+            "passFeedback": "The gate answers 5, the bars rise, and Emberkeep lets you through.",
+            "failFeedback": "Set left to 4 and right to 1, then print the sum with print(left + right).",
+            "checks": [
+              {
+                "name": "the console shows the new sum",
+                "code": "shown = _captured_stdout.strip()\nassert left == 4, \"left should be 4.\"\nassert right == 1, \"right should be 1.\"\nassert shown == str(left + right), \"The console should show the sum of the two numbers.\"\nassert shown != str(left) + str(right), \"Print the sum, not the two numbers stuck together.\""
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

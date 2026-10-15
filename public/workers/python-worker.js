@@ -105,6 +105,13 @@ self.onmessage = async (event) => {
 
   const checks = [];
   if (ok) {
+    try {
+      const flushed = await pyodide.runPythonAsync("import sys\nsys.stdout.flush()\n", { globals });
+      if (flushed && typeof flushed.destroy === "function") flushed.destroy();
+    } catch {
+      // A flush failure should not hide output already captured.
+    }
+    globals.set("_captured_stdout", stdout.join(""));
     for (const check of data.checks || []) {
       try {
         const returned = await pyodide.runPythonAsync(String(check.code ?? ""), { globals });
