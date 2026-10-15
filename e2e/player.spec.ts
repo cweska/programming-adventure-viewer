@@ -67,7 +67,21 @@ test.describe("emberkeep player", () => {
     await pythonReady(page);
     await page.getByTestId("run").click();
     await expect(page.getByTestId("stdout")).toContainText("ember");
+    await expect(page.getByTestId("stdout")).not.toContainText("Program output will appear here.");
     await expect(page.getByTestId("feedback")).toContainText("The wall shows ember");
+    const divider = page.getByTestId("console-divider");
+    await expect(divider).toBeVisible();
+    const between = await page.evaluate(() => {
+      const stdout = document.querySelector('[data-testid="stdout"]');
+      const line = document.querySelector('[data-testid="console-divider"]');
+      const story = document.querySelector('[data-testid="feedback"]');
+      if (!stdout || !line || !story) return false;
+      const stdoutBox = stdout.getBoundingClientRect();
+      const lineBox = line.getBoundingClientRect();
+      const storyBox = story.getBoundingClientRect();
+      return stdoutBox.bottom <= lineBox.top && lineBox.bottom <= storyBox.top && lineBox.height > 0;
+    });
+    expect(between).toBe(true);
     await expect(page.getByTestId("continue")).toBeVisible();
   });
 
