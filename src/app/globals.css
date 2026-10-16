@@ -83,6 +83,12 @@ a {
   border: 1px solid var(--metal-deep);
 }
 
+.local-note {
+  margin: 0 0 10px;
+  color: var(--metal);
+  font-size: 0.92rem;
+}
+
 .join-bar form {
   display: flex;
   flex-wrap: wrap;

@@ -1,10 +1,15 @@
 let pyodidePromise = null;
 
+function pyodideBase() {
+  return new URL("../pyodide/", import.meta.url);
+}
+
 function boot() {
   if (!pyodidePromise) {
     pyodidePromise = (async () => {
-      const { loadPyodide } = await import("/pyodide/pyodide.mjs");
-      const pyodide = await loadPyodide({ indexURL: "/pyodide/" });
+      const base = pyodideBase();
+      const { loadPyodide } = await import(new URL("pyodide.mjs", base).href);
+      const pyodide = await loadPyodide({ indexURL: base.href });
       globalThis.fetch = () => Promise.reject(new Error("Network is disabled"));
       if ("XMLHttpRequest" in globalThis) {
         globalThis.XMLHttpRequest = function XMLHttpRequestBlocked() {

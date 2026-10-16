@@ -1,3 +1,4 @@
+import { publicPath } from "../../site";
 import type { RunInput, RunResult } from "../types";
 import { parseStageMessage, type StageEvent } from "../../stage/bridge";
 
@@ -23,7 +24,7 @@ let failReason: string | null = null;
 function boot(): Promise<void> {
   if (ready && worker) return ready;
   failReason = null;
-  worker = new Worker("/workers/python-worker.js", { type: "module" });
+  worker = new Worker(publicPath("/workers/python-worker.js"), { type: "module" });
   const currentWorker = worker;
   ready = new Promise((resolve, reject) => {
     if (!currentWorker) {
