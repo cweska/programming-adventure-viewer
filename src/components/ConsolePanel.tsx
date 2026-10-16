@@ -1,6 +1,8 @@
 import type { Explanation } from "../lib/languages/types";
 import type { FailedCheck } from "../lib/lesson/progression";
 
+const EMPTY_OUTPUT = "Program output will appear here.";
+
 export function ConsolePanel({
   output,
   explainer,
@@ -12,12 +14,26 @@ export function ConsolePanel({
   feedback: string | null;
   failedChecks: FailedCheck[];
 }) {
+  const hasStdout = output.length > 0;
+  const hasExplainer = explainer !== null;
+  const hasFlavor = Boolean(feedback);
+  const hasPython = hasStdout || hasExplainer;
+  const showDivider = hasPython && hasFlavor;
+  const showPlaceholder = !hasPython && !hasFlavor && failedChecks.length === 0;
+
   return (
     <section className="console" data-testid="console" aria-live="polite">
       <h2>Console</h2>
-      <pre className="program-output" data-testid="stdout">
-        {output || "Program output will appear here."}
-      </pre>
+      {showPlaceholder ? (
+        <pre className="program-output" data-testid="stdout">
+          {EMPTY_OUTPUT}
+        </pre>
+      ) : null}
+      {hasStdout ? (
+        <pre className="program-output" data-testid="stdout">
+          {output}
+        </pre>
+      ) : null}
       {explainer ? (
         <div className="explainer" data-testid="explainer">
           <h3>{explainer.title}</h3>
@@ -30,6 +46,7 @@ export function ConsolePanel({
           ) : null}
         </div>
       ) : null}
+      {showDivider ? <hr className="console-divider" data-testid="console-divider" /> : null}
       {feedback ? (
         <p className="feedback" data-testid="feedback">
           {feedback}

@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { pythonReady } from "./editor";
 
 test("a teacher sees a student after they join and advance", async ({ page }) => {
   const code = `GATE${Date.now()}`;
@@ -15,14 +16,17 @@ test("a teacher sees a student after they join and advance", async ({ page }) =>
   await page.getByLabel("Join code").fill(code);
   await page.getByRole("button", { name: "Join class" }).click();
   await expect(page.getByTestId("join-status")).toContainText("Mira");
+  await pythonReady(page);
+  await page.getByTestId("run").click();
+  await expect(page.getByTestId("continue")).toBeVisible();
   await page.getByTestId("continue").click();
-  await expect(page.getByTestId("instructions")).toContainText("light_torch");
+  await expect(page.getByTestId("part-label")).toHaveText("Part 2 of 15");
 
   await page.goto(`/classroom?code=${code}`);
   await expect(page.getByRole("columnheader", { name: "Part" })).toBeVisible();
   const row = page.getByTestId("report-row");
   await expect(row).toContainText("Mira");
-  await expect(row).toContainText("gate");
-  await expect(row).toContainText("courtyard");
+  await expect(row).toContainText("first-words");
+  await expect(row).toContainText("say-shut");
   await expect(row).toContainText("In progress");
 });

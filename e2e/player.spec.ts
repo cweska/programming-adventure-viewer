@@ -8,11 +8,13 @@ test.describe("emberkeep player", () => {
     await expect(page.getByTestId("torch-left")).toBeVisible();
     await expect(page.getByTestId("torch-right")).toBeVisible();
     await expect(page.getByTestId("caption")).toContainText("Emberkeep");
-    await expect(page.getByTestId("instructions")).toContainText("outer gate");
+    await expect(page.getByTestId("instructions")).toContainText("Press Run");
     await expect(page.getByTestId("editor")).toBeVisible();
     await expect(page.locator(".cm-lineNumbers")).toBeVisible();
     await expect(page.getByTestId("console")).toBeVisible();
-    await expect(page.getByTestId("part-label")).toHaveText("Part 1 of 3");
+    await expect(page.getByTestId("part-label")).toHaveText("Part 1 of 15");
+    await expect(page.getByTestId("editor")).toContainText('print("ember")');
+    await expect(page.getByTestId("continue")).toHaveCount(0);
     await expect(page.getByTestId("format")).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Format" })).toHaveCount(0);
     await expect(page.getByTestId("back")).toBeVisible();
@@ -57,37 +59,30 @@ test.describe("emberkeep player", () => {
     await expect(page.getByTestId("traceback")).toBeHidden();
   });
 
-  test("a correct light_torch solution reveals Continue", async ({ page }) => {
+  test("Run on the prefilled print shows the word in the console", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByTestId("continue")).toBeVisible();
-    await page.getByTestId("continue").click();
-    await expect(page.getByTestId("instructions")).toContainText("light_torch");
+    await expect(page.getByTestId("part-label")).toHaveText("Part 1 of 15");
+    await expect(page.getByTestId("editor")).toContainText('print("ember")');
     await expect(page.getByTestId("continue")).toHaveCount(0);
     await pythonReady(page);
-    await replaceEditor(
-      page,
-      ["def light_torch(oil):", "    if oil:", '        return "lit"', '    return "dark"', ""].join("\n"),
-    );
     await page.getByTestId("run").click();
-    await expect(page.getByTestId("feedback")).toContainText("The torches catch");
+    await expect(page.getByTestId("stdout")).toContainText("ember");
+    await expect(page.getByTestId("stdout")).not.toContainText("Program output will appear here.");
+    await expect(page.getByTestId("feedback")).toContainText("The wall shows ember");
+    const divider = page.getByTestId("console-divider");
+    await expect(divider).toBeVisible();
+    const between = await page.evaluate(() => {
+      const stdout = document.querySelector('[data-testid="stdout"]');
+      const line = document.querySelector('[data-testid="console-divider"]');
+      const story = document.querySelector('[data-testid="feedback"]');
+      if (!stdout || !line || !story) return false;
+      const stdoutBox = stdout.getBoundingClientRect();
+      const lineBox = line.getBoundingClientRect();
+      const storyBox = story.getBoundingClientRect();
+      return stdoutBox.bottom <= lineBox.top && lineBox.bottom <= storyBox.top && lineBox.height > 0;
+    });
+    expect(between).toBe(true);
     await expect(page.getByTestId("continue")).toBeVisible();
-  });
-
-  test("stage.say changes the theater caption", async ({ page }) => {
-    await page.goto("/");
-    await page.getByTestId("continue").click();
-    await pythonReady(page);
-    await replaceEditor(
-      page,
-      ["def light_torch(oil):", "    if oil:", '        return "lit"', '    return "dark"', ""].join("\n"),
-    );
-    await page.getByTestId("run").click();
-    await expect(page.getByTestId("continue")).toBeVisible();
-    await page.getByTestId("continue").click();
-    await expect(page.getByTestId("instructions")).toContainText("stage.say");
-    await replaceEditor(page, 'stage.say("The gate knows my name.")\n');
-    await page.getByTestId("run").click();
-    await expect(page.getByTestId("caption")).toHaveText("The gate knows my name.");
   });
 
   test("formats on blur and not on each keystroke", async ({ page }) => {
@@ -102,41 +97,29 @@ test.describe("emberkeep player", () => {
 
   test("Back restores the previous part and Forward stops at the furthest unlocked part", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByTestId("part-label")).toHaveText("Part 1 of 3");
+    await expect(page.getByTestId("part-label")).toHaveText("Part 1 of 15");
     await expect(page.getByTestId("back")).toBeDisabled();
-    await expect(page.getByTestId("forward")).toBeEnabled();
-
-    await page.getByTestId("forward").click();
-    await expect(page.getByTestId("part-label")).toHaveText("Part 2 of 3");
-    await expect(page.getByTestId("instructions")).toContainText("light_torch");
-    await expect(page.getByTestId("forward")).toBeDisabled();
-
-    await replaceEditor(page, 'draft = "courtyard"\n');
-    await page.getByTestId("back").click();
-    await expect(page.getByTestId("part-label")).toHaveText("Part 1 of 3");
-    await expect(page.getByTestId("editor")).toContainText("Listen to the scene");
-
-    await page.getByTestId("forward").click();
-    await expect(page.getByTestId("part-label")).toHaveText("Part 2 of 3");
-    await expect(page.getByTestId("editor")).toContainText('draft = "courtyard"');
     await expect(page.getByTestId("forward")).toBeDisabled();
 
     await pythonReady(page);
-    await replaceEditor(
-      page,
-      ["def light_torch(oil):", "    if oil:", '        return "lit"', '    return "dark"', ""].join("\n"),
-    );
     await page.getByTestId("run").click();
+    await expect(page.getByTestId("stdout")).toContainText("ember");
     await expect(page.getByTestId("continue")).toBeVisible();
     await expect(page.getByTestId("forward")).toBeEnabled();
 
+    await page.getByTestId("forward").click();
+    await expect(page.getByTestId("part-label")).toHaveText("Part 2 of 15");
+    await expect(page.getByTestId("instructions")).toContainText('print("The gate is shut.")');
+    await expect(page.getByTestId("forward")).toBeDisabled();
+
+    await replaceEditor(page, 'print("draft")\n');
     await page.getByTestId("back").click();
-    await expect(page.getByTestId("part-label")).toHaveText("Part 1 of 3");
+    await expect(page.getByTestId("part-label")).toHaveText("Part 1 of 15");
+    await expect(page.getByTestId("editor")).toContainText('print("ember")');
+
     await page.getByTestId("forward").click();
-    await expect(page.getByTestId("part-label")).toHaveText("Part 2 of 3");
-    await expect(page.getByTestId("continue")).toBeVisible();
-    await page.getByTestId("forward").click();
-    await expect(page.getByTestId("part-label")).toHaveText("Part 3 of 3");
+    await expect(page.getByTestId("part-label")).toHaveText("Part 2 of 15");
+    await expect(page.getByTestId("editor")).toContainText('print("draft")');
     await expect(page.getByTestId("forward")).toBeDisabled();
     await expect(page.getByTestId("back")).toBeEnabled();
   });
