@@ -1,3 +1,5 @@
+import { publicPath } from "../../site";
+
 type RuffWorkspace = {
   format(code: string): string;
 };
@@ -14,12 +16,12 @@ async function loadRuff(): Promise<RuffModule> {
   const importer = new Function("specifier", "return import(specifier)") as (
     specifier: string,
   ) => Promise<RuffModule>;
-  return importer("/ruff/ruff_wasm.js");
+  return importer(publicPath("/ruff/ruff_wasm.js"));
 }
 
 async function loadWorkspace(): Promise<RuffWorkspace> {
   const ruff = await loadRuff();
-  await ruff.default({ module_or_path: "/ruff/ruff_wasm_bg.wasm" });
+  await ruff.default({ module_or_path: publicPath("/ruff/ruff_wasm_bg.wasm") });
   return new ruff.Workspace(
     {
       "line-length": 88,

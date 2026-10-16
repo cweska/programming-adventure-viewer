@@ -23,8 +23,13 @@ import {
 } from "../lib/lesson/progression";
 import { moduleSchema, type Beat, type Module } from "../lib/lesson/schema";
 import { formatForTrigger, type FormatTrigger } from "../lib/languages/python/format-policy";
+import {
+  joinClassroomInBrowser,
+  saveProgressInBrowser,
+} from "../lib/classroom/local-store";
 import { pythonAdapter, PythonTimeoutError, whenPythonReady } from "../lib/languages/python";
 import type { Explanation } from "../lib/languages/types";
+import { isStaticExport } from "../lib/site";
 import type { TheaterState } from "../lib/stage/bridge";
 import { ConsolePanel } from "./ConsolePanel";
 import { PythonEditor } from "./PythonEditor";
@@ -219,17 +224,25 @@ export function Player() {
     setJoining(true);
     setJoinError("");
     try {
-      const response = await fetch("/api/classroom/join", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ displayName: name, joinCode: codeValue }),
-      });
-      const body = (await response.json()) as {
-        error?: string;
-        student?: { id: string; displayName: string; classroomId: string };
-        progress?: StoredProgress | null;
-      };
-      if (!response.ok || !body.student) {
+      const body = isStaticExport
+        ? joinClassroomInBrowser(name, codeValue)
+        : await (async () => {
+            const response = await fetch("/api/classroom/join", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ displayName: name, joinCode: codeValue }),
+            });
+            const payload = (await response.json()) as {
+              error?: string;
+              student?: { id: string; displayName: string; classroomId: string };
+              progress?: StoredProgress | null;
+            };
+            if (!response.ok) {
+              return { error: payload.error ?? "Could not join that classroom." };
+            }
+            return payload;
+          })();
+      if (!body.student) {
         setJoinError(body.error ?? "Could not join that classroom.");
         return;
       }
@@ -265,6 +278,17 @@ export function Player() {
     if (args.status !== "completed" && args.index < frontierRef.current) return;
     frontierRef.current = Math.max(frontierRef.current, args.index);
     await commitProgress(previewRef.current, async () => {
+      if (isStaticExport) {
+        saveProgressInBrowser({
+          studentId: currentStudent.id,
+          moduleId: moduleRef.current.id,
+          lessonId: args.lessonId,
+          beatId: args.beatId,
+          status: args.status,
+          latestCode: args.latestCode,
+        });
+        return;
+      }
       await fetch("/api/progress", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -416,6 +440,9 @@ export function Player() {
         </p>
       ) : null}
       <section className="join-bar" aria-label="Classroom">
+        {isStaticExport ? (
+          <p className="local-note">This class stays in this browser. It does not sync to other computers.</p>
+        ) : null}
         {student ? (
           <p data-testid="join-status">Joined as {student.displayName}</p>
         ) : (

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { parseAuthorModelOutput } from "../../lib/authoring/parse";
 import type { Activity, Beat, Module } from "../../lib/lesson/schema";
+import { isStaticExport, pagePath } from "../../lib/site";
 
 const PREVIEW_STORAGE_KEY = "emberkeep-preview";
 
@@ -30,6 +31,11 @@ export default function AuthorPage() {
   }
 
   async function generate() {
+    if (isStaticExport) {
+      setError("AI drafting needs the local app.");
+      setStatus("");
+      return;
+    }
     setBusy(true);
     setStatus("");
     try {
@@ -153,7 +159,7 @@ export default function AuthorPage() {
   function openPreview() {
     if (!draft) return;
     sessionStorage.setItem(PREVIEW_STORAGE_KEY, JSON.stringify(draft));
-    window.location.href = "/?preview=1";
+    window.location.href = `${pagePath("/")}?preview=1`;
   }
 
   return (

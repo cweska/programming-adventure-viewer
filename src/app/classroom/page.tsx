@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createClassroomInBrowser, reportClassroomInBrowser } from "../../lib/classroom/local-store";
+import { isStaticExport, pagePath } from "../../lib/site";
 
 type ReportRow = {
   studentId: string;
@@ -29,13 +31,21 @@ export default function ClassroomPage() {
   const [error, setError] = useState("");
 
   async function loadReport(code: string) {
-    const response = await fetch(`/api/classroom/report?code=${encodeURIComponent(code)}`);
-    const body = (await response.json()) as {
-      error?: string;
-      classroom?: ClassroomSummary;
-      rows?: ReportRow[];
-    };
-    if (!response.ok || !body.classroom) {
+    const body = isStaticExport
+      ? reportClassroomInBrowser(code)
+      : await (async () => {
+          const response = await fetch(`/api/classroom/report?code=${encodeURIComponent(code)}`);
+          const payload = (await response.json()) as {
+            error?: string;
+            classroom?: ClassroomSummary;
+            rows?: ReportRow[];
+          };
+          if (!response.ok) {
+            return { error: payload.error ?? "Could not load that report." };
+          }
+          return payload;
+        })();
+    if (!body.classroom) {
       setError(body.error ?? "Could not load that report.");
       setRows([]);
       return;
@@ -56,20 +66,28 @@ export default function ClassroomPage() {
   async function createClassroom(event: React.FormEvent) {
     event.preventDefault();
     setError("");
-    const response = await fetch("/api/classroom", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, reportEmail, joinCode }),
-    });
-    const body = (await response.json()) as { error?: string; classroom?: ClassroomSummary };
-    if (!response.ok || !body.classroom) {
+    const body = isStaticExport
+      ? createClassroomInBrowser({ name, reportEmail, joinCode })
+      : await (async () => {
+          const response = await fetch("/api/classroom", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name, reportEmail, joinCode }),
+          });
+          const payload = (await response.json()) as { error?: string; classroom?: ClassroomSummary };
+          if (!response.ok) {
+            return { error: payload.error ?? "Could not create the classroom." };
+          }
+          return payload;
+        })();
+    if (!body.classroom) {
       setError(body.error ?? "Could not create the classroom.");
       return;
     }
     setClassroom(body.classroom);
     setLookup(body.classroom.joinCode);
     setRows([]);
-    const url = `/classroom?code=${encodeURIComponent(body.classroom.joinCode)}`;
+    const url = `${pagePath("/classroom")}?code=${encodeURIComponent(body.classroom.joinCode)}`;
     window.history.replaceState(null, "", url);
   }
 
@@ -77,7 +95,11 @@ export default function ClassroomPage() {
     <main className="column">
       <form className="classroom-form" onSubmit={(event) => void createClassroom(event)}>
         <h1>Classroom</h1>
-        <p>Create a class, share the join code, and read the report here. Email is sent only when SMTP is configured.</p>
+        <p>
+          {isStaticExport
+            ? "This browser keeps the class on this computer. Progress is not shared with other computers, and no email is sent."
+            : "Create a class, share the join code, and read the report here. Email is sent only when SMTP is configured."}
+        </p>
         <label>
           Classroom name
           <input aria-label="Classroom name" value={name} onChange={(event) => setName(event.target.value)} />

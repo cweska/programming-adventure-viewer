@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { Scene } from "../lib/lesson/schema";
+import { publicPath } from "../lib/site";
 import { Torch } from "./Torch";
 
 export function Theater({
@@ -39,16 +40,16 @@ export function Theater({
                 : "";
               return (
                 <figure key={id} className={className} data-image-id={id}>
-                  <img src={image.src} alt={image.alt} />
+                  <img src={publicPath(image.src)} alt={image.alt} />
                 </figure>
               );
             })}
           </div>
-          {scene.video ? <video className="scene-video" src={scene.video} controls /> : null}
+          {scene.video ? <video className="scene-video" src={publicPath(scene.video)} controls /> : null}
           {scene.narration || scene.music ? (
             <div className="audio-row">
-              {scene.narration ? <audio src={scene.narration} controls aria-label="Narration" /> : null}
-              {scene.music ? <audio src={scene.music} controls aria-label="Music" /> : null}
+              {scene.narration ? <audio src={publicPath(scene.narration)} controls aria-label="Narration" /> : null}
+              {scene.music ? <audio src={publicPath(scene.music)} controls aria-label="Music" /> : null}
             </div>
           ) : null}
           <div className="caption" data-testid="caption">
