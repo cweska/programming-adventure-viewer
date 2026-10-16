@@ -7,7 +7,7 @@ test.describe("emberkeep player", () => {
     await expect(page.getByTestId("theater-frame")).toBeVisible();
     await expect(page.getByTestId("torch-left")).toBeVisible();
     await expect(page.getByTestId("torch-right")).toBeVisible();
-    await expect(page.getByTestId("caption")).toContainText("Emberkeep");
+    await expect(page.getByTestId("caption")).toContainText("Rain peppers on the muddy road");
     await expect(page.getByTestId("instructions")).toContainText("Press Run");
     await expect(page.getByTestId("editor")).toBeVisible();
     await expect(page.locator(".cm-lineNumbers")).toBeVisible();
@@ -68,7 +68,7 @@ test.describe("emberkeep player", () => {
     await page.getByTestId("run").click();
     await expect(page.getByTestId("stdout")).toContainText("ember");
     await expect(page.getByTestId("stdout")).not.toContainText("Program output will appear here.");
-    await expect(page.getByTestId("feedback")).toContainText("The wall shows ember");
+    await expect(page.getByTestId("feedback")).toContainText("The wall hears ember and answers through the old magic");
     const divider = page.getByTestId("console-divider");
     await expect(divider).toBeVisible();
     const between = await page.evaluate(() => {
