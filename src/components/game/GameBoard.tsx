@@ -11,6 +11,7 @@ import { createGame } from "../../lib/game/state";
 import type { Actor, GameState } from "../../lib/game/types";
 import { actorById } from "../../lib/game/world";
 import { publicPath } from "../../lib/site";
+import { useReducedMotion } from "../useReducedMotion";
 import { MapTiles, TILE } from "./TileArt";
 
 const STEP_MS = 260;
@@ -23,21 +24,9 @@ type BoardProps = {
   script: BoardScript | null;
   autoFocus: boolean;
   compact: boolean;
-  lockedHint: string | null;
+  lockedHint: { features: Feature[]; text: string } | null;
   onGoal: () => void;
 };
-
-function useReducedMotion(): boolean {
-  const [reduced, setReduced] = useState(false);
-  useEffect(() => {
-    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReduced(query.matches);
-    const update = () => setReduced(query.matches);
-    query.addEventListener("change", update);
-    return () => query.removeEventListener("change", update);
-  }, []);
-  return reduced;
-}
 
 export function GameBoard(props: BoardProps) {
   const [session, setSession] = useState({ key: 0, moves: [] as Direction[] });
@@ -117,6 +106,13 @@ function BoardSession({
     return () => window.clearTimeout(timer);
   }, [enemyTurn, state.tick, reducedMotion]);
 
+  const cutscenePlaying = state.mode === "cutscene" && !state.cutscene?.doorClosed;
+  useEffect(() => {
+    if (!cutscenePlaying) return;
+    const timer = window.setTimeout(() => dispatch({ type: "cutsceneStep" }), reducedMotion ? 30 : STEP_MS * 1.5);
+    return () => window.clearTimeout(timer);
+  }, [cutscenePlaying, state.tick, reducedMotion]);
+
   function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     if (event.altKey || event.ctrlKey || event.metaKey) return;
     const command = commandForKey(event.key);
@@ -152,7 +148,9 @@ function BoardSession({
   const node = currentNode(state);
   const speaker = state.dialogue ? speakerFor(node?.speaker ?? "", actorById(state, state.dialogue.actorId)) : null;
   const notice = state.notice
-    ? `${state.notice.text}${lockedHint && state.notice.kind.endsWith("-locked") ? ` ${lockedHint}` : ""}`
+    ? `${state.notice.text}${
+        lockedHint?.features.some((feature) => state.notice?.kind === `${feature}-locked`) ? ` ${lockedHint.text}` : ""
+      }`
     : null;
 
   return (
@@ -171,9 +169,19 @@ function BoardSession({
       >
         <svg viewBox={`0 0 ${width} ${height}`} className="game-map" aria-hidden="true">
           <MapTiles tiles={state.map.tiles} sky={state.map.sky} />
-          {state.goal?.type === "reach" && !state.goalMet ? (
+          {state.goal?.type === "reach" && !state.goalMet && state.mode !== "cutscene" ? (
             <g transform={`translate(${state.goal.x * TILE} ${state.goal.y * TILE})`} data-testid="goal-marker">
               <rect className="goal-marker" x={3} y={3} width={TILE - 6} height={TILE - 6} rx={6} />
+            </g>
+          ) : null}
+          {state.cutscene?.doorClosed ? (
+            <g
+              transform={`translate(${state.cutscene.door.x * TILE} ${state.cutscene.door.y * TILE})`}
+              data-testid="door-closed"
+            >
+              <rect x={8} y={0} width={32} height={48} fill="#6b4528" stroke="#2a190d" strokeWidth={4} />
+              <path d="M8 16 H40 M8 32 H40" stroke="#4a2f1a" strokeWidth={3} />
+              <circle cx={34} cy={26} r={2.5} fill="#c9a24a" />
             </g>
           ) : null}
           {state.actors.map((actor) => (
@@ -368,6 +376,7 @@ function ActorToken({ actor, state }: { actor: Actor; state: GameState }) {
   const flip = actor.facing === "left" ? `translate(${TILE} 0) scale(-1 1)` : undefined;
   const classes = ["actor", `actor-${actor.kind}`];
   if (actor.down) classes.push("is-down");
+  if (actor.hidden) classes.push("is-hidden");
   return (
     <g
       className={classes.join(" ")}
@@ -378,6 +387,7 @@ function ActorToken({ actor, state }: { actor: Actor; state: GameState }) {
       data-y={actor.y}
       data-hp={actor.hp}
       data-down={actor.down ? "true" : "false"}
+      data-hidden={actor.hidden ? "true" : "false"}
       data-facing={actor.facing}
     >
       {highlighted ? <ellipse cx={TILE / 2} cy={TILE - 6} rx={20} ry={7} className="actor-ring" /> : null}
