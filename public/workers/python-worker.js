@@ -61,6 +61,42 @@ class Party:
         _stage_move(direction)
 
 party = Party()
+
+_prompts = []
+_options = []
+_spoken = []
+_greens = []
+
+def print_prompt(dialogue):
+    text = str(dialogue)
+    _prompts.append(text)
+    _stage_prompt(text)
+
+def print_options(*options):
+    if len(options) < 1 or len(options) > 4:
+        raise ValueError("print_options() needs between 1 and 4 options.")
+    texts = [str(option) for option in options]
+    _options.append(texts)
+    _stage_options(len(texts))
+    for index, text in enumerate(texts):
+        _stage_option(index, text)
+
+class User:
+    def __init__(self):
+        self._clicked = None
+
+    def clicked(self):
+        return self._clicked
+
+user = User()
+
+def speak_dialogue(option):
+    _spoken.append(option)
+    _stage_speak(str(option))
+
+def make_option_green():
+    _greens.append(user._clicked)
+    _stage_highlight(str(user._clicked))
 `;
 
 const NEWLINE = String.fromCharCode(10);
@@ -113,6 +149,22 @@ self.onmessage = async (event) => {
   });
   globals.set("_stage_move", (direction) => {
     events.push({ type: "move", direction: String(direction) });
+  });
+  globals.set("_stage_prompt", (text) => {
+    events.push({ type: "prompt", text: String(text) });
+  });
+  globals.set("_stage_options", (count) => {
+    events.push({ type: "options", options: Array.from({ length: Number(count) }, () => "") });
+  });
+  globals.set("_stage_option", (index, text) => {
+    const last = events[events.length - 1];
+    if (last && last.type === "options") last.options[Number(index)] = String(text);
+  });
+  globals.set("_stage_speak", (option) => {
+    events.push({ type: "speak", option: String(option) });
+  });
+  globals.set("_stage_highlight", (option) => {
+    events.push({ type: "highlight", option: String(option) });
   });
 
   let ok = true;

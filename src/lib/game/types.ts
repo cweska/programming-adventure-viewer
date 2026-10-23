@@ -44,6 +44,7 @@ export type Actor = {
   aggroRange: number;
   dialogue: string | null;
   down: boolean;
+  hidden: boolean;
 };
 
 export type DialogueState = {
@@ -70,7 +71,13 @@ export type NoticeKind =
 
 export type Notice = { kind: NoticeKind; text: string; id: number };
 
-export type GameMode = "explore" | "dialogue" | "combat" | "defeat";
+export type GameMode = "explore" | "dialogue" | "combat" | "defeat" | "cutscene";
+
+export type CutsceneState = {
+  door: { x: number; y: number };
+  queue: string[];
+  doorClosed: boolean;
+};
 
 export type GameState = {
   map: { id: string; name: string; sky: "night" | "day"; width: number; height: number; tiles: Tile[][] };
@@ -82,6 +89,7 @@ export type GameState = {
   dialogue: DialogueState | null;
   dialogues: Record<string, Dialogue>;
   combat: CombatState | null;
+  cutscene: CutsceneState | null;
   combatResult: "victory" | "defeat" | null;
   goal: Goal | null;
   goalMet: boolean;
@@ -100,5 +108,6 @@ export type GameAction =
   | { type: "advanceDialogue" }
   | { type: "endTurn" }
   | { type: "enemyStep" }
+  | { type: "cutsceneStep" }
   | { type: "setFeatures"; features: Feature[] }
   | { type: "clearNotice" };

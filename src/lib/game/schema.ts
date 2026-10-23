@@ -210,6 +210,7 @@ export const goalSchema = z.discriminatedUnion("type", [
       x: z.number().int().min(0),
       y: z.number().int().min(0),
       label: z.string().min(1),
+      enter: z.object({ after: z.array(z.string().min(1)) }).strict().optional(),
     })
     .strict(),
   z.object({ type: z.literal("talk"), actor: z.string().min(1) }).strict(),

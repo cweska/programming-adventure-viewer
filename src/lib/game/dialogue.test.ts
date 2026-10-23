@@ -53,6 +53,6 @@ describe("dialogue", () => {
     });
     const state = playActions(createGame(board, testData), [{ type: "move", direction: "right" }]);
     expect(state.mode).toBe("explore");
-    expect(state.notice).toMatchObject({ kind: "nothing-to-say", text: "Mar'Tu has nothing to say right now." });
+    expect(state.notice).toMatchObject({ kind: "nothing-to-say", text: "Mar'tu has nothing to say right now." });
   });
 });

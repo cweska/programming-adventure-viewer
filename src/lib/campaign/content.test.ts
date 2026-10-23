@@ -110,6 +110,30 @@ describe("campaign content", () => {
     expect(built.has("movement")).toBe(true);
   });
 
+  it("points conversations at known people and at an earlier prompt", () => {
+    const known = (id: string) => id in campaignData.npcs || id in campaignData.characters;
+    let conversations = 0;
+    for (const module of bundledModules) {
+      for (const lesson of module.lessons) {
+        lesson.beats.forEach((beat, index) => {
+          const talk = beat.conversation;
+          if (!talk) return;
+          conversations += 1;
+          expect(known(talk.speaker), `${beat.id} speaker`).toBe(true);
+          expect(known(talk.responder), `${beat.id} responder`).toBe(true);
+          expect(beat.scene.images.length, beat.id).toBeGreaterThan(0);
+          if (talk.promptFrom) {
+            const source = lesson.beats.findIndex((item) => item.id === talk.promptFrom);
+            expect(source, `${beat.id} promptFrom`).toBeGreaterThanOrEqual(0);
+            expect(source, `${beat.id} promptFrom comes first`).toBeLessThan(index);
+            expect(lesson.beats[source].conversation, `${beat.id} promptFrom is a conversation`).toBeTruthy();
+          }
+        });
+      }
+    }
+    expect(conversations).toBeGreaterThan(0);
+  });
+
   it("hides the editor on campaign story and gameplay parts", () => {
     const module = bundledModules.find((item) => item.id === "leylines-awaken");
     for (const beat of module?.lessons[0].beats ?? []) {

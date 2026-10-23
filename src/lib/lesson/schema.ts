@@ -29,6 +29,15 @@ export const activitySchema = z.object({
   unlocks: z.array(featureSchema).optional(),
 });
 
+export const conversationSchema = z
+  .object({
+    speaker: z.string().min(1),
+    responder: z.string().min(1),
+    showOptions: z.boolean(),
+    promptFrom: z.string().min(1).optional(),
+  })
+  .strict();
+
 export const beatSchema = z
   .object({
     id: z.string().min(1),
@@ -36,11 +45,16 @@ export const beatSchema = z
     instructions: z.string().min(1),
     editor: z.enum(["hidden", "visible"]).optional(),
     board: boardSchema.optional(),
+    conversation: conversationSchema.optional(),
     activity: activitySchema.optional(),
   })
   .refine((beat) => beat.scene.images.length > 0 || Boolean(beat.board), {
     message: "A part needs at least one scene image or a game board.",
     path: ["scene", "images"],
+  })
+  .refine((beat) => !(beat.board && beat.conversation), {
+    message: "A part shows either a game board or a conversation, not both.",
+    path: ["conversation"],
   });
 
 export const lessonSchema = z.object({
@@ -63,6 +77,7 @@ export type SceneImage = z.infer<typeof imageSchema>;
 export type Scene = z.infer<typeof sceneSchema>;
 export type Check = z.infer<typeof checkSchema>;
 export type Activity = z.infer<typeof activitySchema>;
+export type Conversation = z.infer<typeof conversationSchema>;
 export type Beat = z.infer<typeof beatSchema>;
 export type Lesson = z.infer<typeof lessonSchema>;
 export type Module = z.infer<typeof moduleSchema>;

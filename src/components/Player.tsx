@@ -32,14 +32,16 @@ import {
 import { pythonAdapter, PythonTimeoutError, whenPythonReady } from "../lib/languages/python";
 import type { Explanation } from "../lib/languages/types";
 import { isStaticExport } from "../lib/site";
-import { stageMoves, type TheaterState } from "../lib/stage/bridge";
+import { conversationEvents, stageMoves, type TheaterState } from "../lib/stage/bridge";
 import { ConsolePanel } from "./ConsolePanel";
+import { ConversationScene, type ConversationScript } from "./ConversationScene";
 import { GameBoard, type BoardScript } from "./game/GameBoard";
 import { PythonEditor } from "./PythonEditor";
 import { Theater } from "./Theater";
 
 const PREVIEW_STORAGE_KEY = "emberkeep-preview";
 const STUDENT_STORAGE_KEY = "emberkeep-student";
+const PROMPTS_STORAGE_PREFIX = "emberkeep-prompts:";
 
 type StudentSession = {
   id: string;
@@ -83,6 +85,9 @@ export function Player({ moduleId, draft = false }: { moduleId?: string; draft?:
   const [joinError, setJoinError] = useState("");
   const [joining, setJoining] = useState(false);
   const [script, setScript] = useState<BoardScript | null>(null);
+  const [conversationScript, setConversationScript] = useState<ConversationScript | null>(null);
+  const [checksPassed, setChecksPassed] = useState<Record<string, boolean>>({});
+  const [prompts, setPrompts] = useState<Record<string, string>>({});
 
   const navRef = useRef(nav);
   const indexRef = useRef(0);
@@ -99,8 +104,10 @@ export function Player({ moduleId, draft = false }: { moduleId?: string; draft?:
   const atEnd = Boolean(lesson) && nav.index >= lesson.beats.length - 1;
   const partPassed = nav.passed[nav.index] === true;
   const continueUnlocked = Boolean(beat) && !(lessonCompleted && atEnd) && (!requiresPass(beat) || partPassed);
-  const boardFeatures = beat?.board
-    ? mergeFeatures(beat.board.features, partPassed ? (beat.activity?.unlocks ?? []) : [])
+  const partKey = lesson && beat ? `${lesson.id}/${beat.id}` : "";
+  const unlocked = partPassed || checksPassed[partKey] === true;
+  const partFeatures = beat
+    ? mergeFeatures(beat.board?.features ?? [], unlocked ? (beat.activity?.unlocks ?? []) : [])
     : [];
 
   function writeNavigation(next: PartNavigation) {
@@ -123,6 +130,7 @@ export function Player({ moduleId, draft = false }: { moduleId?: string; draft?:
     setFeedback(null);
     setFailedChecks([]);
     setScript(null);
+    setConversationScript(null);
     void formatPart("load", next.index, source, lessonId);
   }
 
@@ -177,6 +185,27 @@ export function Player({ moduleId, draft = false }: { moduleId?: string; draft?:
   useEffect(() => {
     void formatPart("load", 0, codeRef.current, lessonIdRef.current);
   }, []);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(`${PROMPTS_STORAGE_PREFIX}${moduleRef.current.id}`);
+      if (saved) setPrompts(JSON.parse(saved) as Record<string, string>);
+    } catch {
+      // Remembered prompts are a convenience; the scene works without them.
+    }
+  }, []);
+
+  function rememberPrompt(beatId: string, text: string) {
+    setPrompts((previous) => {
+      const next = { ...previous, [beatId]: text };
+      try {
+        localStorage.setItem(`${PROMPTS_STORAGE_PREFIX}${moduleRef.current.id}`, JSON.stringify(next));
+      } catch {
+        // Storage can be unavailable; the prompt still shows for this visit.
+      }
+      return next;
+    });
+  }
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -338,7 +367,11 @@ export function Player({ moduleId, draft = false }: { moduleId?: string; draft?:
       setFeedback(grade.feedback);
       setFailedChecks(grade.failedChecks);
       if (part.activity && grade.canContinue) {
-        writeNavigation(recordPass(navRef.current, currentLesson.beats));
+        if (part.board?.goal) {
+          setChecksPassed((previous) => ({ ...previous, [`${currentLesson.id}/${part.id}`]: true }));
+        } else {
+          writeNavigation(recordPass(navRef.current, currentLesson.beats));
+        }
       }
       setTheater((previous) => {
         const next = nextTheaterState(part, result.stageEvents);
@@ -347,6 +380,12 @@ export function Player({ moduleId, draft = false }: { moduleId?: string; draft?:
       const moves = stageMoves(result.stageEvents);
       if (part.board && moves.length > 0) {
         setScript((previous) => ({ token: (previous?.token ?? 0) + 1, moves }));
+      }
+      const spoken = conversationEvents(result.stageEvents);
+      if (part.conversation && spoken.length > 0) {
+        setConversationScript((previous) => ({ token: (previous?.token ?? 0) + 1, events: spoken }));
+        const lastPrompt = spoken.filter((event) => event.type === "prompt").at(-1);
+        if (lastPrompt?.type === "prompt") rememberPrompt(part.id, lastPrompt.text);
       }
       await persist({
         status: "in_progress",
@@ -522,12 +561,25 @@ export function Player({ moduleId, draft = false }: { moduleId?: string; draft?:
             <GameBoard
               key={`${lesson.id}/${beat.id}`}
               board={beat.board}
-              features={boardFeatures}
+              features={partFeatures}
               script={script}
               autoFocus={!showsEditor(beat)}
               compact={showsEditor(beat)}
-              lockedHint={beat.activity ? "Finish the code below and press Run." : null}
+              lockedHint={
+                beat.activity?.unlocks
+                  ? { features: beat.activity.unlocks, text: "Finish the code below and press Run." }
+                  : null
+              }
               onGoal={onBoardGoal}
+            />
+          ) : beat.conversation ? (
+            <ConversationScene
+              key={`${lesson.id}/${beat.id}`}
+              images={beat.scene.images}
+              conversation={beat.conversation}
+              prompt={prompts[beat.conversation.promptFrom ?? beat.id] ?? ""}
+              script={conversationScript}
+              canChoose={partFeatures.includes("dialogue")}
             />
           ) : undefined
         }

@@ -83,12 +83,15 @@ describe("part navigation", () => {
     expect(canGoForward(resumed, parts.length)).toBe(false);
   });
 
-  it("opens story parts at once but holds a gameplay part until its goal is met", () => {
+  it("opens story parts at once but holds a part with a board goal until it is passed", () => {
     const leyline = findModule("leylines-awaken")?.lessons[0].beats ?? [];
     const start = createPartNavigation(leyline);
     expect(start.unlocked).toBe(3);
-    const atGame = navigationFromProgress(leyline, 4, "", false);
-    expect(canGoForward(atGame, leyline.length)).toBe(false);
-    expect(recordPass(atGame, leyline).passed[4]).toBe(true);
+    const atDoor = navigationFromProgress(leyline, 3, "", false);
+    expect(leyline[3]?.board?.goal?.type).toBe("reach");
+    expect(canGoForward(atDoor, leyline.length)).toBe(false);
+    const passed = recordPass(atDoor, leyline);
+    expect(passed.passed[3]).toBe(true);
+    expect(passed.unlocked).toBe(5);
   });
 });

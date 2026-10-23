@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" role="img" aria-label="A close-up of Mar'tu's purple hood, with tired yellow eyes looking to the right">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#2a170c"/>
+      <stop offset="1" stop-color="#4a2c6a"/>
+    </linearGradient>
+    <radialGradient id="fire" cx="0.1" cy="0.8" r="0.8">
+      <stop offset="0" stop-color="#ffb347" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#ffb347" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="hood" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7a5594"/>
+      <stop offset="0.6" stop-color="#553a6c"/>
+      <stop offset="1" stop-color="#3a2650"/>
+    </linearGradient>
+    <radialGradient id="eye" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#fff2a8"/>
+      <stop offset="0.6" stop-color="#ffd23a"/>
+      <stop offset="1" stop-color="#e09a12"/>
+    </radialGradient>
+    <radialGradient id="eyeGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffd23a" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#ffd23a" stop-opacity="0"/>
+    </radialGradient>
+    <style>
+      .lid { animation: blink 5.5s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 0%; }
+      .lid.b { animation-delay: 0.04s; }
+      @keyframes blink {
+        0%, 88%, 100% { transform: scaleY(1); }
+        92% { transform: scaleY(2.6); }
+        95% { transform: scaleY(1); }
+      }
+      @media (prefers-reduced-motion: reduce) { .lid { animation: none; } }
+    </style>
+  </defs>
+  <rect width="960" height="540" fill="url(#bg)"/>
+  <rect width="960" height="540" fill="url(#fire)"/>
+  <rect x="760" y="60" width="160" height="220" fill="#1a1230" stroke="#2a190d" stroke-width="10"/>
+  <circle cx="860" cy="120" r="22" fill="#b8f5a0" opacity="0.8"/>
+  <path d="M840 60 V280 M760 170 H920" stroke="#2a190d" stroke-width="7"/>
+  <path d="M120 540 C 110 360, 180 120, 420 70 C 640 30, 790 200, 780 380 C 776 450, 760 500, 740 540 Z" fill="url(#hood)" stroke="#24162e" stroke-width="6"/>
+  <path d="M250 540 C 250 390, 300 230, 450 196 C 590 170, 680 270, 672 400 C 668 460, 650 510, 636 540 Z" fill="#120a18"/>
+  <path d="M420 70 C 470 120, 500 150, 560 160" fill="none" stroke="#9a77b4" stroke-width="8" opacity="0.5"/>
+  <circle cx="400" cy="330" r="70" fill="url(#eyeGlow)"/>
+  <circle cx="560" cy="330" r="70" fill="url(#eyeGlow)"/>
+  <ellipse cx="400" cy="332" rx="46" ry="24" fill="url(#eye)"/>
+  <ellipse cx="560" cy="332" rx="46" ry="24" fill="url(#eye)"/>
+  <ellipse cx="424" cy="336" rx="12" ry="14" fill="#3a2006"/>
+  <ellipse cx="584" cy="336" rx="12" ry="14" fill="#3a2006"/>
+  <circle cx="428" cy="330" r="3" fill="#fff6d0"/>
+  <circle cx="588" cy="330" r="3" fill="#fff6d0"/>
+  <path class="lid" d="M350 306 H450 V322 Q 400 312 350 324 Z" fill="#120a18"/>
+  <path class="lid b" d="M510 306 H610 V322 Q 560 312 510 324 Z" fill="#120a18"/>
+  <path d="M356 320 Q 400 306 446 318" fill="none" stroke="#0a0610" stroke-width="5" stroke-linecap="round"/>
+  <path d="M516 320 Q 560 306 606 318" fill="none" stroke="#0a0610" stroke-width="5" stroke-linecap="round"/>
+  <path d="M362 368 Q 400 378 440 366" fill="none" stroke="#2a1a36" stroke-width="4" stroke-linecap="round" opacity="0.8"/>
+  <path d="M522 368 Q 560 378 600 366" fill="none" stroke="#2a1a36" stroke-width="4" stroke-linecap="round" opacity="0.8"/>
+</svg>

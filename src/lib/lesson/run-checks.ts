@@ -8,7 +8,7 @@ export type PythonCheckRun = {
   error: string;
   stdout: string;
   checks: { name: string; passed: boolean; message: string }[];
-  events: Record<string, string>[];
+  events: Record<string, string | string[]>[];
 };
 
 export function workerPrelude(): string {
@@ -37,6 +37,11 @@ namespace["_stage_say"] = lambda text: events.append({"type": "say", "text": str
 namespace["_stage_flare"] = lambda: events.append({"type": "flare"})
 namespace["_stage_focus"] = lambda image_id: events.append({"type": "focus", "imageId": str(image_id)})
 namespace["_stage_move"] = lambda direction: events.append({"type": "move", "direction": str(direction)})
+namespace["_stage_prompt"] = lambda text: events.append({"type": "prompt", "text": str(text)})
+namespace["_stage_options"] = lambda count: events.append({"type": "options", "options": [""] * int(count)})
+namespace["_stage_option"] = lambda index, text: events[-1]["options"].__setitem__(int(index), str(text))
+namespace["_stage_speak"] = lambda option: events.append({"type": "speak", "option": str(option)})
+namespace["_stage_highlight"] = lambda option: events.append({"type": "highlight", "option": str(option)})
 exec(payload["prelude"], namespace, namespace)
 ok = True
 error = ""
