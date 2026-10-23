@@ -24,11 +24,12 @@ export const plainDarkTheme = EditorView.theme(
       color: "#f4f7fb",
     },
     ".cm-activeLine": {
-      backgroundColor: "#1c2128",
+      backgroundColor: "rgba(120, 140, 170, 0.1)",
     },
-    ".cm-selectionBackground, &.cm-focused .cm-selectionBackground": {
-      backgroundColor: "#2c4466",
-    },
+    "&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground, .cm-selectionBackground, .cm-content ::selection":
+      {
+        backgroundColor: "#35598a",
+      },
     "&.cm-focused": {
       outline: "none",
     },
