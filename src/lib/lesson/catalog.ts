@@ -24,7 +24,7 @@ function readModules(dir: string, into: Map<string, Module>) {
 }
 
 export function createCatalog(root: string): Catalog {
-  const contentDir = path.join(root, "content");
+  const contentDir = path.join(root, "content", "modules");
   const dataDir = path.join(root, "data", "modules");
 
   function loadAll(): Module[] {
