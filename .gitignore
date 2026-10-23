@@ -13,3 +13,7 @@ test-results/
 blob-report/
 tsconfig.tsbuildinfo
 *.log
+
+# Student character sheets carry real names. Keep them out of the repo.
+*.docx
+character-sheets/

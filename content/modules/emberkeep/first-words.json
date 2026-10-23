@@ -1,6 +1,7 @@
 {
   "id": "emberkeep",
   "title": "Emberkeep",
+  "summary": "The Python warm-up. Speak to the old temple walls with print, variables, and sums.",
   "language": "python",
   "lessons": [
     {

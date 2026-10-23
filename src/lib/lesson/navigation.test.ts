@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { emberkeepModule } from "./emberkeep";
+import { findModule } from "./modules";
 import {
   canGoForward,
   createPartNavigation,
@@ -80,5 +81,14 @@ describe("part navigation", () => {
     expect(resumed.unlocked).toBe(6);
     expect(goBack(resumed).passed[1]).toBe(true);
     expect(canGoForward(resumed, parts.length)).toBe(false);
+  });
+
+  it("opens story parts at once but holds a gameplay part until its goal is met", () => {
+    const leyline = findModule("leylines-awaken")?.lessons[0].beats ?? [];
+    const start = createPartNavigation(leyline);
+    expect(start.unlocked).toBe(3);
+    const atGame = navigationFromProgress(leyline, 4, "", false);
+    expect(canGoForward(atGame, leyline.length)).toBe(false);
+    expect(recordPass(atGame, leyline).passed[4]).toBe(true);
   });
 });

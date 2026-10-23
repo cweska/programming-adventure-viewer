@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="The Arena Keeper with a wide hat and a clipboard">
+  <ellipse cx="32" cy="12" rx="17" ry="4" fill="#7a5230" stroke="#3b2614" stroke-width="1.5"/>
+  <rect x="24" y="4" width="16" height="9" rx="3" fill="#8f6238" stroke="#3b2614" stroke-width="1.5"/>
+  <circle cx="32" cy="20" r="8" fill="#d9a97a" stroke="#6b4a2c" stroke-width="1.5"/>
+  <circle cx="29" cy="19" r="1.2" fill="#2a1d10"/>
+  <circle cx="35" cy="19" r="1.2" fill="#2a1d10"/>
+  <path d="M29 23 q 3 2 6 0" stroke="#6b4a2c" stroke-width="1.5" fill="none"/>
+  <path d="M18 60 L 20 34 C 22 29, 42 29, 44 34 L 46 60 Z" fill="#3e6f8f" stroke="#1d3647" stroke-width="2"/>
+  <path d="M32 30 L 32 60" stroke="#1d3647" stroke-width="1.5"/>
+  <rect x="40" y="38" width="12" height="15" rx="1" fill="#e8dcc0" stroke="#6b5a3a" stroke-width="1.5"/>
+  <path d="M42 43 h 8 M42 47 h 8" stroke="#6b5a3a" stroke-width="1.2"/>
+  <circle cx="24" cy="38" r="2.5" fill="#c9a24a"/>
+</svg>

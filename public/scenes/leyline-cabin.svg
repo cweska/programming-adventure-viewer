@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" role="img" aria-label="A small cabin under a starry purple sky, golden light in its windows, and a figure calling from the open door">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#160c32"/>
+      <stop offset="0.6" stop-color="#3d2160"/>
+      <stop offset="1" stop-color="#583873"/>
+    </linearGradient>
+    <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#21402a"/>
+      <stop offset="1" stop-color="#0d1a10"/>
+    </linearGradient>
+    <linearGradient id="logs" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6b4528"/>
+      <stop offset="1" stop-color="#3f2716"/>
+    </linearGradient>
+    <linearGradient id="roof" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4a3046"/>
+      <stop offset="1" stop-color="#2b1b2b"/>
+    </linearGradient>
+    <radialGradient id="lamp" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffe7a1"/>
+      <stop offset="0.6" stop-color="#ffbe4d"/>
+      <stop offset="1" stop-color="#e58a1f"/>
+    </radialGradient>
+    <radialGradient id="spill" cx="0.5" cy="0" r="1">
+      <stop offset="0" stop-color="#ffcf6b" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#ffcf6b" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffcf6b" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#ffcf6b" stop-opacity="0"/>
+    </radialGradient>
+    <style>
+      .flicker { animation: flicker 2.8s ease-in-out infinite alternate; }
+      .twinkle { animation: twinkle 3.4s ease-in-out infinite alternate; }
+      .twinkle.b { animation-delay: -1.7s; }
+      @keyframes flicker { from { opacity: 0.85; } to { opacity: 1; } }
+      @keyframes twinkle { from { opacity: 0.35; } to { opacity: 1; } }
+      @media (prefers-reduced-motion: reduce) { .flicker, .twinkle { animation: none; } }
+    </style>
+  </defs>
+  <rect width="960" height="540" fill="url(#sky)"/>
+  <g fill="#fdf6ff">
+    <circle class="twinkle" cx="70" cy="50" r="1.8"/>
+    <circle class="twinkle b" cx="150" cy="140" r="1.4"/>
+    <circle class="twinkle" cx="260" cy="70" r="2"/>
+    <circle class="twinkle b" cx="380" cy="30" r="1.3"/>
+    <circle class="twinkle" cx="520" cy="90" r="1.6"/>
+    <circle class="twinkle b" cx="640" cy="40" r="2.2"/>
+    <circle class="twinkle" cx="760" cy="120" r="1.4"/>
+    <circle class="twinkle b" cx="860" cy="60" r="1.8"/>
+    <circle class="twinkle" cx="910" cy="180" r="1.2"/>
+    <circle class="twinkle b" cx="40" cy="220" r="1.2"/>
+    <circle class="twinkle" cx="200" cy="230" r="1"/>
+    <circle class="twinkle b" cx="820" cy="250" r="1"/>
+  </g>
+  <circle cx="150" cy="110" r="34" fill="#b8f5a0" opacity="0.85"/>
+  <path d="M0 380 C 200 340, 380 350, 520 360 S 800 330, 960 350 L 960 540 L 0 540 Z" fill="url(#ground)"/>
+  <ellipse cx="480" cy="470" rx="190" ry="60" fill="url(#spill)" class="flicker"/>
+  <circle cx="480" cy="330" r="230" fill="url(#glow)" class="flicker"/>
+  <path d="M250 250 L 480 140 L 710 250 Z" fill="url(#roof)" stroke="#1d121d" stroke-width="4"/>
+  <rect x="280" y="248" width="400" height="160" fill="url(#logs)" stroke="#2a190d" stroke-width="4"/>
+  <g stroke="#2a190d" stroke-width="3" opacity="0.7">
+    <path d="M280 280 h 400 M280 312 h 400 M280 344 h 400 M280 376 h 400"/>
+  </g>
+  <rect x="600" y="170" width="34" height="60" fill="#3b2a24" stroke="#1d121d" stroke-width="3"/>
+  <g class="flicker">
+    <rect x="312" y="282" width="86" height="70" fill="url(#lamp)" stroke="#2a190d" stroke-width="6"/>
+    <path d="M355 282 v 70 M312 317 h 86" stroke="#2a190d" stroke-width="5"/>
+    <rect x="562" y="282" width="86" height="70" fill="url(#lamp)" stroke="#2a190d" stroke-width="6"/>
+    <path d="M605 282 v 70 M562 317 h 86" stroke="#2a190d" stroke-width="5"/>
+    <rect x="440" y="276" width="80" height="132" fill="url(#lamp)" stroke="#2a190d" stroke-width="6"/>
+  </g>
+  <path d="M440 276 L 404 290 L 404 412 L 440 408 Z" fill="#4b2f1a" stroke="#2a190d" stroke-width="4"/>
+  <g fill="#1a1020">
+    <circle cx="480" cy="316" r="14"/>
+    <path d="M462 408 C 458 370, 462 338, 480 332 C 498 338, 502 370, 498 408 Z"/>
+    <path d="M492 342 L 516 312 L 522 316 L 500 350 Z"/>
+  </g>
+  <path d="M480 408 L 470 540 L 490 540 Z" fill="#ffcf6b" opacity="0.18"/>
+  <g stroke="#2d5a33" stroke-width="3" stroke-linecap="round" fill="none">
+    <path d="M90 470 l -6 -24 M100 472 l 4 -28 M110 474 l 10 -22"/>
+    <path d="M820 480 l -6 -24 M830 482 l 4 -28 M840 482 l 10 -20"/>
+  </g>
+</svg>
