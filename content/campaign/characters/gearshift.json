@@ -1,0 +1,40 @@
+{
+  "id": "gearshift",
+  "name": "Gearshift",
+  "species": "Alien Robot",
+  "classId": "warrior",
+  "alignment": "Good",
+  "size": "About 20 feet tall in robot form",
+  "appearance": "A towering, boxy robot with steel-plate skin, star-marked shoulder pads, twin stacks rising behind his shoulders, a narrow visor face, and wheel-and-tread legs. He can fold himself into an all-terrain vehicle (a jeep, back home) or into a backpack weapon frame that a friend can wear.",
+  "personality": "Steady, protective, and good-hearted. He fixes what is broken and stands in front of his friends.",
+  "abilities": {
+    "strength": 17,
+    "constitution": 17,
+    "athletics": 17,
+    "dexterity": 13,
+    "personality": 13,
+    "perception": 14,
+    "intelligence": 14,
+    "wisdom": 15,
+    "magical_affinity": 10
+  },
+  "skills": {
+    "innate": ["Short-range teleport", "Camouflage and optical illusions", "Lifelike holograms"],
+    "martial": ["Mechanic and technician", "Muay Thai", "Field medicine", "Making do with almost nothing"],
+    "magical": ["Slow self-repair", "Fire bolts", "Transform into vehicle form", "Transform into a backpack weapon frame"]
+  },
+  "weakness": "His body runs on starlode ore, a rare blue ore that is his fuel, his ammunition, and his medicine. It is almost never found away from his home world. If his starlode runs out, he shuts down for good.",
+  "weapon": { "name": "Longsword", "damageDie": 8, "verb": "swings his longsword" },
+  "armor": { "name": "Metal hide", "bonus": 3 },
+  "inventory": [
+    { "name": "Longsword", "kind": "weapon" },
+    { "name": "Metal hide", "kind": "armor", "note": "His skin is armor plate." },
+    { "name": "Forcefield projector", "kind": "relic", "note": "Raising it burns half of his starlode energy." },
+    { "name": "Starlode cell", "kind": "supply", "note": "Nearly empty." }
+  ],
+  "faction": "The Freedom Keepers of Corvex Prime",
+  "backstory": "During an intergalactic war on his home world, Gearshift hauled cargo for the Freedom Keepers. Enemy raiders boarded his transport, and he escaped in a pod that crashed on an unknown planet. He sent out a signal searching for survivors. The next thing he remembers clearly is waking in the greenroom beside Oogrish.",
+  "pastLife": "Back home he carried a self-loading three-barrel musket (60 shots per drum) and a compact rifle (20 shots per magazine). Neither crossed over with him. Firearms in this world are steampunk machines that run on runes and magic.",
+  "sprite": "/sprites/gearshift.svg",
+  "portrait": "/sprites/gearshift.svg"
+}

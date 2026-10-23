@@ -26,6 +26,13 @@ describe("python explainers", () => {
     expect(result.raw).toBe(raw);
   });
 
+  it("explains ValueError with Python's own message", () => {
+    const raw = trace(`ValueError: The party cannot move 'rigth'. Use "left", "right", "up", or "down".`);
+    const result = explainPython(raw);
+    expect(result.title).toBe("Value not allowed");
+    expect(result.hint).toBe(`The party cannot move 'rigth'. Use "left", "right", "up", or "down".`);
+  });
+
   it("explains NameError", () => {
     const raw = trace("NameError: name 'torch' is not defined");
     const result = explainPython(raw);

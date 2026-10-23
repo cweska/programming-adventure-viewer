@@ -45,6 +45,22 @@ class Stage:
         _stage_focus(str(image_id))
 
 stage = Stage()
+
+class Party:
+    _directions = ("left", "right", "up", "down")
+
+    def __init__(self):
+        self._moves = []
+
+    def move(self, direction):
+        if direction not in self._directions:
+            raise ValueError(
+                f'The party cannot move {direction!r}. Use "left", "right", "up", or "down".'
+            )
+        self._moves.append(direction)
+        _stage_move(direction)
+
+party = Party()
 `;
 
 const NEWLINE = String.fromCharCode(10);
@@ -94,6 +110,9 @@ self.onmessage = async (event) => {
   });
   globals.set("_stage_focus", (imageId) => {
     events.push({ type: "focus", imageId: String(imageId) });
+  });
+  globals.set("_stage_move", (direction) => {
+    events.push({ type: "move", direction: String(direction) });
   });
 
   let ok = true;

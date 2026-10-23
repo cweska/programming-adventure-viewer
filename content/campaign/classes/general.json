@@ -1,0 +1,7 @@
+{
+  "id": "general",
+  "name": "General",
+  "role": "Leader",
+  "description": "A battle leader who reads the field and directs allies. Command abilities arrive in a later module.",
+  "baseHp": 10
+}

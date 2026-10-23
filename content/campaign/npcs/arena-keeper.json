@@ -1,0 +1,8 @@
+{
+  "id": "arena-keeper",
+  "name": "Arena Keeper",
+  "pronouns": "they/them",
+  "description": "A retired adventurer who runs the practice yard and explains how things work.",
+  "sprite": "/sprites/arena-keeper.svg",
+  "portrait": "/sprites/arena-keeper.svg"
+}

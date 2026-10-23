@@ -1,0 +1,17 @@
+{
+  "id": "sparring-bot",
+  "name": "Sparring Bot",
+  "description": "A brass practice construct with a padded piston arm. When it runs out of power, it powers down.",
+  "hp": 9,
+  "defense": 11,
+  "attackBonus": 2,
+  "damageDie": 4,
+  "damageBonus": 0,
+  "speed": 3,
+  "dexterity": 10,
+  "aggroRange": 3,
+  "attackName": "Piston jab",
+  "verb": "jabs with its piston arm",
+  "downText": "powers down",
+  "sprite": "/sprites/sparring-bot.svg"
+}

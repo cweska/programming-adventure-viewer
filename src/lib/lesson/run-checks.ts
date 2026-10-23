@@ -1,4 +1,6 @@
 import { spawnSync } from "node:child_process";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import type { Check } from "./schema";
 
 export type PythonCheckRun = {
@@ -6,7 +8,19 @@ export type PythonCheckRun = {
   error: string;
   stdout: string;
   checks: { name: string; passed: boolean; message: string }[];
+  events: Record<string, string>[];
 };
+
+export function workerPrelude(): string {
+  const worker = readFileSync(path.join(process.cwd(), "public/workers/python-worker.js"), "utf8");
+  const match = worker.match(/const GUARD = `([\s\S]*?)`;/);
+  if (!match) throw new Error("The Python worker has no GUARD prelude.");
+  const prelude = match[1];
+  if (prelude.includes("${") || prelude.includes("\\")) {
+    throw new Error("The GUARD prelude must stay plain text so tests run the same Python as the browser.");
+  }
+  return prelude;
+}
 
 const RUNNER = `
 import io
@@ -18,6 +32,12 @@ buffer = io.StringIO()
 real_stdout = sys.stdout
 sys.stdout = buffer
 namespace = {"__name__": "__main__"}
+events = []
+namespace["_stage_say"] = lambda text: events.append({"type": "say", "text": str(text)})
+namespace["_stage_flare"] = lambda: events.append({"type": "flare"})
+namespace["_stage_focus"] = lambda image_id: events.append({"type": "focus", "imageId": str(image_id)})
+namespace["_stage_move"] = lambda direction: events.append({"type": "move", "direction": str(direction)})
+exec(payload["prelude"], namespace, namespace)
 ok = True
 error = ""
 try:
@@ -47,6 +67,7 @@ json.dump(
         "error": error,
         "stdout": namespace["_captured_stdout"],
         "checks": results,
+        "events": events,
     },
     sys.stdout,
 )
@@ -54,7 +75,7 @@ json.dump(
 
 export function runPythonChecks(code: string, checks: Check[]): PythonCheckRun {
   const child = spawnSync("python3", ["-c", RUNNER], {
-    input: JSON.stringify({ code, checks }),
+    input: JSON.stringify({ code, checks, prelude: workerPrelude() }),
     encoding: "utf8",
   });
   if (child.error) throw child.error;
