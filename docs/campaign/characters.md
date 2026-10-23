@@ -25,7 +25,7 @@ The setting rule for every character: they were all carried into this fantasy wo
 - Appearance is based on the sheet's drawing: boxy steel body, star shoulder pads, twin shoulder stacks, a visor face, and wheel-and-tread legs.
 - Game stats: longsword d8, metal hide +3 armor.
 
-**Story flag:** At 20 feet tall, Gearshift cannot fit through the door of Mar'Tu's small cabin. His backpack form might explain how he gets inside. That is your call.
+**Size note:** The outline has Gearshift inside Mar'tu's cabin (Parts 5–7), so the cabin art shows him indoors, leaning against the wall beside the door. The 20-foot height stays in his sheet as lore.
 
 ## Master Oogrish (Turtle, General / Leader)
 
@@ -48,6 +48,6 @@ The setting rule for every character: they were all carried into this fantasy wo
 - The golden clockwork medallion from the Module 1 outline is added as a relic.
 - Game stats: Staff of Wisdom d6, shell and cloak +2 armor.
 
-## Mar'Tu (NPC, they/them)
+## Mar'tu (NPC, they/them)
 
-They are from the Module 1 outline: the friendly keeper of the cabin in the hills, with a thick accent. They have no dialogue yet, because talking has not been programmed in the campaign.
+They are from the Module 1 outline: the friendly keeper of the cabin in the hills, with a thick accent. They wear a purple shroud that hides everything but their tired yellow eyes. They have been studying the glowing clock on their mantle for almost two weeks. On the game map, walking into them says talking isn't programmed yet. In Parts 6 and 7, the students program the dialogue box that shows Mar'tu's question.

@@ -1,0 +1,146 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" role="img" aria-label="Inside Mar'tu's cabin: a fire in a stone fireplace, a pendulum clock glowing blue on the mantle, and Mar'tu at the table in a purple shroud">
+  <defs>
+    <linearGradient id="wall" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3a2416"/>
+      <stop offset="1" stop-color="#5a3a22"/>
+    </linearGradient>
+    <linearGradient id="floor" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7a5230"/>
+      <stop offset="1" stop-color="#4a2f1a"/>
+    </linearGradient>
+    <linearGradient id="oak" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a6773f"/>
+      <stop offset="1" stop-color="#7a5229"/>
+    </linearGradient>
+    <linearGradient id="cherry" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a1442e"/>
+      <stop offset="1" stop-color="#6b2618"/>
+    </linearGradient>
+    <linearGradient id="stone" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8c8a86"/>
+      <stop offset="1" stop-color="#5e5b57"/>
+    </linearGradient>
+    <radialGradient id="fireGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffb347" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#ffb347" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="blueGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#8fe6ff" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#2f9be0" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="sphere" cx="0.4" cy="0.35" r="0.6">
+      <stop offset="0" stop-color="#eafcff"/>
+      <stop offset="0.4" stop-color="#6fd3ff"/>
+      <stop offset="1" stop-color="#1a6fd1"/>
+    </radialGradient>
+    <linearGradient id="shroud" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6c4a86"/>
+      <stop offset="1" stop-color="#3e2850"/>
+    </linearGradient>
+    <style>
+      .flame { animation: flame 0.9s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: 50% 100%; }
+      .flame.b { animation-duration: 1.2s; animation-delay: -0.4s; }
+      .flame.c { animation-duration: 0.7s; animation-delay: -0.2s; }
+      .glow { animation: glow 1.8s ease-in-out infinite alternate; }
+      .pendulum { animation: swing 2.4s ease-in-out infinite alternate; transform-origin: 640px 196px; }
+      .pulse { animation: pulse 2.4s ease-in-out infinite alternate; }
+      @keyframes flame { from { transform: scale(0.9, 0.85); opacity: 0.85; } to { transform: scale(1.05, 1.12); opacity: 1; } }
+      @keyframes glow { from { opacity: 0.7; } to { opacity: 1; } }
+      @keyframes swing { from { transform: rotate(-14deg); } to { transform: rotate(14deg); } }
+      @keyframes pulse { from { opacity: 0.6; } to { opacity: 1; } }
+      @media (prefers-reduced-motion: reduce) { .flame, .glow, .pendulum, .pulse { animation: none; } }
+    </style>
+  </defs>
+  <rect width="960" height="540" fill="url(#wall)"/>
+  <g stroke="#2a190d" stroke-width="3" opacity="0.55">
+    <path d="M0 60 H960 M0 120 H960 M0 180 H960 M0 240 H960 M0 300 H960 M0 360 H960"/>
+  </g>
+  <path d="M0 380 L960 380 L960 540 L0 540 Z" fill="url(#floor)"/>
+  <g stroke="#3a2416" stroke-width="2" opacity="0.6">
+    <path d="M0 410 H960 M0 446 H960 M0 488 H960"/>
+    <path d="M120 380 L80 540 M300 380 L280 540 M480 380 L480 540 M660 380 L680 540 M840 380 L880 540"/>
+  </g>
+
+  <g>
+    <rect x="70" y="110" width="120" height="110" fill="#1a1230" stroke="#2a190d" stroke-width="8"/>
+    <circle cx="150" cy="140" r="14" fill="#b8f5a0" opacity="0.85"/>
+    <circle cx="96" cy="128" r="1.6" fill="#fdf6ff"/>
+    <circle cx="118" cy="190" r="1.3" fill="#fdf6ff"/>
+    <path d="M130 110 V220 M70 165 H190" stroke="#2a190d" stroke-width="6"/>
+  </g>
+
+  <g>
+    <rect x="20" y="300" width="230" height="70" rx="6" fill="url(#oak)" stroke="#3a2416" stroke-width="4"/>
+    <rect x="30" y="286" width="210" height="34" rx="12" fill="#6e7fb0" stroke="#3a3f60" stroke-width="3"/>
+    <rect x="34" y="284" width="64" height="28" rx="10" fill="#efe6d2" stroke="#9c8f73" stroke-width="2"/>
+    <rect x="16" y="250" width="16" height="120" fill="#7a5229" stroke="#3a2416" stroke-width="3"/>
+    <rect x="240" y="276" width="14" height="94" fill="#7a5229" stroke="#3a2416" stroke-width="3"/>
+  </g>
+
+  <g>
+    <rect x="40" y="430" width="230" height="44" rx="20" fill="#8a7a4a" stroke="#4e4325" stroke-width="3"/>
+    <ellipse cx="60" cy="452" rx="22" ry="22" fill="#a39159" stroke="#4e4325" stroke-width="3"/>
+    <path d="M60 438 a 14 14 0 1 0 0.1 0" fill="none" stroke="#4e4325" stroke-width="2"/>
+    <rect x="120" y="428" width="10" height="48" fill="#b73a2e"/>
+    <rect x="200" y="428" width="10" height="48" fill="#b73a2e"/>
+  </g>
+
+  <circle class="glow" cx="640" cy="320" r="260" fill="url(#fireGlow)"/>
+
+  <g>
+    <rect x="520" y="250" width="240" height="140" fill="url(#stone)" stroke="#3a3836" stroke-width="4"/>
+    <g fill="none" stroke="#4a4744" stroke-width="3">
+      <path d="M520 285 H760 M520 320 H760 M520 355 H760"/>
+      <path d="M560 250 V285 M620 250 V285 M700 250 V285 M590 285 V320 M730 285 V320 M560 320 V355 M720 320 V355 M600 355 V390 M690 355 V390"/>
+    </g>
+    <path d="M580 390 V320 Q 640 280 700 320 V390 Z" fill="#1a0e08" stroke="#3a3836" stroke-width="4"/>
+    <g>
+      <path class="flame" d="M600 388 C 596 360, 612 344, 620 326 C 626 350, 640 356, 636 388 Z" fill="#ff8a2a"/>
+      <path class="flame b" d="M628 388 C 622 352, 642 334, 650 312 C 660 342, 678 354, 672 388 Z" fill="#ffb347"/>
+      <path class="flame c" d="M654 388 C 652 364, 664 352, 672 336 C 680 358, 690 366, 684 388 Z" fill="#ff6a1a"/>
+      <path class="flame b" d="M622 388 C 624 368, 640 360, 646 344 C 652 364, 664 370, 660 388 Z" fill="#ffe08a"/>
+    </g>
+    <path d="M618 358 H662 C 664 378, 654 390, 640 390 C 626 390, 616 378, 618 358 Z" fill="#2b2b2e" stroke="#111114" stroke-width="3"/>
+    <path d="M614 358 H666" stroke="#3a3a40" stroke-width="5" stroke-linecap="round"/>
+    <path d="M622 358 Q 640 338 658 358" fill="none" stroke="#111114" stroke-width="3"/>
+    <rect x="500" y="236" width="280" height="18" rx="3" fill="url(#cherry)" stroke="#4a1a10" stroke-width="3"/>
+  </g>
+
+  <g transform="translate(640 236) scale(1.45) translate(-640 -236)">
+    <rect x="606" y="132" width="68" height="104" rx="6" fill="#5a2a18" stroke="#c9a24a" stroke-width="3"/>
+    <path d="M606 140 Q 640 104 674 140" fill="#5a2a18" stroke="#c9a24a" stroke-width="3"/>
+    <circle cx="640" cy="152" r="26" fill="#efe6d2" stroke="#c9a24a" stroke-width="3"/>
+    <path class="pulse" d="M617.5 139 A 26 26 0 0 1 662.5 139" fill="none" stroke="#6fd3ff" stroke-width="6" stroke-linecap="round"/>
+    <path class="pulse" d="M617.5 139 A 26 26 0 0 1 662.5 139" fill="none" stroke="#bff0ff" stroke-width="2" stroke-linecap="round"/>
+    <path d="M640 152 L620 143" stroke="#2a1d10" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="640" cy="152" r="3" fill="#2a1d10"/>
+    <rect x="618" y="182" width="44" height="50" rx="4" fill="#2a160c" stroke="#c9a24a" stroke-width="2"/>
+    <g class="pendulum">
+      <path d="M640 186 V218" stroke="#c9a24a" stroke-width="2"/>
+      <circle cx="640" cy="222" r="14" fill="url(#blueGlow)"/>
+      <circle cx="640" cy="222" r="7" fill="url(#sphere)"/>
+    </g>
+  </g>
+
+  <g>
+    <rect x="330" y="330" width="170" height="16" rx="3" fill="url(#oak)" stroke="#3a2416" stroke-width="3"/>
+    <rect x="344" y="346" width="12" height="60" fill="#7a5229" stroke="#3a2416" stroke-width="2"/>
+    <rect x="474" y="346" width="12" height="60" fill="#7a5229" stroke="#3a2416" stroke-width="2"/>
+    <circle cx="460" cy="324" r="9" fill="#d9c7a4" stroke="#6b5a3a" stroke-width="2"/>
+    <path d="M362 330 L370 322 L388 322 L396 330" fill="#c9a24a" stroke="#6e4a12" stroke-width="2"/>
+    <rect x="270" y="300" width="14" height="110" fill="#7a5229" stroke="#3a2416" stroke-width="2"/>
+    <rect x="270" y="350" width="70" height="12" fill="url(#oak)" stroke="#3a2416" stroke-width="2"/>
+    <path d="M290 352 C 280 300, 288 238, 318 222 C 352 206, 386 232, 388 280 C 390 320, 380 344, 372 352 Z" fill="url(#shroud)" stroke="#24162e" stroke-width="3"/>
+    <path d="M308 266 C 306 244, 322 232, 340 232 C 360 232, 372 246, 370 268 C 360 278, 320 280, 308 266 Z" fill="#140c1c"/>
+    <ellipse cx="328" cy="256" rx="6" ry="3.5" fill="#ffd44a"/>
+    <ellipse cx="352" cy="256" rx="6" ry="3.5" fill="#ffd44a"/>
+    <path d="M370 300 C 390 306, 404 316, 410 328" fill="none" stroke="#3e2850" stroke-width="12" stroke-linecap="round"/>
+  </g>
+
+  <g>
+    <rect x="800" y="408" width="130" height="80" rx="6" fill="url(#oak)" stroke="#3a2416" stroke-width="4"/>
+    <path d="M800 432 H930" stroke="#3a2416" stroke-width="3"/>
+    <path d="M826 408 V488 M904 408 V488" stroke="#5c5c66" stroke-width="6"/>
+    <rect x="856" y="426" width="18" height="16" rx="2" fill="#c9a24a" stroke="#6e4a12" stroke-width="2"/>
+  </g>
+</svg>

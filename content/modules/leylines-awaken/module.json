@@ -1,13 +1,13 @@
 {
   "id": "leylines-awaken",
-  "title": "Leyline's Awaken",
+  "title": "Leylines Awaken",
   "summary": "Two strangers to this world, a humming medallion, and a flashover rolling over the hills. Program your party's first steps.",
   "campaign": { "order": 1, "label": "Module 1" },
   "language": "python",
   "lessons": [
     {
       "id": "leylines-awaken",
-      "title": "Campaign Module 1: Leyline's Awaken",
+      "title": "Campaign Module 1: Leylines Awaken",
       "published": true,
       "beats": [
         {
@@ -45,7 +45,7 @@
           "editor": "hidden",
           "instructions": "Read the scene. Press Continue when you are ready.",
           "scene": {
-            "caption": "Gearshift sat up from his spot next to Oogrish in the grassy field as they heard Mar'Tu calling in their thick accent. \"Boys, there is another flashover coming, get inside.\"",
+            "caption": "Gearshift sat up from his spot next to Oogrish in the grassy field as they heard Mar'tu calling in their thick accent. \"Boys, there is another flashover coming, get inside.\"",
             "images": [
               {
                 "id": "cabin",
@@ -57,26 +57,33 @@
         },
         {
           "id": "program-movement",
-          "instructions": "Each def line makes a function: a named set of steps. The game runs move_left() when you press the left arrow, move_right() for the right arrow, and so on. Right now each function only says pass, which means do nothing. Replace each pass with a command that moves the party, like party.move(\"left\"). Use the direction in the function's name, then press Run.",
+          "instructions": "Each def line makes a function: a named set of steps. The game runs move_left() when you press the left arrow, move_right() for the right arrow, and so on. Right now each function only says pass, which means do nothing. Replace each pass with a command that moves the party, like party.move(\"left\"). Use the direction in the function's name, then press Run. When the arrow keys work, click the map and walk the party to the cabin door.",
           "scene": {
             "caption": "In order for characters in the game to move, we have to program the ability to receive input from the arrow keys. Finish these functions that will make the character attempt to move the corresponding direction whenever they hit an arrow key.",
             "images": []
           },
           "board": {
             "map": "moonlit-hills",
-            "party": ["gearshift", "oogrish"],
+            "party": ["oogrish", "gearshift"],
             "partyStart": [
               { "x": 3, "y": 5 },
               { "x": 2, "y": 5 }
             ],
             "actors": [{ "id": "mar-tu", "kind": "npc", "ref": "mar-tu", "x": 12, "y": 4 }],
             "features": [],
+            "goal": {
+              "type": "reach",
+              "x": 11,
+              "y": 3,
+              "label": "the cabin door",
+              "enter": { "after": ["mar-tu"] }
+            },
             "seed": 1
           },
           "activity": {
             "kind": "interactive",
             "starterCode": "def move_left():\n    pass\n\n\ndef move_right():\n    pass\n\n\ndef move_up():\n    pass\n\n\ndef move_down():\n    pass\n",
-            "passFeedback": "The party steps left, right, up, and down. The arrow keys and W A S D now move your party. Click the map to try it, then press Continue.",
+            "passFeedback": "The party steps left, right, up, and down. The arrow keys and W A S D now move your party. Click the map and walk to the cabin door.",
             "failFeedback": "Each function should use the party's move command with the direction from its own name.",
             "unlocks": ["movement"],
             "checks": [
@@ -100,24 +107,123 @@
           }
         },
         {
-          "id": "beat-the-flashover",
+          "id": "cabin-interior",
           "editor": "hidden",
-          "instructions": "Click the map, then use the arrow keys or W A S D to walk to the cabin door. Tab switches which hero leads.",
+          "instructions": "Read the scene. Press Continue when you are ready.",
           "scene": {
-            "caption": "Another flashover is rolling in over the hills. Get Gearshift and Oogrish to the door of Mar'Tu's cabin before it hits!",
-            "images": []
+            "caption": "Mar'tu sounded grim. \"It seems like the decay is accelerating.\" Their tired yellow eyes drifted between Oogrish and Gearshift. They continued, \"We've been studying the clock device for almost two weeks now. If there was a pattern… a clue… anything… we surely would have seen it by now, yes?\"",
+            "images": [
+              {
+                "id": "cabin-interior",
+                "src": "/scenes/leyline-cabin-interior.svg",
+                "alt": "Inside Mar'tu's cabin: a fire in a stone fireplace, a pendulum clock glowing blue on the mantle, and Mar'tu at the table in a purple shroud"
+              }
+            ]
+          }
+        },
+        {
+          "id": "program-dialogue-prompt",
+          "instructions": "get_dialogue_prompt_string() returns the line Mar'tu says. Change the words inside the quotes to a question Mar'tu asks Oogrish and Gearshift. The next two lines make it lower case and then capitalize the first letter. Then finish present_dialogue_option(): store the result of get_dialogue_prompt_string() in a variable, and pass that variable to print_prompt(). Press Run to see the line on the game screen.",
+          "scene": {
+            "caption": "We need our characters to be able to speak to each other and other characters in the world. Let's implement a dialogue system so the player can select dialogue and advance the story. We'll start with the dialogue prompt.",
+            "images": [
+              {
+                "id": "door-view",
+                "src": "/scenes/leyline-cabin-door-view.svg",
+                "alt": "Gearshift leaning on the wall beside the cabin door and Master Oogrish at the window, seen from Mar'tu's seat"
+              }
+            ]
           },
-          "board": {
-            "map": "moonlit-hills",
-            "party": ["gearshift", "oogrish"],
-            "partyStart": [
-              { "x": 3, "y": 5 },
-              { "x": 2, "y": 5 }
+          "conversation": {
+            "speaker": "mar-tu",
+            "responder": "oogrish",
+            "showOptions": false
+          },
+          "activity": {
+            "kind": "interactive",
+            "starterCode": "def get_dialogue_prompt_string():\n    dialogue_input = \"Write what Mar'tu asks here\"\n    dialogue_input = dialogue_input.lower()\n    dialogue_input = dialogue_input.capitalize()\n    return dialogue_input\n\n\ndef present_dialogue_option():\n    pass\n",
+            "passFeedback": "Dialogue prompt implemented, well done!",
+            "failFeedback": "Store Mar'tu's line in a variable inside present_dialogue_option(), then pass that variable to print_prompt().",
+            "checks": [
+              {
+                "name": "Mar'tu has a line",
+                "code": "line = get_dialogue_prompt_string()\nassert isinstance(line, str) and line.strip(), \"get_dialogue_prompt_string() should return the words Mar'tu says.\"\nassert line.lower() != \"write what mar'tu asks here\", \"Change the words inside the quotes to Mar'tu's question.\""
+              },
+              {
+                "name": "present_dialogue_option shows the line",
+                "code": "_prompts.clear()\npresent_dialogue_option()\nassert _prompts == [get_dialogue_prompt_string()], \"present_dialogue_option() should pass the result of get_dialogue_prompt_string() to print_prompt() once.\""
+              },
+              {
+                "name": "the line is stored in a variable",
+                "code": "assert present_dialogue_option.__code__.co_nlocals >= 1, \"Store the result of get_dialogue_prompt_string() in a variable first, then pass the variable to print_prompt().\""
+              }
+            ]
+          }
+        },
+        {
+          "id": "program-dialogue-options",
+          "instructions": "get_dialogue_input() is already finished. Change the four option strings to things Oogrish could say back, and the game shows them in the four boxes. The game runs dialogue_option_selected() whenever a box is clicked, and user.clicked() tells you which one. Replace each <option> with \"option 1\", \"option 2\", \"option 3\", or \"option 4\" (keep the quotes), in order. Then add make_option_green() under each speak_dialogue line so the clicked box turns green. Press Run.",
+          "scene": {
+            "caption": "Let's implement dialogue response options so the player can select dialogue and advance the story.",
+            "images": [
+              {
+                "id": "door-view",
+                "src": "/scenes/leyline-cabin-door-view.svg",
+                "alt": "Gearshift leaning on the wall beside the cabin door and Master Oogrish at the window, seen from Mar'tu's seat"
+              }
+            ]
+          },
+          "conversation": {
+            "speaker": "mar-tu",
+            "responder": "oogrish",
+            "showOptions": true,
+            "promptFrom": "program-dialogue-prompt"
+          },
+          "activity": {
+            "kind": "interactive",
+            "starterCode": "def get_dialogue_input():\n    option_1 = \"Write option 1 here\"\n    option_2 = \"Write option 2 here\"\n    option_3 = \"Write option 3 here\"\n    option_4 = \"Write option 4 here\"\n    print_options(\n        option_1.lower().capitalize(),\n        option_2.lower().capitalize(),\n        option_3.lower().capitalize(),\n        option_4.lower().capitalize(),\n    )\n\n\ndef dialogue_option_selected():\n    if (user.clicked() == <option>):\n        speak_dialogue(\"option 1\")\n    elif (user.clicked() == <option>):\n        speak_dialogue(\"option 2\")\n    elif (user.clicked() == <option>):\n        speak_dialogue(\"option 3\")\n    elif (user.clicked() == <option>):\n        speak_dialogue(\"option 4\")\n",
+            "passFeedback": "Dialogue fully implemented, well done!",
+            "failFeedback": "Each condition should check its own option, and each answer should also turn its box green.",
+            "unlocks": [
+              "dialogue"
             ],
-            "actors": [{ "id": "mar-tu", "kind": "npc", "ref": "mar-tu", "x": 12, "y": 4 }],
-            "features": ["movement"],
-            "goal": { "type": "reach", "x": 11, "y": 3, "label": "the cabin door" },
-            "seed": 1
+            "checks": [
+              {
+                "name": "four replies are written",
+                "code": "_options.clear()\nget_dialogue_input()\nassert len(_options) == 1 and len(_options[0]) == 4, \"get_dialogue_input() should show four options.\"\nfor number, text in enumerate(_options[0], start=1):\n    assert text.strip() and text.lower() != f\"write option {number} here\", f\"Change option_{number} to something Oogrish could say.\""
+              },
+              {
+                "name": "clicking option 1 speaks it and turns it green",
+                "code": "_spoken.clear()\n_greens.clear()\nuser._clicked = \"option 1\"\ndialogue_option_selected()\nassert _spoken == [\"option 1\"], 'Clicking option 1 should run speak_dialogue(\"option 1\").'\nassert _greens == [\"option 1\"], \"Call make_option_green() once when option 1 is clicked.\""
+              },
+              {
+                "name": "clicking option 2 speaks it and turns it green",
+                "code": "_spoken.clear()\n_greens.clear()\nuser._clicked = \"option 2\"\ndialogue_option_selected()\nassert _spoken == [\"option 2\"], 'Clicking option 2 should run speak_dialogue(\"option 2\").'\nassert _greens == [\"option 2\"], \"Call make_option_green() once when option 2 is clicked.\""
+              },
+              {
+                "name": "clicking option 3 speaks it and turns it green",
+                "code": "_spoken.clear()\n_greens.clear()\nuser._clicked = \"option 3\"\ndialogue_option_selected()\nassert _spoken == [\"option 3\"], 'Clicking option 3 should run speak_dialogue(\"option 3\").'\nassert _greens == [\"option 3\"], \"Call make_option_green() once when option 3 is clicked.\""
+              },
+              {
+                "name": "clicking option 4 speaks it and turns it green",
+                "code": "_spoken.clear()\n_greens.clear()\nuser._clicked = \"option 4\"\ndialogue_option_selected()\nassert _spoken == [\"option 4\"], 'Clicking option 4 should run speak_dialogue(\"option 4\").'\nassert _greens == [\"option 4\"], \"Call make_option_green() once when option 4 is clicked.\""
+              }
+            ]
+          }
+        },
+        {
+          "id": "mar-tu-needs-help",
+          "editor": "hidden",
+          "instructions": "Read the scene. Press Continue when you are ready.",
+          "scene": {
+            "caption": "Mar'tu took a long exaggerated sigh and looked out the window. \"We need help.\"",
+            "images": [
+              {
+                "id": "mar-tu-closeup",
+                "src": "/scenes/leyline-mar-tu-closeup.svg",
+                "alt": "A close-up of Mar'tu's purple hood, with tired yellow eyes looking to the right"
+              }
+            ]
           }
         }
       ]

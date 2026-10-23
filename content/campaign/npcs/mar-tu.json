@@ -1,8 +1,8 @@
 {
   "id": "mar-tu",
-  "name": "Mar'Tu",
+  "name": "Mar'tu",
   "pronouns": "they/them",
-  "description": "The friendly keeper of the little cabin in the hills, who took Gearshift and Oogrish in after the greenroom. They speak with a thick accent.",
+  "description": "The friendly keeper of the little cabin in the hills, who took Gearshift and Oogrish in after the greenroom. They speak with a thick accent and wear a purple shroud that hides everything but their yellow eyes.",
   "sprite": "/sprites/mar-tu.svg",
   "portrait": "/sprites/mar-tu.svg"
 }

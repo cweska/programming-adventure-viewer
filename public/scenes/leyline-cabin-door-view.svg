@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" role="img" aria-label="Gearshift leaning on the wall beside the cabin door and Master Oogrish at the window, seen from Mar'tu's seat">
+  <defs>
+    <linearGradient id="wall" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3a2416"/>
+      <stop offset="1" stop-color="#5a3a22"/>
+    </linearGradient>
+    <linearGradient id="floor" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7a5230"/>
+      <stop offset="1" stop-color="#4a2f1a"/>
+    </linearGradient>
+    <linearGradient id="door" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6b4528"/>
+      <stop offset="1" stop-color="#8a5a32"/>
+    </linearGradient>
+    <linearGradient id="night" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#160c32"/>
+      <stop offset="1" stop-color="#4a2c6a"/>
+    </linearGradient>
+    <radialGradient id="warm" cx="0.2" cy="0.6" r="0.9">
+      <stop offset="0" stop-color="#ffb347" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#ffb347" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="steel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8d9aa8"/>
+      <stop offset="1" stop-color="#b8c4d0"/>
+    </linearGradient>
+    <style>
+      .twinkle { animation: twinkle 3.4s ease-in-out infinite alternate; }
+      .visor { animation: visor 4s ease-in-out infinite alternate; }
+      @keyframes twinkle { from { opacity: 0.35; } to { opacity: 1; } }
+      @keyframes visor { from { opacity: 0.7; } to { opacity: 1; } }
+      @media (prefers-reduced-motion: reduce) { .twinkle, .visor { animation: none; } }
+    </style>
+  </defs>
+  <rect width="960" height="540" fill="url(#wall)"/>
+  <g stroke="#2a190d" stroke-width="3" opacity="0.55">
+    <path d="M0 50 H960 M0 100 H960 M0 150 H960 M0 200 H960 M0 250 H960 M0 300 H960 M0 350 H960"/>
+  </g>
+  <path d="M0 370 H960 V540 H0 Z" fill="url(#floor)"/>
+  <g stroke="#3a2416" stroke-width="2" opacity="0.55">
+    <path d="M0 400 H960 M0 440 H960 M0 490 H960"/>
+  </g>
+
+  <g>
+    <rect x="410" y="96" width="150" height="276" fill="#2a190d"/>
+    <rect x="420" y="104" width="130" height="266" fill="url(#door)" stroke="#2a190d" stroke-width="4"/>
+    <path d="M420 170 H550 M420 240 H550 M420 310 H550" stroke="#4a2f1a" stroke-width="4"/>
+    <circle cx="530" cy="250" r="7" fill="#c9a24a" stroke="#6e4a12" stroke-width="2"/>
+  </g>
+
+  <g>
+    <rect x="640" y="100" width="190" height="140" fill="url(#night)" stroke="#2a190d" stroke-width="10"/>
+    <circle class="twinkle" cx="680" cy="130" r="2" fill="#fdf6ff"/>
+    <circle class="twinkle" cx="790" cy="150" r="1.6" fill="#fdf6ff"/>
+    <circle cx="770" cy="130" r="16" fill="#b8f5a0" opacity="0.85"/>
+    <path d="M640 210 C 690 196, 760 200, 830 214 V240 H640 Z" fill="#1d3a24"/>
+    <path d="M735 100 V240 M640 170 H830" stroke="#2a190d" stroke-width="7"/>
+  </g>
+
+  <g>
+    <path d="M760 362 L 770 196" stroke="#8a5a2b" stroke-width="7" stroke-linecap="round"/>
+    <circle cx="770" cy="192" r="8" fill="#8fdcff" stroke="#3b6f8a" stroke-width="2"/>
+    <ellipse cx="720" cy="300" rx="62" ry="70" fill="#556b2f" stroke="#26331a" stroke-width="4"/>
+    <path d="M690 254 l 30 -18 l 30 18 l 4 40 l -34 24 l -34 -24 Z" fill="#6f8b3e" stroke="#26331a" stroke-width="3"/>
+    <path d="M720 236 V318 M686 294 L660 310 M754 294 L780 310" stroke="#26331a" stroke-width="3"/>
+    <path d="M664 278 C 690 300, 740 300, 776 270" fill="none" stroke="#b73a2e" stroke-width="9"/>
+    <path d="M664 244 C 680 226, 700 218, 718 222" fill="none" stroke="#c9b98a" stroke-width="10" opacity="0.65"/>
+    <ellipse cx="752" cy="216" rx="24" ry="20" fill="#8fbf5c" stroke="#3a5a28" stroke-width="3"/>
+    <path d="M770 222 C 782 234, 784 252, 776 262" fill="none" stroke="#f1ede1" stroke-width="4" stroke-linecap="round"/>
+    <ellipse cx="764" cy="268" rx="11" ry="8" fill="#8fbf5c" stroke="#3a5a28" stroke-width="2.5"/>
+    <ellipse cx="770" cy="284" rx="11" ry="8" fill="#8fbf5c" stroke="#3a5a28" stroke-width="2.5"/>
+    <ellipse cx="694" cy="366" rx="18" ry="9" fill="#8fbf5c" stroke="#3a5a28" stroke-width="2.5"/>
+    <ellipse cx="744" cy="366" rx="18" ry="9" fill="#8fbf5c" stroke="#3a5a28" stroke-width="2.5"/>
+  </g>
+
+  <g transform="rotate(-9 300 360)">
+    <rect x="232" y="70" width="18" height="64" fill="#7d8a99" stroke="#2b3138" stroke-width="3"/>
+    <rect x="352" y="70" width="18" height="64" fill="#7d8a99" stroke="#2b3138" stroke-width="3"/>
+    <rect x="236" y="62" width="10" height="10" fill="#ff8a3d"/>
+    <rect x="356" y="62" width="10" height="10" fill="#ff8a3d"/>
+    <rect x="270" y="78" width="62" height="50" rx="8" fill="#aeb9c6" stroke="#2b3138" stroke-width="3"/>
+    <rect class="visor" x="272" y="96" width="30" height="12" fill="#5ff0ff"/>
+    <rect x="246" y="128" width="112" height="104" rx="8" fill="url(#steel)" stroke="#2b3138" stroke-width="3"/>
+    <rect x="262" y="146" width="30" height="20" fill="#5d6874"/>
+    <rect x="312" y="146" width="30" height="20" fill="#5d6874"/>
+    <path d="M278 186 H326 L302 210 Z" fill="#c43b3b" stroke="#2b3138" stroke-width="2"/>
+    <circle cx="236" cy="150" r="30" fill="#c43b3b" stroke="#2b3138" stroke-width="3"/>
+    <circle cx="368" cy="150" r="30" fill="#c43b3b" stroke="#2b3138" stroke-width="3"/>
+    <path d="M236 132 l5 11 12 1 -9 8 3 12 -11 -6 -11 6 3 -12 -9 -8 12 -1 Z" fill="#f4f0d8"/>
+    <path d="M368 132 l5 11 12 1 -9 8 3 12 -11 -6 -11 6 3 -12 -9 -8 12 -1 Z" fill="#f4f0d8"/>
+    <path d="M220 172 C 214 206, 250 214, 340 200" fill="none" stroke="#7d8a99" stroke-width="22" stroke-linecap="round"/>
+    <path d="M384 172 C 392 210, 352 220, 266 210" fill="none" stroke="#8d9aa8" stroke-width="22" stroke-linecap="round"/>
+    <rect x="258" y="230" width="38" height="132" fill="#7d8a99" stroke="#2b3138" stroke-width="3"/>
+    <rect x="310" y="230" width="38" height="132" fill="#7d8a99" stroke="#2b3138" stroke-width="3"/>
+    <circle cx="277" cy="300" r="15" fill="#2b3138" stroke="#5d6874" stroke-width="5"/>
+    <circle cx="329" cy="300" r="15" fill="#2b3138" stroke="#5d6874" stroke-width="5"/>
+    <rect x="250" y="358" width="54" height="14" fill="#3f4852"/>
+    <rect x="304" y="358" width="54" height="14" fill="#3f4852"/>
+  </g>
+
+  <rect width="960" height="540" fill="url(#warm)"/>
+</svg>
