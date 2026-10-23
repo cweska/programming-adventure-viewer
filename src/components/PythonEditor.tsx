@@ -26,6 +26,7 @@ export function PythonEditor({
           syntaxHighlighting: false,
           closeBrackets: false,
           closeBracketsKeymap: false,
+          highlightSelectionMatches: false,
           tabSize: 4,
         }}
         extensions={[

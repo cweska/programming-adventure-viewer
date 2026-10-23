@@ -123,4 +123,67 @@ test.describe("emberkeep player", () => {
     await expect(page.getByTestId("forward")).toBeDisabled();
     await expect(page.getByTestId("back")).toBeEnabled();
   });
+
+  test("Reset code puts back the starting code", async ({ page }) => {
+    await page.goto("/play/emberkeep");
+    await pythonReady(page);
+    await replaceEditor(page, "print(");
+    await page.getByTestId("run").click();
+    await expect(page.getByTestId("explainer")).toBeVisible();
+
+    await page.getByTestId("reset-code").click();
+    await expect(page.getByRole("alertdialog", { name: "Reset code" })).toContainText("starting code");
+    await page.getByTestId("reset-cancel").click();
+    await expect(page.getByTestId("reset-confirm")).toHaveCount(0);
+    await expect(page.locator('[data-testid="editor"] .cm-content')).toHaveText("print(");
+    await expect(page.getByTestId("explainer")).toBeVisible();
+
+    await page.getByTestId("reset-code").click();
+    await page.getByTestId("reset-confirm").click();
+    await expect(page.getByTestId("reset-confirm")).toHaveCount(0);
+    await expect(page.locator('[data-testid="editor"] .cm-content')).toHaveText('print("ember")');
+    await expect(page.getByTestId("explainer")).toHaveCount(0);
+    await expect(page.getByTestId("stdout")).toContainText("Program output will appear here.");
+    await page.getByTestId("run").click();
+    await expect(page.getByTestId("stdout")).toContainText("ember");
+  });
+
+  test("highlights the selected text on its own line", async ({ page }) => {
+    await page.goto("/play/emberkeep");
+    const content = page.locator('[data-testid="editor"] .cm-content');
+    await content.click();
+    await page.keyboard.press("ControlOrMeta+End");
+    await page.keyboard.type("\nprint(1)\nprint(2)\nprint(3)");
+    const line = content.locator(".cm-line").nth(2);
+    await expect(line).toHaveText("print(1)");
+    const box = await line.boundingBox();
+    if (!box) throw new Error("line 3 should be on screen");
+    await page.mouse.move(box.x + 2, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(box.x + 60, box.y + box.height / 2, { steps: 5 });
+    await page.mouse.up();
+
+    const selection = page.locator('[data-testid="editor"] .cm-selectionBackground');
+    await expect(selection).toHaveCount(1);
+    const highlight = await selection.boundingBox();
+    const above = await content.locator(".cm-line").nth(1).boundingBox();
+    if (!highlight || !above) throw new Error("the selection and line 2 should be on screen");
+    const middle = highlight.y + highlight.height / 2;
+    expect(middle).toBeGreaterThan(box.y);
+    expect(middle).toBeLessThan(box.y + box.height);
+    expect(highlight.y).toBeGreaterThanOrEqual(above.y + above.height - 1);
+    await expect(page.locator('[data-testid="editor"] .cm-selectionMatch')).toHaveCount(0);
+
+    const colors = await page.evaluate(() => {
+      const active = document.querySelector('[data-testid="editor"] .cm-activeLine');
+      const background = document.querySelector('[data-testid="editor"] .cm-selectionBackground');
+      return {
+        active: active ? getComputedStyle(active).backgroundColor : "",
+        selection: background ? getComputedStyle(background).backgroundColor : "",
+      };
+    });
+    const alpha = Number(colors.active.match(/rgba\([^)]*,\s*([\d.]+)\)/)?.[1] ?? 1);
+    expect(alpha).toBeLessThan(0.5);
+    expect(colors.selection).toBe("rgb(53, 89, 138)");
+  });
 });

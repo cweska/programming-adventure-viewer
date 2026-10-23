@@ -21,6 +21,7 @@ import {
   gradeRun,
   initialTheater,
   nextTheaterState,
+  starterFor,
   type FailedCheck,
 } from "../lib/lesson/progression";
 import { moduleSchema, requiresPass, showsEditor, type Beat, type Module } from "../lib/lesson/schema";
@@ -79,6 +80,7 @@ export function Player({ moduleId, draft = false }: { moduleId?: string; draft?:
   const [lessonCompleted, setLessonCompleted] = useState(false);
   const [pythonReady, setPythonReady] = useState(false);
   const [running, setRunning] = useState(false);
+  const [confirmingReset, setConfirmingReset] = useState(false);
   const [student, setStudent] = useState<StudentSession | null>(null);
   const [displayName, setDisplayName] = useState("");
   const [joinCode, setJoinCode] = useState("");
@@ -131,6 +133,7 @@ export function Player({ moduleId, draft = false }: { moduleId?: string; draft?:
     setFailedChecks([]);
     setScript(null);
     setConversationScript(null);
+    setConfirmingReset(false);
     void formatPart("load", next.index, source, lessonId);
   }
 
@@ -156,6 +159,21 @@ export function Player({ moduleId, draft = false }: { moduleId?: string; draft?:
     codeRef.current = value;
     setCode(value);
     writeNavigation(setPartCode(navRef.current, indexRef.current, value));
+  }
+
+  function resetCode() {
+    const currentLesson = lessons[lessonIndex];
+    const index = navRef.current.index;
+    const part = currentLesson?.beats[index];
+    setConfirmingReset(false);
+    if (!currentLesson || !part || running) return;
+    const starter = starterFor(part);
+    onCodeChange(starter);
+    setOutput("");
+    setExplainer(null);
+    setFeedback(null);
+    setFailedChecks([]);
+    void formatPart("load", index, starter, currentLesson.id);
   }
 
   function onEditorBlur() {
@@ -620,7 +638,32 @@ export function Player({ moduleId, draft = false }: { moduleId?: string; draft?:
             <span data-testid="python-status" className="python-status">
               {pythonReady ? "Python is ready" : "Python is loading"}
             </span>
+            <button
+              type="button"
+              className="reset-code"
+              data-testid="reset-code"
+              onClick={() => setConfirmingReset(true)}
+              disabled={running}
+            >
+              Reset code
+            </button>
           </div>
+          {confirmingReset ? (
+            <div className="reset-confirm" role="alertdialog" aria-label="Reset code">
+              <p>Replace your code with this part&apos;s starting code?</p>
+              <button type="button" data-testid="reset-confirm" onClick={resetCode}>
+                Yes, reset
+              </button>
+              <button
+                type="button"
+                className="reset-cancel"
+                data-testid="reset-cancel"
+                onClick={() => setConfirmingReset(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          ) : null}
           <PythonEditor code={code} onChange={onCodeChange} onBlur={onEditorBlur} />
           <ConsolePanel
             output={output}
