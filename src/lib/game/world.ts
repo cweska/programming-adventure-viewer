@@ -34,7 +34,7 @@ export function actorById(state: GameState, id: string): Actor | undefined {
 }
 
 export function actorAt(state: GameState, x: number, y: number): Actor | undefined {
-  return state.actors.find((actor) => !actor.down && actor.x === x && actor.y === y);
+  return state.actors.find((actor) => !actor.down && !actor.hidden && actor.x === x && actor.y === y);
 }
 
 export function isOpen(state: GameState, x: number, y: number): boolean {

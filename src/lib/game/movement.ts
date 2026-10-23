@@ -1,4 +1,5 @@
 import { checkAggro, startCombat } from "./combat";
+import { startEnterCutscene } from "./cutscene";
 import { startDialogue } from "./dialogue";
 import { isWalkable } from "./rules";
 import type { Direction, Position } from "./schema";
@@ -42,9 +43,10 @@ function followLeader(state: GameState, leaderFrom: Position): GameState {
 
 function checkReach(state: GameState): GameState {
   const goal = state.goal;
-  if (state.goalMet || goal?.type !== "reach") return state;
+  if (state.goalMet || goal?.type !== "reach" || !hasFeature(state, "movement")) return state;
   const leader = actorById(state, state.leader);
   if (!leader || leader.x !== goal.x || leader.y !== goal.y) return state;
+  if (goal.enter) return startEnterCutscene(state, goal, goal.enter.after);
   return { ...state, goalMet: true };
 }
 
@@ -73,7 +75,7 @@ export function stepParty(state: GameState, direction: Direction, scripted = fal
 
   const moved = followLeader(moveActor(turned, leader.id, target), { x: leader.x, y: leader.y });
   const reached = checkReach({ ...moved, notice: null });
-  return scripted ? reached : checkAggro(reached);
+  return scripted || reached.mode !== "explore" ? reached : checkAggro(reached);
 }
 
 export function swapLeader(state: GameState): GameState {

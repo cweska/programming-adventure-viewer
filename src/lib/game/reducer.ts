@@ -1,4 +1,5 @@
 import { activeCombatant, combatMove, endTurn, enemyStep } from "./combat";
+import { cutsceneStep } from "./cutscene";
 import { advanceDialogue, chooseOption } from "./dialogue";
 import { stepParty, swapLeader } from "./movement";
 import { mergeFeatures } from "./state";
@@ -21,6 +22,8 @@ function apply(state: GameState, action: GameAction): GameState {
       return activeCombatant(state)?.kind === "hero" ? endTurn(state) : state;
     case "enemyStep":
       return enemyStep(state);
+    case "cutsceneStep":
+      return cutsceneStep(state);
     case "setFeatures":
       return { ...state, features: mergeFeatures(action.features) };
     case "clearNotice":

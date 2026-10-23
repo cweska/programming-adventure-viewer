@@ -44,6 +44,7 @@ export function createGame(board: Board, data: CampaignData, extraFeatures: read
       aggroRange: 0,
       dialogue: null,
       down: false,
+      hidden: false,
     };
   });
 
@@ -79,6 +80,7 @@ export function createGame(board: Board, data: CampaignData, extraFeatures: read
         aggroRange: 0,
         dialogue: placed.dialogue ?? null,
         down: false,
+        hidden: false,
       };
     }
     const enemy = lookup(data.enemies, placed.ref, "enemy");
@@ -104,6 +106,7 @@ export function createGame(board: Board, data: CampaignData, extraFeatures: read
       aggroRange: enemy.aggroRange,
       dialogue: placed.dialogue ?? null,
       down: false,
+      hidden: false,
     };
   });
 
@@ -129,6 +132,7 @@ export function createGame(board: Board, data: CampaignData, extraFeatures: read
     dialogue: null,
     dialogues,
     combat: null,
+    cutscene: null,
     combatResult: null,
     goal: board.goal ?? null,
     goalMet: false,
