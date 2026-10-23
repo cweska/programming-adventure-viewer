@@ -124,6 +124,30 @@ test.describe("emberkeep player", () => {
     await expect(page.getByTestId("back")).toBeEnabled();
   });
 
+  test("Reset code puts back the starting code", async ({ page }) => {
+    await page.goto("/play/emberkeep");
+    await pythonReady(page);
+    await replaceEditor(page, "print(");
+    await page.getByTestId("run").click();
+    await expect(page.getByTestId("explainer")).toBeVisible();
+
+    await page.getByTestId("reset-code").click();
+    await expect(page.getByRole("alertdialog", { name: "Reset code" })).toContainText("starting code");
+    await page.getByTestId("reset-cancel").click();
+    await expect(page.getByTestId("reset-confirm")).toHaveCount(0);
+    await expect(page.locator('[data-testid="editor"] .cm-content')).toHaveText("print(");
+    await expect(page.getByTestId("explainer")).toBeVisible();
+
+    await page.getByTestId("reset-code").click();
+    await page.getByTestId("reset-confirm").click();
+    await expect(page.getByTestId("reset-confirm")).toHaveCount(0);
+    await expect(page.locator('[data-testid="editor"] .cm-content')).toHaveText('print("ember")');
+    await expect(page.getByTestId("explainer")).toHaveCount(0);
+    await expect(page.getByTestId("stdout")).toContainText("Program output will appear here.");
+    await page.getByTestId("run").click();
+    await expect(page.getByTestId("stdout")).toContainText("ember");
+  });
+
   test("highlights the selected text on its own line", async ({ page }) => {
     await page.goto("/play/emberkeep");
     const content = page.locator('[data-testid="editor"] .cm-content');
