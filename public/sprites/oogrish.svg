@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Master Oogrish, an old turtle with a white mustache and a staff">
+  <path d="M51 4 L 51 60" stroke="#8a5a2b" stroke-width="3.5" stroke-linecap="round"/>
+  <circle cx="51" cy="6" r="4" fill="#8fdcff" stroke="#3b6f8a" stroke-width="1.5"/>
+  <ellipse cx="29" cy="38" rx="20" ry="17" fill="#556b2f" stroke="#26331a" stroke-width="2"/>
+  <path d="M17 32 l 8 -6 l 9 0 l 8 6 l -2 10 l -8 5 l -6 0 l -8 -5 Z" fill="#6f8b3e" stroke="#26331a" stroke-width="1.5"/>
+  <path d="M25 26 l -6 -7 M34 26 l 6 -7 M42 32 l 6 -2 M17 32 l -6 -2" stroke="#26331a" stroke-width="1.5"/>
+  <path d="M14 30 C 20 46, 38 50, 46 44" fill="none" stroke="#b73a2e" stroke-width="5"/>
+  <circle cx="32" cy="46" r="3.4" fill="#e3b53f" stroke="#7a5512" stroke-width="1"/>
+  <ellipse cx="44" cy="20" rx="10" ry="9" fill="#8fbf5c" stroke="#3a5a28" stroke-width="2"/>
+  <circle cx="47" cy="17" r="1.8" fill="#2a1d10"/>
+  <path d="M42 13 q 4 -3 9 0" stroke="#e8e2d0" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M49 23 C 54 24, 56 30, 54 36 M48 24 C 46 30, 42 33, 38 32" stroke="#f1ede1" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <ellipse cx="50" cy="35" rx="4" ry="3" fill="#8fbf5c" stroke="#3a5a28" stroke-width="1.5"/>
+  <ellipse cx="20" cy="56" rx="6" ry="4" fill="#8fbf5c" stroke="#3a5a28" stroke-width="1.5"/>
+  <ellipse cx="38" cy="56" rx="6" ry="4" fill="#8fbf5c" stroke="#3a5a28" stroke-width="1.5"/>
+</svg>

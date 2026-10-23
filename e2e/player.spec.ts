@@ -3,7 +3,7 @@ import { pythonReady, replaceEditor } from "./editor";
 
 test.describe("emberkeep player", () => {
   test("shows the theater, torches, caption, instructions, editor, and console", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/play/emberkeep");
     await expect(page.getByTestId("theater-frame")).toBeVisible();
     await expect(page.getByTestId("torch-left")).toBeVisible();
     await expect(page.getByTestId("torch-right")).toBeVisible();
@@ -48,7 +48,7 @@ test.describe("emberkeep player", () => {
   });
 
   test("explains broken Python in plain language", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/play/emberkeep");
     await pythonReady(page);
     await replaceEditor(page, "print(");
     await page.getByTestId("run").click();
@@ -60,7 +60,7 @@ test.describe("emberkeep player", () => {
   });
 
   test("Run on the prefilled print shows the word in the console", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/play/emberkeep");
     await expect(page.getByTestId("part-label")).toHaveText("Part 1 of 15");
     await expect(page.getByTestId("editor")).toContainText('print("ember")');
     await expect(page.getByTestId("continue")).toHaveCount(0);
@@ -86,7 +86,7 @@ test.describe("emberkeep player", () => {
   });
 
   test("formats on blur and not on each keystroke", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/play/emberkeep");
     await replaceEditor(page, "value=1\n");
     const editor = page.locator('[data-testid="editor"] .cm-content');
     await expect(editor).toContainText("value=1");
@@ -96,7 +96,7 @@ test.describe("emberkeep player", () => {
   });
 
   test("Back restores the previous part and Forward stops at the furthest unlocked part", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/play/emberkeep");
     await expect(page.getByTestId("part-label")).toHaveText("Part 1 of 15");
     await expect(page.getByTestId("back")).toBeDisabled();
     await expect(page.getByTestId("forward")).toBeDisabled();

@@ -1,0 +1,39 @@
+{
+  "id": "oogrish",
+  "name": "Master Oogrish",
+  "species": "Turtle",
+  "classId": "general",
+  "alignment": "Good",
+  "size": "About 5 feet tall, most of it shell",
+  "appearance": "An old, broad-shelled turtle with a mossy green shell, a long white mustache, and calm amber eyes. He wears a weathered general's sash and a woven reed cloak over his shell and leans on the Staff of Wisdom. A golden clockwork medallion hangs at his neck.",
+  "personality": "Patient, wise, and a little stubborn. He has led soldiers before and likes to think two moves ahead.",
+  "abilities": {
+    "strength": 13,
+    "constitution": 14,
+    "athletics": 13,
+    "dexterity": 14,
+    "personality": 14,
+    "perception": 10,
+    "intelligence": 17,
+    "wisdom": 17,
+    "magical_affinity": 9
+  },
+  "skills": {
+    "innate": [],
+    "martial": ["Firearms master", "Battlefield command", "Staff fighting"],
+    "magical": []
+  },
+  "weakness": "His shell makes him slow to turn and slower to climb, and he trusts old friends too easily, a lesson his rival taught him the hard way.",
+  "weapon": { "name": "Staff of Wisdom", "damageDie": 6, "verb": "strikes with the Staff of Wisdom" },
+  "armor": { "name": "Shell and reed cloak", "bonus": 2 },
+  "inventory": [
+    { "name": "Staff of Wisdom", "kind": "weapon", "note": "An old temple staff. It is also a relic, and its full power is still a mystery." },
+    { "name": "Shell and reed cloak", "kind": "armor" },
+    { "name": "Clockwork medallion", "kind": "relic", "note": "Golden, full of ticking cogs, with a glowing blue sphere inside. It hums when something strange is coming." }
+  ],
+  "faction": "The Peace Temple",
+  "backstory": "Long ago, Oogrish fought side by side with his friend Varkos. Varkos grew greedy for power, and Oogrish had to stand against him. After defeating Varkos, Oogrish became a wise weapons master at the Peace Temple who taught others to protect the weak.",
+  "pastLife": "Back home he carried a rapid-fire combat shotgun and a heavy six-shot revolver. Neither crossed over with him. Firearms in this world are steampunk machines that run on runes and magic.",
+  "sprite": "/sprites/oogrish.svg",
+  "portrait": "/sprites/oogrish.svg"
+}

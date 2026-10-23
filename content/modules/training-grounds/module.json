@@ -1,0 +1,82 @@
+{
+  "id": "training-grounds",
+  "title": "Training Grounds",
+  "summary": "A teacher practice yard for trying movement, dialogue, and melee combat before they appear in the campaign.",
+  "language": "python",
+  "lessons": [
+    {
+      "id": "practice-yard",
+      "title": "Training Grounds (teacher practice)",
+      "published": false,
+      "beats": [
+        {
+          "id": "yard-walk",
+          "editor": "hidden",
+          "instructions": "Click the map. Arrow keys or W A S D move the party, Tab switches the leader, and Esc lets go of the map.",
+          "scene": {
+            "caption": "The practice yard is quiet. Walk to the marked spot on the far side.",
+            "images": []
+          },
+          "board": {
+            "map": "training-yard",
+            "party": ["gearshift", "oogrish"],
+            "partyStart": [
+              { "x": 2, "y": 4 },
+              { "x": 1, "y": 4 }
+            ],
+            "features": ["movement"],
+            "goal": { "type": "reach", "x": 12, "y": 4, "label": "the marked spot" },
+            "seed": 1
+          }
+        },
+        {
+          "id": "yard-talk",
+          "editor": "hidden",
+          "instructions": "Walk into the Arena Keeper to talk. Click an answer or press its number key.",
+          "scene": {
+            "caption": "The Arena Keeper waves you over from the middle of the yard.",
+            "images": []
+          },
+          "board": {
+            "map": "training-yard",
+            "party": ["gearshift", "oogrish"],
+            "partyStart": [
+              { "x": 2, "y": 4 },
+              { "x": 1, "y": 4 }
+            ],
+            "actors": [
+              { "id": "keeper", "kind": "npc", "ref": "arena-keeper", "x": 10, "y": 4, "dialogue": "arena-keeper-welcome" }
+            ],
+            "features": ["movement", "dialogue"],
+            "goal": { "type": "talk", "actor": "keeper" },
+            "seed": 1
+          }
+        },
+        {
+          "id": "yard-spar",
+          "editor": "hidden",
+          "instructions": "Walk toward the bots to start the fight. On your turn, move up to your speed, then walk into a bot to attack. Space ends your turn.",
+          "scene": {
+            "caption": "Two sparring bots clank to life when anyone comes close. Power them both down!",
+            "images": []
+          },
+          "board": {
+            "map": "training-yard",
+            "party": ["gearshift", "oogrish"],
+            "partyStart": [
+              { "x": 2, "y": 4 },
+              { "x": 1, "y": 4 }
+            ],
+            "actors": [
+              { "id": "bot-1", "kind": "enemy", "ref": "sparring-bot", "x": 11, "y": 3 },
+              { "id": "bot-2", "kind": "enemy", "ref": "sparring-bot", "x": 11, "y": 5 }
+            ],
+            "features": ["movement", "dialogue", "melee"],
+            "goal": { "type": "defeat" },
+            "seed": 7
+          }
+        }
+      ]
+    }
+  ]
+}

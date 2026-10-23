@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { makeValidModule } from "./fixtures";
-import { moduleSchema } from "./schema";
+import { moduleSchema, requiresPass, showsEditor } from "./schema";
 
 describe("lesson schema", () => {
   it("accepts a valid module", () => {
@@ -56,5 +56,44 @@ describe("lesson schema", () => {
     if (!parsed.success) {
       expect(parsed.error.issues.some((issue) => issue.path.includes("language"))).toBe(true);
     }
+  });
+
+  it("needs scene art unless the part shows a game board", () => {
+    const module = makeValidModule();
+    module.lessons[0].beats[0].scene.images = [];
+    expect(moduleSchema.safeParse(module).success).toBe(false);
+
+    const withBoard = makeValidModule();
+    withBoard.lessons[0].beats[0].scene.images = [];
+    withBoard.lessons[0].beats[0].board = {
+      map: "training-yard",
+      party: ["gearshift"],
+      partyStart: [{ x: 2, y: 4 }],
+      actors: [],
+      features: ["movement"],
+      goal: { type: "reach", x: 5, y: 4, label: "the spot" },
+      seed: 1,
+    };
+    const parsed = moduleSchema.safeParse(withBoard);
+    expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      const beat = parsed.data.lessons[0].beats[0];
+      expect(requiresPass(beat)).toBe(true);
+      expect(showsEditor(beat)).toBe(true);
+      expect(showsEditor({ ...beat, editor: "hidden" })).toBe(false);
+    }
+  });
+
+  it("rejects a board whose party has no start positions", () => {
+    const module = makeValidModule();
+    module.lessons[0].beats[0].board = {
+      map: "training-yard",
+      party: ["gearshift", "oogrish"],
+      partyStart: [{ x: 2, y: 4 }],
+      actors: [],
+      features: [],
+      seed: 1,
+    };
+    expect(moduleSchema.safeParse(module).success).toBe(false);
   });
 });

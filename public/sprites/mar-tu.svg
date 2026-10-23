@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Mar'Tu in a hooded cloak, holding a lantern">
+  <path d="M32 6 C 20 6, 15 18, 16 30 L 12 60 L 52 60 L 48 30 C 49 18, 44 6, 32 6 Z" fill="#5a3d6e" stroke="#24162e" stroke-width="2"/>
+  <path d="M32 10 C 24 10, 21 18, 22 26 L 42 26 C 43 18, 40 10, 32 10 Z" fill="#2a1a35"/>
+  <circle cx="28" cy="20" r="1.8" fill="#ffd27a"/>
+  <circle cx="36" cy="20" r="1.8" fill="#ffd27a"/>
+  <path d="M22 34 L 42 34" stroke="#c9a24a" stroke-width="3"/>
+  <path d="M46 34 L 54 40" stroke="#24162e" stroke-width="3" stroke-linecap="round"/>
+  <path d="M54 38 L 54 42" stroke="#24162e" stroke-width="2"/>
+  <rect x="49" y="42" width="10" height="12" rx="2" fill="#ffcf6b" stroke="#6e4a12" stroke-width="2"/>
+  <circle cx="54" cy="48" r="7" fill="#ffcf6b" opacity="0.35"/>
+</svg>

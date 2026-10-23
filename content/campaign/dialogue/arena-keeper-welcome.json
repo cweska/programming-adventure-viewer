@@ -1,0 +1,33 @@
+{
+  "id": "arena-keeper-welcome",
+  "start": "hello",
+  "nodes": {
+    "hello": {
+      "speaker": "arena-keeper",
+      "text": "Welcome to the practice yard! Here you can test what you have built before it really matters. What would you like to know?",
+      "options": [
+        { "text": "How do we talk to people?", "next": "talking" },
+        { "text": "How does fighting work?", "next": "fighting" },
+        { "text": "We are ready. Goodbye!", "next": "bye" }
+      ]
+    },
+    "talking": {
+      "speaker": "arena-keeper",
+      "text": "Walk into someone to talk with them. Pick an answer by clicking it or by pressing its number key.",
+      "options": [
+        { "text": "Got it. How does fighting work?", "next": "fighting" },
+        { "text": "Thanks, that is all.", "next": "bye" }
+      ]
+    },
+    "fighting": {
+      "speaker": "arena-keeper",
+      "text": "When a fight starts, everyone rolls for turn order. On your turn, walk up to your speed, then walk into an enemy to attack. Press Space to end your turn early.",
+      "options": [{ "text": "Thanks!", "next": "bye" }]
+    },
+    "bye": {
+      "speaker": "arena-keeper",
+      "text": "Good luck out there. The sparring bots are waiting!",
+      "next": null
+    }
+  }
+}

@@ -1,4 +1,4 @@
-import type { Beat, Module } from "./schema";
+import { requiresPass, type Beat, type Module } from "./schema";
 import { applyStageEvents, type StageEvent, type TheaterState } from "../stage/bridge";
 import type { RunResult } from "../languages/types";
 
@@ -19,7 +19,7 @@ export function visibleLessons(module: Module): Module["lessons"] {
 }
 
 export function canContinueImmediately(beat: Beat): boolean {
-  return !beat.activity;
+  return !requiresPass(beat);
 }
 
 export function initialTheater(beat: Beat): TheaterState {
@@ -36,7 +36,8 @@ export function nextTheaterState(beat: Beat, events: readonly StageEvent[]): The
 
 export function gradeRun(beat: Beat, result: RunResult): Grade {
   if (!beat.activity) {
-    return { passed: true, canContinue: true, feedback: null, failedChecks: [] };
+    const open = !requiresPass(beat);
+    return { passed: open, canContinue: open, feedback: null, failedChecks: [] };
   }
   if (!result.ok || result.timedOut) {
     return { passed: false, canContinue: false, feedback: null, failedChecks: [] };

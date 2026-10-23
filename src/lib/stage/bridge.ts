@@ -1,7 +1,12 @@
+import type { Direction } from "../game/schema";
+
+const DIRECTIONS: readonly string[] = ["left", "right", "up", "down"];
+
 export type StageEvent =
   | { type: "say"; text: string }
   | { type: "flare" }
-  | { type: "focus"; imageId: string };
+  | { type: "focus"; imageId: string }
+  | { type: "move"; direction: Direction };
 
 export type TheaterState = {
   caption: string;
@@ -21,6 +26,9 @@ export function parseStageMessage(message: unknown): StageEvent | null {
   if (record.type === "focus" && typeof record.imageId === "string" && record.imageId.length > 0) {
     return { type: "focus", imageId: record.imageId };
   }
+  if (record.type === "move" && typeof record.direction === "string" && DIRECTIONS.includes(record.direction)) {
+    return { type: "move", direction: record.direction as Direction };
+  }
   return null;
 }
 
@@ -37,6 +45,10 @@ export function applyStageMessage(state: TheaterState, message: unknown): Theate
     default:
       return state;
   }
+}
+
+export function stageMoves(events: readonly StageEvent[]): Direction[] {
+  return events.flatMap((event) => (event.type === "move" ? [event.direction] : []));
 }
 
 export function applyStageEvents(state: TheaterState, events: readonly unknown[]): TheaterState {

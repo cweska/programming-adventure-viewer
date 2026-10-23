@@ -41,3 +41,6 @@ jobs:
 
       - name: End-to-end tests
         run: npm run test:e2e
+
+      - name: Static export for GitHub Pages
+        run: npm run build:pages

@@ -15,9 +15,9 @@ describe("lesson catalog", () => {
   it("saves a draft and publishes one lesson at a time", () => {
     const root = mkdtempSync(path.join(tmpdir(), "catalog-"));
     dirs.push(root);
-    mkdirSync(path.join(root, "content", "sample"), { recursive: true });
+    mkdirSync(path.join(root, "content", "modules", "sample"), { recursive: true });
     writeFileSync(
-      path.join(root, "content", "sample", "module.json"),
+      path.join(root, "content", "modules", "sample", "module.json"),
       JSON.stringify(makeValidModule()),
     );
     const catalog = createCatalog(root);

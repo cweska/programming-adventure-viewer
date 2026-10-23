@@ -1,4 +1,4 @@
-import type { Beat } from "./schema";
+import { requiresPass, type Beat } from "./schema";
 import { starterFor } from "./progression";
 
 export type PartNavigation = {
@@ -23,9 +23,10 @@ export function canGoForward(state: PartNavigation, partCount: number): boolean 
 function refreshUnlock(state: PartNavigation, parts: Beat[]): PartNavigation {
   let unlocked = Math.max(state.unlocked, state.index);
   for (let index = 0; index < parts.length; index += 1) {
-    const story = !parts[index]?.activity;
+    const part = parts[index];
+    const open = part ? !requiresPass(part) : false;
     const passed = state.passed[index] === true;
-    if ((story || passed) && index <= unlocked && index + 1 < parts.length) {
+    if ((open || passed) && index <= unlocked && index + 1 < parts.length) {
       unlocked = Math.max(unlocked, index + 1);
     }
   }

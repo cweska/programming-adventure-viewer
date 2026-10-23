@@ -159,7 +159,7 @@ export default function AuthorPage() {
   function openPreview() {
     if (!draft) return;
     sessionStorage.setItem(PREVIEW_STORAGE_KEY, JSON.stringify(draft));
-    window.location.href = `${pagePath("/")}?preview=1`;
+    window.location.href = pagePath("/preview");
   }
 
   return (

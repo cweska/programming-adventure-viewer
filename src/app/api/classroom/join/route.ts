@@ -4,9 +4,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
-  let body: { joinCode?: unknown; displayName?: unknown };
+  let body: { joinCode?: unknown; displayName?: unknown; moduleId?: unknown };
   try {
-    body = (await request.json()) as { joinCode?: unknown; displayName?: unknown };
+    body = (await request.json()) as { joinCode?: unknown; displayName?: unknown; moduleId?: unknown };
   } catch {
     return Response.json({ error: "The request was not JSON." }, { status: 400 });
   }
@@ -14,7 +14,8 @@ export async function POST(request: Request) {
     return Response.json({ error: "A display name and join code are required." }, { status: 400 });
   }
   try {
-    const result = getClassroomStore().join(body.joinCode, body.displayName);
+    const moduleId = typeof body.moduleId === "string" ? body.moduleId : undefined;
+    const result = getClassroomStore().join(body.joinCode, body.displayName, moduleId);
     return Response.json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Could not join that classroom.";

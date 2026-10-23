@@ -1,0 +1,7 @@
+{
+  "id": "warrior",
+  "name": "Warrior",
+  "role": "Tank",
+  "description": "A front-line fighter who takes the hits so the rest of the party does not have to.",
+  "baseHp": 12
+}

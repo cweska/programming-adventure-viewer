@@ -64,7 +64,7 @@ export type CompletionOptions = {
 
 export interface ClassroomStore {
   createClassroom(input: { name: string; reportEmail: string; joinCode: string }): Classroom;
-  join(joinCode: string, displayName: string): JoinResult;
+  join(joinCode: string, displayName: string, moduleId?: string): JoinResult;
   resume(studentId: string, moduleId: string): Progress | null;
   saveLatestCode(input: {
     studentId: string;
@@ -283,7 +283,7 @@ export function openClassroomStore(filename: string): ClassroomStore {
       return mapClassroom(classroom);
     },
 
-    join(joinCode, displayName) {
+    join(joinCode, displayName, moduleId) {
       const code = required(joinCode, "Join code");
       const name = required(displayName, "Display name");
       const classroom = classroomByCode.get(code) as ClassroomRow | undefined;
@@ -298,7 +298,9 @@ export function openClassroomStore(filename: string): ClassroomStore {
         };
         insertStudent.run(student);
       }
-      const progress = latestForStudent.get(student.id) as ProgressRow | undefined;
+      const progress = (moduleId ? resumeRow.get(student.id, moduleId) : latestForStudent.get(student.id)) as
+        | ProgressRow
+        | undefined;
       return {
         classroom: mapClassroom(classroom),
         student: mapStudent(student),

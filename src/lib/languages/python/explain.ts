@@ -59,6 +59,12 @@ export function explainPython(traceback: string): Explanation {
           : "This line mixes types. Check the values you passed into the operation.",
         raw,
       };
+    case "ValueError":
+      return {
+        title: "Value not allowed",
+        hint: message || "That value is the right type but not one this code accepts. Check the value you passed in.",
+        raw,
+      };
     case "IndexError":
       return {
         title: "Index out of range",

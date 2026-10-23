@@ -1,5 +1,6 @@
-import { Player } from "../components/Player";
+import { ModulePicker } from "../components/ModulePicker";
+import { studentModules } from "../lib/lesson/modules";
 
 export default function Page() {
-  return <Player />;
+  return <ModulePicker modules={studentModules()} />;
 }

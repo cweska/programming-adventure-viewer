@@ -1,0 +1,126 @@
+{
+  "id": "leylines-awaken",
+  "title": "Leyline's Awaken",
+  "summary": "Two strangers to this world, a humming medallion, and a flashover rolling over the hills. Program your party's first steps.",
+  "campaign": { "order": 1, "label": "Module 1" },
+  "language": "python",
+  "lessons": [
+    {
+      "id": "leylines-awaken",
+      "title": "Campaign Module 1: Leyline's Awaken",
+      "published": true,
+      "beats": [
+        {
+          "id": "peaceful-night",
+          "editor": "hidden",
+          "instructions": "Read the scene. Press Continue when you are ready.",
+          "scene": {
+            "caption": "This night was a peaceful one. The gentle chirp of crickets and the chorus of leaves shifting in the warm summer's breeze was enough to unwind a few coils of tension in Oogrish's chest.",
+            "images": [
+              {
+                "id": "hills",
+                "src": "/scenes/leyline-hills-night.svg",
+                "alt": "Grassy hills at night under a purple sky, with fireflies, stars, and a large green moon"
+              }
+            ]
+          }
+        },
+        {
+          "id": "humming-medallion",
+          "editor": "hidden",
+          "instructions": "Read the scene. Press Continue when you are ready.",
+          "scene": {
+            "caption": "His medallion started humming again. He let out a frustrated sigh. It had been two weeks since he appeared in the greenroom with Gearshift. The two of them were aliens to this new world. The memories of their lives before the greenroom were still faint disparate sparks. Flashes of images of people and places devoid of any meaning or context.",
+            "images": [
+              {
+                "id": "medallion",
+                "src": "/scenes/leyline-medallion.svg",
+                "alt": "A golden clockwork medallion in Oogrish's hand, with a glowing blue sphere beneath the cogs"
+              }
+            ]
+          }
+        },
+        {
+          "id": "flashover-warning",
+          "editor": "hidden",
+          "instructions": "Read the scene. Press Continue when you are ready.",
+          "scene": {
+            "caption": "Gearshift sat up from his spot next to Oogrish in the grassy field as they heard Mar'Tu calling in their thick accent. \"Boys, there is another flashover coming, get inside.\"",
+            "images": [
+              {
+                "id": "cabin",
+                "src": "/scenes/leyline-cabin.svg",
+                "alt": "A small cabin under a starry purple sky, golden light in its windows, and a figure calling from the open door"
+              }
+            ]
+          }
+        },
+        {
+          "id": "program-movement",
+          "instructions": "Each def line makes a function: a named set of steps. The game runs move_left() when you press the left arrow, move_right() for the right arrow, and so on. Right now each function only says pass, which means do nothing. Replace each pass with a command that moves the party, like party.move(\"left\"). Use the direction in the function's name, then press Run.",
+          "scene": {
+            "caption": "In order for characters in the game to move, we have to program the ability to receive input from the arrow keys. Finish these functions that will make the character attempt to move the corresponding direction whenever they hit an arrow key.",
+            "images": []
+          },
+          "board": {
+            "map": "moonlit-hills",
+            "party": ["gearshift", "oogrish"],
+            "partyStart": [
+              { "x": 3, "y": 5 },
+              { "x": 2, "y": 5 }
+            ],
+            "actors": [{ "id": "mar-tu", "kind": "npc", "ref": "mar-tu", "x": 12, "y": 4 }],
+            "features": [],
+            "seed": 1
+          },
+          "activity": {
+            "kind": "interactive",
+            "starterCode": "def move_left():\n    pass\n\n\ndef move_right():\n    pass\n\n\ndef move_up():\n    pass\n\n\ndef move_down():\n    pass\n",
+            "passFeedback": "The party steps left, right, up, and down. The arrow keys and W A S D now move your party. Click the map to try it, then press Continue.",
+            "failFeedback": "Each function should use the party's move command with the direction from its own name.",
+            "unlocks": ["movement"],
+            "checks": [
+              {
+                "name": "move_left steps left",
+                "code": "party._moves.clear()\nmove_left()\nassert party._moves == [\"left\"], 'move_left() should call party.move(\"left\").'"
+              },
+              {
+                "name": "move_right steps right",
+                "code": "party._moves.clear()\nmove_right()\nassert party._moves == [\"right\"], 'move_right() should call party.move(\"right\").'"
+              },
+              {
+                "name": "move_up steps up",
+                "code": "party._moves.clear()\nmove_up()\nassert party._moves == [\"up\"], 'move_up() should call party.move(\"up\").'"
+              },
+              {
+                "name": "move_down steps down",
+                "code": "party._moves.clear()\nmove_down()\nassert party._moves == [\"down\"], 'move_down() should call party.move(\"down\").'"
+              }
+            ]
+          }
+        },
+        {
+          "id": "beat-the-flashover",
+          "editor": "hidden",
+          "instructions": "Click the map, then use the arrow keys or W A S D to walk to the cabin door. Tab switches which hero leads.",
+          "scene": {
+            "caption": "Another flashover is rolling in over the hills. Get Gearshift and Oogrish to the door of Mar'Tu's cabin before it hits!",
+            "images": []
+          },
+          "board": {
+            "map": "moonlit-hills",
+            "party": ["gearshift", "oogrish"],
+            "partyStart": [
+              { "x": 3, "y": 5 },
+              { "x": 2, "y": 5 }
+            ],
+            "actors": [{ "id": "mar-tu", "kind": "npc", "ref": "mar-tu", "x": 12, "y": 4 }],
+            "features": ["movement"],
+            "goal": { "type": "reach", "x": 11, "y": 3, "label": "the cabin door" },
+            "seed": 1
+          }
+        }
+      ]
+    }
+  ]
+}
