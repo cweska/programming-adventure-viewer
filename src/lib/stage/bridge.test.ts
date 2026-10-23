@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { applyStageMessage, parseStageMessage, stageMoves, type StageEvent, type TheaterState } from "./bridge";
+import {
+  applyStageMessage,
+  conversationEvents,
+  parseStageMessage,
+  stageMoves,
+  type StageEvent,
+  type TheaterState,
+} from "./bridge";
 
 const initial: TheaterState = {
   caption: "The gate is shut.",
@@ -40,4 +47,34 @@ describe("stage bridge", () => {
     ];
     expect(stageMoves(events)).toEqual(["left", "down"]);
   });
+
+  it("reads dialogue prompts, options, spoken replies, and highlights from Python", () => {
+    expect(parseStageMessage({ type: "prompt", text: "Will you help us?" })).toEqual({
+      type: "prompt",
+      text: "Will you help us?",
+    });
+    expect(parseStageMessage({ type: "options", options: ["Yes", "No"] })).toEqual({
+      type: "options",
+      options: ["Yes", "No"],
+    });
+    expect(parseStageMessage({ type: "options", options: ["a", "b", "c", "d", "e"] })).toBeNull();
+    expect(parseStageMessage({ type: "options", options: [1] })).toBeNull();
+    expect(parseStageMessage({ type: "speak", option: "option 2" })).toEqual({ type: "speak", option: "option 2" });
+    expect(parseStageMessage({ type: "highlight", option: "option 2" })).toEqual({
+      type: "highlight",
+      option: "option 2",
+    });
+    expect(parseStageMessage({ type: "prompt" })).toBeNull();
+    expect(applyStageMessage(initial, { type: "prompt", text: "Hi" })).toBe(initial);
+    const events: StageEvent[] = [
+      { type: "move", direction: "up" },
+      { type: "prompt", text: "Hi" },
+      { type: "speak", option: "option 1" },
+    ];
+    expect(conversationEvents(events)).toEqual([
+      { type: "prompt", text: "Hi" },
+      { type: "speak", option: "option 1" },
+    ]);
+  });
 });
+
