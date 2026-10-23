@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createClassroomInBrowser, reportClassroomInBrowser } from "../../lib/classroom/local-store";
 import { isStaticExport, pagePath } from "../../lib/site";
@@ -118,6 +119,16 @@ export default function ClassroomPage() {
         </label>
         <button type="submit">Create classroom</button>
       </form>
+      <section className="teacher-tools" data-testid="teacher-tools">
+        <h2>Practice yard</h2>
+        <p>
+          Try movement, dialogue, and melee combat before they show up in the campaign. Students do not see this
+          module, and nothing in it is saved.
+        </p>
+        <Link href={{ pathname: "/play/training-grounds", query: { preview: "1" } }} data-testid="open-practice-yard">
+          Open the practice yard
+        </Link>
+      </section>
 
       <form
         className="classroom-form"

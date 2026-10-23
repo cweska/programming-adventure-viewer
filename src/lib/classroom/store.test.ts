@@ -62,6 +62,31 @@ describe("classroom store", () => {
     expect(store.resume(joined.student.id, "emberkeep")?.latestCode).toBe(saved.latestCode);
   });
 
+  it("resumes the progress for the module being opened", () => {
+    const store = tempStore();
+    store.createClassroom({ name: "Period 2", reportEmail: "t@school.edu", joinCode: "LEY" });
+    const student = store.join("LEY", "Mira").student;
+    store.saveProgress({
+      studentId: student.id,
+      moduleId: "emberkeep",
+      lessonId: "first-words",
+      beatId: "say-shut",
+      status: "in_progress",
+      latestCode: "",
+    });
+    store.saveProgress({
+      studentId: student.id,
+      moduleId: "leylines-awaken",
+      lessonId: "leylines-awaken",
+      beatId: "program-movement",
+      status: "in_progress",
+      latestCode: "",
+    });
+    expect(store.join("LEY", "Mira", "emberkeep").progress?.beatId).toBe("say-shut");
+    expect(store.join("LEY", "Mira", "leylines-awaken").progress?.beatId).toBe("program-movement");
+    expect(store.join("LEY", "Mira", "training-grounds").progress).toBeNull();
+  });
+
   it("reports one row per student per lesson", () => {
     const store = tempStore();
     const room = store.createClassroom({

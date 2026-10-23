@@ -77,8 +77,10 @@ function writeDatabase(storage: KeyValueStorage, database: Database) {
   storage.setItem(STORAGE_KEY, JSON.stringify(database));
 }
 
-function latestProgress(database: Database, studentId: string): LocalProgress | null {
-  const rows = database.progress.filter((item) => item.studentId === studentId);
+function latestProgress(database: Database, studentId: string, moduleId?: string): LocalProgress | null {
+  const rows = database.progress.filter(
+    (item) => item.studentId === studentId && (!moduleId || item.moduleId === moduleId),
+  );
   if (rows.length === 0) return null;
   return rows.reduce((latest, item) => (item.updatedAt > latest.updatedAt ? item : latest));
 }
@@ -108,7 +110,7 @@ export function createLocalClassroomStore(storage: KeyValueStorage) {
       return classroom;
     },
 
-    join(joinCode: string, displayName: string) {
+    join(joinCode: string, displayName: string, moduleId?: string) {
       const code = required(joinCode, "Join code");
       const name = required(displayName, "Display name");
       const database = readDatabase(storage);
@@ -130,7 +132,7 @@ export function createLocalClassroomStore(storage: KeyValueStorage) {
       return {
         classroom,
         student,
-        progress: latestProgress(readDatabase(storage), student.id),
+        progress: latestProgress(readDatabase(storage), student.id, moduleId),
       };
     },
 
@@ -223,9 +225,9 @@ export function createClassroomInBrowser(input: { name: string; reportEmail: str
   }
 }
 
-export function joinClassroomInBrowser(displayName: string, joinCode: string) {
+export function joinClassroomInBrowser(displayName: string, joinCode: string, moduleId?: string) {
   try {
-    const result = localClassroomStore().join(joinCode, displayName);
+    const result = localClassroomStore().join(joinCode, displayName, moduleId);
     return {
       student: {
         id: result.student.id,

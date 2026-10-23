@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { mergeFeatures } from "../lib/game/state";
 import { emberkeepModule } from "../lib/lesson/emberkeep";
+import { findModule } from "../lib/lesson/modules";
 import {
   canGoBack,
   canGoForward,
@@ -21,7 +23,7 @@ import {
   nextTheaterState,
   type FailedCheck,
 } from "../lib/lesson/progression";
-import { moduleSchema, type Beat, type Module } from "../lib/lesson/schema";
+import { moduleSchema, requiresPass, showsEditor, type Beat, type Module } from "../lib/lesson/schema";
 import { formatForTrigger, type FormatTrigger } from "../lib/languages/python/format-policy";
 import {
   joinClassroomInBrowser,
@@ -30,8 +32,9 @@ import {
 import { pythonAdapter, PythonTimeoutError, whenPythonReady } from "../lib/languages/python";
 import type { Explanation } from "../lib/languages/types";
 import { isStaticExport } from "../lib/site";
-import type { TheaterState } from "../lib/stage/bridge";
+import { stageMoves, type TheaterState } from "../lib/stage/bridge";
 import { ConsolePanel } from "./ConsolePanel";
+import { GameBoard, type BoardScript } from "./game/GameBoard";
 import { PythonEditor } from "./PythonEditor";
 import { Theater } from "./Theater";
 
@@ -57,11 +60,12 @@ function lessonsFor(module: Module, preview: boolean) {
   return preview ? module.lessons : module.lessons.filter((lesson) => lesson.published);
 }
 
-export function Player() {
-  const initialLesson = emberkeepModule.lessons[0];
+export function Player({ moduleId, draft = false }: { moduleId?: string; draft?: boolean }) {
+  const startModule = (moduleId ? findModule(moduleId) : undefined) ?? emberkeepModule;
+  const initialLesson = startModule.lessons[0];
   const initialNav = createPartNavigation(initialLesson.beats);
-  const [preview, setPreview] = useState(false);
-  const [lessonModule, setLessonModule] = useState<Module>(emberkeepModule);
+  const [preview, setPreview] = useState(draft);
+  const [lessonModule, setLessonModule] = useState<Module>(startModule);
   const [lessonIndex, setLessonIndex] = useState(0);
   const [nav, setNav] = useState<PartNavigation>(initialNav);
   const [code, setCode] = useState(initialNav.code[0] ?? "");
@@ -78,13 +82,14 @@ export function Player() {
   const [joinCode, setJoinCode] = useState("");
   const [joinError, setJoinError] = useState("");
   const [joining, setJoining] = useState(false);
+  const [script, setScript] = useState<BoardScript | null>(null);
 
   const navRef = useRef(nav);
   const indexRef = useRef(0);
   const codeRef = useRef(initialNav.code[0] ?? "");
   const lessonIdRef = useRef(initialLesson.id);
   const frontierRef = useRef(0);
-  const previewRef = useRef(false);
+  const previewRef = useRef(draft);
   const studentRef = useRef<StudentSession | null>(null);
   const moduleRef = useRef(lessonModule);
 
@@ -92,7 +97,11 @@ export function Player() {
   const lesson = lessons[lessonIndex];
   const beat = lesson?.beats[nav.index];
   const atEnd = Boolean(lesson) && nav.index >= lesson.beats.length - 1;
-  const continueUnlocked = Boolean(beat) && !(lessonCompleted && atEnd) && (!beat.activity || nav.passed[nav.index] === true);
+  const partPassed = nav.passed[nav.index] === true;
+  const continueUnlocked = Boolean(beat) && !(lessonCompleted && atEnd) && (!requiresPass(beat) || partPassed);
+  const boardFeatures = beat?.board
+    ? mergeFeatures(beat.board.features, partPassed ? (beat.activity?.unlocks ?? []) : [])
+    : [];
 
   function writeNavigation(next: PartNavigation) {
     navRef.current = next;
@@ -113,6 +122,7 @@ export function Player() {
     setExplainer(null);
     setFeedback(null);
     setFailedChecks([]);
+    setScript(null);
     void formatPart("load", next.index, source, lessonId);
   }
 
@@ -170,10 +180,11 @@ export function Player() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const isPreview = params.get("preview") === "1";
+    const isPreview = draft || params.get("preview") === "1";
     previewRef.current = isPreview;
     if (isPreview) {
       setPreview(true);
+      if (!draft) return;
       const raw = sessionStorage.getItem(PREVIEW_STORAGE_KEY);
       if (!raw) return;
       try {
@@ -197,7 +208,7 @@ export function Player() {
     try {
       const record = JSON.parse(saved) as { displayName?: string; joinCode?: string };
       if (record.displayName && record.joinCode) {
-        void joinClass(record.displayName, record.joinCode, emberkeepModule, false);
+        void joinClass(record.displayName, record.joinCode, moduleRef.current, false);
       }
     } catch {
       localStorage.removeItem(STUDENT_STORAGE_KEY);
@@ -225,12 +236,12 @@ export function Player() {
     setJoinError("");
     try {
       const body = isStaticExport
-        ? joinClassroomInBrowser(name, codeValue)
+        ? joinClassroomInBrowser(name, codeValue, module.id)
         : await (async () => {
             const response = await fetch("/api/classroom/join", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ displayName: name, joinCode: codeValue }),
+              body: JSON.stringify({ displayName: name, joinCode: codeValue, moduleId: module.id }),
             });
             const payload = (await response.json()) as {
               error?: string;
@@ -333,6 +344,10 @@ export function Player() {
         const next = nextTheaterState(part, result.stageEvents);
         return { ...next, flareToken: previous.flareToken + next.flareToken };
       });
+      const moves = stageMoves(result.stageEvents);
+      if (part.board && moves.length > 0) {
+        setScript((previous) => ({ token: (previous?.token ?? 0) + 1, moves }));
+      }
       await persist({
         status: "in_progress",
         lessonId: currentLesson.id,
@@ -363,6 +378,21 @@ export function Player() {
     }
   }
 
+  function onBoardGoal() {
+    const currentLesson = lessons[lessonIndex];
+    const current = navRef.current;
+    const part = currentLesson?.beats[current.index];
+    if (!currentLesson || !part?.board?.goal || current.passed[current.index]) return;
+    writeNavigation(recordPass(current, currentLesson.beats));
+    void persist({
+      status: "in_progress",
+      lessonId: currentLesson.id,
+      beatId: part.id,
+      latestCode: codeRef.current,
+      index: current.index,
+    });
+  }
+
   function onBack() {
     if (!lesson) return;
     const next = goBack(navRef.current);
@@ -379,7 +409,7 @@ export function Player() {
 
   async function onContinue() {
     if (!lesson || !beat) return;
-    if (beat.activity && navRef.current.passed[navRef.current.index] !== true) return;
+    if (requiresPass(beat) && navRef.current.passed[navRef.current.index] !== true) return;
     const nextIndex = navRef.current.index + 1;
     if (nextIndex < lesson.beats.length) {
       const next = goForward(navRef.current, lesson.beats);
@@ -487,6 +517,20 @@ export function Player() {
         caption={theater.caption}
         flareToken={theater.flareToken}
         focusedImageId={theater.focusedImageId}
+        stage={
+          beat.board ? (
+            <GameBoard
+              key={`${lesson.id}/${beat.id}`}
+              board={beat.board}
+              features={boardFeatures}
+              script={script}
+              autoFocus={!showsEditor(beat)}
+              compact={showsEditor(beat)}
+              lockedHint={beat.activity ? "Finish the code below and press Run." : null}
+              onGoal={onBoardGoal}
+            />
+          ) : undefined
+        }
       />
 
       <section className="instructions" data-testid="instructions">
@@ -510,28 +554,30 @@ export function Player() {
         <p>{beat.instructions}</p>
       </section>
 
-      <section className="code-panel">
-        <div className="toolbar">
-          <button
-            type="button"
-            data-testid="run"
-            onClick={() => void onRun()}
-            disabled={!pythonReady || running}
-          >
-            {running ? "Running…" : pythonReady ? "Run" : "Loading Python…"}
-          </button>
-          <span data-testid="python-status" className="python-status">
-            {pythonReady ? "Python is ready" : "Python is loading"}
-          </span>
-        </div>
-        <PythonEditor code={code} onChange={onCodeChange} onBlur={onEditorBlur} />
-        <ConsolePanel
-          output={output}
-          explainer={explainer}
-          feedback={feedback}
-          failedChecks={failedChecks}
-        />
-      </section>
+      {showsEditor(beat) ? (
+        <section className="code-panel">
+          <div className="toolbar">
+            <button
+              type="button"
+              data-testid="run"
+              onClick={() => void onRun()}
+              disabled={!pythonReady || running}
+            >
+              {running ? "Running…" : pythonReady ? "Run" : "Loading Python…"}
+            </button>
+            <span data-testid="python-status" className="python-status">
+              {pythonReady ? "Python is ready" : "Python is loading"}
+            </span>
+          </div>
+          <PythonEditor code={code} onChange={onCodeChange} onBlur={onEditorBlur} />
+          <ConsolePanel
+            output={output}
+            explainer={explainer}
+            feedback={feedback}
+            failedChecks={failedChecks}
+          />
+        </section>
+      ) : null}
 
       {continueUnlocked ? (
         <button type="button" className="continue" data-testid="continue" onClick={() => void onContinue()}>

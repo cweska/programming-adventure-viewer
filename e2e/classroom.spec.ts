@@ -11,7 +11,7 @@ test("a teacher sees a student after they join and advance", async ({ page }) =>
   await expect(page.getByTestId("created-code")).toHaveText(code);
   await expect(page.getByTestId("report-empty")).toBeVisible();
 
-  await page.goto("/");
+  await page.goto("/play/emberkeep");
   await page.getByLabel("Display name").fill("Mira");
   await page.getByLabel("Join code").fill(code);
   await page.getByRole("button", { name: "Join class" }).click();

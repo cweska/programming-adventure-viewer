@@ -51,6 +51,31 @@ describe("browser classroom store", () => {
     });
   });
 
+  it("resumes the progress for the module being opened", () => {
+    const store = createLocalClassroomStore(memoryStorage());
+    store.createClassroom({ name: "Period 2", reportEmail: "teacher@example.com", joinCode: "GATE" });
+    const student = store.join("GATE", "Mira").student;
+    store.saveProgress({
+      studentId: student.id,
+      moduleId: "emberkeep",
+      lessonId: "first-words",
+      beatId: "say-shut",
+      status: "in_progress",
+      latestCode: "",
+    });
+    store.saveProgress({
+      studentId: student.id,
+      moduleId: "leylines-awaken",
+      lessonId: "leylines-awaken",
+      beatId: "program-movement",
+      status: "in_progress",
+      latestCode: "",
+    });
+    expect(store.join("GATE", "Mira", "emberkeep").progress?.beatId).toBe("say-shut");
+    expect(store.join("GATE", "Mira", "leylines-awaken").progress?.beatId).toBe("program-movement");
+    expect(store.join("GATE", "Mira", "training-grounds").progress).toBeNull();
+  });
+
   it("does not share data across storage buckets", () => {
     const first = createLocalClassroomStore(memoryStorage());
     const second = createLocalClassroomStore(memoryStorage());
