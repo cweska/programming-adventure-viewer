@@ -69,7 +69,8 @@ export type NoticeKind =
   | "no-moves"
   | "not-your-turn"
   | "magic-locked"
-  | "cast-hint";
+  | "cast-hint"
+  | "cast-run";
 
 export type Notice = { kind: NoticeKind; text: string; id: number };
 

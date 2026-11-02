@@ -12,6 +12,7 @@ const NOTICES: Record<Exclude<NoticeKind, "nothing-to-say">, string> = {
   "not-your-turn": "Wait for your turn.",
   "magic-locked": "Casting hasn't been programmed yet.",
   "cast-hint": "The party stays inside the barrier. Click a party member or press 1–4 to cast.",
+  "cast-run": "Press Run to cast with your own code.",
 };
 
 export function delta(direction: Direction): Position {
