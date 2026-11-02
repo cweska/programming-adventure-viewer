@@ -145,7 +145,7 @@ Some parts run the student's own functions when something is clicked. After a pa
 
 Python helpers for Module 2:
 - `reinforce_barrier(caster)` is what Strengthen Magic does.
-- `print_mana(caster, mana_bar)` shows a mana bar. Checks can read `_mana_prints`.
+- `print_mana(caster, mana_bar)` shows a mana bar. Part 14's starter code shows it already finished, so students can see what it does. Its one line calls `party.show_mana_bar(caster, mana_bar)`, which draws the bar. The prelude also defines `print_mana`, in case a student deletes theirs. Checks can read `_mana_prints`.
 - `show_roll(...)` and `_required_roll(check)` are only used by the skill-check buttons and checks.
 
 ### Board fields

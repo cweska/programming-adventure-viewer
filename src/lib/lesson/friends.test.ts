@@ -254,6 +254,46 @@ describe("Campaign Module 2: Friends In Low Places", () => {
       ]);
     });
 
+    it("shows print_mana() already finished and a hint above every line to change", () => {
+      const starter = activityOf("mana-bars").starterCode;
+      expect(starter.startsWith("def print_mana(caster, mana_bar):\n")).toBe(true);
+      expect(starter).toContain("    party.show_mana_bar(caster, mana_bar)\n");
+      expect(starter).toContain("already finished");
+      const lines = starter.split("\n");
+      for (const target of ['    filled = "█" * 0', '    empty = "░" * 0', "    pass"]) {
+        const index = lines.indexOf(target);
+        expect(index, target).toBeGreaterThan(0);
+        expect(lines[index - 1].trim().startsWith("#"), target).toBe(true);
+      }
+      expect(lines[lines.indexOf('    filled = "█" * 0') - 1]).toContain('caster["mana"]');
+      expect(lines[lines.indexOf('    empty = "░" * 0') - 1]).toContain('caster["max_mana"] - caster["mana"]');
+      expect(lines[lines.indexOf("    pass") - 1]).toContain("Replace pass");
+      expect(MANA_ANSWER.startsWith("def print_mana(caster, mana_bar):\n")).toBe(true);
+    });
+
+    it("passes when the student fills in the starter's lines and keeps the comments", () => {
+      const edited = activityOf("mana-bars")
+        .starterCode.replace('"█" * 0', '"█" * caster["mana"]')
+        .replace('"░" * 0', '"░" * (caster["max_mana"] - caster["mana"])')
+        .replace("    pass\n", "    mana_bar = get_mana_bar(caster)\n    print_mana(caster, mana_bar)\n");
+      const result = run("mana-bars", edited);
+      expect(result.ok, result.error).toBe(true);
+      expect(passes(result)).toEqual([true, true, true, true]);
+    });
+
+    it("still draws the bars if the student deletes the finished print_mana()", () => {
+      const withoutHelper = MANA_ANSWER.replace(/^def print_mana[\s\S]*?\n\n\n/, "");
+      expect(withoutHelper).not.toContain("def print_mana");
+      const result = run("mana-bars", withoutHelper);
+      expect(passes(result)).toEqual([true, true, true, true]);
+      expect(
+        result.events
+          .filter((event) => event.type === "mana")
+          .slice(0, 4)
+          .map((event) => event.name),
+      ).toEqual(["Master Oogrish", "Gearshift", "Bomb Shell", "Lucky"]);
+    });
+
     it("catches a wrong bar and a bar that skips the variable", () => {
       const wrong = run("mana-bars", MANA_ANSWER.replace('(caster["max_mana"] - caster["mana"])', 'caster["max_mana"]'));
       expect(passes(wrong)).toEqual([false, false, true, true]);

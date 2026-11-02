@@ -305,7 +305,7 @@
         },
         {
           "id": "mana-bars",
-          "instructions": "get_mana_bar(caster) builds a text bar from two kinds of blocks: a full block █ for each point of mana the caster has, and a light block ░ for each point they've used. Replace the first 0 with caster[\"mana\"] and the second 0 with caster[\"max_mana\"] - caster[\"mana\"]. Then finish show_mana(caster) like present_dialogue_option() in Module 1: store the result of get_mana_bar(caster) in a variable, then pass the caster and that variable to print_mana(). The loop at the bottom shows every party member's bar. Press Run.",
+          "instructions": "print_mana() at the top is already finished, so leave it as it is. The comments mark each line you need to change. get_mana_bar(caster) builds a text bar from two kinds of blocks: a full block █ for each point of mana the caster has, and a light block ░ for each point they've used. Replace the first 0 with caster[\"mana\"] and the second 0 with caster[\"max_mana\"] - caster[\"mana\"]. Then finish show_mana(caster) like present_dialogue_option() in Module 1: store the result of get_mana_bar(caster) in a variable, then pass the caster and that variable to print_mana(). The loop at the bottom shows every party member's bar. Press Run.",
           "scene": {
             "caption": "Magic isn't free. Every spell draws on a character's mana, the magical energy that comes from their connection to the Alatium, the source of all magic. Before anyone casts, the player needs to see how much mana each character has left. Let's build a mana bar.",
             "images": [
@@ -327,7 +327,7 @@
           },
           "activity": {
             "kind": "interactive",
-            "starterCode": "def get_mana_bar(caster):\n    filled = \"█\" * 0\n    empty = \"░\" * 0\n    return \"Mana [\" + filled + empty + \"] \" + str(caster[\"mana\"]) + \"/\" + str(caster[\"max_mana\"])\n\n\ndef show_mana(caster):\n    pass\n\n\nfor member in party.members:\n    show_mana(member)\n",
+            "starterCode": "def print_mana(caster, mana_bar):\n    # This function is already finished. You don't need to change it.\n    # It draws mana_bar in this caster's row of the party panel.\n    party.show_mana_bar(caster, mana_bar)\n\n\ndef get_mana_bar(caster):\n    # Change this 0 to the caster's mana: caster[\"mana\"]\n    filled = \"█\" * 0\n    # Change this 0 to the mana they've used: caster[\"max_mana\"] - caster[\"mana\"]\n    empty = \"░\" * 0\n    return \"Mana [\" + filled + empty + \"] \" + str(caster[\"mana\"]) + \"/\" + str(caster[\"max_mana\"])\n\n\ndef show_mana(caster):\n    # 1. Store the result of get_mana_bar(caster) in a variable.\n    # 2. Pass the caster and that variable to print_mana().\n    # Replace pass with those two lines.\n    pass\n\n\nfor member in party.members:\n    show_mana(member)\n",
             "passFeedback": "Mana bars working, well done!",
             "failFeedback": "Use the caster's mana for the full blocks and max_mana minus mana for the empty ones, then pass the bar to print_mana().",
             "party": {
@@ -468,7 +468,7 @@
               },
               {
                 "from": "mana-bars",
-                "fallback": "def get_mana_bar(caster):\n    filled = \"█\" * caster[\"mana\"]\n    empty = \"░\" * (caster[\"max_mana\"] - caster[\"mana\"])\n    return \"Mana [\" + filled + empty + \"] \" + str(caster[\"mana\"]) + \"/\" + str(caster[\"max_mana\"])\n\n\ndef show_mana(caster):\n    mana_bar = get_mana_bar(caster)\n    print_mana(caster, mana_bar)\n\n\nfor member in party.members:\n    show_mana(member)\n"
+                "fallback": "def print_mana(caster, mana_bar):\n    # This function is already finished. You don't need to change it.\n    # It draws mana_bar in this caster's row of the party panel.\n    party.show_mana_bar(caster, mana_bar)\n\n\ndef get_mana_bar(caster):\n    filled = \"█\" * caster[\"mana\"]\n    empty = \"░\" * (caster[\"max_mana\"] - caster[\"mana\"])\n    return \"Mana [\" + filled + empty + \"] \" + str(caster[\"mana\"]) + \"/\" + str(caster[\"max_mana\"])\n\n\ndef show_mana(caster):\n    mana_bar = get_mana_bar(caster)\n    print_mana(caster, mana_bar)\n\n\nfor member in party.members:\n    show_mana(member)\n"
               }
             ],
             "checks": [

@@ -77,6 +77,11 @@ test.describe("Friends In Low Places", () => {
     await page.getByTestId("continue").click();
 
     await expect(page.getByTestId("mana-text-oogrish")).toHaveText("Mana bar not drawn yet");
+    const editor = page.locator('[data-testid="editor"] .cm-content');
+    await expect(editor).toContainText("def print_mana(caster, mana_bar):");
+    await expect(editor).toContainText("This function is already finished.");
+    await expect(editor).toContainText('# Change this 0 to the caster\'s mana: caster["mana"]');
+    await expect(editor).toContainText("# Replace pass with those two lines.");
     await solveFriends(page, MANA_SOLUTION, "Mana bars working, well done!");
     await expect(page.getByTestId("mana-text-oogrish")).toHaveText(bar(18, 18));
     await expect(page.getByTestId("mana-text-gearshift")).toHaveText(bar(15, 20));
