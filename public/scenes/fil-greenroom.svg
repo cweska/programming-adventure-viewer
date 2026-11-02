@@ -1,0 +1,208 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" role="img" aria-label="A faded green flashback of a bare room with the Ley Clock in the middle and four faint figures around it">
+  <defs>
+    <linearGradient id="wall" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3a2416"/>
+      <stop offset="1" stop-color="#5a3a22"/>
+    </linearGradient>
+    <linearGradient id="floor" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7a5230"/>
+      <stop offset="1" stop-color="#4a2f1a"/>
+    </linearGradient>
+    <linearGradient id="oak" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a6773f"/>
+      <stop offset="1" stop-color="#7a5229"/>
+    </linearGradient>
+    <linearGradient id="cherry" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a1442e"/>
+      <stop offset="1" stop-color="#6b2618"/>
+    </linearGradient>
+    <linearGradient id="stone" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8c8a86"/>
+      <stop offset="1" stop-color="#5e5b57"/>
+    </linearGradient>
+    <linearGradient id="night" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#160c32"/>
+      <stop offset="1" stop-color="#4a2c6a"/>
+    </linearGradient>
+    <linearGradient id="steel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8d9aa8"/>
+      <stop offset="1" stop-color="#b8c4d0"/>
+    </linearGradient>
+    <linearGradient id="plate" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f4f7fa"/>
+      <stop offset="0.5" stop-color="#c9d0d8"/>
+      <stop offset="1" stop-color="#8e98a4"/>
+    </linearGradient>
+    <linearGradient id="fur" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#b8602c"/>
+      <stop offset="1" stop-color="#8a4420"/>
+    </linearGradient>
+    <linearGradient id="gunmetal" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#4c5560"/>
+      <stop offset="0.6" stop-color="#6b7682"/>
+      <stop offset="1" stop-color="#4c5560"/>
+    </linearGradient>
+    <linearGradient id="shroud" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6c4a86"/>
+      <stop offset="1" stop-color="#3e2850"/>
+    </linearGradient>
+    <radialGradient id="tealGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#7ffff0" stop-opacity="0.8"/>
+      <stop offset="1" stop-color="#2fd6c4" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="warm" cx="0.2" cy="0.6" r="0.9">
+      <stop offset="0" stop-color="#ffb347" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#ffb347" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="fireGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffb347" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#ffb347" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="blueGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#8fe6ff" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#2f9be0" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="sphere" cx="0.4" cy="0.35" r="0.6">
+      <stop offset="0" stop-color="#eafcff"/>
+      <stop offset="0.4" stop-color="#6fd3ff"/>
+      <stop offset="1" stop-color="#1a6fd1"/>
+    </radialGradient>
+    <radialGradient id="redSphere" cx="0.4" cy="0.35" r="0.6">
+      <stop offset="0" stop-color="#ffe2dc"/>
+      <stop offset="0.4" stop-color="#ff5a46"/>
+      <stop offset="1" stop-color="#a3120c"/>
+    </radialGradient>
+    <radialGradient id="redGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ff6a50" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#d0201a" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="old" color-interpolation-filters="sRGB">
+      <feColorMatrix type="matrix" values="0.225 0.4425 0.0825 0 0.12  0.27 0.53 0.1 0 0.16  0.2 0.39 0.07 0 0.1  0 0 0 1 0"/>
+    </filter>
+    <radialGradient id="vignette" cx="0.5" cy="0.5" r="0.75">
+      <stop offset="0.55" stop-color="#1a2a14" stop-opacity="0"/>
+      <stop offset="1" stop-color="#1a2a14" stop-opacity="0.75"/>
+    </radialGradient>
+    <style>
+      .ghost { opacity: 0.5; animation: ghost 3s ease-in-out infinite alternate; }
+      .ghost.b { animation-delay: -0.7s; } .ghost.c { animation-delay: -1.4s; } .ghost.d { animation-delay: -2.1s; }
+      .pendulum { animation: swing 2.4s ease-in-out infinite alternate; transform-origin: 640px 186px; }
+      .exit { animation: exit 2.2s ease-in-out infinite alternate; }
+      @keyframes ghost { from { opacity: 0.35; } to { opacity: 0.6; } }
+      @keyframes swing { from { transform: rotate(-14deg); } to { transform: rotate(14deg); } }
+      @keyframes exit { from { opacity: 0.75; } to { opacity: 1; } }
+      @media (prefers-reduced-motion: reduce) { * { animation: none !important; } }
+    </style>
+  </defs>
+  <g filter="url(#old)">
+    <rect width="960" height="540" fill="#5f8a5a"/>
+    <g stroke="#4e7449" stroke-width="3" opacity="0.6"><path d="M0 120 H960 M0 240 H960"/></g>
+    <path d="M0 380 H960 V540 H0 Z" fill="#8a6440"/>
+    <g stroke="#5a3e26" stroke-width="2.5" opacity="0.7">
+      <path d="M0 410 H960 M0 446 H960 M0 488 H960 M150 380 L 110 540 M330 380 L 310 540 M500 380 L 500 540 M670 380 L 690 540 M840 380 L 880 540"/>
+    </g>
+    <rect x="820" y="140" width="130" height="240" fill="#3c5a38" stroke="#2a3a26" stroke-width="5"/>
+    <rect x="830" y="150" width="110" height="230" fill="#7a5a3a" stroke="#4a3420" stroke-width="3"/>
+    <circle cx="920" cy="270" r="6" fill="#c9a24a"/>
+    <rect x="842" y="200" width="86" height="28" rx="3" fill="#c9a24a" stroke="#6e4a12" stroke-width="2"/>
+    <text x="885" y="212" text-anchor="middle" font-family="Georgia, serif" font-size="11" fill="#3a2406">Greenroom,</text>
+    <text x="885" y="224" text-anchor="middle" font-family="Georgia, serif" font-size="11" fill="#3a2406">Interior</text>
+    <circle cx="885" cy="110" r="60" fill="#ff8a6a" opacity="0.25"/>
+    <rect x="840" y="92" width="90" height="36" rx="4" fill="#2a1410" stroke="#1a0a08" stroke-width="3"/>
+    <text class="exit" x="885" y="120" text-anchor="middle" font-family="Impact, 'Arial Black', sans-serif" font-size="26" fill="#ff5a3a">EXIT</text>
+    <g class="ghost a"><svg x="40" y="64" width="324" height="324" viewBox="0 0 64 64" ><rect x="13" y="3" width="6" height="16" fill="#7d8a99" stroke="#2b3138" stroke-width="1.5"/>
+  <rect x="45" y="3" width="6" height="16" fill="#7d8a99" stroke="#2b3138" stroke-width="1.5"/>
+  <rect x="14.5" y="1" width="3" height="3" fill="#ff8a3d"/>
+  <rect x="46.5" y="1" width="3" height="3" fill="#ff8a3d"/>
+  <rect x="25" y="6" width="14" height="11" rx="2" fill="#aeb9c6" stroke="#2b3138" stroke-width="1.5"/>
+  <rect x="27" y="10" width="10" height="3" fill="#5ff0ff"/>
+  <rect x="19" y="17" width="26" height="22" rx="2" fill="#9aa7b5" stroke="#2b3138" stroke-width="1.5"/>
+  <rect x="23" y="21" width="7" height="5" fill="#5d6874"/>
+  <rect x="34" y="21" width="7" height="5" fill="#5d6874"/>
+  <path d="M26 30 h12 l -6 6 Z" fill="#c43b3b" stroke="#2b3138" stroke-width="1"/>
+  <circle cx="13" cy="22" r="8" fill="#c43b3b" stroke="#2b3138" stroke-width="1.5"/>
+  <circle cx="51" cy="22" r="8" fill="#c43b3b" stroke="#2b3138" stroke-width="1.5"/>
+  <path d="M13 17 l1.4 3 3.2 .3 -2.4 2.1 .8 3.1 -3 -1.7 -3 1.7 .8 -3.1 -2.4 -2.1 3.2 -.3 Z" fill="#f4f0d8"/>
+  <path d="M51 17 l1.4 3 3.2 .3 -2.4 2.1 .8 3.1 -3 -1.7 -3 1.7 .8 -3.1 -2.4 -2.1 3.2 -.3 Z" fill="#f4f0d8"/>
+  <rect x="7" y="29" width="7" height="14" fill="#7d8a99" stroke="#2b3138" stroke-width="1.5"/>
+  <rect x="50" y="29" width="7" height="14" fill="#7d8a99" stroke="#2b3138" stroke-width="1.5"/>
+  <rect x="21" y="39" width="9" height="20" fill="#7d8a99" stroke="#2b3138" stroke-width="1.5"/>
+  <rect x="34" y="39" width="9" height="20" fill="#7d8a99" stroke="#2b3138" stroke-width="1.5"/>
+  <circle cx="25.5" cy="50" r="4.5" fill="#2b3138" stroke="#5d6874" stroke-width="2"/>
+  <circle cx="38.5" cy="50" r="4.5" fill="#2b3138" stroke="#5d6874" stroke-width="2"/>
+  <rect x="19" y="58" width="12" height="4" fill="#3f4852"/>
+  <rect x="33" y="58" width="12" height="4" fill="#3f4852"/>
+  <path d="M57 41 L 62 13" stroke="#dfe7ef" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M54 40 h 6" stroke="#b8925a" stroke-width="3" stroke-linecap="round"/></svg></g>
+    <g class="ghost b"><svg x="270" y="248" width="150" height="150" viewBox="0 0 64 64" ><path d="M51 4 L 51 60" stroke="#8a5a2b" stroke-width="3.5" stroke-linecap="round"/>
+  <circle cx="51" cy="6" r="4" fill="#8fdcff" stroke="#3b6f8a" stroke-width="1.5"/>
+  <ellipse cx="29" cy="38" rx="20" ry="17" fill="#556b2f" stroke="#26331a" stroke-width="2"/>
+  <path d="M17 32 l 8 -6 l 9 0 l 8 6 l -2 10 l -8 5 l -6 0 l -8 -5 Z" fill="#6f8b3e" stroke="#26331a" stroke-width="1.5"/>
+  <path d="M25 26 l -6 -7 M34 26 l 6 -7 M42 32 l 6 -2 M17 32 l -6 -2" stroke="#26331a" stroke-width="1.5"/>
+  <path d="M14 30 C 20 46, 38 50, 46 44" fill="none" stroke="#b73a2e" stroke-width="5"/>
+  <circle cx="32" cy="46" r="3.4" fill="#e3b53f" stroke="#7a5512" stroke-width="1"/>
+  <ellipse cx="44" cy="20" rx="10" ry="9" fill="#8fbf5c" stroke="#3a5a28" stroke-width="2"/>
+  <circle cx="47" cy="17" r="1.8" fill="#2a1d10"/>
+  <path d="M42 13 q 4 -3 9 0" stroke="#e8e2d0" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M49 23 C 54 24, 56 30, 54 36 M48 24 C 46 30, 42 33, 38 32" stroke="#f1ede1" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <ellipse cx="50" cy="35" rx="4" ry="3" fill="#8fbf5c" stroke="#3a5a28" stroke-width="1.5"/>
+  <ellipse cx="20" cy="56" rx="6" ry="4" fill="#8fbf5c" stroke="#3a5a28" stroke-width="1.5"/>
+  <ellipse cx="38" cy="56" rx="6" ry="4" fill="#8fbf5c" stroke="#3a5a28" stroke-width="1.5"/></svg></g>
+    <g class="ghost c"><svg x="556" y="200" width="190" height="190" viewBox="0 0 64 64" ><path d="M26 6 L 30 2 L 32 8 Z" fill="#7d8a99" stroke="#2b3138" stroke-width="1.2"/>
+  <ellipse cx="30" cy="15" rx="11" ry="9" fill="#5d6874" stroke="#2b3138" stroke-width="1.5"/>
+  <circle cx="34" cy="15" r="4.2" fill="#0d2b2b" stroke="#2b3138" stroke-width="1"/>
+  <circle cx="34" cy="15" r="2.6" fill="#2fd6c4"/>
+  <circle cx="35" cy="14" r="0.9" fill="#d8fffa"/>
+  <rect x="15" y="23" width="32" height="22" rx="4" fill="#5d6874" stroke="#2b3138" stroke-width="1.5"/>
+  <rect x="24" y="28" width="14" height="10" rx="2" fill="#0d2b2b" stroke="#2b3138" stroke-width="1"/>
+  <path d="M26 30.5 h10 M26 33 h10 M26 35.5 h10" stroke="#2fd6c4" stroke-width="1.4"/>
+  <path d="M8 22 q 7 -6 14 0 l -2 9 h -10 Z" fill="#a8743d" stroke="#5c3f12" stroke-width="1.5"/>
+  <path d="M40 22 q 7 -6 14 0 l -2 9 h -10 Z" fill="#a8743d" stroke="#5c3f12" stroke-width="1.5"/>
+  <rect x="9" y="30" width="7" height="12" rx="2" fill="#7d8a99" stroke="#2b3138" stroke-width="1.5"/>
+  <rect x="46" y="30" width="8" height="10" rx="2" fill="#7d8a99" stroke="#2b3138" stroke-width="1.5"/>
+  <rect x="50" y="33" width="10" height="5" rx="1.5" fill="#3f4852" stroke="#2b3138" stroke-width="1.2"/>
+  <circle cx="60" cy="35.5" r="1.4" fill="#2fd6c4"/>
+  <rect x="18" y="45" width="11" height="10" fill="#7d8a99" stroke="#2b3138" stroke-width="1.5"/>
+  <rect x="33" y="45" width="11" height="10" fill="#7d8a99" stroke="#2b3138" stroke-width="1.5"/>
+  <rect x="15" y="54" width="16" height="7" rx="3" fill="#2b3138"/>
+  <rect x="31" y="54" width="16" height="7" rx="3" fill="#2b3138"/>
+  <path d="M17 57.5 h12 M33 57.5 h12" stroke="#5d6874" stroke-width="1.5" stroke-dasharray="2 2"/></svg></g>
+    <g class="ghost d"><svg x="640" y="150" width="230" height="230" viewBox="0 0 64 64" ><path d="M20 14 C 18 4, 40 0, 44 10 C 48 12, 47 22, 42 25 L 22 25 C 17 22, 16 17, 20 14 Z" fill="#9c4a22" stroke="#4a210d" stroke-width="1.5"/>
+  <path d="M30 2 L 31 10" stroke="#c9c2b8" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M24 6 c -3 2 -4 5 -2 8" fill="none" stroke="#6b2f12" stroke-width="2"/>
+  <ellipse cx="34" cy="16" rx="8" ry="7" fill="#b55a2a" stroke="#4a210d" stroke-width="1.5"/>
+  <circle cx="33" cy="14" r="1.6" fill="#5fe08a"/>
+  <circle cx="38" cy="14" r="1.6" fill="#5fe08a"/>
+  <path d="M33 19.5 q 3 2 6 -1" stroke="#2a120a" stroke-width="1.4" fill="none"/>
+  <path d="M38 19 l 1 2.4 l 1 -2.6" fill="#f4f0e6"/>
+  <path d="M14 26 C 16 23, 46 23, 50 26 L 48 44 L 16 44 Z" fill="#dfe4ea" stroke="#6c7682" stroke-width="1.5"/>
+  <path d="M20 28 L 26 40 M44 28 L 38 40" stroke="#ffffff" stroke-width="2" opacity="0.7"/>
+  <path d="M15 27 l -3 -2 M49 27 l 3 -2" stroke="#9c4a22" stroke-width="2.5" stroke-linecap="round"/>
+  <rect x="8" y="27" width="8" height="15" rx="3" fill="#dfe4ea" stroke="#6c7682" stroke-width="1.5"/>
+  <rect x="48" y="27" width="8" height="15" rx="3" fill="#dfe4ea" stroke="#6c7682" stroke-width="1.5"/>
+  <path d="M40 42 q 4 3 3 7" fill="none" stroke="#d4a535" stroke-width="1.2"/>
+  <circle cx="43" cy="50" r="3" fill="#e3b53f" stroke="#7a5512" stroke-width="1"/>
+  <rect x="18" y="44" width="11" height="14" rx="2" fill="#dfe4ea" stroke="#6c7682" stroke-width="1.5"/>
+  <rect x="35" y="44" width="11" height="14" rx="2" fill="#dfe4ea" stroke="#6c7682" stroke-width="1.5"/>
+  <rect x="12" y="48" width="9" height="5" rx="1.5" fill="#c0c6ce" stroke="#4e5560" stroke-width="1.2"/>
+  <path d="M28 46 h6 v8 h-6 Z" fill="#8a8f96" stroke="#4e5560" stroke-width="1"/>
+  <rect x="16" y="57" width="15" height="5" rx="2" fill="#6c7682"/>
+  <rect x="33" y="57" width="15" height="5" rx="2" fill="#6c7682"/></svg></g>
+  <g transform="translate(480 236) scale(1.5) translate(-640 -110)">
+    <rect x="606" y="132" width="68" height="104" rx="6" fill="#5a2a18" stroke="#c9a24a" stroke-width="3"/>
+    <path d="M606 140 Q 640 104 674 140" fill="#5a2a18" stroke="#c9a24a" stroke-width="3"/>
+    <circle cx="640" cy="152" r="26" fill="#efe6d2" stroke="#c9a24a" stroke-width="3"/>
+    <path class="clockpulse" d="M617.5 139 A 26 26 0 0 1 662.5 139" fill="none" stroke="#6fd3ff" stroke-width="6" stroke-linecap="round"/>
+    <path class="clockpulse" d="M617.5 139 A 26 26 0 0 1 662.5 139" fill="none" stroke="#bff0ff" stroke-width="2" stroke-linecap="round"/>
+    <path d="M640 152 L622.3 142.6" stroke="#2a1d10" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="640" cy="152" r="3" fill="#2a1d10"/>
+    <rect x="618" y="182" width="44" height="50" rx="4" fill="#2a160c" stroke="#c9a24a" stroke-width="2"/>
+    <g class="pendulum">
+      <path d="M640 186 V218" stroke="#c9a24a" stroke-width="2"/>
+      <circle cx="640" cy="222" r="14" fill="url(#blueGlow)" class="clockpulse"/>
+      <circle cx="640" cy="222" r="7" fill="url(#sphere)"/>
+    </g>
+  </g>
+  </g>
+  <rect width="960" height="540" fill="url(#vignette)"/>
+</svg>

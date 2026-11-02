@@ -1,0 +1,194 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" role="img" aria-label="Bomb Shell pulling himself up through the open trap door, his teal optic glowing, with Lucky&#x27;s shaggy head and platinum armor behind him">
+  <defs>
+    <linearGradient id="wall" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3a2416"/>
+      <stop offset="1" stop-color="#5a3a22"/>
+    </linearGradient>
+    <linearGradient id="floor" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7a5230"/>
+      <stop offset="1" stop-color="#4a2f1a"/>
+    </linearGradient>
+    <linearGradient id="oak" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a6773f"/>
+      <stop offset="1" stop-color="#7a5229"/>
+    </linearGradient>
+    <linearGradient id="cherry" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a1442e"/>
+      <stop offset="1" stop-color="#6b2618"/>
+    </linearGradient>
+    <linearGradient id="stone" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8c8a86"/>
+      <stop offset="1" stop-color="#5e5b57"/>
+    </linearGradient>
+    <linearGradient id="night" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#160c32"/>
+      <stop offset="1" stop-color="#4a2c6a"/>
+    </linearGradient>
+    <linearGradient id="steel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8d9aa8"/>
+      <stop offset="1" stop-color="#b8c4d0"/>
+    </linearGradient>
+    <linearGradient id="plate" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f4f7fa"/>
+      <stop offset="0.5" stop-color="#c9d0d8"/>
+      <stop offset="1" stop-color="#8e98a4"/>
+    </linearGradient>
+    <linearGradient id="fur" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#b8602c"/>
+      <stop offset="1" stop-color="#8a4420"/>
+    </linearGradient>
+    <linearGradient id="gunmetal" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#4c5560"/>
+      <stop offset="0.6" stop-color="#6b7682"/>
+      <stop offset="1" stop-color="#4c5560"/>
+    </linearGradient>
+    <linearGradient id="shroud" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6c4a86"/>
+      <stop offset="1" stop-color="#3e2850"/>
+    </linearGradient>
+    <radialGradient id="tealGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#7ffff0" stop-opacity="0.8"/>
+      <stop offset="1" stop-color="#2fd6c4" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="warm" cx="0.2" cy="0.6" r="0.9">
+      <stop offset="0" stop-color="#ffb347" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#ffb347" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="fireGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffb347" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#ffb347" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="blueGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#8fe6ff" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#2f9be0" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="sphere" cx="0.4" cy="0.35" r="0.6">
+      <stop offset="0" stop-color="#eafcff"/>
+      <stop offset="0.4" stop-color="#6fd3ff"/>
+      <stop offset="1" stop-color="#1a6fd1"/>
+    </radialGradient>
+    <radialGradient id="redSphere" cx="0.4" cy="0.35" r="0.6">
+      <stop offset="0" stop-color="#ffe2dc"/>
+      <stop offset="0.4" stop-color="#ff5a46"/>
+      <stop offset="1" stop-color="#a3120c"/>
+    </radialGradient>
+    <radialGradient id="redGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ff6a50" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#d0201a" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="floorDeep" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5e3d22"/>
+      <stop offset="1" stop-color="#8a5c34"/>
+    </linearGradient>
+    <linearGradient id="hole" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0a1620"/>
+      <stop offset="1" stop-color="#1d4a63"/>
+    </linearGradient>
+    <radialGradient id="holeGlow" cx="0.5" cy="0.75" r="0.6">
+      <stop offset="0" stop-color="#c8f2ff" stop-opacity="0.75"/>
+      <stop offset="0.6" stop-color="#6cc8f0" stop-opacity="0.25"/>
+      <stop offset="1" stop-color="#6cc8f0" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="beam" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#bfeeff" stop-opacity="0.5"/>
+      <stop offset="0.5" stop-color="#8fd8ff" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#8fd8ff" stop-opacity="0"/>
+    </linearGradient>
+    <style>
+      .mote { animation: mote 6s ease-in-out infinite alternate; }
+      .mote.b { animation-duration: 7.4s; animation-delay: -2s; }
+      .mote.c { animation-duration: 5.2s; animation-delay: -3.6s; }
+      .beam { animation: beam 3.2s ease-in-out infinite alternate; }
+      @keyframes mote { from { transform: translate(0, 0); opacity: 0.25; } to { transform: translate(14px, -26px); opacity: 0.9; } }
+      @keyframes beam { from { opacity: 0.75; } to { opacity: 1; } }
+      .optic { animation: optic 2.6s ease-in-out infinite alternate; }
+      .glint { animation: none; }
+      @keyframes optic { from { opacity: 0.75; } to { opacity: 1; } }
+      @media (prefers-reduced-motion: reduce) { .mote, .beam, .optic { animation: none; } }
+    </style>
+  </defs>
+  <rect width="960" height="190" fill="url(#wall)"/>
+  <g stroke="#2a190d" stroke-width="3" opacity="0.55"><path d="M0 46 H960 M0 96 H960 M0 146 H960"/></g>
+  <rect x="0" y="182" width="960" height="12" fill="#2a190d"/>
+  <path d="M0 190 H960 V540 H0 Z" fill="url(#floorDeep)"/>
+  <g stroke="#3a2416" stroke-width="3" opacity="0.7"><path d="M-300 540 L25.0 190 M-190 540 L89.2 190 M-80 540 L153.3 190 M30 540 L217.5 190 M140 540 L281.7 190 M250 540 L345.8 190 M360 540 L410.0 190 M470 540 L474.2 190 M580 540 L538.3 190 M690 540 L602.5 190 M800 540 L666.7 190 M910 540 L730.8 190 M1020 540 L795.0 190 M1130 540 L859.2 190 M1240 540 L923.3 190"/></g>
+  <g stroke="#2a190d" stroke-width="3" opacity="0.6"><path d="M106.7 260 L180.0 260 M225.0 330 L307.5 330 M404.3 230 L473.7 230 M549.0 280 L625.0 280 M727.6 350 L812.7 350 M833.6 250 L905.6 250 M269.2 470 L370.0 470 M681.2 505 L786.7 505 M94.3 420 L188.6 420"/></g>
+  <rect width="960" height="540" fill="url(#warm)"/>
+  <g>
+    <polygon points="340,300 605,300 640,470 300,470" fill="url(#hole)" stroke="#1e1208" stroke-width="7"/>
+    <path d="M410 304 L 404 380 M534 304 L 540 380" stroke="#2a1e14" stroke-width="9" stroke-linecap="round"/>
+    <path d="M408 322 H 536 M406 350 H 538" stroke="#2a1e14" stroke-width="6"/>
+    <polygon points="340,300 605,300 640,470 300,470" fill="url(#holeGlow)"/>
+  </g>
+  <polygon points="300,470 640,470 700,40 250,40" fill="url(#beam)" class="beam"/>
+  <g fill="#d6f4ff">
+    <circle class="mote" cx="420" cy="260" r="2.4"/>
+    <circle class="mote b" cx="500" cy="200" r="1.8"/>
+    <circle class="mote c" cx="560" cy="250" r="2.2"/>
+    <circle class="mote" cx="460" cy="140" r="1.6"/>
+    <circle class="mote b" cx="380" cy="190" r="2"/>
+    <circle class="mote c" cx="600" cy="150" r="1.6"/>
+  </g>
+  <g>
+    <path d="M650 300 L 860 300 L 940 470 L 690 470 Z" fill="#8a2a24" stroke="#4a120e" stroke-width="3"/>
+    <path d="M668 314 L 846 314 L 914 456 L 704 456 Z" fill="none" stroke="#d9a441" stroke-width="4"/>
+    <path d="M690 336 L 830 336 L 880 440 L 720 440 Z" fill="none" stroke="#e8d2a0" stroke-width="2" stroke-dasharray="10 6"/>
+    <path d="M650 300 C 618 330, 636 440, 690 470 L 760 470 C 724 440, 704 340, 720 300 Z" fill="#c9a77a" stroke="#6e4f2c" stroke-width="3"/>
+    <path d="M664 312 C 646 340, 656 430, 700 462 M690 306 C 672 340, 680 430, 728 466" fill="none" stroke="#a8875a" stroke-width="2"/>
+    <g stroke="#e8d2a0" stroke-width="3" stroke-linecap="round">
+      <path d="M864 300 l 8 -10 M880 300 l 8 -10 M896 300 l 8 -10"/>
+      <path d="M944 470 l 12 6 M936 454 l 12 6 M928 438 l 12 6"/>
+    </g>
+  </g>
+  <g>
+    <path d="M605 300 L 640 470 L 806 392 L 760 228 Z" fill="#4a2f1a" stroke="#1e1208" stroke-width="6"/>
+    <path d="M622 330 L 776 260 M632 380 L 790 314 M640 430 L 800 362" stroke="#2a190d" stroke-width="5"/>
+    <rect x="690" y="300" width="56" height="18" rx="3" fill="#6b6f76" stroke="#24272b" stroke-width="3" transform="rotate(-24 718 309)"/>
+    <rect x="740" y="282" width="26" height="12" rx="2" fill="#8a8f96" stroke="#24272b" stroke-width="2" transform="rotate(-24 753 288)"/>
+    <path d="M640 470 L 806 392" stroke="#9fd6ea" stroke-width="3" opacity="0.6"/>
+  </g>
+  <clipPath id="inHole"><polygon points="340,300 605,300 640,470 300,470"/></clipPath>
+  <clipPath id="aboveFloor"><path d="M0 0 H960 V470 H0 Z"/></clipPath>
+  <g clip-path="url(#inHole)">
+    <path d="M486 470 C 482 410, 522 380, 566 380 C 610 380, 636 412, 632 470 Z" fill="url(#fur)" stroke="#4a210d" stroke-width="3"/>
+    <path d="M560 392 C 562 410, 562 430, 558 452" stroke="#c9c2b8" stroke-width="7" stroke-linecap="round" fill="none"/>
+    <path d="M520 410 c -6 8 -8 18 -4 28 M604 404 c 6 8 8 18 4 28" stroke="#6b2f12" stroke-width="3" fill="none"/>
+    <path d="M596 452 C 610 446, 630 450, 640 470 L 590 470 Z" fill="url(#plate)" stroke="#6c7682" stroke-width="2"/>
+    <path d="M604 458 l 18 6" stroke="#ffffff" stroke-width="3" opacity="0.8"/>
+  </g>
+  <g clip-path="url(#aboveFloor)">
+  <g transform="translate(372 282) scale(1.55)">
+    <path d="M52 8 L 62 -4 L 66 12 Z" fill="#7d8a99" stroke="#2b3138" stroke-width="2.5"/>
+    <rect x="48" y="58" width="24" height="12" fill="#3f4852" stroke="#2b3138" stroke-width="2"/>
+    <ellipse cx="60" cy="36" rx="32" ry="27" fill="url(#gunmetal)" stroke="#2b3138" stroke-width="3"/>
+    <path d="M34 30 C 40 16, 60 10, 78 16" fill="none" stroke="#9aa6b2" stroke-width="3" opacity="0.6"/>
+    <circle cx="66" cy="38" r="22" fill="url(#tealGlow)" class="optic"/>
+    <circle cx="66" cy="38" r="12" fill="#0d2b2b" stroke="#2b3138" stroke-width="2.5"/>
+    <circle cx="66" cy="38" r="7.5" fill="#2fd6c4" class="optic"/>
+    <circle cx="68.5" cy="35.5" r="2.4" fill="#e6fffb"/>
+    <rect x="24" y="68" width="72" height="76" rx="12" fill="url(#gunmetal)" stroke="#2b3138" stroke-width="3"/>
+    <rect x="44" y="84" width="32" height="24" rx="4" fill="#0d2b2b" stroke="#2b3138" stroke-width="2"/>
+    <path d="M48 90 h24 M48 96 h24 M48 102 h24" stroke="#2fd6c4" stroke-width="3"/>
+    <path d="M30 128 H90" stroke="#3f4852" stroke-width="3"/>
+    <path d="M6 70 C 16 52, 42 54, 48 70 L 44 92 L 10 92 Z" fill="#a8743d" stroke="#5c3f12" stroke-width="3"/>
+    <path d="M72 70 C 78 54, 104 52, 114 70 L 110 92 L 76 92 Z" fill="#a8743d" stroke="#5c3f12" stroke-width="3"/>
+    <path d="M14 78 l 8 -6 M100 78 l -8 -6" stroke="#5c3f12" stroke-width="2"/>
+    <path d="M18 84 L -14 104 L -10 128" fill="none" stroke="#2b3138" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M18 84 L -14 104 L -10 128" fill="none" stroke="#7d8a99" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M102 84 L 134 104 L 130 128" fill="none" stroke="#2b3138" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M102 84 L 134 104 L 130 128" fill="none" stroke="#7d8a99" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="34" y="142" width="22" height="38" fill="#7d8a99" stroke="#2b3138" stroke-width="2.5"/>
+    <rect x="64" y="142" width="22" height="38" fill="#7d8a99" stroke="#2b3138" stroke-width="2.5"/>
+    <rect x="24" y="178" width="38" height="22" rx="8" fill="#2b3138"/>
+    <rect x="58" y="178" width="38" height="22" rx="8" fill="#2b3138"/>
+    <path d="M28 189 h30 M62 189 h30" stroke="#5d6874" stroke-width="3" stroke-dasharray="4 4"/>
+  </g>
+  </g>
+  <g>
+    <path d="M300 470 L 640 470" stroke="#1e1208" stroke-width="7"/>
+    <path d="M330 452 C 326 476, 338 490, 356 490 C 374 490, 386 482, 388 468 L 384 452 Z" fill="#7d8a99" stroke="#2b3138" stroke-width="3"/>
+    <path d="M340 472 v 14 M354 474 v 14 M368 474 v 13 M380 470 v 12" stroke="#2b3138" stroke-width="3"/>
+    <path d="M540 452 C 536 476, 548 490, 566 490 C 584 490, 596 482, 598 468 L 594 452 Z" fill="#7d8a99" stroke="#2b3138" stroke-width="3"/>
+    <path d="M550 472 v 14 M564 474 v 14 M578 474 v 13 M590 470 v 12" stroke="#2b3138" stroke-width="3"/>
+  </g>
+</svg>

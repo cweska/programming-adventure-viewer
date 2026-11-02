@@ -1,9 +1,10 @@
 import emberkeep from "../../../content/modules/emberkeep/first-words.json";
+import friendsInLowPlaces from "../../../content/modules/friends-in-low-places/module.json";
 import leylinesAwaken from "../../../content/modules/leylines-awaken/module.json";
 import trainingGrounds from "../../../content/modules/training-grounds/module.json";
 import { moduleSchema, type Module } from "./schema";
 
-export const bundledModules: Module[] = [emberkeep, leylinesAwaken, trainingGrounds].map((raw) =>
+export const bundledModules: Module[] = [emberkeep, leylinesAwaken, friendsInLowPlaces, trainingGrounds].map((raw) =>
   moduleSchema.parse(raw),
 );
 

@@ -1,0 +1,149 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" role="img" aria-label="Mar&#x27;tu with both arms raised as violet threads of light run to a lattice across the cabin walls">
+  <defs>
+    <linearGradient id="wall" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3a2416"/>
+      <stop offset="1" stop-color="#5a3a22"/>
+    </linearGradient>
+    <linearGradient id="floor" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7a5230"/>
+      <stop offset="1" stop-color="#4a2f1a"/>
+    </linearGradient>
+    <linearGradient id="oak" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a6773f"/>
+      <stop offset="1" stop-color="#7a5229"/>
+    </linearGradient>
+    <linearGradient id="cherry" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a1442e"/>
+      <stop offset="1" stop-color="#6b2618"/>
+    </linearGradient>
+    <linearGradient id="stone" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8c8a86"/>
+      <stop offset="1" stop-color="#5e5b57"/>
+    </linearGradient>
+    <linearGradient id="night" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#160c32"/>
+      <stop offset="1" stop-color="#4a2c6a"/>
+    </linearGradient>
+    <linearGradient id="steel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8d9aa8"/>
+      <stop offset="1" stop-color="#b8c4d0"/>
+    </linearGradient>
+    <linearGradient id="plate" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f4f7fa"/>
+      <stop offset="0.5" stop-color="#c9d0d8"/>
+      <stop offset="1" stop-color="#8e98a4"/>
+    </linearGradient>
+    <linearGradient id="fur" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#b8602c"/>
+      <stop offset="1" stop-color="#8a4420"/>
+    </linearGradient>
+    <linearGradient id="gunmetal" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#4c5560"/>
+      <stop offset="0.6" stop-color="#6b7682"/>
+      <stop offset="1" stop-color="#4c5560"/>
+    </linearGradient>
+    <linearGradient id="shroud" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6c4a86"/>
+      <stop offset="1" stop-color="#3e2850"/>
+    </linearGradient>
+    <radialGradient id="tealGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#7ffff0" stop-opacity="0.8"/>
+      <stop offset="1" stop-color="#2fd6c4" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="warm" cx="0.2" cy="0.6" r="0.9">
+      <stop offset="0" stop-color="#ffb347" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#ffb347" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="fireGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffb347" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#ffb347" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="blueGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#8fe6ff" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#2f9be0" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="sphere" cx="0.4" cy="0.35" r="0.6">
+      <stop offset="0" stop-color="#eafcff"/>
+      <stop offset="0.4" stop-color="#6fd3ff"/>
+      <stop offset="1" stop-color="#1a6fd1"/>
+    </radialGradient>
+    <radialGradient id="redSphere" cx="0.4" cy="0.35" r="0.6">
+      <stop offset="0" stop-color="#ffe2dc"/>
+      <stop offset="0.4" stop-color="#ff5a46"/>
+      <stop offset="1" stop-color="#a3120c"/>
+    </radialGradient>
+    <radialGradient id="redGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ff6a50" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#d0201a" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="lattice" width="44" height="44" patternUnits="userSpaceOnUse">
+      <path d="M0 22 L22 0 L44 22 L22 44 Z" fill="none" stroke="#c89bff" stroke-width="1.6"/>
+      <circle cx="22" cy="0" r="2" fill="#e6d0ff"/>
+    </pattern>
+    <linearGradient id="lightWall" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e6f8ff" stop-opacity="0"/>
+      <stop offset="0.6" stop-color="#d8f4ff" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#ffffff"/>
+    </linearGradient>
+    <radialGradient id="violetGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#f2e2ff"/>
+      <stop offset="0.5" stop-color="#b37bff" stop-opacity="0.7"/>
+      <stop offset="1" stop-color="#b37bff" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="softGlow" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="1.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <style>
+      .lattice { opacity: 0.3; animation: shimmer 2.6s ease-in-out infinite alternate; }
+      .thread { animation: flow 1.6s linear infinite; }
+      .thread.t1 { animation-duration: 1.9s; } .thread.t2 { animation-duration: 1.3s; }
+      .billow { animation: billow 2.2s ease-in-out infinite alternate; transform-origin: 480px 150px; }
+      .hands { animation: shimmer 0.9s ease-in-out infinite alternate; }
+      .horizon { animation: shimmer 3s ease-in-out infinite alternate; }
+      .wash { opacity: 0.1; animation: wash 2s ease-in-out infinite; }
+      @keyframes shimmer { from { opacity: 0.2; } to { opacity: 0.55; } }
+      @keyframes flow { to { stroke-dashoffset: -48; } }
+      @keyframes billow { from { transform: skewX(-3deg); } to { transform: skewX(3deg); } }
+      @keyframes wash { 0%, 100% { opacity: 0.03; } 50% { opacity: 0.22; } }
+      @media (prefers-reduced-motion: reduce) { * { animation: none !important; } .lattice { opacity: 0.4; } .wash { opacity: 0.12; } }
+    </style>
+  </defs>
+  <rect width="960" height="540" fill="url(#wall)"/>
+  <g stroke="#2a190d" stroke-width="3" opacity="0.55">
+    <path d="M0 50 H960 M0 100 H960 M0 150 H960 M0 200 H960 M0 250 H960 M0 300 H960 M0 350 H960"/>
+  </g>
+  <path d="M0 370 H960 V540 H0 Z" fill="url(#floor)"/>
+  <g stroke="#3a2416" stroke-width="2" opacity="0.55">
+    <path d="M0 400 H960 M0 440 H960 M0 490 H960"/>
+  </g>
+  <g>
+    <rect x="70" y="90" width="170" height="130" fill="url(#night)" stroke="#2a190d" stroke-width="10"/>
+    <rect x="76" y="150" width="158" height="40" fill="url(#lightWall)" class="horizon"/>
+    <path d="M76 186 C 120 176, 180 178, 234 188 V214 H76 Z" fill="#1d3a24"/>
+    <path d="M155 90 V220 M70 155 H240" stroke="#2a190d" stroke-width="7"/>
+    <rect x="720" y="90" width="170" height="130" fill="url(#night)" stroke="#2a190d" stroke-width="10"/>
+    <rect x="726" y="150" width="158" height="40" fill="url(#lightWall)" class="horizon" opacity="0.6"/>
+    <path d="M726 186 C 780 178, 840 176, 884 190 V214 H726 Z" fill="#1d3a24"/>
+    <path d="M805 90 V220 M720 155 H890" stroke="#2a190d" stroke-width="7"/>
+  </g>
+  <rect width="960" height="370" fill="url(#lattice)" class="lattice"/>
+  <g fill="none" stroke="#d6b0ff" stroke-width="3" stroke-linecap="round" stroke-dasharray="14 10" filter="url(#softGlow)">
+    <path class="thread t0" d="M392 150 C 300 60, 180 40, 40 80"/>
+    <path class="thread t1" d="M392 150 C 330 200, 200 220, 60 260"/>
+    <path class="thread t2" d="M392 150 C 300 120, 200 140, 150 170"/>
+    <path class="thread t0" d="M568 150 C 660 60, 780 40, 920 80"/>
+    <path class="thread t1" d="M568 150 C 640 200, 760 220, 900 260"/>
+    <path class="thread t2" d="M568 150 C 650 110, 740 130, 800 160"/>
+  </g>
+  <g class="billow">
+    <path d="M480 150 C 430 150, 404 210, 400 300 C 396 380, 380 460, 340 530 C 400 520, 440 536, 480 524 C 520 536, 560 520, 620 530 C 580 460, 564 380, 560 300 C 556 210, 530 150, 480 150 Z" fill="url(#shroud)" stroke="#24162e" stroke-width="4"/>
+    <path d="M448 300 C 440 380, 430 450, 410 516 M512 300 C 520 380, 530 450, 550 516" fill="none" stroke="#24162e" stroke-width="3" opacity="0.6"/>
+  </g>
+  <path d="M440 210 C 420 190, 404 168, 392 150 L 376 162 C 392 190, 414 220, 444 240 Z" fill="url(#shroud)" stroke="#24162e" stroke-width="4"/>
+  <path d="M520 210 C 540 190, 556 168, 568 150 L 584 162 C 568 190, 546 220, 516 240 Z" fill="url(#shroud)" stroke="#24162e" stroke-width="4"/>
+  <path d="M480 96 C 446 96, 430 126, 434 160 C 436 186, 456 204, 480 204 C 504 204, 524 186, 526 160 C 530 126, 514 96, 480 96 Z" fill="url(#shroud)" stroke="#24162e" stroke-width="4"/>
+  <path d="M452 150 C 452 132, 466 124, 480 124 C 494 124, 508 132, 508 150 C 502 166, 458 166, 452 150 Z" fill="#140c1c"/>
+  <ellipse cx="468" cy="146" rx="6" ry="3.5" fill="#ffd44a"/>
+  <ellipse cx="492" cy="146" rx="6" ry="3.5" fill="#ffd44a"/>
+  <circle cx="390" cy="150" r="20" fill="url(#violetGlow)" class="hands"/>
+  <circle cx="570" cy="150" r="20" fill="url(#violetGlow)" class="hands"/>
+  <rect width="960" height="540" fill="#ff2a1a" class="wash"/>
+</svg>

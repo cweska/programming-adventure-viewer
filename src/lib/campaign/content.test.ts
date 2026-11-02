@@ -19,9 +19,14 @@ function publicFile(src: string): boolean {
 }
 
 describe("campaign content", () => {
-  it("bundles the warm-up, Module 1, and the teacher practice yard", () => {
-    expect(bundledModules.map((module) => module.id)).toEqual(["emberkeep", "leylines-awaken", "training-grounds"]);
-    expect(studentModules().map((module) => module.id)).toEqual(["leylines-awaken", "emberkeep"]);
+  it("bundles the warm-up, Modules 1 and 2, and the teacher practice yard", () => {
+    expect(bundledModules.map((module) => module.id)).toEqual([
+      "emberkeep",
+      "leylines-awaken",
+      "friends-in-low-places",
+      "training-grounds",
+    ]);
+    expect(studentModules().map((module) => module.id)).toEqual(["leylines-awaken", "friends-in-low-places", "emberkeep"]);
   });
 
   it("points every character, NPC, and enemy at art that exists", () => {
@@ -135,9 +140,12 @@ describe("campaign content", () => {
   });
 
   it("hides the editor on campaign story and gameplay parts", () => {
-    const module = bundledModules.find((item) => item.id === "leylines-awaken");
-    for (const beat of module?.lessons[0].beats ?? []) {
-      expect(beat.editor === "hidden", beat.id).toBe(!beat.activity);
+    for (const id of ["leylines-awaken", "friends-in-low-places"]) {
+      const module = bundledModules.find((item) => item.id === id);
+      expect(module, id).toBeTruthy();
+      for (const beat of module?.lessons[0].beats ?? []) {
+        expect(beat.editor === "hidden", `${id}/${beat.id}`).toBe(!beat.activity);
+      }
     }
   });
 });

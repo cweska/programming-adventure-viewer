@@ -1,0 +1,130 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" role="img" aria-label="A stuck square trap door in the plank floor beside a folded rug">
+  <defs>
+    <linearGradient id="wall" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3a2416"/>
+      <stop offset="1" stop-color="#5a3a22"/>
+    </linearGradient>
+    <linearGradient id="floor" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7a5230"/>
+      <stop offset="1" stop-color="#4a2f1a"/>
+    </linearGradient>
+    <linearGradient id="oak" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a6773f"/>
+      <stop offset="1" stop-color="#7a5229"/>
+    </linearGradient>
+    <linearGradient id="cherry" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a1442e"/>
+      <stop offset="1" stop-color="#6b2618"/>
+    </linearGradient>
+    <linearGradient id="stone" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8c8a86"/>
+      <stop offset="1" stop-color="#5e5b57"/>
+    </linearGradient>
+    <linearGradient id="night" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#160c32"/>
+      <stop offset="1" stop-color="#4a2c6a"/>
+    </linearGradient>
+    <linearGradient id="steel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8d9aa8"/>
+      <stop offset="1" stop-color="#b8c4d0"/>
+    </linearGradient>
+    <linearGradient id="plate" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f4f7fa"/>
+      <stop offset="0.5" stop-color="#c9d0d8"/>
+      <stop offset="1" stop-color="#8e98a4"/>
+    </linearGradient>
+    <linearGradient id="fur" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#b8602c"/>
+      <stop offset="1" stop-color="#8a4420"/>
+    </linearGradient>
+    <linearGradient id="gunmetal" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#4c5560"/>
+      <stop offset="0.6" stop-color="#6b7682"/>
+      <stop offset="1" stop-color="#4c5560"/>
+    </linearGradient>
+    <linearGradient id="shroud" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6c4a86"/>
+      <stop offset="1" stop-color="#3e2850"/>
+    </linearGradient>
+    <radialGradient id="tealGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#7ffff0" stop-opacity="0.8"/>
+      <stop offset="1" stop-color="#2fd6c4" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="warm" cx="0.2" cy="0.6" r="0.9">
+      <stop offset="0" stop-color="#ffb347" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#ffb347" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="fireGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffb347" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#ffb347" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="blueGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#8fe6ff" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#2f9be0" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="sphere" cx="0.4" cy="0.35" r="0.6">
+      <stop offset="0" stop-color="#eafcff"/>
+      <stop offset="0.4" stop-color="#6fd3ff"/>
+      <stop offset="1" stop-color="#1a6fd1"/>
+    </radialGradient>
+    <radialGradient id="redSphere" cx="0.4" cy="0.35" r="0.6">
+      <stop offset="0" stop-color="#ffe2dc"/>
+      <stop offset="0.4" stop-color="#ff5a46"/>
+      <stop offset="1" stop-color="#a3120c"/>
+    </radialGradient>
+    <radialGradient id="redGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ff6a50" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#d0201a" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="floorDeep" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5e3d22"/>
+      <stop offset="1" stop-color="#8a5c34"/>
+    </linearGradient>
+    <linearGradient id="hole" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0a1620"/>
+      <stop offset="1" stop-color="#1d4a63"/>
+    </linearGradient>
+    <radialGradient id="holeGlow" cx="0.5" cy="0.75" r="0.6">
+      <stop offset="0" stop-color="#c8f2ff" stop-opacity="0.75"/>
+      <stop offset="0.6" stop-color="#6cc8f0" stop-opacity="0.25"/>
+      <stop offset="1" stop-color="#6cc8f0" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="beam" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#bfeeff" stop-opacity="0.5"/>
+      <stop offset="0.5" stop-color="#8fd8ff" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#8fd8ff" stop-opacity="0"/>
+    </linearGradient>
+    <style>
+
+    </style>
+  </defs>
+  <rect width="960" height="190" fill="url(#wall)"/>
+  <g stroke="#2a190d" stroke-width="3" opacity="0.55"><path d="M0 46 H960 M0 96 H960 M0 146 H960"/></g>
+  <rect x="0" y="182" width="960" height="12" fill="#2a190d"/>
+  <path d="M0 190 H960 V540 H0 Z" fill="url(#floorDeep)"/>
+  <g stroke="#3a2416" stroke-width="3" opacity="0.7"><path d="M-300 540 L25.0 190 M-190 540 L89.2 190 M-80 540 L153.3 190 M30 540 L217.5 190 M140 540 L281.7 190 M250 540 L345.8 190 M360 540 L410.0 190 M470 540 L474.2 190 M580 540 L538.3 190 M690 540 L602.5 190 M800 540 L666.7 190 M910 540 L730.8 190 M1020 540 L795.0 190 M1130 540 L859.2 190 M1240 540 L923.3 190"/></g>
+  <g stroke="#2a190d" stroke-width="3" opacity="0.6"><path d="M106.7 260 L180.0 260 M225.0 330 L307.5 330 M404.3 230 L473.7 230 M549.0 280 L625.0 280 M727.6 350 L812.7 350 M833.6 250 L905.6 250 M269.2 470 L370.0 470 M681.2 505 L786.7 505 M94.3 420 L188.6 420"/></g>
+  <rect width="960" height="540" fill="url(#warm)"/>
+  <g>
+    <polygon points="340,300 605,300 640,470 300,470" fill="#6a4426" stroke="#1e1208" stroke-width="7"/>
+    <path d="M406.2 300 L385.0 470 M472.5 300 L470.0 470 M538.8 300 L555.0 470" stroke="#3a2416" stroke-width="3"/>
+    <g fill="#2a190d">
+      <circle cx="362" cy="318" r="3"/><circle cx="586" cy="318" r="3"/>
+      <circle cx="326" cy="452" r="3.5"/><circle cx="618" cy="452" r="3.5"/>
+    </g>
+  </g>
+
+  <g>
+    <path d="M650 300 L 860 300 L 940 470 L 690 470 Z" fill="#8a2a24" stroke="#4a120e" stroke-width="3"/>
+    <path d="M668 314 L 846 314 L 914 456 L 704 456 Z" fill="none" stroke="#d9a441" stroke-width="4"/>
+    <path d="M690 336 L 830 336 L 880 440 L 720 440 Z" fill="none" stroke="#e8d2a0" stroke-width="2" stroke-dasharray="10 6"/>
+    <path d="M650 300 C 618 330, 636 440, 690 470 L 760 470 C 724 440, 704 340, 720 300 Z" fill="#c9a77a" stroke="#6e4f2c" stroke-width="3"/>
+    <path d="M664 312 C 646 340, 656 430, 700 462 M690 306 C 672 340, 680 430, 728 466" fill="none" stroke="#a8875a" stroke-width="2"/>
+    <g stroke="#e8d2a0" stroke-width="3" stroke-linecap="round">
+      <path d="M864 300 l 8 -10 M880 300 l 8 -10 M896 300 l 8 -10"/>
+      <path d="M944 470 l 12 6 M936 454 l 12 6 M928 438 l 12 6"/>
+    </g>
+  </g>
+
+
+</svg>
