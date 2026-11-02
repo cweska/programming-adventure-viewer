@@ -148,6 +148,27 @@ test.describe("emberkeep player", () => {
     await expect(page.getByTestId("stdout")).toContainText("ember");
   });
 
+  test("grows the editor to show every line instead of scrolling inside it", async ({ page }) => {
+    await page.goto("/play/emberkeep");
+    const editor = page.locator('[data-testid="editor"] .cm-editor');
+    const short = await editor.boundingBox();
+    expect(short?.height ?? 0).toBeGreaterThanOrEqual(279);
+
+    const program = Array.from({ length: 40 }, (_, index) => `print("line ${index + 1}")`).join("\n");
+    await replaceEditor(page, program);
+    const lines = page.locator('[data-testid="editor"] .cm-line');
+    await expect(lines).toHaveCount(40);
+    const overflow = await page
+      .locator('[data-testid="editor"] .cm-scroller')
+      .evaluate((scroller) => scroller.scrollHeight - scroller.clientHeight);
+    expect(overflow).toBeLessThanOrEqual(1);
+    const box = await editor.boundingBox();
+    const last = await lines.last().boundingBox();
+    if (!box || !last) throw new Error("the editor and its last line should be laid out");
+    expect(box.height).toBeGreaterThan(short?.height ?? 0);
+    expect(last.y + last.height).toBeLessThanOrEqual(box.y + box.height + 1);
+  });
+
   test("highlights the selected text on its own line", async ({ page }) => {
     await page.goto("/play/emberkeep");
     const content = page.locator('[data-testid="editor"] .cm-content');
