@@ -1043,6 +1043,24 @@ button:disabled {
   border: 2px solid var(--metal);
 }
 
+.skill-narration {
+  margin: 0;
+  padding: 10px 14px;
+  color: #f8f1e4;
+  background: rgba(20, 16, 12, 0.92);
+  border: 2px solid var(--metal);
+  border-left-width: 6px;
+  line-height: 1.5;
+}
+
+.skill-narration[data-outcome="success"] {
+  border-left-color: #8fd16b;
+}
+
+.skill-narration[data-outcome="failure"] {
+  border-left-color: #d98a5f;
+}
+
 .skill-roll-text {
   margin: 0;
   font-family: var(--font-display), Palatino, serif;

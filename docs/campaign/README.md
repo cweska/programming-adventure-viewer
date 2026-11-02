@@ -148,7 +148,7 @@ Checks can read `_prompts`, `_options`, `_spoken`, and `_greens` to see what was
 ### Live code, party setup, and carry-over (Module 2)
 
 Some parts run the student's own functions when something is clicked. After a passing Run, the player keeps that Python program alive (a *live session*), so state such as mana carries over from click to click. The session ends when the student leaves the part or presses Run again.
-- **Skill checks.** Each option names a check function. A click runs `perform_roll(20)` and that check, then shows the roll next to the number the student chose. On a failed roll, the `helper` NPC opens the door instead.
+- **Skill checks.** Each option names a check function. A click runs `perform_roll(20)` and that check, then shows the roll next to the number the student chose. Each option also has a `successText` and a `failureText`. One of them appears under the picture, telling the student what they tried and what happened. On a failed roll, the `helper` NPC opens the door instead.
 - **Casting.** A board with `casting` and a `barrier` turns the arrow keys into a hint. Clicking a party member or pressing 1–4 runs `cast_spell(party.members[i], spell)`. Whatever the student's code does is played on the board: `reinforce_barrier()` thickens the barrier, `print_mana()` updates the bar, and `print_prompt()` shows their message. Once everyone has cast, the burst rolls across and the `barrier` goal is met.
 
 `activity.party` gives Python a `party.members` list built from the character sheets: `character_name`, `race`, `alignment`, `abilities`, `skills`, `inventory`, plus `mana` (from the part's table), `max_mana` (2 × magical affinity), and an empty `spell_book`.

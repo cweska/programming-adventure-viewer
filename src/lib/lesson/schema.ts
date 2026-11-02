@@ -57,6 +57,10 @@ export const skillCheckSchema = z
             id: z.string().min(1),
             label: z.string().min(1),
             check: z.string().regex(/^[A-Za-z_][A-Za-z0-9_]*$/),
+            /** What happens when the roll succeeds, told to the student after the die lands. */
+            successText: z.string().min(1),
+            /** What happens when the roll fails. */
+            failureText: z.string().min(1),
           })
           .strict(),
       )

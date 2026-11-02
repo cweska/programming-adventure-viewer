@@ -121,6 +121,21 @@ describe("Campaign Module 2: Friends In Low Places", () => {
       "Find an easier way",
     ]);
     expect(part("skill-checks").skillCheck?.helper).toEqual({ npc: "mar-tu", line: "Oh just let me do it." });
+    for (const option of part("skill-checks").skillCheck?.options ?? []) {
+      expect(option.successText.length, option.id).toBeGreaterThan(20);
+      expect(option.failureText.length, option.id).toBeGreaterThan(20);
+      expect(option.successText, option.id).not.toBe(option.failureText);
+    }
+    expect(part("skill-checks").skillCheck?.options[0]).toMatchObject({
+      id: "strength",
+      successText:
+        "You slipped your fingers in the gap and used all your strength pulling up on the hatch. You heard a pop as it flung open.",
+      failureText: "You slipped your fingers in the gap and used all your strength pulling up on the hatch. It won't budge.",
+    });
+    expect(part("skill-checks").skillCheck?.options[2]).toMatchObject({
+      id: "intelligence",
+      failureText: "You investigate the surface of the trap door but don't notice anything useful.",
+    });
     expect(part("spell-book").spellBook).toMatchObject({ spell: "Strengthen Magic", manaCost: 10, requiredAffinity: 8 });
     expect(part("mana-bars").partyPanel?.members).toEqual(["oogrish", "gearshift", "bomb-shell", "lucky"]);
     const board = part("hold-the-barrier").board;
@@ -143,6 +158,17 @@ describe("Campaign Module 2: Friends In Low Places", () => {
     expect(part("greenroom").scene.caption).toContain('"Greenroom, Interior,"');
     expect(part("raise-the-barrier").scene.caption).toContain('Mar\'tu didn\'t even turn around. "Existing."');
     expect(part("thirty-two-hours").scene.caption).toContain('"Thirty-two hours," he said.');
+    expect(part("trap-door").scene.caption).toContain("Could one of you get it open for me?");
+    expect(part("bomb-shell-arrives").scene.caption).toContain("the scent of ozone and humidity");
+    expect(part("bomb-shell-arrives").scene.caption).toContain('"The feeling is mutual."');
+    expect(part("the-resonance-array").scene.caption).toContain("has been spiking for over an hour");
+    expect(part("ley-clock").scene.caption).toContain("Once again, it is not a compass.");
+    expect(part("ley-clock").scene.caption).toContain("It does not show direction.");
+    expect(part("map-of-tor").scene.caption).toContain("like fault lines in volcanic planets");
+    expect(part("greenroom").scene.caption).toContain("relatively normal days on their home planets");
+    expect(part("greenroom").scene.images[0].alt).toContain("white room");
+    expect(part("red-clock").scene.caption).toContain("The clock usually turned yellow during a burst.");
+    expect(part("raise-the-barrier").scene.caption).toContain("will not hold another large burst using my strength alone");
     for (const beat of lesson?.beats ?? []) {
       const text = JSON.stringify(beat);
       expect(text).not.toContain("Mar'Tu");

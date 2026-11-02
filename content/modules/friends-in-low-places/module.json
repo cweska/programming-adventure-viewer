@@ -33,7 +33,7 @@
           "editor": "hidden",
           "instructions": "Read the scene. Press Continue when you are ready.",
           "scene": {
-            "caption": "Mar'tu chuckled, \"Looks like the latch is sticking again. Could one of you pry it again?\"",
+            "caption": "Mar'tu chuckled, \"Looks like the latch is sticking again. Could one of you get it open for me?\"",
             "images": [
               {
                 "id": "trap-door",
@@ -66,17 +66,23 @@
               {
                 "id": "strength",
                 "label": "Force it open",
-                "check": "strength_check"
+                "check": "strength_check",
+                "successText": "You slipped your fingers in the gap and used all your strength pulling up on the hatch. You heard a pop as it flung open.",
+                "failureText": "You slipped your fingers in the gap and used all your strength pulling up on the hatch. It won't budge."
               },
               {
                 "id": "dexterity",
                 "label": "Finesse the latch with a shim",
-                "check": "dexterity_check"
+                "check": "dexterity_check",
+                "successText": "You slid a thin metal shim into the gap and felt along it for the latch. A careful twist, a soft click, and the hatch swung open.",
+                "failureText": "You slid a thin metal shim into the gap and felt along it for the latch, but the shim kept slipping off. The hatch stays shut."
               },
               {
                 "id": "intelligence",
                 "label": "Find an easier way",
-                "check": "investigation_check"
+                "check": "investigation_check",
+                "successText": "You investigate the trap door and notice a worn spot in the wood where the latch sits. You give it a whack. That jolts the latch loose and the door flies open.",
+                "failureText": "You investigate the surface of the trap door but don't notice anything useful."
               }
             ],
             "helper": {
@@ -116,7 +122,7 @@
           "editor": "hidden",
           "instructions": "Read the scene. Press Continue when you are ready.",
           "scene": {
-            "caption": "The trap door swung open and a cold draft rolled up out of the basement, carrying the sharp smell the air gets right after a lightning strike. Bomb Shell hauled himself up through the opening, his single optic narrowing against the firelight. Lucky climbed up close behind him and shook a cloud of basement dust out of his fur. \"That latch hates me,\" he grumbled. \"Personally.\"",
+            "caption": "The trap door swung open and a cold draft rolled up out of the basement, carrying air thick with the scent of ozone and humidity. Bomb Shell hauled himself up through the opening, his single optic narrowing against the firelight. Lucky climbed up close behind him and shook a cloud of basement dust out of his fur. \"That latch hates me,\" he grumbled. \"The feeling is mutual.\"",
             "images": [
               {
                 "id": "bomb-shell-arrives",
@@ -131,7 +137,7 @@
           "editor": "hidden",
           "instructions": "Read the scene. Press Continue when you are ready.",
           "scene": {
-            "caption": "Bomb Shell and Lucky had appeared in the greenroom the same night as Oogrish and Gearshift, and they understood just as little about how or why. They had spent most of the last two weeks in Mar'tu's basement, hunched over the strange brass instruments Mar'tu had hauled back from the Institute where they used to teach. Bomb Shell held up the ribbon of paper. \"The resonance array hasn't stopped ringing for an hour,\" he said. \"Whatever's coming, it's bigger than the last one.\"",
+            "caption": "Bomb Shell and Lucky had appeared in the greenroom the same night as Oogrish and Gearshift, and they understood just as little about how or why. They had spent most of the last two weeks in Mar'tu's basement, hunched over the strange brass instruments Mar'tu had hauled back from the Institute where they used to teach. Bomb Shell held up the ribbon of paper. \"The resonance array has been spiking for over an hour,\" he said. \"Whatever's coming, it's bigger than the last one.\"",
             "images": [
               {
                 "id": "the-resonance-array",
@@ -146,7 +152,7 @@
           "editor": "hidden",
           "instructions": "Read the scene. Press Continue when you are ready.",
           "scene": {
-            "caption": "Lucky jerked a thumb at the mantle. \"So what's the clock say?\" Mar'tu sighed the sigh of someone who had answered this question many, many times. \"For the hundredth time, it is not a clock. It is a Ley Clock.\" They tapped the glass above the single hand, now resting at the very edge of the glowing blue. \"It does not count the hours. It counts down to the next burst. When the hand reaches the blue, the burst arrives.\"",
+            "caption": "Lucky jerked a thumb at the mantle. \"I still don't understand how we're supposed to use that compass thing.\" Mar'tu sighed the sigh of someone who had answered this question many, many times. \"Lucky... Once again, it is not a compass. It is a Ley Clock.\" They tapped the glass above the single hand, now resting at the very edge of the glowing blue. \"It does not show direction. It counts down to the next burst. When the hand reaches the blue, the burst arrives.\"",
             "images": [
               {
                 "id": "ley-clock",
@@ -161,7 +167,7 @@
           "editor": "hidden",
           "instructions": "Read the scene. Press Continue when you are ready.",
           "scene": {
-            "caption": "Mar'tu unrolled a worn map across the table. Thin threads of glowing blue split and branched over every continent like cracks in a frozen lake. \"These are the ley-lines. They run under all of Tor, like fault lines in the earth. For longer than anyone can remember, they were quiet. Gentle. They gave a little magic to anyone who knew how to ask for it.\" Their finger traced a line that ran right past the tiny painted cabin. \"Then, not long ago, they woke up.\"",
+            "caption": "Mar'tu unrolled a worn map across the table. Thin threads of glowing blue split and branched over every continent like cracks in a frozen lake. \"These ley-lines run under all of Tor, like fault lines in volcanic planets. For longer than anyone can remember, they were quiet. Gentle. They gave a little magic to anyone who knew how to ask for it.\" Their finger traced a line that ran right past the tiny painted cabin. \"Then, not long ago, they woke up.\"",
             "images": [
               {
                 "id": "map-of-tor",
@@ -206,12 +212,12 @@
           "editor": "hidden",
           "instructions": "Read the scene. Press Continue when you are ready.",
           "scene": {
-            "caption": "That was the part none of them could make sense of. When the four of them first blinked into existence in the greenroom, they weren't the only thing there. Sitting alone in the middle of the bare floor was the Ley Clock, ticking away as if it had been waiting for them. No one else. No note. Just the clock, a door with a small label that read \"Greenroom, Interior,\" and a sign above it that said \"Exit.\"",
+            "caption": "That was the part none of them could make sense of. They were all going through relatively normal days on their home planets when the four of them first blinked into existence in the greenroom. They weren't the only thing there. Sitting alone in the middle of the bare floor was the Ley Clock, ticking away as if it had been waiting for them. No one else. No note. Just the clock, a door with a small label that read \"Greenroom, Interior,\" and a sign above it that said \"Exit.\"",
             "images": [
               {
                 "id": "greenroom",
                 "src": "/scenes/fil-greenroom.svg",
-                "alt": "A faded green flashback of a bare room with the Ley Clock in the middle and four faint figures around it"
+                "alt": "A faded flashback of a bare white room with the Ley Clock in the middle and four faint figures around it"
               }
             ]
           }
@@ -221,7 +227,7 @@
           "editor": "hidden",
           "instructions": "Read the scene. Press Continue when you are ready.",
           "scene": {
-            "caption": "The hand crept the last sliver toward the glowing arc, and then the blue drained out of the clock all at once. It flashed red. Then again. Then again. Oogrish's medallion hummed so hard he could feel it in his shell. Nobody needed to say it. They had seen the clock turn red only once before, and the burst that followed had nearly torn the barrier apart.",
+            "caption": "The hand crept the last sliver toward the glowing arc, and then the blue drained out of the clock all at once. It flashed red. Then again. Then again. Oogrish's medallion hummed so hard he could feel it in his shell. Nobody needed to say it. The clock usually turned yellow during a burst. They had seen the clock turn red only once before, and the burst that followed had nearly torn the barrier apart.",
             "images": [
               {
                 "id": "red-clock",
@@ -236,7 +242,7 @@
           "editor": "hidden",
           "instructions": "Read the scene. Press Continue when you are ready.",
           "scene": {
-            "caption": "Mar'tu was already on their feet, arms raised, and a faint violet lattice flickered to life across the cabin walls. \"The barrier will not hold a red burst on my strength alone,\" they said. \"Out to the yard, all of you, and cast Strengthen Magic on its edge, like we practiced. Quickly now, yes?\" Lucky raised a hand. \"Quick question. What's in it for me?\" Mar'tu didn't even turn around. \"Existing.\"",
+            "caption": "Mar'tu was already on their feet, arms raised, and a faint violet lattice flickered to life across the cabin walls. \"The barrier will not hold another large burst using my strength alone,\" they said. \"Out to the yard, all of you, and cast Strengthen Magic on its edge, like we practiced. Quickly now, yes?\" Lucky raised a hand. \"Quick question. What's in it for me?\" Mar'tu didn't even turn around. \"Existing.\"",
             "images": [
               {
                 "id": "raise-the-barrier",
