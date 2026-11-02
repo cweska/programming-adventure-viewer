@@ -89,6 +89,10 @@ a {
   font-size: 0.92rem;
 }
 
+.local-note.autosave-status {
+  margin: 10px 0 0;
+}
+
 .join-bar form {
   display: flex;
   flex-wrap: wrap;
