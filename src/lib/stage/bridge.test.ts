@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   applyStageMessage,
   conversationEvents,
+  gameEvents,
   parseStageMessage,
   stageMoves,
   type StageEvent,
@@ -76,5 +77,25 @@ describe("stage bridge", () => {
       { type: "speak", option: "option 1" },
     ]);
   });
-});
 
+  it("reads spell casts, mana bars, and skill rolls from Python", () => {
+    expect(parseStageMessage({ type: "cast", name: "Lucky" })).toEqual({ type: "cast", name: "Lucky" });
+    expect(parseStageMessage({ type: "mana", name: "Lucky", bar: "Mana [] 9/26", mana: 9, max: 26 })).toEqual({
+      type: "mana",
+      name: "Lucky",
+      bar: "Mana [] 9/26",
+      mana: 9,
+      max: 26,
+    });
+    expect(parseStageMessage({ type: "mana", name: "Lucky", bar: "x", mana: "9", max: 26 })).toBeNull();
+    expect(parseStageMessage({ type: "roll", skill: "strength", roll: 14, success: true, required: 12 })).toEqual({
+      type: "roll",
+      skill: "strength",
+      roll: 14,
+      success: true,
+      required: 12,
+    });
+    expect(parseStageMessage({ type: "roll", skill: "strength", roll: 14, success: "yes", required: 12 })).toBeNull();
+    expect(gameEvents([{ type: "flare" }, { type: "cast", name: "Lucky" }])).toEqual([{ type: "cast", name: "Lucky" }]);
+  });
+});

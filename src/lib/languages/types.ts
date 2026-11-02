@@ -15,6 +15,7 @@ export type CheckResult = {
 export type RunInput = {
   code: string;
   checks: { name: string; code: string }[];
+  setup?: string;
 };
 
 export type RunResult = {
@@ -27,8 +28,14 @@ export type RunResult = {
   timedOut?: boolean;
 };
 
+export type LiveSession = {
+  call(code: string): Promise<RunResult>;
+  end(): void;
+};
+
 export interface LanguageAdapter {
   format(code: string): Promise<string>;
   run(input: RunInput): Promise<RunResult>;
+  startSession(input: { setup?: string; code: string }): Promise<{ session: LiveSession; result: RunResult }>;
   explain(traceback: string): Explanation;
 }

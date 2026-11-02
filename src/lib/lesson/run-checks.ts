@@ -8,8 +8,11 @@ export type PythonCheckRun = {
   error: string;
   stdout: string;
   checks: { name: string; passed: boolean; message: string }[];
-  events: Record<string, string | string[]>[];
+  events: StageRecord[];
+  calls: { ok: boolean; error: string; events: StageRecord[] }[];
 };
+
+export type StageRecord = Record<string, string | number | boolean | string[]>;
 
 export function workerPrelude(): string {
   const worker = readFileSync(path.join(process.cwd(), "public/workers/python-worker.js"), "utf8");
@@ -42,10 +45,18 @@ namespace["_stage_options"] = lambda count: events.append({"type": "options", "o
 namespace["_stage_option"] = lambda index, text: events[-1]["options"].__setitem__(int(index), str(text))
 namespace["_stage_speak"] = lambda option: events.append({"type": "speak", "option": str(option)})
 namespace["_stage_highlight"] = lambda option: events.append({"type": "highlight", "option": str(option)})
+namespace["_stage_cast"] = lambda name: events.append({"type": "cast", "name": str(name)})
+namespace["_stage_mana"] = lambda name, bar, mana, maximum: events.append(
+    {"type": "mana", "name": str(name), "bar": str(bar), "mana": int(mana), "max": int(maximum)}
+)
+namespace["_stage_roll"] = lambda skill, roll, success, required: events.append(
+    {"type": "roll", "skill": str(skill), "roll": int(roll), "success": bool(success), "required": int(required)}
+)
 exec(payload["prelude"], namespace, namespace)
 ok = True
 error = ""
 try:
+    exec(payload.get("setup", ""), namespace, namespace)
     exec(payload["code"], namespace, namespace)
 except Exception as exc:
     ok = False
@@ -65,6 +76,14 @@ if ok:
                     "message": f"{type(exc).__name__}: {exc}",
                 }
             )
+calls = []
+for call in payload.get("calls", []):
+    start = len(events)
+    try:
+        exec(call, namespace, namespace)
+        calls.append({"ok": True, "error": "", "events": events[start:]})
+    except Exception as exc:
+        calls.append({"ok": False, "error": f"{type(exc).__name__}: {exc}", "events": events[start:]})
 sys.stdout = real_stdout
 json.dump(
     {
@@ -73,14 +92,19 @@ json.dump(
         "stdout": namespace["_captured_stdout"],
         "checks": results,
         "events": events,
+        "calls": calls,
     },
     sys.stdout,
 )
 `;
 
-export function runPythonChecks(code: string, checks: Check[]): PythonCheckRun {
+export function runPythonChecks(
+  code: string,
+  checks: Check[],
+  options: { setup?: string; calls?: string[] } = {},
+): PythonCheckRun {
   const child = spawnSync("python3", ["-c", RUNNER], {
-    input: JSON.stringify({ code, checks, prelude: workerPrelude() }),
+    input: JSON.stringify({ code, checks, prelude: workerPrelude(), setup: options.setup ?? "", calls: options.calls ?? [] }),
     encoding: "utf8",
   });
   if (child.error) throw child.error;
