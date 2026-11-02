@@ -136,7 +136,7 @@ test.describe("Friends In Low Places", () => {
     await page.getByTestId("actor-bomb-shell").click();
     await expect(page.getByTestId("speech-bubble")).toHaveText("Shield up.");
     await page.getByTestId("cast-lucky").click();
-    await expect(page.getByTestId("speech-bubble")).toHaveText("Fine. But I'm keeping track.");
+    await expect(page.getByTestId("speech-bubble")).toHaveText("Don't try to mog while I'm shieldmaxxing.");
     await expect(page.getByTestId("mana-lucky")).toHaveText("Mana 9/26");
     await expect(page.getByTestId("game")).toHaveAttribute("data-barrier-locked", "true");
     await expect(page.getByTestId("goal-met")).toHaveText("The barrier held!");
