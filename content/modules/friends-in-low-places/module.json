@@ -1,0 +1,520 @@
+{
+  "id": "friends-in-low-places",
+  "title": "Friends In Low Places",
+  "summary": "Someone is knocking under the floor. New friends, a clock that is not a clock, and a barrier that has to hold.",
+  "campaign": {
+    "order": 2,
+    "label": "Module 2"
+  },
+  "language": "python",
+  "lessons": [
+    {
+      "id": "friends-in-low-places",
+      "title": "Campaign Module 2: Friends In Low Places",
+      "published": true,
+      "beats": [
+        {
+          "id": "three-knocks",
+          "editor": "hidden",
+          "instructions": "Read the scene. Press Continue when you are ready.",
+          "scene": {
+            "caption": "A knocking from underneath their feet jarred Mar'tu and the others.",
+            "images": [
+              {
+                "id": "three-knocks",
+                "src": "/scenes/fil-three-knocks.svg",
+                "alt": "A close-up of Mar'tu with wide yellow eyes as the word Knock appears again and again"
+              }
+            ]
+          }
+        },
+        {
+          "id": "trap-door",
+          "editor": "hidden",
+          "instructions": "Read the scene. Press Continue when you are ready.",
+          "scene": {
+            "caption": "Mar'tu chuckled, \"Looks like the latch is sticking again. Could one of you pry it again?\"",
+            "images": [
+              {
+                "id": "trap-door",
+                "src": "/scenes/fil-trapdoor-knock.svg",
+                "alt": "A square trap door in the plank floor beside a folded rug, with knocking coming from below"
+              }
+            ]
+          }
+        },
+        {
+          "id": "skill-checks",
+          "instructions": "A skill check rolls a die and compares the roll to the number needed to succeed. First, finish perform_roll(die_size): replace return 1 with return random.randint(1, die_size), which gives a random whole number from 1 to die_size. Then, in each check, set required_roll to how hard that action should be (a number from 2 to 20), and replace return False with return roll >= required_roll so the check succeeds when the roll is high enough. Press Run.",
+          "scene": {
+            "caption": "In RPGs, a skill check is something our character needs to do to see if they can accomplish some kind of action. In this case, we're seeing if we have the ability to force the stuck trap door open. Implement the skill check functionality below.",
+            "images": [
+              {
+                "id": "trap-door",
+                "src": "/scenes/fil-trapdoor.svg",
+                "alt": "A stuck square trap door in the plank floor beside a folded rug"
+              }
+            ]
+          },
+          "skillCheck": {
+            "openImage": {
+              "id": "trap-door-open",
+              "src": "/scenes/fil-trapdoor-open.svg",
+              "alt": "The trap door swung open, with pale blue light spilling up from the basement"
+            },
+            "options": [
+              {
+                "id": "strength",
+                "label": "Force it open",
+                "check": "strength_check"
+              },
+              {
+                "id": "dexterity",
+                "label": "Finesse the latch with a shim",
+                "check": "dexterity_check"
+              },
+              {
+                "id": "intelligence",
+                "label": "Find an easier way",
+                "check": "investigation_check"
+              }
+            ],
+            "helper": {
+              "npc": "mar-tu",
+              "line": "Oh just let me do it."
+            },
+            "success": "Door opened!"
+          },
+          "activity": {
+            "kind": "interactive",
+            "starterCode": "import random\n\n\ndef perform_roll(die_size):\n    return 1\n\n\ndef strength_check(roll):\n    # Prying the hatch open with brute force.\n    required_roll = 0\n    return False\n\n\ndef dexterity_check(roll):\n    # Sliding a metal shim in to free the latch.\n    required_roll = 0\n    return False\n\n\ndef investigation_check(roll):\n    # Finding the worn spot that pops the latch when you hit it.\n    required_roll = 0\n    return False\n",
+            "passFeedback": "Your skill checks work. Choose how the party should get the hatch open.",
+            "failFeedback": "Each check should succeed only when the roll is at least its required roll.",
+            "checks": [
+              {
+                "name": "perform_roll rolls a die",
+                "code": "for _size in (4, 6, 20):\n    _rolls = [perform_roll(_size) for _ in range(600)]\n    assert all(isinstance(_roll, int) for _roll in _rolls), \"perform_roll() should return a whole number.\"\n    assert min(_rolls) >= 1 and max(_rolls) <= _size, f\"perform_roll({_size}) should stay between 1 and {_size}.\"\n    assert len(set(_rolls)) > 1, \"perform_roll() should give a random number, not the same number every time: use random.randint(1, die_size).\"\n_rolls = [perform_roll(6) for _ in range(600)]\nassert 1 in _rolls and 6 in _rolls, \"perform_roll(6) should be able to roll both 1 and 6.\"\n"
+              },
+              {
+                "name": "strength_check succeeds from its required roll up",
+                "code": "_results = [strength_check(roll) for roll in range(1, 21)]\nassert _results == sorted(_results), \"strength_check() should fail on low rolls and succeed on high rolls: return roll >= required_roll.\"\n_needed = _required_roll(strength_check)\nassert _needed != 21, \"strength_check() never succeeds. Use a required_roll from 2 to 20 and return roll >= required_roll.\"\nassert _needed >= 2, \"Set required_roll in strength_check() to a number from 2 to 20 for forcing the hatch.\"\n"
+              },
+              {
+                "name": "dexterity_check succeeds from its required roll up",
+                "code": "_results = [dexterity_check(roll) for roll in range(1, 21)]\nassert _results == sorted(_results), \"dexterity_check() should fail on low rolls and succeed on high rolls: return roll >= required_roll.\"\n_needed = _required_roll(dexterity_check)\nassert _needed != 21, \"dexterity_check() never succeeds. Use a required_roll from 2 to 20 and return roll >= required_roll.\"\nassert _needed >= 2, \"Set required_roll in dexterity_check() to a number from 2 to 20 for the shim.\"\n"
+              },
+              {
+                "name": "investigation_check succeeds from its required roll up",
+                "code": "_results = [investigation_check(roll) for roll in range(1, 21)]\nassert _results == sorted(_results), \"investigation_check() should fail on low rolls and succeed on high rolls: return roll >= required_roll.\"\n_needed = _required_roll(investigation_check)\nassert _needed != 21, \"investigation_check() never succeeds. Use a required_roll from 2 to 20 and return roll >= required_roll.\"\nassert _needed >= 2, \"Set required_roll in investigation_check() to a number from 2 to 20 for finding the worn spot.\"\n"
+              }
+            ]
+          }
+        },
+        {
+          "id": "bomb-shell-arrives",
+          "editor": "hidden",
+          "instructions": "Read the scene. Press Continue when you are ready.",
+          "scene": {
+            "caption": "The trap door swung open and a cold draft rolled up out of the basement, carrying the sharp smell the air gets right after a lightning strike. Bomb Shell hauled himself up through the opening, his single optic narrowing against the firelight. Lucky climbed up close behind him and shook a cloud of basement dust out of his fur. \"That latch hates me,\" he grumbled. \"Personally.\"",
+            "images": [
+              {
+                "id": "bomb-shell-arrives",
+                "src": "/scenes/fil-bomb-shell-arrives.svg",
+                "alt": "Bomb Shell pulling himself up through the open trap door, his teal optic glowing, with Lucky's shaggy head and platinum armor behind him"
+              }
+            ]
+          }
+        },
+        {
+          "id": "the-resonance-array",
+          "editor": "hidden",
+          "instructions": "Read the scene. Press Continue when you are ready.",
+          "scene": {
+            "caption": "Bomb Shell and Lucky had appeared in the greenroom the same night as Oogrish and Gearshift, and they understood just as little about how or why. They had spent most of the last two weeks in Mar'tu's basement, hunched over the strange brass instruments Mar'tu had hauled back from the Institute where they used to teach. Bomb Shell held up the ribbon of paper. \"The resonance array hasn't stopped ringing for an hour,\" he said. \"Whatever's coming, it's bigger than the last one.\"",
+            "images": [
+              {
+                "id": "the-resonance-array",
+                "src": "/scenes/fil-resonance-array.svg",
+                "alt": "Bomb Shell holding up a long ribbon of paper covered in jagged ink spikes, Lucky leaning on the wall, and Gearshift and Oogrish by the door"
+              }
+            ]
+          }
+        },
+        {
+          "id": "ley-clock",
+          "editor": "hidden",
+          "instructions": "Read the scene. Press Continue when you are ready.",
+          "scene": {
+            "caption": "Lucky jerked a thumb at the mantle. \"So what's the clock say?\" Mar'tu sighed the sigh of someone who had answered this question many, many times. \"For the hundredth time, it is not a clock. It is a Ley Clock.\" They tapped the glass above the single hand, now resting at the very edge of the glowing blue. \"It does not count the hours. It counts down to the next burst. When the hand reaches the blue, the burst arrives.\"",
+            "images": [
+              {
+                "id": "ley-clock",
+                "src": "/scenes/fil-ley-clock.svg",
+                "alt": "A close-up of the Ley Clock, its single hand at the edge of the glowing blue arc, with Mar'tu's shrouded hand resting on top"
+              }
+            ]
+          }
+        },
+        {
+          "id": "map-of-tor",
+          "editor": "hidden",
+          "instructions": "Read the scene. Press Continue when you are ready.",
+          "scene": {
+            "caption": "Mar'tu unrolled a worn map across the table. Thin threads of glowing blue split and branched over every continent like cracks in a frozen lake. \"These are the ley-lines. They run under all of Tor, like fault lines in the earth. For longer than anyone can remember, they were quiet. Gentle. They gave a little magic to anyone who knew how to ask for it.\" Their finger traced a line that ran right past the tiny painted cabin. \"Then, not long ago, they woke up.\"",
+            "images": [
+              {
+                "id": "map-of-tor",
+                "src": "/scenes/fil-map-of-tor.svg",
+                "alt": "A worn map of Tor on the oak table, crossed by glowing blue ley-lines, with a tiny painted cabin beside one line"
+              }
+            ]
+          }
+        },
+        {
+          "id": "the-burst",
+          "editor": "hidden",
+          "instructions": "Read the scene. Press Continue when you are ready.",
+          "scene": {
+            "caption": "\"When a ley-line bursts, the magic does not stay in the ground,\" Mar'tu said quietly. \"It rolls across the land like a tidal wave. Anyone caught out in the open without protection…\" They lifted a hand from the folds of their shroud, opened it, and let something invisible drift away. \"…is simply gone. Unmade. Only a barrier like the one around this house can turn it aside.\"",
+            "images": [
+              {
+                "id": "the-burst",
+                "src": "/scenes/fil-the-burst.svg",
+                "alt": "A towering wave of blue-white light rolling across the night hills, with a tiny cabin under a violet dome in the distance"
+              }
+            ]
+          }
+        },
+        {
+          "id": "chalk-wall",
+          "editor": "hidden",
+          "instructions": "Read the scene. Press Continue when you are ready.",
+          "scene": {
+            "caption": "Every night for two weeks, the five of them had gathered at this wall, trying to work out how the bursts worked and, more importantly, how to stop them. Oogrish ran a finger down the column of chalk numbers. \"Every forty-eight hours,\" he said slowly. \"At first.\" Gearshift's visor dimmed as he ran the math. \"The gaps are getting shorter. And they're shrinking faster every time.\" Mar'tu nodded grimly. \"The decay is accelerating. Like I told you, yes?\"",
+            "images": [
+              {
+                "id": "chalk-wall",
+                "src": "/scenes/fil-chalk-wall.svg",
+                "alt": "A cabin wall covered in chalk notes, with the hours 48, 48, 47, 46, 44, 41, and 37, and 37 circled twice"
+              }
+            ]
+          }
+        },
+        {
+          "id": "greenroom",
+          "editor": "hidden",
+          "instructions": "Read the scene. Press Continue when you are ready.",
+          "scene": {
+            "caption": "That was the part none of them could make sense of. When the four of them first blinked into existence in the greenroom, they weren't the only thing there. Sitting alone in the middle of the bare floor was the Ley Clock, ticking away as if it had been waiting for them. No one else. No note. Just the clock, a door with a small label that read \"Greenroom, Interior,\" and a sign above it that said \"Exit.\"",
+            "images": [
+              {
+                "id": "greenroom",
+                "src": "/scenes/fil-greenroom.svg",
+                "alt": "A faded green flashback of a bare room with the Ley Clock in the middle and four faint figures around it"
+              }
+            ]
+          }
+        },
+        {
+          "id": "red-clock",
+          "editor": "hidden",
+          "instructions": "Read the scene. Press Continue when you are ready.",
+          "scene": {
+            "caption": "The hand crept the last sliver toward the glowing arc, and then the blue drained out of the clock all at once. It flashed red. Then again. Then again. Oogrish's medallion hummed so hard he could feel it in his shell. Nobody needed to say it. They had seen the clock turn red only once before, and the burst that followed had nearly torn the barrier apart.",
+            "images": [
+              {
+                "id": "red-clock",
+                "src": "/scenes/fil-red-clock.svg",
+                "alt": "The cabin washed in red light as the Ley Clock flashes, with everyone turned toward the mantle"
+              }
+            ]
+          }
+        },
+        {
+          "id": "raise-the-barrier",
+          "editor": "hidden",
+          "instructions": "Read the scene. Press Continue when you are ready.",
+          "scene": {
+            "caption": "Mar'tu was already on their feet, arms raised, and a faint violet lattice flickered to life across the cabin walls. \"The barrier will not hold a red burst on my strength alone,\" they said. \"Out to the yard, all of you, and cast Strengthen Magic on its edge, like we practiced. Quickly now, yes?\" Lucky raised a hand. \"Quick question. What's in it for me?\" Mar'tu didn't even turn around. \"Existing.\"",
+            "images": [
+              {
+                "id": "raise-the-barrier",
+                "src": "/scenes/fil-raise-the-barrier.svg",
+                "alt": "Mar'tu with both arms raised as violet threads of light run to a lattice across the cabin walls"
+              }
+            ]
+          }
+        },
+        {
+          "id": "spell-book",
+          "instructions": "Finish add_spell(). In the spell dictionary, replace each placeholder with the matching parameter: mana_cost, required_affinity, and spell_function. Then replace the comment with one line that stores the spell in spell_book, using spell_name as the key: spell_book[spell_name] = spell. The loop at the bottom is already written: it writes Strengthen Magic into every party member's spell book. Notice that strengthen_magic is passed in without parentheses. We're handing over the function itself so the game can call it later, not calling it now. Press Run.",
+          "scene": {
+            "caption": "Before our characters can cast a spell, they need a place to keep it. In RPGs, a spell book holds every spell a character knows: what it does, how much mana it costs, and how strong a connection to magic you need to cast it. Let's build an add_spell() function and use it to write Strengthen Magic into every party member's spell book.",
+            "images": [
+              {
+                "id": "spell-book",
+                "src": "/scenes/fil-spell-book.svg",
+                "alt": "A thick leather spell book open on the oak table by candlelight, with a faint violet sigil sketched on the right page"
+              }
+            ]
+          },
+          "spellBook": {
+            "spell": "Strengthen Magic",
+            "manaCost": 10,
+            "requiredAffinity": 8,
+            "success": "Spell book ready, well done!"
+          },
+          "activity": {
+            "kind": "interactive",
+            "starterCode": "def strengthen_magic(caster):\n    reinforce_barrier(caster)\n\n\ndef add_spell(spell_book, spell_name, mana_cost, required_affinity, spell_function):\n    spell = {\n        \"mana_cost\": 0,\n        \"required_affinity\": 0,\n        \"spell_function\": None,\n    }\n    # Store the spell in spell_book, using spell_name as the key\n\n\nfor member in party.members:\n    add_spell(member[\"spell_book\"], \"Strengthen Magic\", 10, 8, strengthen_magic)\n",
+            "passFeedback": "Spell book ready, well done!",
+            "failFeedback": "Fill in all three values from the parameters, then store the spell in spell_book using spell_name as the key.",
+            "party": {
+              "members": [
+                "oogrish",
+                "gearshift",
+                "bomb-shell",
+                "lucky"
+              ],
+              "mana": {
+                "oogrish": 18,
+                "gearshift": 15,
+                "bomb-shell": 14,
+                "lucky": 19
+              }
+            },
+            "checks": [
+              {
+                "name": "add_spell stores a spell under its name",
+                "code": "_book = {}\nadd_spell(_book, \"Test Spark\", 3, 2, print)\nassert \"Test Spark\" in _book, \"add_spell() should store the spell in spell_book using spell_name as the key.\"\n"
+              },
+              {
+                "name": "the stored spell has the right values",
+                "code": "def _test_spark(caster):\n    pass\n_book = {}\nadd_spell(_book, \"Test Spark\", 3, 2, _test_spark)\n_spell = _book[\"Test Spark\"]\nassert _spell[\"mana_cost\"] == 3, \"Use the mana_cost parameter for \\\"mana_cost\\\".\"\nassert _spell[\"required_affinity\"] == 2, \"Use the required_affinity parameter for \\\"required_affinity\\\".\"\nassert _spell[\"spell_function\"] is _test_spark, \"Use the spell_function parameter for \\\"spell_function\\\".\"\n"
+              },
+              {
+                "name": "a second spell keeps the first",
+                "code": "_book = {}\nadd_spell(_book, \"Test Spark\", 3, 2, print)\nadd_spell(_book, \"Second Spark\", 5, 1, print)\nassert \"Test Spark\" in _book and \"Second Spark\" in _book, \"Adding a second spell should keep the first one in spell_book.\"\n"
+              },
+              {
+                "name": "every party member knows Strengthen Magic",
+                "code": "for _member in party.members:\n    _spell = _member[\"spell_book\"].get(\"Strengthen Magic\")\n    assert _spell, _member[\"character_name\"] + \"'s spell book is missing Strengthen Magic.\"\n    assert _spell[\"mana_cost\"] == 10 and _spell[\"required_affinity\"] == 8, \"Strengthen Magic should cost 10 mana and need an affinity of 8.\"\n    assert _spell[\"spell_function\"] is strengthen_magic, \"Strengthen Magic should store the strengthen_magic function.\"\n"
+              }
+            ]
+          }
+        },
+        {
+          "id": "mana-bars",
+          "instructions": "get_mana_bar(caster) builds a text bar from two kinds of blocks: a full block █ for each point of mana the caster has, and a light block ░ for each point they've used. Replace the first 0 with caster[\"mana\"] and the second 0 with caster[\"max_mana\"] - caster[\"mana\"]. Then finish show_mana(caster) like present_dialogue_option() in Module 1: store the result of get_mana_bar(caster) in a variable, then pass the caster and that variable to print_mana(). The loop at the bottom shows every party member's bar. Press Run.",
+          "scene": {
+            "caption": "Magic isn't free. Every spell draws on a character's mana, the magical energy that comes from their connection to the Alatium, the source of all magic. Before anyone casts, the player needs to see how much mana each character has left. Let's build a mana bar.",
+            "images": [
+              {
+                "id": "party-by-door",
+                "src": "/scenes/fil-party-by-door.svg",
+                "alt": "All four party members gathered by the cabin door, seen from Mar'tu's seat"
+              }
+            ]
+          },
+          "partyPanel": {
+            "members": [
+              "oogrish",
+              "gearshift",
+              "bomb-shell",
+              "lucky"
+            ],
+            "success": "Mana bars working, well done!"
+          },
+          "activity": {
+            "kind": "interactive",
+            "starterCode": "def get_mana_bar(caster):\n    filled = \"█\" * 0\n    empty = \"░\" * 0\n    return \"Mana [\" + filled + empty + \"] \" + str(caster[\"mana\"]) + \"/\" + str(caster[\"max_mana\"])\n\n\ndef show_mana(caster):\n    pass\n\n\nfor member in party.members:\n    show_mana(member)\n",
+            "passFeedback": "Mana bars working, well done!",
+            "failFeedback": "Use the caster's mana for the full blocks and max_mana minus mana for the empty ones, then pass the bar to print_mana().",
+            "party": {
+              "members": [
+                "oogrish",
+                "gearshift",
+                "bomb-shell",
+                "lucky"
+              ],
+              "mana": {
+                "oogrish": 18,
+                "gearshift": 15,
+                "bomb-shell": 14,
+                "lucky": 19
+              }
+            },
+            "background": [
+              {
+                "from": "spell-book",
+                "fallback": "def strengthen_magic(caster):\n    reinforce_barrier(caster)\n\n\ndef add_spell(spell_book, spell_name, mana_cost, required_affinity, spell_function):\n    spell = {\n        \"mana_cost\": mana_cost,\n        \"required_affinity\": required_affinity,\n        \"spell_function\": spell_function,\n    }\n    spell_book[spell_name] = spell\n\n\nfor member in party.members:\n    add_spell(member[\"spell_book\"], \"Strengthen Magic\", 10, 8, strengthen_magic)\n"
+              }
+            ],
+            "checks": [
+              {
+                "name": "3 of 5 mana",
+                "code": "assert get_mana_bar({\"mana\": 3, \"max_mana\": 5}) == \"Mana [███░░] 3/5\", \"A caster with 3 of 5 mana should get Mana [███░░] 3/5.\"\n"
+              },
+              {
+                "name": "empty and full bars",
+                "code": "assert get_mana_bar({\"mana\": 0, \"max_mana\": 4}) == \"Mana [░░░░] 0/4\", \"A caster with 0 of 4 mana should get Mana [░░░░] 0/4.\"\nassert get_mana_bar({\"mana\": 6, \"max_mana\": 6}) == \"Mana [██████] 6/6\", \"A caster with 6 of 6 mana should get Mana [██████] 6/6.\"\n"
+              },
+              {
+                "name": "show_mana draws the bar once",
+                "code": "_mana_prints.clear()\n_tester = {\"character_name\": \"Tester\", \"mana\": 2, \"max_mana\": 3}\nshow_mana(_tester)\nassert _mana_prints == [(\"Tester\", get_mana_bar(_tester))], \"show_mana() should pass the caster and their bar to print_mana() once.\"\n"
+              },
+              {
+                "name": "the bar is stored in a variable",
+                "code": "assert show_mana.__code__.co_nlocals >= 2, \"Store the result of get_mana_bar(caster) in a variable first, then pass it to print_mana().\"\n"
+              }
+            ]
+          }
+        },
+        {
+          "id": "hold-the-barrier",
+          "instructions": "Write the rest of cast_spell(caster, spell_name) where the comments are, using an if, an elif, and an else. If the caster's magical affinity (caster[\"abilities\"][\"magical_affinity\"]) is lower than spell[\"required_affinity\"], call print_prompt() to say they aren't skilled enough. Otherwise, if caster[\"mana\"] is lower than spell[\"mana_cost\"], call print_prompt() to say they don't have enough mana. Otherwise, call spell[\"spell_function\"](caster), subtract spell[\"mana_cost\"] from caster[\"mana\"], and call show_mana(caster) so the bar updates. Use < and not <=, because a caster with exactly enough mana can still cast. spell[\"spell_function\"](caster) works because the dictionary is holding a function: the parentheses on the end are what call it. Press Run.",
+          "scene": {
+            "caption": "Now for the main event. When a character casts a spell, the game has to check two things first: are they skilled enough, and do they have enough mana? If both answers are yes, the spell goes off and its cost comes out of their mana. If not, the character tells us why. Let's write cast_spell() and get this barrier ready before the burst hits.",
+            "images": []
+          },
+          "board": {
+            "map": "moonlit-hills",
+            "party": [
+              "oogrish",
+              "gearshift",
+              "bomb-shell",
+              "lucky"
+            ],
+            "partyStart": [
+              {
+                "x": 9,
+                "y": 5
+              },
+              {
+                "x": 10,
+                "y": 5
+              },
+              {
+                "x": 12,
+                "y": 5
+              },
+              {
+                "x": 13,
+                "y": 5
+              }
+            ],
+            "actors": [
+              {
+                "id": "mar-tu",
+                "kind": "npc",
+                "ref": "mar-tu",
+                "x": 11,
+                "y": 4
+              }
+            ],
+            "features": [],
+            "goal": {
+              "type": "barrier"
+            },
+            "casting": {
+              "spell": "Strengthen Magic",
+              "mana": {
+                "oogrish": 18,
+                "gearshift": 15,
+                "bomb-shell": 14,
+                "lucky": 19
+              },
+              "lines": {
+                "oogrish": "Steady, now.",
+                "gearshift": "Barrier's holding.",
+                "bomb-shell": "Shield up.",
+                "lucky": "Fine. But I'm keeping track."
+              }
+            },
+            "barrier": {
+              "x0": 7,
+              "x1": 15,
+              "y0": 0,
+              "y1": 6
+            },
+            "seed": 1
+          },
+          "activity": {
+            "kind": "interactive",
+            "starterCode": "def cast_spell(caster, spell_name):\n    if spell_name not in caster[\"spell_book\"]:\n        print_prompt(caster[\"character_name\"] + \" doesn't know \" + spell_name + \".\")\n        return\n    spell = caster[\"spell_book\"][spell_name]\n\n    # 1. If the caster's magical affinity is lower than the spell's required affinity:\n    #        print_prompt(caster[\"character_name\"] + \" isn't skilled enough to cast \" + spell_name + \".\")\n    # 2. Otherwise, if the caster's mana is lower than the spell's mana cost:\n    #        print_prompt(caster[\"character_name\"] + \" doesn't have enough mana to cast \" + spell_name + \".\")\n    # 3. Otherwise: call the spell's function, subtract its mana cost, and show the new mana bar.\n    pass\n",
+            "passFeedback": "Casting works! Click a party member or press 1–4 to cast Strengthen Magic before the burst hits.",
+            "failFeedback": "Check affinity first, then mana. Only cast, subtract, and update the bar when both checks pass.",
+            "unlocks": [
+              "magic"
+            ],
+            "party": {
+              "members": [
+                "oogrish",
+                "gearshift",
+                "bomb-shell",
+                "lucky"
+              ],
+              "mana": {
+                "oogrish": 18,
+                "gearshift": 15,
+                "bomb-shell": 14,
+                "lucky": 19
+              }
+            },
+            "background": [
+              {
+                "from": "spell-book",
+                "fallback": "def strengthen_magic(caster):\n    reinforce_barrier(caster)\n\n\ndef add_spell(spell_book, spell_name, mana_cost, required_affinity, spell_function):\n    spell = {\n        \"mana_cost\": mana_cost,\n        \"required_affinity\": required_affinity,\n        \"spell_function\": spell_function,\n    }\n    spell_book[spell_name] = spell\n\n\nfor member in party.members:\n    add_spell(member[\"spell_book\"], \"Strengthen Magic\", 10, 8, strengthen_magic)\n"
+              },
+              {
+                "from": "mana-bars",
+                "fallback": "def get_mana_bar(caster):\n    filled = \"█\" * caster[\"mana\"]\n    empty = \"░\" * (caster[\"max_mana\"] - caster[\"mana\"])\n    return \"Mana [\" + filled + empty + \"] \" + str(caster[\"mana\"]) + \"/\" + str(caster[\"max_mana\"])\n\n\ndef show_mana(caster):\n    mana_bar = get_mana_bar(caster)\n    print_mana(caster, mana_bar)\n\n\nfor member in party.members:\n    show_mana(member)\n"
+              }
+            ],
+            "checks": [
+              {
+                "name": "a skilled caster with enough mana casts",
+                "code": "_cast_calls = []\n\ndef _test_spell(caster):\n    _cast_calls.append(caster[\"character_name\"])\n\ndef _tester(affinity, mana, cost, required):\n    _cast_calls.clear()\n    _prompts.clear()\n    _mana_prints.clear()\n    book = {\"Test Spark\": {\"mana_cost\": cost, \"required_affinity\": required, \"spell_function\": _test_spell}}\n    return {\"character_name\": \"Tester\", \"abilities\": {\"magical_affinity\": affinity}, \"mana\": mana, \"max_mana\": 20, \"spell_book\": book}\n_caster = _tester(10, 12, 5, 8)\ncast_spell(_caster, \"Test Spark\")\nassert _cast_calls == [\"Tester\"], \"When both checks pass, call spell[\\\"spell_function\\\"](caster) once.\"\nassert _caster[\"mana\"] == 7, \"After casting, subtract the spell's mana_cost from the caster's mana.\"\n"
+              },
+              {
+                "name": "the mana bar updates after a cast",
+                "code": "_cast_calls = []\n\ndef _test_spell(caster):\n    _cast_calls.append(caster[\"character_name\"])\n\ndef _tester(affinity, mana, cost, required):\n    _cast_calls.clear()\n    _prompts.clear()\n    _mana_prints.clear()\n    book = {\"Test Spark\": {\"mana_cost\": cost, \"required_affinity\": required, \"spell_function\": _test_spell}}\n    return {\"character_name\": \"Tester\", \"abilities\": {\"magical_affinity\": affinity}, \"mana\": mana, \"max_mana\": 20, \"spell_book\": book}\n_caster = _tester(10, 12, 5, 8)\ncast_spell(_caster, \"Test Spark\")\nassert _mana_prints and _mana_prints[-1] == (\"Tester\", get_mana_bar(_caster)), \"After casting, call show_mana(caster) so the bar shows the new mana.\"\n"
+              },
+              {
+                "name": "too little affinity does not cast",
+                "code": "_cast_calls = []\n\ndef _test_spell(caster):\n    _cast_calls.append(caster[\"character_name\"])\n\ndef _tester(affinity, mana, cost, required):\n    _cast_calls.clear()\n    _prompts.clear()\n    _mana_prints.clear()\n    book = {\"Test Spark\": {\"mana_cost\": cost, \"required_affinity\": required, \"spell_function\": _test_spell}}\n    return {\"character_name\": \"Tester\", \"abilities\": {\"magical_affinity\": affinity}, \"mana\": mana, \"max_mana\": 20, \"spell_book\": book}\n_caster = _tester(5, 12, 5, 8)\ncast_spell(_caster, \"Test Spark\")\nassert _cast_calls == [], \"A caster whose affinity is too low should not cast.\"\nassert _caster[\"mana\"] == 12, \"A caster whose affinity is too low should keep their mana.\"\nassert len(_prompts) == 1 and \"skilled enough\" in _prompts[0], \"Call print_prompt() once to say the caster isn't skilled enough.\"\n"
+              },
+              {
+                "name": "too little mana does not cast",
+                "code": "_cast_calls = []\n\ndef _test_spell(caster):\n    _cast_calls.append(caster[\"character_name\"])\n\ndef _tester(affinity, mana, cost, required):\n    _cast_calls.clear()\n    _prompts.clear()\n    _mana_prints.clear()\n    book = {\"Test Spark\": {\"mana_cost\": cost, \"required_affinity\": required, \"spell_function\": _test_spell}}\n    return {\"character_name\": \"Tester\", \"abilities\": {\"magical_affinity\": affinity}, \"mana\": mana, \"max_mana\": 20, \"spell_book\": book}\n_caster = _tester(10, 4, 5, 8)\ncast_spell(_caster, \"Test Spark\")\nassert _cast_calls == [], \"A caster without enough mana should not cast.\"\nassert _caster[\"mana\"] == 4, \"A caster without enough mana should keep their mana.\"\nassert len(_prompts) == 1 and \"enough mana\" in _prompts[0], \"Call print_prompt() once to say the caster doesn't have enough mana.\"\n"
+              },
+              {
+                "name": "exactly enough mana still casts",
+                "code": "_cast_calls = []\n\ndef _test_spell(caster):\n    _cast_calls.append(caster[\"character_name\"])\n\ndef _tester(affinity, mana, cost, required):\n    _cast_calls.clear()\n    _prompts.clear()\n    _mana_prints.clear()\n    book = {\"Test Spark\": {\"mana_cost\": cost, \"required_affinity\": required, \"spell_function\": _test_spell}}\n    return {\"character_name\": \"Tester\", \"abilities\": {\"magical_affinity\": affinity}, \"mana\": mana, \"max_mana\": 20, \"spell_book\": book}\n_caster = _tester(10, 5, 5, 8)\ncast_spell(_caster, \"Test Spark\")\nassert _cast_calls == [\"Tester\"] and _caster[\"mana\"] == 0, \"A caster with exactly enough mana can still cast: use < and not <=.\"\n"
+              },
+              {
+                "name": "the spell's own cost is used",
+                "code": "_cast_calls = []\n\ndef _test_spell(caster):\n    _cast_calls.append(caster[\"character_name\"])\n\ndef _tester(affinity, mana, cost, required):\n    _cast_calls.clear()\n    _prompts.clear()\n    _mana_prints.clear()\n    book = {\"Test Spark\": {\"mana_cost\": cost, \"required_affinity\": required, \"spell_function\": _test_spell}}\n    return {\"character_name\": \"Tester\", \"abilities\": {\"magical_affinity\": affinity}, \"mana\": mana, \"max_mana\": 20, \"spell_book\": book}\n_caster = _tester(10, 12, 7, 8)\ncast_spell(_caster, \"Test Spark\")\nassert _caster[\"mana\"] == 5, \"Subtract spell[\\\"mana_cost\\\"], not a number you typed.\"\n"
+              }
+            ]
+          }
+        },
+        {
+          "id": "thirty-two-hours",
+          "editor": "hidden",
+          "instructions": "Read the scene. Press Continue when you are ready.",
+          "scene": {
+            "caption": "The light faded. The hum in Oogrish's medallion died away to nothing. Outside, a lone cricket started up again, as if checking that the coast was clear. Bomb Shell studied the chalk wall, then the clock. \"Thirty-two hours,\" he said. \"Maybe less.\" Mar'tu closed their tired yellow eyes. \"Then we had better get to work, yes?\"",
+            "images": [
+              {
+                "id": "thirty-two-hours",
+                "src": "/scenes/fil-thirty-two-hours.svg",
+                "alt": "The party resting in the cabin while the Ley Clock glows a calm blue again"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

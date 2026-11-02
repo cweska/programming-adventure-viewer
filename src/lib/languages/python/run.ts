@@ -1,11 +1,12 @@
 import { publicPath } from "../../site";
-import type { RunInput, RunResult } from "../types";
+import type { LiveSession, RunInput, RunResult } from "../types";
 import { parseStageMessage, type StageEvent } from "../../stage/bridge";
 
 const TIMEOUT_MS = 5000;
 
 type WorkerResult = {
   type: "result";
+  requestId: number;
   ok: boolean;
   stdout: string;
   stderr: string;
@@ -20,6 +21,10 @@ type FailedMessage = { type: "failed"; message: string };
 let worker: Worker | null = null;
 let ready: Promise<void> | null = null;
 let failReason: string | null = null;
+let nextRequest = 1;
+let nextSession = 1;
+let generation = 0;
+let queue: Promise<unknown> = Promise.resolve();
 
 function boot(): Promise<void> {
   if (ready && worker) return ready;
@@ -76,43 +81,80 @@ export class PythonTimeoutError extends Error {
   }
 }
 
-export async function runPython(input: RunInput): Promise<RunResult> {
-  if (typeof window === "undefined") {
-    throw new Error("Python runs in the browser.");
-  }
-  await boot();
-  const current = worker;
-  if (!current) throw new Error(failReason ?? "Python is not available.");
+function send(message: Record<string, unknown>): Promise<RunResult> {
+  const job = queue.then(async () => {
+    if (typeof window === "undefined") {
+      throw new Error("Python runs in the browser.");
+    }
+    await boot();
+    const current = worker;
+    if (!current) throw new Error(failReason ?? "Python is not available.");
+    const requestId = nextRequest++;
 
-  return new Promise((resolve, reject) => {
-    const timer = window.setTimeout(() => {
-      current.removeEventListener("message", onMessage);
-      current.terminate();
-      worker = null;
-      ready = null;
-      reject(new PythonTimeoutError());
-    }, TIMEOUT_MS);
+    return new Promise<RunResult>((resolve, reject) => {
+      const timer = window.setTimeout(() => {
+        current.removeEventListener("message", onMessage);
+        current.terminate();
+        worker = null;
+        ready = null;
+        generation += 1;
+        reject(new PythonTimeoutError());
+      }, TIMEOUT_MS);
 
-    const onMessage = (event: MessageEvent<WorkerResult | ReadyMessage | FailedMessage>) => {
-      if (event.data?.type !== "result") return;
-      window.clearTimeout(timer);
-      current.removeEventListener("message", onMessage);
-      const data = event.data;
-      resolve({
-        ok: data.ok,
-        stdout: data.stdout,
-        stderr: data.stderr,
-        traceback: data.traceback,
-        checks: data.checks ?? [],
-        stageEvents: toStageEvents(data.stageEvents ?? []),
-      });
-    };
+      const onMessage = (event: MessageEvent<WorkerResult | ReadyMessage | FailedMessage>) => {
+        if (event.data?.type !== "result" || event.data.requestId !== requestId) return;
+        window.clearTimeout(timer);
+        current.removeEventListener("message", onMessage);
+        const data = event.data;
+        resolve({
+          ok: data.ok,
+          stdout: data.stdout,
+          stderr: data.stderr,
+          traceback: data.traceback,
+          checks: data.checks ?? [],
+          stageEvents: toStageEvents(data.stageEvents ?? []),
+        });
+      };
 
-    current.addEventListener("message", onMessage);
-    current.postMessage({
-      type: "run",
-      code: input.code,
-      checks: input.checks,
+      current.addEventListener("message", onMessage);
+      current.postMessage({ ...message, requestId });
     });
   });
+  queue = job.catch(() => undefined);
+  return job;
+}
+
+export function runPython(input: RunInput): Promise<RunResult> {
+  return send({ type: "run", code: input.code, checks: input.checks, setup: input.setup ?? "" });
+}
+
+export async function startPythonSession(input: {
+  setup?: string;
+  code: string;
+}): Promise<{ session: LiveSession; result: RunResult }> {
+  const id = `session-${nextSession++}`;
+  const result = await send({ type: "session-start", id, code: input.code, setup: input.setup ?? "" });
+  const owner = generation;
+  let ended = false;
+  const session: LiveSession = {
+    call(code: string) {
+      if (ended || owner !== generation) {
+        return Promise.resolve({
+          ok: false,
+          stdout: "",
+          stderr: "",
+          traceback: "RuntimeError: The game session has ended. Press Run to start it again.",
+          checks: [],
+          stageEvents: [],
+        });
+      }
+      return send({ type: "session-call", id, code });
+    },
+    end() {
+      if (ended) return;
+      ended = true;
+      if (worker && owner === generation) worker.postMessage({ type: "session-end", id });
+    },
+  };
+  return { session, result };
 }

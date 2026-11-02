@@ -1,0 +1,154 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" role="img" aria-label="A cabin wall covered in chalk notes, with the hours 48, 48, 47, 46, 44, 41, and 37, and 37 circled twice">
+  <defs>
+    <linearGradient id="wall" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3a2416"/>
+      <stop offset="1" stop-color="#5a3a22"/>
+    </linearGradient>
+    <linearGradient id="floor" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7a5230"/>
+      <stop offset="1" stop-color="#4a2f1a"/>
+    </linearGradient>
+    <linearGradient id="oak" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a6773f"/>
+      <stop offset="1" stop-color="#7a5229"/>
+    </linearGradient>
+    <linearGradient id="cherry" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a1442e"/>
+      <stop offset="1" stop-color="#6b2618"/>
+    </linearGradient>
+    <linearGradient id="stone" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8c8a86"/>
+      <stop offset="1" stop-color="#5e5b57"/>
+    </linearGradient>
+    <linearGradient id="night" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#160c32"/>
+      <stop offset="1" stop-color="#4a2c6a"/>
+    </linearGradient>
+    <linearGradient id="steel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8d9aa8"/>
+      <stop offset="1" stop-color="#b8c4d0"/>
+    </linearGradient>
+    <linearGradient id="plate" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f4f7fa"/>
+      <stop offset="0.5" stop-color="#c9d0d8"/>
+      <stop offset="1" stop-color="#8e98a4"/>
+    </linearGradient>
+    <linearGradient id="fur" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#b8602c"/>
+      <stop offset="1" stop-color="#8a4420"/>
+    </linearGradient>
+    <linearGradient id="gunmetal" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#4c5560"/>
+      <stop offset="0.6" stop-color="#6b7682"/>
+      <stop offset="1" stop-color="#4c5560"/>
+    </linearGradient>
+    <linearGradient id="shroud" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6c4a86"/>
+      <stop offset="1" stop-color="#3e2850"/>
+    </linearGradient>
+    <radialGradient id="tealGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#7ffff0" stop-opacity="0.8"/>
+      <stop offset="1" stop-color="#2fd6c4" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="warm" cx="0.2" cy="0.6" r="0.9">
+      <stop offset="0" stop-color="#ffb347" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#ffb347" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="fireGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffb347" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#ffb347" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="blueGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#8fe6ff" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#2f9be0" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="sphere" cx="0.4" cy="0.35" r="0.6">
+      <stop offset="0" stop-color="#eafcff"/>
+      <stop offset="0.4" stop-color="#6fd3ff"/>
+      <stop offset="1" stop-color="#1a6fd1"/>
+    </radialGradient>
+    <radialGradient id="redSphere" cx="0.4" cy="0.35" r="0.6">
+      <stop offset="0" stop-color="#ffe2dc"/>
+      <stop offset="0.4" stop-color="#ff5a46"/>
+      <stop offset="1" stop-color="#a3120c"/>
+    </radialGradient>
+    <radialGradient id="redGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ff6a50" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#d0201a" stop-opacity="0"/>
+    </radialGradient>
+    <style>
+      .glow { animation: glow 1.8s ease-in-out infinite alternate; }
+      @keyframes glow { from { opacity: 0.7; } to { opacity: 1; } }
+      @media (prefers-reduced-motion: reduce) { * { animation: none !important; } }
+    </style>
+  </defs>
+  <rect width="960" height="540" fill="#2e1d12"/>
+  <g stroke="#1a0f08" stroke-width="5" opacity="0.8">
+    <path d="M0 54 H960 M0 108 H960 M0 162 H960 M0 216 H960 M0 270 H960 M0 324 H960 M0 378 H960 M0 432 H960 M0 486 H960"/>
+  </g>
+  <g stroke="#4a3020" stroke-width="2" opacity="0.6">
+    <path d="M0 30 H960 M0 84 H960 M0 138 H960 M0 192 H960 M0 246 H960 M0 300 H960 M0 354 H960 M0 408 H960 M0 462 H960 M0 516 H960"/>
+  </g>
+  <rect x="0" y="0" width="150" height="540" fill="url(#stone)" stroke="#3a3836" stroke-width="4"/>
+  <g fill="none" stroke="#4a4744" stroke-width="3">
+    <path d="M0 70 H150 M0 150 H150 M0 230 H150 M0 310 H150 M0 390 H150 M0 470 H150 M60 0 V70 M100 70 V150 M40 150 V230 M110 230 V310 M50 310 V390 M90 390 V470"/>
+  </g>
+  <circle class="glow" cx="0" cy="470" r="320" fill="url(#fireGlow)"/>
+  <g fill="none" stroke="#f2efe6" stroke-width="4" stroke-linecap="round" opacity="0.9">
+    <text x="300" y="70" font-family="'Segoe Print', 'Bradley Hand', 'Comic Sans MS', 'Chalkboard SE', cursive" font-size="40" stroke="none" fill="#f2efe6">Bursts</text>
+    <path d="M296 80 C 360 86, 420 76, 470 82"/>
+    <path d="M300 90 L302 120"/>
+    <text x="420" y="120" font-family="'Segoe Print', 'Bradley Hand', 'Comic Sans MS', 'Chalkboard SE', cursive" font-size="34" stroke="none" fill="#f2efe6">48 hrs</text>
+    <path d="M300 142 L302 172 M311 142 L313 172"/>
+    <text x="420" y="172" font-family="'Segoe Print', 'Bradley Hand', 'Comic Sans MS', 'Chalkboard SE', cursive" font-size="34" stroke="none" fill="#f2efe6">48 hrs</text>
+    <path d="M300 194 L302 224 M311 194 L313 224 M322 194 L324 224"/>
+    <text x="420" y="224" font-family="'Segoe Print', 'Bradley Hand', 'Comic Sans MS', 'Chalkboard SE', cursive" font-size="34" stroke="none" fill="#f2efe6">47 hrs</text>
+    <path d="M300 246 L302 276 M311 246 L313 276 M322 246 L324 276 M333 246 L335 276"/>
+    <text x="420" y="276" font-family="'Segoe Print', 'Bradley Hand', 'Comic Sans MS', 'Chalkboard SE', cursive" font-size="34" stroke="none" fill="#f2efe6">46 hrs</text>
+    <path d="M300 298 L302 328 M311 298 L313 328 M322 298 L324 328 M333 298 L335 328 M296 324 L348 302"/>
+    <text x="420" y="328" font-family="'Segoe Print', 'Bradley Hand', 'Comic Sans MS', 'Chalkboard SE', cursive" font-size="34" stroke="none" fill="#f2efe6">44 hrs</text>
+    <path d="M300 350 L302 380 M311 350 L313 380 M322 350 L324 380 M333 350 L335 380 M296 376 L348 354 M360 350 L362 380"/>
+    <text x="420" y="380" font-family="'Segoe Print', 'Bradley Hand', 'Comic Sans MS', 'Chalkboard SE', cursive" font-size="34" stroke="none" fill="#f2efe6">41 hrs</text>
+    <path d="M300 402 L302 432 M311 402 L313 432 M322 402 L324 432 M333 402 L335 432 M296 428 L348 406 M360 402 L362 432 M371 402 L373 432"/>
+    <text x="420" y="432" font-family="'Segoe Print', 'Bradley Hand', 'Comic Sans MS', 'Chalkboard SE', cursive" font-size="34" stroke="none" fill="#f2efe6">37 hrs</text>
+    <path d="M552 110 C 572 120, 572 144, 552 154"/>
+    <text x="580" y="142" font-family="'Segoe Print', 'Bradley Hand', 'Comic Sans MS', 'Chalkboard SE', cursive" font-size="22" stroke="none" fill="#f2efe6">0</text>
+    <path d="M552 162 C 572 172, 572 196, 552 206"/>
+    <text x="580" y="194" font-family="'Segoe Print', 'Bradley Hand', 'Comic Sans MS', 'Chalkboard SE', cursive" font-size="22" stroke="none" fill="#f2efe6">-1</text>
+    <path d="M552 214 C 572 224, 572 248, 552 258"/>
+    <text x="580" y="246" font-family="'Segoe Print', 'Bradley Hand', 'Comic Sans MS', 'Chalkboard SE', cursive" font-size="22" stroke="none" fill="#f2efe6">-1</text>
+    <path d="M552 266 C 572 276, 572 300, 552 310"/>
+    <text x="580" y="298" font-family="'Segoe Print', 'Bradley Hand', 'Comic Sans MS', 'Chalkboard SE', cursive" font-size="22" stroke="none" fill="#f2efe6">-2</text>
+    <path d="M552 318 C 572 328, 572 352, 552 362"/>
+    <text x="580" y="350" font-family="'Segoe Print', 'Bradley Hand', 'Comic Sans MS', 'Chalkboard SE', cursive" font-size="22" stroke="none" fill="#f2efe6">-3</text>
+    <path d="M552 370 C 572 380, 572 404, 552 414"/>
+    <text x="580" y="402" font-family="'Segoe Print', 'Bradley Hand', 'Comic Sans MS', 'Chalkboard SE', cursive" font-size="22" stroke="none" fill="#f2efe6">-4</text>
+    <ellipse cx="462" cy="420" rx="70" ry="30" transform="rotate(-4 462 420)"/>
+    <ellipse cx="460" cy="420" rx="80" ry="36" transform="rotate(3 460 420)"/>
+    <text x="640" y="200" font-family="'Segoe Print', 'Bradley Hand', 'Comic Sans MS', 'Chalkboard SE', cursive" font-size="26" stroke="none" fill="#f2efe6">every 2 days?</text>
+    <path d="M636 192 L 800 180"/>
+    <text x="640" y="260" font-family="'Segoe Print', 'Bradley Hand', 'Comic Sans MS', 'Chalkboard SE', cursive" font-size="26" stroke="none" fill="#f2efe6">weather??</text>
+    <path d="M636 252 L 760 244"/>
+    <text x="640" y="330" font-family="'Segoe Print', 'Bradley Hand', 'Comic Sans MS', 'Chalkboard SE', cursive" font-size="30" stroke="none" fill="#f2efe6">faster ?</text>
+    <path d="M620 340 C 600 380, 560 400, 548 420 M548 420 l 2 -16 M548 420 l 14 -8"/>
+    <text x="820" y="300" font-family="'Segoe Print', 'Bradley Hand', 'Comic Sans MS', 'Chalkboard SE', cursive" font-size="48" stroke="none" fill="#f2efe6">?</text>
+    <text x="250" y="500" font-family="'Segoe Print', 'Bradley Hand', 'Comic Sans MS', 'Chalkboard SE', cursive" font-size="40" stroke="none" fill="#f2efe6">?</text>
+    <circle cx="700" cy="440" r="38"/>
+    <path d="M674 428 A 30 30 0 0 1 726 428"/>
+    <path d="M700 440 L 676 430"/>
+    <circle cx="800" cy="440" r="26"/>
+    <path d="M800 440 L 780 432"/>
+    <path d="M740 440 L 770 440 M762 434 l 8 6 l -8 6"/>
+  </g>
+  <g>
+    <rect x="770" y="40" width="130" height="110" fill="#efe3c4" stroke="#a89670" stroke-width="2" transform="rotate(5 835 95)"/>
+    <g stroke="#7a6a4a" stroke-width="2" transform="rotate(5 835 95)"><path d="M784 70 H884 M784 86 H876 M784 102 H884 M784 118 H860 M784 134 H880"/></g>
+    <circle cx="830" cy="46" r="6" fill="#c43b3b" stroke="#5a1410" stroke-width="2"/>
+    <rect x="186" y="380" width="96" height="120" fill="#e9dcba" stroke="#a89670" stroke-width="2" transform="rotate(-6 234 440)"/>
+    <g stroke="#7a6a4a" stroke-width="2" transform="rotate(-6 234 440)"><path d="M198 410 H270 M198 426 H262 M198 442 H270 M198 458 H250"/><circle cx="234" cy="480" r="12" fill="none"/></g>
+    <circle cx="232" cy="386" r="6" fill="#c9a24a" stroke="#6e4a12" stroke-width="2"/>
+    <rect x="840" y="380" width="100" height="130" fill="#efe3c4" stroke="#a89670" stroke-width="2" transform="rotate(3 890 445)"/>
+    <g stroke="#7a6a4a" stroke-width="2" transform="rotate(3 890 445)"><path d="M852 410 H928 M852 426 H920 M852 442 H928 M852 458 H900 M852 474 H924"/></g>
+    <circle cx="890" cy="386" r="6" fill="#c43b3b" stroke="#5a1410" stroke-width="2"/>
+  </g>
+</svg>

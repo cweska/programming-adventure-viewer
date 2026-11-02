@@ -7,7 +7,13 @@ export type StageEvent =
   | { type: "flare" }
   | { type: "focus"; imageId: string }
   | { type: "move"; direction: Direction }
-  | ConversationEvent;
+  | ConversationEvent
+  | GameEvent;
+
+export type GameEvent =
+  | { type: "cast"; name: string }
+  | { type: "mana"; name: string; bar: string; mana: number; max: number }
+  | { type: "roll"; skill: string; roll: number; success: boolean; required: number };
 
 export type ConversationEvent =
   | { type: "prompt"; text: string }
@@ -50,6 +56,33 @@ export function parseStageMessage(message: unknown): StageEvent | null {
   if ((record.type === "speak" || record.type === "highlight") && typeof record.option === "string") {
     return { type: record.type, option: record.option };
   }
+  if (record.type === "cast" && typeof record.name === "string") {
+    return { type: "cast", name: record.name };
+  }
+  if (
+    record.type === "mana" &&
+    typeof record.name === "string" &&
+    typeof record.bar === "string" &&
+    Number.isFinite(record.mana) &&
+    Number.isFinite(record.max)
+  ) {
+    return { type: "mana", name: record.name, bar: record.bar, mana: Number(record.mana), max: Number(record.max) };
+  }
+  if (
+    record.type === "roll" &&
+    typeof record.skill === "string" &&
+    Number.isFinite(record.roll) &&
+    typeof record.success === "boolean" &&
+    Number.isFinite(record.required)
+  ) {
+    return {
+      type: "roll",
+      skill: record.skill,
+      roll: Number(record.roll),
+      success: record.success,
+      required: Number(record.required),
+    };
+  }
   return null;
 }
 
@@ -76,6 +109,12 @@ export function conversationEvents(events: readonly StageEvent[]): ConversationE
   return events.filter(
     (event): event is ConversationEvent =>
       event.type === "prompt" || event.type === "options" || event.type === "speak" || event.type === "highlight",
+  );
+}
+
+export function gameEvents(events: readonly StageEvent[]): GameEvent[] {
+  return events.filter(
+    (event): event is GameEvent => event.type === "cast" || event.type === "mana" || event.type === "roll",
   );
 }
 

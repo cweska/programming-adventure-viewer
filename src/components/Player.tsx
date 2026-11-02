@@ -24,25 +24,38 @@ import {
   starterFor,
   type FailedCheck,
 } from "../lib/lesson/progression";
-import { moduleSchema, requiresPass, showsEditor, type Beat, type Module } from "../lib/lesson/schema";
+import {
+  moduleSchema,
+  passesOnGoal,
+  requiresPass,
+  showsEditor,
+  type Beat,
+  type Module,
+  type SkillCheck,
+} from "../lib/lesson/schema";
+import { activitySetup, castCode, skillRollCode } from "../lib/lesson/setup";
 import { formatForTrigger, type FormatTrigger } from "../lib/languages/python/format-policy";
 import {
   joinClassroomInBrowser,
   saveProgressInBrowser,
 } from "../lib/classroom/local-store";
 import { pythonAdapter, PythonTimeoutError, whenPythonReady } from "../lib/languages/python";
-import type { Explanation } from "../lib/languages/types";
+import type { Explanation, LiveSession, RunResult } from "../lib/languages/types";
 import { isStaticExport } from "../lib/site";
-import { conversationEvents, stageMoves, type TheaterState } from "../lib/stage/bridge";
+import { conversationEvents, gameEvents, stageMoves, type StageEvent, type TheaterState } from "../lib/stage/bridge";
 import { ConsolePanel } from "./ConsolePanel";
 import { ConversationScene, type ConversationScript } from "./ConversationScene";
 import { GameBoard, type BoardScript } from "./game/GameBoard";
+import { PartyPanelScene, type ManaEvent, type ManaScript } from "./PartyPanelScene";
 import { PythonEditor } from "./PythonEditor";
+import { SkillCheckScene, type RollOutcome } from "./SkillCheckScene";
+import { SpellBookScene } from "./SpellBookScene";
 import { Theater } from "./Theater";
 
 const PREVIEW_STORAGE_KEY = "emberkeep-preview";
 const STUDENT_STORAGE_KEY = "emberkeep-student";
 const PROMPTS_STORAGE_PREFIX = "emberkeep-prompts:";
+const PASSED_STORAGE_PREFIX = "emberkeep-passed:";
 
 type StudentSession = {
   id: string;
@@ -90,6 +103,7 @@ export function Player({ moduleId, draft = false }: { moduleId?: string; draft?:
   const [conversationScript, setConversationScript] = useState<ConversationScript | null>(null);
   const [checksPassed, setChecksPassed] = useState<Record<string, boolean>>({});
   const [prompts, setPrompts] = useState<Record<string, string>>({});
+  const [manaScript, setManaScript] = useState<ManaScript | null>(null);
 
   const navRef = useRef(nav);
   const indexRef = useRef(0);
@@ -99,6 +113,8 @@ export function Player({ moduleId, draft = false }: { moduleId?: string; draft?:
   const previewRef = useRef(draft);
   const studentRef = useRef<StudentSession | null>(null);
   const moduleRef = useRef(lessonModule);
+  const passedCodeRef = useRef<Record<string, string>>({});
+  const liveRef = useRef<{ key: string; session: LiveSession } | null>(null);
 
   const lessons = useMemo(() => lessonsFor(lessonModule, preview), [lessonModule, preview]);
   const lesson = lessons[lessonIndex];
@@ -133,8 +149,97 @@ export function Player({ moduleId, draft = false }: { moduleId?: string; draft?:
     setFailedChecks([]);
     setScript(null);
     setConversationScript(null);
+    setManaScript(null);
     setConfirmingReset(false);
+    endLiveSession();
     void formatPart("load", next.index, source, lessonId);
+  }
+
+  function endLiveSession() {
+    liveRef.current?.session.end();
+    liveRef.current = null;
+  }
+
+  function rememberPassedCode(beatId: string, source: string) {
+    passedCodeRef.current = { ...passedCodeRef.current, [beatId]: source };
+    try {
+      localStorage.setItem(`${PASSED_STORAGE_PREFIX}${moduleRef.current.id}`, JSON.stringify(passedCodeRef.current));
+    } catch {
+      // Without storage, later parts fall back to the answer key that ships with them.
+    }
+  }
+
+  function explainFailure(error: unknown) {
+    if (error instanceof PythonTimeoutError) {
+      liveRef.current = null;
+      setExplainer({
+        title: "Time limit",
+        hint: "The program ran too long and was stopped. Check for an infinite loop.",
+        raw: "",
+      });
+      setPythonReady(false);
+      whenPythonReady()
+        .then(() => setPythonReady(true))
+        .catch(() => setPythonReady(false));
+      return;
+    }
+    setExplainer({
+      title: "Python could not start",
+      hint: "The player could not run this program. Try again in a moment.",
+      raw: error instanceof Error ? error.message : String(error),
+    });
+  }
+
+  async function startLiveSession(key: string, setup: string, source: string) {
+    try {
+      const { session, result } = await pythonAdapter.startSession({ setup, code: source });
+      const currentLesson = lessons[lessonIndex];
+      const currentPart = currentLesson?.beats[navRef.current.index];
+      const stillHere = currentLesson && currentPart && `${currentLesson.id}/${currentPart.id}` === key;
+      if (!result.ok || !stillHere) {
+        session.end();
+        return;
+      }
+      liveRef.current?.session.end();
+      liveRef.current = { key, session };
+    } catch (error) {
+      explainFailure(error);
+    }
+  }
+
+  async function callLive(code: string): Promise<RunResult | "no-session" | "error"> {
+    const live = liveRef.current;
+    if (!live || live.key !== partKey) return "no-session";
+    try {
+      const result = await live.session.call(code);
+      const printed = [result.stdout, result.stderr].filter((chunk) => chunk.trim().length > 0).join("");
+      if (printed) setOutput((previous) => previous + printed);
+      if (!result.ok) {
+        setExplainer(pythonAdapter.explain(result.traceback));
+        return "error";
+      }
+      return result;
+    } catch (error) {
+      explainFailure(error);
+      return "error";
+    }
+  }
+
+  async function rollSkill(option: SkillCheck["options"][number]): Promise<RollOutcome> {
+    const result = await callLive(skillRollCode(option));
+    if (result === "no-session") return { kind: "no-session" };
+    if (result === "error") return { kind: "error" };
+    const roll = result.stageEvents.find((event) => event.type === "roll");
+    return roll?.type === "roll"
+      ? { kind: "roll", roll: { roll: roll.roll, success: roll.success, required: roll.required } }
+      : { kind: "error" };
+  }
+
+  async function castFor(index: number, spell: string): Promise<StageEvent[] | null> {
+    const result = await callLive(castCode(index, spell));
+    if (result === "no-session") return null;
+    if (result === "error") return [];
+    return result.stageEvents;
   }
 
   async function formatPart(trigger: FormatTrigger, index: number, source: string, lessonId: string): Promise<string> {
@@ -211,6 +316,16 @@ export function Player({ moduleId, draft = false }: { moduleId?: string; draft?:
     } catch {
       // Remembered prompts are a convenience; the scene works without them.
     }
+    try {
+      const passed = localStorage.getItem(`${PASSED_STORAGE_PREFIX}${moduleRef.current.id}`);
+      if (passed) passedCodeRef.current = JSON.parse(passed) as Record<string, string>;
+    } catch {
+      passedCodeRef.current = {};
+    }
+    return () => {
+      liveRef.current?.session.end();
+      liveRef.current = null;
+    };
   }, []);
 
   function rememberPrompt(beatId: string, text: string) {
@@ -373,10 +488,13 @@ export function Player({ moduleId, draft = false }: { moduleId?: string; draft?:
     setFeedback(null);
     setFailedChecks([]);
     const source = await formatPart("run", current.index, codeRef.current, currentLesson.id);
+    endLiveSession();
+    const setup = activitySetup(part.activity, passedCodeRef.current);
     try {
       const result = await pythonAdapter.run({
         code: source,
         checks: part.activity?.checks ?? [],
+        setup,
       });
       const printed = [result.stdout, result.stderr].filter((chunk) => chunk.trim().length > 0).join("");
       setOutput(printed);
@@ -384,12 +502,23 @@ export function Player({ moduleId, draft = false }: { moduleId?: string; draft?:
       const grade = gradeRun(part, result);
       setFeedback(grade.feedback);
       setFailedChecks(grade.failedChecks);
+      const key = `${currentLesson.id}/${part.id}`;
       if (part.activity && grade.canContinue) {
-        if (part.board?.goal) {
-          setChecksPassed((previous) => ({ ...previous, [`${currentLesson.id}/${part.id}`]: true }));
+        rememberPassedCode(part.id, source);
+        if (passesOnGoal(part)) {
+          setChecksPassed((previous) => ({ ...previous, [key]: true }));
         } else {
           writeNavigation(recordPass(navRef.current, currentLesson.beats));
         }
+        if (part.skillCheck || part.board?.casting) await startLiveSession(key, setup, source);
+        if (part.board?.casting) {
+          // A fresh session starts everyone at full starting mana, so the board starts over too.
+          setScript((previous) => ({ token: (previous?.token ?? 0) + 1, moves: [] }));
+        }
+      }
+      if (part.partyPanel) {
+        const mana = gameEvents(result.stageEvents).filter((event): event is ManaEvent => event.type === "mana");
+        setManaScript((previous) => ({ token: (previous?.token ?? 0) + 1, events: mana }));
       }
       setTheater((previous) => {
         const next = nextTheaterState(part, result.stageEvents);
@@ -413,33 +542,17 @@ export function Player({ moduleId, draft = false }: { moduleId?: string; draft?:
         index: current.index,
       });
     } catch (error) {
-      if (error instanceof PythonTimeoutError) {
-        setExplainer({
-          title: "Time limit",
-          hint: "The program ran too long and was stopped. Check for an infinite loop.",
-          raw: "",
-        });
-        setPythonReady(false);
-        whenPythonReady()
-          .then(() => setPythonReady(true))
-          .catch(() => setPythonReady(false));
-      } else {
-        setExplainer({
-          title: "Python could not start",
-          hint: "The player could not run this program. Try again in a moment.",
-          raw: error instanceof Error ? error.message : String(error),
-        });
-      }
+      explainFailure(error);
     } finally {
       setRunning(false);
     }
   }
 
-  function onBoardGoal() {
+  function onPartGoal() {
     const currentLesson = lessons[lessonIndex];
     const current = navRef.current;
     const part = currentLesson?.beats[current.index];
-    if (!currentLesson || !part?.board?.goal || current.passed[current.index]) return;
+    if (!currentLesson || !part || !passesOnGoal(part) || current.passed[current.index]) return;
     writeNavigation(recordPass(current, currentLesson.beats));
     void persist({
       status: "in_progress",
@@ -588,7 +701,12 @@ export function Player({ moduleId, draft = false }: { moduleId?: string; draft?:
                   ? { features: beat.activity.unlocks, text: "Finish the code below and press Run." }
                   : null
               }
-              onGoal={onBoardGoal}
+              onGoal={onPartGoal}
+              onCast={
+                beat.board.casting
+                  ? (index) => castFor(index, beat.board?.casting?.spell ?? "")
+                  : undefined
+              }
             />
           ) : beat.conversation ? (
             <ConversationScene
@@ -598,6 +716,31 @@ export function Player({ moduleId, draft = false }: { moduleId?: string; draft?:
               prompt={prompts[beat.conversation.promptFrom ?? beat.id] ?? ""}
               script={conversationScript}
               canChoose={partFeatures.includes("dialogue")}
+            />
+          ) : beat.skillCheck ? (
+            <SkillCheckScene
+              key={`${lesson.id}/${beat.id}`}
+              image={beat.scene.images[0]}
+              skillCheck={beat.skillCheck}
+              canRoll={unlocked}
+              opened={partPassed}
+              onRoll={rollSkill}
+              onOpened={onPartGoal}
+            />
+          ) : beat.spellBook ? (
+            <SpellBookScene
+              key={`${lesson.id}/${beat.id}`}
+              image={beat.scene.images[0]}
+              spellBook={beat.spellBook}
+              inked={partPassed}
+            />
+          ) : beat.partyPanel ? (
+            <PartyPanelScene
+              key={`${lesson.id}/${beat.id}`}
+              image={beat.scene.images[0]}
+              panel={beat.partyPanel}
+              script={manaScript}
+              passed={partPassed}
             />
           ) : undefined
         }

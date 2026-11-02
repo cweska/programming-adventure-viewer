@@ -35,6 +35,7 @@
   "faction": "The Freedom Keepers of Corvex Prime",
   "backstory": "During an intergalactic war on his home world, Gearshift hauled cargo for the Freedom Keepers. Enemy raiders boarded his transport, and he escaped in a pod that crashed on an unknown planet. He sent out a signal searching for survivors. The next thing he remembers clearly is waking in the greenroom beside Oogrish.",
   "pastLife": "Back home he carried a self-loading three-barrel musket (60 shots per drum) and a compact rifle (20 shots per magazine). Neither crossed over with him. Firearms in this world are steampunk machines that run on runes and magic.",
+  "spellColor": "#ff7a2f",
   "sprite": "/sprites/gearshift.svg",
   "portrait": "/sprites/gearshift.svg"
 }

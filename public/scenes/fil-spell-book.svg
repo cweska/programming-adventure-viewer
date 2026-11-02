@@ -1,0 +1,133 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" role="img" aria-label="A thick leather spell book open on the oak table by candlelight, with a faint violet sigil sketched on the right page">
+  <defs>
+    <linearGradient id="wall" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3a2416"/>
+      <stop offset="1" stop-color="#5a3a22"/>
+    </linearGradient>
+    <linearGradient id="floor" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7a5230"/>
+      <stop offset="1" stop-color="#4a2f1a"/>
+    </linearGradient>
+    <linearGradient id="oak" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a6773f"/>
+      <stop offset="1" stop-color="#7a5229"/>
+    </linearGradient>
+    <linearGradient id="cherry" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a1442e"/>
+      <stop offset="1" stop-color="#6b2618"/>
+    </linearGradient>
+    <linearGradient id="stone" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8c8a86"/>
+      <stop offset="1" stop-color="#5e5b57"/>
+    </linearGradient>
+    <linearGradient id="night" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#160c32"/>
+      <stop offset="1" stop-color="#4a2c6a"/>
+    </linearGradient>
+    <linearGradient id="steel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8d9aa8"/>
+      <stop offset="1" stop-color="#b8c4d0"/>
+    </linearGradient>
+    <linearGradient id="plate" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f4f7fa"/>
+      <stop offset="0.5" stop-color="#c9d0d8"/>
+      <stop offset="1" stop-color="#8e98a4"/>
+    </linearGradient>
+    <linearGradient id="fur" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#b8602c"/>
+      <stop offset="1" stop-color="#8a4420"/>
+    </linearGradient>
+    <linearGradient id="gunmetal" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#4c5560"/>
+      <stop offset="0.6" stop-color="#6b7682"/>
+      <stop offset="1" stop-color="#4c5560"/>
+    </linearGradient>
+    <linearGradient id="shroud" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6c4a86"/>
+      <stop offset="1" stop-color="#3e2850"/>
+    </linearGradient>
+    <radialGradient id="tealGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#7ffff0" stop-opacity="0.8"/>
+      <stop offset="1" stop-color="#2fd6c4" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="warm" cx="0.2" cy="0.6" r="0.9">
+      <stop offset="0" stop-color="#ffb347" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#ffb347" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="fireGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffb347" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#ffb347" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="blueGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#8fe6ff" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#2f9be0" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="sphere" cx="0.4" cy="0.35" r="0.6">
+      <stop offset="0" stop-color="#eafcff"/>
+      <stop offset="0.4" stop-color="#6fd3ff"/>
+      <stop offset="1" stop-color="#1a6fd1"/>
+    </radialGradient>
+    <radialGradient id="redSphere" cx="0.4" cy="0.35" r="0.6">
+      <stop offset="0" stop-color="#ffe2dc"/>
+      <stop offset="0.4" stop-color="#ff5a46"/>
+      <stop offset="1" stop-color="#a3120c"/>
+    </radialGradient>
+    <radialGradient id="redGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ff6a50" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#d0201a" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="pageL" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#f4ead2"/>
+      <stop offset="0.85" stop-color="#ebdfc2"/>
+      <stop offset="1" stop-color="#cfc0a0"/>
+    </linearGradient>
+    <linearGradient id="pageR" x1="1" y1="0" x2="0" y2="0">
+      <stop offset="0" stop-color="#f4ead2"/>
+      <stop offset="0.85" stop-color="#ebdfc2"/>
+      <stop offset="1" stop-color="#cfc0a0"/>
+    </linearGradient>
+    <style>
+      .flame { animation: flame 0.9s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: 50% 100%; }
+      .flame.b { animation-duration: 1.2s; animation-delay: -0.4s; }
+      .flame.c { animation-duration: 0.7s; animation-delay: -0.2s; }
+      @keyframes flame { from { transform: scale(0.9, 0.85); opacity: 0.85; } to { transform: scale(1.05, 1.12); opacity: 1; } }
+      .glow { animation: glow 1.6s ease-in-out infinite alternate; }
+      .wash { opacity: 0.06; animation: wash 2s ease-in-out infinite; }
+      @keyframes glow { from { opacity: 0.6; } to { opacity: 1; } }
+      @keyframes wash { 0%, 100% { opacity: 0.02; } 50% { opacity: 0.16; } }
+      @media (prefers-reduced-motion: reduce) { * { animation: none !important; } .wash { opacity: 0.08; } }
+    </style>
+  </defs>
+  <rect width="960" height="540" fill="url(#oak)"/>
+  <g stroke="#6a4522" stroke-width="2" opacity="0.5" fill="none">
+    <path d="M0 60 C 200 50, 500 80, 960 64 M0 160 C 300 150, 600 180, 960 158 M0 480 C 250 470, 650 500, 960 476"/>
+  </g>
+  <g transform="rotate(8 880 300)">
+    <rect x="800" y="40" width="260" height="480" fill="#e6d3a6" stroke="#9c7f4a" stroke-width="4"/>
+    <path d="M820 120 C 860 110, 900 150, 940 140 M830 300 C 870 280, 900 320, 950 300" stroke="#7fdcff" stroke-width="3" fill="none" opacity="0.8"/>
+    <path d="M840 200 C 880 190, 930 220, 960 200 L 960 260 C 920 270, 870 250, 840 260 Z" fill="#d9c493" stroke="#8a6d3a" stroke-width="2"/>
+  </g>
+  <ellipse cx="480" cy="478" rx="380" ry="40" fill="#2a190d" opacity="0.45"/>
+  <path d="M120 80 C 260 60, 400 66, 480 92 C 560 66, 700 60, 840 80 L 860 460 C 720 440, 560 446, 480 470 C 400 446, 240 440, 100 460 Z" fill="#5a2a18" stroke="#2a120a" stroke-width="5"/>
+  <path d="M140 74 C 270 56, 404 62, 480 86 L 480 456 C 400 434, 260 428, 128 446 Z" fill="url(#pageL)" stroke="#a89670" stroke-width="2"/>
+  <path d="M820 74 C 690 56, 556 62, 480 86 L 480 456 C 560 434, 700 428, 832 446 Z" fill="url(#pageR)" stroke="#a89670" stroke-width="2"/>
+  <path d="M480 86 V 456" stroke="#8a7a5a" stroke-width="3"/>
+  <g fill="none" stroke="#b07cff" stroke-width="2.5" opacity="0.45">
+    <circle cx="645" cy="200" r="78"/>
+    <circle cx="645" cy="200" r="48"/>
+    <path d="M645 152 L 686 224 L 604 224 Z M645 248 L 604 176 L 686 176 Z"/>
+    <path d="M702.0 194.0 l 5 12 l 5 -12 M703.0 200.0 h 8" transform="rotate(90 707.0 200.0)"/> <path d="M693.7 225.0 l 5 12 l 5 -12 M694.7 231.0 h 8" transform="rotate(120 698.7 231.0)"/> <path d="M671.0 247.7 l 5 12 l 5 -12 M672.0 253.7 h 8" transform="rotate(150 676.0 253.7)"/> <path d="M640.0 256.0 l 5 12 l 5 -12 M641.0 262.0 h 8" transform="rotate(180 645.0 262.0)"/> <path d="M609.0 247.7 l 5 12 l 5 -12 M610.0 253.7 h 8" transform="rotate(210 614.0 253.7)"/> <path d="M586.3 225.0 l 5 12 l 5 -12 M587.3 231.0 h 8" transform="rotate(240 591.3 231.0)"/> <path d="M578.0 194.0 l 5 12 l 5 -12 M579.0 200.0 h 8" transform="rotate(270 583.0 200.0)"/> <path d="M586.3 163.0 l 5 12 l 5 -12 M587.3 169.0 h 8" transform="rotate(300 591.3 169.0)"/> <path d="M609.0 140.3 l 5 12 l 5 -12 M610.0 146.3 h 8" transform="rotate(330 614.0 146.3)"/> <path d="M640.0 132.0 l 5 12 l 5 -12 M641.0 138.0 h 8" transform="rotate(360 645.0 138.0)"/> <path d="M671.0 140.3 l 5 12 l 5 -12 M672.0 146.3 h 8" transform="rotate(390 676.0 146.3)"/> <path d="M693.7 163.0 l 5 12 l 5 -12 M694.7 169.0 h 8" transform="rotate(420 698.7 169.0)"/>
+  </g>
+  <text x="645" y="330" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-style="italic" font-size="32" fill="#7a7468" opacity="0.55">Strengthen Magic</text>
+  <path d="M560 344 C 600 348, 690 348, 730 342" stroke="#7a7468" stroke-width="1.5" opacity="0.4" fill="none"/>
+  <g>
+    <ellipse cx="70" cy="300" rx="40" ry="14" fill="#2a190d" opacity="0.4"/>
+    <rect x="48" y="216" width="44" height="84" rx="6" fill="#efe6c8" stroke="#a89670" stroke-width="3"/>
+    <ellipse cx="70" cy="300" rx="34" ry="11" fill="#c9a24a" stroke="#6e4a12" stroke-width="3"/>
+    <path d="M70 216 v -8" stroke="#2a1d10" stroke-width="2"/>
+    <circle class="glow" cx="70" cy="196" r="150" fill="url(#fireGlow)"/>
+    <path class="flame" d="M70 208 C 60 198, 64 184, 70 172 C 76 184, 80 198, 70 208 Z" fill="#ffcf6b"/>
+    <path class="flame b" d="M70 206 C 65 200, 67 190, 70 184 C 73 190, 75 200, 70 206 Z" fill="#fff4c8"/>
+  </g>
+  <rect width="960" height="540" fill="#ff2a1a" class="wash"/>
+</svg>

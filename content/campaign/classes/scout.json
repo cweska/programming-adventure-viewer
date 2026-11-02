@@ -1,0 +1,7 @@
+{
+  "id": "scout",
+  "name": "Scout",
+  "role": "Ranger",
+  "description": "A quiet forward runner who spots trouble first and handles it from range.",
+  "baseHp": 10
+}

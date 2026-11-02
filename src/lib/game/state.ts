@@ -1,5 +1,6 @@
 import { seedRng } from "./rng";
 import { heroStats } from "./rules";
+import { maxManaFor } from "./barrier";
 import type { Board, Dialogue, Feature } from "./schema";
 import type { Actor, CampaignData, GameState } from "./types";
 
@@ -133,6 +134,22 @@ export function createGame(board: Board, data: CampaignData, extraFeatures: read
     dialogues,
     combat: null,
     cutscene: null,
+    barrier: board.barrier
+      ? { ...board.barrier, level: 0, casters: [], locked: false, wave: 0, done: false }
+      : null,
+    mana: Object.fromEntries(
+      Object.entries(board.casting?.mana ?? {}).flatMap(([id, mana]) => {
+        const character = data.characters[id];
+        if (!character) return [];
+        const max = maxManaFor(character.abilities.magical_affinity);
+        return [[id, { mana: Math.min(mana, max), max }]];
+      }),
+    ),
+    castLines: { ...(board.casting?.lines ?? {}) },
+    speech: null,
+    castFx: null,
+    manaDrop: null,
+    prompt: null,
     combatResult: null,
     goal: board.goal ?? null,
     goalMet: false,

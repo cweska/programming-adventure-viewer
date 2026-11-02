@@ -8,8 +8,11 @@ Each day of the campaign is one **module** that students pick on the home page. 
 | Programming (game screen) | The game screen, the description box, and the Python editor. Passing the checks "builds" a game feature. | `board` + `activity` (with `unlocks`) |
 | Programming (conversation) | Scene art with a dialogue box and four option boxes, plus the Python editor. | `conversation` + `activity` |
 | Gameplay | The game screen only. Continue unlocks when the party meets the goal. | `"editor": "hidden"`, `board` with a `goal` |
+| Programming (skill check) | Scene art with option buttons that roll a d20 through the student's own checks. | `skillCheck` + `activity` |
+| Programming (spell book) | An open book that inks in the spell once the checks pass. | `spellBook` + `activity` |
+| Programming (party panel) | Scene art with one mana bar per party member, drawn by the student's code. | `partyPanel` + `activity` |
 
-The game mechanics are already wired up in `src/lib/game/`. A programming part only switches a feature on (`movement`, `dialogue`, or `melee`) once its checks pass. If a programming part also has a board `goal`, passing the checks only unlocks the feature, and the part is finished when the party meets the goal. Module 1's Part 4 works this way: students program movement, then walk to the cabin door.
+The game mechanics are already wired up in `src/lib/game/`. A programming part only switches a feature on (`movement`, `dialogue`, `melee`, or `magic`) once its checks pass. If a programming part also has a board `goal` or a `skillCheck`, passing the checks only unlocks the feature, and the part is finished when the goal is met. Module 1's Part 4 works this way: students program movement, then walk to the cabin door. Module 2's Part 3 finishes when the trap door opens, and Part 15 when the barrier holds.
 
 Module 1, Leylines Awaken, has 8 parts:
 1. Hills at night
@@ -20,6 +23,24 @@ Module 1, Leylines Awaken, has 8 parts:
 6. Program the dialogue prompt
 7. Program the dialogue options
 8. "We need help."
+
+Module 2, Friends In Low Places, has 16 parts. Parts 3, 13, 14, and 15 are programming parts. The rest are story.
+1. Three knocks
+2. The trap door
+3. Program skill checks, then roll to open the trap door
+4. Bomb Shell and Lucky arrive
+5. The resonance array
+6. The Ley Clock
+7. The map of Tor
+8. What a burst does
+9. The chalk wall
+10. The greenroom (a flashback)
+11. The clock turns red
+12. Mar'tu raises the barrier
+13. Program the spell book
+14. Program the mana bars
+15. Program cast_spell(), then cast with every party member until the barrier holds
+16. Thirty-two hours
 
 ## Where things live
 
@@ -112,13 +133,29 @@ Python helpers for conversation parts:
 
 Checks can read `_prompts`, `_options`, `_spoken`, and `_greens` to see what was called. They can also set `user._clicked` to pretend a box was clicked.
 
+### Live code, party setup, and carry-over (Module 2)
+
+Some parts run the student's own functions when something is clicked. After a passing Run, the player keeps that Python program alive (a *live session*), so state such as mana carries over from click to click. The session ends when the student leaves the part or presses Run again.
+- **Skill checks.** Each option names a check function. A click runs `perform_roll(20)` and that check, then shows the roll next to the number the student chose. On a failed roll, the `helper` NPC opens the door instead.
+- **Casting.** A board with `casting` and a `barrier` turns the arrow keys into a hint. Clicking a party member or pressing 1–4 runs `cast_spell(party.members[i], spell)`. Whatever the student's code does is played on the board: `reinforce_barrier()` thickens the barrier, `print_mana()` updates the bar, and `print_prompt()` shows their message. Once everyone has cast, the burst rolls across and the `barrier` goal is met.
+
+`activity.party` gives Python a `party.members` list built from the character sheets: `character_name`, `race`, `alignment`, `abilities`, `skills`, `inventory`, plus `mana` (from the part's table), `max_mana` (2 × magical affinity), and an empty `spell_book`.
+
+`activity.background` runs earlier parts' code before this part, so Part 15 can call the `add_spell()` and `show_mana()` that students wrote in Parts 13 and 14. The player uses the student's own passing code, which it saves in the browser. If there is none, it falls back to the answer key in `fallback`. Background code runs separately from the editor, so line numbers in error messages still match what students see.
+
+Python helpers for Module 2:
+- `reinforce_barrier(caster)` is what Strengthen Magic does.
+- `print_mana(caster, mana_bar)` shows a mana bar. Checks can read `_mana_prints`.
+- `show_roll(...)` and `_required_roll(check)` are only used by the skill-check buttons and checks.
+
 ### Board fields
 
 - `map`: a map id from `content/campaign/maps/`. Columns are `x` (0 on the left) and rows are `y` (0 at the top).
 - `party` and `partyStart`: character ids and their starting tiles. The first character leads.
 - `actors`: NPCs (`"kind": "npc"`, with an optional `dialogue` id) and enemies (`"kind": "enemy"`).
 - `features`: what already works on this screen. A campaign module may only list features that an earlier programming part unlocked. A test enforces this.
-- `goal`: `reach` a tile (optionally `enter` through it as a door), `talk` to an actor until the conversation ends, or `defeat` every enemy.
+- `goal`: `reach` a tile (optionally `enter` through it as a door), `talk` to an actor until the conversation ends, `defeat` every enemy, or hold the `barrier`.
+- `casting` and `barrier` (Module 2): the spell clicks cast, each member's starting mana, a line each member says when their spell lands, and the tiles the barrier covers.
 - `seed`: fixes the dice so a fight plays the same way every time.
 
 ### Maps
@@ -156,5 +193,5 @@ The **Training Grounds** module is unpublished, so students never see it. Open i
 ## Tests
 
 - `npm test` runs the unit tests. They cover movement, input, dialogue, combat maths, and every map, board, goal, and dialogue. They also run each module's reference Python against the same `party` object the browser uses, and the privacy checks.
-- `npm run build && npm run test:e2e` plays the real site in Chromium: it walks the party with arrows and WASD, talks with number keys, and wins a sparring fight.
+- `npm run build && npm run test:e2e` plays the real site in Chromium: it walks the party with arrows and WASD, talks with number keys, and wins a sparring fight. For Module 2 it rolls skill checks (with a fixed `random.seed` so both outcomes are tested), inks the spell book, draws mana bars, and casts until the barrier holds.
 - GitHub Actions runs all of these on every push, then checks the GitHub Pages static export.

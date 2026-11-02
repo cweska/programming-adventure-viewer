@@ -1,14 +1,15 @@
 import type { LanguageAdapter } from "../types";
 import { explainPython } from "./explain";
 import { formatPython } from "./format";
-import { runPython } from "./run";
+import { runPython, startPythonSession } from "./run";
 
 export const pythonAdapter: LanguageAdapter = {
   format: formatPython,
   run: runPython,
+  startSession: startPythonSession,
   explain: explainPython,
 };
 
 export { explainPython } from "./explain";
 export { formatPython } from "./format";
-export { runPython, whenPythonReady, PythonTimeoutError } from "./run";
+export { runPython, startPythonSession, whenPythonReady, PythonTimeoutError } from "./run";

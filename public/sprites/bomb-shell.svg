@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Bomb Shell, a stocky gunmetal robot with one teal optic">
+  <path d="M26 6 L 30 2 L 32 8 Z" fill="#7d8a99" stroke="#2b3138" stroke-width="1.2"/>
+  <ellipse cx="30" cy="15" rx="11" ry="9" fill="#5d6874" stroke="#2b3138" stroke-width="1.5"/>
+  <circle cx="34" cy="15" r="4.2" fill="#0d2b2b" stroke="#2b3138" stroke-width="1"/>
+  <circle cx="34" cy="15" r="2.6" fill="#2fd6c4"/>
+  <circle cx="35" cy="14" r="0.9" fill="#d8fffa"/>
+  <rect x="15" y="23" width="32" height="22" rx="4" fill="#5d6874" stroke="#2b3138" stroke-width="1.5"/>
+  <rect x="24" y="28" width="14" height="10" rx="2" fill="#0d2b2b" stroke="#2b3138" stroke-width="1"/>
+  <path d="M26 30.5 h10 M26 33 h10 M26 35.5 h10" stroke="#2fd6c4" stroke-width="1.4"/>
+  <path d="M8 22 q 7 -6 14 0 l -2 9 h -10 Z" fill="#a8743d" stroke="#5c3f12" stroke-width="1.5"/>
+  <path d="M40 22 q 7 -6 14 0 l -2 9 h -10 Z" fill="#a8743d" stroke="#5c3f12" stroke-width="1.5"/>
+  <rect x="9" y="30" width="7" height="12" rx="2" fill="#7d8a99" stroke="#2b3138" stroke-width="1.5"/>
+  <rect x="46" y="30" width="8" height="10" rx="2" fill="#7d8a99" stroke="#2b3138" stroke-width="1.5"/>
+  <rect x="50" y="33" width="10" height="5" rx="1.5" fill="#3f4852" stroke="#2b3138" stroke-width="1.2"/>
+  <circle cx="60" cy="35.5" r="1.4" fill="#2fd6c4"/>
+  <rect x="18" y="45" width="11" height="10" fill="#7d8a99" stroke="#2b3138" stroke-width="1.5"/>
+  <rect x="33" y="45" width="11" height="10" fill="#7d8a99" stroke="#2b3138" stroke-width="1.5"/>
+  <rect x="15" y="54" width="16" height="7" rx="3" fill="#2b3138"/>
+  <rect x="31" y="54" width="16" height="7" rx="3" fill="#2b3138"/>
+  <path d="M17 57.5 h12 M33 57.5 h12" stroke="#5d6874" stroke-width="1.5" stroke-dasharray="2 2"/>
+</svg>

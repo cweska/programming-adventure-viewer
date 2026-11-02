@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useReducer, useRef, useState, type KeyboardEvent } from "react";
+import { characterIdByName } from "../../lib/campaign/party";
 import { campaignData } from "../../lib/campaign/registry";
+import { insideBarrier } from "../../lib/game/barrier";
+import { castActions } from "../../lib/game/casting";
 import { activeCombatant } from "../../lib/game/combat";
 import { currentNode } from "../../lib/game/dialogue";
 import { commandForKey } from "../../lib/game/input";
@@ -11,10 +14,13 @@ import { createGame } from "../../lib/game/state";
 import type { Actor, GameState } from "../../lib/game/types";
 import { actorById } from "../../lib/game/world";
 import { publicPath } from "../../lib/site";
+import type { StageEvent } from "../../lib/stage/bridge";
 import { useReducedMotion } from "../useReducedMotion";
 import { MapTiles, TILE } from "./TileArt";
 
 const STEP_MS = 260;
+const WAVE_MS = 170;
+const WAVE_PAUSE_MS = 900;
 
 export type BoardScript = { token: number; moves: Direction[] };
 
@@ -26,6 +32,8 @@ type BoardProps = {
   compact: boolean;
   lockedHint: { features: Feature[]; text: string } | null;
   onGoal: () => void;
+  /** Runs the student's cast_spell() for party member `index`. Resolves to null when there is no live code yet. */
+  onCast?: (index: number) => Promise<StageEvent[] | null>;
 };
 
 export function GameBoard(props: BoardProps) {
@@ -55,6 +63,7 @@ function goalText(state: GameState): string {
   if (!goal) return "";
   if (goal.type === "reach") return `You made it to ${goal.label}!`;
   if (goal.type === "talk") return `You finished talking with ${actorById(state, goal.actor)?.name ?? "them"}.`;
+  if (goal.type === "barrier") return "The barrier held!";
   return "Every enemy is down.";
 }
 
@@ -66,6 +75,7 @@ function BoardSession({
   compact,
   lockedHint,
   onGoal,
+  onCast,
   onRetry,
 }: Omit<BoardProps, "script"> & { pendingMoves: Direction[]; onRetry: () => void }) {
   const [state, dispatch] = useReducer(gameReducer, undefined, () => createGame(board, campaignData, features));
@@ -73,9 +83,19 @@ function BoardSession({
   const surface = useRef<HTMLDivElement>(null);
   const reducedMotion = useReducedMotion();
   const onGoalRef = useRef(onGoal);
+  const onCastRef = useRef(onCast);
   useEffect(() => {
     onGoalRef.current = onGoal;
+    onCastRef.current = onCast;
   });
+  const alive = useRef(true);
+  const castBusy = useRef(false);
+  useEffect(() => {
+    alive.current = true;
+    return () => {
+      alive.current = false;
+    };
+  }, []);
 
   const featureKey = features.join(",");
   useEffect(() => {
@@ -113,6 +133,38 @@ function BoardSession({
     return () => window.clearTimeout(timer);
   }, [cutscenePlaying, state.tick, reducedMotion]);
 
+  const barrier = state.barrier;
+  const magicOn = state.features.includes("magic");
+  const waving = Boolean(barrier?.locked && !barrier.done);
+  useEffect(() => {
+    if (!waving) return;
+    const delay = reducedMotion ? 30 : barrier?.wave === 0 ? WAVE_PAUSE_MS : WAVE_MS;
+    const timer = window.setTimeout(() => dispatch({ type: "waveStep" }), delay);
+    return () => window.clearTimeout(timer);
+  }, [waving, state.tick, reducedMotion, barrier?.wave]);
+
+  async function cast(index: number) {
+    if (!barrier || barrier.locked || castBusy.current) return;
+    const id = board.party[index];
+    if (!id) return;
+    if (!magicOn) {
+      dispatch({ type: "notice", kind: "magic-locked" });
+      return;
+    }
+    castBusy.current = true;
+    try {
+      const events = (await onCastRef.current?.(index)) ?? null;
+      if (!alive.current) return;
+      if (events === null) {
+        dispatch({ type: "notice", kind: "cast-run" });
+        return;
+      }
+      for (const action of castActions(events, (name) => characterIdByName(name))) dispatch(action);
+    } finally {
+      castBusy.current = false;
+    }
+  }
+
   function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     if (event.altKey || event.ctrlKey || event.metaKey) return;
     const command = commandForKey(event.key);
@@ -122,6 +174,11 @@ function BoardSession({
       return;
     }
     event.preventDefault();
+    if (barrier) {
+      if (command.type === "move") dispatch({ type: "notice", kind: magicOn ? "cast-hint" : "magic-locked" });
+      if (command.type === "option") void cast(command.index);
+      return;
+    }
     switch (command.type) {
       case "move":
         dispatch({ type: "move", direction: command.direction });
@@ -153,14 +210,27 @@ function BoardSession({
       }`
     : null;
 
+  const castingNow = Boolean(barrier);
+  const label = castingNow
+    ? `${state.map.name}. Click a party member or press 1 to 4 to cast. Escape leaves the map.`
+    : `${state.map.name}. Arrow keys or W A S D move. Tab switches the leader. Escape leaves the map.`;
+
   return (
-    <div className={compact ? "game is-compact" : "game"} data-testid="game" data-mode={state.mode} data-tick={state.tick}>
+    <div
+      className={compact ? "game is-compact" : "game"}
+      data-testid="game"
+      data-mode={state.mode}
+      data-tick={state.tick}
+      data-barrier-level={barrier ? barrier.level : undefined}
+      data-barrier-locked={barrier ? String(barrier.locked) : undefined}
+      data-barrier-done={barrier ? String(barrier.done) : undefined}
+    >
       <div
         ref={surface}
         className={focused ? "game-surface is-focused" : "game-surface"}
         tabIndex={0}
         role="application"
-        aria-label={`${state.map.name}. Arrow keys or W A S D move. Tab switches the leader. Escape leaves the map.`}
+        aria-label={label}
         data-testid="board"
         onKeyDown={onKeyDown}
         onFocus={() => setFocused(true)}
@@ -184,11 +254,38 @@ function BoardSession({
               <circle cx={34} cy={26} r={2.5} fill="#c9a24a" />
             </g>
           ) : null}
+          {barrier ? <SkyAlert width={width} height={height} calm={barrier.done} /> : null}
+          {barrier ? <BarrierDome state={state} /> : null}
           {state.actors.map((actor) => (
-            <ActorToken key={actor.id} actor={actor} state={state} />
+            <ActorToken
+              key={actor.id}
+              actor={actor}
+              state={state}
+              onClick={
+                castingNow && board.party.includes(actor.id)
+                  ? () => {
+                      surface.current?.focus({ preventScroll: true });
+                      void cast(board.party.indexOf(actor.id));
+                    }
+                  : undefined
+              }
+            />
           ))}
-          {state.map.sky === "night" ? <Fireflies width={width} height={height} /> : null}
+          {barrier ? <CastEffects state={state} /> : null}
+          {barrier ? (
+            <BarrierFireflies state={state} width={width} height={height} />
+          ) : state.map.sky === "night" ? (
+            <Fireflies width={width} height={height} />
+          ) : null}
+          {barrier ? <LightWall state={state} width={width} height={height} /> : null}
         </svg>
+        {state.prompt ? (
+          <div className="dialogue-box cast-prompt" data-testid="cast-prompt" role="status" key={state.prompt.id}>
+            <div className="dialogue-body">
+              <p>{state.prompt.text}</p>
+            </div>
+          </div>
+        ) : null}
         {state.mode === "dialogue" && node ? (
           <div
             className="dialogue-box"
@@ -243,6 +340,7 @@ function BoardSession({
         ) : null}
       </div>
 
+      {castingNow ? null : (
       <div className="touch-pad" aria-label="Touch controls">
         {(["up", "left", "down", "right"] as const).map((direction) => (
           <button
@@ -259,10 +357,33 @@ function BoardSession({
           Switch leader
         </button>
       </div>
+      )}
 
       <div className="game-hud">
         <ul className="party-panel" aria-label="Party">
-          {heroes.map((hero) => {
+          {castingNow
+            ? heroes.map((hero, index) => (
+                <li key={hero.id} className="party-member is-caster" data-testid={`party-member-${hero.id}`}>
+                  <button
+                    type="button"
+                    className="cast-button"
+                    data-testid={`cast-${hero.id}`}
+                    disabled={Boolean(barrier?.locked)}
+                    onClick={() => {
+                      surface.current?.focus({ preventScroll: true });
+                      void cast(board.party.indexOf(hero.id));
+                    }}
+                  >
+                    <span className="option-key">{index + 1}</span>
+                    <img src={publicPath(hero.sprite)} alt="" />
+                    <span className="cast-body">
+                      <span className="party-name">{hero.name}</span>
+                      <ManaBar actor={hero} state={state} />
+                    </span>
+                  </button>
+                </li>
+              ))
+            : heroes.map((hero) => {
             const isActive = state.mode === "combat" ? active?.id === hero.id : state.leader === hero.id;
             return (
               <li
@@ -368,18 +489,23 @@ function HealthBar({ actor }: { actor: Actor }) {
   );
 }
 
-function ActorToken({ actor, state }: { actor: Actor; state: GameState }) {
+function ActorToken({ actor, state, onClick }: { actor: Actor; state: GameState; onClick?: () => void }) {
   const active = activeCombatant(state);
   const highlighted =
     state.mode === "combat" ? active?.id === actor.id : actor.kind === "hero" && state.leader === actor.id;
-  const showHealth = actor.kind !== "npc" && (state.mode === "combat" || actor.hp < actor.maxHp);
+  const mana = state.mana[actor.id];
+  const showHealth = !mana && actor.kind !== "npc" && (state.mode === "combat" || actor.hp < actor.maxHp);
+  const casting = state.castFx?.actorId === actor.id ? state.castFx : null;
+  const color = campaignData.characters[actor.ref]?.spellColor ?? "#c89bff";
   const flip = actor.facing === "left" ? `translate(${TILE} 0) scale(-1 1)` : undefined;
   const classes = ["actor", `actor-${actor.kind}`];
   if (actor.down) classes.push("is-down");
   if (actor.hidden) classes.push("is-hidden");
+  if (onClick) classes.push("is-clickable");
   return (
     <g
       className={classes.join(" ")}
+      onClick={onClick}
       style={{ transform: `translate(${actor.x * TILE}px, ${actor.y * TILE}px)` }}
       data-testid={`actor-${actor.id}`}
       data-kind={actor.kind}
@@ -392,9 +518,20 @@ function ActorToken({ actor, state }: { actor: Actor; state: GameState }) {
     >
       {highlighted ? <ellipse cx={TILE / 2} cy={TILE - 6} rx={20} ry={7} className="actor-ring" /> : null}
       <ellipse cx={TILE / 2} cy={TILE - 5} rx={14} ry={4} fill="#000000" opacity={0.3} />
-      <g transform={flip}>
-        <image href={publicPath(actor.sprite)} x={2} y={0} width={TILE - 4} height={TILE - 4} />
+      {casting ? (
+        <ellipse key={`glow-${casting.id}`} className="cast-glow" cx={TILE / 2} cy={TILE / 2} rx={26} ry={28} fill={color} />
+      ) : null}
+      <g key={casting ? `lift-${casting.id}` : "still"} className={casting ? "cast-lift" : undefined}>
+        <g transform={flip}>
+          <image href={publicPath(actor.sprite)} x={2} y={0} width={TILE - 4} height={TILE - 4} />
+        </g>
       </g>
+      {mana ? (
+        <g transform="translate(6 -4)" data-testid={`mana-over-${actor.id}`} data-mana={mana.mana} data-max={mana.max}>
+          <rect width={TILE - 12} height={5} rx={2} fill="#1b1b1b" />
+          <rect width={Math.max(0, ((TILE - 12) * mana.mana) / Math.max(1, mana.max))} height={5} rx={2} fill="#9b6cff" />
+        </g>
+      ) : null}
       {showHealth ? (
         <g transform="translate(6 -2)">
           <rect width={TILE - 12} height={5} rx={2} fill="#1b1b1b" />
@@ -432,6 +569,192 @@ function Fireflies({ width, height }: { width: number; height: number }) {
           style={{ animationDelay: `${spot.delay}s` }}
         />
       ))}
+    </g>
+  );
+}
+
+function ManaBar({ actor, state }: { actor: Actor; state: GameState }) {
+  const mana = state.mana[actor.id];
+  if (!mana) return null;
+  const percent = Math.round((Math.max(0, mana.mana) / Math.max(1, mana.max)) * 100);
+  return (
+    <span className="health mana" aria-label={`${actor.name} mana ${mana.mana} of ${mana.max}`}>
+      <span className="health-track">
+        <span className="health-fill mana-fill" style={{ width: `${percent}%` }} />
+      </span>
+      <span className="health-text" data-testid={`mana-${actor.id}`}>
+        Mana {mana.mana}/{mana.max}
+      </span>
+    </span>
+  );
+}
+
+function SkyAlert({ width, height, calm }: { width: number; height: number; calm: boolean }) {
+  return (
+    <rect
+      className={calm ? "sky-alert is-calm" : "sky-alert"}
+      data-testid="sky-alert"
+      width={width}
+      height={height}
+      pointerEvents="none"
+    />
+  );
+}
+
+function barrierBox(state: GameState) {
+  const barrier = state.barrier;
+  if (!barrier) return null;
+  return {
+    x: barrier.x0 * TILE,
+    y: barrier.y0 * TILE,
+    width: (barrier.x1 - barrier.x0 + 1) * TILE,
+    height: (barrier.y1 - barrier.y0 + 1) * TILE,
+  };
+}
+
+function waveX(state: GameState): number {
+  const barrier = state.barrier;
+  if (!barrier || !barrier.locked) return -TILE * 0.5;
+  return (barrier.wave - 1) * TILE;
+}
+
+function BarrierDome({ state }: { state: GameState }) {
+  const barrier = state.barrier;
+  const box = barrierBox(state);
+  if (!barrier || !box) return null;
+  const front = waveX(state);
+  const flaring = barrier.locked && !barrier.done && front + TILE >= box.x && front <= box.x + box.width;
+  const classes = ["barrier"];
+  if (barrier.locked) classes.push("is-locked");
+  if (flaring) classes.push("is-flaring");
+  return (
+    <rect
+      className={classes.join(" ")}
+      data-testid="barrier"
+      data-level={barrier.level}
+      x={box.x + 3}
+      y={box.y + 3}
+      width={box.width - 6}
+      height={box.height - 6}
+      rx={28}
+      style={{ fillOpacity: 0.05 + barrier.level * 0.05, strokeWidth: 2 + barrier.level * 1.5 }}
+      pointerEvents="none"
+    />
+  );
+}
+
+function LightWall({ state, width, height }: { state: GameState; width: number; height: number }) {
+  const barrier = state.barrier;
+  const box = barrierBox(state);
+  if (!barrier || !box || barrier.done) return null;
+  const x = waveX(state);
+  const outside = `M0 0 H${width} V${height} H0 Z M${box.x} ${box.y} V${box.y + box.height} H${box.x + box.width} V${box.y} Z`;
+  return (
+    <g pointerEvents="none" data-testid="light-wall" data-x={barrier.locked ? barrier.wave - 1 : -1}>
+      <clipPath id="outside-barrier">
+        <path d={outside} clipRule="evenodd" />
+      </clipPath>
+      <g clipPath="url(#outside-barrier)">
+        <rect className="light-wall-glow" x={x - TILE * 0.6} y={0} width={TILE * 1.6} height={height} />
+        <rect className={barrier.locked ? "light-wall is-rolling" : "light-wall"} x={x} y={0} width={TILE * 0.5} height={height} />
+      </g>
+    </g>
+  );
+}
+
+const BARRIER_FLIES = [
+  { x: 0.6, y: 1.4 },
+  { x: 2.3, y: 4.5 },
+  { x: 4.2, y: 2.4 },
+  { x: 5.5, y: 6.6 },
+  { x: 1.4, y: 8.2 },
+  { x: 3.6, y: 7.6 },
+  { x: 6.4, y: 9.1 },
+  { x: 9.5, y: 8.4 },
+  { x: 12.3, y: 9.2 },
+  { x: 14.6, y: 7.7 },
+  { x: 10.4, y: 0.6 },
+  { x: 13.2, y: 4.8 },
+];
+
+function BarrierFireflies({ state, width, height }: { state: GameState; width: number; height: number }) {
+  const front = waveX(state) + TILE * 0.5;
+  return (
+    <g aria-hidden="true" pointerEvents="none">
+      {BARRIER_FLIES.map((spot, index) => {
+        const cx = Math.min(width - 4, spot.x * TILE);
+        const cy = Math.min(height - 4, spot.y * TILE);
+        const safe = insideBarrier(state, Math.floor(spot.x), Math.floor(spot.y));
+        const out = Boolean(state.barrier?.locked) && !safe && cx <= front;
+        return (
+          <circle
+            key={index}
+            className={out ? "firefly is-out" : "firefly"}
+            data-testid="barrier-firefly"
+            data-out={out ? "true" : "false"}
+            cx={cx}
+            cy={cy}
+            r={3}
+            style={{ animationDelay: `${(index % 5) * -1.1}s` }}
+          />
+        );
+      })}
+    </g>
+  );
+}
+
+function CastEffects({ state }: { state: GameState }) {
+  const box = barrierBox(state);
+  const fx = state.castFx;
+  const caster = fx ? actorById(state, fx.actorId) : undefined;
+  const drop = state.manaDrop;
+  const dropActor = drop ? actorById(state, drop.actorId) : undefined;
+  const speech = state.speech;
+  const speaker = speech ? actorById(state, speech.actorId) : undefined;
+  const width = state.map.width * TILE;
+  return (
+    <g pointerEvents="none">
+      {fx && caster && box ? (
+        <path
+          key={`arc-${fx.id}`}
+          className="spark-arc"
+          data-testid="spark-arc"
+          d={`M${caster.x * TILE + TILE / 2} ${caster.y * TILE + 8} Q ${caster.x * TILE + TILE * 1.4} ${box.y - TILE * 0.6}, ${
+            caster.x * TILE + TILE / 2
+          } ${box.y + 6}`}
+          stroke={campaignData.characters[caster.ref]?.spellColor ?? "#c89bff"}
+        />
+      ) : null}
+      {drop && dropActor ? (
+        <text
+          key={`drop-${drop.id}`}
+          className="mana-drop"
+          data-testid="mana-drop"
+          x={dropActor.x * TILE + TILE / 2}
+          y={dropActor.y * TILE - 8}
+          textAnchor="middle"
+        >
+          -{drop.amount} mana
+        </text>
+      ) : null}
+      {speech && speaker ? (
+        <SpeechBubble key={`speech-${speech.id}`} text={speech.text} x={speaker.x * TILE + TILE / 2} y={speaker.y * TILE - 22} width={width} />
+      ) : null}
+    </g>
+  );
+}
+
+function SpeechBubble({ text, x, y, width }: { text: string; x: number; y: number; width: number }) {
+  const bubbleWidth = Math.min(width - 8, text.length * 6.6 + 18);
+  const left = Math.max(4, Math.min(width - bubbleWidth - 4, x - bubbleWidth / 2));
+  const top = Math.max(4, y - 26);
+  return (
+    <g className="speech" data-testid="speech-bubble">
+      <rect x={left} y={top} width={bubbleWidth} height={24} rx={8} />
+      <path d={`M${x - 6} ${top + 24} L ${x} ${top + 32} L ${x + 6} ${top + 24} Z`} />
+      <text x={left + bubbleWidth / 2} y={top + 16} textAnchor="middle">
+        {text}
+      </text>
     </g>
   );
 }

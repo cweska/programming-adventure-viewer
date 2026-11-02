@@ -51,6 +51,7 @@ class Party:
 
     def __init__(self):
         self._moves = []
+        self.members = []
 
     def move(self, direction):
         if direction not in self._directions:
@@ -97,6 +98,26 @@ def speak_dialogue(option):
 def make_option_green():
     _greens.append(user._clicked)
     _stage_highlight(str(user._clicked))
+
+_casts = []
+_mana_prints = []
+
+def reinforce_barrier(caster):
+    _casts.append(caster["character_name"])
+    _stage_cast(str(caster["character_name"]))
+
+def print_mana(caster, mana_bar):
+    _mana_prints.append((caster["character_name"], str(mana_bar)))
+    _stage_mana(str(caster["character_name"]), str(mana_bar), int(caster["mana"]), int(caster["max_mana"]))
+
+def _required_roll(check):
+    for roll in range(1, 21):
+        if check(roll):
+            return roll
+    return 21
+
+def show_roll(skill, roll, success, required):
+    _stage_roll(str(skill), int(roll), bool(success), int(required))
 `;
 
 const NEWLINE = String.fromCharCode(10);
@@ -127,53 +148,67 @@ boot()
     self.postMessage({ type: "failed", message: String(error && error.message ? error.message : error) });
   });
 
-self.onmessage = async (event) => {
-  const data = event.data || {};
-  if (data.type !== "run") return;
-  const pyodide = await boot();
-  const stdout = [];
-  const stderr = [];
-  pyodide.setStdout({ batched: (text) => pushChunk(stdout, String(text)) });
-  pyodide.setStderr({ batched: (text) => pushChunk(stderr, String(text)) });
-
-  const events = [];
+function createGlobals(pyodide, sink) {
   const globals = pyodide.runPython("{}");
-  globals.set("_stage_say", (text) => {
-    events.push({ type: "say", text: String(text) });
-  });
-  globals.set("_stage_flare", () => {
-    events.push({ type: "flare" });
-  });
-  globals.set("_stage_focus", (imageId) => {
-    events.push({ type: "focus", imageId: String(imageId) });
-  });
-  globals.set("_stage_move", (direction) => {
-    events.push({ type: "move", direction: String(direction) });
-  });
-  globals.set("_stage_prompt", (text) => {
-    events.push({ type: "prompt", text: String(text) });
-  });
-  globals.set("_stage_options", (count) => {
-    events.push({ type: "options", options: Array.from({ length: Number(count) }, () => "") });
-  });
+  const emit = (event) => sink.events.push(event);
+  globals.set("_stage_say", (text) => emit({ type: "say", text: String(text) }));
+  globals.set("_stage_flare", () => emit({ type: "flare" }));
+  globals.set("_stage_focus", (imageId) => emit({ type: "focus", imageId: String(imageId) }));
+  globals.set("_stage_move", (direction) => emit({ type: "move", direction: String(direction) }));
+  globals.set("_stage_prompt", (text) => emit({ type: "prompt", text: String(text) }));
+  globals.set("_stage_options", (count) =>
+    emit({ type: "options", options: Array.from({ length: Number(count) }, () => "") }),
+  );
   globals.set("_stage_option", (index, text) => {
-    const last = events[events.length - 1];
+    const last = sink.events[sink.events.length - 1];
     if (last && last.type === "options") last.options[Number(index)] = String(text);
   });
-  globals.set("_stage_speak", (option) => {
-    events.push({ type: "speak", option: String(option) });
-  });
-  globals.set("_stage_highlight", (option) => {
-    events.push({ type: "highlight", option: String(option) });
-  });
+  globals.set("_stage_speak", (option) => emit({ type: "speak", option: String(option) }));
+  globals.set("_stage_highlight", (option) => emit({ type: "highlight", option: String(option) }));
+  globals.set("_stage_cast", (name) => emit({ type: "cast", name: String(name) }));
+  globals.set("_stage_mana", (name, bar, mana, max) =>
+    emit({ type: "mana", name: String(name), bar: String(bar), mana: Number(mana), max: Number(max) }),
+  );
+  globals.set("_stage_roll", (skill, roll, success, required) =>
+    emit({ type: "roll", skill: String(skill), roll: Number(roll), success: Boolean(success), required: Number(required) }),
+  );
+  return globals;
+}
+
+async function runIn(pyodide, globals, code) {
+  const returned = await pyodide.runPythonAsync(String(code ?? ""), { globals });
+  if (returned && typeof returned.destroy === "function") returned.destroy();
+}
+
+function capture(pyodide) {
+  const output = { stdout: [], stderr: [] };
+  pyodide.setStdout({ batched: (text) => pushChunk(output.stdout, String(text)) });
+  pyodide.setStderr({ batched: (text) => pushChunk(output.stderr, String(text)) });
+  return output;
+}
+
+async function flush(pyodide, globals) {
+  try {
+    await runIn(pyodide, globals, "import sys\nsys.stdout.flush()\n");
+  } catch {
+    // A flush failure should not hide output already captured.
+  }
+}
+
+const sessions = new Map();
+
+async function runProgram(data) {
+  const pyodide = await boot();
+  const output = capture(pyodide);
+  const sink = { events: [] };
+  const globals = createGlobals(pyodide, sink);
 
   let ok = true;
   let traceback = "";
   try {
-    const prepared = await pyodide.runPythonAsync(GUARD, { globals });
-    if (prepared && typeof prepared.destroy === "function") prepared.destroy();
-    const returned = await pyodide.runPythonAsync(String(data.code ?? ""), { globals });
-    if (returned && typeof returned.destroy === "function") returned.destroy();
+    await runIn(pyodide, globals, GUARD);
+    if (data.setup) await runIn(pyodide, globals, data.setup);
+    await runIn(pyodide, globals, data.code);
   } catch (error) {
     ok = false;
     traceback = formatTraceback(error);
@@ -181,17 +216,11 @@ self.onmessage = async (event) => {
 
   const checks = [];
   if (ok) {
-    try {
-      const flushed = await pyodide.runPythonAsync("import sys\nsys.stdout.flush()\n", { globals });
-      if (flushed && typeof flushed.destroy === "function") flushed.destroy();
-    } catch {
-      // A flush failure should not hide output already captured.
-    }
-    globals.set("_captured_stdout", stdout.join(""));
+    await flush(pyodide, globals);
+    globals.set("_captured_stdout", output.stdout.join(""));
     for (const check of data.checks || []) {
       try {
-        const returned = await pyodide.runPythonAsync(String(check.code ?? ""), { globals });
-        if (returned && typeof returned.destroy === "function") returned.destroy();
+        await runIn(pyodide, globals, check.code);
         checks.push({ name: String(check.name ?? "check"), passed: true, message: "" });
       } catch (error) {
         checks.push({
@@ -208,13 +237,59 @@ self.onmessage = async (event) => {
   } catch {
     // The proxy may already be gone after a hard Python failure.
   }
-  self.postMessage({
-    type: "result",
-    ok,
-    stdout: stdout.join(""),
-    stderr: stderr.join(""),
-    traceback,
-    checks,
-    stageEvents: events,
-  });
+  return { ok, stdout: output.stdout.join(""), stderr: output.stderr.join(""), traceback, checks, stageEvents: sink.events };
+}
+
+function endSession(id) {
+  const session = sessions.get(id);
+  if (!session) return;
+  sessions.delete(id);
+  try {
+    session.globals.destroy();
+  } catch {
+    // Already gone.
+  }
+}
+
+async function runSession(data) {
+  const pyodide = await boot();
+  const output = capture(pyodide);
+  let session = sessions.get(data.id);
+  if (data.type === "session-start") {
+    endSession(data.id);
+    const sink = { events: [] };
+    session = { sink, globals: createGlobals(pyodide, sink) };
+    sessions.set(data.id, session);
+  }
+  if (!session) {
+    return { ok: false, stdout: "", stderr: "", traceback: "RuntimeError: The game session has ended.", checks: [], stageEvents: [] };
+  }
+  session.sink.events = [];
+  let ok = true;
+  let traceback = "";
+  try {
+    if (data.type === "session-start") {
+      await runIn(pyodide, session.globals, GUARD);
+      if (data.setup) await runIn(pyodide, session.globals, data.setup);
+    }
+    await runIn(pyodide, session.globals, data.code);
+  } catch (error) {
+    ok = false;
+    traceback = formatTraceback(error);
+  }
+  await flush(pyodide, session.globals);
+  return { ok, stdout: output.stdout.join(""), stderr: output.stderr.join(""), traceback, checks: [], stageEvents: session.sink.events };
+}
+
+self.onmessage = async (event) => {
+  const data = event.data || {};
+  if (data.type === "session-end") {
+    endSession(data.id);
+    return;
+  }
+  let result;
+  if (data.type === "run") result = await runProgram(data);
+  else if (data.type === "session-start" || data.type === "session-call") result = await runSession(data);
+  else return;
+  self.postMessage({ type: "result", requestId: data.requestId, ...result });
 };

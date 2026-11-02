@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" role="img" aria-label="A close-up of the Ley Clock, its single hand at the edge of the glowing blue arc, with Mar&#x27;tu&#x27;s shrouded hand resting on top">
+  <defs>
+    <linearGradient id="wall" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3a2416"/>
+      <stop offset="1" stop-color="#5a3a22"/>
+    </linearGradient>
+    <linearGradient id="floor" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7a5230"/>
+      <stop offset="1" stop-color="#4a2f1a"/>
+    </linearGradient>
+    <linearGradient id="oak" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a6773f"/>
+      <stop offset="1" stop-color="#7a5229"/>
+    </linearGradient>
+    <linearGradient id="cherry" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a1442e"/>
+      <stop offset="1" stop-color="#6b2618"/>
+    </linearGradient>
+    <linearGradient id="stone" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8c8a86"/>
+      <stop offset="1" stop-color="#5e5b57"/>
+    </linearGradient>
+    <linearGradient id="night" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#160c32"/>
+      <stop offset="1" stop-color="#4a2c6a"/>
+    </linearGradient>
+    <linearGradient id="steel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8d9aa8"/>
+      <stop offset="1" stop-color="#b8c4d0"/>
+    </linearGradient>
+    <linearGradient id="plate" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f4f7fa"/>
+      <stop offset="0.5" stop-color="#c9d0d8"/>
+      <stop offset="1" stop-color="#8e98a4"/>
+    </linearGradient>
+    <linearGradient id="fur" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#b8602c"/>
+      <stop offset="1" stop-color="#8a4420"/>
+    </linearGradient>
+    <linearGradient id="gunmetal" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#4c5560"/>
+      <stop offset="0.6" stop-color="#6b7682"/>
+      <stop offset="1" stop-color="#4c5560"/>
+    </linearGradient>
+    <linearGradient id="shroud" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6c4a86"/>
+      <stop offset="1" stop-color="#3e2850"/>
+    </linearGradient>
+    <radialGradient id="tealGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#7ffff0" stop-opacity="0.8"/>
+      <stop offset="1" stop-color="#2fd6c4" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="warm" cx="0.2" cy="0.6" r="0.9">
+      <stop offset="0" stop-color="#ffb347" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#ffb347" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="fireGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffb347" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#ffb347" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="blueGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#8fe6ff" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#2f9be0" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="sphere" cx="0.4" cy="0.35" r="0.6">
+      <stop offset="0" stop-color="#eafcff"/>
+      <stop offset="0.4" stop-color="#6fd3ff"/>
+      <stop offset="1" stop-color="#1a6fd1"/>
+    </radialGradient>
+    <radialGradient id="redSphere" cx="0.4" cy="0.35" r="0.6">
+      <stop offset="0" stop-color="#ffe2dc"/>
+      <stop offset="0.4" stop-color="#ff5a46"/>
+      <stop offset="1" stop-color="#a3120c"/>
+    </radialGradient>
+    <radialGradient id="redGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ff6a50" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#d0201a" stop-opacity="0"/>
+    </radialGradient>
+    <style>
+      .pendulum { animation: swing 2.4s ease-in-out infinite alternate; transform-origin: 640px 186px; }
+      .clockpulse { animation: pulse 2.4s ease-in-out infinite alternate; }
+      .glow { animation: pulse 1.8s ease-in-out infinite alternate; }
+      @keyframes swing { from { transform: rotate(-14deg); } to { transform: rotate(14deg); } }
+      @keyframes pulse { from { opacity: 0.6; } to { opacity: 1; } }
+      @media (prefers-reduced-motion: reduce) { * { animation: none !important; } }
+    </style>
+  </defs>
+  <rect width="960" height="540" fill="url(#stone)"/>
+  <g fill="none" stroke="#4a4744" stroke-width="4">
+    <path d="M0 90 H960 M0 190 H960 M0 290 H960 M0 390 H960"/>
+    <path d="M120 0 V90 M380 0 V90 M700 0 V90 M240 90 V190 M560 90 V190 M860 90 V190 M120 190 V290 M820 190 V290 M300 290 V390 M680 290 V390"/>
+  </g>
+  <circle class="glow" cx="480" cy="560" r="420" fill="url(#fireGlow)"/>
+  <rect x="0" y="452" width="960" height="60" rx="6" fill="url(#cherry)" stroke="#4a1a10" stroke-width="5"/>
+  <rect x="0" y="508" width="960" height="40" fill="#3a3836"/>
+  <g transform="translate(480 30) scale(3.6) translate(-640 -110)">
+    <rect x="606" y="132" width="68" height="104" rx="6" fill="#5a2a18" stroke="#c9a24a" stroke-width="3"/>
+    <path d="M606 140 Q 640 104 674 140" fill="#5a2a18" stroke="#c9a24a" stroke-width="3"/>
+    <circle cx="640" cy="152" r="26" fill="#efe6d2" stroke="#c9a24a" stroke-width="3"/>
+    <path class="clockpulse" d="M617.5 139 A 26 26 0 0 1 662.5 139" fill="none" stroke="#6fd3ff" stroke-width="6" stroke-linecap="round"/>
+    <path class="clockpulse" d="M617.5 139 A 26 26 0 0 1 662.5 139" fill="none" stroke="#bff0ff" stroke-width="2" stroke-linecap="round"/>
+    <path d="M640 152 L622.2 142.9" stroke="#2a1d10" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="640" cy="152" r="3" fill="#2a1d10"/>
+    <rect x="618" y="182" width="44" height="50" rx="4" fill="#2a160c" stroke="#c9a24a" stroke-width="2"/>
+    <g class="pendulum">
+      <path d="M640 186 V218" stroke="#c9a24a" stroke-width="2"/>
+      <circle cx="640" cy="222" r="14" fill="url(#blueGlow)" class="clockpulse"/>
+      <circle cx="640" cy="222" r="7" fill="url(#sphere)"/>
+    </g>
+  </g>
+  <g>
+    <path d="M980 -20 L 980 150 C 880 140, 740 118, 640 104 L 600 44 C 700 30, 850 6, 980 -20 Z" fill="url(#shroud)" stroke="#24162e" stroke-width="5"/>
+    <path d="M960 30 C 860 44, 760 60, 660 70 M960 92 C 870 96, 760 92, 668 92" fill="none" stroke="#24162e" stroke-width="4" opacity="0.6"/>
+    <path d="M940 4 C 840 22, 740 36, 640 50" fill="none" stroke="#9a77b4" stroke-width="5" opacity="0.5"/>
+    <path d="M664 40 C 620 22, 556 26, 528 50 C 504 72, 512 100, 540 110 C 566 120, 612 116, 640 104 C 666 92, 680 60, 664 40 Z" fill="url(#shroud)" stroke="#24162e" stroke-width="5"/>
+    <path d="M540 62 C 560 54, 590 54, 614 64 M532 84 C 556 78, 596 80, 626 90 M548 104 C 566 100, 596 102, 618 106" fill="none" stroke="#24162e" stroke-width="3.5" opacity="0.7"/>
+    <path d="M560 46 C 584 36, 620 36, 646 48" fill="none" stroke="#9a77b4" stroke-width="4" opacity="0.6"/>
+  </g>
+</svg>
