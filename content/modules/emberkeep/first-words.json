@@ -11,7 +11,7 @@
       "beats": [
         {
           "id": "run-ember",
-          "instructions": "Press Run. The line print(\"ember\") is already written, and the wall will show that word.",
+          "instructions": "The line `print(\"ember\")` is already written.\nPress Run, and the wall will show that word.",
           "scene": {
             "caption": "Rain peppers on the muddy road. The gate of Emberkeep is shut. The walls are special; they respond to magic... an old magic: the Python programming language.",
             "images": [
@@ -32,12 +32,13 @@
                 "name": "the console shows ember",
                 "code": "assert \"ember\" in _captured_stdout, \"The console should include the word ember.\""
               }
-            ]
+            ],
+            "solution": "print(\"ember\")\n"
           }
         },
         {
           "id": "say-shut",
-          "instructions": "Type this line and press Run: print(\"The gate is shut.\")",
+          "instructions": "Type this line:\n`print(\"The gate is shut.\")`\nThen press Run.",
           "scene": {
             "caption": "Iron bars fill the arch. Say the sentence \"The gate is shut.\"",
             "images": [
@@ -58,12 +59,13 @@
                 "name": "the console shows the sentence",
                 "code": "assert _captured_stdout.strip() == \"The gate is shut.\", \"The console should show The gate is shut.\""
               }
-            ]
+            ],
+            "solution": "print(\"The gate is shut.\")\n"
           }
         },
         {
           "id": "say-keeper",
-          "instructions": "Type a different print and press Run: print(\"A keeper waits.\")",
+          "instructions": "Type a different print:\n`print(\"A keeper waits.\")`\nThen press Run.",
           "scene": {
             "caption": "A hooded figure stands before you, waiting for you to give them form and function.",
             "images": [
@@ -84,12 +86,13 @@
                 "name": "the console shows the new sentence",
                 "code": "assert _captured_stdout.strip() == \"A keeper waits.\", \"The console should show A keeper waits.\""
               }
-            ]
+            ],
+            "solution": "print(\"A keeper waits.\")\n"
           }
         },
         {
           "id": "two-lines",
-          "instructions": "Type these two lines and press Run: print(\"The left torch is dark.\") and print(\"The right torch is dark.\"). The console should show two lines.",
+          "instructions": "Type these two lines:\n`print(\"The left torch is dark.\")`\n`print(\"The right torch is dark.\")`\nThen press Run. The console should show two lines.",
           "scene": {
             "caption": "Two torches are dark. Say \"The left torch is dark.\" Then say \"The right torch is dark.\"",
             "images": [
@@ -110,7 +113,8 @@
                 "name": "the console shows two lines",
                 "code": "lines = [line.strip() for line in _captured_stdout.splitlines() if line.strip()]\nassert lines == [\"The left torch is dark.\", \"The right torch is dark.\"], \"The console should show the two torch lines.\""
               }
-            ]
+            ],
+            "solution": "print(\"The left torch is dark.\")\nprint(\"The right torch is dark.\")\n"
           }
         },
         {
@@ -129,7 +133,7 @@
         },
         {
           "id": "remember-ember",
-          "instructions": "A variable remembers a value. Type this line and press Run: word = \"ember\"",
+          "instructions": "A variable remembers a value.\nType this line:\n`word = \"ember\"`\nThen press Run.",
           "scene": {
             "caption": "Hold \"ember\" in word. Do not say it yet.",
             "images": [
@@ -150,12 +154,13 @@
                 "name": "word remembers ember",
                 "code": "assert word == \"ember\", \"word should remember ember.\""
               }
-            ]
+            ],
+            "solution": "word = \"ember\"\n"
           }
         },
         {
           "id": "change-word",
-          "instructions": "Change that same variable to a new word. Type word = \"keep\" and press Run.",
+          "instructions": "Change that same variable to a new word.\nType `word = \"keep\"` and press Run.",
           "scene": {
             "caption": "word holds ember. Make word hold \"keep\" instead.",
             "images": [
@@ -176,7 +181,8 @@
                 "name": "word remembers keep",
                 "code": "assert word == \"keep\", \"word should remember keep.\""
               }
-            ]
+            ],
+            "solution": "word = \"keep\"\n"
           }
         },
         {
@@ -195,7 +201,7 @@
         },
         {
           "id": "say-name",
-          "instructions": "name holds Rowan. print(name) shows the value. print(\"name\") shows the word name. Add print(name) and press Run.",
+          "instructions": "`name` holds Rowan.\n`print(name)` shows the value. `print(\"name\")` shows the word name.\nAdd `print(name)` and press Run.",
           "scene": {
             "caption": "name holds Rowan. Say that value, not the word name.",
             "images": [
@@ -216,12 +222,13 @@
                 "name": "the console shows the value",
                 "code": "shown = _captured_stdout.strip()\nassert shown == str(name), \"The console should show the value of name, not the word name.\"\nassert shown != \"name\""
               }
-            ]
+            ],
+            "solution": "name = \"Rowan\"\nprint(name)\n"
           }
         },
         {
           "id": "say-place",
-          "instructions": "Make a different variable and print it. Type place = \"Emberkeep\" and then print(place), and press Run.",
+          "instructions": "Make a different variable and print it.\n1. Type `place = \"Emberkeep\"`.\n2. Then type `print(place)`.\n3. Press Run.",
           "scene": {
             "caption": "Hold \"Emberkeep\" in place, then say that value.",
             "images": [
@@ -242,7 +249,8 @@
                 "name": "the console shows the place",
                 "code": "shown = _captured_stdout.strip()\nassert place == \"Emberkeep\", \"place should remember Emberkeep.\"\nassert shown == \"Emberkeep\", \"The console should show Emberkeep.\""
               }
-            ]
+            ],
+            "solution": "place = \"Emberkeep\"\nprint(place)\n"
           }
         },
         {
@@ -261,7 +269,7 @@
         },
         {
           "id": "torch-counts",
-          "instructions": "The left torch is 2 and the right torch is 3. Type left = 2 and right = 3, then press Run. Do not print yet.",
+          "instructions": "The left torch is 2 and the right torch is 3.\n1. Type `left = 2`.\n2. Type `right = 3`.\n3. Press Run. Do not print yet.",
           "scene": {
             "caption": "Hold 2 in left and 3 in right. Do not say them yet.",
             "images": [
@@ -282,12 +290,13 @@
                 "name": "both torch counts are remembered",
                 "code": "assert left == 2, \"left should be 2.\"\nassert right == 3, \"right should be 3.\""
               }
-            ]
+            ],
+            "solution": "left = 2\nright = 3\n"
           }
         },
         {
           "id": "say-counts",
-          "instructions": "Print each number on its own line. Keep left = 2 and right = 3, then type print(left) and print(right), and press Run.",
+          "instructions": "Print each number on its own line.\n1. Keep `left = 2` and `right = 3`.\n2. Type `print(left)` and `print(right)`.\n3. Press Run.",
           "scene": {
             "caption": "Say the number left holds, then say the number right holds.",
             "images": [
@@ -308,12 +317,13 @@
                 "name": "each count is on its own line",
                 "code": "lines = [line.strip() for line in _captured_stdout.splitlines() if line.strip()]\nassert lines == [str(left), str(right)], \"Print each number on its own line.\""
               }
-            ]
+            ],
+            "solution": "left = 2\nright = 3\nprint(left)\nprint(right)\n"
           }
         },
         {
           "id": "say-sum",
-          "instructions": "Print the sum with print(left + right). Keep left = 2 and right = 3. Adding the numbers gives one total, which is not the same as sticking the two numbers together as text.",
+          "instructions": "Keep `left = 2` and `right = 3`.\nPrint the sum with `print(left + right)`, then press Run.\nAdding the numbers gives one total, which is not the same as sticking the two numbers together as text.",
           "scene": {
             "caption": "left holds 2 and right holds 3. Say the sum.",
             "images": [
@@ -334,12 +344,13 @@
                 "name": "the console shows the sum",
                 "code": "shown = _captured_stdout.strip()\nassert left == 2, \"left should be 2.\"\nassert right == 3, \"right should be 3.\"\nassert shown == str(left + right), \"Print the sum of the two numbers.\"\nassert shown != str(left) + str(right), \"Print the sum, not the two numbers stuck together.\""
               }
-            ]
+            ],
+            "solution": "left = 2\nright = 3\nprint(left + right)\n"
           }
         },
         {
           "id": "gate-answers",
-          "instructions": "Put it together. Hold 4 in left and 1 in right, then say the sum. Type left = 4, then right = 1, then print(left + right), and press Run.",
+          "instructions": "Put it together: hold 4 in `left` and 1 in `right`, then say the sum.\n1. Type `left = 4`.\n2. Type `right = 1`.\n3. Type `print(left + right)`.\n4. Press Run.",
           "scene": {
             "caption": "The gate will answer if you can hold 4 in the left and 1 in the right and then say the sum.",
             "images": [
@@ -360,7 +371,8 @@
                 "name": "the console shows the new sum",
                 "code": "shown = _captured_stdout.strip()\nassert left == 4, \"left should be 4.\"\nassert right == 1, \"right should be 1.\"\nassert shown == str(left + right), \"The console should show the sum of the two numbers.\"\nassert shown != str(left) + str(right), \"Print the sum, not the two numbers stuck together.\""
               }
-            ]
+            ],
+            "solution": "left = 4\nright = 1\nprint(left + right)\n"
           }
         }
       ]

@@ -61,6 +61,10 @@ class Party:
         self._moves.append(direction)
         _stage_move(direction)
 
+    def show_mana_bar(self, caster, mana_bar):
+        _mana_prints.append((caster["character_name"], str(mana_bar)))
+        _stage_mana(str(caster["character_name"]), str(mana_bar), int(caster["mana"]), int(caster["max_mana"]))
+
 party = Party()
 
 _prompts = []
@@ -107,8 +111,7 @@ def reinforce_barrier(caster):
     _stage_cast(str(caster["character_name"]))
 
 def print_mana(caster, mana_bar):
-    _mana_prints.append((caster["character_name"], str(mana_bar)))
-    _stage_mana(str(caster["character_name"]), str(mana_bar), int(caster["mana"]), int(caster["max_mana"]))
+    party.show_mana_bar(caster, mana_bar)
 
 def _required_roll(check):
     for roll in range(1, 21):

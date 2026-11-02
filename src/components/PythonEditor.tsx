@@ -18,7 +18,7 @@ export function PythonEditor({
     <div className="editor-shell" data-testid="editor">
       <CodeMirror
         value={code}
-        height="280px"
+        minHeight="280px"
         theme={plainDarkTheme}
         basicSetup={{
           lineNumbers: true,
