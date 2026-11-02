@@ -148,6 +148,20 @@ test.describe("emberkeep player", () => {
     await expect(page.getByTestId("stdout")).toContainText("ember");
   });
 
+  test("puts each instruction on its own line, shows code as code, and the console above the editor", async ({ page }) => {
+    await page.goto("/play/emberkeep");
+    const instructions = page.getByTestId("part-instructions");
+    await expect(instructions.locator("p")).toHaveCount(2);
+    await expect(instructions.locator("code.inline-code")).toHaveText('print("ember")');
+    await expect(instructions.locator("p").first()).toHaveText('The line print("ember") is already written.');
+    const consoleBox = await page.getByTestId("console").boundingBox();
+    const toolbarBox = await page.getByTestId("run").boundingBox();
+    const editorBox = await page.getByTestId("editor").boundingBox();
+    if (!consoleBox || !toolbarBox || !editorBox) throw new Error("the console, Run, and the editor should be laid out");
+    expect(consoleBox.y + consoleBox.height).toBeLessThanOrEqual(toolbarBox.y);
+    expect(toolbarBox.y + toolbarBox.height).toBeLessThanOrEqual(editorBox.y);
+  });
+
   test("grows the editor to show every line instead of scrolling inside it", async ({ page }) => {
     await page.goto("/play/emberkeep");
     const editor = page.locator('[data-testid="editor"] .cm-editor');

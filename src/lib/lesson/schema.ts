@@ -26,6 +26,8 @@ export const activitySchema = z.object({
   passFeedback: z.string().min(1),
   failFeedback: z.string().min(1),
   checks: z.array(checkSchema).min(1),
+  /** A finished version of the code. The player offers it after a student has spent a while on the part. */
+  solution: z.string().min(1).optional(),
   unlocks: z.array(featureSchema).optional(),
   party: z
     .object({ members: z.array(z.string().min(1)).min(1), mana: manaTableSchema })

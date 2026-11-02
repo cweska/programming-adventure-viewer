@@ -66,6 +66,18 @@ New JSON files must also be imported in `src/lib/lesson/modules.ts` (modules) or
 | Description Box | `scene.caption` |
 | Programming Editor/Console: Hidden | `"editor": "hidden"` |
 | What students should do | `instructions` (shown under the title) |
+| A finished answer | `activity.solution` (the Show solution button) |
+
+### Writing instructions
+
+Students read `instructions` under the part's title. A few rules keep them easy to read:
+- Put each instruction on its own line (`\n` in JSON). Every line shows on its own.
+- Start lines with `1. `, `2. `, ... to show numbered steps.
+- Wrap code in backticks, such as `` `party.move("left")` ``, so it looks like code.
+
+### Show solution
+
+Every coding part should have an `activity.solution`: finished code that passes all of the part's checks. After a student has spent five minutes on a part, a **Show solution** button appears next to Reset code. Only time spent on that part counts. Clicking it asks first, then puts the solution in the editor, and the student still presses Run. A unit test runs every solution against its part's checks.
 
 A story part:
 

@@ -297,6 +297,42 @@ button:disabled {
   margin: 0;
 }
 
+.instruction-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  line-height: 1.5;
+}
+
+.instruction-lines p,
+.instruction-lines ol {
+  margin: 0;
+}
+
+.instruction-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-left: 1.6em;
+}
+
+.instruction-steps li::marker {
+  color: #f0d7a2;
+  font-weight: 600;
+}
+
+.inline-code {
+  padding: 1px 5px;
+  color: #f4f7fb;
+  background: #121417;
+  border: 1px solid #3c4452;
+  border-radius: 3px;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.9em;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 .code-panel {
   background: #121417;
   border: 1px solid #2c313a;
@@ -320,6 +356,17 @@ button:disabled {
   color: #9aa3b2;
   font-family: var(--font-mono), ui-monospace, monospace;
   font-size: 0.82rem;
+}
+
+.toolbar .show-solution {
+  margin-left: auto;
+  color: #10240c;
+  background: #cfe8b0;
+  border-color: #5f8b3e;
+}
+
+.toolbar .show-solution + .reset-code {
+  margin-left: 0;
 }
 
 .toolbar .reset-code {
@@ -357,9 +404,9 @@ button:disabled {
 }
 
 .console {
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid #2c313a;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #2c313a;
   color: #f4f7fb;
 }
 

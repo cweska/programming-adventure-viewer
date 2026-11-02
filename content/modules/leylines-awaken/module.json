@@ -2,7 +2,10 @@
   "id": "leylines-awaken",
   "title": "Leylines Awaken",
   "summary": "Two strangers to this world, a humming medallion, and a flashover rolling over the hills. Program your party's first steps.",
-  "campaign": { "order": 1, "label": "Module 1" },
+  "campaign": {
+    "order": 1,
+    "label": "Module 1"
+  },
   "language": "python",
   "lessons": [
     {
@@ -57,26 +60,47 @@
         },
         {
           "id": "program-movement",
-          "instructions": "Each def line makes a function: a named set of steps. The game runs move_left() when you press the left arrow, move_right() for the right arrow, and so on. Right now each function only says pass, which means do nothing. Replace each pass with a command that moves the party, like party.move(\"left\"). Use the direction in the function's name, then press Run. When the arrow keys work, click the map and walk the party to the cabin door.",
+          "instructions": "Each `def` line makes a function: a named set of steps.\nThe game runs `move_left()` when you press the left arrow, `move_right()` for the right arrow, and so on.\nRight now each function only says `pass`, which means do nothing.\n1. Replace each `pass` with a command that moves the party, like `party.move(\"left\")`. Use the direction in the function's name.\n2. Press Run.\n3. When the arrow keys work, click the map and walk the party to the cabin door.",
           "scene": {
             "caption": "In order for characters in the game to move, we have to program the ability to receive input from the arrow keys. Finish these functions that will make the character attempt to move the corresponding direction whenever they hit an arrow key.",
             "images": []
           },
           "board": {
             "map": "moonlit-hills",
-            "party": ["oogrish", "gearshift"],
-            "partyStart": [
-              { "x": 3, "y": 5 },
-              { "x": 2, "y": 5 }
+            "party": [
+              "oogrish",
+              "gearshift"
             ],
-            "actors": [{ "id": "mar-tu", "kind": "npc", "ref": "mar-tu", "x": 12, "y": 4 }],
+            "partyStart": [
+              {
+                "x": 3,
+                "y": 5
+              },
+              {
+                "x": 2,
+                "y": 5
+              }
+            ],
+            "actors": [
+              {
+                "id": "mar-tu",
+                "kind": "npc",
+                "ref": "mar-tu",
+                "x": 12,
+                "y": 4
+              }
+            ],
             "features": [],
             "goal": {
               "type": "reach",
               "x": 11,
               "y": 3,
               "label": "the cabin door",
-              "enter": { "after": ["mar-tu"] }
+              "enter": {
+                "after": [
+                  "mar-tu"
+                ]
+              }
             },
             "seed": 1
           },
@@ -85,7 +109,9 @@
             "starterCode": "def move_left():\n    pass\n\n\ndef move_right():\n    pass\n\n\ndef move_up():\n    pass\n\n\ndef move_down():\n    pass\n",
             "passFeedback": "The party steps left, right, up, and down. The arrow keys and W A S D now move your party. Click the map and walk to the cabin door.",
             "failFeedback": "Each function should use the party's move command with the direction from its own name.",
-            "unlocks": ["movement"],
+            "unlocks": [
+              "movement"
+            ],
             "checks": [
               {
                 "name": "move_left steps left",
@@ -103,7 +129,8 @@
                 "name": "move_down steps down",
                 "code": "party._moves.clear()\nmove_down()\nassert party._moves == [\"down\"], 'move_down() should call party.move(\"down\").'"
               }
-            ]
+            ],
+            "solution": "def move_left():\n    party.move(\"left\")\n\n\ndef move_right():\n    party.move(\"right\")\n\n\ndef move_up():\n    party.move(\"up\")\n\n\ndef move_down():\n    party.move(\"down\")\n"
           }
         },
         {
@@ -123,7 +150,7 @@
         },
         {
           "id": "program-dialogue-prompt",
-          "instructions": "get_dialogue_prompt_string() returns the line Mar'tu says. Change the words inside the quotes to a question Mar'tu asks Oogrish and Gearshift. The next two lines make it lower case and then capitalize the first letter. Then finish present_dialogue_option(): store the result of get_dialogue_prompt_string() in a variable, and pass that variable to print_prompt(). Press Run to see the line on the game screen.",
+          "instructions": "`get_dialogue_prompt_string()` returns the line Mar'tu says.\n1. Change the words inside the quotes to a question Mar'tu asks Oogrish and Gearshift. The next two lines make it lower case and then capitalize the first letter.\n2. Finish `present_dialogue_option()`: store the result of `get_dialogue_prompt_string()` in a variable.\n3. Pass that variable to `print_prompt()`.\n4. Press Run to see the line on the game screen.",
           "scene": {
             "caption": "We need our characters to be able to speak to each other and other characters in the world. Let's implement a dialogue system so the player can select dialogue and advance the story. We'll start with the dialogue prompt.",
             "images": [
@@ -157,12 +184,13 @@
                 "name": "the line is stored in a variable",
                 "code": "assert present_dialogue_option.__code__.co_nlocals >= 1, \"Store the result of get_dialogue_prompt_string() in a variable first, then pass the variable to print_prompt().\""
               }
-            ]
+            ],
+            "solution": "def get_dialogue_prompt_string():\n    dialogue_input = \"WHAT DO YOU REMEMBER ABOUT THE GREENROOM?\"\n    dialogue_input = dialogue_input.lower()\n    dialogue_input = dialogue_input.capitalize()\n    return dialogue_input\n\n\ndef present_dialogue_option():\n    dialogue = get_dialogue_prompt_string()\n    print_prompt(dialogue)\n"
           }
         },
         {
           "id": "program-dialogue-options",
-          "instructions": "get_dialogue_input() is already finished. Change the four option strings to things Oogrish could say back, and the game shows them in the four boxes. The game runs dialogue_option_selected() whenever a box is clicked, and user.clicked() tells you which one. Replace each <option> with \"option 1\", \"option 2\", \"option 3\", or \"option 4\" (keep the quotes), in order. Then add make_option_green() under each speak_dialogue line so the clicked box turns green. Press Run.",
+          "instructions": "`get_dialogue_input()` is already finished except for its four option strings.\nThe game runs `dialogue_option_selected()` whenever a box is clicked, and `user.clicked()` tells you which one.\n1. Change the four option strings to things Oogrish could say back. The game shows them in the four boxes.\n2. Replace each `<option>` with `\"option 1\"`, `\"option 2\"`, `\"option 3\"`, or `\"option 4\"` (keep the quotes), in order.\n3. Add `make_option_green()` under each `speak_dialogue` line so the clicked box turns green.\n4. Press Run.",
           "scene": {
             "caption": "Let's implement dialogue response options so the player can select dialogue and advance the story.",
             "images": [
@@ -208,7 +236,8 @@
                 "name": "clicking option 4 speaks it and turns it green",
                 "code": "_spoken.clear()\n_greens.clear()\nuser._clicked = \"option 4\"\ndialogue_option_selected()\nassert _spoken == [\"option 4\"], 'Clicking option 4 should run speak_dialogue(\"option 4\").'\nassert _greens == [\"option 4\"], \"Call make_option_green() once when option 4 is clicked.\""
               }
-            ]
+            ],
+            "solution": "def get_dialogue_input():\n    option_1 = \"We will help you.\"\n    option_2 = \"What is the decay?\"\n    option_3 = \"Tell us about the clock.\"\n    option_4 = \"We need to rest first.\"\n    print_options(\n        option_1.lower().capitalize(),\n        option_2.lower().capitalize(),\n        option_3.lower().capitalize(),\n        option_4.lower().capitalize(),\n    )\n\n\ndef dialogue_option_selected():\n    if (user.clicked() == \"option 1\"):\n        speak_dialogue(\"option 1\")\n        make_option_green()\n    elif (user.clicked() == \"option 2\"):\n        speak_dialogue(\"option 2\")\n        make_option_green()\n    elif (user.clicked() == \"option 3\"):\n        speak_dialogue(\"option 3\")\n        make_option_green()\n    elif (user.clicked() == \"option 4\"):\n        speak_dialogue(\"option 4\")\n        make_option_green()\n"
           }
         },
         {

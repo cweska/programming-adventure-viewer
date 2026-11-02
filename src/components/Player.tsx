@@ -46,6 +46,7 @@ import { conversationEvents, gameEvents, stageMoves, type StageEvent, type Theat
 import { ConsolePanel } from "./ConsolePanel";
 import { ConversationScene, type ConversationScript } from "./ConversationScene";
 import { GameBoard, type BoardScript } from "./game/GameBoard";
+import { Instructions } from "./Instructions";
 import { PartyPanelScene, type ManaEvent, type ManaScript } from "./PartyPanelScene";
 import { PythonEditor } from "./PythonEditor";
 import { SkillCheckScene, type RollOutcome } from "./SkillCheckScene";
@@ -56,6 +57,8 @@ const PREVIEW_STORAGE_KEY = "emberkeep-preview";
 const STUDENT_STORAGE_KEY = "emberkeep-student";
 const PROMPTS_STORAGE_PREFIX = "emberkeep-prompts:";
 const PASSED_STORAGE_PREFIX = "emberkeep-passed:";
+/** How long a student works on a coding part before "Show solution" appears. */
+export const SOLUTION_DELAY_MS = 5 * 60 * 1000;
 
 type StudentSession = {
   id: string;
@@ -94,6 +97,8 @@ export function Player({ moduleId, draft = false }: { moduleId?: string; draft?:
   const [pythonReady, setPythonReady] = useState(false);
   const [running, setRunning] = useState(false);
   const [confirmingReset, setConfirmingReset] = useState(false);
+  const [confirmingSolution, setConfirmingSolution] = useState(false);
+  const [solutionReady, setSolutionReady] = useState<Record<string, boolean>>({});
   const [student, setStudent] = useState<StudentSession | null>(null);
   const [displayName, setDisplayName] = useState("");
   const [joinCode, setJoinCode] = useState("");
@@ -115,6 +120,7 @@ export function Player({ moduleId, draft = false }: { moduleId?: string; draft?:
   const moduleRef = useRef(lessonModule);
   const passedCodeRef = useRef<Record<string, string>>({});
   const liveRef = useRef<{ key: string; session: LiveSession } | null>(null);
+  const timeOnPartRef = useRef<Record<string, number>>({});
 
   const lessons = useMemo(() => lessonsFor(lessonModule, preview), [lessonModule, preview]);
   const lesson = lessons[lessonIndex];
@@ -151,6 +157,7 @@ export function Player({ moduleId, draft = false }: { moduleId?: string; draft?:
     setConversationScript(null);
     setManaScript(null);
     setConfirmingReset(false);
+    setConfirmingSolution(false);
     endLiveSession();
     void formatPart("load", next.index, source, lessonId);
   }
@@ -266,20 +273,47 @@ export function Player({ moduleId, draft = false }: { moduleId?: string; draft?:
     writeNavigation(setPartCode(navRef.current, indexRef.current, value));
   }
 
-  function resetCode() {
+  function replaceCode(pick: (part: Beat) => string | undefined) {
     const currentLesson = lessons[lessonIndex];
     const index = navRef.current.index;
     const part = currentLesson?.beats[index];
     setConfirmingReset(false);
+    setConfirmingSolution(false);
     if (!currentLesson || !part || running) return;
-    const starter = starterFor(part);
-    onCodeChange(starter);
+    const source = pick(part);
+    if (source === undefined) return;
+    onCodeChange(source);
     setOutput("");
     setExplainer(null);
     setFeedback(null);
     setFailedChecks([]);
-    void formatPart("load", index, starter, currentLesson.id);
+    void formatPart("load", index, source, currentLesson.id);
   }
+
+  function resetCode() {
+    replaceCode((part) => starterFor(part));
+  }
+
+  function showSolution() {
+    replaceCode((part) => part.activity?.solution);
+  }
+
+  const hasSolution = Boolean(beat?.activity?.solution);
+  const solutionShown = solutionReady[partKey] === true;
+  useEffect(() => {
+    if (!partKey || !hasSolution || solutionShown) return;
+    // Count only the time spent on this part, so leaving and coming back picks up where it left off.
+    const entered = Date.now();
+    const spent = timeOnPartRef.current[partKey] ?? 0;
+    const timer = window.setTimeout(
+      () => setSolutionReady((previous) => ({ ...previous, [partKey]: true })),
+      Math.max(0, SOLUTION_DELAY_MS - spent),
+    );
+    return () => {
+      window.clearTimeout(timer);
+      timeOnPartRef.current[partKey] = spent + (Date.now() - entered);
+    };
+  }, [partKey, hasSolution, solutionShown]);
 
   function onEditorBlur() {
     void formatPart("blur", indexRef.current, codeRef.current, lessonIdRef.current);
@@ -764,11 +798,17 @@ export function Player({ moduleId, draft = false }: { moduleId?: string; draft?:
             Forward
           </button>
         </div>
-        <p>{beat.instructions}</p>
+        <Instructions text={beat.instructions} />
       </section>
 
       {showsEditor(beat) ? (
         <section className="code-panel">
+          <ConsolePanel
+            output={output}
+            explainer={explainer}
+            feedback={feedback}
+            failedChecks={failedChecks}
+          />
           <div className="toolbar">
             <button
               type="button"
@@ -781,11 +821,28 @@ export function Player({ moduleId, draft = false }: { moduleId?: string; draft?:
             <span data-testid="python-status" className="python-status">
               {pythonReady ? "Python is ready" : "Python is loading"}
             </span>
+            {solutionShown ? (
+              <button
+                type="button"
+                className="show-solution"
+                data-testid="show-solution"
+                onClick={() => {
+                  setConfirmingReset(false);
+                  setConfirmingSolution(true);
+                }}
+                disabled={running}
+              >
+                Show solution
+              </button>
+            ) : null}
             <button
               type="button"
               className="reset-code"
               data-testid="reset-code"
-              onClick={() => setConfirmingReset(true)}
+              onClick={() => {
+                setConfirmingSolution(false);
+                setConfirmingReset(true);
+              }}
               disabled={running}
             >
               Reset code
@@ -807,13 +864,23 @@ export function Player({ moduleId, draft = false }: { moduleId?: string; draft?:
               </button>
             </div>
           ) : null}
+          {confirmingSolution ? (
+            <div className="reset-confirm" role="alertdialog" aria-label="Show solution">
+              <p>Replace your code with a finished solution? You can read it, then press Run.</p>
+              <button type="button" data-testid="solution-confirm" onClick={showSolution}>
+                Yes, show it
+              </button>
+              <button
+                type="button"
+                className="reset-cancel"
+                data-testid="solution-cancel"
+                onClick={() => setConfirmingSolution(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          ) : null}
           <PythonEditor code={code} onChange={onCodeChange} onBlur={onEditorBlur} />
-          <ConsolePanel
-            output={output}
-            explainer={explainer}
-            feedback={feedback}
-            failedChecks={failedChecks}
-          />
         </section>
       ) : null}
 
