@@ -67,7 +67,9 @@ export type NoticeKind =
   | "melee-locked"
   | "nothing-to-say"
   | "no-moves"
-  | "not-your-turn";
+  | "not-your-turn"
+  | "magic-locked"
+  | "cast-hint";
 
 export type Notice = { kind: NoticeKind; text: string; id: number };
 
@@ -78,6 +80,20 @@ export type CutsceneState = {
   queue: string[];
   doorClosed: boolean;
 };
+
+export type BarrierState = {
+  x0: number;
+  x1: number;
+  y0: number;
+  y1: number;
+  level: number;
+  casters: string[];
+  locked: boolean;
+  wave: number;
+  done: boolean;
+};
+
+export type ManaState = { mana: number; max: number };
 
 export type GameState = {
   map: { id: string; name: string; sky: "night" | "day"; width: number; height: number; tiles: Tile[][] };
@@ -90,6 +106,13 @@ export type GameState = {
   dialogues: Record<string, Dialogue>;
   combat: CombatState | null;
   cutscene: CutsceneState | null;
+  barrier: BarrierState | null;
+  mana: Record<string, ManaState>;
+  castLines: Record<string, string>;
+  speech: { actorId: string; text: string; id: number } | null;
+  castFx: { actorId: string; id: number } | null;
+  manaDrop: { actorId: string; amount: number; id: number } | null;
+  prompt: { text: string; id: number } | null;
   combatResult: "victory" | "defeat" | null;
   goal: Goal | null;
   goalMet: boolean;
@@ -109,5 +132,10 @@ export type GameAction =
   | { type: "endTurn" }
   | { type: "enemyStep" }
   | { type: "cutsceneStep" }
+  | { type: "cast"; actorId: string }
+  | { type: "manaChanged"; actorId: string; mana: number; max: number }
+  | { type: "prompt"; text: string }
+  | { type: "waveStep" }
+  | { type: "notice"; kind: NoticeKind }
   | { type: "setFeatures"; features: Feature[] }
   | { type: "clearNotice" };

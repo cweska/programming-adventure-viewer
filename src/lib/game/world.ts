@@ -10,6 +10,8 @@ const NOTICES: Record<Exclude<NoticeKind, "nothing-to-say">, string> = {
   "melee-locked": "Fighting hasn't been programmed yet.",
   "no-moves": "No steps left this turn. Walk into an enemy to attack, or press Space to end your turn.",
   "not-your-turn": "Wait for your turn.",
+  "magic-locked": "Casting hasn't been programmed yet.",
+  "cast-hint": "The party stays inside the barrier. Click a party member or press 1–4 to cast.",
 };
 
 export function delta(direction: Direction): Position {

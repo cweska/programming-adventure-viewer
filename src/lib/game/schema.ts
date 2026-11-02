@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const featureSchema = z.enum(["movement", "dialogue", "melee"]);
+export const featureSchema = z.enum(["movement", "dialogue", "melee", "magic"]);
 
 export const directionSchema = z.enum(["left", "right", "up", "down"]);
 
@@ -79,6 +79,10 @@ export const characterSchema = z
     faction: z.string().min(1),
     backstory: z.string().min(1),
     pastLife: z.string().min(1),
+    spellColor: z
+      .string()
+      .regex(/^#[0-9a-f]{6}$/i)
+      .optional(),
     sprite: z.string().startsWith("/"),
     portrait: z.string().startsWith("/"),
   })
@@ -215,7 +219,28 @@ export const goalSchema = z.discriminatedUnion("type", [
     .strict(),
   z.object({ type: z.literal("talk"), actor: z.string().min(1) }).strict(),
   z.object({ type: z.literal("defeat") }).strict(),
+  z.object({ type: z.literal("barrier") }).strict(),
 ]);
+
+export const manaTableSchema = z.record(z.string().min(1), z.number().int().min(0));
+
+export const castingSchema = z
+  .object({
+    spell: z.string().min(1),
+    mana: manaTableSchema,
+    lines: z.record(z.string().min(1), z.string().min(1)),
+  })
+  .strict();
+
+export const barrierSchema = z
+  .object({
+    x0: z.number().int().min(0),
+    x1: z.number().int().min(0),
+    y0: z.number().int().min(0),
+    y1: z.number().int().min(0),
+  })
+  .strict()
+  .refine((area) => area.x0 <= area.x1 && area.y0 <= area.y1, { message: "The barrier needs x0 <= x1 and y0 <= y1." });
 
 export const boardSchema = z
   .object({
@@ -225,12 +250,18 @@ export const boardSchema = z
     actors: z.array(boardActorSchema).default([]),
     features: z.array(featureSchema).default([]),
     goal: goalSchema.optional(),
+    casting: castingSchema.optional(),
+    barrier: barrierSchema.optional(),
     seed: z.number().int().default(1),
   })
   .strict()
   .refine((board) => board.party.length === board.partyStart.length, {
     message: "Every party member needs a start position.",
     path: ["partyStart"],
+  })
+  .refine((board) => board.goal?.type !== "barrier" || Boolean(board.barrier && board.casting), {
+    message: "A barrier goal needs a barrier and casting.",
+    path: ["goal"],
   });
 
 export type Feature = z.infer<typeof featureSchema>;
@@ -248,3 +279,5 @@ export type Position = z.infer<typeof positionSchema>;
 export type BoardActor = z.infer<typeof boardActorSchema>;
 export type Goal = z.infer<typeof goalSchema>;
 export type Board = z.infer<typeof boardSchema>;
+export type Casting = z.infer<typeof castingSchema>;
+export type BarrierArea = z.infer<typeof barrierSchema>;

@@ -1,9 +1,11 @@
+import { castLanded, changeMana, showPrompt, waveStep } from "./barrier";
 import { activeCombatant, combatMove, endTurn, enemyStep } from "./combat";
 import { cutsceneStep } from "./cutscene";
 import { advanceDialogue, chooseOption } from "./dialogue";
 import { stepParty, swapLeader } from "./movement";
 import { mergeFeatures } from "./state";
 import type { GameAction, GameState } from "./types";
+import { notify } from "./world";
 
 function apply(state: GameState, action: GameAction): GameState {
   switch (action.type) {
@@ -24,6 +26,16 @@ function apply(state: GameState, action: GameAction): GameState {
       return enemyStep(state);
     case "cutsceneStep":
       return cutsceneStep(state);
+    case "cast":
+      return castLanded(state, action.actorId);
+    case "manaChanged":
+      return changeMana(state, action.actorId, action.mana, action.max);
+    case "prompt":
+      return showPrompt(state, action.text);
+    case "waveStep":
+      return waveStep(state);
+    case "notice":
+      return notify(state, action.kind);
     case "setFeatures":
       return { ...state, features: mergeFeatures(action.features) };
     case "clearNotice":
