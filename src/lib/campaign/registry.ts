@@ -1,6 +1,9 @@
+import bombShell from "../../../content/campaign/characters/bomb-shell.json";
 import gearshift from "../../../content/campaign/characters/gearshift.json";
+import lucky from "../../../content/campaign/characters/lucky.json";
 import oogrish from "../../../content/campaign/characters/oogrish.json";
 import general from "../../../content/campaign/classes/general.json";
+import scout from "../../../content/campaign/classes/scout.json";
 import warrior from "../../../content/campaign/classes/warrior.json";
 import arenaKeeperWelcome from "../../../content/campaign/dialogue/arena-keeper-welcome.json";
 import sparringBot from "../../../content/campaign/enemies/sparring-bot.json";
@@ -30,8 +33,8 @@ function byId<T extends { id: string }>(schema: z.ZodType<T, z.ZodTypeDef, unkno
 }
 
 export const campaignData: CampaignData = {
-  characters: byId(characterSchema, [gearshift, oogrish]),
-  classes: byId(classSchema, [warrior, general]),
+  characters: byId(characterSchema, [gearshift, oogrish, bombShell, lucky]),
+  classes: byId(classSchema, [warrior, general, scout]),
   npcs: byId(npcSchema, [marTu, arenaKeeper]),
   enemies: byId(enemySchema, [sparringBot]),
   maps: byId(mapSchema, [moonlitHills, trainingYard]),

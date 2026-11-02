@@ -48,6 +48,43 @@ The setting rule for every character: they were all carried into this fantasy wo
 - The golden clockwork medallion from the Module 1 outline is added as a relic.
 - Game stats: Staff of Wisdom d6, shell and cloak +2 armor.
 
+## Bomb Shell (Alien Robot, Scout / Ranger), Module 2
+
+**From the outline**
+- Name, species, Good alignment, size, appearance, and personality.
+- Ability scores: STR 15, CON 16, ATH 11, DEX 6, PERS 13, PER 12, INT 14, WIS 8, MAG 12. Max mana 24.
+- Innate: stealth. Martial: Dead Eye, arm blade fighting. Magical: invisibility for one minute.
+- Weakness: Velocite ore powers everything, invisibility burns it fastest, and he is clumsy and quick to act.
+- Gear: arm cannon d8 (alternate: arm blade d6), Durabyllium plating +3, Velocite ore, and the signal fin.
+- Backstory: fled a losing side of a civil war by escape pod, crash-landed, and followed a signal only he could hear.
+- Spell color: teal.
+
+**Filled in or changed**
+- **Scout** is a new class, as the outline suggests: role Ranger, 10 base HP.
+- The faction name came from an existing franchise, so it is changed to the original **Kingdom of Velocara**.
+- The arm blade is kept as a note on his arm cannon, because a character has one weapon in the game for now.
+- The outline's optional story hook (that his signal may be the one Gearshift sent) is left for a later module.
+
+## Lucky (Ruskar, Warrior), Module 2
+
+**From the outline**
+- Name, Warrior class, the alignment "Only in it for himself", size, appearance, and personality.
+- Ability scores: STR 17, CON 14, ATH 18, DEX 15, PERS 14, PER 11, INT 13, WIS 12, MAG 13. Max mana 26.
+- Innate: Dumb Luck. Martial: master of every weapon, alien martial arts. Magical: mind control through his pocket watch.
+- Weakness: few people trust him, and his own mirror-bright armor can turn the watch against him.
+- Gear: the Telegun d6, platinum plate +3, the pocket watch, and his canteen of glug.
+- Backstory: a hired gun who fired the Telegun at a far-off ridge and landed in the greenroom.
+- Spell color: silver.
+
+**Filled in or changed**
+- The species on the sheet comes from an existing franchise, so it is changed to the original **Ruskar**: a tall, shaggy, rust-furred people. His look and personality stay the same.
+- The faction uses the outline's "Unbroken States of America" reading of the sheet.
+- The Telegun crossed over as a brass-and-rune machine, like every firearm on Tor, per the outline's past-life note.
+
+## Spell colors
+
+Module 2 gives each party member a spell color for their casting sparks: gold for Oogrish, fire orange for Gearshift, teal for Bomb Shell, and silver for Lucky. Max mana is twice a character's magical affinity.
+
 ## Mar'tu (NPC, they/them)
 
 They are from the Module 1 outline: the friendly keeper of the cabin in the hills, with a thick accent. They wear a purple shroud that hides everything but their tired yellow eyes. They have been studying the glowing clock on their mantle for almost two weeks. On the game map, walking into them says talking isn't programmed yet. In Parts 6 and 7, the students program the dialogue box that shows Mar'tu's question.

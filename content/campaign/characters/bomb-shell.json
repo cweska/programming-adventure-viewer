@@ -1,0 +1,70 @@
+{
+  "id": "bomb-shell",
+  "name": "Bomb Shell",
+  "species": "Alien Robot",
+  "classId": "scout",
+  "alignment": "Good",
+  "size": "About 8 feet tall, compact for a robot and small next to Gearshift",
+  "appearance": "A stocky gunmetal-grey robot built low and wide, with thick shoulder plates of scuffed bronze-colored durabyllium. His rounded, helmet-like head has a single round optic that glows teal and a small antenna fin on the back. A chest grille shows the teal glow of the ore core inside. His right forearm folds open into a short arm cannon or slides out a curved arm blade. Heavy treaded feet.",
+  "personality": "Quiet, watchful, and loyal to anyone who helps him. He talks in short, clipped sentences. He carries the guilt of the friends who didn't make it off his home world and doesn't like to talk about it.",
+  "abilities": {
+    "strength": 15,
+    "constitution": 16,
+    "athletics": 11,
+    "dexterity": 6,
+    "personality": 13,
+    "perception": 12,
+    "intelligence": 14,
+    "wisdom": 8,
+    "magical_affinity": 12
+  },
+  "skills": {
+    "innate": [
+      "Stealth: his frame dampens his own sound and heat"
+    ],
+    "martial": [
+      "Dead Eye: his targeting optic rarely misses at range",
+      "Arm blade fighting"
+    ],
+    "magical": [
+      "Invisibility for one minute"
+    ]
+  },
+  "weakness": "His Velocite ore powers everything: his body, his ammunition, and his self-repair. Turning invisible burns it fastest, and he flickers back into view if he's hit. He's heavy and clumsy with his hands and tends to act before he thinks.",
+  "weapon": {
+    "name": "Arm cannon",
+    "damageDie": 8,
+    "verb": "fires his arm cannon"
+  },
+  "armor": {
+    "name": "Durabyllium plating",
+    "bonus": 3
+  },
+  "inventory": [
+    {
+      "name": "Arm cannon / arm blade",
+      "kind": "weapon",
+      "note": "Built into his right arm. The arm blade does d6 and he slashes with it."
+    },
+    {
+      "name": "Durabyllium plating",
+      "kind": "armor"
+    },
+    {
+      "name": "Velocite ore",
+      "kind": "supply",
+      "note": "A pouch of rare teal ore he uses to power himself, make ammunition, and patch his own damage. About a week left."
+    },
+    {
+      "name": "Signal fin",
+      "kind": "relic",
+      "note": "Picks up a signal only he can hear. It has been silent since the greenroom."
+    }
+  ],
+  "faction": "The Kingdom of Velocara",
+  "backstory": "Bomb Shell's home planet was torn apart by an all-out civil war, and the side he chose was losing. He escaped with a small band of other robots in escape pods, but most of the pods were shot down before they cleared the sky. His pod crash-landed on a mysterious planet, and while searching for help he picked up a signal that only he could receive. He followed it. The next thing he remembers clearly is waking in the greenroom.",
+  "pastLife": "His arm cannon and blade are built into his body, so unlike Oogrish's and Gearshift's guns, they crossed over with him.",
+  "spellColor": "#2fd6c4",
+  "sprite": "/sprites/bomb-shell.svg",
+  "portrait": "/sprites/bomb-shell.svg"
+}

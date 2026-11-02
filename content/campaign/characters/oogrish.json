@@ -34,6 +34,7 @@
   "faction": "The Peace Temple",
   "backstory": "Long ago, Oogrish fought side by side with his friend Varkos. Varkos grew greedy for power, and Oogrish had to stand against him. After defeating Varkos, Oogrish became a wise weapons master at the Peace Temple who taught others to protect the weak.",
   "pastLife": "Back home he carried a rapid-fire combat shotgun and a heavy six-shot revolver. Neither crossed over with him. Firearms in this world are steampunk machines that run on runes and magic.",
+  "spellColor": "#f0c75e",
   "sprite": "/sprites/oogrish.svg",
   "portrait": "/sprites/oogrish.svg"
 }

@@ -1,0 +1,70 @@
+{
+  "id": "lucky",
+  "name": "Lucky",
+  "species": "Ruskar",
+  "classId": "warrior",
+  "alignment": "Only in it for himself",
+  "size": "About 7 and a half feet tall",
+  "appearance": "A huge, broad-shouldered warrior covered in thick, shaggy rust-brown fur, with a streak of grey down his back and a short braided mane. Bright green eyes and a crooked grin with one chipped fang. He wears full-body platinum plate armor polished to a mirror shine, with fur poking out at the joints. A gold pocket watch on a chain hangs at his hip, always closed. A chunky silver pistol, the Telegun, rides on his thigh, and a dented tin canteen hangs from his belt.",
+  "personality": "Cocky, funny, and always looking out for number one. He'll help, eventually, but he always wants to know what's in it for him. He's starting to like this group more than he'll admit.",
+  "abilities": {
+    "strength": 17,
+    "constitution": 14,
+    "athletics": 18,
+    "dexterity": 15,
+    "personality": 14,
+    "perception": 11,
+    "intelligence": 13,
+    "wisdom": 12,
+    "magical_affinity": 13
+  },
+  "skills": {
+    "innate": [
+      "Dumb Luck: once per day he can reroll a failed roll"
+    ],
+    "martial": [
+      "Master of every weapon",
+      "Alien martial arts"
+    ],
+    "magical": [
+      "Mind control, through his pocket watch"
+    ]
+  },
+  "weakness": "Few people trust him, and he knows it. His mirror-bright armor is a problem too: if he catches the watch's reflection in his own platinum, he's the one who ends up spellbound.",
+  "weapon": {
+    "name": "Telegun",
+    "damageDie": 6,
+    "verb": "fires the Telegun"
+  },
+  "armor": {
+    "name": "Platinum plate",
+    "bonus": 3
+  },
+  "inventory": [
+    {
+      "name": "Telegun",
+      "kind": "weapon",
+      "note": "A semi-automatic pistol whose shots teleport him to wherever they land. Since the greenroom it has worked exactly once, and he landed in a hedge."
+    },
+    {
+      "name": "Platinum plate",
+      "kind": "armor"
+    },
+    {
+      "name": "Pocket watch",
+      "kind": "relic",
+      "note": "Anyone who looks at its face falls under Lucky's control for a few seconds, one person at a time, and it drains his mana."
+    },
+    {
+      "name": "Glug",
+      "kind": "supply",
+      "note": "A dented canteen of something he calls glug. He won't say what's in it. It heals, and it smells terrible."
+    }
+  ],
+  "faction": "The Unbroken States of America: a rugged patchwork of regions held together by grit and old grudges",
+  "backstory": "Lucky was a hired gun who fought for whichever region paid best, and he was very good at it. Every side wanted him, and none of them trusted him. He was halfway through a job, chasing a bounty across the desert, when he fired the Telegun at a far-off ridge and landed in the greenroom instead. He's still waiting to get paid.",
+  "pastLife": "Back home, the Telegun's bullets teleported him to wherever they hit. It crossed over with him, but came out rebuilt as a brass-and-rune machine like every firearm on Tor, and it hasn't been reliable since.",
+  "spellColor": "#d9dde3",
+  "sprite": "/sprites/lucky.svg",
+  "portrait": "/sprites/lucky.svg"
+}
