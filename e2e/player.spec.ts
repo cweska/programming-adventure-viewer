@@ -148,6 +148,41 @@ test.describe("emberkeep player", () => {
     await expect(page.getByTestId("stdout")).toContainText("ember");
   });
 
+  test("puts each instruction on its own line, shows code as code, and the console above the editor", async ({ page }) => {
+    await page.goto("/play/emberkeep");
+    const instructions = page.getByTestId("part-instructions");
+    await expect(instructions.locator("p")).toHaveCount(2);
+    await expect(instructions.locator("code.inline-code")).toHaveText('print("ember")');
+    await expect(instructions.locator("p").first()).toHaveText('The line print("ember") is already written.');
+    const consoleBox = await page.getByTestId("console").boundingBox();
+    const toolbarBox = await page.getByTestId("run").boundingBox();
+    const editorBox = await page.getByTestId("editor").boundingBox();
+    if (!consoleBox || !toolbarBox || !editorBox) throw new Error("the console, Run, and the editor should be laid out");
+    expect(consoleBox.y + consoleBox.height).toBeLessThanOrEqual(toolbarBox.y);
+    expect(toolbarBox.y + toolbarBox.height).toBeLessThanOrEqual(editorBox.y);
+  });
+
+  test("grows the editor to show every line instead of scrolling inside it", async ({ page }) => {
+    await page.goto("/play/emberkeep");
+    const editor = page.locator('[data-testid="editor"] .cm-editor');
+    const short = await editor.boundingBox();
+    expect(short?.height ?? 0).toBeGreaterThanOrEqual(279);
+
+    const program = Array.from({ length: 40 }, (_, index) => `print("line ${index + 1}")`).join("\n");
+    await replaceEditor(page, program);
+    const lines = page.locator('[data-testid="editor"] .cm-line');
+    await expect(lines).toHaveCount(40);
+    const overflow = await page
+      .locator('[data-testid="editor"] .cm-scroller')
+      .evaluate((scroller) => scroller.scrollHeight - scroller.clientHeight);
+    expect(overflow).toBeLessThanOrEqual(1);
+    const box = await editor.boundingBox();
+    const last = await lines.last().boundingBox();
+    if (!box || !last) throw new Error("the editor and its last line should be laid out");
+    expect(box.height).toBeGreaterThan(short?.height ?? 0);
+    expect(last.y + last.height).toBeLessThanOrEqual(box.y + box.height + 1);
+  });
+
   test("highlights the selected text on its own line", async ({ page }) => {
     await page.goto("/play/emberkeep");
     const content = page.locator('[data-testid="editor"] .cm-content');

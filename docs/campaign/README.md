@@ -66,6 +66,18 @@ New JSON files must also be imported in `src/lib/lesson/modules.ts` (modules) or
 | Description Box | `scene.caption` |
 | Programming Editor/Console: Hidden | `"editor": "hidden"` |
 | What students should do | `instructions` (shown under the title) |
+| A finished answer | `activity.solution` (the Show solution button) |
+
+### Writing instructions
+
+Students read `instructions` under the part's title. A few rules keep them easy to read:
+- Put each instruction on its own line (`\n` in JSON). Every line shows on its own.
+- Start lines with `1. `, `2. `, ... to show numbered steps.
+- Wrap code in backticks, such as `` `party.move("left")` ``, so it looks like code.
+
+### Show solution
+
+Every coding part should have an `activity.solution`: finished code that passes all of the part's checks. After a student has spent five minutes on a part, a **Show solution** button appears next to Reset code. Only time spent on that part counts. Clicking it asks first, then puts the solution in the editor, and the student still presses Run. A unit test runs every solution against its part's checks.
 
 A story part:
 
@@ -136,7 +148,7 @@ Checks can read `_prompts`, `_options`, `_spoken`, and `_greens` to see what was
 ### Live code, party setup, and carry-over (Module 2)
 
 Some parts run the student's own functions when something is clicked. After a passing Run, the player keeps that Python program alive (a *live session*), so state such as mana carries over from click to click. The session ends when the student leaves the part or presses Run again.
-- **Skill checks.** Each option names a check function. A click runs `perform_roll(20)` and that check, then shows the roll next to the number the student chose. On a failed roll, the `helper` NPC opens the door instead.
+- **Skill checks.** Each option names a check function. A click runs `perform_roll(20)` and that check, then shows the roll next to the number the student chose. Each option also has a `successText` and a `failureText`. One of them appears under the picture, telling the student what they tried and what happened. On a failed roll, the `helper` NPC opens the door instead.
 - **Casting.** A board with `casting` and a `barrier` turns the arrow keys into a hint. Clicking a party member or pressing 1–4 runs `cast_spell(party.members[i], spell)`. Whatever the student's code does is played on the board: `reinforce_barrier()` thickens the barrier, `print_mana()` updates the bar, and `print_prompt()` shows their message. Once everyone has cast, the burst rolls across and the `barrier` goal is met.
 
 `activity.party` gives Python a `party.members` list built from the character sheets: `character_name`, `race`, `alignment`, `abilities`, `skills`, `inventory`, plus `mana` (from the part's table), `max_mana` (2 × magical affinity), and an empty `spell_book`.
@@ -145,7 +157,7 @@ Some parts run the student's own functions when something is clicked. After a pa
 
 Python helpers for Module 2:
 - `reinforce_barrier(caster)` is what Strengthen Magic does.
-- `print_mana(caster, mana_bar)` shows a mana bar. Checks can read `_mana_prints`.
+- `print_mana(caster, mana_bar)` shows a mana bar. Part 14's starter code shows it already finished, so students can see what it does. Its one line calls `party.show_mana_bar(caster, mana_bar)`, which draws the bar. The prelude also defines `print_mana`, in case a student deletes theirs. Checks can read `_mana_prints`.
 - `show_roll(...)` and `_required_roll(check)` are only used by the skill-check buttons and checks.
 
 ### Board fields

@@ -12,7 +12,7 @@ export type RollOutcome = { kind: "roll"; roll: RollEvent } | { kind: "no-sessio
 type Phase = "idle" | "rolling" | "result" | "helper" | "open";
 
 const TUMBLE_MS = 1100;
-const RESULT_MS = 1100;
+const RESULT_MS = 2500;
 const HELPER_MS = 2200;
 
 export function SkillCheckScene({
@@ -69,7 +69,7 @@ export function SkillCheckScene({
       setNotice(
         outcome.kind === "no-session"
           ? "Press Run to roll with your own code."
-          : "Your code stopped during the roll. Read the message below the editor.",
+          : "Your code stopped during the roll. Read the message in the console.",
       );
       return;
     }
@@ -96,6 +96,7 @@ export function SkillCheckScene({
   const helper = campaignData.npcs[skillCheck.helper.npc];
   const shown = phase === "open" ? skillCheck.openImage : image;
   const option = skillCheck.options.find((item) => item.id === chosen);
+  const narration = roll && option && phase !== "rolling" ? (roll.success ? option.successText : option.failureText) : null;
   return (
     <div className="skill-check" data-testid="skill-check" data-phase={phase}>
       <div className="skill-scene">
@@ -135,6 +136,16 @@ export function SkillCheckScene({
           </p>
         ) : null}
       </div>
+      {narration ? (
+        <p
+          className="skill-narration"
+          data-testid="skill-narration"
+          data-outcome={roll?.success ? "success" : "failure"}
+          role="status"
+        >
+          {narration}
+        </p>
+      ) : null}
       {phase !== "open" ? (
         <ol className="skill-options">
           {skillCheck.options.map((item, index) => (

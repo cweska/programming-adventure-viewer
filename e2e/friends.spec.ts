@@ -41,6 +41,10 @@ test.describe("Friends In Low Places", () => {
     await expect(page.getByTestId("continue")).toHaveCount(0);
     await page.getByTestId("skill-option-strength").click();
     await expect(page.getByTestId("skill-result")).toHaveText("Rolled 20, needed 12. Success!");
+    await expect(page.getByTestId("skill-narration")).toHaveText(
+      "You slipped your fingers in the gap and used all your strength pulling up on the hatch. You heard a pop as it flung open.",
+    );
+    await expect(page.getByTestId("skill-narration")).toHaveAttribute("data-outcome", "success");
     await expect(page.getByTestId("skill-helper")).toHaveCount(0);
     await expect(page.getByTestId("skill-success")).toHaveText("Door opened!");
     await expect(page.locator('[data-testid="skill-check"] img')).toHaveAttribute("src", /fil-trapdoor-open\.svg$/);
@@ -52,6 +56,10 @@ test.describe("Friends In Low Places", () => {
     await solveFriends(page, skillSolution(2), "Your skill checks work.");
     await page.getByTestId("skill-option-dexterity").click();
     await expect(page.getByTestId("skill-success")).toHaveText("Door opened!");
+    await expect(page.getByTestId("skill-narration")).toHaveText(
+      "You slid a thin metal shim into the gap and felt along it for the latch, but the shim kept slipping off. The hatch stays shut.",
+    );
+    await expect(page.getByTestId("skill-narration")).toHaveAttribute("data-outcome", "failure");
     await expect(page.getByTestId("continue")).toBeVisible();
   });
 
@@ -61,8 +69,14 @@ test.describe("Friends In Low Places", () => {
     await solveFriends(page, skillSolution(2), "Your skill checks work.");
     await page.getByTestId("skill-option-intelligence").click();
     await expect(page.getByTestId("skill-result")).toHaveText("Rolled 2, needed 9. Not this time.");
+    await expect(page.getByTestId("skill-narration")).toHaveText(
+      "You investigate the surface of the trap door but don't notice anything useful.",
+    );
+    await expect(page.getByTestId("skill-success")).toHaveCount(0);
     await expect(page.getByTestId("skill-helper")).toContainText("Oh just let me do it.");
+    await expect(page.getByTestId("skill-narration")).toBeVisible();
     await expect(page.getByTestId("skill-success")).toHaveText("Door opened!");
+    await expect(page.getByTestId("skill-narration")).toBeVisible();
   });
 
   test("inks the spell book and draws every mana bar with the student's code", async ({ page }) => {
@@ -77,6 +91,11 @@ test.describe("Friends In Low Places", () => {
     await page.getByTestId("continue").click();
 
     await expect(page.getByTestId("mana-text-oogrish")).toHaveText("Mana bar not drawn yet");
+    const editor = page.locator('[data-testid="editor"] .cm-content');
+    await expect(editor).toContainText("def print_mana(caster, mana_bar):");
+    await expect(editor).toContainText("This function is already finished.");
+    await expect(editor).toContainText('# Change this 0 to the caster\'s mana: caster["mana"]');
+    await expect(editor).toContainText("# Replace pass with those two lines.");
     await solveFriends(page, MANA_SOLUTION, "Mana bars working, well done!");
     await expect(page.getByTestId("mana-text-oogrish")).toHaveText(bar(18, 18));
     await expect(page.getByTestId("mana-text-gearshift")).toHaveText(bar(15, 20));
@@ -117,7 +136,7 @@ test.describe("Friends In Low Places", () => {
     await page.getByTestId("actor-bomb-shell").click();
     await expect(page.getByTestId("speech-bubble")).toHaveText("Shield up.");
     await page.getByTestId("cast-lucky").click();
-    await expect(page.getByTestId("speech-bubble")).toHaveText("Fine. But I'm keeping track.");
+    await expect(page.getByTestId("speech-bubble")).toHaveText("Don't try to mog while I'm shieldmaxxing.");
     await expect(page.getByTestId("mana-lucky")).toHaveText("Mana 9/26");
     await expect(page.getByTestId("game")).toHaveAttribute("data-barrier-locked", "true");
     await expect(page.getByTestId("goal-met")).toHaveText("The barrier held!");

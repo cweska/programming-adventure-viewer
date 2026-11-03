@@ -48,6 +48,12 @@ export const SPELL_SOLUTION = [
 ].join("\n");
 
 export const MANA_SOLUTION = [
+  "def print_mana(caster, mana_bar):",
+  "    # This function is already finished. You don't need to change it.",
+  "    # It draws mana_bar in this caster's row of the party panel.",
+  "    party.show_mana_bar(caster, mana_bar)",
+  "",
+  "",
   "def get_mana_bar(caster):",
   '    filled = "█" * caster["mana"]',
   '    empty = "░" * (caster["max_mana"] - caster["mana"])',

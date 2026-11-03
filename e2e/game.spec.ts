@@ -52,6 +52,37 @@ test.describe("module picker", () => {
 test.describe("Leylines Awaken", () => {
   test.use({ reducedMotion: "reduce" });
 
+  test("offers Show solution after five minutes on a coding part", async ({ page }) => {
+    await page.clock.install();
+    await openLeylinePart(page, 4);
+    const instructions = page.getByTestId("part-instructions");
+    await expect(instructions.locator(".instruction-steps li")).toHaveCount(3);
+    await expect(instructions.locator("code.inline-code").first()).toHaveText("def");
+    await pythonReady(page);
+    await expect(page.getByTestId("show-solution")).toHaveCount(0);
+
+    await page.clock.fastForward("04:00");
+    await expect(page.getByTestId("show-solution")).toHaveCount(0);
+    await page.getByTestId("back").click();
+    await expect(page.getByTestId("part-label")).toHaveText("Part 3 of 8");
+    await page.clock.fastForward("03:00");
+    await page.getByTestId("forward").click();
+    await expect(page.getByTestId("part-label")).toHaveText("Part 4 of 8");
+    await expect(page.getByTestId("show-solution")).toHaveCount(0);
+    await page.clock.fastForward("01:05");
+    await expect(page.getByTestId("show-solution")).toBeVisible();
+
+    await page.getByTestId("show-solution").click();
+    await page.getByTestId("solution-cancel").click();
+    await expect(page.getByTestId("editor")).not.toContainText('party.move("left")');
+    await page.getByTestId("show-solution").click();
+    await page.getByTestId("solution-confirm").click();
+    await expect(page.getByTestId("editor")).toContainText('party.move("left")');
+    await expect(page.getByTestId("editor")).toContainText('party.move("down")');
+    await page.getByTestId("run").click();
+    await expect(page.getByTestId("feedback")).toContainText("The party steps left, right, up, and down.");
+  });
+
   test("tells the story with the editor hidden", async ({ page }) => {
     await page.goto("/play/leylines-awaken");
     const captions = [

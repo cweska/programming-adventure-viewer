@@ -24,7 +24,7 @@ function barrierBoard() {
     casting: {
       spell: "Strengthen Magic",
       mana: { oogrish: 18, gearshift: 15, "bomb-shell": 14, lucky: 19 },
-      lines: { oogrish: "Steady, now.", gearshift: "Barrier's holding.", "bomb-shell": "Shield up.", lucky: "Fine. But I'm keeping track." },
+      lines: { oogrish: "Steady, now.", gearshift: "Barrier's holding.", "bomb-shell": "Shield up.", lucky: "Don't try to mog while I'm shieldmaxxing." },
     },
     barrier: { x0: 7, x1: 15, y0: 0, y1: 6 },
   });
@@ -61,7 +61,7 @@ describe("holding the barrier", () => {
     expect(state.barrier?.locked).toBe(false);
     state = castAll(state);
     expect(state.barrier).toMatchObject({ level: 4, locked: true });
-    expect(state.speech?.text).toBe("Fine. But I'm keeping track.");
+    expect(state.speech?.text).toBe("Don't try to mog while I'm shieldmaxxing.");
   });
 
   it("records mana changes and how much a cast spent", () => {
