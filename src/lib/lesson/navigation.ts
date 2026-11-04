@@ -67,6 +67,24 @@ export function navigationFromProgress(
   );
 }
 
+export function navigationFromSave(
+  parts: Beat[],
+  saved: { index: number; reached: number; passed: boolean[]; code: Array<string | undefined> },
+): PartNavigation {
+  const last = Math.max(parts.length - 1, 0);
+  const index = Math.min(Math.max(saved.index, 0), last);
+  const reached = Math.min(Math.max(saved.reached, index), last);
+  return refreshUnlock(
+    {
+      index,
+      unlocked: reached,
+      passed: parts.map((_, partIndex) => saved.passed[partIndex] === true),
+      code: parts.map((part, partIndex) => saved.code[partIndex] ?? starterFor(part)),
+    },
+    parts,
+  );
+}
+
 export function setPartCode(state: PartNavigation, index: number, code: string): PartNavigation {
   if (index < 0 || index >= state.code.length) return state;
   const nextCode = state.code.slice();

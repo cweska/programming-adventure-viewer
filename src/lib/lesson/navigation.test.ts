@@ -7,6 +7,7 @@ import {
   goBack,
   goForward,
   navigationFromProgress,
+  navigationFromSave,
   partLabel,
   recordPass,
   setPartCode,
@@ -81,6 +82,22 @@ describe("part navigation", () => {
     expect(resumed.unlocked).toBe(6);
     expect(goBack(resumed).passed[1]).toBe(true);
     expect(canGoForward(resumed, parts.length)).toBe(false);
+  });
+
+  it("rebuilds a saved lesson with each part's code and the furthest part still open", () => {
+    const code = parts.map(() => undefined as string | undefined);
+    code[1] = 'print("draft")\n';
+    const passed = parts.map((_, index) => index < 2);
+    const saved = navigationFromSave(parts, { index: 1, reached: 2, passed, code });
+    expect(saved.index).toBe(1);
+    expect(saved.code[1]).toBe('print("draft")\n');
+    expect(saved.code[0]).toContain('print("ember")');
+    expect(saved.unlocked).toBe(2);
+    expect(canGoForward(saved, parts.length)).toBe(true);
+    expect(canGoForward(goForward(saved, parts), parts.length)).toBe(false);
+
+    const clamped = navigationFromSave(parts, { index: 99, reached: -1, passed: [], code: [] });
+    expect(clamped.index).toBe(parts.length - 1);
   });
 
   it("opens story parts at once but holds a part with a board goal until it is passed", () => {

@@ -2,6 +2,16 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { mergeFeatures } from "../lib/game/state";
+import {
+  browserStorage,
+  isAhead,
+  readSave,
+  restoreSave,
+  saveFrom,
+  writeSave,
+  type PlayPosition,
+  type PlaySave,
+} from "../lib/lesson/autosave";
 import { emberkeepModule } from "../lib/lesson/emberkeep";
 import { findModule } from "../lib/lesson/modules";
 import {
@@ -59,6 +69,21 @@ const PROMPTS_STORAGE_PREFIX = "emberkeep-prompts:";
 const PASSED_STORAGE_PREFIX = "emberkeep-passed:";
 /** How long a student works on a coding part before "Show solution" appears. */
 export const SOLUTION_DELAY_MS = 5 * 60 * 1000;
+const AUTOSAVE_DELAY_MS = 400;
+const CODE_SYNC_DELAY_MS = 3000;
+
+type SaveStatus = "idle" | "saved" | "failed";
+
+type PendingCode = {
+  key: string;
+  index: number;
+  signature: string;
+  body: { studentId: string; moduleId: string; lessonId: string; beatId: string; code: string };
+};
+
+function codeSignature(studentId: string, lessonId: string, beatId: string, code: string): string {
+  return [studentId, lessonId, beatId, code].join("\u0000");
+}
 
 type StudentSession = {
   id: string;
@@ -109,8 +134,17 @@ export function Player({ moduleId, draft = false }: { moduleId?: string; draft?:
   const [checksPassed, setChecksPassed] = useState<Record<string, boolean>>({});
   const [prompts, setPrompts] = useState<Record<string, string>>({});
   const [manaScript, setManaScript] = useState<ManaScript | null>(null);
+  const [autosaveReady, setAutosaveReady] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const [resumed, setResumed] = useState(false);
 
   const navRef = useRef(nav);
+  const completedRef = useRef(false);
+  const restoredFromSaveRef = useRef(false);
+  const pendingSaveRef = useRef<PlaySave | null>(null);
+  const pendingCodeRef = useRef<PendingCode | null>(null);
+  const lastCodeSyncRef = useRef("");
+  const typedRef = useRef(false);
   const indexRef = useRef(0);
   const codeRef = useRef(initialNav.code[0] ?? "");
   const lessonIdRef = useRef(initialLesson.id);
@@ -139,9 +173,16 @@ export function Player({ moduleId, draft = false }: { moduleId?: string; draft?:
     setNav(next);
   }
 
+  function writeCompleted(value: boolean) {
+    completedRef.current = value;
+    setLessonCompleted(value);
+  }
+
   function openIndex(next: PartNavigation, beats: Beat[], lessonId: string) {
     const part = beats[next.index];
     if (!part) return;
+    setResumed(false);
+    typedRef.current = false;
     lessonIdRef.current = lessonId;
     indexRef.current = next.index;
     const source = next.code[next.index] ?? "";
@@ -259,6 +300,8 @@ export function Player({ moduleId, draft = false }: { moduleId?: string; draft?:
     }
     if (lessonIdRef.current !== lessonId) return formatted;
     if (indexRef.current === index && codeRef.current !== snapshot) return codeRef.current;
+    // The part's code changed while formatting (for example, a saved lesson was restored), so keep the newer code.
+    if (navRef.current.code[index] !== snapshot) return formatted;
     writeNavigation(setPartCode(navRef.current, index, formatted));
     if (indexRef.current === index) {
       codeRef.current = formatted;
@@ -268,6 +311,7 @@ export function Player({ moduleId, draft = false }: { moduleId?: string; draft?:
   }
 
   function onCodeChange(value: string) {
+    typedRef.current = true;
     codeRef.current = value;
     setCode(value);
     writeNavigation(setPartCode(navRef.current, indexRef.current, value));
@@ -390,7 +434,7 @@ export function Player({ moduleId, draft = false }: { moduleId?: string; draft?:
         setLessonModule(parsed.data);
         moduleRef.current = parsed.data;
         setLessonIndex(0);
-        setLessonCompleted(false);
+        writeCompleted(false);
         frontierRef.current = 0;
         openIndex(createPartNavigation(beats), beats, parsed.data.lessons[0].id);
       } catch {
@@ -398,6 +442,10 @@ export function Player({ moduleId, draft = false }: { moduleId?: string; draft?:
       }
       return;
     }
+
+    restoreLocalSave(moduleRef.current);
+    // Saving starts only after the restore, so the fresh first render never overwrites a save.
+    setAutosaveReady(true);
 
     const saved = localStorage.getItem(STUDENT_STORAGE_KEY);
     if (!saved) return;
@@ -422,9 +470,55 @@ export function Player({ moduleId, draft = false }: { moduleId?: string; draft?:
     const completed = progress.status === "completed";
     const next = navigationFromProgress(beats, nextIndex, progress.latestCode, completed);
     setLessonIndex(nextLesson);
-    setLessonCompleted(completed);
+    writeCompleted(completed);
     frontierRef.current = nextIndex;
     openIndex(next, beats, visible[nextLesson].id);
+    setResumed(true);
+  }
+
+  function restoreLocalSave(module: Module) {
+    const storage = browserStorage();
+    const save = storage ? readSave(storage, module.id) : null;
+    if (!save) return;
+    const visible = lessonsFor(module, false);
+    const restored = restoreSave(save, visible);
+    if (!restored) return;
+    const restoredLesson = visible[restored.lessonIndex];
+    setLessonIndex(restored.lessonIndex);
+    writeCompleted(restored.completed);
+    frontierRef.current = restored.frontier;
+    openIndex(restored.nav, restoredLesson.beats, restoredLesson.id);
+    restoredFromSaveRef.current = true;
+    const pastStart =
+      restored.lessonIndex > 0 || restored.nav.index > 0 || restored.completed || save.passed.length > 0;
+    if (pastStart) setResumed(true);
+  }
+
+  // The furthest part this student reached in the lesson on screen.
+  function frontierPart(module: Module, isPreview: boolean) {
+    const current = lessonsFor(module, isPreview).find((item) => item.id === lessonIdRef.current);
+    if (!current || current.beats.length === 0) return null;
+    const index = Math.min(Math.max(navRef.current.index, frontierRef.current), current.beats.length - 1);
+    return { lesson: current, index, part: current.beats[index] };
+  }
+
+  function localPosition(module: Module, isPreview: boolean): PlayPosition | null {
+    const reached = frontierPart(module, isPreview);
+    if (!reached) return null;
+    return { lessonId: reached.lesson.id, beatId: reached.part.id, completed: completedRef.current };
+  }
+
+  // Tells the class how far this browser got, for play saved here before the student joined.
+  function reportLocalProgress(module: Module, isPreview: boolean) {
+    const reached = frontierPart(module, isPreview);
+    if (!reached) return;
+    void persist({
+      status: completedRef.current ? "completed" : "in_progress",
+      lessonId: reached.lesson.id,
+      beatId: reached.part.id,
+      latestCode: navRef.current.code[reached.index] ?? "",
+      index: reached.index,
+    });
   }
 
   async function joinClass(name: string, codeValue: string, module: Module, isPreview: boolean) {
@@ -465,7 +559,22 @@ export function Player({ moduleId, draft = false }: { moduleId?: string; draft?:
         STUDENT_STORAGE_KEY,
         JSON.stringify({ displayName: session.displayName, joinCode: session.joinCode }),
       );
-      if (body.progress) applyProgress(body.progress, module, isPreview);
+      const progress = body.progress ?? null;
+      const visible = lessonsFor(module, isPreview);
+      const local = localPosition(module, isPreview);
+      const start = visible[0]?.beats[0] ? { lessonId: visible[0].id, beatId: visible[0].beats[0].id } : null;
+      // A save restored in this browser wins a tie: it has the code for every part, not just one.
+      const keepLocal = restoredFromSaveRef.current;
+      if (
+        progress &&
+        (!local || isAhead(progress, local, visible) || (!keepLocal && !isAhead(local, progress, visible)))
+      ) {
+        applyProgress(progress, module, isPreview);
+      } else if (local) {
+        // Played here before joining: bring the class report up to where the student is.
+        const known = progress ?? start;
+        if (!known || isAhead(local, known, visible)) reportLocalProgress(module, isPreview);
+      }
     } catch {
       setJoinError("Could not join that classroom.");
     } finally {
@@ -480,11 +589,13 @@ export function Player({ moduleId, draft = false }: { moduleId?: string; draft?:
     latestCode: string;
     index: number;
   }) {
+    if (args.status !== "completed" && args.index < frontierRef.current) return;
+    // The frontier moves for guests too, so it is in their save if they join a class later.
+    frontierRef.current = Math.max(frontierRef.current, args.index);
     const currentStudent = studentRef.current;
     if (!currentStudent) return;
-    if (args.status !== "completed" && args.index < frontierRef.current) return;
-    frontierRef.current = Math.max(frontierRef.current, args.index);
-    await commitProgress(previewRef.current, async () => {
+    const signature = codeSignature(currentStudent.id, args.lessonId, args.beatId, args.latestCode);
+    const committed = await commitProgress(previewRef.current, async () => {
       if (isStaticExport) {
         saveProgressInBrowser({
           studentId: currentStudent.id,
@@ -510,7 +621,85 @@ export function Player({ moduleId, draft = false }: { moduleId?: string; draft?:
         }),
       });
     });
+    if (committed) lastCodeSyncRef.current = signature;
   }
+
+  function flushSave() {
+    const save = pendingSaveRef.current;
+    if (!save) return;
+    pendingSaveRef.current = null;
+    const storage = browserStorage();
+    setSaveStatus(storage && writeSave(storage, save) ? "saved" : "failed");
+  }
+
+  function flushCode() {
+    const pending = pendingCodeRef.current;
+    if (!pending) return;
+    pendingCodeRef.current = null;
+    // The class keeps code for one part per lesson: the furthest. Code from a part left behind would move it back.
+    if (pending.index < frontierRef.current) return;
+    lastCodeSyncRef.current = pending.signature;
+    fetch("/api/progress/code", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(pending.body),
+      keepalive: true,
+    }).catch(() => {
+      if (lastCodeSyncRef.current === pending.signature) lastCodeSyncRef.current = "";
+    });
+  }
+
+  useEffect(() => {
+    if (!autosaveReady || preview || !lesson) return;
+    pendingSaveRef.current = saveFrom({
+      moduleId: lessonModule.id,
+      lesson,
+      nav,
+      completed: lessonCompleted,
+      frontier: frontierRef.current,
+    });
+    const timer = window.setTimeout(flushSave, AUTOSAVE_DELAY_MS);
+    return () => window.clearTimeout(timer);
+  }, [autosaveReady, preview, lessonModule, lesson, nav, lessonCompleted]);
+
+  useEffect(() => {
+    const key = lesson && beat ? `${lesson.id}/${beat.id}` : "";
+    if (pendingCodeRef.current && pendingCodeRef.current.key !== key) flushCode();
+    if (isStaticExport || preview || !student || !lesson || !beat) return;
+    // Only the student's own edits are sent; the class already has the part's starting code.
+    if (!typedRef.current || nav.index < frontierRef.current) return;
+    const signature = codeSignature(student.id, lesson.id, beat.id, code);
+    if (signature === lastCodeSyncRef.current) {
+      pendingCodeRef.current = null;
+      return;
+    }
+    pendingCodeRef.current = {
+      key,
+      index: nav.index,
+      signature,
+      body: { studentId: student.id, moduleId: lessonModule.id, lessonId: lesson.id, beatId: beat.id, code },
+    };
+    const timer = window.setTimeout(flushCode, CODE_SYNC_DELAY_MS);
+    return () => window.clearTimeout(timer);
+  }, [preview, student, lessonModule, lesson, beat, nav.index, code]);
+
+  useEffect(() => {
+    // Write anything still waiting when the tab closes, the student switches away, or the player unmounts.
+    function flushAll() {
+      flushSave();
+      flushCode();
+    }
+    function onVisibility() {
+      if (document.visibilityState === "hidden") flushAll();
+    }
+    window.addEventListener("pagehide", flushAll);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("pagehide", flushAll);
+      document.removeEventListener("visibilitychange", onVisibility);
+      flushAll();
+    };
+  }, []);
 
   async function onRun() {
     const currentLesson = lessons[lessonIndex];
@@ -628,7 +817,7 @@ export function Player({ moduleId, draft = false }: { moduleId?: string; draft?:
       openIndex(next, lesson.beats, lesson.id);
       return;
     }
-    setLessonCompleted(true);
+    writeCompleted(true);
     await persist({
       status: "completed",
       lessonId: lesson.id,
@@ -640,7 +829,7 @@ export function Player({ moduleId, draft = false }: { moduleId?: string; draft?:
     if (nextLessonIndex < lessons.length) {
       const nextLesson = lessons[nextLessonIndex];
       setLessonIndex(nextLessonIndex);
-      setLessonCompleted(false);
+      writeCompleted(false);
       frontierRef.current = 0;
       openIndex(createPartNavigation(nextLesson.beats), nextLesson.beats, nextLesson.id);
       await persist({
@@ -671,6 +860,11 @@ export function Player({ moduleId, draft = false }: { moduleId?: string; draft?:
       {lessonCompleted && atEnd ? (
         <p className="banner" data-testid="lesson-complete">
           The lesson is complete.
+        </p>
+      ) : null}
+      {resumed && !preview ? (
+        <p className="banner" data-testid="resumed">
+          Welcome back! You are right where you left off.
         </p>
       ) : null}
       <section className="join-bar" aria-label="Classroom">
@@ -714,6 +908,15 @@ export function Player({ moduleId, draft = false }: { moduleId?: string; draft?:
             {joinError}
           </p>
         ) : null}
+        {preview ? null : (
+          <p className="local-note autosave-status" data-testid="autosave-status" role="status">
+            {saveStatus === "failed"
+              ? "This browser would not save your progress. Keep this tab open until you finish."
+              : saveStatus === "saved"
+                ? "Progress saved on this computer."
+                : "Your progress saves automatically."}
+          </p>
+        )}
       </section>
 
       <Theater
