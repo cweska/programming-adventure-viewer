@@ -2,11 +2,19 @@
  * Pure logic for the Intro to Python exercise player (ExercisePlayer.tsx / LessonPlayer.tsx).
  * Client-safe, no React, no Python: everything here is unit tested in exercise-logic.test.ts.
  */
-import type { ExerciseProgress, GradeResult } from "../../lib/course/contracts";
+import type { CourseSettings, ExerciseProgress, GradeResult } from "../../lib/course/contracts";
 import type { AnotherWay, Checkpoint } from "../../lib/course/schema";
 
 export type Support = "full" | "light" | "none";
 export type PlayerMode = "lesson" | "project" | "challenge" | "testout" | "try-it";
+/** curriculum §2.3: "Show me more" (the default) or "Keep it short". */
+export type Preset = "more" | "short";
+
+/** The player's extra saved fields (kept by progress.ts, which preserves fields it does not know). */
+export type PlayerExtras = {
+  /** Predict before Run: the chosen choice index, or -1 when skipped. */
+  predicted?: number;
+};
 
 /* ------------------------------------------------------------------------------------------------ */
 /* Stepper: the current exercise lives in the URL hash (#<exerciseId>)                              */
@@ -39,9 +47,15 @@ export function effectiveSupport(mode: PlayerMode, support: Support | undefined)
   return support ?? "full";
 }
 
+/** The student's preset. Legacy `light: true` (the old "Fewer words" switch) means "short". */
+export function presetOf(settings: CourseSettings | undefined): Preset {
+  if (settings?.preset === "short" || settings?.preset === "more") return settings.preset;
+  return settings?.light === true ? "short" : "more";
+}
+
 /**
- * Whether the hint ladder is open. full: always. light: after the student's first run that did not
- * finish (this visit or saved). none: never.
+ * Whether Help is available. full: always. light: after the student's first run that did not finish
+ * (this visit or saved). none (Quick Checks): never.
  */
 export function hintsOpen(support: Support, triedAndMissed: boolean): boolean {
   if (support === "full") return true;
@@ -61,33 +75,37 @@ export function anotherWayOpen(support: Support, angles: readonly AnotherWay[]):
 export type SolutionGate = {
   support: Support;
   activeMs: number;
+  /** Counted failed runs only (see countsAsAttempt). */
   failedRuns: number;
   solutionAfterMinutes: number;
   solutionAfterFailedRuns: number;
-  /** The active checkpoint's hint ladder is used up (architecture.md: a third way to unlock). */
-  hintsUsedUp?: boolean;
 };
 
 /**
- * "Show solution" appears after N minutes of active time, OR N failed runs, OR once the active step's hints
- * are all open (full and light support only). Only real attempts count as failed runs: see
- * countsAsAttempt().
+ * "Compare with Mar'tu's version" opens after N minutes of visible time on the exercise, OR N counted
+ * failed runs (full and light support only; never in a Quick Check).
  */
 export function solutionUnlocked(gate: SolutionGate): boolean {
   if (gate.support === "none") return false;
   const minutes = Math.max(0, gate.solutionAfterMinutes);
   const runs = Math.max(0, gate.solutionAfterFailedRuns);
-  return gate.activeMs >= minutes * 60_000 || gate.failedRuns >= runs || gate.hintsUsedUp === true;
+  return gate.activeMs >= minutes * 60_000 || gate.failedRuns >= runs;
 }
 
 /**
- * Whether a missed run counts toward "Show solution": only when the student wrote something (not blank,
- * not the untouched starter) and changed it since their last run. Pressing Run four times on the starter
- * is not four tries.
+ * Whether a missed run counts toward Mar'tu's version: only when the code CHANGED since the last run (the
+ * starter counts as the "last run" before the first one), or a Help rung was opened since then. Pressing
+ * Run four times on untouched starter code is not four tries; a blank editor is never a try.
  */
-export function countsAsAttempt(source: string, starter: string, lastRunSource: string | null): boolean {
-  if (isBlankOrStarter(source, starter)) return false;
-  return lastRunSource === null || normalize(source) !== normalize(lastRunSource);
+export function countsAsAttempt(
+  source: string,
+  starter: string,
+  lastRunSource: string | null,
+  usedHelpSinceLastRun = false,
+): boolean {
+  if (meaningfulLines(source).length === 0) return false;
+  if (usedHelpSinceLastRun) return true;
+  return normalize(source) !== normalize(lastRunSource ?? starter);
 }
 
 /** The code is Mar'tu's answer as it was put in the editor (maybe with spacing changes). */
@@ -192,24 +210,111 @@ export function nextFailStreak(previous: FailStreak, stuckOn: string | null): Fa
   return { checkpointId: stuckOn, count: 1 };
 }
 
-/** Wait this long without typing after a miss before offering a hint. */
+/** Offer Help after this long without typing or running, counted from a failed run. */
 export const NUDGE_IDLE_MS = 90_000;
-/** Offer a hint after this many misses in a row on one checkpoint. */
-export const NUDGE_AFTER_MISSES = 2;
+/** Offer Help after this many failed runs in a row on one step. */
+export const NUDGE_AFTER_MISSES = 3;
+/** Offer Help after this much visible time on the exercise without a new step passing. */
+export const NUDGE_NO_PROGRESS_MS = 4 * 60_000;
 
-/** The gentle "Want a hint?" offer: full support only, and only when a hint is left to give. */
-export function shouldNudge(input: {
-  support: Support;
-  streak: FailStreak;
-  /** ms since the last keystroke, counted from the last miss (null when the last run did not miss). */
-  idleSinceMissMs: number | null;
-  hintsLeft: number;
+export type HelpOffer = "misses" | "time" | "idle";
+
+/**
+ * Proactive Help offers (curriculum §2.2): a highlighted Help control with one line, never a popup.
+ * Only under "Show me more", only while Help is available and has something left to give, and one
+ * dismiss silences offers for the exercise.
+ */
+export function helpOffer(input: {
+  preset: Preset;
+  helpAvailable: boolean;
+  done: boolean;
   dismissed: boolean;
-}): boolean {
-  if (input.support !== "full" || input.dismissed || input.hintsLeft <= 0) return false;
-  if (!input.streak.checkpointId) return false;
-  if (input.streak.count >= NUDGE_AFTER_MISSES) return true;
-  return input.idleSinceMissMs !== null && input.idleSinceMissMs >= NUDGE_IDLE_MS;
+  /** Help rungs the student could still open now (a locked "Show me" does not count). */
+  rungsLeft: number;
+  /** Failed runs in a row on the current step. */
+  missesInARow: number;
+  /** Visible ms on this exercise since the last new step passed (or since opening it). */
+  msSinceProgress: number;
+  /** ms since the last keystroke or run, counted only after a failed run (null otherwise). */
+  idleSinceMissMs: number | null;
+}): HelpOffer | null {
+  if (input.preset !== "more" || !input.helpAvailable || input.done || input.dismissed || input.rungsLeft <= 0) return null;
+  if (input.missesInARow >= NUDGE_AFTER_MISSES) return "misses";
+  if (input.msSinceProgress >= NUDGE_NO_PROGRESS_MS) return "time";
+  if (input.idleSinceMissMs !== null && input.idleSinceMissMs >= NUDGE_IDLE_MS) return "idle";
+  return null;
+}
+
+/** The one line that highlights Help (Oogrish's line after repeated misses, §2.2). */
+export function helpOfferLine(offer: HelpOffer): string {
+  if (offer === "misses") return "Oogrish: \u201cSteady, now. Read the last line first. Want a nudge?\u201d";
+  if (offer === "time") return "This one is taking a while. That is normal. Want a nudge?";
+  return "Still thinking? A nudge is one click away.";
+}
+
+/* ------------------------------------------------------------------------------------------------ */
+/* The Help stack (curriculum §2.2): one climbing Help control per exercise                          */
+/* ------------------------------------------------------------------------------------------------ */
+
+export type RungKind = "start" | "point" | "another" | "teach" | "structure" | "show";
+
+export type Rung = {
+  kind: RungKind;
+  /** What the Help control says before this rung opens, and the rung's title once open. */
+  label: string;
+  /** For start / point / teach: the checkpoint hint this rung shows. */
+  hint?: number;
+};
+
+/** Each rung waits for a Run or this long after the last one, so each one gets read. */
+export const RUNG_PACE_MS = 10_000;
+
+/**
+ * The Help rungs for one step, in order: Start me off (hints[0]), Where to look (hints[1]), Another way
+ * (the exercise's angles), Teach me (hints[2], hints[3] ...), More structure (Assemble it), Show me
+ * (Mar'tu's version side by side). Missing pieces are skipped. A SOLO exercise starts at Where to look.
+ */
+export function helpRungs(
+  checkpoint: Pick<Checkpoint, "hints">,
+  exercise: { anotherWayCount: number; hasAssemble: boolean; solo: boolean },
+): Rung[] {
+  const hints = checkpoint.hints ?? [];
+  const rungs: Rung[] = [];
+  if (!exercise.solo && hints.length > 0) rungs.push({ kind: "start", label: "Start me off", hint: 0 });
+  if (hints.length > 1) rungs.push({ kind: "point", label: "Where to look", hint: 1 });
+  if (exercise.anotherWayCount > 0) rungs.push({ kind: "another", label: "Another way" });
+  for (let index = 2; index < hints.length; index += 1) {
+    rungs.push({ kind: "teach", label: index === 2 ? "Teach me" : "Teach me more", hint: index });
+  }
+  if (exercise.hasAssemble) rungs.push({ kind: "structure", label: "More structure" });
+  rungs.push({ kind: "show", label: "Show me" });
+  return rungs;
+}
+
+export type HelpState = {
+  /** The rungs open now (from hintsUsed), in order. */
+  open: Rung[];
+  /** The rung the Help control opens next, or null when every rung is open. */
+  next: Rung | null;
+  /** The next rung is Show me, but Mar'tu's version is not unlocked yet. */
+  nextLocked: boolean;
+  /** Rungs the student could still open now (a locked Show me does not count). */
+  left: number;
+};
+
+export function helpState(rungs: readonly Rung[], used: number, showUnlocked: boolean): HelpState {
+  const count = Math.max(0, Math.min(rungs.length, Math.floor(used)));
+  const open = rungs.slice(0, count);
+  const next = rungs[count] ?? null;
+  const rest = rungs.slice(count);
+  const left = rest.filter((rung) => rung.kind !== "show" || showUnlocked).length;
+  return { open, next, nextLocked: next?.kind === "show" && !showUnlocked, left };
+}
+
+/** Whether the next rung must wait (a Run since the last rung, or RUNG_PACE_MS, lets it open). */
+export function rungPaced(lastRungAt: number | null, ranSinceRung: boolean, now: number): boolean {
+  if (lastRungAt === null || ranSinceRung) return false;
+  return now - lastRungAt < RUNG_PACE_MS;
 }
 
 /* ------------------------------------------------------------------------------------------------ */
@@ -265,11 +370,22 @@ export function assembledCode(lines: readonly string[]): string {
   return lines.length > 0 ? `${lines.join("\n")}\n` : "";
 }
 
-/** The "Input for your program" box: one answer per line; trailing empty lines are ignored. */
-export function parseStdinBox(text: string): string[] {
+/**
+ * The "Input for your program" box: one answer per line. Trailing empty lines are dropped, but never below
+ * `minAnswers`; missing answers are empty, like pressing Enter (`input("Press Enter to open the door")`).
+ */
+export function parseStdinBox(text: string, minAnswers = 0): string[] {
   const lines = (text ?? "").replace(/\r/g, "").split("\n");
-  while (lines.length > 0 && lines[lines.length - 1] === "") lines.pop();
+  while (lines.length > minAnswers && lines[lines.length - 1] === "") lines.pop();
+  while (lines.length < minAnswers) lines.push("");
   return lines;
+}
+
+/** How many input( calls the code has outside comments (a rough count of the answers it needs). */
+export function countInputCalls(code: string): number {
+  let count = 0;
+  for (const line of meaningfulLines(code)) count += [...line.matchAll(/(^|[^\w.])input\s*\(/g)].length;
+  return count;
 }
 
 export function stdinBoxText(answers: readonly string[] | undefined): string {
@@ -277,12 +393,115 @@ export function stdinBoxText(answers: readonly string[] | undefined): string {
 }
 
 /**
- * The answers a run gets. While the box still shows Mar'tu's answers it sends them exactly, so an empty
- * last answer ("Press Enter to open the door") is not lost to parseStdinBox's trimming.
+ * The answers a run gets. While the box still shows Mar'tu's answers it sends them exactly. Otherwise each
+ * line is an answer, and there are at least as many as Mar'tu's answers or the code's input() calls, so an
+ * empty answer ("Press Enter to open the door") is never lost.
  */
-export function answersFromBox(text: string, scripted: readonly string[] | undefined): string[] {
+export function answersFromBox(text: string, scripted: readonly string[] | undefined, code = ""): string[] {
   if (scripted && text === stdinBoxText(scripted)) return [...scripted];
-  return parseStdinBox(text);
+  return parseStdinBox(text, Math.max(scripted?.length ?? 0, countInputCalls(code)));
+}
+
+/* ------------------------------------------------------------------------------------------------ */
+/* Compare with Mar'tu's version                                                                     */
+/* ------------------------------------------------------------------------------------------------ */
+
+export type CompareLine = { text: string; changed: boolean };
+
+/**
+ * Line-by-line differences between the student's code and Mar'tu's version (a longest-common-subsequence
+ * diff on lines, ignoring trailing spaces and blank lines at the end). Each side keeps its own lines;
+ * `changed` marks a line the other side does not have in the same order.
+ */
+export function compareLines(mine: string, theirs: string): { mine: CompareLine[]; theirs: CompareLine[] } {
+  const split = (code: string) => {
+    const lines = (code ?? "").replace(/\r/g, "").split("\n").map((line) => line.replace(/\s+$/, ""));
+    while (lines.length > 0 && lines[lines.length - 1] === "") lines.pop();
+    return lines;
+  };
+  const a = split(mine);
+  const b = split(theirs);
+  // lcs[i][j] = longest common subsequence of a[i:] and b[j:]
+  const lcs: number[][] = Array.from({ length: a.length + 1 }, () => new Array<number>(b.length + 1).fill(0));
+  for (let i = a.length - 1; i >= 0; i -= 1) {
+    for (let j = b.length - 1; j >= 0; j -= 1) {
+      lcs[i][j] = a[i] === b[j] ? lcs[i + 1][j + 1] + 1 : Math.max(lcs[i + 1][j], lcs[i][j + 1]);
+    }
+  }
+  const sameA = new Array<boolean>(a.length).fill(false);
+  const sameB = new Array<boolean>(b.length).fill(false);
+  let i = 0;
+  let j = 0;
+  while (i < a.length && j < b.length) {
+    if (a[i] === b[j]) {
+      sameA[i] = true;
+      sameB[j] = true;
+      i += 1;
+      j += 1;
+    } else if (lcs[i + 1][j] >= lcs[i][j + 1]) {
+      i += 1;
+    } else {
+      j += 1;
+    }
+  }
+  return {
+    mine: a.map((text, index) => ({ text, changed: !sameA[index] })),
+    theirs: b.map((text, index) => ({ text, changed: !sameB[index] })),
+  };
+}
+
+/* ------------------------------------------------------------------------------------------------ */
+/* Inserting into the editor: Names to use, Mar'tu's pick                                            */
+/* ------------------------------------------------------------------------------------------------ */
+
+/** True when the text before the cursor (on its line) leaves a string open. */
+export function insideString(lineBefore: string): boolean {
+  let quote: string | null = null;
+  for (let index = 0; index < lineBefore.length; index += 1) {
+    const char = lineBefore[index];
+    if (quote) {
+      if (char === "\\") index += 1;
+      else if (char === quote) quote = null;
+    } else if (char === "#") {
+      return false;
+    } else if (char === '"' || char === "'") {
+      quote = char;
+    }
+  }
+  return quote !== null;
+}
+
+/**
+ * What Mar'tu's pick puts in the editor: the value itself inside an open string or for a number (or a
+ * multi-line pick), otherwise the value in quotes.
+ */
+export function pickInsertion(pick: string, lineBefore: string): string {
+  const value = pick ?? "";
+  if (value.includes("\n") || /^-?\d+(\.\d+)?$/.test(value.trim()) || insideString(lineBefore)) return value;
+  return value.includes('"') && !value.includes("'") ? `'${value}'` : `"${value.replace(/"/g, '\\"')}"`;
+}
+
+/* ------------------------------------------------------------------------------------------------ */
+/* Keep it short: Mar'tu's first paragraph                                                           */
+/* ------------------------------------------------------------------------------------------------ */
+
+/**
+ * The first paragraph of course prose (one paragraph per line; a fenced code block counts as one), and
+ * whether there is more after it.
+ */
+export function firstParagraph(text: string): { first: string; more: boolean } {
+  const lines = (text ?? "").replace(/\r\n?/g, "\n").split("\n");
+  let start = 0;
+  while (start < lines.length && lines[start].trim() === "") start += 1;
+  if (start >= lines.length) return { first: "", more: false };
+  let end = start + 1;
+  if (/^```/.test(lines[start].trim())) {
+    while (end < lines.length && !/^```\s*$/.test(lines[end].trim())) end += 1;
+    end = Math.min(lines.length, end + 1);
+  }
+  const first = lines.slice(start, end).join("\n");
+  const more = lines.slice(end).some((line) => line.trim() !== "");
+  return { first, more };
 }
 
 /* ------------------------------------------------------------------------------------------------ */
@@ -304,6 +523,12 @@ const ANGLE_LABELS: Record<string, string> = {
   mistake: "A common mistake",
   "common mistake": "A common mistake",
   campaign: "Where the campaign uses it",
+  "from the campaign": "From the campaign",
+  everyday: "In everyday life",
+  "in tor": "In Tor",
+  shorter: "Shorter",
+  contrast: "Not this",
+  "sentence frame": "Fill the frame",
 };
 
 /** What the "Explain it another way" button says for an angle. */

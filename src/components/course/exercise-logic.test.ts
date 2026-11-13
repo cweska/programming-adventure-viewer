@@ -14,12 +14,10 @@ import {
   hintsOpen,
   isBlankOrStarter,
   nextFailStreak,
-  NUDGE_IDLE_MS,
   parseStdinBox,
   revealNextRung,
   rungsShown,
   runOutcome,
-  shouldNudge,
   solutionUnlocked,
   stdinBoxText,
   stepNoun,
@@ -192,7 +190,7 @@ describe("runs and progress", () => {
   });
 });
 
-describe("the Want-a-hint nudge", () => {
+describe("misses in a row", () => {
   it("counts misses in a row on the same checkpoint", () => {
     let streak = nextFailStreak({ checkpointId: null, count: 0 }, "b");
     expect(streak).toEqual({ checkpointId: "b", count: 1 });
@@ -200,30 +198,6 @@ describe("the Want-a-hint nudge", () => {
     expect(streak.count).toBe(2);
     expect(nextFailStreak(streak, "c")).toEqual({ checkpointId: "c", count: 1 });
     expect(nextFailStreak(streak, null)).toEqual({ checkpointId: null, count: 0 });
-  });
-
-  const base = {
-    support: "full" as const,
-    streak: { checkpointId: "b", count: 1 },
-    idleSinceMissMs: 0,
-    hintsLeft: 2,
-    dismissed: false,
-  };
-
-  it("offers after two misses or a quiet minute and a half", () => {
-    expect(shouldNudge(base)).toBe(false);
-    expect(shouldNudge({ ...base, streak: { checkpointId: "b", count: 2 } })).toBe(true);
-    expect(shouldNudge({ ...base, idleSinceMissMs: NUDGE_IDLE_MS })).toBe(true);
-    expect(shouldNudge({ ...base, idleSinceMissMs: null })).toBe(false);
-  });
-
-  it("stays quiet when it should", () => {
-    const ready = { ...base, streak: { checkpointId: "b", count: 3 } };
-    expect(shouldNudge({ ...ready, support: "light" })).toBe(false);
-    expect(shouldNudge({ ...ready, support: "none" })).toBe(false);
-    expect(shouldNudge({ ...ready, dismissed: true })).toBe(false);
-    expect(shouldNudge({ ...ready, hintsLeft: 0 })).toBe(false);
-    expect(shouldNudge({ ...ready, streak: { checkpointId: null, count: 0 } })).toBe(false);
   });
 });
 
@@ -266,6 +240,13 @@ describe("code helpers", () => {
     expect(stdinBoxText(["a", "b"])).toBe("a\nb");
     expect(stdinBoxText(undefined)).toBe("");
     expect(parseStdinBox(stdinBoxText(["x", "y"]))).toEqual(["x", "y"]);
+  });
+
+  it("never drops an empty answer the program needs (Press Enter)", () => {
+    expect(parseStdinBox("", 1)).toEqual([""]);
+    expect(parseStdinBox("Mira\n", 2)).toEqual(["Mira", ""]);
+    expect(parseStdinBox("Mira", 2)).toEqual(["Mira", ""]);
+    expect(parseStdinBox("Mira\n\n\n", 1)).toEqual(["Mira"]);
   });
 });
 
