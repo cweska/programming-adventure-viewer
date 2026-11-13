@@ -135,7 +135,10 @@ const exerciseShape = {
   predict: exercisePredictSchema.optional(),
   /** "Names to use" chips: the names the steps ask for. */
   names: z.array(z.string().min(1)).default([]),
-  /** Mar'tu's pick: a value to use when the student can't decide (every other value is still accepted). */
+  /**
+   * Mar'tu's pick: a value to use when the student can't decide (every other value is still accepted). The UI
+   * puts it in quotes where needed; a pick that starts with `#` is a note and goes in as it is, on its own line.
+   */
   pick: z.string().optional(),
   /** An optional "Pair talk" prompt. Each student still does every step on their own device. */
   pairTalk: prose.optional(),

@@ -171,7 +171,7 @@ Kinds:
 | `takeaway` | str | `takeaway` | one line for the cheatsheet / skill map |
 | `predict` | dict | `predict` | Predict before Run, see [below](#predict-before-run). Free: a thinking prompt, never a test, and it never blocks Run. Hidden in Quick Checks. |
 | `names` | list of str | `names` | the "Names to use" chips: every exact name the steps ask for (variables, functions, parameters), e.g. `["caster", "mana"]`. Shown in every preset. The harness warns about a name the solution never uses. |
-| `pick` | str | `pick` | Mar'tu's pick: a value to use when the student can't decide, e.g. `'"Gearshift"'` (shown as code; a value with `\n` shows as a block). Every other value the checks allow is still accepted, so only use it where the checks accept any value. |
+| `pick` | str | `pick` | Mar'tu's pick: a value to use when the student can't decide, e.g. `'"Gearshift"'` (shown as code; a value with `\n` shows as a block). Every other value the checks allow is still accepted, so only use it where the checks accept any value. The player wraps plain words in quotes; a pick that starts with `#` is a note and goes in as it is, on a line of its own. |
 | `pair_talk` | prose | `pairTalk` | an optional "Pair talk" prompt, e.g. "Tell your partner why `mana` needs `str()`." The site adds the "Pair talk:" label. Every student still does every step on their own device (no shared-device steps). |
 | `solo` | bool | `solo` | `True` for the lesson's SOLO item (one per lesson, about 2 minutes, done alone). Recorded, never blocking. Default `False`. |
 | `partials` | list of code | sidecar only | staged solutions: partial *k* passes checkpoints 1..k and fails k+1 |

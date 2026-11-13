@@ -537,6 +537,24 @@ test.describe("Intro to Python", () => {
     await expect(page.getByTestId("article-read")).toBeVisible();
   });
 
+  test("a SOLO pass says \"You did that alone\" only when it is true", async ({ page }) => {
+    await page.goto(itemUrl("asking-the-traveler"));
+    await expect(page.getByTestId("solo")).toBeVisible();
+    await pythonReady(page);
+    const help = page.getByTestId("help-button");
+    await expect(help).toContainText("Help: Where to look");
+    await help.click();
+    await page.getByTestId("run").click();
+    await expect(page.getByTestId("run-count")).toContainText("Run 1 finished", { timeout: 30_000 });
+    await help.click();
+    await expect(page.getByTestId("help-rung-2")).toHaveAttribute("data-kind", "how");
+    await runCode(page, 'print("Shield up.")\n');
+    await expect(page.getByTestId("all-passed")).toBeVisible();
+    // Show me how was opened: Mar'tu does not say "alone".
+    await expect(page.getByTestId("exercise-done-martu")).not.toContainText("You did that alone");
+    await expect(page.getByTestId("exercise-done-martu")).toContainText("Good. Very good, yes?");
+  });
+
   test("passing the Quick Check marks the unit as tested out", async ({ page }) => {
     await page.goto(`/intro-python/${SAMPLE}`);
     await page.getByTestId("testout-start").click();

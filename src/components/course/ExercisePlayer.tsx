@@ -506,7 +506,7 @@ export function ExercisePlayer({
     if (runNumber === 0) return;
     const root = rootRef.current;
     const target =
-      root?.querySelector<HTMLElement>('[data-testid="exercise-done"].is-fresh') ??
+      root?.querySelector<HTMLElement>('[data-testid="exercise-done"].is-fresh, [data-testid="reveal-pass"]') ??
       root?.querySelector<HTMLElement>('[data-testid="console"]');
     try {
       target?.scrollIntoView({ block: "nearest" });
