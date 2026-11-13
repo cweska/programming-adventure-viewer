@@ -427,6 +427,31 @@ def verify_exercise(ex: dict, where: str, gate: ConceptGate, report: Report, kin
         elif result["stdout"].rstrip() != str(ex["example_output"]).rstrip():
             report.error(where, f"example prints {result['stdout']!r}, example_output says {ex['example_output']!r}")
 
+    # predict = dict(q=..., code=<optional, defaults to the starter>, choices=[...], answer=<index or exact text>, explain=...)
+    predict = ex.get("predict")
+    if predict:
+        if not predict.get("explain"):
+            report.error(where, "predict has no explanation (explain)")
+        p_code = predict.get("code") or ex["starter"]
+        gate.check(report, where, "predict code", p_code, preview, exempt)
+        answer = predict.get("answer")
+        choices = predict.get("choices") or []
+        if isinstance(answer, int):
+            if not (0 <= answer < len(choices)):
+                report.error(where, "predict answer index out of range")
+                answer = None
+            else:
+                answer = choices[answer]
+        if answer is not None:
+            result = run(p_code, [], setup, stdin, engine)
+            actual = _norm(result["stdout"]) if result["ok"] else f"ERROR: {result['error']}"
+            if _norm(str(answer)) != actual and not (str(answer).startswith("ERROR") and actual.startswith("ERROR")):
+                report.error(where, f"predict answer {answer!r} but the code prints {actual!r}")
+
+    for field in ("names", "pick", "pair_talk", "solo"):
+        if field in ex and field == "names" and not all(isinstance(n, str) for n in ex["names"]):
+            report.error(where, "names must be a list of strings")
+
     bonus = ex.get("bonus")
     if bonus:
         bonus_cp = [{"checks": bonus.get("checks")}]
