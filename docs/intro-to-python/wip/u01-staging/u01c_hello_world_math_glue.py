@@ -1230,6 +1230,16 @@ SPEND_MANA = dict(
                     "the casts use spell_cost", {"spell_cost": 5}, "str(26 - 3 * _R('spell_cost'))",
                     "Spend `spell_cost` in each cast, not a number.",
                 ),
+                (
+                    "each cast changes the box",
+                    "import ast as _ast\n"
+                    "_casts = [_n for _n in _ast.parse(_source).body if (type(_n).__name__ == 'Assign' "
+                    "and any(getattr(_t, 'id', '') == 'mana' for _t in _n.targets) and type(_n.value).__name__ == 'BinOp' "
+                    "and type(_n.value.op).__name__ == 'Sub') or (type(_n).__name__ == 'AugAssign' "
+                    "and getattr(_n.target, 'id', '') == 'mana' and type(_n.op).__name__ == 'Sub')]\n"
+                    "assert len(_casts) >= 3, 'Your program prints 17, but `mana` only changed ' + str(len(_casts)) + "
+                    "' times. Give the third cast its own line, `mana = mana - spell_cost`, so the box keeps the answer.'",
+                ),
             ],
             pass_line="Mar'tu: 26, 23, 20, 17. The box keeps only the newest value, yes?",
         ),
@@ -1320,6 +1330,9 @@ SPEND_MANA = dict(
         dict(why="capital letter: a new box Mana (prints 17, but mana is still 20)",
              code="mana = 26\nspell_cost = 3\nmana = mana - spell_cost\nmana = mana - spell_cost\nMana = mana - spell_cost\nprint(Mana)\n",
              fails_at=1, message_contains="letter for letter"),
+        dict(why="the third cast worked out inside the print, never stored (mana stays 20)",
+             code="mana = 26\nspell_cost = 3\nmana = mana - spell_cost\nmana = mana - spell_cost\nprint(mana - spell_cost)\n",
+             fails_at=1, message_contains="only changed 2 times"),
         dict(why="subtracts the wrong way round on the new line",
              code="mana = 26\nspell_cost = 3\nmana = mana - spell_cost\nmana = mana - spell_cost\nmana = spell_cost - mana\nprint(mana)\n",
              fails_at=1, message_contains="Put `mana` first"),
@@ -1405,6 +1418,11 @@ GLUE_WORDS = dict(
                 GLUE_OUT,
                 rerun_line(
                     "the line is built from the boxes", {"name": "Tester", "mana": 4},
+                    "_R('name') + ' has ' + str(_R('mana')) + ' mana.'",
+                    "Build the line from `name` and `str(mana)`, so it follows the boxes.", hide=own("name"),
+                ),
+                rerun_line(
+                    "the line follows other boxes too", {"name": "Zelda", "mana": 7},
                     "_R('name') + ' has ' + str(_R('mana')) + ' mana.'",
                     "Build the line from `name` and `str(mana)`, so it follows the boxes.", hide=own("name"),
                 ),
@@ -1517,6 +1535,8 @@ GLUE_WORDS = dict(
              fails_at=1, message_contains="practises glue"),
         dict(why="a closing quote missing", code='name = "Lucky"\nmana = 26\nprint(name + " has + str(mana) + " mana.")\n',
              fails_at=0, message_contains="SyntaxError"),
+        dict(why="gaming: boxes set to the rerun's values, then the line typed",
+             code='name = "Tester"\nmana = 4\nprint("Tester has " + str(4) + " mana.")\n', fails_at=1, message_contains="Zelda"),
     ],
     notes=(
         meta(starter_level="S4", path="CC", skills="concat-str", solo="false", dictates="",
@@ -1619,6 +1639,10 @@ STATUS_LINE_EX = dict(
                     "the status line is built from the boxes", {"hero_name": "Tester", "magical_affinity": 13},
                     "'Tester: 26/26 mana'", "Build the line from the boxes, with `str()` on each number.", show=False,
                 ),
+                rerun_line(
+                    "the status line follows other boxes too", {"hero_name": "Zelda", "magical_affinity": 5},
+                    "'Zelda: 10/10 mana'", "Build the line from the boxes, with `str()` on each number.", show=False,
+                ),
                 (
                     "the first number is mana",
                     "import ast as _ast\n"
@@ -1713,6 +1737,9 @@ STATUS_LINE_EX = dict(
              fails_at=1, message_contains="letter for letter"),
         dict(why="the hero with no quotes (A-08 kratos)", code=_status("Oogrish").replace('"Oogrish"', "Kratos", 1),
              fails_at=0, message_contains="not defined"),
+        dict(why="gaming: hero and affinity set to the rerun's values, the max typed",
+             code=_status("Tester", printed=False).replace("magical_affinity = 9", "magical_affinity = 13")
+             + 'print(hero_name + ": " + str(mana) + "/26 mana")\n', fails_at=3, message_contains="Zelda"),
         dict(why="twice worked out on a line of its own, kept in no box",
              code=_status("Oogrish", maxline="max_mana = 0\nmagical_affinity * 2"),
              fails_at=1, message_contains="keeps it nowhere"),
@@ -1988,6 +2015,8 @@ BROKEN_SPELL_1C = dict(
                 out_line("prints Mana: 3", "'Mana: ' + str(mana)", "Print `Mana: ` glued to `str(mana)`."),
                 rerun_line("the mana line follows the box", {"mana": 4}, "'Mana: 4'",
                            "Glue the box, not a number: `\"Mana: \" + str(mana)`."),
+                rerun_line("the mana line follows the box (1)", {"mana": 1}, "'Mana: 1'",
+                           "Glue the box, not a number: `\"Mana: \" + str(mana)`."),
             ],
         ),
         dict(
@@ -2109,6 +2138,9 @@ BROKEN_SPELL_1C = dict(
              code=_broken(mana_line='print("Mana: 3")\nprint("Mana: 4")'), fails_at=1, message_contains="typed in"),
         dict(why="rope_cost typed as a sum instead of from the boxes", code=_broken(rope_cost="rope_cost = 5 * 2"),
              fails_at=2, message_contains="18"),
+        dict(why="gaming: mana set to the rerun's value, then the line typed",
+             code=_broken(mana_line='print("Mana: 4")').replace("mana = 3\n", "mana = 4\n"), fails_at=1,
+             message_contains="Mana: 1"),
     ],
     notes=(
         meta(starter_level="S4", path="CC", skills="combine-values,concat-str,repeat-string,read-traceback",
@@ -2270,7 +2302,12 @@ THE_SHORT_WAY = dict(
                     "assert not _flip, 'Line ' + str(_flip[0] if _flip else 0) + ' has `=+` or `=-`, which puts a "
                     "plain number in the box. The short way is `+=`: the sign first, then the `=`.'",
                 ),
-                ("hours_waited is 36", "assert hours_waited == 36, '`hours_waited` should end at 36: 30, then 6 more.'"),
+                (
+                    "hours_waited is 36",
+                    "assert hours_waited != 66, '`+=` already adds to what is in the box. Write `hours_waited += 6`, "
+                    "not `hours_waited += hours_waited + 6`.'\n"
+                    "assert hours_waited == 36, '`hours_waited` should end at 36: 30, then 6 more.'",
+                ),
                 (
                     "uses += on hours_waited",
                     "import ast as _ast\n"
@@ -2318,6 +2355,9 @@ THE_SHORT_WAY = dict(
              code="hours_waited = 30\nhours_waited =+ 6\nmana = 20\nmana = mana - 3\nprint(hours_waited)\nprint(mana)\n",
              fails_at=1, message_contains="+="),
         dict(why="still the long way", code=SHORT_STARTER, fails_at=1, message_contains="long way"),
+        dict(why="mixes both forms: += with the long right side",
+             code="hours_waited = 30\nhours_waited += hours_waited + 6\nmana = 20\nmana = mana - 3\nprint(hours_waited)\nprint(mana)\n",
+             fails_at=1, message_contains="already adds"),
         dict(why="+= on the wrong line",
              code="hours_waited = 30\nhours_waited = hours_waited + 6\nmana = 20\nmana -= 3\nprint(hours_waited)\nprint(mana)\n",
              fails_at=1, message_contains="hours_waited += 6"),
@@ -2766,6 +2806,8 @@ PROJECT_1P1 = dict(
                          spaces="Check the spaces: one after the colon, like `First watch: Tester`."),
                 rerun_line("the watch line is built from the box", {"watch_keeper": "Tester"}, "'First watch: Tester'",
                            "Glue `\"First watch: \"` to the box `watch_keeper`.", show=False),
+                rerun_line("the watch line follows another hero", {"watch_keeper": "Zelda"}, "'First watch: Zelda'",
+                           "Glue `\"First watch: \"` to the box `watch_keeper`.", show=False),
             ],
             pass_line="Mar'tu: Hm. Noted. First watch is theirs, then.",
         ),
@@ -2910,6 +2952,8 @@ PROJECT_1P1 = dict(
         dict(why="gaming the message: the typed watch line plus the Tester line the message showed",
              code=_ledger(c7='watch_keeper = "Bomb Shell"\nprint("First watch: Bomb Shell")\nprint("First watch: Tester")\n'),
              fails_at=7, message_contains="typed in"),
+        dict(why="gaming: the hero set to the rerun's Tester, then the watch line typed",
+             code=_ledger(c7='watch_keeper = "Tester"\nprint("First watch: Tester")\n'), fails_at=7, message_contains="Zelda"),
         dict(why="the hint's name copied: the hero in `guard`, watch_keeper left empty",
              code=_ledger(c7='watch_keeper = ""\nguard = "Bomb Shell"\nprint("First watch: " + guard)\n'),
              fails_at=7, message_contains="new box `guard`"),
