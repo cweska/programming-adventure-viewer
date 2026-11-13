@@ -120,8 +120,8 @@ def shows(text, where, extra_ok=(".",), starts_ok=False):
       1. the words are in quotes on their own line with no `print` (BARE),
       2. a printed line differs only by capitals (STREXACT),
       3. only by spaces or marks (STREXACT),
-      4. by a letter or two (a spelling slip),
-      5. the words are inside a longer printed line,
+      4. the words are inside a longer printed line,
+      5. by a letter or two (a spelling slip),
     and otherwise says the line is not showing yet, plus `where`.
     """
     bare = text.rstrip(".!?")
@@ -149,14 +149,14 @@ def shows(text, where, extra_ok=(".",), starts_ok=False):
         "    if _bare:\n"
         "        _msg = ('Line ' + str(_bare[0]) + ' has the words in quotes, but no `print`, so Python made them '\n"
         "                'and forgot them. Write `print(` before the quotes and `)` after.')\n"
-        "    elif _l and _fix(_l).lower().rstrip('.!?') == _want[0].lower():\n"
+        "    elif _l and _fix(_l).lower().rstrip('.!?') == _want[0].lower() and _fix(_l).rstrip('.!?') != _want[0]:\n"
         f"        _msg = {head!r} + _l + '`. Capitals count: Python shows exactly what is inside the quotes.'\n"
         "    elif _l and _key(_l) == _key(_want[0]):\n"
         f"        _msg = {head!r} + _l + '`. Every space and mark counts: Python shows exactly what is inside the quotes.'\n"
-        "    elif _l and _sim(_l) >= 0.75:\n"
-        f"        _msg = {head!r} + _l + '`. Check it letter by letter: Python shows exactly what is inside the quotes.'\n"
         "    elif _longer:\n"
         f"        _msg = 'Your line shows `' + _longer[0] + {longer!r}\n"
+        "    elif _l and _sim(_l) >= 0.75:\n"
+        f"        _msg = {head!r} + _l + '`. Check it letter by letter: Python shows exactly what is inside the quotes.'\n"
         "    else:\n"
         f"        _msg = {missing!r}\n"
         "assert not _msg, _msg"
@@ -255,6 +255,10 @@ WHAT_AN_ERROR_LOOKS_LIKE = dict(
              message_contains="unterminated"),
         dict(why="removes the opening quote instead of adding the closing one", code="print(Shield up.)\n",
              fails_at=0, message_contains="comma"),
+        dict(why="check-breaker: words in quotes with no print (BARE)", code='"Shield up."\n', fails_at=1,
+             message_contains="no `print`"),
+        dict(why="check-breaker: retyped in lower case", code='print("shield up.")\n', fails_at=1,
+             message_contains="capitals"),
     ],
     takeaway="Read the last line of Python's message first. Then look at the line it names.",
     notes=(
@@ -343,6 +347,8 @@ KEYBOARD_SYMBOLS = dict(
              fails_at=1, message_contains="Nothing printed"),
         dict(why="symbols with no quotes", code="print(_ - =)\n", fails_at=0, message_contains="invalid syntax"),
         dict(why="leaves one symbol out", code='print("_ -")\n', fails_at=1, message_contains="missing `=`"),
+        dict(why="check-breaker: each symbol on its own line, not one line with all three",
+             code='print("_")\nprint("-")\nprint("=")\n', fails_at=1, message_contains="missing"),
     ],
     takeaway="`-` subtracts, `_` joins words in a name, `=` puts a value in a box.",
     notes=(
@@ -458,13 +464,24 @@ YOUR_OWN_WORDS = dict(
                     "assert _lines(), 'Nothing printed yet. Keep `print(\"...\")` and put the words inside the quotes.'",
                 ),
                 (
+                    "the words are in quotes",
+                    "import ast as _ast\n"
+                    "_quoted = [n for n in _ast.walk(_ast.parse(_source)) if isinstance(n, _ast.Call) "
+                    "and getattr(n.func, 'id', '') == 'print' and any(isinstance(c, _ast.Constant) "
+                    "and isinstance(c.value, str) and c.value.strip() for a in n.args for c in _ast.walk(a))]\n"
+                    "assert _quoted, 'Your line shows `' + (_lines() or [''])[0] + '`, but with no quotes. "
+                    "Oogrish\\'s words go inside quotes: `print(\"...\")`.'",
+                ),
+                (
                     "not the placeholder",
-                    "assert \"Oogrish's words here\" not in _lines()[0], "
-                    "'Change the words between the quotes to something Oogrish would say.'",
+                    "_ph = [l for l in _lines() if any(p in l.lower().replace('\\u2019', \"'\") "
+                    "for p in ('words here', 'write oogrish', \"oogrish's words\", 'oogrishs words'))]\n"
+                    "assert not _ph, 'Your line `' + (_ph or [''])[0] + '` still has the starter\\'s words. "
+                    "Change the words between the quotes to something Oogrish would say.'",
                 ),
                 (
                     "not the example's line",
-                    "assert _lines()[0].lower().rstrip('.!') != 'shield up', "
+                    "assert ''.join(c for c in _lines()[0].lower() if c.isalnum()) != 'shieldup', "
                     "\"That's the example's line, so write your own words, or use Mar'tu's pick: `Steady, now.`\"",
                 ),
             ],
@@ -532,6 +549,15 @@ YOUR_OWN_WORDS = dict(
              message_contains="no `print`"),
         dict(why="new words with no quotes", code="print(Steady, now)\n", fails_at=0, message_contains="not defined"),
         dict(why="quote never closed", code='print("Steady, now.)\n', fails_at=0, message_contains="unterminated"),
+        dict(why="check-breaker: deletes only part of the placeholder", code='print("Write words here")\n', fails_at=1,
+             message_contains="starter's words"),
+        dict(why="check-breaker: own line added, placeholder line still printing",
+             code='print("Steady, now.")\nprint("Write Oogrish\'s words here")\n', fails_at=1,
+             message_contains="starter's words"),
+        dict(why="check-breaker: the example's line with another final mark", code='print("Shield up?")\n', fails_at=1,
+             message_contains="example"),
+        dict(why="check-breaker: a number with no quotes still prints", code="print(42)\n", fails_at=1,
+             message_contains="no quotes"),
     ],
     takeaway="The words inside the quotes are yours. Python shows them exactly.",
     notes=(
@@ -667,6 +693,8 @@ CLOSE_THE_QUOTE = dict(
              code='print("It is not a compass")\nprint("Shield up."\n', fails_at=0, message_contains="never closed"),
         dict(why="mends line 2 by deleting it", code='print("It is not a compass")\n', fails_at=2,
              message_contains="Shield up."),
+        dict(why="check-breaker: both lines squeezed into one print",
+             code='print("It is not a compass", "Shield up.")\n', fails_at=1, message_contains="line of its own"),
     ],
     takeaway="Quotes come in pairs, and brackets come in pairs.",
     notes=(
@@ -712,7 +740,7 @@ WORDS_NEED_QUOTES = dict(
                 'with that name. `print("Lantern")` shows `Lantern`.',
             ],
             checks=[
-                ("shows Fireball", shows("Fireball", "Put quotes around it on line 1.", extra_ok=())),
+                ("shows Fireball", shows("Fireball", "Put quotes around it on line 1.", extra_ok=(".", "!"))),
             ],
             pass_line="Mar'tu: Words in quotes. Good.",
         ),
@@ -732,7 +760,8 @@ WORDS_NEED_QUOTES = dict(
                     "assert 'Getinside' not in _lines(), "
                     "'Your line shows `Getinside`. Put both words inside one pair of quotes, with the space between them.'",
                 ),
-                ("shows Get inside", shows("Get inside", "Add a new line under line 1 that shows them.", extra_ok=(".", "!"))),
+                ("shows Get inside", shows("Get inside", "Add a new line under line 1 that shows them.", extra_ok=(".", "!"),
+                                           starts_ok=True)),
             ],
             pass_line="Oogrish: Steady, now. Everyone inside.",
         ),
@@ -823,6 +852,12 @@ WORDS_NEED_QUOTES = dict(
              fails_at=2, message_contains="no `print`"),
         dict(why="changes the capitals", code='print("fireball")\nprint("Get inside")\n', fails_at=1,
              message_contains="capitals"),
+        dict(why="check-breaker: quotes added, but the spell split in two",
+             code='print("Fire Ball")\nprint("Get inside")\n', fails_at=1, message_contains="space"),
+        dict(why="check-breaker: quotes added, but no print (BARE)", code='"Fireball"\nprint("Get inside")\n',
+             fails_at=1, message_contains="no `print`"),
+        dict(why="check-breaker: both in one line", code='print("Fireball Get inside")\n', fails_at=1,
+             message_contains="line of its own"),
     ],
     takeaway="Words you want to show need quotes. Without quotes, Python looks for a saved name.",
     notes=(
@@ -892,6 +927,12 @@ TOP_TO_BOTTOM = dict(
                     "'Keep all three lines. Only move `Get inside, yes?`.'",
                 ),
                 (
+                    "the warning prints once",
+                    "assert _lines().count('Get inside, yes?') == 1, "
+                    "'`Get inside, yes?` prints twice now. Move the line instead of copying it: "
+                    "take it away from the top, so it prints once, at the end.'",
+                ),
+                (
                     "the warning comes after them",
                     "_l = _lines()\n"
                     "assert _l.index('Get inside, yes?') > _l.index(\"Mar'tu checks the clock.\") "
@@ -913,10 +954,17 @@ TOP_TO_BOTTOM = dict(
             checks=[
                 (
                     "blank line just before the warning",
+                    "import ast as _ast\n"
                     "_raw = [s.strip() for s in _captured_stdout.splitlines()]\n"
                     "_i = _raw.index('Get inside, yes?') if 'Get inside, yes?' in _raw else 0\n"
+                    "_lone = [n.lineno for n in _ast.parse(_source).body if isinstance(n, _ast.Expr) "
+                    "and isinstance(n.value, _ast.Name) and n.value.id == 'print']\n"
+                    "assert (_i > 0 and _raw[_i - 1] == '') or not _lone, "
+                    "'Line ' + str((_lone or [0])[0]) + ' says `print` with no brackets, so it does nothing. "
+                    "Write `print()`, brackets and all.'\n"
                     "assert _i > 0 and _raw[_i - 1] == '', "
-                    "'Add `print()` on the line just above the warning, so a blank line shows first.'",
+                    "'No blank line shows just above the warning yet. An empty line in your code shows nothing: "
+                    "write `print()` on the line just above the warning.'",
                 ),
             ],
             pass_line="Mar'tu: A breath before the warning. Better.",
@@ -955,7 +1003,7 @@ TOP_TO_BOTTOM = dict(
                 "blank line, then Lucky's reply",
                 "_raw = [s.strip() for s in _captured_stdout.splitlines()]\n"
                 "_i = _raw.index('Get inside, yes?') if 'Get inside, yes?' in _raw else len(_raw)\n"
-                "assert len(_raw) > _i + 2 and _raw[_i + 1] == '' and _raw[_i + 2] != '', "
+                "assert len(_raw) > _i + 2 and _raw[_i + 1] == '' and any(_raw[_i + 2:]), "
                 "'After the warning: `print()` first, then a `print` line with Lucky\\'s reply.'",
             ),
         ],
@@ -1021,6 +1069,25 @@ TOP_TO_BOTTOM = dict(
             'print("The hand is near the arc.")\n'
             'print("Get inside, yes?")\n'
         ), fails_at=1, message_contains="Keep all three"),
+        dict(why="check-breaker: copies the warning to the bottom instead of moving it", code=(
+            'print("Get inside, yes?")\n'
+            'print("Mar\'tu checks the clock.")\n'
+            'print("The hand is near the arc.")\n'
+            "print()\n"
+            'print("Get inside, yes?")\n'
+        ), fails_at=1, message_contains="prints twice"),
+        dict(why="check-breaker: an empty line in the code instead of print()", code=(
+            'print("Mar\'tu checks the clock.")\n'
+            'print("The hand is near the arc.")\n'
+            "\n"
+            'print("Get inside, yes?")\n'
+        ), fails_at=2, message_contains="empty line"),
+        dict(why="check-breaker: print with no brackets does nothing", code=(
+            'print("Mar\'tu checks the clock.")\n'
+            'print("The hand is near the arc.")\n'
+            "print\n"
+            'print("Get inside, yes?")\n'
+        ), fails_at=2, message_contains="no brackets"),
     ],
     takeaway="Python runs lines from top to bottom. `print()` shows a blank line.",
     notes=(
@@ -1067,8 +1134,9 @@ NOTES_FOR_HUMANS = dict(
                 ),
                 (
                     "the line is kept as a note",
-                    NOTES + "assert any('keeping the glug' in text for _, text in _notes), "
-                    "'Keep the glug line in your code, and switch it off with `#` at the start.'",
+                    NOTES + "assert any('keeping the glug' in text and 'print' in text.lower() for _, text in _notes), "
+                    "'Keep the whole glug line in your code, `print` and all, and switch it off with `#` at the "
+                    "very start.'",
                 ),
                 (
                     "the other lines still print",
@@ -1212,6 +1280,17 @@ NOTES_FOR_HUMANS = dict(
             '# print("I am keeping the glug.")\n'
             'print("I will take first watch.")\n'
         ), fails_at=2, message_contains="any words"),
+        dict(why="check-breaker: swaps `print(` for `#`, so the code line is gone", code=(
+            "# Night watch at the cabin.\n"
+            'print("Steady, now. Rest while you can.")\n'
+            "# I am keeping the glug.\n"
+            'print("I will take first watch.")\n'
+        ), fails_at=1, message_contains="`print` and all"),
+        dict(why="check-breaker: deletes the line and writes a note about it", code=(
+            "# Lucky is keeping the glug.\n"
+            'print("Steady, now. Rest while you can.")\n'
+            'print("I will take first watch.")\n'
+        ), fails_at=1, message_contains="`print` and all"),
     ],
     takeaway="`#` starts a note for humans. Python skips it. Put `#` in front of a line to switch it off.",
     notes=(
@@ -1355,6 +1434,21 @@ BROKEN_SPELL_1A = dict(
             'print("Barrier\'s holding.")\n'
             'print("steady")\n'
         ), fails_at=3, message_contains="capitals"),
+        dict(why="check-breaker: single quotes around words with an apostrophe", code=(
+            'print("Shield up.")\n'
+            "print('Barrier's holding.')\n"
+            'print("Steady")\n'
+        ), fails_at=0, message_contains="unterminated"),
+        dict(why="check-breaker: retyped line 2 without the apostrophe", code=(
+            'print("Shield up.")\n'
+            'print("Barriers holding.")\n'
+            'print("Steady")\n'
+        ), fails_at=2, message_contains="mark"),
+        dict(why="check-breaker: line 3 quoted but its print removed (BARE)", code=(
+            'print("Shield up.")\n'
+            'print("Barrier\'s holding.")\n'
+            '"Steady"\n'
+        ), fails_at=3, message_contains="no `print`"),
     ],
     takeaway="Run, read the last line first, mend one line, run again.",
     notes=(
@@ -1401,6 +1495,10 @@ SOLO_1A = dict(
              message_contains="comma"),
         dict(why="retypes it in lower case", code='print("the lantern is lit.")\n', fails_at=1,
              message_contains="capitals"),
+        dict(why="check-breaker: quote closed but print removed (BARE)", code='"The lantern is lit."\n', fails_at=1,
+             message_contains="no `print`"),
+        dict(why="check-breaker: retyped with a spelling slip", code='print("The lanturn is lit.")\n', fails_at=1,
+             message_contains="letter by letter"),
     ],
     takeaway="You can find and mend a missing quote on your own.",
     notes=(
