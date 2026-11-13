@@ -7,18 +7,13 @@ import { findGlossaryEntry, inlineParts, lightBlocks, proseBlocks, type InlinePa
 /* Server renders run useEffect never; use it there so React does not warn about useLayoutEffect. */
 const useIsoLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
-/** Short inline code (`mana = mana - cost`) stays on one line, so it never reads as two pieces of code. */
-function inlineCodeClass(code: string): string {
-  return code.length <= 24 ? "inline-code is-short" : "inline-code";
-}
-
 /** Inline code and plain text only (used inside the glossary popover, where terms do not nest). */
 function SimpleInline({ text }: { text: string }) {
   return (
     <>
       {inlineParts(text).map((part, index) =>
         part.kind === "code" ? (
-          <code key={index} className={inlineCodeClass(part.text)}>
+          <code key={index} className="inline-code">
             {part.text}
           </code>
         ) : (
@@ -145,7 +140,7 @@ function Inline({ parts, glossary }: { parts: InlinePart[]; glossary: readonly G
       {parts.map((part, index) => {
         if (part.kind === "code") {
           return (
-            <code key={index} className={inlineCodeClass(part.text)}>
+            <code key={index} className="inline-code">
               {part.text}
             </code>
           );

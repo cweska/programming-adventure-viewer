@@ -199,6 +199,17 @@
     /* Room for focus rings inside the scroll box. */
     padding: 4px;
     margin: -4px;
+    /* What Help or the console scrolls into view lands below the Run bar, not under it. */
+    scroll-padding-top: 64px;
+  }
+
+  /* Run stays at the top of the pane even when opening Help or a long console scrolls the pane. */
+  .ex-work > .ex-toolbar {
+    position: sticky;
+    top: -4px;
+    z-index: 2;
+    padding: 4px 0 8px;
+    background: #211d1a;
   }
 }
 
