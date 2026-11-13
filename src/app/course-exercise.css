@@ -188,16 +188,17 @@
   }
 }
 
-/* Tall enough screens: the Learn pane scrolls on its own so the editor stays in view. */
+/* Tall enough screens: the Learn pane scrolls with the page (one scroll, steps reached by reading down),
+   and the Run button, editor and console stay in view beside it. */
 @media (min-width: 1100px) and (min-height: 640px) {
-  .ex-learn {
+  .ex-work {
     position: sticky;
     top: 12px;
     max-height: calc(100vh - 24px);
     overflow-y: auto;
-    overscroll-behavior: contain;
-    padding-right: 8px;
-    scrollbar-gutter: stable;
+    /* Room for focus rings inside the scroll box. */
+    padding: 4px;
+    margin: -4px;
   }
 }
 
@@ -233,6 +234,7 @@
 /* Light mode: Mar'tu's words fold away */
 
 .ex-light-explain > summary {
+  list-style: none;
   cursor: pointer;
   min-height: 44px;
   display: flex;
@@ -241,6 +243,19 @@
   color: var(--course-violet-soft, #d8ccff);
   border: 1px solid var(--course-violet, #b9a2ff);
   width: fit-content;
+}
+
+.ex-light-explain > summary::-webkit-details-marker {
+  display: none;
+}
+
+.ex-light-explain > summary::before {
+  content: "▸";
+  margin-right: 8px;
+}
+
+.ex-light-explain[open] > summary::before {
+  content: "▾";
 }
 
 .ex-light-explain[open] > summary {
@@ -354,6 +369,24 @@
   min-height: 44px;
   padding: 6px 12px;
   cursor: pointer;
+}
+
+.ex-campaign > summary {
+  list-style: none;
+}
+
+.ex-campaign > summary::-webkit-details-marker {
+  display: none;
+}
+
+.ex-campaign > summary::after {
+  content: "▸";
+  margin-left: auto;
+  color: var(--course-muted, #d9c7a4);
+}
+
+.ex-campaign[open] > summary::after {
+  content: "▾";
 }
 
 .ex-campaign-body {
@@ -849,6 +882,7 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+  container-type: inline-size;
 }
 
 .parsons-help {
@@ -863,7 +897,8 @@
   gap: 12px;
 }
 
-@media (min-width: 720px) {
+/* Side by side only when the board itself is wide enough to keep code lines readable. */
+@container (min-width: 760px) {
   .parsons-columns {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
@@ -904,8 +939,10 @@
 .parsons code {
   font-family: var(--font-mono), ui-monospace, monospace;
   font-size: 0.92rem;
-  white-space: pre;
-  overflow-x: auto;
+  /* Wrap long lines (keeping indentation) so every piece can be read in full. */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  min-width: 0;
 }
 
 .parsons-piece,

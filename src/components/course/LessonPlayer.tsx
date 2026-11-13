@@ -14,7 +14,7 @@ import {
   type TestoutItem,
 } from "../../lib/course/schema";
 import { KindBadge } from "./CourseBits";
-import { unitHref } from "./course-links";
+import { itemHref, unitHref } from "./course-links";
 import { exerciseIndexFromHash, hashForExercise, type PlayerMode } from "./exercise-logic";
 import { ExercisePlayer, type ExerciseNext } from "./ExercisePlayer";
 import { Prose } from "./Prose";
@@ -306,7 +306,7 @@ export function LessonPlayer(props: ItemPageProps) {
     item.kind === "challenge" && item.variantOf ? unit.items.find((entry) => entry.id === item.variantOf) : undefined;
 
   return (
-    <div className={`lesson-player kind-${item.kind}`} data-testid="lesson-player" data-kind={item.kind}>
+    <div className={`lesson-player ex-kind-${item.kind}`} data-testid="lesson-player" data-kind={item.kind}>
       <header className="item-header">
         <KindBadge kind={item.kind} />
         {item.kind === "challenge" && item.level === "advanced" ? <span className="optional-tag ex-level">Advanced</span> : null}
@@ -316,7 +316,7 @@ export function LessonPlayer(props: ItemPageProps) {
         {item.minutes ? <p className="item-meta">About {item.minutes} min</p> : null}
         {variant ? (
           <p className="item-meta">
-            A harder version of <Link href={`${unitHref(unit.id)}/${variant.id}`}>{variant.title}</Link>.
+            A harder version of <Link href={itemHref(unit.id, variant.id)}>{variant.title}</Link>.
           </p>
         ) : null}
       </header>

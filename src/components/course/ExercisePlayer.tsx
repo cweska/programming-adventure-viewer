@@ -45,6 +45,15 @@ import { Prose } from "./Prose";
 import { ReadAloud } from "./ReadAloud";
 import { PYTHON_STATUS_TEXT, type PythonStatus } from "./usePythonStatus";
 
+/** The console shows at most this much output (a print loop can make 200,000 characters). */
+const MAX_SHOWN_OUTPUT = 20_000;
+
+function shownOutput(stdout: string): string {
+  const text = stdout.replace(/\n$/, "");
+  if (text.length <= MAX_SHOWN_OUTPUT) return text;
+  return `${text.slice(0, MAX_SHOWN_OUTPUT)}\n… (Your program printed a lot more. Only the start is shown.)`;
+}
+
 /** Where the bonus side quest's hint count is kept in hintsUsed. */
 const BONUS_ID = "__bonus";
 /** How long typing waits before the code is saved. */
@@ -379,7 +388,9 @@ export function ExercisePlayer({
 
   const activeMs = useActiveTime(key);
   const runButton = useRef<HTMLButtonElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
   const confirmRef = useRef<HTMLDivElement>(null);
+  const toolbarRef = useRef<HTMLDivElement>(null);
 
   /* Load: Python, the saved code, whether this browser saves. */
   useEffect(() => {
@@ -438,8 +449,24 @@ export function ExercisePlayer({
     return () => window.clearInterval(timer);
   }, [support]);
 
+  /* After each run, bring the result into view (on a phone the console is below the editor). */
+  const runNumber = view?.runNumber ?? 0;
   useEffect(() => {
-    if (confirm) confirmRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
+    if (runNumber === 0) return;
+    const root = rootRef.current;
+    const target =
+      root?.querySelector<HTMLElement>('[data-testid="exercise-done"].is-fresh') ??
+      root?.querySelector<HTMLElement>('[data-testid="console"]');
+    try {
+      target?.scrollIntoView({ block: "nearest" });
+    } catch {
+      // Old browsers without scrollIntoView options: the result is still there, just not scrolled to.
+    }
+  }, [runNumber]);
+
+  useEffect(() => {
+    // Start on the safe choice ("Keep my code" / "Not yet").
+    if (confirm) confirmRef.current?.querySelector<HTMLButtonElement>(".reset-cancel")?.focus();
   }, [confirm]);
 
   function changeCode(value: string) {
@@ -556,6 +583,14 @@ export function ExercisePlayer({
         setJustFinished(true);
         onDone?.();
       }
+      if (result.timedOut) {
+        // The worker was stopped and restarts; Run comes back once Python is ready again.
+        setPython("loading");
+        whenPythonReady().then(
+          () => setPython("ready"),
+          () => setPython("failed"),
+        );
+      }
     } catch {
       setPython("failed");
       setView((previous) => ({
@@ -582,13 +617,33 @@ export function ExercisePlayer({
     }
   }
 
+  /** Put the keyboard back on Run (or, while Python loads, on the button that opened a panel). */
+  function focusRun(fallback?: string) {
+    const run = runButton.current;
+    if (run && !run.disabled) {
+      run.focus();
+      return;
+    }
+    const other = fallback ? toolbarRef.current?.querySelector<HTMLElement>(`[data-testid="${fallback}"]`) : null;
+    (other ?? toolbarRef.current?.querySelector<HTMLElement>('[data-testid="reset-code"]'))?.focus();
+  }
+
+  function onConfirmKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      const opener = confirm === "solution" ? "show-solution" : "reset-code";
+      setConfirm(null);
+      focusRun(opener);
+    }
+  }
+
   function doReset() {
     replaceCode(exercise.starter);
     setStdinText(stdinBoxText(exercise.stdin));
     setConfirm(null);
     setResumed(false);
     setSolutionNote(false);
-    runButton.current?.focus();
+    focusRun();
   }
 
   function doShowSolution() {
@@ -597,7 +652,7 @@ export function ExercisePlayer({
     setConfirm(null);
     setSolutionNote(true);
     setResumed(false);
-    runButton.current?.focus();
+    focusRun();
   }
 
   function openAssemble() {
@@ -609,10 +664,10 @@ export function ExercisePlayer({
     replaceCode(assembledCode(assembled));
     setAssembling(false);
     setAssembled([]);
-    runButton.current?.focus();
+    focusRun();
   }
 
-  const runLabel = running ? "Running…" : python === "loading" ? "Python is waking up…" : "Run";
+  const runLabel = running ? "Running…" : "Run";
   const pythonText = python === "ready" ? PYTHON_STATUS_TEXT.ready : python === "failed" ? PYTHON_STATUS_TEXT.failed : PYTHON_STATUS_TEXT.loading;
 
   /* ------------------------------------------------------------------------------------------ */
@@ -667,7 +722,7 @@ export function ExercisePlayer({
   );
 
   return (
-    <div className={`ex-player${done ? " is-done" : ""}`} data-testid="exercise-player" data-mode={mode} data-done={done}>
+    <div ref={rootRef} className={`ex-player${done ? " is-done" : ""}`} data-testid="exercise-player" data-mode={mode} data-done={done}>
       <div className="ex-grid">
         <section className="ex-learn" aria-label="Learn" data-testid="learn-pane">
           {mode === "lesson" || mode === "testout" || mode === "try-it" ? (
@@ -685,12 +740,12 @@ export function ExercisePlayer({
           )}
           {exercise.example ? <WorkedExample example={exercise.example} /> : null}
           {anotherWayOpen(support, exercise.anotherWay) ? <AnotherWay exercise={exercise} glossary={glossary} /> : null}
-          {exercise.campaignLink && mode !== "testout" ? <CampaignLink link={exercise.campaignLink} glossary={glossary} /> : null}
           {checkpointList}
+          {exercise.campaignLink && mode !== "testout" ? <CampaignLink link={exercise.campaignLink} glossary={glossary} /> : null}
         </section>
 
         <section className="ex-work" aria-label="Your code" data-testid="work-pane">
-          <div className="toolbar ex-toolbar">
+          <div className="toolbar ex-toolbar" ref={toolbarRef}>
             <button
               ref={runButton}
               type="button"
@@ -734,7 +789,7 @@ export function ExercisePlayer({
           </div>
 
           {confirm === "reset" ? (
-            <div className="reset-confirm ex-confirm" data-testid="reset-confirm" ref={confirmRef} role="group" aria-label="Reset code?">
+            <div className="reset-confirm ex-confirm" data-testid="reset-confirm" ref={confirmRef} role="group" aria-label="Reset code?" onKeyDown={onConfirmKeyDown}>
               <p>Start this exercise&apos;s code over? Your steps stay done.</p>
               <button type="button" data-testid="reset-yes" onClick={doReset}>
                 Yes, reset
@@ -746,7 +801,7 @@ export function ExercisePlayer({
           ) : null}
 
           {confirm === "solution" ? (
-            <div className="reset-confirm ex-confirm" data-testid="solution-confirm" ref={confirmRef} role="group" aria-label="Show solution?">
+            <div className="reset-confirm ex-confirm" data-testid="solution-confirm" ref={confirmRef} role="group" aria-label="Show solution?" onKeyDown={onConfirmKeyDown}>
               <p>Put Mar&apos;tu&apos;s answer in the editor? It replaces your code. That is okay: read it, then run it.</p>
               <button type="button" data-testid="solution-yes" onClick={doShowSolution}>
                 Show it
@@ -778,7 +833,15 @@ export function ExercisePlayer({
                 <button type="button" data-testid="assemble-insert" onClick={insertAssembled} disabled={assembled.length === 0}>
                   Put it in the editor
                 </button>
-                <button type="button" className="ex-quiet" data-testid="assemble-cancel" onClick={() => setAssembling(false)}>
+                <button
+                  type="button"
+                  className="ex-quiet"
+                  data-testid="assemble-cancel"
+                  onClick={() => {
+                    setAssembling(false);
+                    focusRun();
+                  }}
+                >
                   Cancel
                 </button>
               </div>
@@ -930,7 +993,7 @@ function ExerciseConsole({
         </pre>
       ) : view.failure ? null : (
         <pre className="program-output" data-testid="stdout">
-          {view.stdout.length > 0 ? view.stdout.replace(/\n$/, "") : "(Nothing was printed.)"}
+          {view.stdout.length > 0 ? shownOutput(view.stdout) : "(Nothing was printed.)"}
         </pre>
       )}
       {stage.length > 0 ? (
@@ -948,7 +1011,7 @@ function ExerciseConsole({
         {view?.explanation ? (
           <div className="explainer ex-explainer" data-testid="explainer">
             <p className="ex-explainer-title">{view.explanation.title}</p>
-            <p data-testid="explainer-hint">{view.explanation.hint}</p>
+            <Prose text={view.explanation.hint} className="ex-explainer-hint" testId="explainer-hint" />
             {view.explanation.raw ? (
               <details>
                 <summary>Show Python&apos;s full message</summary>
@@ -979,7 +1042,7 @@ function ExerciseConsole({
                   <strong>
                     {noun} {index + 1}, not yet:
                   </strong>{" "}
-                  <span data-testid={`checkpoint-message-${index + 1}`}>{result.message}</span>
+                  <Prose text={result.message} inline testId={`checkpoint-message-${index + 1}`} />
                 </li>
               );
             })}
@@ -990,7 +1053,7 @@ function ExerciseConsole({
             <span aria-hidden="true">★</span> Every {noun.toLowerCase()} is done!
           </p>
         ) : null}
-        {done && bonus && view?.bonus && view.allPassed ? (
+        {done && bonus && view?.bonus ? (
           view.bonus.allPassed ? (
             <p className="ex-result is-pass" data-testid="side-quest-pass">
               <span aria-hidden="true">✓</span> <strong>Side quest done!</strong> {CAMEO_NAMES[bonus.by]} is impressed.
@@ -998,7 +1061,7 @@ function ExerciseConsole({
           ) : view.wasDone && view.bonus.firstFailing !== null ? (
             <p className="ex-result is-side" data-testid="side-quest-message">
               <span aria-hidden="true">→</span> <strong>Side quest, not yet:</strong>{" "}
-              {view.bonus.checkpoints[view.bonus.firstFailing]?.message}
+              <Prose text={view.bonus.checkpoints[view.bonus.firstFailing]?.message ?? ""} inline />
             </p>
           ) : null
         ) : null}

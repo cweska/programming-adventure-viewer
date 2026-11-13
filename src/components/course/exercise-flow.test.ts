@@ -67,12 +67,12 @@ describe("the run loop on course content", () => {
     });
 
     if (exercise.bonus) {
-      it(`${where}: the side quest passes with its solution and not with the main one`, () => {
+      it(`${where}: the side quest counts after the exercise is done`, () => {
+        const early = press(exercise, exercise.bonus!.solution, fresh());
+        expect(early.bonusGrade?.allPassed).toBe(true);
         const main = press(exercise, exercise.solution, fresh());
-        expect(main.bonusGrade?.allPassed).toBe(false);
-        expect(main.next.bonusDone).toBeUndefined();
+        expect(main.next.done).toBe(true);
         const side = press(exercise, exercise.bonus!.solution, main.next);
-        expect(side.grade.allPassed).toBe(true);
         expect(side.bonusGrade?.allPassed).toBe(true);
         expect(side.next.bonusDone).toBe(true);
       });

@@ -4,7 +4,11 @@ import { useState } from "react";
 import { explainCourseError } from "../../lib/course/explain";
 import { runCourse } from "../../lib/languages/python/run";
 import type { Explanation, RunResult } from "../../lib/languages/types";
+import { Prose } from "./Prose";
 import { PYTHON_STATUS_TEXT, usePythonStatus } from "./usePythonStatus";
+
+/** Output past this many characters is cut off on screen (a print loop can make 200,000). */
+const MAX_SHOWN_OUTPUT = 20_000;
 
 export type RunView = {
   stdout: string;
@@ -29,14 +33,18 @@ export function RunOutput({ view, testId, label = "Output" }: { view: RunView | 
           <p className="run-output-label">{label}</p>
           {view.failure ? <p className="run-output-failure">{view.failure}</p> : null}
           {view.failure ? null : view.stdout.length > 0 ? (
-            <pre className="run-output-text">{view.stdout}</pre>
+            <pre className="run-output-text">
+              {view.stdout.length > MAX_SHOWN_OUTPUT
+                ? `${view.stdout.slice(0, MAX_SHOWN_OUTPUT)}\n… (It printed a lot more. Only the start is shown.)`
+                : view.stdout}
+            </pre>
           ) : view.explanation ? null : (
             <pre className="run-output-text">(nothing printed)</pre>
           )}
           {view.explanation ? (
             <div className="run-output-error">
               <p className="run-output-error-title">{view.explanation.title}</p>
-              <p>{view.explanation.hint}</p>
+              <Prose text={view.explanation.hint} />
               {view.explanation.raw ? (
                 <details>
                   <summary>Python&apos;s message</summary>

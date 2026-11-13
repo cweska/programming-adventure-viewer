@@ -221,37 +221,37 @@
   text-transform: uppercase;
 }
 
-.kind-lesson {
+.kind-badge.kind-lesson {
   background: #2f3b52;
   border-color: #5a74a3;
 }
 
-.kind-quiz {
+.kind-badge.kind-quiz {
   background: #4a3a1c;
   border-color: #b8925a;
 }
 
-.kind-project {
+.kind-badge.kind-project {
   background: #24432c;
   border-color: #5f9a6b;
 }
 
-.kind-challenge {
+.kind-badge.kind-challenge {
   background: #4a2626;
   border-color: #b06a5a;
 }
 
-.kind-article {
+.kind-badge.kind-article {
   background: #2c3a3e;
   border-color: #6b9aa3;
 }
 
-.kind-cheatsheet {
+.kind-badge.kind-cheatsheet {
   background: #3a3528;
   border-color: #a39a6b;
 }
 
-.kind-testout {
+.kind-badge.kind-testout {
   background: var(--course-violet-deep);
   border-color: var(--course-violet);
 }

@@ -174,11 +174,14 @@ describe("runs and progress", () => {
     expect(applyRun(done, runOutcome(grade([false, false, false]), done.passed)).done).toBe(true);
   });
 
-  it("records the side quest only alongside a full pass", () => {
+  it("records the side quest only once the exercise is done", () => {
     const all = runOutcome(grade([true, true, true]), []);
     expect(applyRun(empty(), all, { bonusPassed: true }).bonusDone).toBe(true);
     const partial = runOutcome(grade([true, false, true]), []);
     expect(applyRun(empty(), partial, { bonusPassed: true }).bonusDone).toBeUndefined();
+    const doneBefore = { ...empty(), done: true, passed: ["a", "b", "c"] };
+    expect(applyRun(doneBefore, partial, { bonusPassed: true }).bonusDone).toBe(true);
+    expect(applyRun(doneBefore, partial, { bonusPassed: false }).bonusDone).toBeUndefined();
   });
 
   it("finds the checkpoint the student is stuck on", () => {

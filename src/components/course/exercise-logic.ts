@@ -156,7 +156,8 @@ export function applyRun(
     failedRuns: previous.failedRuns + (outcome.failed ? 1 : 0),
   };
   if (extra.code !== undefined) next.code = extra.code;
-  if (extra.bonusPassed && outcome.allPassed) next.bonusDone = true;
+  // The side quest counts once the exercise itself is done (now or earlier).
+  if (extra.bonusPassed && next.done) next.bonusDone = true;
   return next;
 }
 

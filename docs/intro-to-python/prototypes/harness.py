@@ -14,6 +14,8 @@ It checks, for every exercise / project / challenge / test-out item:
   * each known wrong answer fails at the checkpoint it names (and with the message it names),
   * the worked example prints exactly ``example_output``,
   * the bonus side quest passes with its own solution,
+  * the "Assemble it" lines (``assemble=dict(lines=[...], distractors=[...])``), put in the editor on their
+    own exactly as the player does, pass every checkpoint,
   * no code a student SEES (starter, solution, example, partials, quiz code) uses a concept that has not been
     introduced yet, in course order (see CONCEPT TOKENS below),
   * every checkpoint has a hint ladder of at least two hints,
@@ -31,10 +33,13 @@ Unit file format (plain Python data, no imports needed):
         dict(kind="project", id="...", title="...", **EXERCISE_FIELDS),         # checkpoints = project tasks
         dict(kind="challenge", id="...", title="...", level="core"|"advanced", **EXERCISE_FIELDS),
         dict(kind="testout", id="...", title="...", exercises=[EXERCISE, ...]),  # pass all => unit complete
-        dict(kind="article", id="...", title="...", body="...", examples=[dict(code=..., output=...)],
+        dict(kind="article", id="...", title="...", body="...", examples=[dict(code=..., output=..., stdin=[...])],
              exercises=[...optional try-it EXERCISEs...]),
         dict(kind="cheatsheet", id="...", title="...", entries=[dict(concept=..., code=..., output=..., note=...)]),
     ]
+
+    (The site cannot run article examples with ``setup``, or cheatsheet entries with ``setup``/``stdin``:
+    this verifier would accept them, but scripts/course/export_prototypes.py rejects them.)
 
     EXERCISE = dict(
         id="lists-create", title="Make a list",
@@ -55,6 +60,7 @@ Unit file format (plain Python data, no imports needed):
         engine=False,                        # True: also load the campaign objects (party, print_prompt, ...)
         tracer=True,                         # offer the step-through tracer on this exercise
         bonus=dict(text="Lucky's side quest ...", checks=[...], solution="..."),
+        assemble=dict(lines=["first line", "second line"], distractors=["a wrong line"]),
         notes="designer notes (not shown to students)",
     )
 
@@ -430,6 +436,23 @@ def verify_exercise(ex: dict, where: str, gate: ConceptGate, report: Report, kin
         base = run(ex["solution"], bonus_cp, setup, stdin, engine)
         if all(checkpoint_status(base, 1)):
             report.warn(where, "the plain solution already passes the bonus checks")
+
+    assemble = ex.get("assemble")
+    if assemble:
+        lines = list(assemble.get("lines") or [])
+        if len(lines) < 2:
+            report.error(where, f"assemble needs at least 2 lines (has {len(lines)})")
+        else:
+            # The player puts exactly these lines in the editor (starter comments are dropped).
+            code = "\n".join(lines) + "\n"
+            gate.check(report, where, "assemble", code, preview, exempt)
+            result = run(code, checkpoints, setup, stdin, engine)
+            if not all(checkpoint_status(result, len(checkpoints))):
+                index, message = first_failure(result)
+                report.error(where, f"assemble lines fail at checkpoint {index}: {message}")
+        for distractor in assemble.get("distractors") or []:
+            if distractor in lines:
+                report.error(where, f"assemble distractor {distractor!r} is also one of the right lines")
 
 
 def _norm(text: str) -> str:

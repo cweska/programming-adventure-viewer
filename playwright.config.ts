@@ -13,6 +13,9 @@ export default defineConfig({
     baseURL: "http://127.0.0.1:3000",
     trace: "retain-on-failure",
     ...devices["Desktop Chrome"],
+    // Local runs on a machine whose preinstalled Chromium does not match this Playwright version can point
+    // at it with PLAYWRIGHT_CHROMIUM_PATH. CI installs the matching browser and leaves this unset.
+    launchOptions: process.env.PLAYWRIGHT_CHROMIUM_PATH ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH } : {},
   },
   webServer: {
     command: "npm run start",
