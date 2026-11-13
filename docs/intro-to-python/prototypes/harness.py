@@ -1,6 +1,7 @@
 """Prototype verifier for the Intro to Python units.
 
-Every unit lives in a file named ``uNN_<slug>.py`` beside this one. Run:
+Every unit lives in a file named ``uNN_<slug>.py`` beside this one. A big unit may be split into parts
+``uNNa_<slug>.py``, ``uNNb_<slug>.py`` ... (each part repeats the UNIT dict); files run in prefix order. Run:
 
     python3 docs/intro-to-python/prototypes/harness.py            # all units
     python3 docs/intro-to-python/prototypes/harness.py u03         # units whose file name starts with u03
@@ -633,16 +634,16 @@ def main(argv: list[str]) -> int:
         argv = argv[:at] + argv[at + 2:]
     prefixes = argv
     unit_dir = Path(os.environ.get("PROTOTYPE_DIR", HERE))
-    files = sorted(unit_dir.glob("u[0-9][0-9]_*.py"))
+    files = sorted(unit_dir.glob("u[0-9][0-9]*_*.py"), key=lambda f: f.name.split("_")[0])
     report = Report()
     gate = ConceptGate()
     # When checking only some units, earlier units may not be written yet. concept_map.json (from the
     # curriculum plan) says what each unit WILL introduce: {"units": [{"prefix": "u01", "introduces": [...]}]}.
     plan_path = unit_dir / "concept_map.json"
     if prefixes and plan_path.exists():
-        first = min(prefixes)
+        first = min(p.split("_")[0] for p in prefixes)
         for planned in json.loads(plan_path.read_text(encoding="utf8")).get("units", []):
-            if planned["prefix"] < first[:3]:
+            if planned["prefix"] < first and not first.startswith(planned["prefix"]):
                 gate.introduce(planned.get("introduces"), f"{planned['prefix']} (planned)")
     for path in files:
         selected = not prefixes or any(path.name.startswith(p) for p in prefixes)
