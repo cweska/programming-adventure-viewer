@@ -1,0 +1,99 @@
+{
+  "unit": "sample",
+  "notes": "Keep this unit small. Every feature the player supports should appear here at least once.",
+  "items": {
+    "asking-the-traveler": {
+      "notes": "Article example output includes the echoed input line, the same as the console shows it."
+    }
+  },
+  "exercises": {
+    "first-words/read-the-chalk": {
+      "notes": "Run-and-read: the starter passes on purpose, so the first press of Run is a win. The predict is free and never blocks Run."
+    },
+    "first-words/ask-the-traveler": {
+      "wrongAnswers": [
+        {
+          "why": "types the name instead of using the variable",
+          "code": [
+            "name = input(\"Who goes there? \")",
+            "print(\"Welcome to the cabin, Lucky\")"
+          ],
+          "failsAt": 1,
+          "messageContains": "variable"
+        }
+      ]
+    },
+    "first-words/barrier-report": {
+      "partials": [
+        [
+          "caster = \"Gearshift\""
+        ],
+        [
+          "caster = \"Gearshift\"",
+          "mana = 20"
+        ]
+      ],
+      "wrongAnswers": [
+        {
+          "why": "puts the number in quotes",
+          "code": [
+            "caster = \"Gearshift\"",
+            "mana = \"20\"",
+            "print(caster + \" has \" + mana + \" mana.\")"
+          ],
+          "failsAt": 2,
+          "messageContains": "no quotes"
+        },
+        {
+          "why": "types the sentence instead of using the variables",
+          "code": [
+            "caster = \"Gearshift\"",
+            "mana = 20",
+            "print(\"Gearshift has 20 mana.\")"
+          ],
+          "failsAt": 3,
+          "messageContains": "caster"
+        },
+        {
+          "why": "forgets str() and crashes",
+          "code": [
+            "caster = \"Gearshift\"",
+            "mana = 20",
+            "print(caster + \" has \" + mana + \" mana.\")"
+          ],
+          "failsAt": 0,
+          "messageContains": "can only concatenate"
+        }
+      ],
+      "notes": "The crash wrong answer (fails_at=0) proves the TypeError path reaches the explainer. The example uses other names (guard, arrows) and another sentence shape, so it cannot be copied as the answer."
+    },
+    "night-watch-sign": {
+      "partials": [
+        [
+          "print(\"==========\")"
+        ],
+        [
+          "print(\"==========\")",
+          "print(\"NIGHT WATCH\")"
+        ]
+      ],
+      "wrongAnswers": [
+        {
+          "why": "types 37 instead of using hours_left",
+          "code": [
+            "print(\"==========\")",
+            "print(\"NIGHT WATCH\")",
+            "print(\"Next burst in 37 hours\")"
+          ],
+          "failsAt": 3,
+          "messageContains": "hours_left"
+        }
+      ]
+    }
+  },
+  "questions": {
+    "chalk-quiz/q-6": {
+      "notes": "SyntaxError case: the buggy code never runs."
+    }
+  }
+}

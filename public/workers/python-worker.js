@@ -1,15 +1,34 @@
 let pyodidePromise = null;
+// The Intro to Python course helpers (course_helpers.py next to this file): { source, error }.
+let courseHelpers = { source: "", error: "The course helpers have not loaded yet." };
 
 function pyodideBase() {
   return new URL("../pyodide/", import.meta.url);
+}
+
+async function loadCourseHelpers() {
+  // Never rejects: a missing helpers file must not stop campaign runs from working.
+  try {
+    // The page loads this worker as python-worker.js?v=<version> (run.ts PYTHON_WORKER_VERSION). Ask for the
+    // helpers with the same version, so a browser never pairs a new worker with old cached helpers.
+    const version = new URL(import.meta.url).search;
+    const response = await fetch(new URL(`course_helpers.py${version}`, import.meta.url).href);
+    if (!response.ok) throw new Error(`course_helpers.py returned HTTP ${response.status}`);
+    return { source: await response.text(), error: "" };
+  } catch (error) {
+    return { source: "", error: String(error && error.message ? error.message : error) };
+  }
 }
 
 function boot() {
   if (!pyodidePromise) {
     pyodidePromise = (async () => {
       const base = pyodideBase();
+      const helpers = loadCourseHelpers();
       const { loadPyodide } = await import(new URL("pyodide.mjs", base).href);
       const pyodide = await loadPyodide({ indexURL: base.href });
+      // Fetch the course helpers BEFORE the network is disabled below.
+      courseHelpers = await helpers;
       globalThis.fetch = () => Promise.reject(new Error("Network is disabled"));
       if ("XMLHttpRequest" in globalThis) {
         globalThis.XMLHttpRequest = function XMLHttpRequestBlocked() {
@@ -243,6 +262,55 @@ async function runProgram(data) {
   return { ok, stdout: output.stdout.join(""), stderr: output.stderr.join(""), traceback, checks, stageEvents: sink.events };
 }
 
+// Intro to Python course runs. Every run gets FRESH globals: course_helpers.py (import guard, check
+// helpers, input() shim, runner), then GUARD only when the exercise turns the campaign engine on, then
+// _course_run(code, setup, checks, stdin). src/lib/course/run-course.ts and the prototype harness run the
+// same file in the same order in CPython, so a check behaves the same in the browser and in tests.
+async function runCourse(data) {
+  const pyodide = await boot();
+  capture(pyodide);
+  const sink = { events: [] };
+  const engine = data.engine === true;
+  const globals = engine ? createGlobals(pyodide, sink) : pyodide.runPython("{}");
+  let result;
+  try {
+    if (!courseHelpers.source) {
+      throw new Error(`Python could not load its lesson tools (${courseHelpers.error}). Reload the page.`);
+    }
+    globals.set("__name__", "__main__");
+    await runIn(pyodide, globals, courseHelpers.source);
+    if (engine) await runIn(pyodide, globals, GUARD);
+    const run = globals.get("_course_run_json");
+    try {
+      const job = {
+        code: String(data.code ?? ""),
+        setup: String(data.setup ?? ""),
+        checks: (data.checks || []).map((check) => ({ name: String(check.name ?? "check"), code: String(check.code ?? "") })),
+        stdin: (data.stdin || []).map((answer) => String(answer)),
+      };
+      result = JSON.parse(run(JSON.stringify(job)));
+    } finally {
+      run.destroy();
+    }
+  } catch (error) {
+    result = { ok: false, stdout: "", stderr: "", traceback: formatTraceback(error), checks: [] };
+  }
+
+  try {
+    globals.destroy();
+  } catch {
+    // The proxy may already be gone after a hard Python failure.
+  }
+  return {
+    ok: result.ok === true,
+    stdout: String(result.stdout ?? ""),
+    stderr: String(result.stderr ?? ""),
+    traceback: String(result.traceback ?? ""),
+    checks: Array.isArray(result.checks) ? result.checks : [],
+    stageEvents: sink.events,
+  };
+}
+
 function endSession(id) {
   const session = sessions.get(id);
   if (!session) return;
@@ -292,7 +360,20 @@ self.onmessage = async (event) => {
   }
   let result;
   if (data.type === "run") result = await runProgram(data);
+  else if (data.type === "course-run") result = await runCourse(data);
   else if (data.type === "session-start" || data.type === "session-call") result = await runSession(data);
-  else return;
+  else {
+    // A message this worker does not know (a newer page talking to an older worker): answer at once
+    // instead of leaving the page waiting for its time limit.
+    if (data.requestId === undefined) return;
+    result = {
+      ok: false,
+      stdout: "",
+      stderr: "",
+      traceback: "Python needs a newer version of this page. Reload the page.",
+      checks: [],
+      stageEvents: [],
+    };
+  }
   self.postMessage({ type: "result", requestId: data.requestId, ...result });
 };

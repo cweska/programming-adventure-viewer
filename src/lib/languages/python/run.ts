@@ -1,8 +1,21 @@
 import { publicPath } from "../../site";
+import type { CourseRunInput } from "../../course/contracts";
 import type { LiveSession, RunInput, RunResult } from "../types";
 import { parseStageMessage, type StageEvent } from "../../stage/bridge";
 
 const TIMEOUT_MS = 5000;
+
+/**
+ * The version of public/workers/python-worker.js and course_helpers.py, sent as `?v=` on the worker's URL
+ * (the worker asks for the helpers with the same `?v=`). Browsers cache the worker file, and an old
+ * cached worker silently ignores newer messages such as "course-run", so a changed worker needs a new URL.
+ * run.test.ts fails until this matches the files; it prints the value to paste here.
+ */
+export const PYTHON_WORKER_VERSION = "cf0a8d079198";
+
+export function pythonWorkerUrl(): string {
+  return publicPath(`/workers/python-worker.js?v=${PYTHON_WORKER_VERSION}`);
+}
 
 type WorkerResult = {
   type: "result";
@@ -29,7 +42,7 @@ let queue: Promise<unknown> = Promise.resolve();
 function boot(): Promise<void> {
   if (ready && worker) return ready;
   failReason = null;
-  worker = new Worker(publicPath("/workers/python-worker.js"), { type: "module" });
+  worker = new Worker(pythonWorkerUrl(), { type: "module" });
   const currentWorker = worker;
   ready = new Promise((resolve, reject) => {
     if (!currentWorker) {
@@ -126,6 +139,41 @@ function send(message: Record<string, unknown>): Promise<RunResult> {
 
 export function runPython(input: RunInput): Promise<RunResult> {
   return send({ type: "run", code: input.code, checks: input.checks, setup: input.setup ?? "" });
+}
+
+/** The traceback a course run reports when it hits the time limit (explainCourseError knows it). */
+export const COURSE_TIMEOUT_TRACEBACK = "TimeoutError: The program ran too long and was stopped.";
+
+/**
+ * One Intro to Python course run (contracts.ts RunCourse): fresh globals, the course helpers, the campaign
+ * engine only when `engine` is true, scripted input() answers, setup, the code, then the checks.
+ * A run that hits the time limit resolves with `timedOut: true` (the worker is restarted); it only
+ * rejects when Python itself cannot load.
+ */
+export async function runCourse(input: CourseRunInput): Promise<RunResult> {
+  try {
+    return await send({
+      type: "course-run",
+      code: input.code,
+      checks: input.checks.map((check) => ({ name: check.name, code: check.code })),
+      setup: input.setup ?? "",
+      stdin: input.stdin ?? [],
+      engine: input.engine === true,
+    });
+  } catch (error) {
+    if (error instanceof PythonTimeoutError) {
+      return {
+        ok: false,
+        stdout: "",
+        stderr: "",
+        traceback: COURSE_TIMEOUT_TRACEBACK,
+        checks: [],
+        stageEvents: [],
+        timedOut: true,
+      };
+    }
+    throw error;
+  }
 }
 
 export async function startPythonSession(input: {

@@ -1,0 +1,252 @@
+[
+  {
+    "term": "brackets",
+    "aliases": [
+      "bracket"
+    ],
+    "plain": "The marks `(` and `)`. They come in pairs too. `print` keeps what it shows between them.",
+    "example": "print(\"Hi\")"
+  },
+  {
+    "term": "checkpoint",
+    "aliases": [
+      "checkpoints"
+    ],
+    "plain": "One small task in an exercise. It turns green when your code does it."
+  },
+  {
+    "term": "comment",
+    "aliases": [
+      "comments"
+    ],
+    "plain": "A line that starts with `#`. Python skips it. It is a note for people.",
+    "example": "# Lucky's lines for tonight"
+  },
+  {
+    "term": "console",
+    "aliases": [
+      "the console"
+    ],
+    "plain": "The space under the editor. Your printed lines and Python's messages show up there."
+  },
+  {
+    "term": "decimal",
+    "aliases": [
+      "decimals",
+      "decimal number"
+    ],
+    "plain": "A number with a point in it, like `24.0` or `42.5`. Dividing with `/` always gives one.",
+    "example": "print(48 / 2)"
+  },
+  {
+    "term": "defined",
+    "aliases": [
+      "not defined",
+      "define"
+    ],
+    "plain": "Made already. A name is defined once a line like `name = value` has run. \"Not defined\" means Python looked for something saved with that name and found nothing.",
+    "example": "NameError: name 'hero' is not defined"
+  },
+  {
+    "term": "error message",
+    "aliases": [
+      "error messages",
+      "message from Python"
+    ],
+    "plain": "Python's note that it could not finish your code. It is information, not a mark. Read the last line first, then look at the line it names.",
+    "example": "SyntaxError: unterminated string literal"
+  },
+  {
+    "term": "floor division",
+    "aliases": [
+      "whole division"
+    ],
+    "plain": "Divide, then keep only the whole part. `50 // 12` is 4, because 12 fits into 50 four whole times.",
+    "example": "print(50 // 12)"
+  },
+  {
+    "term": "glue",
+    "aliases": [
+      "glues",
+      "gluing",
+      "concatenate",
+      "concatenation"
+    ],
+    "plain": "Join texts end to end with `+`. Python adds no spaces, so put the spaces inside the quotes.",
+    "example": "\"Shield\" + \" up.\""
+  },
+  {
+    "term": "input",
+    "aliases": [
+      "input()"
+    ],
+    "plain": "A command that asks a question and waits for an answer. The answer always comes back as text.",
+    "example": "name = input(\"Who goes there? \")"
+  },
+  {
+    "term": "int()",
+    "aliases": [
+      "int"
+    ],
+    "plain": "Turns text that looks like a whole number into a real number, so you can do math with it. `int(\"3\")` gives 3.",
+    "example": "sips = int(\"3\")"
+  },
+  {
+    "term": "math signs",
+    "aliases": [
+      "math sign",
+      "operator",
+      "operators"
+    ],
+    "plain": "The signs Python does math with: `+` adds, `-` subtracts, `*` multiplies (times), `/` divides.",
+    "example": "print(48 - 37)"
+  },
+  {
+    "term": "number",
+    "aliases": [
+      "numbers"
+    ],
+    "plain": "A value Python can do math with. Numbers have no quotes: `3` is a number, `\"3\"` is text.",
+    "example": "armor_bonus = 3"
+  },
+  {
+    "term": "order of operations",
+    "aliases": [
+      "operator order"
+    ],
+    "plain": "The order Python does math in. Brackets first, then `**`, then `*` `/` `//` `%`, then `+` and `-`. So `2 + 3 * 4` is 14.",
+    "example": "print((2 + 3) * 4)"
+  },
+  {
+    "term": "output",
+    "aliases": [
+      "prints",
+      "printed"
+    ],
+    "plain": "What your program shows on the screen when it runs."
+  },
+  {
+    "term": "placeholder",
+    "aliases": [
+      "placeholders"
+    ],
+    "plain": "A stand-in value, like the `0` in a starter. It holds the place until you put the real thing there.",
+    "example": "lantern_count = 0"
+  },
+  {
+    "term": "power",
+    "aliases": [
+      "powers",
+      "exponent"
+    ],
+    "plain": "A number times itself, again and again. `2 ** 3` means 2 × 2 × 2, which is 8.",
+    "example": "print(2 ** 3)"
+  },
+  {
+    "term": "print",
+    "aliases": [
+      "print()"
+    ],
+    "plain": "The Python command that shows words on the screen, in the console.",
+    "example": "print(\"Barrier's holding.\")"
+  },
+  {
+    "term": "prompt",
+    "aliases": [
+      "prompts"
+    ],
+    "plain": "The question `input()` shows before it waits, like `\"Who goes there? \"`.",
+    "example": "input(\"How many sips? \")"
+  },
+  {
+    "term": "quotes",
+    "aliases": [
+      "quote",
+      "quote mark",
+      "quote marks"
+    ],
+    "plain": "The marks around words: `\"` or `'`. They come in pairs, one before the words and one after.",
+    "example": "\"Steady, now.\""
+  },
+  {
+    "term": "remainder",
+    "aliases": [
+      "remainders",
+      "modulo"
+    ],
+    "plain": "What is left over after dividing. `50 % 12` is 2: four 12s make 48, and 2 is left.",
+    "example": "print(50 % 12)"
+  },
+  {
+    "term": "run",
+    "aliases": [
+      "runs",
+      "Run button"
+    ],
+    "plain": "Tell Python to do your lines, from top to bottom. Press Run as often as you like. It costs nothing."
+  },
+  {
+    "term": "show your working",
+    "aliases": [
+      "combine",
+      "let the code combine it",
+      "build it from the boxes"
+    ],
+    "plain": "Build a value from boxes, like `total_cost = lantern_cost + rope_cost`, instead of typing the answer. Then it stays right when a box changes.",
+    "example": "total_cost = lantern_cost + rope_cost"
+  },
+  {
+    "term": "stamp",
+    "aliases": [
+      "stamps",
+      "repetition",
+      "repeat a mark"
+    ],
+    "plain": "`*` with text and a number stamps the text that many times. `\"█\" * 3` gives `███`.",
+    "example": "\"█\" * 3"
+  },
+  {
+    "term": "str()",
+    "aliases": [
+      "str"
+    ],
+    "plain": "Turns a value into text. `str(26)` gives the text `\"26\"`, which can be glued to other text.",
+    "example": "\"Mana: \" + str(26)"
+  },
+  {
+    "term": "string",
+    "aliases": [
+      "strings",
+      "text"
+    ],
+    "plain": "Words inside quotes. Python shows them exactly as you typed them.",
+    "example": "\"Shield up.\""
+  },
+  {
+    "term": "triple quotes",
+    "aliases": [
+      "triple-quoted",
+      "multi-line string"
+    ],
+    "plain": "Three quote marks in a row, `\"\"\"`. The text between two sets of them can run over many lines.",
+    "example": "print(\"\"\"Line one\nLine two\"\"\")"
+  },
+  {
+    "term": "value",
+    "aliases": [
+      "values"
+    ],
+    "plain": "The thing inside a box: text in quotes, like `\"Lucky\"`, or a number, like `26`.",
+    "example": "mana = 26"
+  },
+  {
+    "term": "variable",
+    "aliases": [
+      "variables",
+      "box",
+      "boxes"
+    ],
+    "plain": "A box with a label. The label is the name. Inside is a value. You make one with `name = value`.",
+    "example": "companion = \"Gearshift\""
+  }
+]

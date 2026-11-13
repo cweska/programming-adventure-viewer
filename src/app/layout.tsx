@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Fraunces, IBM_Plex_Mono } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
+import "./course.css";
+import "./course-exercise.css";
 
 const display = Fraunces({
   subsets: ["latin"],
@@ -27,6 +29,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <p className="wordmark">Emberkeep</p>
           <nav className="site-nav" aria-label="Site">
             <Link href="/">Play</Link>
+            <Link href="/intro-python">Intro to Python</Link>
             <Link href="/author">Author</Link>
             <Link href="/classroom">Classroom</Link>
           </nav>

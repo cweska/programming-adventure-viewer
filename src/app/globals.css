@@ -335,6 +335,11 @@ button:disabled {
   font-size: 0.9em;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+  /* One piece: short code (`mana = mana - cost`) moves to the next line whole instead of splitting into what
+     looks like two bits of code. Code wider than the line still wraps inside its box. */
+  display: inline-block;
+  max-width: 100%;
+  line-height: 1.35;
 }
 
 .code-panel {

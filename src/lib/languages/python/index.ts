@@ -12,4 +12,13 @@ export const pythonAdapter: LanguageAdapter = {
 
 export { explainPython } from "./explain";
 export { formatPython } from "./format";
-export { runPython, startPythonSession, whenPythonReady, PythonTimeoutError } from "./run";
+export {
+  runPython,
+  runCourse,
+  startPythonSession,
+  whenPythonReady,
+  PythonTimeoutError,
+  COURSE_TIMEOUT_TRACEBACK,
+  PYTHON_WORKER_VERSION,
+  pythonWorkerUrl,
+} from "./run";

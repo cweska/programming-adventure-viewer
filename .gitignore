@@ -17,3 +17,7 @@ tsconfig.tsbuildinfo
 # Student character sheets carry real names. Keep them out of the repo.
 *.docx
 character-sheets/
+
+# Python bytecode from the prototype verifier
+__pycache__/
+*.pyc

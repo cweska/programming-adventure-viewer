@@ -1,0 +1,775 @@
+{
+  "id": "sample",
+  "order": 99,
+  "title": "Sample Unit (teacher preview)",
+  "subtitle": "A Tour of the Cabin",
+  "published": false,
+  "martuIntro": "Hi. It is me, Mar'tu. This is not a real lesson, yes? It is a tour of the cabin.\nEvery kind of page in this course lives here: a lesson, a quiz, a project, two challenges, an article, a cheat sheet and a Quick Check.\nTry them all. Nothing here counts toward anything.\nLucky asked what is in it for him. Existing, Lucky. Existing.",
+  "goals": [
+    "Show words on the screen with `print()`",
+    "Store a value in a [[variable]]",
+    "Ask the traveler a question with `input()`",
+    "Glue [[string|strings]] together with `+`"
+  ],
+  "campaignLinks": [
+    "leylines-awaken"
+  ],
+  "items": [
+    {
+      "kind": "lesson",
+      "id": "first-words",
+      "title": "First Words by the Fire",
+      "minutes": 15,
+      "summary": "Print words, ask a question, and write a barrier report.",
+      "exercises": [
+        {
+          "id": "read-the-chalk",
+          "title": "Read the chalk",
+          "martu": "Before we cast anything, we read, yes?\n`print()` shows words on the screen. The words go inside quotes. Python calls quoted words a [[string]].\nNumbers do not need quotes. A comma lets you print a string and a number on one line.\nThis code already works. Press Run and read the [[output]].",
+          "example": {
+            "code": [
+              "print(\"Steady, now.\")",
+              "print(\"Hours left:\", 42 - 5)"
+            ],
+            "output": "Steady, now.\nHours left: 37"
+          },
+          "introduces": [
+            "call:print",
+            "const:str",
+            "const:int"
+          ],
+          "preview": [
+            "op:Sub"
+          ],
+          "starter": [
+            "# Mar'tu's first spell: words in quotes.",
+            "print(\"The barrier is holding.\")",
+            "print(\"Hours until the next burst:\", 37)"
+          ],
+          "checkpoints": [
+            {
+              "id": "step-1",
+              "text": "Press Run and read what prints.",
+              "hints": [
+                "Press the Run button. Pressing Ctrl and Enter together works too.",
+                "You do not need to change anything. Just press Run and look at the console."
+              ],
+              "checks": [
+                {
+                  "name": "prints the barrier line",
+                  "code": "assert 'The barrier is holding.' in _lines(), 'Press Run to see the barrier line.'"
+                }
+              ],
+              "passLine": "Oogrish: Steady, now. You read it well."
+            }
+          ],
+          "solution": [
+            "# Mar'tu's first spell: words in quotes.",
+            "print(\"The barrier is holding.\")",
+            "print(\"Hours until the next burst:\", 37)"
+          ],
+          "starterPasses": true,
+          "takeaway": "`print()` shows words and numbers on the screen.",
+          "predict": {
+            "q": "Before you press Run: what will this line print?",
+            "code": [
+              "print(\"Hours until the next burst:\", 37)"
+            ],
+            "choices": [
+              "Hours until the next burst: 37",
+              "Hours until the next burst:37",
+              "\"Hours until the next burst:\", 37"
+            ],
+            "answer": 0,
+            "explain": "The quotes are not printed. The comma becomes one space between the words and the number."
+          }
+        },
+        {
+          "id": "ask-the-traveler",
+          "title": "Ask the traveler",
+          "martu": "Someone knocks on the cabin door. I must ask who it is, yes?\n`input()` asks a question and waits for an answer. Put the answer in a [[variable]] with `=`.\nThen you can [[concatenate|glue]] it to other words with `+`.\nIn this exercise the traveler always answers `Lucky`. Of course it is Lucky.",
+          "example": {
+            "code": [
+              "traveler = input(\"Name? \")",
+              "print(\"Hello, \" + traveler)"
+            ],
+            "output": "Name? Lucky\nHello, Lucky",
+            "stdin": [
+              "Lucky"
+            ]
+          },
+          "introduces": [
+            "node:Assign",
+            "call:input",
+            "op:Add"
+          ],
+          "stdin": [
+            "Lucky"
+          ],
+          "starter": [
+            "name = input(\"Who goes there? \")",
+            "# Greet the traveler on the next line."
+          ],
+          "checkpoints": [
+            {
+              "id": "greet",
+              "text": "Print a greeting that uses `name`.",
+              "hints": [
+                "The traveler's answer is stored in `name`.",
+                "Glue words and `name` together with `+` inside `print()`.",
+                "Try `print(\"Welcome to the cabin, \" + name)`."
+              ],
+              "checks": [
+                {
+                  "name": "still asks for a name",
+                  "code": "assert _inputs_used() == 1, 'Keep the input() line so the cabin can ask who is there.'"
+                },
+                {
+                  "name": "greets the traveler",
+                  "code": "assert any('Lucky' in line and 'Who goes there?' not in line for line in _lines()), 'Print a greeting that includes the name.'"
+                },
+                {
+                  "name": "uses the variable",
+                  "code": "assert 'Lucky' not in _source, 'Use the variable name instead of typing Lucky.'"
+                }
+              ],
+              "passLine": "Lucky: Took you long enough.",
+              "dictated": false
+            }
+          ],
+          "solution": [
+            "name = input(\"Who goes there? \")",
+            "print(\"Welcome to the cabin, \" + name)"
+          ],
+          "takeaway": "`input()` asks a question. `=` keeps the answer in a variable.",
+          "names": [
+            "name"
+          ],
+          "pick": "\"Welcome to the cabin, \""
+        },
+        {
+          "id": "barrier-report",
+          "title": "The barrier report",
+          "martu": "Every night, someone reports who holds the barrier and how much mana they have left.\nA [[variable]] keeps a value under a name. Text needs quotes. Numbers do not.\nYou cannot glue a number straight onto a string. Turn it into text first with `str()`.\nThree small steps, yes? Then the report.",
+          "example": {
+            "code": [
+              "guard = \"Oogrish\"",
+              "arrows = 12",
+              "print(\"Arrows left for \" + guard + \": \" + str(arrows))"
+            ],
+            "output": "Arrows left for Oogrish: 12"
+          },
+          "anotherWay": [
+            {
+              "angle": "analogy",
+              "label": "Think of jars",
+              "text": "A variable is a jar with a label. `caster` is the label. `\"Gearshift\"` is what is inside.\n`str()` is like writing the number on a scrap of paper, so it can join the other words."
+            },
+            {
+              "angle": "step by step",
+              "text": "1. Type `caster = \"Gearshift\"` and press Run.\n2. Type `mana = 20` on the next line and press Run.\n3. Build the sentence: `caster`, then `\" has \"`, then `str(mana)`, then `\" mana.\"`, joined with `+`."
+            }
+          ],
+          "introduces": [
+            "call:str"
+          ],
+          "starter": [
+            "# Gearshift's barrier report",
+            "# 1. Make caster",
+            "# 2. Make mana",
+            "# 3. Print the report"
+          ],
+          "checkpoints": [
+            {
+              "id": "make-caster",
+              "text": "Make a variable called `caster` that holds the text `\"Gearshift\"`.",
+              "hints": [
+                "A variable is a name, an equals sign, then a value.",
+                "Text needs quotes around it.",
+                "Write `caster = \"Gearshift\"` on the first line."
+              ],
+              "checks": [
+                {
+                  "name": "caster holds Gearshift",
+                  "code": "assert caster == 'Gearshift', 'Store the text Gearshift in caster, with quotes.'"
+                }
+              ],
+              "passLine": "Gearshift: Visor dims. Name logged.",
+              "dictated": true
+            },
+            {
+              "id": "make-mana",
+              "text": "Make a variable called `mana` that holds the number `20`.",
+              "hints": [
+                "Numbers do not need quotes.",
+                "Write `mana = 20` on its own line."
+              ],
+              "checks": [
+                {
+                  "name": "mana is the number 20",
+                  "code": "assert mana == 20, 'Store the number 20 in mana, with no quotes.'"
+                }
+              ]
+            },
+            {
+              "id": "print-report",
+              "text": "Print `Gearshift has 20 mana.` Build it from `caster` and `mana`.",
+              "hints": [
+                "Glue strings together with `+`.",
+                "`mana` is a number. Turn it into text with `str(mana)` before you glue it.",
+                "Try `print(caster + \" has \" + str(mana) + \" mana.\")`."
+              ],
+              "checks": [
+                {
+                  "name": "prints the report",
+                  "code": "assert 'Gearshift has 20 mana.' in _lines(), 'Print exactly: Gearshift has 20 mana.'"
+                },
+                {
+                  "name": "uses the variables",
+                  "code": "assert _source.count('Gearshift') == 1, 'Use caster in the print line instead of typing Gearshift again.'"
+                }
+              ],
+              "passLine": "Gearshift: Barrier's holding."
+            }
+          ],
+          "solution": [
+            "caster = \"Gearshift\"",
+            "mana = 20",
+            "print(caster + \" has \" + str(mana) + \" mana.\")"
+          ],
+          "tracer": true,
+          "bonus": {
+            "by": "lucky",
+            "title": "What's in it for me?",
+            "text": "Lucky wants a report too. Add a line that prints `Lucky has 26 mana.` Use two new variables.",
+            "hints": [
+              "Copy your three lines and change the names and values.",
+              "Try `lucky_mana = 26`."
+            ],
+            "checks": [
+              {
+                "name": "prints Lucky's report",
+                "code": "assert 'Lucky has 26 mana.' in _lines(), 'Print exactly: Lucky has 26 mana.'"
+              },
+              {
+                "name": "keeps Gearshift's report",
+                "code": "assert 'Gearshift has 20 mana.' in _lines(), 'Keep the Gearshift line too.'"
+              }
+            ],
+            "solution": [
+              "caster = \"Gearshift\"",
+              "mana = 20",
+              "print(caster + \" has \" + str(mana) + \" mana.\")",
+              "lucky = \"Lucky\"",
+              "lucky_mana = 26",
+              "print(lucky + \" has \" + str(lucky_mana) + \" mana.\")"
+            ]
+          },
+          "assemble": {
+            "lines": [
+              "caster = \"Gearshift\"",
+              "mana = 20",
+              "print(caster + \" has \" + str(mana) + \" mana.\")"
+            ],
+            "distractors": [
+              "mana = \"20\"",
+              "print(caster + \" has \" + mana + \" mana.\")"
+            ]
+          },
+          "campaignLink": {
+            "module": "leylines-awaken",
+            "part": "program-dialogue-prompt",
+            "snippet": [
+              "dialogue = get_dialogue_prompt_string()",
+              "print_prompt(dialogue)"
+            ],
+            "why": "In the campaign you keep Mar'tu's line in a [[variable]] and hand it to `print_prompt()`. Same idea as `caster`, yes?"
+          },
+          "takeaway": "Keep values in variables. Use `str()` to glue a number to text.",
+          "names": [
+            "caster",
+            "mana"
+          ],
+          "pairTalk": "Tell your partner why `mana` needs `str()` but `caster` does not. Then each of you types your own report."
+        }
+      ]
+    },
+    {
+      "kind": "quiz",
+      "id": "chalk-quiz",
+      "title": "Chalk Quiz",
+      "minutes": 5,
+      "summary": "Six quick questions, one of each kind.",
+      "questions": [
+        {
+          "type": "mc",
+          "id": "store-mana",
+          "q": "Which line stores the number `20` in `mana`?",
+          "choices": [
+            "mana = \"20\"",
+            "mana = 20",
+            "20 = mana",
+            "mana == 20"
+          ],
+          "answer": 1,
+          "whyWrong": {
+            "0": "The quotes make it text, not a number.",
+            "2": "The name goes on the left of `=`.",
+            "3": "`==` compares two values. It does not store anything."
+          },
+          "explain": "The name goes on the left, then `=`, then the value. Numbers have no quotes."
+        },
+        {
+          "type": "mc",
+          "id": "q-2",
+          "q": "What kind of value does `caster` hold?",
+          "code": [
+            "caster = \"Gearshift\""
+          ],
+          "choices": [
+            "A string",
+            "A number",
+            "Nothing yet"
+          ],
+          "answer": 0,
+          "explain": "Quotes make a string. `caster` holds the text `Gearshift`."
+        },
+        {
+          "type": "predict",
+          "id": "q-3",
+          "q": "What does this print?",
+          "code": [
+            "hours = 37",
+            "print(\"Next burst in \" + str(hours) + \" hours\")"
+          ],
+          "choices": [
+            "Next burst in 37 hours",
+            "Next burst in hours hours",
+            "Next burst in str(hours) hours"
+          ],
+          "answer": "Next burst in 37 hours",
+          "explain": "`str(hours)` turns `37` into text, and `+` glues the pieces together."
+        },
+        {
+          "type": "fill",
+          "id": "q-4",
+          "q": "Fill the blank so this prints `Shield up.` with a space in the middle.",
+          "code": [
+            "print(\"Shield\" + ___ + \"up.\")"
+          ],
+          "answer": "\" \"",
+          "accept": [
+            "' '"
+          ],
+          "expectedOutput": "Shield up.",
+          "explain": "`+` does not add spaces for you. A space is a string too: `\" \"`."
+        },
+        {
+          "type": "parsons",
+          "id": "q-5",
+          "q": "Put the lines in order so the warning reads from top to bottom.",
+          "lines": [
+            "print(\"The clock turns red.\")",
+            "print(\"Everyone inside the barrier!\")",
+            "print(\"Shield up.\")"
+          ],
+          "distractors": [
+            "print(Shield up.)"
+          ],
+          "expectedOutput": "The clock turns red.\nEveryone inside the barrier!\nShield up.",
+          "explain": "Python runs lines from top to bottom, so the output comes out in the same order."
+        },
+        {
+          "type": "bug",
+          "id": "q-6",
+          "q": "Bomb Shell's line crashes. Fix it.",
+          "code": [
+            "print(\"Barrier is holding.)"
+          ],
+          "fix": [
+            "print(\"Barrier is holding.\")"
+          ],
+          "expectedOutput": "Barrier is holding.",
+          "explain": "A string needs a quote at the start and at the end. The closing quote was missing."
+        }
+      ]
+    },
+    {
+      "kind": "project",
+      "id": "night-watch-sign",
+      "title": "The Night Watch Sign",
+      "minutes": 10,
+      "summary": "Paint a sign for the cabin door.",
+      "intro": "The night watch needs a sign on the cabin door, yes?\nIt shows a border, a title, and how many hours are left before the next burst.",
+      "martu": "I already stored the hours in a [[variable]] called `hours_left`. Do not change it. Use it.\nEach task is one line of [[output]]. Press Run after each one.",
+      "setup": [
+        "hours_left = 37"
+      ],
+      "starter": [
+        "# hours_left is already set for you. Use it, do not change it."
+      ],
+      "checkpoints": [
+        {
+          "id": "step-1",
+          "text": "Print a border of exactly ten `=` signs.",
+          "hints": [
+            "A border is just a string of `=` signs.",
+            "Try `print(\"==========\")`."
+          ],
+          "checks": [
+            {
+              "name": "prints the border",
+              "code": "assert '==========' in _lines(), 'Print a line of exactly ten = signs.'"
+            }
+          ]
+        },
+        {
+          "id": "step-2",
+          "text": "Print `NIGHT WATCH` on the next line.",
+          "hints": [
+            "Capital letters, inside quotes.",
+            "Try `print(\"NIGHT WATCH\")`."
+          ],
+          "checks": [
+            {
+              "name": "prints the title",
+              "code": "assert 'NIGHT WATCH' in _lines(), 'Print NIGHT WATCH in capital letters.'"
+            }
+          ]
+        },
+        {
+          "id": "step-3",
+          "text": "Print `Next burst in 37 hours` using `hours_left`.",
+          "hints": [
+            "`hours_left` is a number, so it needs `str()` before you glue it.",
+            "Try `print(\"Next burst in \" + str(hours_left) + \" hours\")`."
+          ],
+          "checks": [
+            {
+              "name": "prints the hours",
+              "code": "assert 'Next burst in 37 hours' in _lines(), 'Print exactly: Next burst in 37 hours'"
+            },
+            {
+              "name": "uses hours_left",
+              "code": "assert '37' not in _source, 'Use hours_left instead of typing 37.'"
+            }
+          ],
+          "passLine": "Oogrish: A fine sign. Steady hands."
+        }
+      ],
+      "solution": [
+        "print(\"==========\")",
+        "print(\"NIGHT WATCH\")",
+        "print(\"Next burst in \" + str(hours_left) + \" hours\")"
+      ],
+      "takeaway": "A project is a few small steps. Run after each one."
+    },
+    {
+      "kind": "challenge",
+      "id": "mar-tu-speaks",
+      "title": "Mar'tu Speaks",
+      "minutes": 5,
+      "summary": "Put Mar'tu's warning on the game screen.",
+      "level": "core",
+      "martu": "In the campaign, `print_prompt()` puts my words on the game screen.\nStore my warning in a variable once. Then show it twice: on the game screen and in the console.",
+      "engine": true,
+      "starter": [
+        "# Show Mar'tu's warning on the game screen and in the console."
+      ],
+      "checkpoints": [
+        {
+          "id": "step-1",
+          "text": "Store `The decay is accelerating.` in a variable called `line`.",
+          "hints": [
+            "Text needs quotes.",
+            "Try `line = \"The decay is accelerating.\"`."
+          ],
+          "checks": [
+            {
+              "name": "line holds the warning",
+              "code": "assert line == 'The decay is accelerating.', 'Store the exact warning in line.'"
+            }
+          ]
+        },
+        {
+          "id": "step-2",
+          "text": "Show `line` on the game screen with `print_prompt()`.",
+          "hints": [
+            "Pass the variable inside the brackets.",
+            "Try `print_prompt(line)`."
+          ],
+          "checks": [
+            {
+              "name": "shows the prompt",
+              "code": "assert 'The decay is accelerating.' in _prompts, 'Pass line to print_prompt().'"
+            }
+          ]
+        },
+        {
+          "id": "step-3",
+          "text": "Print `line` in the console too.",
+          "hints": [
+            "`print()` works on variables.",
+            "Try `print(line)`."
+          ],
+          "checks": [
+            {
+              "name": "prints the warning",
+              "code": "assert 'The decay is accelerating.' in _lines(), 'Print line with print() as well.'"
+            },
+            {
+              "name": "types it once",
+              "code": "assert _source.count('The decay') == 1, 'Type the warning once and reuse line.'"
+            }
+          ]
+        }
+      ],
+      "solution": [
+        "line = \"The decay is accelerating.\"",
+        "print_prompt(line)",
+        "print(line)"
+      ]
+    },
+    {
+      "kind": "challenge",
+      "id": "mar-tu-speaks-advanced",
+      "title": "Mar'tu Asks",
+      "minutes": 8,
+      "summary": "Build Mar'tu's question from the traveler's answer.",
+      "level": "advanced",
+      "variantOf": "mar-tu-speaks",
+      "martu": "Harder now, yes? Ask the traveler to name a place. Build my question from their answer.\nThe traveler will answer `greenroom`.",
+      "engine": true,
+      "stdin": [
+        "greenroom"
+      ],
+      "starter": [
+        "# Ask for a place, build the question, then show it."
+      ],
+      "checkpoints": [
+        {
+          "id": "step-1",
+          "text": "Show `What do you remember about the greenroom?` with `print_prompt()`, built from the answer.",
+          "hints": [
+            "Ask with `place = input(\"Name a place: \")`.",
+            "Glue it: `\"What do you remember about the \" + place + \"?\"`.",
+            "Store that in a variable, then pass it to `print_prompt()`."
+          ],
+          "checks": [
+            {
+              "name": "asks once",
+              "code": "assert _inputs_used() == 1, 'Ask for the place with input() one time.'"
+            },
+            {
+              "name": "shows the question",
+              "code": "assert 'What do you remember about the greenroom?' in _prompts, 'Show the full question with print_prompt().'"
+            },
+            {
+              "name": "builds it from the answer",
+              "code": "assert 'greenroom' not in _source, 'Use the answer from input() instead of typing greenroom.'"
+            }
+          ]
+        }
+      ],
+      "solution": [
+        "place = input(\"Name a place: \")",
+        "question = \"What do you remember about the \" + place + \"?\"",
+        "print_prompt(question)"
+      ]
+    },
+    {
+      "kind": "article",
+      "id": "asking-the-traveler",
+      "title": "Asking the Traveler",
+      "optional": true,
+      "minutes": 6,
+      "summary": "How `input()` works on this site.",
+      "body": "On this site, `input()` does not wait for you to type. Each exercise brings its own answers, yes?\nThis line asks for a name:\n```python\nname = input(\"Your name? \")\n```\nIf the answer is `Gearshift`, the console shows the question and the answer together on one line: `Your name? Gearshift`\nThree things to remember:\n1. `input()` always hands back a [[string]], even when the answer looks like a number.\n2. Keep the answer in a [[variable]], or it is gone.\n3. If your code asks more questions than the exercise has answers, Python stops with an `EOFError`.\nRun the examples below. Then try it yourself.",
+      "examples": [
+        {
+          "code": [
+            "name = input(\"Your name? \")",
+            "print(\"Hello, \" + name)"
+          ],
+          "output": "Your name? Gearshift\nHello, Gearshift",
+          "stdin": [
+            "Gearshift"
+          ]
+        },
+        {
+          "code": [
+            "print(\"Ley Clock check.\")",
+            "print(\"It is not a compass.\")"
+          ],
+          "output": "Ley Clock check.\nIt is not a compass."
+        }
+      ],
+      "exercises": [
+        {
+          "id": "try-it",
+          "title": "Try it: Bomb Shell's words",
+          "martu": "Bomb Shell talks in short sentences. Change the words in quotes so he says `Shield up.`",
+          "starter": [
+            "print(\"Write Bomb Shell's words here\")"
+          ],
+          "checkpoints": [
+            {
+              "id": "step-1",
+              "text": "Make the code print `Shield up.`",
+              "hints": [
+                "Change only the words inside the quotes.",
+                "Try `print(\"Shield up.\")`."
+              ],
+              "checks": [
+                {
+                  "name": "prints Shield up.",
+                  "code": "assert 'Shield up.' in _lines(), 'Print exactly: Shield up.'"
+                }
+              ],
+              "passLine": "Bomb Shell: Shield up."
+            }
+          ],
+          "solution": [
+            "print(\"Shield up.\")"
+          ],
+          "solo": true
+        }
+      ]
+    },
+    {
+      "kind": "cheatsheet",
+      "id": "chalk-notes",
+      "title": "Mar'tu's Chalk Notes",
+      "entries": [
+        {
+          "concept": "Print words",
+          "code": [
+            "print(\"Steady, now.\")"
+          ],
+          "output": "Steady, now.",
+          "note": "Words go inside quotes."
+        },
+        {
+          "concept": "Store a value",
+          "code": [
+            "mana = 20",
+            "print(mana)"
+          ],
+          "output": "20",
+          "note": "Name on the left, value on the right."
+        },
+        {
+          "concept": "Glue strings",
+          "code": [
+            "caster = \"Lucky\"",
+            "print(caster + \" has \" + str(26) + \" mana.\")"
+          ],
+          "output": "Lucky has 26 mana.",
+          "note": "Use `str()` to glue a number to text."
+        },
+        {
+          "concept": "Ask a question",
+          "code": [
+            "name = input(\"Who goes there? \")"
+          ],
+          "note": "The answer is always a string."
+        }
+      ]
+    },
+    {
+      "kind": "testout",
+      "id": "quick-check",
+      "title": "Quick Check",
+      "minutes": 5,
+      "summary": "Already know this? Pass both tasks to skip the unit.",
+      "exercises": [
+        {
+          "id": "name-the-leader",
+          "title": "Name the leader",
+          "martu": "No hints this time, yes? Show me what you know.",
+          "starter": [],
+          "checkpoints": [
+            {
+              "id": "step-1",
+              "text": "Store the text `Oogrish` in a variable called `leader`.",
+              "hints": [
+                "Text needs quotes.",
+                "Write `leader = \"Oogrish\"`."
+              ],
+              "checks": [
+                {
+                  "name": "leader holds Oogrish",
+                  "code": "assert leader == 'Oogrish', 'Store the text Oogrish in leader.'"
+                }
+              ]
+            },
+            {
+              "id": "step-2",
+              "text": "Print `leader`.",
+              "hints": [
+                "Put the variable inside `print()`.",
+                "Write `print(leader)`."
+              ],
+              "checks": [
+                {
+                  "name": "prints Oogrish",
+                  "code": "assert 'Oogrish' in _lines(), 'Print the leader.'"
+                },
+                {
+                  "name": "prints the variable",
+                  "code": "assert _source.count('Oogrish') == 1, 'Print leader instead of typing Oogrish again.'"
+                }
+              ]
+            }
+          ],
+          "solution": [
+            "leader = \"Oogrish\"",
+            "print(leader)"
+          ],
+          "support": "none"
+        },
+        {
+          "id": "leader-report",
+          "title": "The leader's report",
+          "martu": "One more. A report, like Gearshift's.",
+          "setup": [
+            "leader = \"Oogrish\""
+          ],
+          "starter": [
+            "# leader is already set for you."
+          ],
+          "checkpoints": [
+            {
+              "id": "step-1",
+              "text": "Print `Oogrish has 18 mana.` using `leader` and a variable called `max_mana`.",
+              "hints": [
+                "Make `max_mana = 18` first.",
+                "Then `print(leader + \" has \" + str(max_mana) + \" mana.\")`."
+              ],
+              "checks": [
+                {
+                  "name": "max_mana is 18",
+                  "code": "assert max_mana == 18, 'Store the number 18 in max_mana.'"
+                },
+                {
+                  "name": "prints the report",
+                  "code": "assert 'Oogrish has 18 mana.' in _lines(), 'Print exactly: Oogrish has 18 mana.'"
+                },
+                {
+                  "name": "uses the variables",
+                  "code": "assert 'Oogrish' not in _source, 'Use leader instead of typing Oogrish.'"
+                }
+              ]
+            }
+          ],
+          "solution": [
+            "# leader is already set for you.",
+            "max_mana = 18",
+            "print(leader + \" has \" + str(max_mana) + \" mana.\")"
+          ],
+          "support": "none"
+        }
+      ]
+    }
+  ]
+}

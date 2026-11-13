@@ -21,6 +21,12 @@ jobs:
           node-version: "22"
           cache: npm
 
+      # The course's Python checks must run on the same Python as the browser (Pyodide 0.28 is Python 3.13).
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
       - name: Install dependencies
         run: npm ci
 
