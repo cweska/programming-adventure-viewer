@@ -87,7 +87,13 @@ export type ExerciseProgress = {
 export type QuizProgress = { best: number; attempts: number; lastAnswers?: Record<string, string> };
 
 export type CourseSettings = {
-  /** Instructions-light: collapse Mar'tu's narrative to the essentials. */
+  /**
+   * Support preset (curriculum §2.3). "more" = "Show me more" (the default): Mar'tu's full explanation, the
+   * example open, help offered proactively. "short" = "Keep it short": explanation collapsed to the essentials,
+   * example collapsed, help only when asked. Students can always open anything; presets never hide steps.
+   */
+  preset?: "more" | "short";
+  /** Legacy alias for preset "short" (kept so saved progress still loads). */
   light?: boolean;
   /** Show the read-aloud buttons. */
   readAloud?: boolean;
