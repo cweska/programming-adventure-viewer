@@ -35,12 +35,16 @@ function lastException(raw: string): Parsed | null {
   return null;
 }
 
-/** The student's line number: the last `File "main.py", line N` (or `<exec>`, or any non-library file). */
+/**
+ * The student's line number: the last `File "main.py", line N`. Only when there is none, the last `<exec>`
+ * frame (in a Pyodide course run `<exec>` is the course helpers, not the student), then any non-library file.
+ */
 function errorLine(raw: string): number | null {
   const frames = [...raw.matchAll(/File "([^"]+)", line (\d+)/g)];
   if (frames.length === 0) return null;
-  const student = frames.filter((frame) => frame[1] === "main.py" || frame[1] === "<exec>");
-  const pick = (student.length > 0 ? student : frames.filter((frame) => !frame[1].startsWith("/")))?.at(-1);
+  const main = frames.filter((frame) => frame[1] === "main.py");
+  const exec = frames.filter((frame) => frame[1] === "<exec>");
+  const pick = (main.length > 0 ? main : exec.length > 0 ? exec : frames.filter((frame) => !frame[1].startsWith("/"))).at(-1);
   return pick ? Number(pick[2]) : null;
 }
 
@@ -162,7 +166,58 @@ function dashFix(text: string, name?: string): string | null {
   return `${match[1]} = ${match[2]}`;
 }
 
-function quotesProblem(text: string, line: number | null, raw: string): Explanation {
+/** Names the code makes before `line` (all of them when the line is unknown). */
+function namesBefore(code: string, line: number | null): string[] {
+  const names = definedNames(code)
+    .filter((entry) => line === null || entry.line < line)
+    .map((entry) => entry.name)
+    .filter((name) => !name.startsWith("_"));
+  return [...new Set(names)];
+}
+
+const JOIN_CALLS = /^(str|int|float|len|round|input|abs|max|min|sum)\s*\(/;
+
+/**
+ * `print("Welcome, + name)`: text whose closing quote was forgotten before a `+` (or a `,`) that joins it to a
+ * variable. Returns the line with the quote put back, `print("Welcome, " + name)`, or null.
+ */
+function closeTextBeforeJoin(text: string, names: string[]): string | null {
+  let from = 0;
+  while (from < text.length) {
+    const open = text.slice(from).search(/["']/);
+    if (open < 0) return null;
+    const start = from + open;
+    const quote = text[start];
+    const close = text.indexOf(quote, start + 1);
+    for (let at = start + 1; at < text.length; at += 1) {
+      if (close >= 0 && at > close) break;
+      const mark = text[at];
+      if (mark !== "+" && mark !== ",") continue;
+      const after = text.slice(at + 1).trimStart();
+      const next = after.match(/^[A-Za-z_]\w*/)?.[0];
+      if (!next) continue;
+      const joins = names.includes(next) || (mark === "+" && JOIN_CALLS.test(after));
+      if (!joins) continue;
+      const words = text.slice(start + 1, at);
+      if (!words.trim()) return null;
+      const glue = mark === "+" ? " + " : ", ";
+      return `${text.slice(0, start + 1)}${mark === "," ? words.trimEnd() : words}${quote}${glue}${after}`.trim();
+    }
+    if (close < 0) return null;
+    from = close + 1;
+  }
+  return null;
+}
+
+function quotesProblem(text: string, line: number | null, raw: string, code = ""): Explanation {
+  const joined = closeTextBeforeJoin(text, namesBefore(code, line));
+  if (joined) {
+    return explain(
+      "Missing quote",
+      `The text${onLine(line)} is missing its closing quote, so Python reads the rest of the line as text too. Close the text before you join it: ${joined}`,
+      raw,
+    );
+  }
   const open = text.search(/["']/);
   if (open >= 0) {
     const quote = text[open];
@@ -184,7 +239,8 @@ function quotesProblem(text: string, line: number | null, raw: string): Explanat
         raw,
       );
     }
-    const example = words && words.length <= 40 ? `${quote}${words}${quote}` : `${quote}Hello${quote}`;
+    const plain = words && words.length <= 40 && !/["'()]/.test(words);
+    const example = plain ? `${quote}${words}${quote}` : `${quote}Hello${quote}`;
     return explain(
       "Missing quote",
       `The text${onLine(line)} is missing its closing quote. Text needs a quote at the start and at the end, like ${example}.`,
@@ -216,7 +272,68 @@ function defForVariable(text: string): string | null {
   return `character = "Kratos"`;
 }
 
-function explainSyntax(message: string, type: string, text: string, line: number | null, raw: string): Explanation {
+/** A word of text typed without quotes: letters or digits, maybe with punctuation stuck to it. */
+const BARE_WORD = /^[A-Za-z0-9][A-Za-z0-9,!?.:;-]*$/;
+
+/**
+ * Text typed without quotes: `caster = Gear shift`, `caster = Gearshift.`, `print(Gearshift has 20 mana.)`.
+ * Returns the student's own line with the quotes put in, or null when the line is not that slip.
+ */
+function unquotedWords(text: string, names: string[]): { fixed: string; comma: boolean } | null {
+  if (/["'#]/.test(text)) return null;
+  const assign = text.match(/^(\s*[A-Za-z_]\w*\s*=)(?!=)\s*(.+?)\s*$/);
+  if (assign) {
+    const words = assign[2].split(/\s+/);
+    if (!words.every((word) => BARE_WORD.test(word)) || !words.some((word) => /[A-Za-z]/.test(word))) return null;
+    if (words.length === 1 && !/[.!?]$/.test(words[0])) return null;
+    // One word with a full stop after it ("Gearshift.") is a sentence's end, not part of the name.
+    const value = words.length === 1 ? words[0].replace(/[.!?]+$/, "") : words.join(" ");
+    return { fixed: `${assign[1].trim()} "${value}"`, comma: false };
+  }
+  const call = text.match(/^(\s*print\s*\()\s*([^()]+?)\s*\)\s*$/);
+  if (call) {
+    const words = call[2].split(/\s+/);
+    if (words.length < 2 || !words.every((word) => BARE_WORD.test(word))) return null;
+    if (!words.some((word) => /[A-Za-z]/.test(word))) return null;
+    // Keep the student's variables outside the quotes, and quote the runs of words between them.
+    const parts: string[] = [];
+    let run: string[] = [];
+    const flush = () => {
+      if (run.length) parts.push(`"${run.join(" ")}"`);
+      run = [];
+    };
+    for (const word of words) {
+      if (names.includes(word)) {
+        flush();
+        parts.push(word);
+      } else {
+        run.push(word);
+      }
+    }
+    flush();
+    return { fixed: `print(${parts.join(", ")})`, comma: parts.every((part) => !part.startsWith('"')) };
+  }
+  return null;
+}
+
+function explainUnquoted(text: string, code: string, line: number | null, raw: string): Explanation | null {
+  const found = unquotedWords(text, namesBefore(code, line));
+  if (!found) return null;
+  if (found.comma) {
+    return explain(
+      "Missing comma",
+      `${lineWord(line)} has values side by side with nothing between them. Put a comma between them, like this: ${found.fixed}`,
+      raw,
+    );
+  }
+  return explain(
+    "Missing quotes",
+    `${lineWord(line)} has words with no quotes around them, so Python tries to read them as code. Text needs quotes at the start and the end, like this: ${found.fixed}`,
+    raw,
+  );
+}
+
+function explainSyntax(message: string, type: string, text: string, line: number | null, raw: string, code = ""): Explanation {
   const lower = message.toLowerCase();
 
   if (/unterminated triple-quoted string/.test(lower)) {
@@ -227,7 +344,7 @@ function explainSyntax(message: string, type: string, text: string, line: number
     );
   }
   if (/unterminated string literal|eol while scanning string literal/.test(lower)) {
-    return quotesProblem(text, line, raw);
+    return quotesProblem(text, line, raw, code);
   }
   const curly = message.match(/invalid character '([“”‘’])'/);
   if (curly) {
@@ -287,8 +404,10 @@ function explainSyntax(message: string, type: string, text: string, line: number
     );
   }
   if (/perhaps you forgot a comma/.test(lower)) {
+    const unquoted = explainUnquoted(text, code, line, raw);
+    if (unquoted) return unquoted;
     const inside = text.match(/\(([^()"']*)\)/)?.[1]?.trim();
-    if (inside && /^[A-Za-z][A-Za-z ,!?.']*[A-Za-z!?.]$/.test(inside) && inside.includes(" ")) {
+    if (inside && /^[A-Za-z0-9][A-Za-z0-9 ,!?.']*[A-Za-z0-9!?.]$/.test(inside) && /[A-Za-z]/.test(inside) && inside.includes(" ")) {
       return explain(
         "Missing quotes?",
         `If ${inside} is text, put quotes around it: "${inside}". Text needs quotes.`,
@@ -349,6 +468,10 @@ function explainSyntax(message: string, type: string, text: string, line: number
   if (/expected an indented block|unexpected indent|unindent does not match/.test(lower) || type === "IndentationError") {
     return explainIndent(message, line, raw);
   }
+  if (/^invalid syntax/.test(lower)) {
+    const unquoted = explainUnquoted(text, code, line, raw);
+    if (unquoted) return unquoted;
+  }
   return explain(
     "Python can't read this",
     `Python could not read line ${line ?? "?"}. Look for a missing quote, a missing bracket ( ), or a missing colon :.`,
@@ -375,7 +498,9 @@ function explainIndent(message: string, line: number | null, raw: string): Expla
   if (/unexpected indent/.test(message)) {
     return explain(
       "Extra spaces",
-      `${lineWord(line)} starts with spaces it should not have. Move it back so it lines up with the line above.`,
+      line === 1
+        ? "Line 1 starts with spaces it should not have. Delete the spaces so it starts at the left edge."
+        : `${lineWord(line)} starts with spaces it should not have. Move it back so it lines up with the line above.`,
       raw,
     );
   }
@@ -473,6 +598,18 @@ function explainName(message: string, code: string, text: string, line: number |
     return explain(
       "Unknown function",
       `Python doesn't know a function called ${name}. Check the spelling, or make it with def before you use it.`,
+      raw,
+    );
+  }
+  // A lowercase word in code that already made variables is often a name copied from the example
+  // (`traveler` where the task's variable is `name`), so offer both fixes, the variables first.
+  const assignedHere = text.match(/^\s*([A-Za-z_]\w*)\s*=(?!=)/)?.[1];
+  const earlier = namesBefore(code, line).filter((entry) => entry !== assignedHere && entry !== name);
+  if (/^[a-z][a-z0-9_]*$/.test(name) && earlier.length > 0) {
+    const shown = earlier.slice(-3).join(", ");
+    return explain(
+      "Unknown name",
+      `Python doesn't know ${name}. If it's a variable, use one your code made: ${shown} (spelled exactly). If it's text, put quotes around it: "${name}"`,
       raw,
     );
   }
@@ -597,7 +734,7 @@ export function explainCourseError(traceback: string, code: string): Explanation
 
   switch (type) {
     case "SyntaxError":
-      return explainSyntax(message, type, text, line, raw);
+      return explainSyntax(message, type, text, line, raw, code);
     case "IndentationError":
     case "TabError":
       return explainIndent(message, line, raw);

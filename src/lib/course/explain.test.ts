@@ -42,8 +42,58 @@ describe("explainCourseError: the class's real slips", () => {
 
   it("suggests quotes for several unquoted words in print", () => {
     const result = explainRun("print(Hello world)\n");
-    expect(result.title).toBe("Missing quotes?");
-    expect(result.hint).toBe('If Hello world is text, put quotes around it: "Hello world". Text needs quotes.');
+    expect(result.title).toBe("Missing quotes");
+    expect(result.hint).toBe(
+      'Line 1 has words with no quotes around them, so Python tries to read them as code. Text needs quotes at the start and the end, like this: print("Hello world")',
+    );
+  });
+
+  it("puts quotes around several words typed without them, using the student's own line", () => {
+    const cases: [string, string][] = [
+      ["caster = Gear shift\n", 'caster = "Gear shift"'],
+      ["caster = spartin rage in barsed hamah\n", 'caster = "spartin rage in barsed hamah"'],
+      ["caster = Gearshift.\n", 'caster = "Gearshift"'],
+      ["line = The decay is accelerating.\n", 'line = "The decay is accelerating."'],
+      ["print(Gearshift has 20 mana.)\n", 'print("Gearshift has 20 mana.")'],
+      ['caster = "Gearshift"\nprint(caster has 20 mana.)\n', 'print(caster, "has 20 mana.")'],
+    ];
+    for (const [code, fixed] of cases) {
+      const result = explainRun(code);
+      expect(result.title, code).toBe("Missing quotes");
+      expect(result.hint, code).toMatch(/has words with no quotes around them/);
+      expect(result.hint.endsWith(`like this: ${fixed}`), `${code} -> ${result.hint}`).toBe(true);
+    }
+  });
+
+  it("asks for a comma between two variables side by side", () => {
+    const result = explainRun('caster = "Gearshift"\nmana = 20\nprint(caster mana)\n');
+    expect(result.title).toBe("Missing comma");
+    expect(result.hint).toBe("Line 3 has values side by side with nothing between them. Put a comma between them, like this: print(caster, mana)");
+  });
+
+  it("closes forgotten quotes before a + or a comma, not after the whole line", () => {
+    const welcome = explainRun('name = input("Who goes there? ")\nprint("Welcome, + name)\n', ["Lucky"]);
+    expect(welcome.title).toBe("Missing quote");
+    expect(welcome.hint).toContain('print("Welcome, " + name)');
+    expect(welcome.hint).not.toContain('"Welcome, + name"');
+    const mana = explainRun('caster = "Gearshift"\nmana = 20\nprint(caster + " has + str(mana) + " mana.")\n');
+    expect(mana.hint).toContain('print(caster + " has " + str(mana) + " mana.")');
+    expect(explainRun('strength = 5\nprint("Strength:, strength)\n').hint).toContain('print("Strength:", strength)');
+    // Real text with a comma or a plus sign keeps the plain advice.
+    expect(explainRun('print("Hello, world)\n').hint).toContain('like "Hello, world".');
+    expect(explainRun('print("2 + 2 = 4)\n').hint).toContain('like "2 + 2 = 4".');
+  });
+
+  it("offers the code's own variables when a lowercase name is unknown (a name copied from the example)", () => {
+    const result = explainRun('name = input("Who goes there? ")\nprint("Hello, " + traveler)\n', ["Lucky"]);
+    expect(result.title).toBe("Unknown name");
+    expect(result.hint).toBe(
+      'Python doesn\'t know traveler. If it\'s a variable, use one your code made: name (spelled exactly). If it\'s text, put quotes around it: "traveler"',
+    );
+    // A capitalized word is most likely text (a name like Gearshift).
+    expect(explainRun('mana = 20\nprint(Gearshift)\n').title).toBe("Missing quotes?");
+    // The variable being made on this line is not offered.
+    expect(explainRun("spell = fireball\n").title).toBe("Missing quotes?");
   });
 
   it("explains def used to make a variable", () => {
@@ -111,6 +161,8 @@ describe("explainCourseError: the class's real slips", () => {
       "The line after line 1 belongs inside the if, so it needs 4 spaces at the start.",
     );
     expect(explainRun('  print("x")\n').title).toBe("Extra spaces");
+    expect(explainRun('  print("x")\n').hint).not.toContain("line above");
+    expect(explainRun('print("a")\n  print("x")\n').hint).toContain("line above");
     expect(explainRun('if True:\n        print("a")\n    print("b")\n').title).toBe("Spaces don't line up");
     expect(explainRun("def greet():\nreturn 1\n").hint).toContain("inside the def");
   });
@@ -181,8 +233,21 @@ describe("explainCourseError: the class's real slips", () => {
       "NameError: name 'fireball' is not defined",
     ].join("\n");
     const result = explainCourseError(raw, 'a = 1\nb = 2\nprint(fireball)\n');
-    expect(result.title).toBe("Missing quotes?");
+    expect(result.title).toBe("Unknown name");
+    expect(result.hint).toContain("use one your code made: a, b");
     expect(result.raw).toBe(raw);
+    expect(explainCourseError(raw, "print(fireball)\n").title).toBe("Missing quotes?");
+  });
+
+  it("prefers the student's main.py line over helper <exec> frames", () => {
+    const raw = [
+      "Traceback (most recent call last):",
+      '  File "<exec>", line 306, in _course_run',
+      '  File "main.py", line 2, in <module>',
+      '  File "<exec>", line 281, in write',
+      "TypeError: unsupported operand type(s) for -: 'str' and 'int'",
+    ].join("\n");
+    expect(explainCourseError(raw, 'a = "x"\nprint(a - 1)\n').hint).toMatch(/^Line 2 /);
   });
 
   it("falls back to a plain explanation", () => {
