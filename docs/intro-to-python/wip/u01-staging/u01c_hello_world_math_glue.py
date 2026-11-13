@@ -16,11 +16,13 @@ the checks swap in other numbers.
 Check builders below (plain string templates, no student values ever echoed back):
   slot()        NAME / LEFT / NEWBOX / BARE / TEXT-vs-NUM plus per-exercise rules, for one box's value
   story_pair()  SWAP / LINE-TOTAL / wild count / placeholder / NEWBOX, for a count box and a price box from a story
-                (a right pair always passes; the diagnosis runs only when it is wrong)
+                (a right pair always passes; the diagnosis runs only when it is wrong; swap_extra adds to SWAP)
   rerun()       CMB: re-runs _source with some input lines changed (the "Try other numbers" mechanism). Every
                 input a combine line reads is changed by at least one rerun, so no half-typed line survives.
   rerun_line()  CMB on output. The wanted line must come from a line that CHANGED with the inputs: a line that
                 prints the same in both runs is typed in (stops `print(11)` + `print(7)` after the message shows 7).
+                word=True accepts labelled output (`The gap shrank by 7` holds 7 as a whole number); starts=True
+                accepts a line that starts with the wanted text (glue-words' first bead, `Tester has`).
   out_line()    OUT diff: the expected line, the nearest printed line, and where they first differ. `hide=own(box)`
                 keeps lines holding a student's creative value out of every diff (privacy, 2.11).
   loose_math() / set_once() / near_names()   BARE math, a box re-set below its uses, NAME on its own
