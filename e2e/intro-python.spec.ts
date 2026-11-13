@@ -343,7 +343,8 @@ test.describe("Intro to Python", () => {
     // "Yes" never takes support away: it stays on Show me more and is offered the Quick Check instead.
     await page.getByTestId("placement-yes").click();
     await expect(page.getByTestId("placement-done")).toBeFocused();
-    await expect(page.getByTestId("placement-quick-check-link")).toHaveAttribute("href", /\/intro-python\/sample\/quick-check\/?$/);
+    // It offers the FIRST unit's Quick Check in course order: Unit 1 (order 1) comes before the sample (order 99).
+    await expect(page.getByTestId("placement-quick-check-link")).toHaveAttribute("href", /\/intro-python\/hello-world\/qc1-a\/?$/);
     await expect
       .poll(() => page.evaluate((key) => JSON.parse(window.localStorage.getItem(key) ?? "{}")?.settings?.preset ?? null, PROGRESS_KEY))
       .toBe("more");
