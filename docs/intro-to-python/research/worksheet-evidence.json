@@ -1,0 +1,404 @@
+{
+  "note": "Anonymized evidence from the class's 'Python Power-Up' diagnostic worksheets. Student names were never read (covered on the scans). Ids (A-01..A-08, B-01..B-03) follow the scan order. Hero answers that could be real first names, joke names that could be about a classmate, and handwritten dates are redacted.",
+  "sets": {
+    "A": {
+      "pdf": "scan set A",
+      "students": [
+        {
+          "id": "A-01",
+          "pages": [
+            1,
+            2,
+            3
+          ],
+          "part1_variables": "(1) character= \"Zelda\"   [correct name, double quotes both sides; hero copied from the worksheet's example (player_name = \"Zelda\") - see margin note]\n(2) health= 100   [correct]\n(3) power_up = \"Fireball'   [correct name/value; closing quote looks like a single tick (possibly mismatched quotes, more likely haste); value handwriting reads \"Fireboll\"/\"Fireball\"]\nScored 3/3 (benefit of doubt on the closing quote).",
+          "part2_arithmetic": "pizzas = 4 ; sodas = 10 ; pizza_cost = pizzas * 12 ; soda_cost = sodas * 2 ; total_cost = 68  [literal 68, lighter pencil].\nSide work to the right: \"4·12=48 / 2·10=20 / + (line) 68\".\nAll four modeling blanks correct; total_cost is the hand-computed literal, not pizza_cost + soda_cost. 4.5/5.",
+          "part3_functions": "total = attack * bonus\nreturn reslt   [reads like \"result\" misspelled \"reslt\"]\nApproximate parameter names (attack for base_attack, bonus for bonus_multiplier) - clearly intends the parameters. Return names 'result', copied from the double_number example; 'result' is undefined here (function uses 'total') -> NameError. 1/3.",
+          "part4_trace": "gold_value = 3 x 10 = 30 ; silver_value = 4 x 5 = 20 ; return value = 30 + 20 = 50 ; final_score = 50 + 10 = 60 ; printed: 60. All correct. 5/5.",
+          "margin_notes": "[corrected] Beside the Part 1 \"Your Turn\" heading (a pen stroke slashes between \"to\" and \"your\" in the prompt, linking the note to it): \"not my favorite I just can't think of a character\" (written in cramped lines: \"not my favorite I just\" / \"can't think of a\" / \"character\"). Part 2 side arithmetic: \"4·12=48\", \"2·10=20\", \"+\", \"68\". Part 3: the first blank 'attack' is darker and looks retraced over an earlier attempt (minor self-revision). No doodles, no crossed-out work.",
+          "score": {
+            "p1": 3,
+            "p2": 4.5,
+            "p3": 1,
+            "p4": 5
+          },
+          "misconceptions": [
+            "Fills function blanks by pattern-matching the example: writes `return result` (from double_number) even though this function's variable is `total` - returning an undefined name.",
+            "Treats parameter names as approximate labels (attack, bonus) rather than exact identifiers that must match the def line (base_attack, bonus_multiplier).",
+            "Computes total_cost by hand (literal 68) instead of letting the code combine pizza_cost + soda_cost."
+          ],
+          "strengths": [
+            "Correct assignment syntax for strings (with quotes) and numbers.",
+            "Correctly maps the word problem onto variables (counts 4/10, prices 12/2) and shows arithmetic work.",
+            "Flawless code trace including function call, return value, and reassignment (final_score = final_score + 10).",
+            "Understands that the function's multiplicands should be the inputs, not fixed numbers.",
+            "Honest metacognitive comment shows engagement with the task."
+          ],
+          "help_suspicion": "none - internally consistent handwriting/pencil throughout; errors (return result, shortened names) are authentic novice errors; own side arithmetic shown.",
+          "experience_estimate": "capable - solid on variables, arithmetic modeling and tracing; only the function fill-in (exact parameter names, returning the right variable) is not yet secure.",
+          "transcription_confidence": "high for Parts 1, 2, 4; medium for Part 3 (cramped pencil: 'attack' / 'bonus' / 'reslt') and for the exact wording of the margin note."
+        },
+        {
+          "id": "A-02",
+          "pages": [
+            4,
+            5,
+            6
+          ],
+          "part1_variables": "(1) def (\"character\")   [followed by a few trailing dots/marks]\n(2) def (\"health\")   and then, squeezed in smaller print between items 2 and 3: Health = 100  [\"Hea\" overwritten]\n(3) def: Power_up= (\"Fire Ball   [\"up\" written like \"VP\"; no closing quote or paren; trailing tick marks]\nUses the keyword `def` and parentheses/quotes around the variable NAME - conflates function-definition syntax with assignment. Only the added \"Health = 100\" is an assignment (capital H). 0.5/3.",
+          "part2_arithmetic": "pizzas = 5 [written like an \"S\"] ; sodas = 5 [S/5 shape, overwritten - possibly a 2] ; pizza_cost = pizzas * 5 ; soda_cost = sodas * 2 ; total_cost = 5P + 2S [algebra-style; first character scribbled over, reading uncertain - last term could also be read \"25\"].\nCounts wrong, pizza price wrong, soda price (*2) correct; total is an algebraic expression, not Python variables. 1/5.",
+          "part3_functions": "total = 100 * 5\nreturn 500   [written \"50\" + a third digit, consistent with 100*5]\nLiteral numbers instead of parameters; 100 looks like a misreading of base attack 10. Return is a literal (and wrong value). The 5 is the correct literal multiplier. 0.5/3.",
+          "part4_trace": "[corrected] Answers are shifted up a line: \"30\" is written above the gold_value line and \"20\" sits on the gold_value underline itself, while the silver_value blank is left empty - read as gold_value = 30, silver_value = 20. return value = '3' with a stroke through it (possibly a cramped 30, or a struck 3) + 20 = 50 ; final_score = 50 + 10 = 60 ; printed: 60.\nCorrect result; placement sloppy and one operand ambiguous. 4.5/5.",
+          "margin_notes": "No comments or doodles. Trailing dots after item 1. \"Health = 100\" inserted afterwards between items 2 and 3 in smaller, lighter writing with overwritten letters (self-correction or prompted). Overwritten digits in Part 2 counts; first character of total_cost scribbled over.",
+          "score": {
+            "p1": 0.5,
+            "p2": 1,
+            "p3": 0.5,
+            "p4": 4.5
+          },
+          "misconceptions": [
+            "Believes `def` creates a variable (def (\"character\")) - mixes up function-definition keyword with assignment.",
+            "Puts the variable name itself in quotes/parentheses, as if the name were a string.",
+            "Does not tie item-count variables to the numbers in the word problem (5s instead of 4 and 10).",
+            "Writes math-class algebra (5P + 2S) rather than Python expressions using the defined variable names.",
+            "Fills function blanks with literal (and misread) numbers instead of parameters; returns a literal.",
+            "Inconsistent capitalization of names (Health, Power_up) with no sign of knowing names are case-sensitive."
+          ],
+          "strengths": [
+            "Traced Part 4 correctly to 60 when the arithmetic was scaffolded.",
+            "Attempted every section rather than leaving blanks.",
+            "Recovered on item 2 by writing a real assignment (Health = 100).",
+            "Knows quotes belong around text values (\"Fire Ball)."
+          ],
+          "help_suspicion": "low - Part 4 is fully correct while Parts 1-3 show deep syntax confusion, but Part 4's scratchpad supplies the arithmetic (3 x 10, 4 x 5) so this contrast is plausible without help; the late, smaller 'Health = 100' could be a self-correction or a hint from a neighbor.",
+          "experience_estimate": "brand-new - no working model of assignment yet (uses def to create variables) and no use of parameters; can follow scaffolded arithmetic only.",
+          "transcription_confidence": "low-medium - Part 1 parentheses/quotes and 'Power_VP' are messy; Part 2 digits (5 vs S vs 2) and the '5P + 2S' total are uncertain; Part 3 return could be 500 or 50-with-mark; Part 4 values written off their lines and return-line first operand ambiguous."
+        },
+        {
+          "id": "A-03",
+          "pages": [
+            7,
+            8,
+            9
+          ],
+          "part1_variables": "[corrected] (1) canes_women   [an accent/apostrophe mark over the 'e' - i.e. \"cane's\"; no variable name 'character', no =, no quotes - a joke (Raising Cane's)]\n(2) meidicine = 80   [wrong name, wrong value]\n(3) fries_up = \"Fierball.   [wrong name, misspelled value, closing quote missing or a tiny tick after the period]\nShows the name = value shape in items 2-3 but ignores the requested names/values. 0/3.",
+          "part2_arithmetic": "pizzas = 180 ; sodas = 1000 ; pizza_cost = pizzas * 10 ; soda_cost = sodas * 2 ; total_cost = 18.\nOnly soda price (*2) correct; other numbers unrelated to the problem. 1/5.",
+          "part3_functions": "total = 30 * 0\nreturn 10\nArbitrary literals; no parameters; return unrelated. 0/3.",
+          "part4_trace": "[corrected] gold_value = 30 ; silver_value = 20 ; return value = 10 + 5 = 15 ; final_score = 30 + 10 = 40 ; printed: 55.\nAdds the multiplier constants (10 and 5) instead of the computed values. Bonus line uses gold_value (30) rather than the return value. The printed 55 is not random: it is 40 + 15, i.e. the bonus-line result plus the 'return value' - the student treats print as summing the earlier results. 2/5.",
+          "margin_notes": "No margin comments or doodles; the jokes are inside the answers (canes_women, meidicine, fries_up - fast-food theme). Name line partly visible on page 7 - not recorded.",
+          "score": {
+            "p1": 0,
+            "p2": 1,
+            "p3": 0,
+            "p4": 2
+          },
+          "misconceptions": [
+            "Ignores required variable names; item 1 has no assignment at all.",
+            "Doesn't distinguish counts from prices - numbers chosen arbitrarily (180, 1000, *10, 18).",
+            "Function blanks filled with unrelated literals (30 * 0, return 10).",
+            "During tracing, adds the constants from the code (10 + 5) instead of the variables' computed values (30 + 20).",
+            "[corrected] Does not see that final_score holds the returned value: the bonus line uses gold_value (30 + 10 = 40), and the printed answer adds earlier results together (40 + 15 = 55) instead of printing final_score."
+          ],
+          "strengths": [
+            "Computes 3 x 10 and 4 x 5 correctly in the scratchpad.",
+            "Knows the `name = value` shape and that text values start with a quote.",
+            "Soda price multiplier (*2) correct."
+          ],
+          "help_suspicion": "[corrected] high (peer collaboration / joint goofing with A-04, not adult help) - near-identical joke answers with A-04: canes_women vs chick-fa-le_women, meidicine = 80 vs medicine = 100, fries_up vs chicken_sandwich; pizzas = 180 and sodas = 1000 on both sheets; both write `* 0` in Part 3; both trace 10 + 5 = 15; and both get the printed answer by the same unusual method (bonus-line result + 15: A-03 40 + 15 = 55, A-04 30 + 15 = 45). Answers are wrong, so working together did not raise the score.",
+          "experience_estimate": "brand-new - no secure assignment syntax, arbitrary numbers, and tracing confuses constants with values; low engagement makes the true floor hard to read.",
+          "transcription_confidence": "high - neat pencil; only the closing quote on 'Fierball.' is uncertain."
+        },
+        {
+          "id": "A-04",
+          "pages": [
+            10,
+            11,
+            12
+          ],
+          "part1_variables": "(1) \"chick-fa-le_women\"   [just a quoted string - no variable name, no =]\n(2) medicine = 100   [wrong name, correct value]\n(3) chicken_sandwich - \"Fireball   [wrong name; a dash/minus instead of =; no closing quote]\n0.5/3 (item 2 shows correct assignment form with the right value).",
+          "part2_arithmetic": "pizzas = 180 [the 8 could be a 6] ; sodas = 1000 ; pizza_cost = pizzas * 12 ; soda_cost = sodas * 4 [4 with a small tick] ; total_cost = 15.\nOnly pizza price (*12) correct. 1/5.",
+          "part3_functions": "total = 50 * 0\nreturn 35\nArbitrary literals; no parameters. 0/3.",
+          "part4_trace": "[corrected] gold_value = 30 ; silver_value = 20 ; return value = 10 + 5 = 15 ; final_score = 20 + 10 = 30 ; printed: 45.\nAdds the constants 10 + 5; bonus line uses silver_value (20) rather than the return value; the printed 45 is 30 + 15 (bonus-line result plus 'return value') - the same print-sums-earlier-results method as A-03. 2/5.",
+          "margin_notes": "No margin comments or doodles; jokes are inside the answers (\"chick-fa-le_women\", \"medicine\", \"chicken_sandwich\").",
+          "score": {
+            "p1": 0.5,
+            "p2": 1,
+            "p3": 0,
+            "p4": 2
+          },
+          "misconceptions": [
+            "Item 1 is a bare string with no variable - doesn't yet see that a variable needs a name and =.",
+            "Uses '-' where '=' is required for assignment; leaves quotes unclosed.",
+            "Ignores required variable names.",
+            "Arbitrary counts/prices (180, 1000, *4, 15) - not modeling the word problem.",
+            "Function blanks filled with unrelated literals (50 * 0, return 35).",
+            "[corrected] Tracing: adds code constants (10 + 5) instead of computed values; bonus line starts from silver_value instead of the returned value; printed answer is the sum of earlier results (30 + 15) rather than final_score."
+          ],
+          "strengths": [
+            "Correct products 3 x 10 and 4 x 5.",
+            "medicine = 100 shows the assignment shape with a number.",
+            "Pizza price multiplier (*12) correct."
+          ],
+          "help_suspicion": "[corrected] high (peer collaboration / joint goofing with A-03) - same fast-food joke theme, same 180/1000 counts, same `* 0` in Part 3, same 10 + 5 = 15 trace error, and the same unusual 'printed = bonus-line result + 15' method (30 + 15 = 45 here, 40 + 15 = 55 on A-03).",
+          "experience_estimate": "brand-new - assignment syntax not secure (string with no name, '-' for '='), no parameter concept, tracing confuses constants with values.",
+          "transcription_confidence": "medium-high - pizzas digit 180 vs 160 and the soda multiplier '4' (with a tick) are slightly ambiguous."
+        },
+        {
+          "id": "A-05",
+          "pages": [
+            13,
+            14,
+            15
+          ],
+          "part1_variables": "(1) player name= \"[first name]\"   [uses the example's variable name instead of 'character'; 'name' written small/faint; any underscore would be hidden by the printed answer line - none visible; double quotes correct]\n(2) health = 100   [correct]\n(3) Powrup = fireball   [reads \"Powrup\"/\"Power up\" with capital P, no underscore visible; no quotes]\n1.5/3.",
+          "part2_arithmetic": "pizzas = 12 ; sodas = 2 ; pizza_cost = pizzas * 48 ; soda_cost = sodas * 20 ; total_cost = 68  [literal].\nPrices placed in the count variables and line totals placed in the multiplier blanks; correct final number by hand. 0.5/5.",
+          "part3_functions": "total = ____ * ____ ; return ____   - ALL BLANK. 0/3.",
+          "part4_trace": "gold_value = 30 ; silver_value = 20 ; return value = 30 + 20 = 50 ; final_score = 50 + 10 = 60 ; printed: 60. All correct. 5/5.",
+          "margin_notes": "[corrected] None by this student. Faint marks at the bottom of page 13 are show-through from the reverse side. The faint 'pri...' fragment at the very bottom of page 14 and the pencil lines at the bottom of page 15 (\"total pizzapa... / print(pizza party) ... # 6_\" - the final digit looks like 0 because the sheet is curled) are on a different sheet lying underneath - they belong to A-06 (see A-06 page 16, which reads \"# 68\"), not A-05.",
+          "score": {
+            "p1": 1.5,
+            "p2": 0.5,
+            "p3": 0,
+            "p4": 5
+          },
+          "misconceptions": [
+            "Copies the example's variable name (player_name) instead of the one the instruction asks for (character).",
+            "Unsure when text needs quotes and that names need exact spelling/underscores (Powrup = fireball).",
+            "Fills code blanks with 'the numbers from the math' instead of reasoning about what each variable means: prices into count variables (12, 2), line totals into multiplier slots (48, 20).",
+            "Hand-computes total_cost (68) instead of using pizza_cost + soda_cost.",
+            "Functions/parameters not yet approachable - left Part 3 blank."
+          ],
+          "strengths": [
+            "Perfect trace of a function call, return value and reassignment.",
+            "Correct mental arithmetic for the pizza problem (48, 20, 68).",
+            "Correct number assignment (health = 100) and correct quoting in item 1."
+          ],
+          "help_suspicion": "[corrected] low-medium - Part 2 is identical to A-07 and A-08 (12, 2, *48, *20, 68) and item 1 'player name = \"[first name]\"' matches A-07's 'player_name = \"[first name]\"'. But A-07 and A-08 each show their own planning notes arriving at the same Part 2 answer (so it is a natural misreading the blank layout invites, not proof of copying), and '[first name]' is a popular hero name. Parts 3-4 differ completely from A-07 (blank vs literals; correct trace vs 3 + 4), so at most some neighbor talk on Parts 1-2, and it did not raise the score.",
+          "experience_estimate": "[corrected] emerging - only one of three Part 1 items fully correct (no quotes on 'fireball', altered names), cannot yet map the pizza problem onto variables, and left the function blank; the perfect Part 4 trace (which the scratchpad scaffolds as arithmetic) is a real strength but not enough to call this 'developing'.",
+          "transcription_confidence": "medium - item 1 underscore vs printed line, and item 3 'Powrup' letters are cramped; Part 2 and Part 4 are clear."
+        },
+        {
+          "id": "A-06",
+          "pages": [
+            16,
+            17,
+            18
+          ],
+          "part1_variables": "[corrected] (1) player_name =\"[first name]\"   [uses the example's variable name instead of 'character'; letters look partly capitalized (roughly 'Player_NamE') - case unclear in the handwriting; opening quote merges with the = stroke, closing double quote clear]\n(2) health = 100   [correct]\n(3) power_up = \"Fireball\"   [correct; opening quote a single slanted stroke, closing double]\n2.5/3.",
+          "part2_arithmetic": "pizzas = 4 ; sodas = 10 ; pizza_cost = pizzas * 12 ; soda_cost = sodas * 2 ; total_cost = 68  [literal].\nAlso wrote own code under the prompt (light pencil): \"Pizza = 4 / soda - 10 / total pizzaparty = pizza + soda / print(pizza party) output # 68\" - mirrors the apples/oranges example (adds counts, no prices) but claims 68.\n4.5/5.",
+          "part3_functions": "total = 10 * 5   [10 written small (a 1 with a tiny 0), 5 written oddly]\nreturn 50   [written just above the return blank]\nCorrect literal argument values, no parameters; literal return. 1.5/3.",
+          "part4_trace": "[corrected] gold_value = 30 ; silver_value = 10 [on zoom this reads clearly as 10, not a sloppy 20 - an arithmetic slip, since the next line correctly uses 20] ; return value = 30 + 20 = 50 ; final_score = 50 [looks written over a 30] + 10 = 60 ; printed: 60.\nOne wrong scratch line, correct final answer. 4/5.",
+          "margin_notes": "Light-pencil self-written program below the pizza-party prompt on page 16: \"Pizza = 4\" / \"soda - 10\" / \"total pizzaparty = pizza + soda\" / \"print(pizza party) output # 68\" (\"output\" squeezed above \"# 68\"). The bottom edge of this same sheet is visible under A-05's page 15. Faint strokes at the right of page 17 are show-through.",
+          "score": {
+            "p1": 2.5,
+            "p2": 4.5,
+            "p3": 1.5,
+            "p4": 4
+          },
+          "misconceptions": [
+            "Copies the example's variable name (player_name) instead of the requested 'character'.",
+            "Treats the function as a one-off calculation: plugs in literals 10 and 5 and returns 50 instead of using parameters.",
+            "Hand-computes total_cost (68) instead of pizza_cost + soda_cost.",
+            "In own code, copies the example's shape (a + b) without the prices yet expects 68; uses spaces in names (pizza party) and in print().",
+            "[corrected] Arithmetic slip: silver_value written as 10 (4 x 5), though the next line correctly uses 20."
+          ],
+          "strengths": [
+            "Correct counts and prices in the Part 2 blanks.",
+            "Correct quoting of strings and number assignment.",
+            "Accurate trace through function call and reassignment.",
+            "Spontaneously wrote an own mini-program with print and an output comment - curious and willing to experiment."
+          ],
+          "help_suspicion": "low - consistent light-pencil handwriting across all pages; the side program contains authentic novice errors that clash with any outside help; Part 2 matches A-01 only because both are correct.",
+          "experience_estimate": "developing - strong on variables, arithmetic modeling and tracing, but has no working concept of parameters yet (literals in function).",
+          "transcription_confidence": "medium - very light pencil; quote marks in item 1 merge with '='; capitalization in item 1 unclear; side-program words partly faint. silver_value = 10 is clear on zoom."
+        },
+        {
+          "id": "A-07",
+          "pages": [
+            19,
+            20,
+            21
+          ],
+          "part1_variables": "[corrected] (1) player_name= \"[first name]\"   [uses the example's variable name instead of 'character'; quotes correct] -> 0.5\n(2) health=100   [correct] -> 1\n(3) power_up = \"Fire ball\"   [correct name and quotes, but a space inside the string, so the value is not \"Fireball\"] -> 0.5 (wrong value, scored by the same one-flaw rule used for the other students)\n2/3.",
+          "part2_arithmetic": "Side work around the prompt (page 19): right side \"pizzas = 12 / sodas = 2\"; left side \"total_cost = 48 + 20\".\nBlanks (page 20): pizzas = 12 ; sodas = 2 ; pizza_cost = pizzas * 48 ; soda_cost = sodas * 20 ; total_cost = 68  [literal].\nPrices into count variables, line totals into multiplier slots. 0.5/5.",
+          "part3_functions": "total = 10 * 5\nreturn 50\nCorrect literal values, no parameters; literal return. 1.5/3.",
+          "part4_trace": "gold_value = 30 ; silver_value = 20 ; return value = 3 + 4 = 7 ; final_score = 7 + 10 = 17 ; printed: 17.\nReturns the sum of the raw arguments, ignoring the multiplications just computed; consistent carry-forward. 2/5.",
+          "margin_notes": "Planning notes on page 19 around the pizza prompt: \"pizzas = 12\", \"sodas = 2\" (right), \"total_cost = 48 + 20\" (left). No doodles or comments.",
+          "score": {
+            "p1": 2,
+            "p2": 0.5,
+            "p3": 1.5,
+            "p4": 2
+          },
+          "misconceptions": [
+            "Copies the example's variable name (player_name) instead of 'character'.",
+            "Prices go into count variables and line totals into multiplier slots (12, 2, *48, *20); total computed by hand.",
+            "Function blanks filled with literal argument values instead of parameter names.",
+            "Thinks the function returns the sum of its raw inputs (3 + 4) - doesn't connect `return gold_value + silver_value` to the values computed on the lines above, even after computing 30 and 20.",
+            "String content exactness ('Fire ball' vs 'Fireball')."
+          ],
+          "strengths": [
+            "Clean assignment syntax with correct quotes.",
+            "Correct products 3 x 10, 4 x 5 and correct pizza math by hand (48 + 20).",
+            "Carries values forward consistently once chosen.",
+            "Plans in the margin before filling blanks."
+          ],
+          "help_suspicion": "[corrected] low - Part 2 matches A-05 and A-08 (12, 2, *48, *20, 68) and '[first name]' matches A-05's '[first name]', but this sheet's own planning notes (pizzas = 12, sodas = 2, total_cost = 48 + 20) show the student reasoning to that answer themselves; A-08 also reached it on their own in red pen, so it is a shared misreading of the blank layout. '[first name]' is a common hero pick. Parts 3-4 differ from A-05, and nothing here is better than the rest of the sheet.",
+          "experience_estimate": "emerging - knows assignment syntax but not how variables model a problem, has no parameter concept, and misreads what a function returns.",
+          "transcription_confidence": "high - clear pen; all values legible."
+        },
+        {
+          "id": "A-08",
+          "pages": [
+            22,
+            23,
+            24
+          ],
+          "part1_variables": "[corrected] (all in red pen)\n(1) plager_name = kratos   [i.e. player_name (example's name, not 'character'); the '=' is drawn as one long dash; value unquoted] -> 0 (wrong name AND no quotes)\n(2) heath = 100   [name reads \"heath\" - 'l' missing or merged; \"1ö0\" with dots over a 0] -> 0.5\n(3) power_up = spartin rage in barsed hamah   [correct name; own God-of-War value (\"Spartan Rage ...\") instead of \"Fireball\"; no quotes; last two words uncertain, runs past the line into the margin] -> 0 (wrong value AND no quotes)\n0.5/3 (the draft's 1/3 was inconsistent with the one-flaw scoring rule).",
+          "part2_arithmetic": "Side work under the prompt (red): \"P=12\" / \"S=2\" / \"Total_P[scribbled out]=a[pple scribbled out]+ pizza + soda\" / a crossed-out \"p=s\" beneath / \"print(total_frait)\" [i.e. total_fruit left over from the apples/oranges example].\nBlanks: pizzas = 12 ; sodas = 2 ; pizza_cost = pizzas * 48 ; soda_cost = sodas * 20 ; total_cost = 68  [literal].\n0.5/5.",
+          "part3_functions": "total = 25 * 2,[heavily overwritten - unreadable, maybe \"10\"]\nreturn 50\nPicks numbers that multiply to the expected 50 rather than using parameters; literal return. 0.5/3.",
+          "part4_trace": "[corrected] gold_value = 50 [on zoom the first digit has the flat top of a 5, and the next line uses 50 with a sum of 70, so the student did write 50 - an arithmetic slip, not an ambiguous 30] ; silver_value = 20 [heavily overwritten] ; return value = 50 + 20 = 70 ; final_score = 70 + 10 = 80 ; printed: 80 [same glyph as the 80 on the line above; could also be read as 90].\nThe gold slip is carried forward consistently; the structure (add the two values, then add 10) is right. 1/5 (silver line correct; no credit for 'ambiguous' gold since it reads as 50).",
+          "margin_notes": "Red pen throughout. Page 22: item 3 runs off the line into the right margin (\"...in barsed hamah·\"); side code under the pizza prompt with crossed-out attempts (\"Total_P~~...~~=a~~pple~~+ pizza + soda\", crossed-out \"p=s\", \"print(total_frait)\"). Page 23: second Part 3 blank is a scribbled-over block; mirrored red show-through of page 22's side code is visible at the bottom (same sheet, front/back). Page 24: the pencil squiggle at the top-right is on a different sheet underneath, not this student's.",
+          "score": {
+            "p1": 0.5,
+            "p2": 0.5,
+            "p3": 0.5,
+            "p4": 1
+          },
+          "misconceptions": [
+            "Copies the example's variable name (player_name) instead of 'character'.",
+            "Writes text values without quotes, including a multi-word value.",
+            "Doesn't realize variable names must be spelled exactly (heath).",
+            "Prices into count variables and line totals into multiplier slots; total by hand.",
+            "Copies the apples/oranges template literally (print(total_frait)) without adapting the variable name.",
+            "Sees the function as 'produce the expected output' - picks 25 * 2 = 50 instead of using the inputs.",
+            "Arithmetic/trace slip (gold_value 50) carried through to 80."
+          ],
+          "strengths": [
+            "High engagement and creativity - personalized the character with a favorite game (Kratos / Spartan Rage).",
+            "Understands the name = value shape.",
+            "Works backward from the expected output; carries values forward consistently.",
+            "Willing to draft and revise code (crossed-out attempts)."
+          ],
+          "help_suspicion": "[corrected] low - Part 2 matches A-05 and A-07 (12, 2, *48, *20, 68), but this student's own red-pen planning (\"P=12\", \"S=2\", crossed-out attempts) shows them reaching it on their own, and A-07 did the same in their own notes - a shared misreading of the blanks, not copying. Everything else is idiosyncratic (God-of-War answers, red pen, unique Part 3/4 errors).",
+          "experience_estimate": "emerging - knows the general shape of assignment and engages eagerly, but no quotes for strings, no parameter concept, and imitates examples without adapting them.",
+          "transcription_confidence": "medium - red pen with overwrites; Part 1 item 3's last words and the second Part 3 blank (unreadable) are uncertain; the printed 80 could be read as 90. gold_value = 50 is clear on zoom."
+        }
+      ],
+      "page_notes": "[corrected] Second-reader check: all 24 pages read, with zoomed crops of every ambiguous region. Page-to-student assignment confirmed: 8 students x 3 pages each, in order (A-01 p1-3, A-02 p4-6, A-03 p7-9, A-04 p10-12, A-05 p13-15, A-06 p16-18, A-07 p19-21, A-08 p22-24). No missed or merged students; ids unchanged. No blank, duplicated or missing pages. Several photos are tilted/rotated a few degrees and curled but readable. Each student's first page has a short diagonal stroke at the top-left (looks like a collector/teacher mark, not student work). Names are covered by a thumb; on page 7 a fragment of the name line and on several pages a partial date are visible - deliberately not recorded. Cross-sheet bleed: the faint 'pri...' at the bottom of page 14 and the pencil text at the bottom of page 15 are the edge of A-06's page-16 sheet lying under A-05's; the scribble at the top-right of page 24 and the \"Py / V\" at the top-left of page 21 are other sheets underneath. Faint mirrored text is show-through from the reverse side (e.g. page 22's red side code shows through at the bottom of page 23, so p22/p23 are one double-sided sheet).\nCHANGES FROM THE FIRST DRAFT: Scores - A-06 p4 4.5 -> 4 (silver_value reads clearly as 10); A-07 p1 2.5 -> 2 ('Fire ball' is a wrong value under the one-flaw rule); A-08 p1 1 -> 0.5 (items 1 and 3 each have two flaws) and p4 1.5 -> 1 (gold_value reads as 50, not ambiguous). Help suspicion - A-05 medium -> low-medium, A-07 medium -> low, A-08 low-medium -> low (A-07's and A-08's own planning notes show the shared Part 2 answer was reasoned out independently); A-03/A-04 stay high with one more shared quirk added. Experience - A-05 developing -> emerging. Transcription - A-02's Part 4 values sit one line too high; A-03/A-04's printed answers explained as the bonus-line result + 15.\nSCORING CONVENTIONS used: P1 per item 1 = correct name + '=' + correct value with valid quotes; 0.5 = exactly one flaw (wrong/altered name OR missing/unbalanced quotes OR wrong value); 0 = two+ flaws or not an assignment. P2 = 1 per blank (4, 10, *12, *2, pizza_cost + soda_cost); a literal 68 / 48+20 for total_cost = 0.5. P3 multiplicands: exact parameter = 1, approximate parameter name or correct literal (10 / 5) = 0.5, else 0; return: total = 1, literal 50 = 0.5, undefined name or other = 0. P4 = 1 per scratch line + printed answer; 0.5 where the reading is truly ambiguous.\nCROSS-STUDENT PATTERNS: (a) 0 of 8 completed Part 3 correctly - nobody wrote base_attack * bonus_multiplier / return total; 6 used literals (only A-06 and A-07 used the correct literals 10 * 5 / return 50), 1 used approximate names (A-01), 1 left it blank (A-05). (b) 4 of 8 (A-05, A-06, A-07, A-08) wrote player_name (the example's name) instead of the requested 'character' - students copy the example's identifiers. (c) A-05, A-07, A-08 share the identical Part 2 error 12, 2, *48, *20, 68 (prices into counts, totals into multipliers). A-07 and A-08 each reached it in their own planning notes, so the worksheet layout invites it (the first two numbers in the prompt are prices, and the blanks are labelled 'counts'). (d) A-03 and A-04 share joke answers, 180/1000 counts, '* 0', the 10 + 5 trace error, and the same 'printed = bonus-line result + 15' method - clearly worked together. (e) Only A-01 and A-06 modeled Part 2 correctly; both still hand-wrote 68 for total_cost (and so did every student who reached 68) - nobody wrote total_cost = pizza_cost + soda_cost. (f) Part 4 (scaffolded trace) was the strongest section: A-01 and A-05 perfect, A-02 4.5, A-06 4; the common trace errors were adding the code's constants (A-03, A-04), returning the raw arguments 3 + 4 (A-07), and not carrying the returned value into final_score (A-03, A-04)."
+    },
+    "B": {
+      "pdf": "scan set B",
+      "scoring_conventions": "P1: 1 per item; a correctly quoted string with no `character =` gets 0.5. P2: 1 per blank (pizzas, sodas, *12, *2, total_cost); a hard-coded 68 gets 0.5 (right number, not pizza_cost + soda_cost). P3: 1 per slot; a correct literal argument value (10 or 5) instead of the parameter name gets 0.5, a blank or erased slot gets 0. P4: 1 per scratch line (4) + 1 for the final answer.",
+      "students": [
+        {
+          "id": "B-01",
+          "pages": [
+            1,
+            2,
+            3
+          ],
+          "part1_variables": "[corrected] (1) `[joke name]`: written across the answer line and up into the prompt line, with no quotes and no `character =`. It reads as the joke name \"[joke name]\"; the P's are drawn large, so case is uncertain. INCORRECT: there is no assignment and the string has no quotes. (2) `health=100` (the l is drawn like '('): CORRECT. (3) `power_UP= fireball`: 'UP' is drawn as capitals, and the w in power is drawn like a 'v' (it could be read 'pover_UP'). There are no quotes around fireball, the f is lowercase, and the dot on the i looks like a comma ('f,reball'). The end could be 'll' or 'l)'. INCORRECT: without quotes Python reads fireball as an undefined name (NameError), and power_UP is a different identifier from power_up.",
+          "part2_arithmetic": "Side work on p.1, in light-gray pencil below the prompt and outside the template: `PiZZa= 4` (the z's are overwritten/doubled) / `sodaS = 10`. Template on p.2: pizzas = `4` (4 drawn like 'Ч') CORRECT; sodas = `10` CORRECT; pizza_cost = pizzas * `12` CORRECT; soda_cost = sodas * `2` (the 2 is Z-shaped) CORRECT; total_cost = `68`: the value is right but it is a hard-coded literal, not pizza_cost + soda_cost. The program would print 68. 4.5/5.",
+          "part3_functions": "total = `10` * ____ ; return ____. The '10' in the first blank is extremely faint and looks erased or barely pressed. The second multiplicand is blank. The return blank is empty apart from a stray dot. INCORRECT/ABANDONED: the only mark is a literal from the test call, not the parameter base_attack. 0/3.",
+          "part4_trace": "gold_value = 3 x 10 = `30` CORRECT; silver_value = 4 x 5 = `20` (2 drawn with a bottom loop, like 'ə') CORRECT; score_points return value = `30` + `20` = `50` (5 drawn angular and flat-topped, like 'Σ') CORRECT; final_score after bonus = `50` + 10 = `60` CORRECT; What number will be printed? `60` CORRECT. 5/5.",
+          "margin_notes": "[corrected] No separate comments or doodles. The hero-name answer is the joke '[joke name]' (playful). Light-gray pencil side work below the Part 2 prompt on p.1 reads 'PiZZa= 4 / sodaS = 10' (the z's are overwritten; case is uncertain). It looks like an attempt to write the code before turning the page and finding the template. There is a faint, apparently erased '10' in the Part 3 first blank and a stray dot by the return blank. The diagonal mark in the top-left corner of p.1 is a metal staple (zoomed: a gray metallic staple crown), not a pen mark. The same staple appears on pp.4 and 7. The Date line on p.1 is blank, and the Name field is cropped off the top edge (not read).",
+          "score": {
+            "p1": 1,
+            "p2": 4.5,
+            "p3": 0,
+            "p4": 5
+          },
+          "misconceptions": [
+            "Strings without quotes: writes text values ([joke name], fireball) bare, so Python would treat them as variable names.",
+            "Writing a variable means writing just the value: Part 1 #1 has no `character =`.",
+            "[corrected] Possibly unaware that names must match exactly (Python is case-sensitive): wrote power_UP (maybe 'pover_UP') for power_up. The capitals are uncertain in handwriting, so treat this as tentative.",
+            "Hard-codes the computed answer (68) instead of combining the variables pizza_cost + soda_cost.",
+            "No working model of parameters or return yet: the function section was essentially abandoned (one erased literal)."
+          ],
+          "strengths": [
+            "Correct `name = value` assignment for a number (health=100).",
+            "Wrote assignment statements on their own (PiZZa= 4 / sodaS = 10) before seeing the template.",
+            "Fills scaffolded blanks correctly when the numbers come from the word problem (4, 10, 12, 2, 68).",
+            "Perfect guided code trace, including the reassignment step final_score = final_score + 10 (as scaffolded)."
+          ],
+          "help_suspicion": "[corrected] medium (limited to Part 4). Parts 1-3 look authentic. Part 1 is in this student's large, loose black-pen hand, with genuine beginner errors and a joke name. The Part 2 digits and the p.1 pencil side work share this student's own digit style: an open 'Ч'-shaped 4, non-looped Z-shaped 2s in '12' and '2', and plain round 0s. Part 3 is abandoned. The Part 4 sheet (p.3) is in a different hand: looped 'ə/∂'-style 2s, large round 0s, and an angular flat-topped 5 in the final_score line. That is the same digit style as B-03's Part 4 (p.9), the Part 2 digits on both B-02 and B-03 (looped 2s in '12'/'2'), and the looped 2 in B-03's date [date]. The packets are stapled (a metal staple shows top-left on pp.1, 4 and 7), so a mixed-up Part 4 sheet is unlikely unless the teacher stapled loose sheets after collecting them. The teacher can confirm this. Most likely the same person who wrote B-03's sheet (and B-02's Parts 1-2) filled in or copied out B-01's trace. Practical effect: do not treat B-01's 5/5 trace as evidence of their own tracing skill. Everything correct on this sheet can also be reached from the worksheet's scaffolding.",
+          "experience_estimate": "brand-new: writes strings without quotes, does not form a full assignment for the hero, and leaves functions untouched; succeeds only where the worksheet supplies the numbers or the arithmetic.",
+          "transcription_confidence": "[corrected] medium. Page 1 was photographed at a noticeable skew. Letter case in '[joke name]' and 'power_UP' is ambiguous (large P/U forms), the w in 'power' looks like a v, and the end of 'fireball' could be 'll' or 'l)'. The Part 3 '10' is barely visible (erased). The Part 4 numbers are clear; the angular 5s are confirmed as 5 by the arithmetic (30+20=50)."
+        },
+        {
+          "id": "B-02",
+          "pages": [
+            4,
+            5,
+            6
+          ],
+          "part1_variables": "(1) `\"Spiderman\"`: a quoted string only, with no `character =`. PARTIAL (0.5): correct string literal but no variable created. (2) `health=100`: CORRECT. (3) `power_up= \"Fireball\"`: CORRECT (capital F; the opening quote is drawn as two separate tick marks).",
+          "part2_arithmetic": "Side work on p.4, in light-gray pencil below the prompt: `Pizza=4` / `Soda=10` (cursive 'α'-style a). Template on p.5: pizzas = `4` CORRECT; sodas = `10` CORRECT; pizza_cost = pizzas * `12` CORRECT; soda_cost = sodas * `2` (2 drawn with a bottom loop, like 'ə') CORRECT; total_cost = `68`: the value is right but it is a hard-coded literal, not pizza_cost + soda_cost. Prints 68. 4.5/5.",
+          "part3_functions": "total = `10` * `5` ; return ____ (blank). INCORRECT: puts the test-call argument values in the body instead of the parameters base_attack and bonus_multiplier. That happens to give 50 for this one call but ignores the inputs. With return blank, the function would return None. Partial credit for the correct literal values: 1/3.",
+          "part4_trace": "[corrected] gold_value = 3 x 10 = `30` CORRECT; silver_value = 4 x 5 = `20` CORRECT; score_points return value = `30` + `20` = `50` CORRECT; final_score after bonus = `50` + 10 = `60` CORRECT; What number will be printed? `60` CORRECT. 5/5. Digit forms on this sheet (p.6), which matter for the help note: non-looped 2s with a flat base (Z-like), small 0s drawn with an inner stroke or loop (θ-like; the final '60' has a slashed 0), a 3 with a curled top, a flat-topped 5, and a cursive 6. These differ from the looped 2s and clean round 0s in B-02's own Part 2.",
+          "margin_notes": "[corrected] No comments or doodles. Light-gray pencil side work below the Part 2 prompt on p.4: 'Pizza=4 / Soda=10' (cursive 'α'-style a). It looks like an attempt to write the code before turning the page to the template. The diagonal mark in the top-left corner of p.4 is a metal staple, the same as on pp.1 and 7. The top-right corner of p.5 shows the stapled sheet folded over, so p.5 is the back of p.4. The Name and Date fields are covered by a thumb (not read).",
+          "score": {
+            "p1": 2.5,
+            "p2": 4.5,
+            "p3": 1,
+            "p4": 5
+          },
+          "misconceptions": [
+            "Writing a variable means writing just the value: Part 1 #1 has no `character =`, even though #2 and #3 are written as full assignments.",
+            "Parameters vs arguments: puts the specific call values (10, 5) inside the function body instead of the parameter names.",
+            "Unclear what return does: left it blank, so the function would give back nothing (None).",
+            "Hard-codes the computed answer (68) instead of pizza_cost + soda_cost.",
+            "Loose with exact variable names: wrote Pizza/Soda in the side work, while the template uses pizzas/sodas."
+          ],
+          "strengths": [
+            "Quotes strings correctly (\"Spiderman\", \"Fireball\").",
+            "Correct `name = value` assignment syntax for numbers and strings.",
+            "Wrote assignment statements on their own before seeing the template.",
+            "Attempted the function body and saw that it should multiply the two inputs.",
+            "Perfect guided code trace."
+          ],
+          "help_suspicion": "[corrected] high (the packet is not one person's independent work; who wrote which part is uncertain). (a) Parts 1-2 and the pencil side work are in the same hand as B-03's sheet: nearly identical 'health=100' letterforms, the same two-tick opening quotes, the same 'power_up=' spacing, the same looped 'ə/∂' 2s in '12' and '2', the same '68', and the same cursive-α 'Pizza=4 / Soda=10' note in the same spot. This is a matching hand, not just matching answers, because the hero names differ (Spiderman vs Superman). (b) Within this stapled packet, the Part 4 sheet (p.6) is in a different hand from Parts 1-2: non-looped flat-based 2s, θ-like 0s with an inner stroke, and a curled 3. The Part 3 entries ('10' with an inner-stroke 0, a flat-topped '5') resemble the p.6 digits more than B-02's own Part 2 digits. So at least two writers appear on this packet, and one of them also wrote B-03's sheet and B-01's Part 4. Which one is B-02 cannot be told from the scans. Alternative explanation: a Part 4 sheet swap with B-01 (p.6's non-looped 2s are closer to B-01's Part 2), but that only works if the sheets were stapled after collection. Either way, nothing on the sheet goes beyond the scaffolding: Part 3 uses literals and has no return.",
+          "experience_estimate": "[corrected] emerging (low confidence): the sheet shows `name = value` with quoted strings, and a function body attempted with argument literals and no return. But Parts 1-2 are in a hand shared with B-03's sheet, so the Part 1 string/assignment skill may not be B-02's own. Recheck B-02 individually before placing them above brand-new.",
+          "transcription_confidence": "high. The handwriting is clear. Minor points: the opening quotes are drawn as two separate ticks, and the 2s are looped."
+        },
+        {
+          "id": "B-03",
+          "pages": [
+            7,
+            8,
+            9
+          ],
+          "part1_variables": "(1) `\"Superman\"`: a quoted string only, with no `character =`. PARTIAL (0.5). (2) `health=100`: CORRECT. (3) `power_up= \"fireball\"`: correct variable name and quotes. The f looks like a lowercase/script f, so the value may differ in case from \"Fireball\"; counted CORRECT because the case difference is minor.",
+          "part2_arithmetic": "Side work on p.7, in light-gray pencil below the prompt: `Pizza=4` / `soda=10` (cursive 'α'-style a). Template on p.8: pizzas = `4` CORRECT; sodas = `10` CORRECT; pizza_cost = pizzas * `12` CORRECT; soda_cost = sodas * `2` (looped 'ə'-style 2) CORRECT; total_cost = `68`: the value is right but it is a hard-coded literal, not pizza_cost + soda_cost. Prints 68. 4.5/5.",
+          "part3_functions": "total = ____ * ____ ; return ____. ALL BLANK. 0/3.",
+          "part4_trace": "gold_value = 3 x 10 = `30` CORRECT; silver_value = 4 x 5 = `20` (looped 2) CORRECT; score_points return value = `30` + `20` = `50` CORRECT; final_score after bonus = `50` (angular flat-topped 5) + 10 = `60` CORRECT; What number will be printed? `60` CORRECT. 5/5.",
+          "margin_notes": "[corrected] No comments or doodles. Light-gray pencil side work below the Part 2 prompt on p.7: 'Pizza=4 / soda=10' (cursive-α a). The date field reads [date]; the 2 is the looped '∂' form, and the rest is hidden by a thumb. The Name field is covered by a thumb (not read). The diagonal mark in the top-left corner of p.7 is a metal staple. There is a tiny dot just left of the title. The Part 3 section was left completely blank.",
+          "score": {
+            "p1": 2.5,
+            "p2": 4.5,
+            "p3": 0,
+            "p4": 5
+          },
+          "misconceptions": [
+            "Writing a variable means writing just the value: Part 1 #1 has no `character =`.",
+            "Hard-codes the computed answer (68) instead of pizza_cost + soda_cost.",
+            "No model yet of a function body, parameters or return: Part 3 left entirely blank.",
+            "Loose with exact names and case: wrote Pizza/soda in the side work, and probably fireball for \"Fireball\"."
+          ],
+          "strengths": [
+            "Quotes strings correctly.",
+            "Correct `name = value` assignment syntax.",
+            "Wrote assignment statements on their own before seeing the template.",
+            "Fills the scaffolded arithmetic blanks correctly.",
+            "Perfect guided code trace."
+          ],
+          "help_suspicion": "[corrected] medium (this sheet is in one hand that also shows up on other students' packets). Internally the sheet is consistent: Parts 1-2, the pencil note, the date and the Part 4 digits (p.9) all share one hand, with looped '∂' 2s, large round 0s, an angular flat-topped 5 and two-tick quotes. That same hand also wrote B-02's Parts 1-2 (identical 'health=100', 'power_up=', quotes, looped 2s and pencil note) and, judging by the digits, B-01's Part 4 (p.3). So B-03 may be the student who helped others or wrote on their sheets, rather than one who received help, or one person (possibly B-02) wrote both sheets. That cannot be resolved from the scans. The blank Part 3 shows no help reached functions, and every correct answer is reachable from the scaffolding.",
+          "experience_estimate": "emerging: quoted strings and assignments in Part 1 are essentially right, but the function section is completely blank, and success elsewhere is on scaffolded fill-ins.",
+          "transcription_confidence": "high/medium. The handwriting is clear overall. The only real question is whether 'fireball' begins with a lowercase f or a cursive capital F."
+        }
+      ],
+      "page_notes": "[corrected] 9 pages, 3 students, 3 consecutive pages each: B-01 = pp.1-3, B-02 = pp.4-6, B-03 = pp.7-9. No students were missed or merged, so the ids are unchanged. Each student starts on a page with the 'Python Power-Up' title and Name/Date header. Names were not read: on pp.4 and 7 a thumb covers them, and on p.1 the Name field is cropped off the top edge. PHYSICAL STRUCTURE (verified on zoomed crops): each packet is sheet 1, printed double-sided (front = Parts 1-2 prompt, back = Part 2 template + Part 3), plus sheet 2 (Part 4), held by a metal staple at the top-left. The 'small diagonal stroke' the first reader saw on pp.1, 4 and 7 is that staple. pp.2, 5 and 8 show mirrored bleed-through of their own front ('...ARITHMETIC & FUNCTIONS', 'Part 1: Variables (The Magic Boxes)'), and their top-right corners show the stapled sheet folded over. So the page-to-student grouping as photographed is very likely correct, unless the teacher stapled loose sheets after collecting them; the teacher can confirm. Photo quality: p.1 is noticeably skewed (about 5-8 degrees) and p.5 slightly; both are readable. The lower halves of pp.3, 6 and 9 are blank on the worksheet but show faint bleed-through of an underlying sheet-1 front (printed Part 1 prompts and faint handwriting). This is not student work on those pages and is too faint to attribute, so it was ignored. Cross-sheet observations: (a) All three students wrote light-gray pencil side work ('Pizza=4 / Soda=10' variants) in the same spot below the Part 2 prompt on the front page, before turning to the template. B-01's version is in their own block print; B-02's and B-03's are the same cursive-α hand. (b) Parts 2 and 4 have identical answers on all three sheets, including the hard-coded total_cost = 68. The scaffolding makes that expected, so identical answers alone are weak evidence. (c) [corrected] Handwriting map from digit forms. Hand X (looped '∂' 2s, large round 0s, angular flat-topped 5, two-tick quotes) wrote B-03's whole sheet (pp.7-9), B-02's Parts 1-2 (pp.4-5) and B-01's Part 4 (p.3). B-01's own hand (open 'Ч' 4, non-looped Z-shaped 2s) appears in B-01's Parts 1-2. A third style (non-looped flat-based 2s, θ-like 0s with an inner stroke) appears on B-02's Part 4 (p.6) and probably B-02's Part 3 entries. The first reader caught the B-01/B-03 Part 4 match but missed that B-02's Part 4 does not match B-02's own Part 2. (d) No student wrote the variable-based pizza_cost + soda_cost, and no student used parameter names in Part 3. (e) No scoring errors were found: all scores follow the stated conventions. One judgment call: B-03's \"fireball\" (lowercase f) got full credit, though strictly it is a different string from \"Fireball\". The heavy scaffolding in Parts 2 and 4, plus the multiple hands, means the Part 4 5/5 scores here say little about any individual's tracing skill."
+    }
+  }
+}
