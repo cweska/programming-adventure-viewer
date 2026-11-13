@@ -700,6 +700,14 @@ def export(sources: list[Path], content_dir: Path, ts_path: Path, root: Path, ct
         if order_a == order_b:
             ctx.error(file_b, f"unit {id_b!r} has the same order ({order_b}) as unit {id_a!r} in {file_a}")
     entries = [entry for entry, _ in sorted(glossary.values(), key=lambda pair: str(pair[0].get("term", "")).lower())]
+    # A [[link]] resolves by term or alias, so no name may belong to two entries (even from different files).
+    owners: dict[str, str] = {}
+    for entry, shown in glossary.values():
+        for name in [entry.get("term", ""), *(entry.get("aliases") or [])]:
+            key = str(name).strip().lower()
+            if key in owners and owners[key] != entry.get("term"):
+                ctx.error(shown, f"glossary name {name!r} of {entry.get('term')!r} is already a term or alias of {owners[key]!r}")
+            owners.setdefault(key, str(entry.get("term")))
     outputs[content_dir / "glossary.json"] = render_json(entries)
     outputs[ts_path] = render_ts([unit_id for _, _, unit_id in units], content_dir, ts_path)
     return outputs

@@ -75,9 +75,10 @@ GLOSSARY = [
         example='name = input("Who goes there? ")',
     ),
     dict(
-        term="concatenate",
-        aliases=["concatenation", "glue"],
-        plain="Join strings end to end with `+`.",
+        # Same entry as Unit 1's (u01c), so the merged glossary keeps one "glue" with no clashing aliases.
+        term="glue",
+        aliases=["glues", "gluing", "concatenate", "concatenation"],
+        plain="Join texts end to end with `+`. Python adds no spaces, so put the spaces inside the quotes.",
         example='"Shield" + " up."',
     ),
     dict(

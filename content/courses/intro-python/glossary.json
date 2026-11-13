@@ -23,15 +23,6 @@
     "example": "# Lucky's lines for tonight"
   },
   {
-    "term": "concatenate",
-    "aliases": [
-      "concatenation",
-      "glue"
-    ],
-    "plain": "Join strings end to end with `+`.",
-    "example": "\"Shield\" + \" up.\""
-  },
-  {
     "term": "console",
     "aliases": [
       "the console"
