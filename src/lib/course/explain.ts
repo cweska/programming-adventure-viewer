@@ -2,7 +2,7 @@
  * Friendly error explanations for the Intro to Python course (contracts.ts ExplainCourseError).
  *
  * Wraps the campaign's explainPython() and adds plain-language help for the slips this class really
- * makes (docs/intro-to-python/research/student-groups.md, "Class-wide patterns", and the "starting from
+ * makes (the class diagnostic's "Class-wide patterns", kept out of the repo, and the "starting from
  * zero" review, docs/intro-to-python/design/reviews/curriculum-starting-from-zero.md §4.1): unquoted text,
  * unclosed or mismatched quotes, `def` used to make a variable, a dash instead of `=`, `5P + 2S`, a name
  * alone on a line, capital-letter and spelling mismatches, names copied from the worked example,
