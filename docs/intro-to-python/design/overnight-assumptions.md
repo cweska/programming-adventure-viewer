@@ -23,3 +23,8 @@ without them. Each one is easy to change in the morning.
   Unit 1 (export, full tests, a browser check that every Unit 1 solution passes, the pull request) comes first and
   should fit. Units 2+ will probably need your monthly reset, or Tuesday's weekly reset (3:00pm MST). Everything
   is saved on the branch, so work can pick up right where it stopped.
+
+- **(6:05am MST) Unit 1 is verified and the pull request is open.** Locally, all 592 unit tests and 71 browser tests
+  pass, including a test that runs every one of Unit 1's 44 exercises in a real browser and gets the same result as
+  the prototype checker. The container restarted around 3:20am and paused work until 6:00am; nothing was lost. A
+  student-perspective review of Unit 1 is still running, and any fixes it finds will be added to the same pull request.
