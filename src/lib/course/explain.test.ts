@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { closeName, definedNames, explainCourseError, explainQuietSlip, type ExplainContext } from "./explain";
+import { flattenChecks, gradeCheckpoints } from "./grading";
 import { runCourseChecks } from "./run-course";
 
 /** Run the code like a course run and explain the real traceback Python gives. */
@@ -502,6 +503,134 @@ describe("explainCourseError: the reviewer's findings", () => {
     // The apostrophe and mismatched cases keep their own advice.
     expect(explainRun("print('It's fun')\n").kind).toBe("apostrophe");
     expect(explainRun("print(\"It's fun')\n").hint).toContain('like "It\'s fun"');
+  });
+});
+
+describe("explainCourseError: Unit 1 play-through findings", () => {
+  it("sends a case slip to the task's name, and to the line that made the box (name-and-value, exact-names, mend-three)", () => {
+    const character = explainRun('Character = "Kratos"\nprint(character)\n', [], { names: ["character"] });
+    expect(character.kind).toBe("capital-letters");
+    expect(character.hint).toBe(
+      "Line 1 makes `Character`, but this task's box is `character`. Python sees them as two different names, because the capital letters differ. Rename it on line 1: `character = \"Kratos\"`",
+    );
+    expect(character.hint).not.toContain("Use Character");
+    const mana = explainRun("Max_Mana = 18\nprint(max_mana)\n", [], { names: ["magical_affinity", "max_mana"] });
+    expect(mana.hint).toContain("this task's box is `max_mana`");
+    expect(mana.hint).toContain("Rename it on line 1: `max_mana = 18`");
+    const stamina = explainRun(
+      'print("The fire is low.")\nstamina = 15\nstamina = stamina - 4\nMax_Stamina = 16\nprint(max_stamina)\n',
+      [],
+      { names: ["stamina", "max_stamina"] },
+    );
+    expect(stamina.hint).toContain("Line 4 makes `Max_Stamina`, but this task's box is `max_stamina`");
+    expect(stamina.hint).toContain("`max_stamina = 16`");
+    // The box made right and used wrong: write the task's name where it is used.
+    const used = explainRun('character = "Kratos"\nprint(Character)\n', [], { names: ["character"] });
+    expect(used.hint).toContain("Line 2 uses `Character`, but this task's box is `character`");
+    expect(used.hint).toContain("Write `character` on line 2");
+    // Neither spelling is the task's: make both lines match, without picking one.
+    const neither = explainRun('Spell = "fire"\nprint(spell)\n', [], { names: ["mana"] });
+    expect(neither.hint).toContain("Make both lines match");
+    expect(neither.hint).not.toContain("Use Spell");
+    // A builtin with a capital keeps its own advice.
+    expect(explainRun('Print("hi")\n', [], { names: ["print"] }).hint).toContain("Use print");
+  });
+
+  it("says `mana = mana - spell_cost` for a subtraction that keeps nothing (spend-mana, Quick Check status line)", () => {
+    const spend = explainQuietSlip("mana = 26\nspell_cost = 3\nmana = mana - spell_cost\nmana - spell_cost\nprint(mana)\n");
+    expect(spend?.kind).toBe("dash-no-effect");
+    expect(spend?.hint).toBe(
+      "Line 4 works out mana - spell_cost, but nothing keeps the answer, so mana does not change. To keep it, put `mana =` in front: `mana = mana - spell_cost`",
+    );
+    expect(spend?.hint).not.toContain("mana = spell_cost");
+    // A number: Mar'tu's version says whether it is a spend (mana = mana - 3) or a new value (mana = 14).
+    const spendNumber = explainQuietSlip("mana = 20\nmana - 3\nprint(mana)\n", { context: { solution: "mana = 20\nmana = mana - 3\nprint(mana)\n" } });
+    expect(spendNumber?.hint).toContain("`mana = mana - 3`");
+    const newValue = explainQuietSlip("mana = 26\nmana = 21\nmana - 14\nprint(mana)\n", {
+      context: { names: ["mana"], solution: "mana = 26\nmana = 21\nmana = 14\nprint(mana)\n" },
+    });
+    expect(newValue?.hint).toContain("write: mana = 14");
+    // Graded like the site: the step message is the slip, not "mana = spell_cost".
+    const checkpoints = [{ id: "spend", text: "Spend one spell.", hints: ["a", "b"], checks: [{ name: "spent", code: "assert mana == 14, 'mana did not change'" }] }];
+    const code = "mana = 20\nspell_cost = 6\nmana - spell_cost\nprint(mana)\n";
+    const grade = gradeCheckpoints(checkpoints, runCourseChecks(code, flattenChecks(checkpoints)), code, { names: ["mana", "spell_cost"] });
+    expect(grade.checkpoints[0].message).toContain("`mana = mana - spell_cost`");
+  });
+
+  it("points to print, never to a variable, in a task that only prints (Lesson 1A)", () => {
+    const printOnly = { names: ["print"], solution: 'print("_ - = are side by side.")\n' };
+    const def = explainRun('# Type the symbols\ndef ("symbols")\n', [], printOnly);
+    expect(def.kind).toBe("def-for-variable");
+    expect(def.hint).toBe('`def` is not needed here: this task only shows words. To show them, write `print("symbols")`');
+    const words = { solution: 'print("Steady, now. We go together.")\n' };
+    expect(explainRun('def ("Steady now")\n', [], words).hint).toContain('`print("Steady now")`');
+    const dash = explainRun('oogrish - "Steady now"\n', [], words);
+    expect(dash.kind).toBe("dash-for-equals");
+    expect(dash.hint).toContain('write `print("Steady now")`');
+    expect(dash.hint).not.toMatch(/variable|oogrish =/);
+    const bare = explainQuietSlip('"_ - ="\n', { context: printOnly });
+    expect(bare?.kind).toBe("bare-value");
+    expect(bare?.hint).toBe('Line 1 is words in quotes with no print, so Python reads it, then forgets it. To show it, write `print("_ - =")`');
+    expect(explainRun("Steady\n", [], words).hint).toContain('`print("Steady")`');
+    // Once the task makes boxes, the variable advice is right again.
+    expect(explainRun('def ("character")\n', [], { names: ["character"], solution: 'character = "Kratos"\nprint(character)\n' }).hint).toContain(
+      'character = "your value"',
+    );
+  });
+
+  it("reads a quoted box name as quotes on a name, and keeps Name goes first for a real swap", () => {
+    const quoted = explainRun('"weapon" = "Telegun"\n', [], { names: ["weapon", "companion", "glug_sips", "hero"] });
+    expect(quoted.kind).toBe("quoted-name");
+    expect(quoted.hint).toBe('A box\'s name has no quotes on line 1. Take the quotes off weapon: `weapon = "Telegun"`');
+    expect(quoted.hint).not.toContain("Kratos");
+    const swap = explainRun('"Lucky" = hero\n');
+    expect(swap.kind).toBe("name-goes-first");
+    expect(swap.hint).toContain('hero = "Lucky"');
+  });
+
+  it("never suggests a module or a builtin the student has not met (moth is not math)", () => {
+    const solo = { names: ["familiar"], solution: 'familiar = "a grumpy moth"\nprint(familiar)\n' };
+    for (const word of ["moth", "mop", "ant"]) {
+      const result = explainRun(`familiar = ${word}\nprint(familiar)\n`, [], solo);
+      expect(result.kind, word).toBe("unquoted-word");
+      expect(result.hint, word).toContain(`"${word}"`);
+    }
+    // An import makes math a name the code made.
+    expect(explainRun("import math\nprint(meth.pi)\n").hint).toContain("math");
+  });
+
+  it("says a task's box is not made yet, and points at the bare value that should make it (broken-spell-1b)", () => {
+    const names = { names: ["weapon", "companion", "glug_sips", "hero"] };
+    const lucky = explainRun('weapon = "Telegun"\ncompanion = "Gearshift"\nglug_sips = 3\n"Lucky"\nprint(hero)\nprint(weapon)\n', [], names);
+    expect(lucky.kind).toBe("not-made-yet");
+    expect(lucky.hint).toBe(
+      'hero is one of this task\'s boxes, but no line makes it yet. Line 4 has the value "Lucky" on its own: put `hero = ` in front of it, `hero = "Lucky"`',
+    );
+    const none = explainRun('weapon = "Telegun"\nprint(hero)\n', [], names);
+    expect(none.hint).toContain("Make it above line 2");
+    expect(none.hint).not.toContain('"hero"');
+  });
+
+  it("says One fixed only when the error moved later, or the same line now parses with a new slip", () => {
+    const quote = tracebackOf("print(\"Shield up!')\n");
+    expect(explainRun('print("Shield up!)"\n', [], { previous: quote }).hint).not.toContain("One fixed");
+    const moth = tracebackOf("familiar = moth\n");
+    expect(explainRun("familiar = cat\n", [], { previous: moth }).hint).not.toContain("One fixed");
+    const shell = tracebackOf("companion = Bomb Shell\nprint(companion)\n");
+    expect(explainRun("companion = kratos\nprint(companion)\n", [], { previous: shell, names: ["companion"] }).hint).not.toContain("One fixed");
+    const first = tracebackOf('print("Shield up.)\nprint(Steady)\n');
+    expect(explainRun('print("Shield up.")\nprint(Steady)\n', [], { previous: first }).hint).toMatch(/^One fixed!/);
+  });
+
+  it("explains plain words on a line, and symbols with no quotes, without a colon Unit 1 never taught", () => {
+    const note = explainRun('Night watch\nprint("Steady, now.")\n');
+    expect(note.kind).toBe("unquoted-words");
+    expect(note.hint).toContain("start the line with #: `# Night watch`");
+    expect(note.hint).toContain('`print("Night watch")`');
+    expect(note.hint).not.toContain("colon");
+    const symbols = explainRun("print(_ - =)\n");
+    expect(symbols.hint).toContain('`print("_ - =")`');
+    expect(symbols.hint).not.toContain("colon");
   });
 });
 

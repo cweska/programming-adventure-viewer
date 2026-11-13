@@ -129,7 +129,7 @@ export function gradeCheckpoints(checkpoints: Checkpoint[], result: RunResult, c
   });
   const firstFailing = grades.findIndex((grade) => !grade.passed);
   if (firstFailing !== -1 && code) {
-    const slip = quietSlipFor(code, rawMessages[firstFailing] ?? "", result.stdout ?? "");
+    const slip = quietSlipFor(code, rawMessages[firstFailing] ?? "", result.stdout ?? "", context);
     if (slip) grades[firstFailing] = { ...grades[firstFailing], message: slip };
   }
   return {
@@ -141,9 +141,9 @@ export function gradeCheckpoints(checkpoints: Checkpoint[], result: RunResult, c
 }
 
 /** The quiet-slip message for a failing check, or null when the slip does not explain this failure. */
-function quietSlipFor(code: string, raw: string, stdout: string): string | null {
+function quietSlipFor(code: string, raw: string, stdout: string, context?: ExplainContext): string | null {
   const missingName = raw.trim().match(/^NameError: name '([^']+)' is not defined/)?.[1];
-  const slip = explainQuietSlip(code, { missingName });
+  const slip = explainQuietSlip(code, { missingName, context });
   if (!slip) return null;
   const printedNothing = stdout.trim() === "";
   switch (slip.kind) {

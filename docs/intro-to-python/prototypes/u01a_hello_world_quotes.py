@@ -202,7 +202,8 @@ WHAT_AN_ERROR_LOOKS_LIKE = dict(
     martu=(
         "Press Run first. Then you will break it on purpose and read Python's [[error message|message]]. "
         "A message is not a mark against you: it says what Python could not read. "
-        "Read the last line first. Then look at the line it names."
+        "Read the last line first: the message under your code shows it as *Python's last line*. "
+        "Then look at the line it names."
     ),
     introduces=["call:print", "const:str"],
     starter='print("Shield up.")\n',
@@ -224,7 +225,7 @@ WHAT_AN_ERROR_LOOKS_LIKE = dict(
         dict(
             id="close-the-quote",
             text=(
-                'Break it on purpose: delete the last `"` and Run. Read the last line of Python\'s message. '
+                'Break it on purpose: delete the last `"` and Run. Read *Python\'s last line* in the message. '
                 'Then put the `"` back, change the `.` to `!`, and Run.'
             ),
             dictated=True,
@@ -276,14 +277,15 @@ WHAT_AN_ERROR_LOOKS_LIKE = dict(
         dict(
             angle="picture",
             text=(
-                "Two places to look. Read 1 first, then 2.\n"
+                "Python's full message, short:\n"
                 "```text\n"
-                '  File "main.py", line 1     <- 2. this line\n'
-                '    print("Shield up.)\n'
-                "          ^\n"
-                "SyntaxError: unterminated string literal     <- 1. first\n"
+                'File "main.py", line 1\n'
+                '  print("Shield up.)\n'
+                "        ^\n"
+                "SyntaxError: unterminated ...\n"
                 "```\n"
-                "Unterminated means the words never ended: the closing quote is missing."
+                "1. Read the last line first. *Unterminated* means the words never ended: the closing quote is missing.\n"
+                "2. Then the top line: it names the line to mend, line 1."
             ),
         ),
         dict(
@@ -483,10 +485,12 @@ PRESS_RUN = dict(
             angle="picture",
             text=(
                 "```text\n"
-                'editor:    print("Hi. It is me, Mar\'tu.")\n'
-                "               |  press Run\n"
-                "               v\n"
-                "console:   Hi. It is me, Mar'tu.\n"
+                "editor:\n"
+                'print("Hi. It is me, Mar\'tu.")\n'
+                "   |  press Run\n"
+                "   v\n"
+                "console:\n"
+                "Hi. It is me, Mar'tu.\n"
                 "```"
             ),
         ),
@@ -517,7 +521,8 @@ YOUR_OWN_WORDS = dict(
     title="Your own words",
     martu=(
         "The words inside the [[quotes]] are yours. Python shows them exactly. "
-        "Change them to something Oogrish might say. Stuck for words? Press Mar'tu's pick."
+        "Change them to something Oogrish might say. Stuck for words? Delete the words between the quotes, "
+        "click there, and press Mar'tu's pick."
     ),
     example='print("Shield up.")\n',
     example_output="Shield up.",
@@ -600,9 +605,10 @@ YOUR_OWN_WORDS = dict(
             angle="picture",
             text=(
                 "```text\n"
-                'print("  your words go here  ")\n'
-                "      ^                    ^\n"
-                "   keep this quote    keep this quote\n"
+                'print("your words")\n'
+                "      ^          ^\n"
+                "      |          keep this quote\n"
+                "      keep this quote\n"
                 "```"
             ),
         ),
@@ -733,10 +739,12 @@ CLOSE_THE_QUOTE = dict(
             text=(
                 "Quotes are bookends. Words stand between them:\n"
                 "```text\n"
-                'print(  "  It is not a compass  "  )\n'
-                "      |  |                     |  |\n"
-                "      (  open quote   close quote  )\n"
-                "```"
+                'print("It is not a compass")\n'
+                "     ^^                   ^^\n"
+                "   ( and \"           \" and )\n"
+                "    open               close\n"
+                "```\n"
+                "The bracket opens first and closes last, around the quotes."
             ),
         ),
         dict(
@@ -1111,13 +1119,10 @@ TOP_TO_BOTTOM = dict(
             label="Step table",
             text=(
                 "The finished code, one line at a time:\n"
-                "```text\n"
-                "line  code                               the console now shows\n"
-                "1     print(\"Mar'tu checks the clock.\")   Mar'tu checks the clock.\n"
-                "2     print(\"The hand is near the arc.\")  The hand is near the arc.\n"
-                "3     print()                            (an empty line)\n"
-                "4     print(\"Get inside, yes?\")           Get inside, yes?\n"
-                "```"
+                "1. `print(\"Mar'tu checks the clock.\")` shows: Mar'tu checks the clock.\n"
+                "2. `print(\"The hand is near the arc.\")` shows: The hand is near the arc.\n"
+                "3. `print()` shows an empty line.\n"
+                "4. `print(\"Get inside, yes?\")` shows: Get inside, yes?"
             ),
         ),
         dict(
@@ -1312,9 +1317,14 @@ NOTES_FOR_HUMANS = dict(
             text=(
                 "A `#` is a sticky note on your code:\n"
                 "```text\n"
-                "# Lucky, keep quiet.                 <- note: skipped\n"
-                "print(\"Steady, now.\")                <- runs\n"
-                "# print(\"I am keeping the glug.\")    <- switched off: skipped\n"
+                "# Lucky, keep quiet.\n"
+                "^ a note: skipped\n"
+                "\n"
+                "print(\"Steady, now.\")\n"
+                "^ runs\n"
+                "\n"
+                "# print(\"I am keeping the glug.\")\n"
+                "^ switched off: skipped\n"
                 "```"
             ),
         ),

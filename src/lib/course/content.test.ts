@@ -421,6 +421,22 @@ describe("exported course content", () => {
     expect(problems).toEqual([]);
   });
 
+  it("keeps the pictures and tables in prose narrow enough for a phone (36 characters a line)", () => {
+    // A fenced block in prose scrolls sideways on a 390px screen past about 36 characters, hiding the labels
+    // that explain the picture. Put each label on its own line under the code, or make a table a numbered list.
+    const wide: string[] = [];
+    for (const name of unitFiles.filter((file) => file !== "sample.json")) {
+      for (const { where, text } of proseStrings(readJson(path.join(UNITS_DIR, name)))) {
+        let inFence = false;
+        for (const line of text.split("\n")) {
+          if (/^```/.test(line.trim())) inFence = !inFence;
+          else if (inFence && line.length > 36) wide.push(`${name} ${where}: ${line.length} characters: ${line}`);
+        }
+      }
+    }
+    expect(wide).toEqual([]);
+  });
+
   it("lists every units/*.json in units.generated.ts, in course order", () => {
     const ts = readFileSync(GENERATED_TS, "utf8");
     for (const name of unitFiles) {

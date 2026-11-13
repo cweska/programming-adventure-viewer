@@ -1,0 +1,211 @@
+{
+ "units": [
+  {
+   "prefix": "u01a",
+   "introduces": [
+    "call:print",
+    "const:str"
+   ]
+  },
+  {
+   "prefix": "u01b",
+   "introduces": [
+    "node:Assign",
+    "const:int",
+    "const:multiline_str"
+   ]
+  },
+  {
+   "prefix": "u01c",
+   "introduces": [
+    "op:Add",
+    "op:Sub",
+    "op:Mult",
+    "op:Div",
+    "call:str",
+    "node:AugAssign"
+   ]
+  },
+  {
+   "prefix": "u01d",
+   "introduces": [
+    "op:Pow",
+    "op:Mod",
+    "op:FloorDiv",
+    "call:input",
+    "call:int"
+   ]
+  },
+  {
+   "prefix": "u02a",
+   "introduces": [
+    "const:bool",
+    "op:Gt",
+    "op:Lt",
+    "op:Eq",
+    "op:NotEq",
+    "op:GtE",
+    "op:LtE",
+    "attr:lower"
+   ]
+  },
+  {
+   "prefix": "u02b",
+   "introduces": [
+    "node:If",
+    "op:And",
+    "op:Or",
+    "op:Not",
+    "node:Import",
+    "import:random",
+    "attr:randint",
+    "node:Match"
+   ]
+  },
+  {
+   "prefix": "u02c",
+   "introduces": [
+    "node:Assert"
+   ]
+  },
+  {
+   "prefix": "u03a",
+   "introduces": [
+    "node:FunctionDef",
+    "node:Pass",
+    "node:Return",
+    "attr:capitalize"
+   ]
+  },
+  {
+   "prefix": "u03b",
+   "introduces": []
+  },
+  {
+   "prefix": "u04a",
+   "introduces": [
+    "node:List",
+    "node:Subscript",
+    "op:USub",
+    "attr:append",
+    "call:len",
+    "call:range",
+    "call:list",
+    "node:Slice",
+    "call:sorted",
+    "attr:sort"
+   ]
+  },
+  {
+   "prefix": "u04b",
+   "introduces": [
+    "attr:count",
+    "attr:insert",
+    "attr:pop",
+    "attr:remove",
+    "op:In",
+    "call:max",
+    "call:min",
+    "call:sum",
+    "node:Tuple",
+    "call:zip"
+   ]
+  },
+  {
+   "prefix": "u05a",
+   "introduces": [
+    "node:Dict",
+    "op:NotIn",
+    "attr:get"
+   ]
+  },
+  {
+   "prefix": "u05b",
+   "introduces": []
+  },
+  {
+   "prefix": "u05c",
+   "introduces": []
+  },
+  {
+   "prefix": "u06a",
+   "introduces": [
+    "node:For",
+    "node:While",
+    "node:Break"
+   ]
+  },
+  {
+   "prefix": "u06b",
+   "introduces": [
+    "node:Continue",
+    "node:ListComp",
+    "node:IfExp",
+    "attr:items",
+    "attr:keys",
+    "attr:values"
+   ]
+  },
+  {
+   "prefix": "u07a",
+   "introduces": []
+  },
+  {
+   "prefix": "u07b",
+   "introduces": [
+    "const:None"
+   ]
+  },
+  {
+   "prefix": "u07c",
+   "introduces": [
+    "node:DefaultArg",
+    "node:KeywordArg",
+    "node:Lambda",
+    "call:map"
+   ]
+  },
+  {
+   "prefix": "u08a",
+   "introduces": []
+  },
+  {
+   "prefix": "u08b",
+   "introduces": []
+  },
+  {
+   "prefix": "u08c",
+   "introduces": []
+  },
+  {
+   "prefix": "u09a",
+   "introduces": [
+    "const:escape",
+    "attr:upper",
+    "attr:title",
+    "attr:split",
+    "attr:join",
+    "attr:strip",
+    "attr:replace",
+    "attr:find",
+    "node:FString"
+   ]
+  },
+  {
+   "prefix": "u09b",
+   "introduces": []
+  },
+  {
+   "prefix": "u10a",
+   "introduces": []
+  },
+  {
+   "prefix": "u10b",
+   "introduces": []
+  },
+  {
+   "prefix": "u10c",
+   "introduces": []
+  }
+ ]
+}

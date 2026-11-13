@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import type { ExerciseProgress, GradeResult } from "../../lib/course/contracts";
-import { explainCourseError, type ExplainContext } from "../../lib/course/explain";
+import { explainCourseError, isPrintOnlyTask, type ExplainContext } from "../../lib/course/explain";
 import { flattenChecks, gradeCheckpoints } from "../../lib/course/grading";
 import { coursePreset, getCourseProgress, progressIsSaving, updateExercise, useCourseProgress } from "../../lib/course/progress";
 import type { Bonus, Checkpoint, GlossaryEntry, Playable } from "../../lib/course/schema";
@@ -11,7 +11,7 @@ import { runCourse, whenPythonReady } from "../../lib/languages/python/run";
 import type { Explanation } from "../../lib/languages/types";
 import { publicPath } from "../../lib/site";
 import type { StageEvent } from "../../lib/stage/bridge";
-import type { InsertWhere } from "../editor-insert";
+import type { InsertText, InsertWhere } from "../editor-insert";
 import { PythonEditor, type PythonEditorHandle } from "../PythonEditor";
 import { CompareView } from "./CompareView";
 import {
@@ -23,6 +23,7 @@ import {
   checkpointHeading,
   codeHasStart,
   countsAsAttempt,
+  crashTarget,
   effectiveSupport,
   firstParagraph,
   helpOffer,
@@ -32,6 +33,7 @@ import {
   hintsOpen,
   isBlankOrStarter,
   isSolutionCode,
+  namesALine,
   nextFailStreak,
   pickInsertion,
   pickIsNote,
@@ -126,6 +128,16 @@ type RunView = {
   /** This run passed with Mar'tu's version, copied in with "Copy into my editor". */
   revealPass?: boolean;
 };
+
+/** The last line of Python's message ("SyntaxError: unterminated string literal ..."), or "" when there is none. */
+function pythonLastLine(traceback: string): string {
+  const last = (traceback ?? "")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .at(-1);
+  return last && /^[A-Za-z_][\w.]*(Error|Exception|Warning|Exit|Interrupt|Output)\b/.test(last) ? last : "";
+}
 
 /** The student's line in a course traceback (the last `File "main.py", line N`). */
 function crashLine(traceback: string): number | null {
@@ -370,6 +382,9 @@ const STATE_MARK: Record<CheckpointState, { icon: string; words: string }> = {
   pending: { icon: "○", words: "Not done yet" },
 };
 
+/** A step that passed before but fails on the latest run (its pass stays recorded). */
+const SLIPPED_MARK = { icon: "↺", words: "Was done. Check it again" };
+
 /* ---------------------------------------------------------------------------------------------- */
 /* The player                                                                                      */
 /* ---------------------------------------------------------------------------------------------- */
@@ -420,6 +435,8 @@ export function ExercisePlayer({
   /** The miss streak when the student took up a "misses" offer by opening a rung (it then waits for 3 more). */
   const [streakTakenUp, setStreakTakenUp] = useState<FailStreak>({ checkpointId: null, count: 0 });
   const lastRungAt = useRef<number | null>(null);
+  /** Steps whose Start me off Help stepped over (the line was there already), this visit. */
+  const steppedOverStart = useRef<Set<string>>(new Set());
   const ranSinceRung = useRef(false);
   const helpSinceRun = useRef(false);
   const progressAtSessionMs = useRef(0);
@@ -551,6 +568,23 @@ export function ExercisePlayer({
   const triedAndMissed = missedThisVisit || (saved?.failedRuns ?? 0) > 0 || passed.length > 0 || done;
   const firstOpen = exercise.checkpoints.findIndex((checkpoint) => !passed.includes(checkpoint.id));
   const activeCheckpoint = firstOpen >= 0 ? exercise.checkpoints[firstOpen] : null;
+  /* The last run crashed: Python stopped before it could check any step (so "step 1" may already be right). */
+  const crashed = view?.grade?.crashed === true;
+  const crashAt = crashed && view?.explanation ? crashLine(view.explanation.raw) : null;
+  /* Steps that passed before, failing on the latest run that Python finished (a crash checks nothing). */
+  const slippedSteps =
+    view?.grade && !view.grade.crashed && !view.revealPass
+      ? view.grade.checkpoints.filter((grade) => !grade.passed && passed.includes(grade.id)).map((grade) => grade.id)
+      : [];
+  /** Done before, but the latest run is not right now: the done panel stays, softer, without the celebration. */
+  const slippedSinceDone = done && view?.grade != null && !view.grade.allPassed && !view.revealPass;
+  // While a crash stands, Help aims at the line Python stopped on, never at step 1 under "Mend line 3 first.":
+  // a step that names that line ("Mend line 3 ...") gets the Help. When the steps name other lines and none
+  // names this one, their Help would talk about a different line, so it waits until the code runs.
+  const crashStep = crashTarget(exercise.checkpoints, crashAt);
+  const crashOnlyHelp = crashed && crashAt !== null && crashStep < 0 && exercise.checkpoints.some((checkpoint) => namesALine(checkpoint.text));
+  const helpIndex = crashStep >= 0 ? crashStep : firstOpen;
+  const helpCheckpoint = activeCheckpoint && helpIndex >= 0 ? exercise.checkpoints[helpIndex] : null;
   const helpAvailable = support !== "none" && hintsOpen(support, triedAndMissed) && !done && activeCheckpoint !== null;
   const showUnlocked =
     support !== "none" &&
@@ -563,25 +597,28 @@ export function ExercisePlayer({
     });
   const rungs = useMemo(
     () =>
-      activeCheckpoint
-        ? helpRungs(activeCheckpoint, {
+      helpCheckpoint
+        ? helpRungs(helpCheckpoint, {
             anotherWayCount: exercise.anotherWay.length,
             hasAssemble: Boolean(exercise.assemble),
             solo: exercise.solo === true,
             solution: exercise.solution,
           })
         : [],
-    [activeCheckpoint, exercise.anotherWay.length, exercise.assemble, exercise.solo, exercise.solution],
+    [helpCheckpoint, exercise.anotherWay.length, exercise.assemble, exercise.solo, exercise.solution],
   );
-  /* The last run crashed: Python stopped before it could check any step (so "step 1" may already be right). */
-  const crashed = view?.grade?.crashed === true;
-  const crashAt = crashed && view?.explanation ? crashLine(view.explanation.raw) : null;
   /** Start me off has nothing to give when the line is already there, or right after a crash (mend that first). */
   const skipRung = (rung: Rung) => rung.kind === "start" && (crashed || codeHasStart(code, rung.start ?? ""));
-  const help = helpState(rungs, activeCheckpoint ? rungsShown(saved?.hintsUsed, activeCheckpoint.id, rungs.length) : 0, showUnlocked, {
+  const climbed = helpState(rungs, helpCheckpoint ? rungsShown(saved?.hintsUsed, helpCheckpoint.id, rungs.length) : 0, showUnlocked, {
     preset,
     skip: skipRung,
   });
+  // A Start me off that Help stepped over was never shown: it stays out of the open rungs (it would only say
+  // "Your code already starts this line" above Where to look).
+  const help =
+    helpCheckpoint && steppedOverStart.current.has(helpCheckpoint.id)
+      ? { ...climbed, open: climbed.open.filter((rung) => rung.kind !== "start") }
+      : climbed;
   const streakHere = activeCheckpoint && streak.checkpointId === activeCheckpoint.id ? streak.count : 0;
   const takenUp = activeCheckpoint && streakTakenUp.checkpointId === activeCheckpoint.id ? streakTakenUp.count : 0;
   const offer = helpOffer({
@@ -599,6 +636,8 @@ export function ExercisePlayer({
     [exercise.assemble, key],
   );
   const names = exercise.names ?? [];
+  /** The task only prints (Lesson 1A): a pick on a line of its own goes in as `print("...")`. */
+  const printOnly = isPrintOnlyTask({ names, solution: exercise.solution });
 
   function openCompare() {
     setCompare("open");
@@ -612,11 +651,12 @@ export function ExercisePlayer({
 
   /** The Help control: open the next rung for the current step (see HelpStack). */
   function revealRung(): RevealResult {
-    if (!activeCheckpoint || !help.next) return "none";
+    if (!helpCheckpoint || !help.next) return "none";
     if (help.nextLocked) return "locked";
     const at = Date.now();
     if (rungPaced(lastRungAt.current, ranSinceRung.current, at)) return "paced";
-    const id = activeCheckpoint.id;
+    const id = helpCheckpoint.id;
+    if (rungs.slice(help.opened, help.nextIndex).some((rung) => rung.kind === "start")) steppedOverStart.current.add(id);
     const total = rungs.length;
     const upTo = help.nextIndex + 1;
     updateExercise(key, (previous) => ({ ...previous, hintsUsed: revealNextRung(previous.hintsUsed, id, total, upTo) }));
@@ -636,7 +676,7 @@ export function ExercisePlayer({
    * Inserting names, Mar'tu's pick and Start me off. Names and picks go at the cursor, but never inside a `#`
    * note; Start me off always starts a line of its own (editor-insert.ts).
    */
-  function insertInCode(text: string | ((lineBefore: string) => string), spoken: string, where: InsertWhere) {
+  function insertInCode(text: InsertText, spoken: string, where: InsertWhere) {
     if (editorRef.current?.insert(text, where)) setInsertNote(`${spoken} is in your code.`);
     else setInsertNote(`Type ${spoken} in your code.`);
   }
@@ -649,7 +689,7 @@ export function ExercisePlayer({
       return;
     }
     if (context?.placed) {
-      insertInCode((lineBefore) => pickInsertion(pick, lineBefore), "Mar'tu's pick", "code");
+      insertInCode((lineBefore, lineAfter) => pickInsertion(pick, lineBefore, { printOnly, lineAfter }), "Mar'tu's pick", "code");
       return;
     }
     // The student has not clicked into the code yet, so Mar'tu cannot know where it goes: copy it (with its
@@ -699,6 +739,7 @@ export function ExercisePlayer({
         example: exercise.example?.code,
         names: exercise.names,
         previous: view?.explanation?.raw || undefined,
+        solution: exercise.solution,
       };
       const grade = gradeCheckpoints(exercise.checkpoints, result, source, context);
       // The side quest's checks come after the main ones: grade them from their own slice, by position.
@@ -929,24 +970,33 @@ export function ExercisePlayer({
           const n = index + 1;
           const state: CheckpointState = passed.includes(checkpoint.id) ? "passed" : index === firstOpen ? "active" : "pending";
           const justPassed = state === "passed" && view?.newlyPassed.includes(checkpoint.id) === true;
+          // Passed once (it stays recorded), but the latest run says it is not right now: say so, kindly.
+          const slipped = state === "passed" && slippedSteps.includes(checkpoint.id);
+          const mark = slipped ? SLIPPED_MARK : STATE_MARK[state];
           return (
             <li
               key={checkpoint.id}
-              className={`ex-checkpoint is-${state}`}
+              className={`ex-checkpoint is-${state}${slipped ? " is-slipped" : ""}`}
               data-testid={`checkpoint-${n}`}
               data-state={state}
+              data-slipped={slipped ? "true" : undefined}
             >
               <div className="ex-checkpoint-head">
                 <span className="ex-checkpoint-mark" aria-hidden="true">
-                  {STATE_MARK[state].icon}
+                  {mark.icon}
                 </span>
                 <span className="ex-checkpoint-number">
                   {noun} {n}
-                  <span className="ex-sr-only">: {STATE_MARK[state].words}.</span>
+                  <span className="ex-sr-only">: {mark.words}.</span>
                 </span>
               </div>
               <Prose text={checkpoint.text} glossary={glossary} className="ex-checkpoint-text" />
               <ReadAloud text={checkpoint.text} label={`Read ${noun.toLowerCase()} ${n} aloud`} testId={`read-aloud-step-${n}`} />
+              {slipped ? (
+                <p className="ex-checkpoint-slipped" data-testid={`checkpoint-slipped-${n}`}>
+                  <span aria-hidden="true">↺</span> Was done. Your last run changed it: check it again.
+                </p>
+              ) : null}
               {justPassed ? (
                 <p className="ex-checkpoint-done" data-testid={`checkpoint-pass-${n}`}>
                   <span aria-hidden="true">✓</span> <strong>Done!</strong>
@@ -1218,12 +1268,12 @@ export function ExercisePlayer({
             </div>
           ) : null}
 
-          {helpAvailable && activeCheckpoint ? (
+          {helpAvailable && helpCheckpoint ? (
             <HelpStack
-              key={activeCheckpoint.id}
+              key={helpCheckpoint.id}
               noun={noun}
-              stepNumber={firstOpen + 1}
-              checkpoint={activeCheckpoint}
+              stepNumber={helpIndex + 1}
+              checkpoint={helpCheckpoint}
               state={help}
               anotherWay={exercise.anotherWay}
               glossary={glossary}
@@ -1233,6 +1283,7 @@ export function ExercisePlayer({
               runNumber={runNumber}
               crashed={crashed}
               crashLine={crashAt}
+              crashOnly={crashOnlyHelp}
               startInCode={(start) => codeHasStart(code, start)}
               onReveal={revealRung}
               onDismissOffer={() => {
@@ -1248,15 +1299,23 @@ export function ExercisePlayer({
           ) : null}
 
           {done ? (
-            <div className={`ex-done${justFinished ? " is-fresh" : ""}`} data-testid="exercise-done">
+            <div
+              className={`ex-done${justFinished && !slippedSinceDone ? " is-fresh" : ""}${slippedSinceDone ? " is-slipped" : ""}`}
+              data-testid="exercise-done"
+              data-slipped={slippedSinceDone ? "true" : undefined}
+            >
               <MarTu
                 text={
-                  // "You did that alone" only when it is true: no Help past Where to look, no Mar'tu's version.
-                  justFinished && exercise.solo && mode !== "testout" && soloUnaided(saved)
-                    ? "You did that alone. I saw."
-                    : justFinished
-                      ? "Good. Very good, yes?"
-                      : "You finished this one. Run it again any time, yes?"
+                  slippedSinceDone
+                    ? view?.grade?.crashed
+                      ? "This one is still done, yes? But your last run stopped at an error. Mend it, then Run again."
+                      : "This one is still done, yes? But your last run has a step that is not right now. Check it again."
+                    : // "You did that alone" only when it is true: no Help past Where to look, no Mar'tu's version.
+                      justFinished && exercise.solo && mode !== "testout" && soloUnaided(saved)
+                      ? "You did that alone. I saw."
+                      : justFinished
+                        ? "Good. Very good, yes?"
+                        : "You finished this one. Run it again any time, yes?"
                 }
                 size="small"
                 testId="exercise-done-martu"
@@ -1363,6 +1422,13 @@ function ExerciseConsole({
             ) : null}
             <p className="ex-explainer-title">{view.explanation.title}</p>
             <Prose text={view.explanation.hint} className="ex-explainer-hint" testId="explainer-hint" />
+            {pythonLastLine(view.explanation.raw) ? (
+              // Mar'tu teaches "read the last line of Python's message first": it is on screen, not folded away.
+              <p className="ex-explainer-python" data-testid="python-last-line">
+                <span className="ex-explainer-python-label">Python&apos;s last line:</span>{" "}
+                <code className="inline-code">{pythonLastLine(view.explanation.raw)}</code>
+              </p>
+            ) : null}
             {view.explanation.raw ? (
               <details>
                 <summary>Show Python&apos;s full message</summary>

@@ -1097,7 +1097,7 @@ WHO_GOES_THERE = dict(
     another_way=[
         dict(
             angle="picture",
-            text="```\ntyped 3  ->  input() gives \"3\" (text)  ->  int() gives 3 (a number)  ->  3 * 2 is 6\n```",
+            text="```\ntyped 3\n-> input() gives \"3\" (text)\n-> int() gives 3 (a number)\n-> 3 * 2 is 6\n```",
         ),
         dict(
             angle="everyday",
@@ -1445,6 +1445,8 @@ def _c3(form, who_name, who, affinity, cost_name, cost, aff_case, cost_case, lin
                         "mana went down",
                         f"assert mana != max_mana, '`mana` didn\\'t change. Put the answer back in the box: "
                         f"`mana = mana - {cost_name}`.'\n"
+                        f"assert mana != {cost_name} or mana == max_mana - {cost_name}, '`mana` holds only the cost now. "
+                        f"Take the cost away from what is in `mana`: `mana = mana - {cost_name}`.'\n"
                         f"assert mana == max_mana - {cost_name}, '`mana` holds ' + str(mana) + ', but full mana minus one "
                         f"spell is ' + str(max_mana - {cost_name}) + '. Python runs top to bottom: work out `max_mana` above "
                         f"the line `mana = max_mana`, then spend the spell once.'",
@@ -1493,6 +1495,8 @@ def _c3(form, who_name, who, affinity, cost_name, cost, aff_case, cost_case, lin
             dict(why="mana typed in", code=p1 + f"mana = {mana}\n{line}\n", fails_at=2, message_contains=str(max_mana - cost_case)),
             dict(why="the subtraction not put back", code=p1 + f"mana - {cost_name}\n{line}\n", fails_at=2,
                  message_contains="didn't change"),
+            dict(why="the old dash advice followed: mana gets only the cost", code=p1 + f"mana = {cost_name}\n{line}\n",
+                 fails_at=2, message_contains=f"mana = mana - {cost_name}"),
             dict(why="the spell cost typed as a number", code=p1 + f"mana = mana - {cost}\n{line}\n", fails_at=2,
                  message_contains=str(max_mana - cost_case)),
             dict(why="mana = max_mana runs before max_mana is worked out",

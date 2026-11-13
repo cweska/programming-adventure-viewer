@@ -403,6 +403,20 @@ export function codeHasStart(code: string, start: string): boolean {
   return meaningfulLines(code).some((line) => squash(line).startsWith(wanted));
 }
 
+/** The step's text names a line of the code ("Mend line 3 so ...", "Line 2 is Lucky's secret."). */
+export function namesALine(text: string, line?: number): boolean {
+  return new RegExp(`\\bline ${line === undefined ? "\\d+" : line}\\b`, "i").test(text ?? "");
+}
+
+/**
+ * After a crash on `crashLine`: the step whose text names that line (broken spells: "Mend line 3 ..."), or -1.
+ * Help aims there, so it never talks about line 1 under "Mend line 3 first."
+ */
+export function crashTarget(checkpoints: readonly Pick<Checkpoint, "text">[], crashLine: number | null): number {
+  if (crashLine === null) return -1;
+  return checkpoints.findIndex((checkpoint) => namesALine(checkpoint.text, crashLine));
+}
+
 /** Whether the next rung must wait (a Run since the last rung, or RUNG_PACE_MS, lets it open). */
 export function rungPaced(lastRungAt: number | null, ranSinceRung: boolean, now: number): boolean {
   if (lastRungAt === null || ranSinceRung) return false;
@@ -571,15 +585,28 @@ export function pickIsNote(pick: string): boolean {
 /**
  * What Mar'tu's pick puts in the editor: a `#` note as it is; the value itself for a number or a multi-line
  * pick; inside an open string, the bare words; otherwise the words in quotes. A pick authored as a quoted
- * literal (`"Welcome, "`) is used as it is (or without its quotes inside an open string).
+ * literal (`"Welcome, "`) is used as it is (or without its quotes inside an open string). In a task that only
+ * prints (`printOnly`), words that land on a line of their own go in as `print("...")`, so the line does
+ * something (`lineAfter` is the rest of the cursor's line: "" for a line of its own).
  */
-export function pickInsertion(pick: string, lineBefore: string): string {
+export function pickInsertion(pick: string, lineBefore: string, options: { printOnly?: boolean; lineAfter?: string } = {}): string {
   const value = pick ?? "";
   if (pickIsNote(value)) return value.trim();
   const literal = value.trim().match(/^(["'])([\s\S]*)\1$/);
-  if (literal && value.trim().length >= 2) return insideString(lineBefore) ? literal[2] : value.trim();
-  if (value.includes("\n") || /^-?\d+(\.\d+)?$/.test(value.trim()) || insideString(lineBefore)) return value;
-  return value.includes('"') && !value.includes("'") ? `'${value}'` : `"${value.replace(/"/g, '\\"')}"`;
+  let quoted: string;
+  if (literal && value.trim().length >= 2) {
+    if (insideString(lineBefore)) return literal[2];
+    quoted = value.trim();
+  } else {
+    if (value.includes("\n") || /^-?\d+(\.\d+)?$/.test(value.trim()) || insideString(lineBefore)) return value;
+    quoted = value.includes('"') && !value.includes("'") ? `'${value}'` : `"${value.replace(/"/g, '\\"')}"`;
+  }
+  if (!options.printOnly || value.includes("\n") || (options.lineAfter ?? "").trim() !== "") return quoted;
+  // A task that only prints, and the pick lands on a line of its own: words alone would do nothing there.
+  if (lineBefore.trim() === "") return `print(${quoted})`;
+  // Right after a finished line (`print("...")|`): a print line of its own under it, not words stuck on the end.
+  if (/\)\s*$/.test(lineBefore)) return `\n${lineBefore.match(/^[ \t]*/)?.[0] ?? ""}print(${quoted})`;
+  return quoted;
 }
 
 /* ------------------------------------------------------------------------------------------------ */

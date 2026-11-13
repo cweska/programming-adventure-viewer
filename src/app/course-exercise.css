@@ -563,6 +563,34 @@
   color: var(--course-right, #9fd98a);
 }
 
+.ex-explainer-python {
+  margin: 0;
+  font-size: 0.95rem;
+  overflow-wrap: anywhere;
+}
+
+.ex-explainer-python-label {
+  color: var(--course-muted, #d9c7a4);
+}
+
+.ex-checkpoint.is-slipped {
+  border-left-color: var(--course-focus, #f0d7a2);
+  border-left-style: dashed;
+}
+
+.ex-checkpoint.is-slipped .ex-checkpoint-mark {
+  color: var(--course-focus, #f0d7a2);
+}
+
+.ex-checkpoint-slipped {
+  margin: 0;
+  color: var(--course-focus, #f0d7a2);
+}
+
+.ex-done.is-slipped {
+  border-style: dashed;
+}
+
 .ex-checkpoint-done .ex-pass-line {
   color: var(--parchment, #f3ead7);
 }
@@ -1682,5 +1710,52 @@
 @media (prefers-reduced-motion: reduce) {
   .ex-done.is-fresh {
     animation: none;
+  }
+}
+
+/* ---------------------------------------------------------------- code that scrolls sideways */
+
+/*
+ * A code block wider than the screen scrolls sideways. A soft glow at the edge that has more shows it (the
+ * covers scroll with the text, so the glow fades out once that edge is reached). Phones also get a slightly
+ * smaller code font, so a 36-character line fits a 390px screen.
+ */
+@media screen {
+  .prose-code,
+  .example-code,
+  .quiz-code,
+  .cheatsheet-code,
+  .ex-example-code,
+  .ex-campaign-code {
+    --scroll-cover: var(--course-code-bg, #121417);
+    background-color: var(--scroll-cover);
+    background-image:
+      linear-gradient(to right, var(--scroll-cover) 40%, transparent),
+      linear-gradient(to left, var(--scroll-cover) 40%, transparent),
+      radial-gradient(farthest-side at 0 50%, rgba(240, 215, 162, 0.5), transparent),
+      radial-gradient(farthest-side at 100% 50%, rgba(240, 215, 162, 0.5), transparent);
+    background-position:
+      left center,
+      right center,
+      left center,
+      right center;
+    background-repeat: no-repeat;
+    background-size:
+      32px 100%,
+      32px 100%,
+      16px 100%,
+      16px 100%;
+    background-attachment: local, local, scroll, scroll;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .prose-code,
+  .example-code,
+  .quiz-code,
+  .cheatsheet-code,
+  .ex-example-code,
+  .ex-campaign-code {
+    font-size: 0.84rem;
   }
 }

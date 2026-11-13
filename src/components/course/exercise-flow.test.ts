@@ -259,6 +259,38 @@ describe("server render", () => {
     expect(html).toContain("Mend line 2 first.");
   });
 
+  it("after a crash on a line no step names, holds the step's rungs back and names the line", () => {
+    const checkpoint = { id: "line-1", text: "Mend line 1.", hints: ["Look.", "Teach.", 'Write `weapon = "Telegun"`.'], checks: [{ name: "c", code: "assert True" }] };
+    const rungs = helpRungs(checkpoint, { anotherWayCount: 0, hasAssemble: false, solo: false });
+    const html = renderToString(
+      createElement(HelpStack, {
+        noun: "Step",
+        stepNumber: 1,
+        checkpoint,
+        state: helpState(rungs, 2, false),
+        anotherWay: [],
+        glossary: [],
+        offer: null,
+        compareOpen: false,
+        showUnlocked: false,
+        runNumber: 4,
+        crashed: true,
+        crashLine: 5,
+        crashOnly: true,
+        onReveal: () => "opened" as const,
+        onDismissOffer: () => undefined,
+        onOpenAssemble: () => undefined,
+        onOpenCompare: () => undefined,
+        onInsertStart: () => undefined,
+      }),
+    );
+    expect(html).toContain("Mend line 5 first.");
+    expect(html).toContain('data-testid="help-crash-wait"');
+    expect(html).not.toContain('data-testid="help-button"');
+    expect(html).not.toContain('data-testid="help-rung-1"');
+    expect(html).not.toContain("its last line");
+  });
+
   it("under Keep it short, renders the trimmed stack with Start me off and More structure under More options", () => {
     const checkpoint = { id: "make-caster", text: "Make caster.", hints: ["Look.", "Teach.", 'Write `caster = "Gearshift"`.'], checks: [{ name: "c", code: "assert True" }] };
     const rungs = helpRungs(checkpoint, { anotherWayCount: 1, hasAssemble: true, solo: false });

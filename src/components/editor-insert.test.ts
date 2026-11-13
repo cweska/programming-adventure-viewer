@@ -43,6 +43,18 @@ describe("where buttons put text in the editor", () => {
     expect(apply("# hero here|\n", quoted, "code")).toBe('# hero here\n"Zelda"|\n');
   });
 
+  it("tells the text what is after the cursor on its line (\"\" when it gets a line of its own)", () => {
+    const seen: string[] = [];
+    const text: InsertText = (before, after) => {
+      seen.push(`${before}|${after}`);
+      return "x";
+    };
+    apply('print("|")\n', text, "code");
+    apply("# Print the symbols|\n", text, "code");
+    apply("# note\n|\n", text, "code");
+    expect(seen).toEqual(['print("|")', "|", "|"]);
+  });
+
   it("a # note goes on a line of its own, above the line with the cursor", () => {
     expect(apply('print("Steady, now.")|\n', "# Night watch.", "note")).toBe('# Night watch.|\nprint("Steady, now.")\n');
     expect(apply('print("a")\n|\nprint("b")\n', "# Night watch.", "note")).toBe('print("a")\n# Night watch.|\nprint("b")\n');

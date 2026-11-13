@@ -16,8 +16,11 @@ export type InsertWhere = "cursor" | "code" | "line" | "note";
 
 export type InsertPlan = { from: number; to: number; insert: string; anchor: number };
 
-/** The text that goes in may depend on what is before it on its line (e.g. Mar'tu's pick inside a string). */
-export type InsertText = string | ((lineBefore: string) => string);
+/**
+ * The text that goes in may depend on what is before it on its line (e.g. Mar'tu's pick inside a string), and
+ * on what is after it ("" when it goes on a line of its own).
+ */
+export type InsertText = string | ((lineBefore: string, lineAfter: string) => string);
 
 type Line = { from: number; to: number; text: string };
 
@@ -63,7 +66,7 @@ export function planInsert(
   text: InsertText,
   where: InsertWhere = "cursor",
 ): InsertPlan {
-  const value = (lineBefore: string) => (typeof text === "function" ? text(lineBefore) : text);
+  const value = (lineBefore: string, lineAfter = "") => (typeof text === "function" ? text(lineBefore, lineAfter) : text);
   const end = doc.length;
 
   if (!placed) {
@@ -86,7 +89,7 @@ export function planInsert(
 
   const ownLine = where === "line" || where === "note" || (where === "code" && cursorInNote);
   if (!ownLine) {
-    const insert = value(doc.slice(line.from, from));
+    const insert = value(doc.slice(line.from, from), doc.slice(to, line.to));
     return { from, to, insert, anchor: from + insert.length };
   }
 
