@@ -29,6 +29,10 @@ Checks can use everything the student defined, plus:
 
 Keep this plain standard-library Python that runs on CPython 3.12 and 3.13. Executing it with
 ``__name__ == "course_helpers"`` (tools that only want the tokenizer) skips the import guard.
+
+The helpers live in the student's namespace, and students name things ``str``, ``len`` and ``type``
+(strength, length, spell type). So every helper takes the builtins it needs from the ``builtins``
+module inside its factory (closure variables), never from the namespace the student's code changes.
 """
 
 # ---------------------------------------------------------------------------------------------
@@ -44,6 +48,7 @@ _COURSE_BLOCKED_IMPORTS = frozenset({
 def _course_install_import_guard(blocked):
     import builtins
     import sys
+    from builtins import ModuleNotFoundError, getattr
 
     # The Pyodide worker reuses one interpreter for every run, so wrap the real import only once.
     real = getattr(sys, "_course_real_import", None)
@@ -82,6 +87,7 @@ def _course_make_tokenizer(campaign_names):
     import ast
     import builtins
     import re
+    from builtins import any, bool, dir, float, int, isinstance, list, set, str, type
 
     PRELUDE_NAMES = set(campaign_names)
     BUILTIN_NAMES = set(dir(builtins))
@@ -202,6 +208,7 @@ del _course_make_tokenizer
 
 def _course_make_input():
     import sys
+    from builtins import EOFError, len, list, str
 
     state = {"answers": [], "used": 0}
 
@@ -233,12 +240,18 @@ del _course_make_input
 # ---------------------------------------------------------------------------------------------
 
 def _course_make_runner():
+    import ast
+    import builtins
     import io
     import json
     import linecache
     import re
     import sys
     import traceback
+    from builtins import (
+        BaseException, Exception, SystemExit, callable, compile, dict, exec, getattr, globals, int, isinstance,
+        len, list, str, super, type,
+    )
 
     filename = "main.py"
     # A loop that prints forever fills memory and freezes the console long before the 5 second limit.
@@ -284,8 +297,43 @@ def _course_make_runner():
         return "\n".join(lines), (last[-1] if last else type(exc).__name__)
 
     def _check_message(exc):
-        text = str(exc)
-        return f"{type(exc).__name__}: {text}" if text else type(exc).__name__
+        kind = getattr(type(exc), "__name__", "Error")
+        try:
+            text = str(exc)
+        except Exception:  # noqa: BLE001 - a broken __str__ must not hide the result
+            text = ""
+        return f"{kind}: {text}" if text else kind
+
+    def _check_namespace(ns, check_code):
+        """The namespace a check runs in: the student's, except for builtins the check only CALLS.
+
+        A student who writes ``len = 10`` hides the builtin ``len`` from a check like
+        ``assert len(_lines()) == 2``. When the student's value is not callable and the check uses the
+        name only as ``name(...)``, the check gets a copy of the namespace with the builtin put back.
+        """
+        try:
+            tree = ast.parse(check_code)
+        except SyntaxError:
+            return ns
+        uses, calls = {}, {}
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Name):
+                uses[node.id] = uses.get(node.id, 0) + 1
+            if isinstance(node, ast.Call) and isinstance(node.func, ast.Name):
+                calls[node.func.id] = calls.get(node.func.id, 0) + 1
+        restore = {}
+        for name, count in calls.items():
+            real = getattr(builtins, name, None)
+            if real is None or name not in ns or uses.get(name) != count:
+                continue
+            value = ns[name]
+            if value is not real and not callable(value):
+                restore[name] = real
+        if not restore:
+            return ns
+        local = dict(ns)
+        local.update(restore)
+        return local
 
     def _course_run(code, setup="", checks=(), stdin=()):
         ns = globals()
@@ -315,9 +363,11 @@ def _course_make_runner():
             if ok:
                 ns["_captured_stdout"] = stdout
                 for check in checks or []:
-                    name = str(check.get("name", "check"))
+                    name = "check"
                     try:
-                        exec(compile(str(check.get("code", "")), "<check>", "exec"), ns)
+                        name = str(check.get("name", "check"))
+                        check_code = str(check.get("code", ""))
+                        exec(compile(check_code, "<check>", "exec"), _check_namespace(ns, check_code))
                         results.append({"name": name, "passed": True, "message": ""})
                     except BaseException as exc:  # noqa: BLE001
                         results.append({"name": name, "passed": False, "message": _check_message(exc)})

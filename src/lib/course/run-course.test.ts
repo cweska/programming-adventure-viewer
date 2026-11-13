@@ -123,6 +123,37 @@ describe("runCourseChecks: course-run semantics", () => {
     expect(syntax.error).toMatch(/^SyntaxError: unterminated string literal/);
   });
 
+  it("keeps working when the student names variables str, len, type, isinstance or set", () => {
+    const strength = runCourseChecks('str = 18\nprint("Strength:", str)\n', [check("prints", "assert _lines() == ['Strength: 18']")]);
+    expect(strength).toMatchObject({ ok: true, stdout: "Strength: 18\n", error: "" });
+    expect(strength.checks).toEqual([{ name: "prints", passed: true, message: "" }]);
+
+    const bridge = runCourseChecks('len = 10\nprint("The bridge is", len, "steps long")\n', [
+      check("count", "assert len(_lines()) == 1, 'One line.'"),
+      check("value", "assert len == 10"),
+    ]);
+    expect(bridge.stdout).toBe("The bridge is 10 steps long\n");
+    expect(bridge.checks.map((c) => c.passed)).toEqual([true, true]);
+
+    const spell = runCourseChecks('type = "fire"\nprint(type)\n', [check("ice", "assert 'ice' in _captured_stdout, 'Use ice.'")]);
+    expect(spell.ok).toBe(true);
+    expect(spell.checks).toEqual([{ name: "ice", passed: false, message: "AssertionError: Use ice." }]);
+
+    const asked = runCourseChecks('str = "Bob"\nname = input("Name? ")\nprint(name)\n', [], { stdin: ["Lucky"] });
+    expect(asked).toMatchObject({ ok: true, stdout: "Name? Lucky\nLucky\n" });
+
+    const many = runCourseChecks('isinstance = 1\nany = 2\nset = 3\ngetattr = 4\nlist = 5\nprint("ok")\n', [
+      check("helpers", "assert _uses('node:Assign') and _count('node:Assign') == 5 and not _assigned_from_expression('set')"),
+      check("lines", "assert _lines() == ['ok']"),
+    ]);
+    expect(many.checks.filter((c) => !c.passed)).toEqual([]);
+
+    const crash = runCourseChecks("str = 1\nprint(fireball)\n", []);
+    expect(crash.error).toBe("NameError: name 'fireball' is not defined");
+    expect(crash.traceback).toContain('File "main.py", line 2');
+    expect(crash.traceback).not.toContain("course_helpers");
+  });
+
   it("treats exit() as the end of the program", () => {
     const result = runCourseChecks('print("one")\nexit()\nprint("two")\n', [check("one", "assert _lines() == ['one']")]);
     expect(result.ok).toBe(true);
@@ -247,6 +278,32 @@ const JOBS: Job[] = [
     label: "check errors",
     code: 'total = "68"\n',
     checks: [check("type", "assert total + 1 == 69"), check("bare", "assert total == 68")],
+  },
+  {
+    label: "student names a variable str",
+    code: 'str = 18\nprint("Strength:", str)\n',
+    checks: [check("prints", "assert _lines() == ['Strength: 18'], _lines()"), check("assign", "assert _uses('node:Assign')")],
+  },
+  {
+    label: "student names a variable len, check calls len()",
+    code: 'len = 10\nprint("The bridge is", len, "steps long")\n',
+    checks: [check("count", "assert len(_lines()) == 1, 'One line.'"), check("value", "assert len == 10")],
+  },
+  {
+    label: "student names a variable type, with a failing check",
+    code: 'type = "fire"\nprint(type)\n',
+    checks: [check("ice", "assert 'ice' in _captured_stdout, 'Use ice.'"), check("fire", "assert type == 'fire'")],
+  },
+  {
+    label: "student names a variable str, then input()",
+    code: 'str = "Bob"\nname = input("Name? ")\nprint(name, str)\n',
+    stdin: ["Lucky"],
+    checks: [check("used", "assert _inputs_used() == 1"), check("out", "assert _lines()[-1] == 'Lucky Bob', _lines()")],
+  },
+  {
+    label: "student shadows a builtin and then crashes",
+    code: "str = 1\nprint(fireball)\n",
+    checks: [check("c", "assert True")],
   },
 ];
 
