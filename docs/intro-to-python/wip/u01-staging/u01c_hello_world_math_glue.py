@@ -59,11 +59,16 @@ _RERUN_DEF = (
     "def _rerun(_changes):\n"
     "    _tree = _ast.parse(_source)\n"
     "    _found = []\n"
-    "    for _n in _ast.walk(_tree):\n"
+    "    _sets = {}\n"
+    "    for _n in _tree.body:\n"
     "        if type(_n).__name__ == 'Assign' and len(_n.targets) == 1 and type(_n.targets[0]).__name__ == 'Name' "
-    "and _n.targets[0].id in _changes and type(_n.value).__name__ == 'Constant':\n"
-    "            _n.value = _ast.Constant(_changes[_n.targets[0].id])\n"
-    "            _found.append(_n.targets[0].id)\n"
+    "and _n.targets[0].id in _changes:\n"
+    "            _sets.setdefault(_n.targets[0].id, []).append(_n)\n"
+    "    for _k, _ns_ in _sets.items():\n"
+    "        _lit = [_n for _n in _ns_ if type(_n.value).__name__ == 'Constant']\n"
+    "        for _n in (_lit or _ns_[:1]):\n"
+    "            _n.value = _ast.Constant(_changes[_k])\n"
+    "            _found.append(_k)\n"
     "    _ast.fix_missing_locations(_tree)\n"
     "    _ns = {'__name__': '__main__', 'input': lambda *_a: ''}\n"
     "    _keep = _sys.stdout\n"
@@ -128,7 +133,9 @@ def rerun_box(label, changes, target, want, fix):
 
 
 def rerun_line(label, changes, want, fix, show=True):
-    """CMB on printed output: after the rerun, the line `want` (an expression over _R) must be printed."""
+    """CMB on printed output: after the rerun, the line `want` (an expression over _R) must be printed, by a
+    line that FOLLOWED the change. A line that prints `want` in the normal run too (at the same place) is typed
+    in: that stops `print(11)` + `print(7)` once the message has shown 7 (unless the rerun changed nothing)."""
     shown = (
         "(', but it printed `' + _nearest(_p, _want) + '`' if _p else ', but it printed nothing')"
         if show
@@ -137,9 +144,15 @@ def rerun_line(label, changes, want, fix, show=True):
     return rerun(
         label,
         changes,
-        f"_want = {want}",
-        "_want in _p",
-        f"'your program should print `' + _want + '`' + {shown} + '. ' + {fix!r}",
+        f"_want = {want}\n"
+        "_old = _lines()\n"
+        f"_same = all(_g0.get(_k) == _v for _k, _v in {changes!r}.items())\n"
+        "_at = [_i for _i, _l in enumerate(_p) if _l == _want]\n"
+        "_ok = bool(_at) and (_same or any(_i >= len(_old) or _old[_i] != _want for _i in _at))",
+        "_ok",
+        "(('your program printed `' + _want + '`, but that line prints `' + _want + '` even without the change, "
+        "so it is typed in. ') if _at else "
+        f"('your program should print `' + _want + '`' + {shown} + '. ')) + {fix!r}",
     )
 
 
@@ -187,7 +200,8 @@ def slot(label, name, want, *, known, default, foreign=(), rules=()):
 
 
 def story_pair(label, count_name, price_name, count, price, things, *, known, wild, price_first=False):
-    """SWAP / LINE-TOTAL / wild count / placeholder for a count box and a price box filled from a story."""
+    """SWAP / LINE-TOTAL / wild count / placeholder / NEWBOX for a count box and a price box filled from a story.
+    A right pair always passes (no near-miss nagging about other boxes); the diagnosis runs only when it is wrong."""
     swap = "You swapped them: %d is how many %s, %d is the price of one." % (count, things, price)
     if price_first:
         swap += " This story gives the price first."
@@ -195,22 +209,41 @@ def story_pair(label, count_name, price_name, count, price, things, *, known, wi
     code = _NAMES_PRE + (
         f"_names = {[count_name, price_name]!r}\n"
         f"_known = {list(known)!r}\n"
+        f"_wants = {{{count_name!r}: {count}, {price_name!r}: {price}}}\n"
+        "_num = lambda _v: type(_v).__name__ in ('int', 'float')\n"
+        "_ok = all(_w in _g and _num(_g[_w]) and _g[_w] == _wants[_w] for _w in _names)\n"
+        "_msg = ''\n"
         "_near = [(_m, _w) for _w in _names for _m in _made if _m not in _known and _m not in _names and _close(_m, _w)]\n"
-        "assert not _near, 'Python matches names letter for letter: you wrote `' + (_near[0][0] if _near else '') + "
-        "'`, the task needs `' + (_near[0][1] if _near else '') + '`.'\n"
+        "if not _ok and _near:\n"
+        "    _msg = 'Python matches names letter for letter: you wrote `' + _near[0][0] + '`, the task needs `' + _near[0][1] + '`.'\n"
         "for _w in _names:\n"
-        "    if _w not in _g and _bare:\n"
-        "        assert False, 'Line ' + str(_bare[0]) + ' is a value with no box, so Python made it and forgot it. "
+        "    if not _ok and not _msg and _w not in _g and _bare:\n"
+        "        _msg = 'Line ' + str(_bare[0]) + ' is a value with no box, so Python made it and forgot it. "
         "Put `' + _w + ' = ` in front of it.'\n"
-        "    assert _w in _g, 'Make a box named `' + _w + '`: start a line with `' + _w + ' = `.'\n"
-        f"    assert type(_g[_w]).__name__ != 'str', '`' + _w + {TEXT_NOT_NUM[3:]!r}\n"
-        f"_c, _p = _g[{count_name!r}], _g[{price_name!r}]\n"
-        f"assert not (_c == {price} and _p == {count}), {swap!r}\n"
-        f"assert _p != {count * price}, {line_total!r}\n"
-        f"assert _c in (0, {count}, {price}), {wild!r}\n"
-        "assert _c != 0 and _p != 0, 'A 0 is a placeholder: replace it with the number from the story.'\n"
-        f"assert _c == {count}, {'`' + count_name + '` answers how many ' + things + '. Read the story again.'!r}\n"
-        f"assert _p == {price}, {'`' + price_name + '` answers how much one costs. Read the story again.'!r}\n"
+        "    if not _ok and not _msg and _w not in _g:\n"
+        "        _msg = 'Make a box named `' + _w + '`: start a line with `' + _w + ' = `.'\n"
+        "    if not _ok and not _msg and type(_g[_w]).__name__ == 'str':\n"
+        f"        _msg = '`' + _w + {TEXT_NOT_NUM[3:]!r}\n"
+        "if not _ok and not _msg:\n"
+        f"    _c, _p = _g[{count_name!r}], _g[{price_name!r}]\n"
+        "    _newb = [(_m, _w) for _w in _names for _m in _made if _m not in _known and _m not in _names "
+        "and _g[_w] == 0 and _num(_g.get(_m)) and _g.get(_m) == _wants[_w]]\n"
+        f"    if _c == {price} and _p == {count}:\n"
+        f"        _msg = {swap!r}\n"
+        f"    elif _p == {count * price}:\n"
+        f"        _msg = {line_total!r}\n"
+        "    elif _newb:\n"
+        "        _msg = 'Your new box `' + _newb[0][0] + '` holds ' + str(_wants[_newb[0][1]]) + ', but `' + _newb[0][1] + "
+        "'` still holds 0. Put the number in `' + _newb[0][1] + '`.'\n"
+        f"    elif _c not in (0, {count}, {price}):\n"
+        f"        _msg = {wild!r}\n"
+        "    elif _c == 0 or _p == 0:\n"
+        "        _msg = 'A 0 is a placeholder: replace it with the number from the story.'\n"
+        f"    elif _c != {count}:\n"
+        f"        _msg = {'`' + count_name + '` answers how many ' + things + '. Read the story again.'!r}\n"
+        "    else:\n"
+        f"        _msg = {'`' + price_name + '` answers how much one costs. Read the story again.'!r}\n"
+        "assert _ok, _msg\n"
     )
     return (label, code)
 
@@ -220,7 +253,7 @@ def out_line(label, want, missing, privacy=False, spaces="Check the spaces in yo
     differs, unless privacy=True (the line holds the student's own creative text)."""
     if privacy:
         code = (
-            f"_want = {want}\n"
+            f"_want = ({want}).strip()\n"
             "_flat = [_l.replace(' ', '') for _l in _lines()]\n"
             f"assert _want in _lines() or _want.replace(' ', '') not in _flat, {spaces!r}\n"
             f"assert _want in _lines(), {missing!r}\n"
@@ -267,6 +300,51 @@ def no_bare_math(label, box):
         "and type(_n.value).__name__ == 'BinOp']\n"
         "assert not _loose, 'Line ' + str(_loose[0] if _loose else 0) + "
         f"{' works out a new number, but `' + box + '` didn' + chr(39) + 't change: put the answer back with `' + box + ' = ` in front.'!r}",
+    )
+
+
+def loose_math(label):
+    """BARE for math: a line that works out a number but keeps it nowhere (`lantern_count * lantern_price` on its
+    own raises no error, and the box keeps its 0)."""
+    return (
+        label,
+        "import ast as _ast\n"
+        "_loose = [_n.lineno for _n in _ast.parse(_source).body if type(_n).__name__ == 'Expr' "
+        "and type(_n.value).__name__ == 'BinOp']\n"
+        "assert not _loose, 'Line ' + str(_loose[0] if _loose else 0) + ' works out a number, but keeps it nowhere. "
+        "Put the box name and `=` in front of it, like `total = `.'",
+    )
+
+
+def set_once(label, names):
+    """A box that is set again BELOW the lines that use it: those lines never see the new number, because Python
+    runs from the top down (`rope_count = 1000` added at the bottom instead of changing line 3)."""
+    return (
+        label,
+        "import ast as _ast\n"
+        "_body = _ast.parse(_source).body\n"
+        "_late = []\n"
+        f"for _k in {list(names)!r}:\n"
+        "    _sets = [_n.lineno for _n in _body if type(_n).__name__ == 'Assign' and any(getattr(_t, 'id', '') == _k for _t in _n.targets)]\n"
+        "    _uses = [_n.lineno for _n in _ast.walk(_ast.Module(body=_body, type_ignores=[])) if type(_n).__name__ == 'Name' "
+        "and _n.id == _k and type(_n.ctx).__name__ == 'Load']\n"
+        "    if len(_sets) > 1 and any(_sets[0] < _u < _sets[-1] for _u in _uses):\n"
+        "        _late.append((_k, _sets[0], _sets[-1]))\n"
+        "assert not _late, '`' + (_late[0][0] if _late else '') + '` is set again on line ' + str(_late[0][2] if _late else 0) + "
+        "', below the lines that use it. Python runs from the top down, so those lines never see the new number. "
+        "Change line ' + str(_late[0][1] if _late else 0) + ' instead.'",
+    )
+
+
+def near_names(label, names, known):
+    """NAME on its own: a box whose name is a near miss of a required name (`Mana` for `mana`)."""
+    return (
+        label,
+        _NAMES_PRE
+        + f"_names = {list(names)!r}\n_known = {list(known)!r}\n"
+        "_near = [(_m, _w) for _w in _names for _m in _made if _m not in _known and _m not in _names and _close(_m, _w)]\n"
+        "assert not _near, 'Python matches names letter for letter: you wrote `' + (_near[0][0] if _near else '') + "
+        "'`, the task needs `' + (_near[0][1] if _near else '') + '`.'\n",
     )
 
 

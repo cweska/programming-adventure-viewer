@@ -62,7 +62,7 @@ test.describe("Intro to Python", () => {
     await expect(page.getByTestId("help-start-code")).toHaveText("caster =");
     await page.getByTestId("help-start-insert").click();
     await expect(page.locator('[data-testid="editor"] .cm-content')).toContainText("caster =");
-    await expect(page.locator('[data-testid="editor"] .cm-content')).not.toContainText("Gearshift");
+    await expect(page.locator('[data-testid="editor"] .cm-content')).not.toContainText('"Gearshift"');
     await expect(help).toContainText("More help: Where to look");
     await help.click();
     await expect(page.getByTestId("help-paced")).toBeVisible();

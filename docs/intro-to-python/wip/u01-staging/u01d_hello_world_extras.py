@@ -19,8 +19,10 @@ Check codes (curriculum 2.5) built by the helpers below:
   TEXT / NUM   text needs quotes, numbers don't
   CMB          the program is run again with other numbers (or other input answers); the result must follow
   SWAP / LINE-TOTAL, NEWBOX, OUT (diff)
-The harness has no _rerun() helper yet, so CMB is done in the check itself: the student's code is parsed, the
-first plain-value line of each named box gets a new value, and the program runs again in a fresh namespace.
+The harness has no _rerun() helper yet, so CMB is done in the check itself: the student's code is parsed, EVERY
+plain-value line of each named box gets the new value (so a new line added under a placeholder still reruns
+fairly), and the program runs again in a fresh namespace. The input() try-it uses _quiet(): two reruns with fixed
+answers and no echo, so line i of one run can be compared with line i of the other (a typed line stays put).
 Messages use invented values only (Tester, Zelda, Captain Glug, moth-grey) and never repeat a student's text.
 
 Verify:
@@ -658,6 +660,31 @@ WARD_SIGN = dict(
             message_contains="repaint",
         ),
         dict(
+            why="the O copied from the T's rows (every row uses ink, but there is no O)",
+            code=_sign(o="# O\nprint(ink * 5)\n" + 'print("  " + ink)\n' * 4, r="# R\n\n"),
+            fails_at=1,
+            message_contains="hole",
+        ),
+        dict(
+            why="the O as a column of single marks",
+            code=_sign(o="# O\n" + "print(ink)\n" * 5, r="# R\n\n"),
+            fails_at=1,
+            message_contains="hole",
+        ),
+        dict(
+            why="the O half typed: ink glued to a typed block, so only half of each side repaints",
+            code=_sign(o='# O\nprint(ink * 5)\nprint(ink + "   █")\nprint(ink + "   █")\nprint(ink + "   █")\nprint(ink * 5)\n',
+                       r="# R\n\n"),
+            fails_at=1,
+            message_contains="typed mark",
+        ),
+        dict(
+            why="the R drawn as a straight column (a copied T shape)",
+            code=_sign(r="# R\nprint(ink * 4)\n" + 'print("  " + ink)\n' * 4),
+            fails_at=2,
+            message_contains="gap",
+        ),
+        dict(
             why="ink put in quotes, so the word ink is stamped",
             code=_sign(o='# O\nprint("ink" * 5)\nprint("ink" + "   " + "ink")\nprint("ink" * 5)\n', r="# R\n\n"),
             fails_at=1,
@@ -672,6 +699,8 @@ WARD_SIGN = dict(
         dict(why="a border on top only", code=_sign(top=_BORDER), fails_at=3, message_contains="again"),
         dict(why="the border made from ink, so it is part of the letters",
              code=_sign(top="print(ink * 9)\n", bottom="print(ink * 9)\n"), fails_at=3, message_contains="changes when"),
+        dict(why="ink changed only at the end, after the letters are drawn, so the sign never repaints",
+             code=_sign(top=_BORDER, bottom=_BORDER) + 'ink = "▓"\n', fails_at=4, message_contains="after the letters"),
         dict(why="a new box Ink with a capital I", code=_sign(top=_BORDER, bottom=_BORDER).replace('ink = "█"\n', 'ink = "█"\nInk = "▓"\n'),
              fails_at=4, message_contains="letter for letter"),
         dict(why="the extra letter drawn with five separate prints",
@@ -687,10 +716,12 @@ WARD_SIGN = dict(
              dictates="3,4", foreign_names="chalk", prereq_card="1A-07 many-lines-at-once") + "\n"
         "Spec 1P2. Letters go DOWN the post (one under another), so each row is one print and no row needs "
         "side-by-side glue. Checks: CP1/CP2 count rows that change between two reruns (ink '#' and ink '@'), so "
-        "rows typed with █ are caught (CMB with ink) and any word or letter shape passes; CP3 the border is the first "
+        "rows typed with █ are caught (CMB with ink); a row with a mark that is the same in both reruns is half "
+        "typed (caught); the letter's own five ink rows (after the T's five) need a row with a gap between two "
+        "marks, so a copied T, a column of marks or a filled block fails while any real O or R design passes; CP3 the border is the first "
         "line, not an ink row, stamped (a 1-3 character unit repeated), not typed as one literal, and repeated after "
         "the last ink row (a later side-quest line under the sign keeps it green); CP4 ink changed (near-miss name "
-        "caught first); CP5 one print with a triple-quoted string of 5+ non-blank rows. The triple-quoted letter does "
+        "caught first) AND the printed letters use the new mark (ink changed after the letters fails); CP5 one print with a triple-quoted string of 5+ non-blank rows. The triple-quoted letter does "
         "not follow ink on purpose: CP5's pass line asks the student to notice that (the quotes rule again). "
         "Side quest (spec): sign the post in your hero's spell color, checked with a rerun (spell_color 'moth-grey'). "
         "Trial mode after a QC1 pass: premise + required output + the check table, from blank (site work)."
@@ -820,6 +851,8 @@ WHERE_IS_THE_HAND = dict(
     wrong_answers=[
         dict(why="the mark worked out by hand", code="start = 10\nhours = 5\nhand = 3\nturns = 1\nprint(hand)\nprint(turns)\n",
              fails_at=1, message_contains="11"),
+        dict(why="the story's numbers typed into the formula",
+             code="start = 10\nhours = 5\nhand = (10 + 5) % 12\nturns = 0\nprint(hand)\n", fails_at=1, message_contains="11"),
         dict(why="no brackets, so % happens first",
              code="start = 10\nhours = 5\nhand = start + hours % 12\nturns = 0\nprint(hand)\n", fails_at=1, message_contains="brackets"),
         dict(why="added but never wrapped",
@@ -832,6 +865,9 @@ WHERE_IS_THE_HAND = dict(
         dict(why="/ instead of // for the turns",
              code="start = 10\nhours = 5\nhand = (start + hours) % 12\nturns = (start + hours) / 12\nprint(turns)\n",
              fails_at=2, message_contains="decimal"),
+        dict(why="the turns with the numbers typed into the formula",
+             code="start = 10\nhours = 5\nhand = (start + hours) % 12\nturns = (10 + 5) // 12\n", fails_at=2,
+             message_contains="4"),
         dict(why="the turns typed in",
              code="start = 10\nhours = 5\nhand = (start + hours) % 12\nturns = 1\nprint(turns)\n", fails_at=2, message_contains="4"),
     ],
@@ -937,8 +973,9 @@ assert _usedA == 2, 'Your program asked ' + str(_usedA) + (' question' if _usedA
 _s = _nsA.get('sips')
 assert type(_s).__name__ != 'str', '`sips` holds the text ' + _show(_s) + '. `input()` always hands back text. Wrap it to make a number: `int(input(...))`.'
 assert type(_s).__name__ != 'float', '`sips` holds ' + str(_s) + ', a decimal. Use `int()` for a whole number of sips.'
-assert type(_s).__name__ == 'int' and _s == 3, '`sips` should hold the answer to the sips question, as a number. When the traveler answered 3, it held ' + _show(_s) + '.'
-assert _nsB.get('sips') == 5, 'When the traveler asked for 5 sips, `sips` still held ' + _show(_nsB.get('sips')) + '. Keep the answer itself in `sips`: `sips = int(input("How many sips? "))`.'
+# `sips = sips * 2` later on (a fair reassign, for step 3) leaves 6 and 10 in the box: that still follows the answer.
+assert type(_s).__name__ == 'int' and _s in (3, 6), '`sips` should hold the answer to the sips question, as a number. When the traveler answered 3, it held ' + _show(_s) + '.'
+assert _nsB.get('sips') == _s // 3 * 5, 'When the traveler asked for 5 sips, `sips` still held ' + _show(_nsB.get('sips')) + '. Keep the answer itself in `sips`: `sips = int(input("How many sips? "))`.'
 ''',
 )
 
@@ -1080,6 +1117,13 @@ WHO_GOES_THERE = dict(
     wrong_answers=[
         dict(why="the greeting typed with the name",
              code='traveler = input("Who goes there? ")\nprint("Welcome, Lucky.")\n', fails_at=1, message_contains="Tester"),
+        dict(why="both greetings typed, one for Lucky and one for Tester",
+             code='traveler = input("Who goes there? ")\nprint("Welcome, Lucky.")\nprint("Welcome, Tester.")\n',
+             fails_at=1, message_contains="still said Lucky"),
+        dict(why="only the name printed, no greeting",
+             code='traveler = input("Who goes there? ")\nprint(traveler)\n', fails_at=1, message_contains="only the name"),
+        dict(why="the name typed into the box instead of asked",
+             code='traveler = "Lucky"\nprint("Welcome, " + traveler)\n', fails_at=1, message_contains="never asks"),
         dict(why="traveler in quotes",
              code='traveler = input("Who goes there? ")\nprint("Welcome, traveler.")\n', fails_at=1, message_contains="quotes"),
         dict(why="sips left as text",
@@ -1088,12 +1132,20 @@ WHO_GOES_THERE = dict(
         dict(why="sips typed in, no second question",
              code='traveler = input("Who goes there? ")\nprint("Welcome, " + traveler)\nsips = 3\nprint(sips * 2)\n',
              fails_at=2, message_contains="needs 2"),
+        dict(why="sips typed in, beside a second question whose answer is never kept",
+             code='traveler = input("Who goes there? ")\nprint("Welcome, " + traveler)\ninput("How many sips? ")\nsips = 3\n'
+                  'print(sips * 2)\n',
+             fails_at=2, message_contains="still held 3"),
         dict(why="Sips with a capital S",
              code='traveler = input("Who goes there? ")\nprint("Welcome, " + traveler)\nSips = int(input("How many sips? "))\nprint(Sips * 2)\n',
              fails_at=2, message_contains="letter for letter"),
         dict(why="the double typed in",
              code='traveler = input("Who goes there? ")\nprint("Welcome, " + traveler)\nsips = int(input("How many sips? "))\nprint(6)\n',
              fails_at=3, message_contains="10"),
+        dict(why="6 and 10 both typed, to match both answers",
+             code='traveler = input("Who goes there? ")\nprint("Welcome, " + traveler)\nsips = int(input("How many sips? "))\n'
+                  'print(6)\nprint(10)\n',
+             fails_at=3, message_contains="did not change to 10"),
         dict(why="the word sips doubled",
              code='traveler = input("Who goes there? ")\nprint("Welcome, " + traveler)\nsips = int(input("How many sips? "))\nprint("sips" * 2)\n',
              fails_at=3, message_contains="quotes"),
@@ -1101,9 +1153,11 @@ WHO_GOES_THERE = dict(
     notes=(
         meta(starter_level="S2", path="optional", skills="input-int", solo="false", dictates="",
              foreign_names="visitor,coins") + "\n"
-        "Spec 1-A3a: stdin [Lucky, 3]; checks _inputs_used() == 2 (CP2) plus CMB through stdin [Tester, 5] (CP1 "
-        "greeting, CP3 double). The site shows the answers in the 'Input for your program' box; students can change "
-        "them, and the checks rerun with Mar'tu's answers."
+        "Spec 1-A3a: stdin [Lucky, 3]. Every check reruns the program twice, quietly, with [Lucky, 3] and [Tester, 5] "
+        "(CMB through stdin), whatever is in the student's own Input box, so pair-talk edits never block a pass. "
+        "CP1 a line that follows the name (Lucky -> Tester) and has a greeting word; CP2 two questions asked and "
+        "sips follows the answer (3 -> 5; 6 -> 10 also passes, for `sips = sips * 2` in step 3); CP3 a line that "
+        "shows 6 and changes to 10. Typed lines (both greetings typed, 6 and 10 both printed) stay put and fail."
     ),
 )
 
@@ -1154,7 +1208,7 @@ def _qc_meta(skills, dictates, foreign="", form="A"):
 
 # ---- C1: make a box with the exact name (make-variable, exact-names, quote-text) ----
 
-def _c1(form, name, what, foreign, ex_code, ex_out, pick, wrong_value="Zelda"):
+def _c1(form, name, what, foreign, ex_code, ex_out, pick, wrong_value="Zelda", other_name="hero"):
     return dict(
         id="make-a-box",
         title="A box with the right name",
@@ -1202,6 +1256,8 @@ def _c1(form, name, what, foreign, ex_code, ex_out, pick, wrong_value="Zelda"):
             dict(why="the example's name", code=f'{foreign[0]} = "{wrong_value}"\nprint({foreign[0]})\n',
                  fails_at=1, message_contains="example"),
             dict(why="a lone value", code=f'"{wrong_value}"\nprint("{wrong_value}")\n', fails_at=1, message_contains="no box"),
+            dict(why="a box with another name", code=f'{other_name} = "{wrong_value}"\nprint({other_name})\n', fails_at=1,
+                 message_contains="this task's box"),
             dict(why="text with no quotes", code=f"{name} = {wrong_value}\nprint({name})\n", fails_at=0,
                  message_contains=wrong_value),
             dict(why="def used to make a box", code=f'def {name} = "{wrong_value}"\nprint({name})\n', fails_at=0,
@@ -1298,6 +1354,11 @@ def _c2(form, story, a, b, total_name, a_vals, b_vals, cases, total):
         wrong_answers=[
             dict(why="the total worked out by hand", code=filled + f"{total_name} = {total}\nprint({total_name})\n",
                  fails_at=2, message_contains="Build it from the boxes"),
+            dict(why="the line totals typed in", code=filled + f"{total_name} = {a_vals[0] * a_vals[1]} + {b_vals[0] * b_vals[1]}\n"
+                 f"print({total_name})\n", fails_at=2, message_contains="Build it from the boxes"),
+            dict(why="the story's numbers typed into the formula",
+                 code=filled + f"{total_name} = {a_vals[0]} * {a_vals[1]} + {b_vals[0]} * {b_vals[1]}\nprint({total_name})\n",
+                 fails_at=2, message_contains="Build it from the boxes"),
             dict(why=f"{aw} count and price swapped",
                  code=story + f"{ac} = {a_vals[1]}\n{ap} = {a_vals[0]}\n{bc} = {b_vals[0]}\n{bp} = {b_vals[1]}\n"
                  f"{total_name} = {formula}\nprint({total_name})\n",
@@ -1371,7 +1432,10 @@ def _c3(form, who_name, who, affinity, cost_name, cost, aff_case, cost_case, lin
                     (
                         "mana went down",
                         f"assert mana != max_mana, '`mana` didn\\'t change. Put the answer back in the box: "
-                        f"`mana = mana - {cost_name}`.'",
+                        f"`mana = mana - {cost_name}`.'\n"
+                        f"assert mana == max_mana - {cost_name}, '`mana` holds ' + str(mana) + ', but full mana minus one "
+                        f"spell is ' + str(max_mana - {cost_name}) + '. Python runs top to bottom: work out `max_mana` above "
+                        f"the line `mana = max_mana`, then spend the spell once.'",
                     ),
                     cmb_check("mana", [({cost_name: cost_case}, max_mana - cost_case),
                                        ({"magical_affinity": aff_case}, aff_case * 2 - cost)],
@@ -1417,7 +1481,14 @@ def _c3(form, who_name, who, affinity, cost_name, cost, aff_case, cost_case, lin
             dict(why="mana typed in", code=p1 + f"mana = {mana}\n{line}\n", fails_at=2, message_contains=str(max_mana - cost_case)),
             dict(why="the subtraction not put back", code=p1 + f"mana - {cost_name}\n{line}\n", fails_at=2,
                  message_contains="didn't change"),
+            dict(why="the spell cost typed as a number", code=p1 + f"mana = mana - {cost}\n{line}\n", fails_at=2,
+                 message_contains=str(max_mana - cost_case)),
+            dict(why="mana = max_mana runs before max_mana is worked out",
+                 code=head + f"max_mana = 0\nmana = max_mana\nmax_mana = magical_affinity * 2\n{cost_name} = {cost}\n"
+                 f"mana = mana - {cost_name}\n{line}\n", fails_at=2, message_contains="top to bottom"),
             dict(why="the status line typed in", code=p2 + f'print("{status}")\n', fails_at=3, message_contains="Tester"),
+            dict(why="the numbers typed into the status line",
+                 code=p2 + f'print({who_name} + ": {mana}/{max_mana} mana")\n', fails_at=3, message_contains="Tester"),
             dict(why="str() missing", code=p2 + f'print({who_name} + ": " + mana + "/" + max_mana + " mana")\n',
                  fails_at=0, message_contains="concatenate"),
             dict(why="spaces missing", code=p2 + f'print({who_name} + ":" + str(mana) + "/" + str(max_mana) + "mana")\n',
@@ -1539,7 +1610,7 @@ def _c5(form, words, box, start, take, name_bad, name_good, value):
                     "With other words: `print(\"Steady, now.\")` has a quote at each end.",
                 ],
                 checks=[("prints the words",
-                         f"assert {words!r} in _lines(), {'Line 1 should print `' + words + '`. Close its quotes.'!r}")],
+                         f"assert {words!r} in _lines(), {'Line 1 should print exactly `' + words + '`. Put the closing quote right after the words, before the `)`.'!r}")],
             ),
             dict(
                 id="mend-the-number",
@@ -1555,9 +1626,16 @@ def _c5(form, words, box, start, take, name_bad, name_good, value):
                         f"{box} is {start - take}, worked out by Python",
                         f"assert type({box}).__name__ == 'int' and {box} == {start - take}, "
                         f"'`{box}` should be {start - take}: {start} take away {take}.'\n"
-                        f"assert _assigned_from_expression({box!r}), '`{box}` holds {start - take}, but it was typed in. "
+                        "import ast as _ast\n"
+                        "_done = [_n for _n in _ast.walk(_ast.parse(_source)) if (type(_n).__name__ == 'AugAssign' "
+                        f"and type(_n.target).__name__ == 'Name' and _n.target.id == {box!r}) or (type(_n).__name__ == "
+                        "'Assign' and type(_n.value).__name__ != 'Constant' and any(type(_t).__name__ == 'Name' and "
+                        f"_t.id == {box!r} for _t in _n.targets))]\n"
+                        f"assert _done, '`{box}` holds {start - take}, but it was typed in. "
                         f"Keep the subtraction and let Python do it: `{box} - {take}`.'",
                     ),
+                    cmb_check(box, [({box: start + 10}, start + 10 - take)],
+                              tail=f"Take {take} away from `{box}` itself: `{box} = {box} - {take}`."),
                 ],
             ),
             dict(
@@ -1570,7 +1648,10 @@ def _c5(form, words, box, start, take, name_bad, name_good, value):
                     "`Glow` and `glow` are two different boxes to Python.",
                 ],
                 checks=[
-                    box_check(name_good),
+                    box_check(name_good, skip=[box]),
+                    (f"no {name_bad} left over", f"assert {name_bad!r} not in globals(), '`{name_bad}` is still there. "
+                     f"To Python it is a different box from `{name_good}`. Mend line 4 instead of adding a new line.'"),
+                    print_check(name_good),
                     ("the box is printed", f"assert {name_good} == {value} and {str(value)!r} in _lines(), "
                      f"'`{name_good}` should hold {value}, and line 5 should print it.'"),
                 ],
@@ -1593,6 +1674,13 @@ def _c5(form, words, box, start, take, name_bad, name_good, value):
                  fails_at=0, message_contains="unsupported operand"),
             dict(why="the answer typed in", code=fixed.replace(f"{box} = {box} - {take}", f"{box} = {start - take}"),
                  fails_at=2, message_contains="typed in"),
+            dict(why="a subtraction that does not start from the box",
+                 code=fixed.replace(f"{box} = {box} - {take}", f"{box} = {start} - {take}"), fails_at=2, message_contains="itself"),
+            dict(why="the wrong name left, with a new line for the right one",
+                 code=fixed.replace(f"{name_good} = {value}\n", f"{name_bad} = {value}\n{name_good} = {value}\n"),
+                 fails_at=3, message_contains="still there"),
+            dict(why="the number typed into the print instead of the box",
+                 code=fixed.replace(f"print({name_good})", f"print({value})"), fails_at=3, message_contains=f"print({name_good})"),
             dict(why="the name mended on line 5 instead",
                  code=fixed.replace(f"{name_good} = {value}", f"{name_bad} = {value}").replace(f"print({name_good})", f"print({name_bad})"),
                  fails_at=3, message_contains=name_good),
@@ -1601,7 +1689,9 @@ def _c5(form, words, box, start, take, name_bad, name_good, value):
         ],
         notes=_qc_meta("quote-text,numbers-vs-text,exact-names,read-traceback", "", "glow", form) + "\n"
         "QC1 C5 (G4 R1 #6). Every slip crashes until it is mended, so no partials: a program with any slip left "
-        "fails every checkpoint with the explainer, which is the read-the-traceback skill being tested.",
+        "fails every checkpoint with the explainer, which is the read-the-traceback skill being tested. CP2 accepts "
+        "`-=` and reruns with a bigger start (a subtraction that does not start from the box stays put); CP3 also "
+        "fails a leftover wrong-case box and a typed number in the print.",
     )
 
 
@@ -1651,7 +1741,7 @@ QC1_B = dict(
     summary="The same five skills with new names and numbers. Pass them all, plus the questions, to test out.",
     exercises=[
         _c1("B", "familiar", "creature", ["steed"], 'steed = "a brass jeep"\nprint(steed)\n', "a brass jeep",
-            "a glowing newt", wrong_value="Kratos"),
+            "a glowing newt", wrong_value="Kratos", other_name="pet"),
         _c2(
             "B",
             "# Candles cost 3 coins each, and Mar'tu needs 4.\n# Oil: Mar'tu needs 2 flasks, at 6 coins a flask.\n",
