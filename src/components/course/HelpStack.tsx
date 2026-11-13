@@ -62,10 +62,18 @@ export function HelpStack({
 
   useEffect(() => setNote(null), [runNumber, state.open.length, checkpoint.id]);
 
-  // The Help control goes away once every rung is open: keep the keyboard on the newest rung.
+  // A rung just opened: bring it (and the Help control under it) into view, since the code pane can be
+  // its own scroll box. The Help control goes away once every rung is open: keep the keyboard on the newest
+  // rung then.
   useEffect(() => {
     if (!focusLast.current) return;
     focusLast.current = false;
+    try {
+      buttonRef.current?.scrollIntoView({ block: "nearest" });
+      lastRungRef.current?.scrollIntoView({ block: "nearest" });
+    } catch {
+      // Old browsers without scrollIntoView options: the rung is still there, just not scrolled to.
+    }
     if (!buttonRef.current) lastRungRef.current?.focus();
   }, [state.open.length]);
 

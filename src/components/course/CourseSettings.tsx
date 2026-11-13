@@ -131,8 +131,8 @@ export function PlacementQuestion({ quickCheck }: { quickCheck?: { href: string;
     return (
       <div ref={doneRef} tabIndex={-1} className="course-placement-done" role="status" data-testid="placement-done">
         <p>
-          Good. We start small. When you are stuck, Mar&apos;tu will offer help. You can change how much Mar&apos;tu
-          explains any time, under Help options.
+          Thanks. We start small, and help is always one click away. You can change how much Mar&apos;tu explains
+          any time, under Help options.
         </p>
         {answered === "yes" && quickCheck ? (
           <p data-testid="placement-quick-check">

@@ -312,7 +312,7 @@ def loose_math(label):
         "_loose = [_n.lineno for _n in _ast.parse(_source).body if type(_n).__name__ == 'Expr' "
         "and type(_n.value).__name__ == 'BinOp']\n"
         "assert not _loose, 'Line ' + str(_loose[0] if _loose else 0) + ' works out a number, but keeps it nowhere. "
-        "Put the box name and `=` in front of it, like `total = `.'",
+        "Which box should keep it? Put that box' + chr(39) + 's name and `=` in front.'",
     )
 
 
@@ -538,6 +538,12 @@ CHALK_MATH = dict(
                     "str(_R('first_gap') - _R('last_gap'))",
                     "Use the two boxes, so Python does the math every time.",
                 ),
+                rerun_line(
+                    "the shrink uses first_gap too",
+                    {"first_gap": 52},
+                    "str(_R('first_gap') - _R('last_gap'))",
+                    "Use the box `first_gap` too, not the number 48.",
+                ),
             ],
             pass_line="Gearshift: Math checks out.",
         ),
@@ -627,6 +633,12 @@ CHALK_MATH = dict(
              fails_at=1, message_contains="bigger gap first"),
         dict(why="a name spelled differently", code="first_gap = 48\nlast_gap = 37\nprint(first_gap - lastgap)\n",
              fails_at=0, message_contains="not defined"),
+        dict(why="half typed: 48 instead of first_gap (passes the last_gap rerun)",
+             code="first_gap = 48\nlast_gap = 37\nprint(48 - last_gap)\n", fails_at=1, message_contains="first_gap = 52"),
+        dict(why="gaming the message: the typed 11 plus the 7 the message showed",
+             code="first_gap = 48\nlast_gap = 37\nprint(11)\nprint(7)\n", fails_at=1, message_contains="typed in"),
+        dict(why="the example's names copied (A-05/A-07/A-08 player_name)",
+             code="first_gap = 48\nlast_gap = 37\nprint(owl_hoots - wolf_howls)\n", fails_at=0, message_contains="not defined"),
     ],
     notes=(
         meta(starter_level="S4", path="CC", skills="combine-values", solo="false", dictates="1",
@@ -810,6 +822,12 @@ WHAT_EACH_NUMBER_MEANS = dict(
         dict(why="capital letter in a name, placeholder left",
              code="Lantern_count = 3\nlantern_count = 0\nlantern_price = 4\nrope_count = 5\nrope_price = 2\n",
              fails_at=1, message_contains="letter for letter"),
+        dict(why="side work in a new box (B-02/B-03 Pizza=4 before the template), placeholder left",
+             code="lanterns = 3\nlantern_count = 0\nlantern_price = 4\nrope_count = 5\nrope_price = 2\n",
+             fails_at=1, message_contains="new box `lanterns`"),
+        dict(why="a price in quotes (rope)",
+             code='lantern_count = 3\nlantern_price = 4\nrope_count = 5\nrope_price = "2"\n',
+             fails_at=2, message_contains="quotes"),
     ],
     notes=(
         meta(starter_level="S4", path="CC", skills="combine-values", solo="false", dictates="1",
@@ -824,6 +842,7 @@ COST_FOREIGN = ["map_count", "map_price", "map_cost", "a", "b", "c"]
 COST_BOXES = "lantern_count = 3\nlantern_price = 4\nrope_count = 5\nrope_price = 2\n"
 COST_BOXES_1000 = "lantern_count = 3\nlantern_price = 4\nrope_count = 1000\nrope_price = 2\n"
 COMBINE_FIX = "Build it from the boxes, so the code does the math."
+COST_INPUTS = ["lantern_count", "lantern_price", "rope_count", "rope_price"]
 
 LET_THE_CODE_COMBINE = dict(
     id="let-the-code-combine",
@@ -864,6 +883,8 @@ LET_THE_CODE_COMBINE = dict(
                 "`*` multiplies. If `a = 2` and `b = 6`, then `c = a * b` puts 12 in `c`.",
             ],
             checks=[
+                loose_math("the math is kept in a box"),
+                set_once("each box is set once, at the top", COST_INPUTS[:2]),
                 slot(
                     "lantern_cost multiplies the lantern boxes", "lantern_cost", "lantern_count * lantern_price",
                     known=COST_KNOWN, foreign=COST_FOREIGN,
@@ -887,6 +908,8 @@ LET_THE_CODE_COMBINE = dict(
                 "If `a = 2` and `b = 6`, then `c = a * b` puts 12 in `c`. Same shape, rope boxes.",
             ],
             checks=[
+                loose_math("the math is kept in a box"),
+                set_once("each box is set once, at the top", COST_INPUTS[2:]),
                 slot(
                     "rope_cost multiplies the rope boxes", "rope_cost", "rope_count * rope_price",
                     known=COST_KNOWN, foreign=COST_FOREIGN,
@@ -911,6 +934,8 @@ LET_THE_CODE_COMBINE = dict(
                 "and it stays right when `a` changes.",
             ],
             checks=[
+                loose_math("the math is kept in a box"),
+                set_once("each box is set once, at the top", COST_INPUTS),
                 slot(
                     "total_cost adds the two costs", "total_cost",
                     "lantern_count * lantern_price + rope_count * rope_price",
@@ -924,7 +949,7 @@ LET_THE_CODE_COMBINE = dict(
                     "_R('lantern_count') * _R('lantern_price') + _R('rope_count') * _R('rope_price')", COMBINE_FIX,
                 ),
                 rerun_box(
-                    "total_cost follows the rope boxes", {"rope_price": 3}, "total_cost",
+                    "total_cost follows every box", {"lantern_price": 5, "rope_count": 6, "rope_price": 3}, "total_cost",
                     "_R('lantern_count') * _R('lantern_price') + _R('rope_count') * _R('rope_price')", COMBINE_FIX,
                 ),
             ],
@@ -1088,6 +1113,29 @@ LET_THE_CODE_COMBINE = dict(
              code=COST_BOXES + "lantern_cost = lantern_count * lantern_price\nrope_cost = rope_count * rope_price\n"
              "total_cost = lantern_cost + 10\nprint(total_cost)\n",
              fails_at=3, message_contains="rope_price"),
+        dict(why="rope count typed inside the total (passes a lantern-only and a price-only rerun)",
+             code=COST_BOXES + "lantern_cost = lantern_count * lantern_price\nrope_cost = rope_count * rope_price\n"
+             "total_cost = lantern_cost + 5 * rope_price\nprint(total_cost)\n",
+             fails_at=3, message_contains="rope_count = 6"),
+        dict(why="lantern price typed inside the total, cost boxes skipped",
+             code=COST_BOXES + "lantern_cost = lantern_count * lantern_price\nrope_cost = rope_count * rope_price\n"
+             "total_cost = lantern_count * 4 + rope_cost\nprint(total_cost)\n",
+             fails_at=3, message_contains="lantern_price = 5"),
+        dict(why="the math in quotes",
+             code=COST_BOXES + "lantern_cost = lantern_count * lantern_price\nrope_cost = rope_count * rope_price\n"
+             'total_cost = "lantern_cost + rope_cost"\nprint(total_cost)\n',
+             fails_at=3, message_contains="quotes"),
+        dict(why="the math worked out on a line of its own, kept in no box (B-02/B-03 lone value)",
+             code=COST_BOXES + "lantern_cost = 0\nlantern_count * lantern_price\nrope_cost = 0\ntotal_cost = 0\nprint(total_cost)\n",
+             fails_at=1, message_contains="keeps it nowhere"),
+        dict(why="adds the rope boxes instead of multiplying",
+             code=COST_BOXES + "lantern_cost = lantern_count * lantern_price\nrope_cost = rope_count + rope_price\n"
+             "total_cost = 0\nprint(total_cost)\n",
+             fails_at=2, message_contains="use `*`"),
+        dict(why="CP4 done as a new line at the bottom (side-work habit): the total never sees 1000",
+             code=COST_BOXES + "lantern_cost = lantern_count * lantern_price\nrope_cost = rope_count * rope_price\n"
+             "total_cost = lantern_cost + rope_cost\nprint(total_cost)\nrope_count = 1000\n",
+             fails_at=2, message_contains="top down"),
     ],
     notes=(
         meta(starter_level="S4", path="CC", skills="combine-values", solo="false", dictates="1,4",
@@ -1145,9 +1193,12 @@ SPEND_MANA = dict(
                 "`glow = glow - 2` puts 6 back in `glow`.",
             ],
             checks=[
+                near_names("the names are exact", ["mana", "spell_cost"], ["mana", "spell_cost"]),
                 no_bare_math("the answer goes back in the box", "mana"),
                 (
                     "three casts print 17",
+                    "assert '-17' not in _lines(), 'Your new line takes `mana` away from `spell_cost`, so it gives -17. "
+                    "Put `mana` first: `mana = mana - spell_cost`.'\n"
                     "assert '17' in _lines() or mana != 17, '`mana` holds 17, but it was printed too early. "
                     "Put `print(mana)` below the third cast.'\n"
                     "assert '17' in _lines() or mana != 20, '`mana` is 20, which is two casts. "
@@ -1244,6 +1295,14 @@ SPEND_MANA = dict(
              code="mana = 26\nspell_cost = 3\nmana = mana - spell_cost\nmana = mana - spell_cost\nprint(mana)\nmana = mana - spell_cost\n",
              fails_at=1, message_contains="too early"),
         dict(why="the starter left as two casts", code=SPEND_STARTER, fails_at=1, message_contains="two casts"),
+        dict(why="gaming the message: typed 17 plus the 11 the rerun message showed",
+             code="mana = 26\nspell_cost = 3\nprint(17)\nprint(11)\n", fails_at=1, message_contains="typed in"),
+        dict(why="capital letter: a new box Mana (prints 17, but mana is still 20)",
+             code="mana = 26\nspell_cost = 3\nmana = mana - spell_cost\nmana = mana - spell_cost\nMana = mana - spell_cost\nprint(Mana)\n",
+             fails_at=1, message_contains="letter for letter"),
+        dict(why="subtracts the wrong way round on the new line",
+             code="mana = 26\nspell_cost = 3\nmana = mana - spell_cost\nmana = mana - spell_cost\nmana = spell_cost - mana\nprint(mana)\n",
+             fails_at=1, message_contains="Put `mana` first"),
     ],
     notes=(
         meta(starter_level="S4", path="CC", skills="reassign", solo="false", dictates="1",
@@ -1252,6 +1311,27 @@ SPEND_MANA = dict(
         "Checks read the printed 17 (not the final value) so Lucky's +2 side quest does not undo the checkpoint. "
         "WA evidence: tracing by adding the printed constants (A-03/A-04), typed answers (everyone's 68)."
     ),
+)
+
+# OUT for 1C-06. Lucky (the starter's name) gets the full diff; another name a student picked is accepted, and
+# its diff never repeats the name back (privacy, 2.11).
+def named_out(label, tail, missing_lucky, missing_own, spaces):
+    """OUT for a line that starts with `name`: Lucky gets the full diff; any other name is accepted and its diff
+    never repeats the student's name back."""
+    full = out_line("", "'Lucky' + " + tail, missing_lucky)[1]
+    own = out_line("", "str(name) + " + tail, missing_own, privacy=True, spaces=spaces)[1]
+    return (
+        label,
+        "if name == 'Lucky':\n" + "".join("    " + _l + "\n" for _l in full.splitlines())
+        + "else:\n" + "".join("    " + _l + "\n" for _l in own.splitlines()),
+    )
+
+
+GLUE_OUT = named_out(
+    "prints Lucky has 26 mana.", "' has ' + str(mana) + ' mana.'",
+    "Print `Lucky has 26 mana.`, glued from `name`, fixed words and `str(mana)`.",
+    "Print the line glued from `name`, fixed words and `str(mana)`, like `Tester has 4 mana.`",
+    "Check the spaces: one after the name, and one on each side of the number.",
 )
 
 GLUE_WORDS = dict(
@@ -1293,15 +1373,25 @@ GLUE_WORDS = dict(
                     "import ast as _ast\n"
                     "_q = [_n.value for _n in _ast.walk(_ast.parse(_source)) if type(_n).__name__ == 'Constant' "
                     "and type(_n.value).__name__ == 'str' and _n.value.strip() in ('mana', 'name')]\n"
-                    "assert not _q, '`\"' + (_q[0].strip() if _q else '') + '\"` in quotes is just those letters. "
+                    "_right = str(name) + ' has ' + str(mana) + ' mana.' in _lines()\n"
+                    "assert _right or not _q, '`\"' + (_q[0].strip() if _q else '') + '\"` in quotes is just those letters. "
                     + QUOTES_RULE + "'",
                 ),
-                out_line("prints Lucky has 26 mana.", "'Lucky has 26 mana.'",
-                         "Print `Lucky has 26 mana.`, glued from `name`, fixed words and `str(mana)`."),
+                (
+                    "mana holds a number",
+                    "assert type(mana).__name__ == 'int', '`mana` holds text, because of the quotes. Numbers don' + "
+                    "chr(39) + 't need quotes: keep `mana = 26`, and turn it into text in the line with `str(mana)`.'",
+                ),
+                GLUE_OUT,
                 rerun_line(
                     "the line is built from the boxes", {"name": "Tester", "mana": 4},
                     "_R('name') + ' has ' + str(_R('mana')) + ' mana.'",
                     "Build the line from `name` and `str(mana)`, so it follows the boxes.",
+                ),
+                (
+                    "glued with + and str()",
+                    "assert _uses('op:Add') and _uses('call:str'), 'Your line prints the right words. This step "
+                    "practises glue: join the pieces with `+`, and turn the number into text with `str(mana)`.'",
                 ),
             ],
             pass_line="Lucky: Twenty-six. Fine. But I'm keeping track.",
@@ -1360,7 +1450,10 @@ GLUE_WORDS = dict(
         ],
         checks=[
             ("max_mana is 26", "assert max_mana == 26, 'Make a box `max_mana = 26`.'"),
-            out_line("prints the of-line", "'Lucky has 26 of 26 mana.'", "Print `Lucky has 26 of 26 mana.` on a new line."),
+            named_out("prints the of-line", "' has ' + str(mana) + ' of ' + str(max_mana) + ' mana.'",
+                      "Print `Lucky has 26 of 26 mana.` on a new line.",
+                      "Print the of-line on a new line, like `Tester has 4 of 30 mana.`",
+                      "Check the spaces: one on each side of `has` and `of`, and one before `mana.`"),
             rerun_line(
                 "the of-line is built from the boxes", {"name": "Tester", "mana": 4, "max_mana": 30},
                 "_R('name') + ' has ' + str(_R('mana')) + ' of ' + str(_R('max_mana')) + ' mana.'",
@@ -1393,6 +1486,17 @@ GLUE_WORDS = dict(
              fails_at=1, message_contains="exact letters"),
         dict(why="the number typed into str()", code='name = "Lucky"\nmana = 26\nprint(name + " has " + str(26) + " mana.")\n',
              fails_at=1, message_contains="Tester"),
+        dict(why="gaming the message: the typed line plus the Tester line the message showed",
+             code='name = "Lucky"\nmana = 26\nprint(name + " has " + str(26) + " mana.")\nprint("Tester has " + str(4) + " mana.")\n',
+             fails_at=1, message_contains="typed in"),
+        dict(why="the number quoted so it glues without str() (NUM)",
+             code='name = "Lucky"\nmana = "26"\nprint(name + " has " + mana + " mana.")\n',
+             fails_at=1, message_contains="Numbers don't need quotes"),
+        dict(why="commas instead of glue: right output, skips + and str()",
+             code='name = "Lucky"\nmana = 26\nprint(name, "has", mana, "mana.")\n',
+             fails_at=1, message_contains="practises glue"),
+        dict(why="a closing quote missing", code='name = "Lucky"\nmana = 26\nprint(name + " has + str(mana) + " mana.")\n',
+             fails_at=0, message_contains="SyntaxError"),
     ],
     notes=(
         meta(starter_level="S4", path="CC", skills="concat-str", solo="false", dictates="",
@@ -1442,6 +1546,7 @@ STATUS_LINE_EX = dict(
                 "If `power = 7`, then `double = power * 2` puts 14 in `double`, and it follows when `power` changes.",
             ],
             checks=[
+                loose_math("the math is kept in a box"),
                 slot(
                     "max_mana is twice the affinity", "max_mana", "magical_affinity * 2",
                     known=STATUS_KNOWN, foreign=["power", "double"],
@@ -1493,6 +1598,13 @@ STATUS_LINE_EX = dict(
                 rerun_line(
                     "the status line is built from the boxes", {"hero_name": "Tester", "magical_affinity": 13},
                     "'Tester: 26/26 mana'", "Build the line from the boxes, with `str()` on each number.", show=False,
+                ),
+                (
+                    "the first number is mana",
+                    "import ast as _ast\n"
+                    "assert [_n for _n in _ast.walk(_ast.parse(_source)) if type(_n).__name__ == 'Name' and _n.id == 'mana' "
+                    "and type(_n.ctx).__name__ == 'Load'], 'Your line never uses the box `mana`. The first number is the "
+                    "mana the hero has now: glue in `str(mana)` there, and `str(max_mana)` after the `/`.'",
                 ),
             ],
             pass_line="Mar'tu: Hm. That one goes in my ledger.",
@@ -1569,6 +1681,20 @@ STATUS_LINE_EX = dict(
         dict(why="space missing after the colon",
              code=_status("Oogrish", printed=False) + 'print(hero_name + ":" + str(mana) + "/" + str(max_mana) + " mana")\n',
              fails_at=3, message_contains="spaces"),
+        dict(why="gaming the message: the typed line plus the Tester line the message showed",
+             code=_status("Oogrish", printed=False) + 'print("Oogrish: 18/18 mana")\nprint("Tester: 26/26 mana")\n',
+             fails_at=3, message_contains="typed in"),
+        dict(why="max_mana shown twice (right output only because mana starts full)",
+             code=_status("Oogrish", printed=False) + 'print(hero_name + ": " + str(max_mana) + "/" + str(max_mana) + " mana")\n',
+             fails_at=3, message_contains="str(mana)"),
+        dict(why="capital letter: a new box Max_mana, placeholder left",
+             code=_status("Oogrish", maxline="max_mana = 0\nMax_mana = magical_affinity * 2", manaline="mana = Max_mana"),
+             fails_at=1, message_contains="letter for letter"),
+        dict(why="the hero with no quotes (A-08 kratos)", code=_status("Oogrish").replace('"Oogrish"', "Kratos", 1),
+             fails_at=0, message_contains="not defined"),
+        dict(why="twice worked out on a line of its own, kept in no box",
+             code=_status("Oogrish", maxline="max_mana = 0\nmagical_affinity * 2"),
+             fails_at=1, message_contains="keeps it nowhere"),
     ],
     notes=(
         meta(starter_level="S3", path="CC", skills="combine-values,concat-str,reassign", solo="false", dictates="2",
@@ -1653,6 +1779,8 @@ REPEAT_A_MARK = dict(
                            "The light part is the mana used: `empty * (max_mana - mana)`."),
                 rerun_line("full bar at mana 5", {"mana": 5, "max_mana": 5}, "'[█████]'",
                            "The light part is the mana used: `empty * (max_mana - mana)`."),
+                rerun_line("bar at mana 2 of 6", {"mana": 2, "max_mana": 6}, "'[██░░░░]'",
+                           "Use the box `max_mana` in the brackets, not the number 5: `(max_mana - mana)`."),
             ],
             pass_line="Mar'tu: Which part of your line is the mana used? Point at it. Yes. The part in brackets.",
         ),
@@ -1766,6 +1894,11 @@ REPEAT_A_MARK = dict(
              fails_at=0, message_contains="concatenate"),
         dict(why="Gearshift's bar typed as 20 blocks", code=_bar("bar = full * 20", 20, 20),
              fails_at=1, message_contains="not a number"),
+        dict(why="max mana typed as 5 inside the brackets (passes every rerun at max 5, and the 20/20 bar)",
+             code=_bar("bar = full * mana + empty * (5 - mana)", 20, 20), fails_at=2, message_contains="max_mana = 6"),
+        dict(why="gaming the message: the 3-of-5 bar typed",
+             code=_bar("bar = full * mana + empty * 0") + 'print("[░░░░░]")\nprint("[███░░]")\nprint("[█████]")\n',
+             fails_at=2, message_contains="typed in"),
     ],
     notes=(
         meta(starter_level="S4", path="CC", skills="repeat-string", solo="false", dictates="1,2",
@@ -1881,6 +2014,8 @@ BROKEN_SPELL_1C = dict(
                            "The light part is the mana used: `\"░\" * (max_mana - mana)`."),
                 rerun_line("bar at mana 0", {"mana": 0, "max_mana": 5}, "'[░░░░░]'",
                            "The light part is the mana used: `\"░\" * (max_mana - mana)`."),
+                rerun_line("bar at mana 2 of 6", {"mana": 2, "max_mana": 6}, "'[██░░░░]'",
+                           "Use the box `max_mana` in the brackets, not the number 5: `(max_mana - mana)`."),
             ],
             pass_line="Mar'tu: Four bugs, four mends. The spell holds, yes?",
         ),
@@ -1947,6 +2082,12 @@ BROKEN_SPELL_1C = dict(
              fails_at=3, message_contains="swapped"),
         dict(why="bar brackets still missing", code=_broken(bar='bar = "█" * mana + "░" * max_mana - mana'),
              fails_at=0, message_contains="operand"),
+        dict(why="bar mended with the max typed as 5", code=_broken(bar='bar = "█" * mana + "░" * (5 - mana)'),
+             fails_at=4, message_contains="max_mana = 6"),
+        dict(why="gaming the message: the typed Mana line plus the one the message showed",
+             code=_broken(mana_line='print("Mana: 3")\nprint("Mana: 4")'), fails_at=1, message_contains="typed in"),
+        dict(why="rope_cost typed as a sum instead of from the boxes", code=_broken(rope_cost="rope_cost = 5 * 2"),
+             fails_at=2, message_contains="18"),
     ],
     notes=(
         meta(starter_level="S4", path="CC", skills="combine-values,concat-str,repeat-string,read-traceback",
