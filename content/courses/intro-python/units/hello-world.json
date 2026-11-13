@@ -37,11 +37,11 @@
         {
           "id": "what-an-error-looks-like",
           "title": "What an error looks like",
-          "martu": "Press Run first. Then you will break it on purpose and read Python's [[error message|message]]. A message is not a mark against you: it says what Python could not read. Read the last line first. Then look at the line it names.",
+          "martu": "Press Run first. Then you will break it on purpose and read Python's [[error message|message]]. A message is not a mark against you: it says what Python could not read. Read the last line first: the message under your code shows it as *Python's last line*. Then look at the line it names.",
           "anotherWay": [
             {
               "angle": "picture",
-              "text": "Two places to look. Read 1 first, then 2.\n```text\n  File \"main.py\", line 1     <- 2. this line\n    print(\"Shield up.)\n          ^\nSyntaxError: unterminated string literal     <- 1. first\n```\nUnterminated means the words never ended: the closing quote is missing."
+              "text": "Python's full message, short:\n```text\nFile \"main.py\", line 1\n  print(\"Shield up.)\n        ^\nSyntaxError: unterminated ...\n```\n1. Read the last line first. *Unterminated* means the words never ended: the closing quote is missing.\n2. Then the top line: it names the line to mend, line 1."
             },
             {
               "angle": "everyday",
@@ -81,7 +81,7 @@
             },
             {
               "id": "close-the-quote",
-              "text": "Break it on purpose: delete the last `\"` and Run. Read the last line of Python's message. Then put the `\"` back, change the `.` to `!`, and Run.",
+              "text": "Break it on purpose: delete the last `\"` and Run. Read *Python's last line* in the message. Then put the `\"` back, change the `.` to `!`, and Run.",
               "hints": [
                 "Click just after `Shield up.\"` and press Backspace once. Then Run.",
                 "*Unterminated* means the words never ended: the closing quote is missing. Put it back after the words.",
@@ -220,7 +220,7 @@
           "anotherWay": [
             {
               "angle": "picture",
-              "text": "```text\neditor:    print(\"Hi. It is me, Mar'tu.\")\n               |  press Run\n               v\nconsole:   Hi. It is me, Mar'tu.\n```"
+              "text": "```text\neditor:\nprint(\"Hi. It is me, Mar'tu.\")\n   |  press Run\n   v\nconsole:\nHi. It is me, Mar'tu.\n```"
             },
             {
               "angle": "in Tor",
@@ -278,7 +278,7 @@
         {
           "id": "your-own-words",
           "title": "Your own words",
-          "martu": "The words inside the [[quotes]] are yours. Python shows them exactly. Change them to something Oogrish might say. Stuck for words? Press Mar'tu's pick.",
+          "martu": "The words inside the [[quotes]] are yours. Python shows them exactly. Change them to something Oogrish might say. Stuck for words? Delete the words between the quotes, click there, and press Mar'tu's pick.",
           "example": {
             "code": [
               "print(\"Shield up.\")"
@@ -288,7 +288,7 @@
           "anotherWay": [
             {
               "angle": "picture",
-              "text": "```text\nprint(\"  your words go here  \")\n      ^                    ^\n   keep this quote    keep this quote\n```"
+              "text": "```text\nprint(\"your words\")\n      ^          ^\n      |          keep this quote\n      keep this quote\n```"
             },
             {
               "angle": "in Tor",
@@ -407,7 +407,7 @@
           "anotherWay": [
             {
               "angle": "picture",
-              "text": "Quotes are bookends. Words stand between them:\n```text\nprint(  \"  It is not a compass  \"  )\n      |  |                     |  |\n      (  open quote   close quote  )\n```"
+              "text": "Quotes are bookends. Words stand between them:\n```text\nprint(\"It is not a compass\")\n     ^^                   ^^\n   ( and \"           \" and )\n    open               close\n```\nThe bracket opens first and closes last, around the quotes."
             },
             {
               "angle": "everyday",
@@ -815,7 +815,7 @@
             {
               "angle": "step-by-step",
               "label": "Step table",
-              "text": "The finished code, one line at a time:\n```text\nline  code                               the console now shows\n1     print(\"Mar'tu checks the clock.\")   Mar'tu checks the clock.\n2     print(\"The hand is near the arc.\")  The hand is near the arc.\n3     print()                            (an empty line)\n4     print(\"Get inside, yes?\")           Get inside, yes?\n```"
+              "text": "The finished code, one line at a time:\n1. `print(\"Mar'tu checks the clock.\")` shows: Mar'tu checks the clock.\n2. `print(\"The hand is near the arc.\")` shows: The hand is near the arc.\n3. `print()` shows an empty line.\n4. `print(\"Get inside, yes?\")` shows: Get inside, yes?"
             },
             {
               "angle": "shorter",
@@ -967,7 +967,7 @@
             },
             {
               "angle": "picture",
-              "text": "A `#` is a sticky note on your code:\n```text\n# Lucky, keep quiet.                 <- note: skipped\nprint(\"Steady, now.\")                <- runs\n# print(\"I am keeping the glug.\")    <- switched off: skipped\n```"
+              "text": "A `#` is a sticky note on your code:\n```text\n# Lucky, keep quiet.\n^ a note: skipped\n\nprint(\"Steady, now.\")\n^ runs\n\n# print(\"I am keeping the glug.\")\n^ switched off: skipped\n```"
             },
             {
               "angle": "campaign",
@@ -1409,7 +1409,7 @@
           "anotherWay": [
             {
               "angle": "picture",
-              "text": "Two lines, two answers:\n```\nprint(companion)    ->  opens the box   ->  Gearshift\nprint(\"companion\")  ->  just the letters ->  companion\n```"
+              "text": "Two lines, two answers:\n```\nprint(companion)\n-> opens the box\n-> shows Gearshift\n\nprint(\"companion\")\n-> just the letters\n-> shows companion\n```"
             },
             {
               "angle": "everyday",
@@ -1423,7 +1423,7 @@
             },
             {
               "angle": "step-by-step",
-              "text": "Python reads one line at a time:\n```\nline  code                     what happens\n1     companion = \"Gearshift\"  box companion gets Gearshift\n2     print(companion)         opens the box, shows Gearshift\n3     print(\"companion\")       shows the letters companion\n```"
+              "text": "Python reads one line at a time:\n1. `companion = \"Gearshift\"`: the box `companion` gets Gearshift.\n2. `print(companion)`: opens the box and shows Gearshift.\n3. `print(\"companion\")`: shows the letters companion."
             },
             {
               "angle": "contrast",
@@ -1832,7 +1832,7 @@
           "anotherWay": [
             {
               "angle": "picture",
-              "text": "Two boxes that look alike:\n```\narmor_bonus = 3     a number: Python can do math with it\narmor_bonus = \"3\"   text: just the letter 3, like a word\n```"
+              "text": "Two boxes that look alike:\n```\narmor_bonus = 3\n^ a number: Python can\n  do math with it\n\narmor_bonus = \"3\"\n^ text: just the letter 3,\n  like a word\n```"
             },
             {
               "angle": "everyday",
@@ -2097,7 +2097,7 @@
             {
               "angle": "picture",
               "label": "Spot the difference",
-              "text": "Line them up, letter by letter:\n```\nMax_Mana\nmax_mana\n^   ^      two letters differ, so Python sees two names\n```"
+              "text": "Line them up, letter by letter:\n```\nMax_Mana\nmax_mana\n^   ^\nTwo letters differ, so\nPython sees two names.\n```"
             },
             {
               "angle": "everyday",
@@ -3233,7 +3233,7 @@
           "anotherWay": [
             {
               "angle": "picture",
-              "text": "```\nsatchel = \"three candles and a map\"   words: quotes\ncoins = 7                            number: no quotes\n```"
+              "text": "```\nsatchel = \"three candles and a map\"\n^ words: quotes\n\ncoins = 7\n^ a number: no quotes\n```"
             },
             {
               "angle": "in Tor",
@@ -3505,7 +3505,7 @@
             {
               "angle": "picture",
               "label": "Two jars",
-              "text": "Two jars and a minus sign:\n```text\n[ first_gap: 48 ]  -  [ last_gap: 37 ]  ->  11\n```\nPython opens both jars, takes one number from the other, and prints the answer."
+              "text": "Two jars and a minus sign:\n```text\n[ first_gap: 48 ]\n        -\n[ last_gap: 37 ]\n        ->  11\n```\nPython opens both jars, takes one number from the other, and prints the answer."
             },
             {
               "angle": "everyday",
@@ -3816,7 +3816,7 @@
             {
               "angle": "picture",
               "label": "Tally marks and a price tag",
-              "text": "How many is a row of tally marks. How much is one is a price tag.\n```text\nlanterns:  ||| (3)     price tag: [4 coins]\nrope:      ||||| (5)   price tag: [2 coins]\n```"
+              "text": "How many is a row of tally marks. How much is one is a price tag.\n```text\nlanterns: ||| (3)\nprice tag: [4 coins]\n\nrope: ||||| (5)\nprice tag: [2 coins]\n```"
             },
             {
               "angle": "everyday",
@@ -4081,7 +4081,7 @@
             {
               "angle": "picture",
               "label": "Arrows into the total",
-              "text": "```text\nlantern_count --\\\n                 *--> lantern_cost --\\\nlantern_price --/                     \\\n                                       +--> total_cost\nrope_count -----\\                     /\n                 *--> rope_cost ----/\nrope_price -----/\n```\nChange any box on the left, and the arrows carry it all the way to the total."
+              "text": "```text\nlantern_count * lantern_price\n  --> lantern_cost\n\nrope_count * rope_price\n  --> rope_cost\n\nlantern_cost + rope_cost\n  --> total_cost\n```\nChange any box on the left, and the arrows carry it all the way to the total."
             },
             {
               "angle": "everyday",
@@ -4747,12 +4747,12 @@
             {
               "angle": "picture",
               "label": "Coins out of a jar",
-              "text": "```text\n[ mana: 26 ]  -> take out 3 ->  23  -> put it back ->  [ mana: 23 ]\n```\nEach cast: open the jar, take out the cost, put what is left back in the same jar."
+              "text": "```text\n[ mana: 26 ]\n  -> take out 3: 23\n  -> put it back\n[ mana: 23 ]\n```\nEach cast: open the jar, take out the cost, put what is left back in the same jar."
             },
             {
               "angle": "step-by-step",
               "label": "Step table",
-              "text": "```text\nline  code                      mana holds\n1     mana = 26                 26\n3     mana = mana - spell_cost  23\n4     mana = mana - spell_cost  20\n5     mana = mana - spell_cost  17\n6     print(mana)               17\n```"
+              "text": "1. `mana = 26`: mana holds 26.\n2. `mana = mana - spell_cost`: 26 - 3, so mana holds 23.\n3. The same line again: 23 - 3, so 20.\n4. Once more: 20 - 3, so 17.\n5. `print(mana)` shows 17."
             },
             {
               "angle": "read aloud",
@@ -5017,7 +5017,7 @@
               "29"
             ],
             "answer": 0,
-            "explain": "Each cast takes 3 from what is in the box at that moment:\n```text\nline  code                      mana holds\n1     mana = 26                 26\n2     spell_cost = 3            26\n3     mana = mana - spell_cost  23\n4     mana = mana - spell_cost  20\n5     print(mana)               20, so 20 prints\n```"
+            "explain": "Each cast takes 3 from what is in the box at that moment:\n1. `mana = 26`: mana holds 26.\n2. `spell_cost = 3`: mana still holds 26.\n3. `mana = mana - spell_cost`: 26 - 3, so 23.\n4. The same line again: 23 - 3, so 20.\n5. `print(mana)`: mana holds 20, so 20 prints."
           },
           "names": [
             "mana",
@@ -6649,7 +6649,7 @@
             {
               "angle": "picture",
               "label": "Two kinds of bug",
-              "text": "```text\nloud bugs:  Python stops, and its message names the line\nquiet bugs: the program runs, but the code is wrong\n```\nThe quiet ones only show up when someone tries other numbers."
+              "text": "```text\nloud bugs:\nPython stops, and its\nmessage names the line.\n\nquiet bugs:\nthe program runs, but\nthe code is wrong.\n```\nThe quiet ones only show up when someone tries other numbers."
             },
             {
               "angle": "shorter",
@@ -8278,7 +8278,7 @@
         {
           "angle": "picture",
           "label": "The ledger page",
-          "text": "```text\nA. what we know        37 hours, 2 mana/hour, 1 flask/hour, 3 coins/flask\nB. let the code ...   mana_needed, oil_needed, oil_cost\nC. the ledger          three printed lines\n```\nEach part only uses boxes from the parts above it."
+          "text": "```text\nA. what we know\n   37 hours, 2 mana/hour,\n   1 flask/hour, 3 coins/flask\nB. let the code combine it\n   mana_needed, oil_needed,\n   oil_cost\nC. the ledger\n   three printed lines\n```\nEach part only uses boxes from the parts above it."
         },
         {
           "angle": "step-by-step",
@@ -10642,7 +10642,7 @@
           "anotherWay": [
             {
               "angle": "picture",
-              "text": "```\ntyped 3  ->  input() gives \"3\" (text)  ->  int() gives 3 (a number)  ->  3 * 2 is 6\n```"
+              "text": "```\ntyped 3\n-> input() gives \"3\" (text)\n-> int() gives 3 (a number)\n-> 3 * 2 is 6\n```"
             },
             {
               "angle": "everyday",
@@ -11336,6 +11336,7 @@
                   "name": "mana went down",
                   "code": [
                     "assert mana != max_mana, '`mana` didn\\'t change. Put the answer back in the box: `mana = mana - spell_cost`.'",
+                    "assert mana != spell_cost or mana == max_mana - spell_cost, '`mana` holds only the cost now. Take the cost away from what is in `mana`: `mana = mana - spell_cost`.'",
                     "assert mana == max_mana - spell_cost, '`mana` holds ' + str(mana) + ', but full mana minus one spell is ' + str(max_mana - spell_cost) + '. Python runs top to bottom: work out `max_mana` above the line `mana = max_mana`, then spend the spell once.'"
                   ]
                 },
@@ -12303,6 +12304,7 @@
                   "name": "mana went down",
                   "code": [
                     "assert mana != max_mana, '`mana` didn\\'t change. Put the answer back in the box: `mana = mana - shield_cost`.'",
+                    "assert mana != shield_cost or mana == max_mana - shield_cost, '`mana` holds only the cost now. Take the cost away from what is in `mana`: `mana = mana - shield_cost`.'",
                     "assert mana == max_mana - shield_cost, '`mana` holds ' + str(mana) + ', but full mana minus one spell is ' + str(max_mana - shield_cost) + '. Python runs top to bottom: work out `max_mana` above the line `mana = max_mana`, then spend the spell once.'"
                   ]
                 },

@@ -37,6 +37,7 @@ export type CourseErrorKind =
   | "dash-and-quote"
   | "colon-for-equals"
   | "name-goes-first"
+  | "quoted-name"
   | "name-starts-with-number"
   | "number-stuck-to-name"
   | "space-in-name"
@@ -47,6 +48,7 @@ export type CourseErrorKind =
   | "capital-letters"
   | "spelling"
   | "make-it-first"
+  | "not-made-yet"
   | "used-too-early"
   | "unknown-function"
   | "unknown-name"
@@ -106,11 +108,37 @@ export type ExplainContext = {
   /** The names the task asks for (the exercise's "Names to use"). */
   names?: readonly string[];
   /**
-   * The previous run's traceback, when that run crashed too. A different error after it reads
-   * "One fixed. Python found the next one." (Python stops at the first error, so fixes come one at a time.)
+   * The previous run's traceback, when that run crashed too. A later error after it (or a line that now
+   * parses) reads "One fixed! Python found the next one." (Python stops at the first error, so fixes come
+   * one at a time.)
    */
   previous?: string;
+  /**
+   * Mar'tu's version of the exercise. A task whose version makes no variable and only prints is a
+   * print-only task (Lesson 1A, before boxes are taught): there `def`, a dash and a bare value get "use
+   * print" advice, never "make a variable". It also says whether `mana - 3` should be `mana = mana - 3`.
+   */
+  solution?: string;
 };
+
+/** The task only shows words: Mar'tu's version prints and makes no variable (nothing about boxes yet). */
+export function isPrintOnlyTask(context: ExplainContext | undefined): boolean {
+  return printOnlyTask(context);
+}
+
+function printOnlyTask(context: ExplainContext | undefined): boolean {
+  const solution = context?.solution;
+  if (solution === undefined || !/(^|[^\w.])print\s*\(/.test(solution)) return false;
+  if ((context?.names ?? []).some((name) => name !== "print")) return false;
+  return definedNames(solution).length === 0;
+}
+
+/** `print("words")` for a print-only task: the student's own text when the line has some, else "your words". */
+function printFix(text: string): string {
+  const literal = codePart(text).match(/(["'])((?:(?!\1)[^\\]|\\.)*)\1/);
+  if (literal && literal[2].trim()) return `print(${literal[0]})`;
+  return 'print("your words")';
+}
 
 type Parsed = { type: string; message: string };
 
@@ -360,6 +388,72 @@ export function closeName(wrong: string, candidates: string[], limit = wrong.len
   return best;
 }
 
+/** Modules: a near name never suggests one (`moth` is not `math`); an import makes it a name the code made. */
+const MODULES = new Set(["random", "math"]);
+
+/**
+ * Python's own names a "Did you mean" may offer: `print`, and the others this student has met here (in the
+ * task's names, the example, Mar'tu's version or their own code). Without context, the common ones.
+ */
+function suggestableBuiltins(code: string, context?: ExplainContext): string[] {
+  const all = COMMON_BUILTINS.filter((name) => !MODULES.has(name));
+  if (!context) return all;
+  const seen = [code ?? "", context.example ?? "", context.solution ?? ""].join("\n");
+  return all.filter(
+    (name) =>
+      name === "print" ||
+      (context.names ?? []).includes(name) ||
+      new RegExp(/^[A-Z]/.test(name) ? `\\b${name}\\b` : `(^|[^\\w.])${name}\\s*\\(`).test(seen),
+  );
+}
+
+/**
+ * `Character = "Kratos"` then `print(character)`, in a task whose box is `character`: the line to change is
+ * the one that MADE the box, not the one that uses it. Says which spelling is the task's, so the advice never
+ * sends the student to the name the step check rejects. Null when the task's names do not settle it.
+ */
+function nameAgainstTask(
+  name: string,
+  close: string,
+  code: string,
+  line: number | null,
+  defined: Definition[],
+  context: ExplainContext | undefined,
+  raw: string,
+): CourseExplanation | null {
+  const task = context?.names ?? [];
+  const made = defined.find((entry) => entry.name === close);
+  if (task.length === 0 || !made) return null;
+  const sameLetters = close.toLowerCase() === name.toLowerCase();
+  const kind = sameLetters ? "capital-letters" : "spelling";
+  const title = sameLetters ? "Capital letters matter" : "Check the spelling";
+  const differ = sameLetters
+    ? "Python sees them as two different names, because the capital letters differ."
+    : "Python sees them as two different names.";
+  const here = line ? `line ${line}` : "this line";
+  if (task.includes(name) && !task.includes(close)) {
+    const madeText = codePart(sourceLine(code, made.line)).trim();
+    const renamed = madeText.replace(new RegExp(`^${escapeRegExp(close)}(?![\\w])`), name);
+    const fix = renamed !== madeText ? `Rename it on line ${made.line}: \`${renamed}\`` : `Rename it to \`${name}\` on line ${made.line}.`;
+    return explain(kind, title, `Line ${made.line} makes \`${close}\`, but this task's box is \`${name}\`. ${differ} ${fix}`, raw);
+  }
+  if (task.includes(close) && !task.includes(name)) {
+    return explain(
+      kind,
+      title,
+      `${here[0].toUpperCase()}${here.slice(1)} uses \`${name}\`, but this task's box is \`${close}\`. ${differ} Write \`${close}\` on ${here}, spelled exactly the same.`,
+      raw,
+    );
+  }
+  if (!sameLetters) return null;
+  return explain(
+    kind,
+    title,
+    `Line ${made.line} makes \`${close}\` and ${here} uses \`${name}\`. Python sees them as two different names. Make both lines match, with the same capital letters every time.`,
+    raw,
+  );
+}
+
 /** Names the code makes before `line` (all of them when the line is unknown). */
 function namesBefore(code: string, line: number | null): string[] {
   const names = definedNames(code)
@@ -482,7 +576,7 @@ function closeTextBeforeJoin(text: string, names: string[]): string | null {
   return null;
 }
 
-function quotesProblem(text: string, line: number | null, raw: string, code = ""): CourseExplanation {
+function quotesProblem(text: string, line: number | null, raw: string, code = "", context?: ExplainContext): CourseExplanation {
   const joined = closeTextBeforeJoin(text, namesBefore(code, line));
   if (joined) {
     return explain(
@@ -536,6 +630,7 @@ function quotesProblem(text: string, line: number | null, raw: string, code = ""
     if (tail.replace(/[)\]}\s]/g, "").length > 0) {
       const { fixed, added } = closeQuoteLine(text, start, quote);
       const defFix = defForVariable(fixed);
+      if (defFix && printOnlyTask(context)) return defInPrintTask(fixed, raw, true);
       if (defFix) {
         return explain(
           "def-for-variable",
@@ -545,6 +640,7 @@ function quotesProblem(text: string, line: number | null, raw: string, code = ""
         );
       }
       const dash = dashFix(fixed);
+      if (dash && printOnlyTask(context)) return dashInPrintTask(fixed, line, raw, "dash-and-quote", true);
       if (dash) {
         return explain(
           "dash-and-quote",
@@ -607,6 +703,37 @@ function defForVariable(text: string): string | null {
   if (name && value && !quoted) return `${name} = ${unwrapValue(value)}`;
   if (name) return `${name} = "your value"`;
   return `character = "Kratos"`;
+}
+
+/**
+ * `def ("Steady now")` in a task that only prints (Lesson 1A): boxes are not taught yet, so the fix is print,
+ * with the student's own words. `closed` says the line's closing quote was missing too.
+ */
+function defInPrintTask(text: string, raw: string, closed = false): CourseExplanation {
+  const quote = closed ? " The words need a quote at both ends too." : "";
+  return explain(
+    "def-for-variable",
+    "No def needed",
+    `\`def\` is not needed here: this task only shows words.${quote} To show them, write \`${printFix(text)}\``,
+    raw,
+  );
+}
+
+/** `oogrish - "Steady now"` in a task that only prints: the fix is print, not a box. */
+function dashInPrintTask(
+  text: string,
+  line: number | null,
+  raw: string,
+  kind: "dash-for-equals" | "dash-and-quote" | "dash-no-effect",
+  closed = false,
+): CourseExplanation {
+  const quote = closed ? " The words need a quote at both ends too." : "";
+  return explain(
+    kind,
+    "Show it with print",
+    `${lineWord(line)} has a name and a dash -, but this task only shows words.${quote} To show them, write \`${printFix(text)}\``,
+    raw,
+  );
 }
 
 /** A word of text typed without quotes: letters or digits, maybe with punctuation stuck to it. */
@@ -794,6 +921,7 @@ function explainSyntax(
   line: number | null,
   raw: string,
   code = "",
+  context?: ExplainContext,
 ): CourseExplanation {
   const lower = message.toLowerCase();
 
@@ -806,7 +934,7 @@ function explainSyntax(
     );
   }
   if (/unterminated string literal|eol while scanning string literal/.test(lower)) {
-    return quotesProblem(text, line, raw, code);
+    return quotesProblem(text, line, raw, code, context);
   }
   const curly = message.match(/invalid character '([“”‘’])'/);
   if (curly) {
@@ -836,6 +964,7 @@ function explainSyntax(
   }
 
   const defFix = defForVariable(text);
+  if (defFix && printOnlyTask(context)) return defInPrintTask(text, raw);
   if (defFix) {
     return explain(
       "def-for-variable",
@@ -849,8 +978,20 @@ function explainSyntax(
   if (shape) return shape;
 
   if (/cannot assign to literal/.test(lower)) {
+    // `"weapon" = "Telegun"`: the name is first already, but in quotes (a box's name never has quotes).
+    const quotedName = codePart(text).trim().match(/^(["'])([A-Za-z_]\w*)\1\s*=(?!=)\s*(.+)$/);
+    const right = quotedName?.[3]?.trim() ?? "";
+    if (quotedName && !KEYWORDS.has(quotedName[2]) && !(/^[A-Za-z_]\w*$/.test(right) && !KEYWORDS.has(right))) {
+      return explain(
+        "quoted-name",
+        "No quotes on a name",
+        `A box's name has no quotes${onLine(line)}. Take the quotes off ${quotedName[2]}: \`${quotedName[2]} = ${right}\``,
+        raw,
+      );
+    }
     const swap = text.match(/^\s*(.+?)\s*=(?!=)\s*([A-Za-z_]\w*)\s*$/);
-    const example = swap ? `${swap[2]} = ${swap[1]}` : `character = "Kratos"`;
+    const taskName = (context?.names ?? []).find((name) => !COMMON_BUILTINS.includes(name)) ?? "name";
+    const example = swap ? `${swap[2]} = ${swap[1]}` : `${taskName} = "value"`;
     return explain(
       "name-goes-first",
       "Name goes first",
@@ -987,11 +1128,33 @@ function explainSyntax(
   if (/^invalid syntax/.test(lower)) {
     const unquoted = explainUnquoted(text, code, line, raw);
     if (unquoted) return unquoted;
+    const body = codePart(text).trim();
+    // `Night watch`: plain words on a line, meant as a note or as words to show.
+    if (/^[A-Za-z][A-Za-z0-9 ,.!?;:-]*$/.test(body) && /\s/.test(body) && !KEYWORDS.has(body.split(/\s+/)[0] ?? "")) {
+      return explain(
+        "unquoted-words",
+        "Words with no quotes",
+        `${lineWord(line)} is plain words, so Python tries to read them as code. To make it a note, start the line with #: \`# ${body}\`. To show the words, put them in quotes inside print( ): \`print("${body}")\``,
+        raw,
+      );
+    }
+    // `print(_ - =)`: symbols to show, with no quotes around them.
+    const inside = body.match(/^print\s*\(\s*([^"'()]+?)\s*\)$/)?.[1];
+    if (inside) {
+      return explain(
+        "unquoted-words",
+        "Missing quotes?",
+        `${lineWord(line)} has no quotes inside print( ), so Python tries to read ${inside} as code. To show it as it is, put it in quotes: \`print("${inside}")\``,
+        raw,
+      );
+    }
   }
+  // A colon is only worth naming once the code has a line that needs one (if, for, while, def ...).
+  const colons = /^\s*(if|elif|else|for|while|def|class|try|except|finally|with)\b/m.test(code ?? "");
   return explain(
     "cant-read-line",
     "Python can't read this",
-    `Python could not read line ${line ?? "?"}. Look for a missing quote, a missing bracket ( ), or a missing colon :.`,
+    `Python could not read line ${line ?? "?"}. Look for a missing quote${colons ? ", a missing bracket ( ), or a missing colon :." : " or a missing bracket ( )."}`,
     raw,
   );
 }
@@ -1051,6 +1214,7 @@ function explainName(
   }
 
   const dash = dashFix(text, name);
+  if (dash && printOnlyTask(context)) return dashInPrintTask(text, line, raw, "dash-for-equals");
   if (dash) {
     return explain(
       "dash-for-equals",
@@ -1074,15 +1238,16 @@ function explainName(
   }
 
   const defined = definedNames(code);
-  const known = [...defined.map((entry) => entry.name), ...COMMON_BUILTINS];
-  // Trust Python's own "Did you mean" only for names a beginner would know (not ord, iter, ...).
+  const builtins = suggestableBuiltins(code, context);
+  const known = [...defined.map((entry) => entry.name), ...builtins];
+  // Trust Python's own "Did you mean" only for names this student has met (not ord, iter, map, any ...).
   const suggested = message.match(/Did you mean: '([^']+)'/)?.[1];
   const trusted =
     suggested && !suggested.startsWith("_") && (known.includes(suggested) || suggested.toLowerCase() === name.toLowerCase())
       ? suggested
       : null;
   // Names the student made can be 2 letters off; Python's own names only 1 (so count is not "round").
-  const close = trusted ?? closeName(name, defined.map((entry) => entry.name)) ?? closeName(name, COMMON_BUILTINS, 1);
+  const close = trusted ?? closeName(name, defined.map((entry) => entry.name)) ?? closeName(name, builtins, 1);
 
   // `canes_women` alone on a line: no `=`, no print( ). Python looked it up and found nothing.
   if (codePart(text).trim() === name) {
@@ -1099,6 +1264,14 @@ function explainName(
         "lone-name",
         "A name on its own",
         `${lineWord(line)} is only a name on its own: ${name}. Did you mean ${close}? To show what ${close} holds, write print(${close}).`,
+        raw,
+      );
+    }
+    if (printOnlyTask(context)) {
+      return explain(
+        "lone-name",
+        "Words with no quotes",
+        `${lineWord(line)} is only the word ${name}, with no quotes and no print, so Python reads it as a name it does not know. To show it, write \`print("${name}")\``,
         raw,
       );
     }
@@ -1121,6 +1294,10 @@ function explainName(
     );
   }
 
+  if (close) {
+    const taskWay = nameAgainstTask(name, close, code, line, defined, context, raw);
+    if (taskWay) return taskWay;
+  }
   if (close && close.toLowerCase() === name.toLowerCase()) {
     return explain(
       "capital-letters",
@@ -1149,6 +1326,26 @@ function explainName(
       "used-too-early",
       "Used too early",
       `Line ${line} uses ${name}, but ${name} is only made on line ${later.line}. Python runs from top to bottom, so make ${name} first.`,
+      raw,
+    );
+  }
+
+  // `print(hero)` when no line makes `hero` yet, and `hero` is one of the task's own boxes: make it, above.
+  if ((context?.names ?? []).includes(name) && !defined.some((entry) => entry.name === name)) {
+    const bare = line !== null ? explainQuietSlip((code ?? "").split("\n").slice(0, line - 1).join("\n")) : null;
+    if (bare && bare.kind === "bare-value") {
+      const value = codePart(sourceLine(code, bare.line)).trim();
+      return explain(
+        "not-made-yet",
+        "Not made yet",
+        `${name} is one of this task's boxes, but no line makes it yet. Line ${bare.line} has the value ${value} on its own: put \`${name} = \` in front of it, \`${name} = ${value}\``,
+        raw,
+      );
+    }
+    return explain(
+      "not-made-yet",
+      "Not made yet",
+      `${name} is one of this task's boxes, but no line makes it yet. Make it ${line ? `above line ${line}` : "first"}, starting the line with \`${name} = \``,
       raw,
     );
   }
@@ -1191,7 +1388,14 @@ function inputNames(code: string): string[] {
   return [...(code ?? "").matchAll(/^\s*([A-Za-z_]\w*)\s*=\s*input\s*\(/gm)].map((match) => match[1]);
 }
 
-function explainType(message: string, code: string, text: string, line: number | null, raw: string): CourseExplanation {
+function explainType(
+  message: string,
+  code: string,
+  text: string,
+  line: number | null,
+  raw: string,
+  context?: ExplainContext,
+): CourseExplanation {
   const fromInput = inputNames(code).find((name) => new RegExp(`\\b${escapeRegExp(name)}\\b`).test(text));
   const joinText = /can only concatenate str \(not "(int|float)"\) to str/.test(message);
   const addToNumber = /unsupported operand type\(s\) for \+: '(int|float)' and 'str'/.test(message);
@@ -1224,6 +1428,7 @@ function explainType(message: string, code: string, text: string, line: number |
     );
   }
   const dash = /unsupported operand type\(s\) for -/.test(message) ? dashFix(text) : null;
+  if (dash && printOnlyTask(context)) return dashInPrintTask(text, line, raw, "dash-for-equals");
   if (dash) {
     return explain(
       "dash-for-equals",
@@ -1315,14 +1520,14 @@ function explainParsed(parsed: Parsed, raw: string, code: string, context?: Expl
 
   switch (type) {
     case "SyntaxError":
-      return explainSyntax(message, type, text, line, raw, code);
+      return explainSyntax(message, type, text, line, raw, code, context);
     case "IndentationError":
     case "TabError":
       return explainIndent(message, line, raw);
     case "NameError":
       return explainName(message, code, text, line, raw, context);
     case "TypeError":
-      return explainType(message, code, text, line, raw);
+      return explainType(message, code, text, line, raw, context);
     case "ZeroDivisionError":
       return explain(
         "divide-by-zero",
@@ -1458,7 +1663,17 @@ export function explainCourseError(traceback: string, code: string, context?: Ex
   }
 }
 
-/** "One fixed. Python found the next one.": a different error, at or after the previous one's line. */
+const PARSE_ERRORS = new Set(["SyntaxError", "IndentationError", "TabError"]);
+
+/** Kinds that mean "still no quotes": a line that now parses but has the same slip is not a fix. */
+const STILL_UNQUOTED = new Set<CourseErrorKind>(["unquoted-word", "unquoted-words", "missing-quote", "unknown-name", "lone-name"]);
+
+/**
+ * "One fixed! Python found the next one.": only when something really was fixed. The error moved to a later
+ * line, or the same line now parses (a SyntaxError became a run-time error) and the new error is not the same
+ * slip again (`companion = Bomb Shell` -> `companion = kratos` still has no quotes). Never for a new error on
+ * the same line that is still unreadable (`print("Shield up!')` -> `print("Shield up!)"`).
+ */
 function nextErrorAfterFix(result: CourseExplanation, parsed: Parsed, raw: string, context?: ExplainContext): CourseExplanation {
   const previousRaw = context?.previous ?? "";
   if (!previousRaw || result.kind === "timeout" || result.kind === "too-much-output") return result;
@@ -1466,9 +1681,11 @@ function nextErrorAfterFix(result: CourseExplanation, parsed: Parsed, raw: strin
   if (!previous || previous.type === "TimeoutError" || /ran too long/i.test(previousRaw)) return result;
   const line = errorLine(raw);
   const previousLine = errorLine(previousRaw);
-  const same = previous.type === parsed.type && previous.message === parsed.message && previousLine === line;
-  const later = line === null || previousLine === null || line >= previousLine;
-  if (same || !later) return result;
+  if (line === null || previousLine === null) return result;
+  const later = line > previousLine;
+  const nowParses =
+    line === previousLine && PARSE_ERRORS.has(previous.type) && !PARSE_ERRORS.has(parsed.type) && !STILL_UNQUOTED.has(result.kind);
+  if (!later && !nowParses) return result;
   return { ...result, hint: `One fixed! Python found the next one. ${result.hint}` };
 }
 
@@ -1510,7 +1727,7 @@ const NUMBER_LITERAL = /^-?\d+(?:\.\d+)?$/;
  *
  * `missingName` is a name a check looked for and could not find ("put `character = ` in front of it").
  */
-export function explainQuietSlip(code: string, options: { missingName?: string } = {}): QuietSlip | null {
+export function explainQuietSlip(code: string, options: { missingName?: string; context?: ExplainContext } = {}): QuietSlip | null {
   try {
     return findQuietSlip(code, options);
   } catch (error) {
@@ -1519,9 +1736,12 @@ export function explainQuietSlip(code: string, options: { missingName?: string }
   }
 }
 
-function findQuietSlip(code: string, options: { missingName?: string }): QuietSlip | null {
+function findQuietSlip(code: string, options: { missingName?: string; context?: ExplainContext }): QuietSlip | null {
   const lines = (code ?? "").split("\n");
   const defined = new Set(definedNames(code).map((entry) => entry.name));
+  const printOnly = printOnlyTask(options.context);
+  const solution = options.context?.solution ?? "";
+  const taskName = (options.context?.names ?? []).find((name) => !COMMON_BUILTINS.includes(name));
   let open: string[] = [];
   let inTriple = false;
   for (let index = 0; index < lines.length; index += 1) {
@@ -1549,16 +1769,15 @@ function findQuietSlip(code: string, options: { missingName?: string }): QuietSl
     const raw = "";
 
     if (STRING_LITERAL.test(body) || NUMBER_LITERAL.test(body) || body === "True" || body === "False") {
-      const keep = missing ?? (STRING_LITERAL.test(body) ? "character" : "number");
+      const keep = missing ?? taskName ?? (STRING_LITERAL.test(body) ? "character" : "number");
+      // A print-only task (Lesson 1A): boxes are not taught yet, so the only fix is print.
+      const hint = missing
+        ? `${where} is a value on its own: ${body}. Python reads it, then forgets it, because no variable keeps it. To keep it, put ${keep} = in front of it: ${keep} = ${body}`
+        : printOnly
+          ? `${where} is ${STRING_LITERAL.test(body) ? "words in quotes" : "a value"} with no print, so Python reads it, then forgets it. To show it, write \`print(${body})\``
+          : `${where} is a value on its own: ${body}. Python reads it, then forgets it. To show it, put it inside print( ): print(${body}). To keep it, put a name and = in front, like ${keep} = ${body}`;
       return {
-        ...explain(
-          "bare-value",
-          "A value with no name",
-          missing
-            ? `${where} is a value on its own: ${body}. Python reads it, then forgets it, because no variable keeps it. To keep it, put ${keep} = in front of it: ${keep} = ${body}`
-            : `${where} is a value on its own: ${body}. Python reads it, then forgets it. To show it, put it inside print( ): print(${body}). To keep it, put a name and = in front, like ${keep} = ${body}`,
-          raw,
-        ),
+        ...explain("bare-value", "A value with no name", hint, raw),
         kind: "bare-value",
         line,
       };
@@ -1590,13 +1809,20 @@ function findQuietSlip(code: string, options: { missingName?: string }): QuietSl
     }
     const dash = body.match(/^([A-Za-z_]\w*)\s*-(?!=)\s*(.+)$/);
     if (dash && !/=/.test(dash[2]) && (STRING_LITERAL.test(dash[2].trim()) || NUMBER_LITERAL.test(dash[2].trim()) || /^[A-Za-z_]\w*$/.test(dash[2].trim()))) {
+      const [, left] = dash;
+      const right = dash[2].trim();
+      // `mana - spell_cost`: the subtraction is right, only `mana =` is missing (the unit's `mana = mana - cost`).
+      // `mana - 14` in a task that puts a new number in the box is a dash typed for =.
+      const spendsBox = /^[A-Za-z_]\w*$/.test(right) && defined.has(right) && !KEYWORDS.has(right);
+      const spendsInSolution = new RegExp(`^\\s*${escapeRegExp(left)}\\s*(=\\s*${escapeRegExp(left)}\\s*-|-=)`, "m").test(solution);
+      const keepAnswer = defined.has(left) && !STRING_LITERAL.test(right) && (spendsBox || spendsInSolution);
+      const hint = keepAnswer
+        ? `${where} works out ${left} - ${right}, but nothing keeps the answer, so ${left} does not change. To keep it, put \`${left} =\` in front: \`${left} = ${left} - ${right}\``
+        : printOnly
+          ? `${where} has a name and a dash -, but this task only shows words. To show them, write \`${printFix(right)}\``
+          : `${where} uses a dash - where = belongs, so nothing is kept. To store the value, write: ${left} = ${right}`;
       return {
-        ...explain(
-          "dash-no-effect",
-          "Dash or equals?",
-          `${where} uses a dash - where = belongs, so nothing is kept. To store the value, write: ${dash[1]} = ${dash[2].trim()}`,
-          raw,
-        ),
+        ...explain("dash-no-effect", "Dash or equals?", hint, raw),
         kind: "dash-no-effect",
         line,
         name: dash[1],

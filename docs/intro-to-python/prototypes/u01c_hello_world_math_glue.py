@@ -640,7 +640,7 @@ CHALK_MATH = dict(
             label="Two jars",
             text=(
                 "Two jars and a minus sign:\n"
-                "```text\n[ first_gap: 48 ]  -  [ last_gap: 37 ]  ->  11\n```\n"
+                "```text\n[ first_gap: 48 ]\n        -\n[ last_gap: 37 ]\n        ->  11\n```\n"
                 "Python opens both jars, takes one number from the other, and prints the answer."
             ),
         ),
@@ -832,7 +832,7 @@ WHAT_EACH_NUMBER_MEANS = dict(
             label="Tally marks and a price tag",
             text=(
                 "How many is a row of tally marks. How much is one is a price tag.\n"
-                "```text\nlanterns:  ||| (3)     price tag: [4 coins]\nrope:      ||||| (5)   price tag: [2 coins]\n```"
+                "```text\nlanterns: ||| (3)\nprice tag: [4 coins]\n\nrope: ||||| (5)\nprice tag: [2 coins]\n```"
             ),
         ),
         dict(
@@ -1113,9 +1113,8 @@ LET_THE_CODE_COMBINE = dict(
             angle="picture",
             label="Arrows into the total",
             text=(
-                "```text\nlantern_count --\\\n                 *--> lantern_cost --\\\nlantern_price --/                     \\\n"
-                "                                       +--> total_cost\nrope_count -----\\                     /\n"
-                "                 *--> rope_cost ----/\nrope_price -----/\n```\n"
+                "```text\nlantern_count * lantern_price\n  --> lantern_cost\n\nrope_count * rope_price\n  --> rope_cost\n\n"
+                "lantern_cost + rope_cost\n  --> total_cost\n```\n"
                 "Change any box on the left, and the arrows carry it all the way to the total."
             ),
         ),
@@ -1293,9 +1292,11 @@ SPEND_MANA = dict(
         answer=0,
         explain=(
             "Each cast takes 3 from what is in the box at that moment:\n"
-            "```text\nline  code                      mana holds\n1     mana = 26                 26\n"
-            "2     spell_cost = 3            26\n3     mana = mana - spell_cost  23\n"
-            "4     mana = mana - spell_cost  20\n5     print(mana)               20, so 20 prints\n```"
+            "1. `mana = 26`: mana holds 26.\n"
+            "2. `spell_cost = 3`: mana still holds 26.\n"
+            "3. `mana = mana - spell_cost`: 26 - 3, so 23.\n"
+            "4. The same line again: 23 - 3, so 20.\n"
+            "5. `print(mana)`: mana holds 20, so 20 prints."
         ),
     ),
     pair_talk=(
@@ -1362,7 +1363,7 @@ SPEND_MANA = dict(
             angle="picture",
             label="Coins out of a jar",
             text=(
-                "```text\n[ mana: 26 ]  -> take out 3 ->  23  -> put it back ->  [ mana: 23 ]\n```\n"
+                "```text\n[ mana: 26 ]\n  -> take out 3: 23\n  -> put it back\n[ mana: 23 ]\n```\n"
                 "Each cast: open the jar, take out the cost, put what is left back in the same jar."
             ),
         ),
@@ -1370,9 +1371,11 @@ SPEND_MANA = dict(
             angle="step-by-step",
             label="Step table",
             text=(
-                "```text\nline  code                      mana holds\n1     mana = 26                 26\n"
-                "3     mana = mana - spell_cost  23\n4     mana = mana - spell_cost  20\n"
-                "5     mana = mana - spell_cost  17\n6     print(mana)               17\n```"
+                "1. `mana = 26`: mana holds 26.\n"
+                "2. `mana = mana - spell_cost`: 26 - 3, so mana holds 23.\n"
+                "3. The same line again: 23 - 3, so 20.\n"
+                "4. Once more: 20 - 3, so 17.\n"
+                "5. `print(mana)` shows 17."
             ),
         ),
         dict(
@@ -1442,6 +1445,9 @@ SPEND_MANA = dict(
         dict(why="the third cast worked out inside the print, never stored (mana stays 20)",
              code="mana = 26\nspell_cost = 3\nmana = mana - spell_cost\nmana = mana - spell_cost\nprint(mana - spell_cost)\n",
              fails_at=1, message_contains="only changed 2 times"),
+        dict(why="the old dash advice followed: the third cast stores only the cost",
+             code="mana = 26\nspell_cost = 3\nmana = mana - spell_cost\nmana = mana - spell_cost\nmana = spell_cost\nprint(mana)\n",
+             fails_at=1, message_contains="mana = mana - spell_cost"),
         dict(why="subtracts the wrong way round on the new line",
              code="mana = 26\nspell_cost = 3\nmana = mana - spell_cost\nmana = mana - spell_cost\nmana = spell_cost - mana\nprint(mana)\n",
              fails_at=1, message_contains="Put `mana` first"),
@@ -2273,8 +2279,8 @@ BROKEN_SPELL_1C = dict(
             angle="picture",
             label="Two kinds of bug",
             text=(
-                "```text\nloud bugs:  Python stops, and its message names the line\n"
-                "quiet bugs: the program runs, but the code is wrong\n```\n"
+                "```text\nloud bugs:\nPython stops, and its\nmessage names the line.\n\n"
+                "quiet bugs:\nthe program runs, but\nthe code is wrong.\n```\n"
                 "The quiet ones only show up when someone tries other numbers."
             ),
         ),
@@ -3115,8 +3121,8 @@ PROJECT_1P1 = dict(
             angle="picture",
             label="The ledger page",
             text=(
-                "```text\nA. what we know        37 hours, 2 mana/hour, 1 flask/hour, 3 coins/flask\n"
-                "B. let the code ...   mana_needed, oil_needed, oil_cost\nC. the ledger          three printed lines\n```\n"
+                "```text\nA. what we know\n   37 hours, 2 mana/hour,\n   1 flask/hour, 3 coins/flask\n"
+                "B. let the code combine it\n   mana_needed, oil_needed,\n   oil_cost\nC. the ledger\n   three printed lines\n```\n"
                 "Each part only uses boxes from the parts above it."
             ),
         ),

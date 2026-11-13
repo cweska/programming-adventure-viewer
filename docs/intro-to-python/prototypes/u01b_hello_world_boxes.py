@@ -314,8 +314,8 @@ LABEL_A_BOX = dict(
             angle="picture",
             text=(
                 "Two lines, two answers:\n"
-                "```\nprint(companion)    ->  opens the box   ->  Gearshift\n"
-                "print(\"companion\")  ->  just the letters ->  companion\n```"
+                "```\nprint(companion)\n-> opens the box\n-> shows Gearshift\n\n"
+                "print(\"companion\")\n-> just the letters\n-> shows companion\n```"
             ),
         ),
         dict(
@@ -338,10 +338,9 @@ LABEL_A_BOX = dict(
             angle="step-by-step",
             text=(
                 "Python reads one line at a time:\n"
-                "```\nline  code                     what happens\n"
-                "1     companion = \"Gearshift\"  box companion gets Gearshift\n"
-                "2     print(companion)         opens the box, shows Gearshift\n"
-                "3     print(\"companion\")       shows the letters companion\n```"
+                "1. `companion = \"Gearshift\"`: the box `companion` gets Gearshift.\n"
+                "2. `print(companion)`: opens the box and shows Gearshift.\n"
+                "3. `print(\"companion\")`: shows the letters companion."
             ),
         ),
         dict(
@@ -690,8 +689,8 @@ NUMBERS_STAND_ALONE = dict(
             angle="picture",
             text=(
                 "Two boxes that look alike:\n"
-                "```\narmor_bonus = 3     a number: Python can do math with it\n"
-                "armor_bonus = \"3\"   text: just the letter 3, like a word\n```"
+                "```\narmor_bonus = 3\n^ a number: Python can\n  do math with it\n\n"
+                "armor_bonus = \"3\"\n^ text: just the letter 3,\n  like a word\n```"
             ),
         ),
         dict(
@@ -841,7 +840,7 @@ EXACT_NAMES = dict(
             label="Spot the difference",
             text=(
                 "Line them up, letter by letter:\n"
-                "```\nMax_Mana\nmax_mana\n^   ^      two letters differ, so Python sees two names\n```"
+                "```\nMax_Mana\nmax_mana\n^   ^\nTwo letters differ, so\nPython sees two names.\n```"
             ),
         ),
         dict(
@@ -1630,7 +1629,10 @@ NAME_AND_VALUE_AGAIN = dict(
     another_way=[
         dict(
             angle="picture",
-            text="```\nsatchel = \"three candles and a map\"   words: quotes\ncoins = 7                            number: no quotes\n```",
+            text=(
+                "```\nsatchel = \"three candles and a map\"\n^ words: quotes\n\n"
+                "coins = 7\n^ a number: no quotes\n```"
+            ),
         ),
         dict(
             angle="in Tor",

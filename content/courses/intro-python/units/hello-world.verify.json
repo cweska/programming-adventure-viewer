@@ -2609,6 +2609,19 @@
           "messageContains": "only changed 2 times"
         },
         {
+          "why": "the old dash advice followed: the third cast stores only the cost",
+          "code": [
+            "mana = 26",
+            "spell_cost = 3",
+            "mana = mana - spell_cost",
+            "mana = mana - spell_cost",
+            "mana = spell_cost",
+            "print(mana)"
+          ],
+          "failsAt": 1,
+          "messageContains": "mana = mana - spell_cost"
+        },
+        {
           "why": "subtracts the wrong way round on the new line",
           "code": [
             "mana = 26",
@@ -5660,6 +5673,20 @@
           "messageContains": "didn't change"
         },
         {
+          "why": "the old dash advice followed: mana gets only the cost",
+          "code": [
+            "scout_name = \"Gearshift\"",
+            "magical_affinity = 10",
+            "max_mana = magical_affinity * 2",
+            "mana = max_mana",
+            "spell_cost = 6",
+            "mana = spell_cost",
+            "print(scout_name + \": \" + str(mana) + \"/\" + str(max_mana) + \" mana\")"
+          ],
+          "failsAt": 2,
+          "messageContains": "mana = mana - spell_cost"
+        },
+        {
           "why": "the spell cost typed as a number",
           "code": [
             "scout_name = \"Gearshift\"",
@@ -6186,6 +6213,20 @@
           ],
           "failsAt": 2,
           "messageContains": "didn't change"
+        },
+        {
+          "why": "the old dash advice followed: mana gets only the cost",
+          "code": [
+            "caster_name = \"Bomb Shell\"",
+            "magical_affinity = 12",
+            "max_mana = magical_affinity * 2",
+            "mana = max_mana",
+            "shield_cost = 5",
+            "mana = shield_cost",
+            "print(caster_name + \": \" + str(mana) + \"/\" + str(max_mana) + \" mana\")"
+          ],
+          "failsAt": 2,
+          "messageContains": "mana = mana - shield_cost"
         },
         {
           "why": "the spell cost typed as a number",

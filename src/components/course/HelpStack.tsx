@@ -15,7 +15,9 @@ export type RevealResult = "opened" | "paced" | "locked" | "none";
  *
  * Under "Keep it short" the control climbs Where to look, Teach me, Show me how and Mar'tu's version; Start me
  * off, Another way and More structure sit under "More options" (curriculum §2.3). Right after a crash, Help
- * first says which line to mend (a crash checks no step), and Start me off waits.
+ * first says which line to mend (a crash checks no step), and Start me off waits. The player aims Help at the
+ * step that names the crash line; when no step does but the steps name other lines, `crashOnly` holds every
+ * rung back until the code runs, so Help never contradicts "Mend line 3 first."
  *
  * testids: help, help-button, help-rung-<n> (n from 1, in order), help-offer, help-offer-dismiss,
  * help-paced, help-show-locked, help-another-next, help-start-code, help-start-insert, help-start-done,
@@ -34,6 +36,7 @@ export function HelpStack({
   runNumber,
   crashed = false,
   crashLine = null,
+  crashOnly = false,
   startInCode = () => false,
   onReveal,
   onDismissOffer,
@@ -55,6 +58,11 @@ export function HelpStack({
   /** The last run crashed, at this line of the student's code (null when Python did not name one). */
   crashed?: boolean;
   crashLine?: number | null;
+  /**
+   * The crash is on a line no step names, while the steps name other lines (a broken spell): this step's
+   * rungs would talk about a different line, so they wait until the code runs. Only the crash note shows.
+   */
+  crashOnly?: boolean;
   /** Whether the code already starts the step's line (Start me off then has nothing to add). */
   startInCode?: (start: string) => boolean;
   onReveal: () => RevealResult;
@@ -187,6 +195,30 @@ export function HelpStack({
     ) : null;
   }
 
+  const crashNote = crashed ? (
+    <p className="ex-help-crash" data-testid="help-crash">
+      <strong>{`Mend ${crashLine ? `line ${crashLine}` : "the error"} first.`}</strong> Python stopped there, so it could
+      not check your steps yet. Read the message under your code.
+    </p>
+  ) : null;
+
+  if (crashOnly) {
+    return (
+      <section
+        className="ex-help"
+        data-testid="help"
+        data-step={checkpoint.id}
+        data-crash-only="true"
+        aria-label={`Help for ${crashLine ? `line ${crashLine}` : "the error"}`}
+      >
+        {crashNote}
+        <p className="ex-help-note ex-muted" data-testid="help-crash-wait">
+          Help for the {noun.toLowerCase()}s comes back once your code runs.
+        </p>
+      </section>
+    );
+  }
+
   const buttonText = next
     ? `${state.opened === 0 ? "Help" : "More help"}${crashed ? ` with ${stepLabel}` : ""}: ${next.label}${state.nextLocked ? " (opens soon)" : ""}`
     : "";
@@ -209,12 +241,7 @@ export function HelpStack({
         </div>
       ) : null}
 
-      {crashed ? (
-        <p className="ex-help-crash" data-testid="help-crash">
-          <strong>{`Mend ${crashLine ? `line ${crashLine}` : "the error"} first.`}</strong> Python stopped there, so it could
-          not check your steps yet. Read the message under your code: its last line says what went wrong.
-        </p>
-      ) : null}
+      {crashNote}
 
       {state.open.length > 0 ? (
         <ol className="ex-help-rungs" aria-live="polite" data-testid="help-rungs">

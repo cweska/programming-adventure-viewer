@@ -6,12 +6,14 @@ import {
   compareLines,
   countInputCalls,
   countsAsAttempt,
+  crashTarget,
   firstParagraph,
   helpOffer,
   helpOfferLine,
   helpRungs,
   helpState,
   insideString,
+  namesALine,
   NUDGE_AFTER_MISSES,
   NUDGE_IDLE_MS,
   NUDGE_NO_PROGRESS_MS,
@@ -173,6 +175,25 @@ describe("the Help rungs", () => {
   });
 });
 
+describe("Help after a crash", () => {
+  const brokenSpell = [
+    { text: "Mend line 1 so it shows `Shield up.`" },
+    { text: "Mend line 2 so it shows `Barrier's holding.`" },
+    { text: "Mend line 3 so it shows `Steady`." },
+  ];
+
+  it("aims at the step that names the crash line, never at step 1 under \"Mend line 3 first.\"", () => {
+    expect(crashTarget(brokenSpell, 3)).toBe(2);
+    expect(crashTarget(brokenSpell, 1)).toBe(0);
+    expect(crashTarget(brokenSpell, 5)).toBe(-1);
+    expect(crashTarget(brokenSpell, null)).toBe(-1);
+    // "line 1" is not "line 12".
+    expect(crashTarget([{ text: "Mend line 12." }, { text: "Mend line 1." }], 1)).toBe(1);
+    expect(namesALine("Line 2 is Lucky's secret.")).toBe(true);
+    expect(namesALine("Print a line that has `_`, `-` and `=` in it.")).toBe(false);
+  });
+});
+
 describe("proactive Help offers", () => {
   const quiet = {
     preset: "more" as const,
@@ -288,6 +309,19 @@ describe("Mar'tu's pick", () => {
     expect(pickInsertion("18", "mana = ")).toBe("18");
     expect(pickInsertion('the "Brave"', "x = ")).toBe("'the \"Brave\"'");
     expect(pickInsertion("a\nb", "")).toBe("a\nb");
+  });
+
+  it("in a task that only prints, puts a pick on a line of its own as a print line", () => {
+    const printOnly = { printOnly: true, lineAfter: "" };
+    // keyboard-symbols: the empty line under the note.
+    expect(pickInsertion("_ - = are side by side.", "", printOnly)).toBe('print("_ - = are side by side.")');
+    // your-own-words: the cursor at the end of the starter line gets a print line under it.
+    expect(pickInsertion("Steady, now.", 'print("Write Oogrish\'s words here")', printOnly)).toBe('\nprint("Steady, now.")');
+    // Between the quotes it is still just the words; with code after the cursor it is the quoted words.
+    expect(pickInsertion("Steady, now.", 'print("', { printOnly: true, lineAfter: '")' })).toBe("Steady, now.");
+    expect(pickInsertion("Steady, now.", "", { printOnly: true, lineAfter: "print()" })).toBe('"Steady, now."');
+    // Tasks that make boxes keep the plain value.
+    expect(pickInsertion("Zelda", "", { lineAfter: "" })).toBe('"Zelda"');
   });
 
   it("puts a pick that is a # note in as it is, never in quotes", () => {

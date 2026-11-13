@@ -270,6 +270,66 @@ test.describe("Intro to Python, Unit 1: Hello World", () => {
     }
   });
 
+  test.describe("play-through fixes", () => {
+    test("after a crash, Help aims at the line Python stopped on, and Python's last line is on screen", async ({ page }) => {
+      await page.goto(`${itemPath("words-in-quotes")}#broken-spell-1a`);
+      await expect(page.getByTestId("exercise-title")).toHaveText("Broken spell: three slips");
+      await pythonReady(page);
+      await setCode(page, 'print("Shield up.")\nprint("Barrier\'s holding.")\nprint(Steady)\n');
+      await runAndWait(page, 1);
+      await expect(page.getByTestId("help-crash")).toContainText("Mend line 3 first.");
+      await expect(page.getByTestId("help-crash")).not.toContainText("its last line");
+      // Help is for step 3 ("Mend line 3 ..."), not step 1, whose line is already right.
+      await expect(page.getByTestId("help")).toHaveAttribute("data-step", "mend-line-3");
+      await expect(page.getByTestId("help-button")).toContainText("step 3");
+      await expect(page.getByTestId("python-last-line")).toContainText("NameError: name 'Steady' is not defined");
+      await expect(page.getByTestId("traceback")).toBeHidden();
+    });
+
+    test("a crash on a line no step names holds the steps' Help back, and names the box to make", async ({ page }) => {
+      await page.goto(`${itemPath("boxes-with-labels")}#broken-spell-1b`);
+      await expect(page.getByTestId("exercise-title")).toHaveText("Broken spell");
+      await pythonReady(page);
+      await setCode(page, 'weapon = "Telegun"\ncompanion = "Gearshift"\nglug_sips = 3\n"Lucky"\nprint(hero)\nprint(weapon)\n');
+      await runAndWait(page, 1);
+      await expect(page.getByTestId("help-crash")).toContainText("Mend line 5 first.");
+      await expect(page.getByTestId("help")).toHaveAttribute("data-crash-only", "true");
+      await expect(page.getByTestId("help-button")).toHaveCount(0);
+      await expect(page.getByTestId("explainer-hint")).toContainText("hero is one of this task's boxes");
+      await expect(page.getByTestId("explainer-hint")).toContainText('hero = "Lucky"');
+    });
+
+    test("a step that passed, then broke, is marked to check again, and the done panel does not celebrate", async ({ page }) => {
+      await page.goto(`${itemPath("math-and-glue")}#solo-1c`);
+      await expect(page.getByTestId("exercise-title")).toHaveText("Show Mar'tu");
+      await pythonReady(page);
+      await setCode(page, "# Mar'tu needs 4 candles that cost 2 coins each.\ncandle_count = 4\ncandle_price = 2\ncandle_cost = candle_count * candle_price\nprint(candle_cost)\n");
+      await runAndWait(page, 1);
+      await expect(page.getByTestId("all-passed")).toBeVisible();
+      await setCode(page, "# Mar'tu needs 4 candles that cost 2 coins each.\ncandle_count = 2\ncandle_price = 4\ncandle_cost = 8\nprint(candle_cost)\n");
+      await runAndWait(page, 2);
+      await expect(checkpoint(page, 1)).toHaveAttribute("data-state", "passed");
+      await expect(checkpoint(page, 1)).toHaveAttribute("data-slipped", "true");
+      await expect(page.getByTestId("checkpoint-slipped-1")).toContainText("check it again");
+      await expect(page.getByTestId("exercise-done")).toHaveAttribute("data-slipped", "true");
+      await expect(page.getByTestId("exercise-done-martu")).not.toContainText("You did that alone");
+      await expect(page.getByTestId("exercise-done-martu")).toContainText("still done");
+    });
+
+    test("in a print-only warm-up, Mar'tu's pick on an empty line goes in as a print line", async ({ page }) => {
+      await page.goto(`${itemPath("before-the-first-spell")}#keyboard-symbols`);
+      await expect(page.getByTestId("exercise-title")).toHaveText("Where the symbols live");
+      await pythonReady(page);
+      await setCode(page, "# Print a line that has _ and - and = in it.\n");
+      const lines = page.locator('[data-testid="exercise-player"] [data-testid="editor"] .cm-line');
+      await lines.nth(1).click();
+      await page.getByTestId("pick-use").first().click();
+      await expect(lines.nth(1)).toHaveText('print("_ - = are side by side.")');
+      await runAndWait(page, 1);
+      await expect(page.getByTestId("all-passed")).toBeVisible();
+    });
+  });
+
   test("passing the Quick Check marks Unit 1 as tested out", async ({ page }) => {
     const quickCheck = unit.items.find((item) => item.kind === "testout");
     expect(quickCheck).toBeDefined();
