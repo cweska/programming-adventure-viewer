@@ -214,8 +214,8 @@ export function HelpStack({
 
       {crashed ? (
         <p className="ex-help-crash" data-testid="help-crash">
-          <strong>Mend {crashLine ? `line ${crashLine}` : "the error"} first.</strong> Python stopped there, so it could not
-          check your steps yet. Read the message under your code: its last line says what went wrong.
+          <strong>{`Mend ${crashLine ? `line ${crashLine}` : "the error"} first.`}</strong> Python stopped there, so it could
+          not check your steps yet. Read the message under your code: its last line says what went wrong.
         </p>
       ) : null}
 
@@ -253,7 +253,7 @@ export function HelpStack({
             data-next={next.kind}
             aria-disabled={state.nextLocked ? true : undefined}
             aria-describedby={offer ? offerId : undefined}
-            aria-label={`${buttonText}, for ${stepLabel}`}
+            aria-label={crashed ? buttonText : `${buttonText}, for ${stepLabel}`}
             onClick={press}
           >
             <span aria-hidden="true">💡</span> {buttonText}

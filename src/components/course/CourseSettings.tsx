@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import {
   coursePreset,
   needsPlacement,
@@ -37,9 +37,31 @@ export function CourseSettings({ className }: { className?: string }) {
   const ready = useProgressReady();
   const [canSpeak, setCanSpeak] = useState(true);
   const [saving, setSaving] = useState(true);
+  const [open, setOpen] = useState(false);
+  const detailsRef = useRef<HTMLDetailsElement>(null);
   const groupId = useId();
   const speakId = useId();
   const preset = coursePreset(settings);
+
+  // The open panel floats over the page: a click or tap anywhere else closes it.
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (event: PointerEvent) => {
+      const details = detailsRef.current;
+      if (details && event.target instanceof Node && !details.contains(event.target)) details.open = false;
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [open]);
+
+  /** Esc closes the panel and puts the keyboard back on "Help options". */
+  function onKeyDown(event: ReactKeyboardEvent<HTMLDetailsElement>) {
+    const details = detailsRef.current;
+    if (event.key !== "Escape" || !details?.open) return;
+    event.preventDefault();
+    details.open = false;
+    details.querySelector("summary")?.focus();
+  }
 
   useEffect(() => {
     try {
@@ -52,7 +74,13 @@ export function CourseSettings({ className }: { className?: string }) {
 
   return (
     <div className={["course-settings-wrap", className].filter(Boolean).join(" ")}>
-      <details className="course-settings" data-testid="help-options">
+      <details
+        className="course-settings"
+        data-testid="help-options"
+        ref={detailsRef}
+        onToggle={(event) => setOpen(event.currentTarget.open)}
+        onKeyDown={onKeyDown}
+      >
         <summary>Help options</summary>
         <div className="course-settings-body">
           <fieldset className="course-preset" data-testid="setting-preset">

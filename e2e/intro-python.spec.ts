@@ -176,6 +176,19 @@ test.describe("Intro to Python", () => {
     });
   });
 
+  test("a student who never presses Run is offered a nudge after 90 quiet seconds", async ({ page }) => {
+    await page.clock.install();
+    await openExercise(page, "first-words", "ask-the-traveler");
+    await expect(page.getByTestId("help-offer")).toHaveCount(0);
+    await page.clock.runFor(95_000);
+    await expect(page.getByTestId("help-offer")).toHaveAttribute("data-offer", "idle");
+    await expect(page.getByTestId("help-offer")).toContainText("A nudge is one click away");
+    await expect(page.getByTestId("help-button")).toHaveClass(/is-offered/);
+    // Taking up Help answers the offer.
+    await page.getByTestId("help-button").click();
+    await expect(page.getByTestId("help-offer")).toHaveCount(0);
+  });
+
   test("an input() exercise reads its answers from the Input box", async ({ page }) => {
     await openExercise(page, "first-words", "ask-the-traveler");
     const box = page.getByTestId("stdin-box");
@@ -241,8 +254,55 @@ test.describe("Intro to Python", () => {
     await page.getByTestId("compare-copy-yes").click();
     await expect(page.locator('[data-testid="editor"] .cm-content')).toContainText("mana = 20");
     await page.getByTestId("run").click();
-    await expect(page.getByTestId("all-passed")).toBeVisible();
+    // Mar'tu's version works, but a copy does not finish the exercise: the one way on is Write it myself.
+    await expect(page.getByTestId("reveal-passed")).toBeVisible();
+    await expect(page.getByTestId("all-passed")).toHaveCount(0);
     await expect(page.getByTestId("write-it-myself")).toBeVisible();
+    await expect(page.getByTestId("celebrate-next")).toHaveCount(0);
+    await expect(page.getByTestId("exercise-player")).toHaveAttribute("data-done", "false");
+    await expect(checkpoint(page, 1)).toHaveAttribute("data-state", "active");
+    await expectSaved(page, `${SAMPLE}/first-words/barrier-report`, (entry) => entry.done === false && entry.copiedSolution === true);
+
+    // Writing it: the starter is back, and the steps and Help stay live.
+    await page.getByTestId("write-it-myself").click();
+    await expect(page.locator('[data-testid="editor"] .cm-content')).toContainText("# 1. Make caster");
+    await expect(page.locator('[data-testid="editor"] .cm-content')).not.toContainText("mana = 20");
+    await expect(page.getByTestId("help-button")).toBeVisible();
+    await expect(page.getByTestId("task-line")).toContainText("step 1 of 3");
+    await runCode(page, BARRIER_SOLUTION);
+    await expect(page.getByTestId("all-passed")).toBeVisible();
+    await expect(page.getByTestId("exercise-player")).toHaveAttribute("data-done", "true");
+    await expectSaved(page, `${SAMPLE}/first-words/barrier-report`, (entry) => entry.done === true && entry.copiedSolution === undefined);
+  });
+
+  test("Start me off starts a line of its own, never inside a # note, and steps aside once the line is there", async ({ page }) => {
+    await openExercise(page, "first-words", "barrier-report");
+    const lines = page.locator('[data-testid="editor"] .cm-line');
+    // The cursor at the end of the note "# 1. Make caster".
+    await lines.nth(1).click();
+    await page.keyboard.press("End");
+    await page.getByTestId("help-button").click();
+    await page.getByTestId("help-start-insert").click();
+    await expect(lines.nth(1)).toHaveText("# 1. Make caster");
+    await expect(lines.nth(2)).toContainText("caster =");
+    await expect(lines.nth(3)).toHaveText("# 2. Make mana");
+    // The line is there now: the rung says so instead of offering it again.
+    await expect(page.getByTestId("help-start-done")).toBeVisible();
+    await expect(page.getByTestId("help-start-insert")).toHaveCount(0);
+
+    // A name chip clicked while the cursor is in a note goes on a new line too.
+    await lines.nth(3).click();
+    await page.keyboard.press("End");
+    await page.getByTestId("name-chip-mana").click();
+    await expect(lines.nth(3)).toHaveText("# 2. Make mana");
+    await expect(lines.nth(4)).toHaveText("mana");
+
+    // After a crash, Help names the line to mend first; Start me off is not offered for a line that is there.
+    await runCode(page, 'caster = "Gearshift"\nmana = 20\nprint(caster + " has " + mana + " mana.")\n');
+    await expect(page.getByTestId("explainer")).toBeVisible();
+    await expect(page.getByTestId("task-line")).toContainText("First, mend line 3.");
+    await expect(page.getByTestId("help-crash")).toContainText("Mend line 3 first.");
+    await expect(page.getByTestId("help-button")).not.toContainText("Start me off");
   });
 
   test("Predict first, Names to use and Mar'tu's pick help without getting in the way", async ({ page }) => {
@@ -306,6 +366,14 @@ test.describe("Intro to Python", () => {
     await expect
       .poll(() => page.evaluate((key) => JSON.parse(window.localStorage.getItem(key) ?? "{}")?.settings?.preset ?? null, PROGRESS_KEY))
       .toBe("short");
+    // Esc closes the panel and hands the keyboard back to "Help options"; so does a click anywhere else.
+    await page.keyboard.press("Escape");
+    await expect(page.getByTestId("help-options")).not.toHaveAttribute("open", "");
+    await expect(page.getByTestId("help-options").locator("summary")).toBeFocused();
+    await page.getByTestId("help-options").locator("summary").click();
+    await expect(page.getByTestId("help-options")).toHaveAttribute("open", "");
+    await page.getByTestId("course-map").click({ position: { x: 5, y: 5 } });
+    await expect(page.getByTestId("help-options")).not.toHaveAttribute("open", "");
     await openExercise(page, "first-words", "barrier-report");
     await expect(page.getByTestId("exercise-player")).toHaveAttribute("data-preset", "short");
     await expect(page.getByTestId("show-explanation")).toBeVisible();
@@ -326,6 +394,16 @@ test.describe("Intro to Python", () => {
     await expect(page.getByTestId("worked-example")).toBeHidden();
     await expect(page.getByTestId("checkpoint-3")).toBeVisible();
     await expect(page.getByTestId("help-button")).toBeVisible();
+    // Help climbs Where to look, Teach me, Show me how; Start me off and the rest wait under More options.
+    await expect(page.getByTestId("help-button")).toContainText("Help: Where to look");
+    await page.getByTestId("help-more-options").locator("summary").click();
+    await expect(page.getByTestId("help-extra-start")).toBeVisible();
+    await page.getByTestId("help-button").click();
+    await expect(page.getByTestId("help-rung-1")).toHaveAttribute("data-kind", "point");
+    await page.getByTestId("run").click();
+    await expect(page.getByTestId("run-count")).toContainText("Run 1 finished", { timeout: 30_000 });
+    await page.getByTestId("help-button").click();
+    await expect(page.getByTestId("help-rung-2")).toHaveAttribute("data-kind", "teach");
     await page.getByTestId("show-explanation").click();
     await expect(page.getByTestId("show-explanation")).toHaveCount(0);
     await page.getByTestId("example-toggle").locator("summary").click();
@@ -346,6 +424,16 @@ test.describe("Intro to Python", () => {
     await expect(page.getByTestId("run-count")).toContainText("Run 2");
 
     const content = page.locator('[data-testid="editor"] .cm-content');
+    const firstLine = page.locator('[data-testid="editor"] .cm-line').first();
+    // Tabbing through the page passes over the editor without changing the code (nothing typed there yet).
+    await page.getByTestId("reset-code").focus();
+    await page.keyboard.press("Tab");
+    await expect(content).toBeFocused();
+    await page.keyboard.press("Tab");
+    await expect(content).not.toBeFocused();
+    await expect(firstLine).toHaveText("# Gearshift's barrier report");
+
+    // A click puts the cursor in the code: Tab adds spaces there, and Esc then Tab leaves.
     await content.click();
     await page.keyboard.press("Tab");
     await expect(content).toBeFocused();

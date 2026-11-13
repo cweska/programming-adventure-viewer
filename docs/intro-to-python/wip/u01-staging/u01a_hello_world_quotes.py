@@ -249,8 +249,8 @@ WHAT_AN_ERROR_LOOKS_LIKE = dict(
                     "        _msg = ('Line ' + str(_bare[0]) + ' has the words in quotes, but no `print`, so Python '\n"
                     "                'made them and forgot them. Write `print(` before the quotes and `)` after.')\n"
                     "    elif 'Shield up.' in _l:\n"
-                    "        _msg = ('Your line still shows `Shield up.`, with a `.` at the end. Break it on purpose '\n"
-                    "                'first: delete the last `\"` and Run, and read the last line of the message. '\n"
+                    "        _msg = ('Your line still shows `Shield up.`, with a `.` at the end. If you have not broken it '\n"
+                    "                'yet: delete the last `\"`, Run, and read the last line of the message. '\n"
                     "                'Then put the `\"` back, change the `.` to `!`, and Run.')\n"
                     "    elif _near and _near[0].rstrip('.!?') != 'Shield up' and _near[0].rstrip('.!?').lower() == 'shield up':\n"
                     "        _msg = ('Your line shows `' + _near[0] + '`. Capitals count: Python shows exactly what is '\n"
@@ -262,8 +262,8 @@ WHAT_AN_ERROR_LOOKS_LIKE = dict(
                     "        _msg = ('Your line shows `' + _near[0] + '`. Spaces, marks and capitals all count: '\n"
                     "                'make it `Shield up!`, then Run.')\n"
                     "    else:\n"
-                    "        _msg = ('`Shield up!` is not showing yet. Keep the line `print(\"Shield up.\")`, '\n"
-                    "                'change the `.` to `!`, and Run.')\n"
+                    "        _msg = ('`Shield up!` is not showing yet. Press Reset code to get `print(\"Shield up.\")` back. '\n"
+                    "                'Then change the `.` to `!`, and Run.')\n"
                     "assert not _msg, _msg",
                 ),
             ],
@@ -320,6 +320,8 @@ WHAT_AN_ERROR_LOOKS_LIKE = dict(
              code='print("Shield up.")\n"Shield up!"\n', fails_at=2, message_contains="no `print`"),
         dict(why="check-breaker: a space lost", code='print("Shieldup!")\n', fails_at=2,
              message_contains="Spaces, marks and capitals"),
+        dict(why="check-breaker: line replaced with other words", code='print("Ready.")\n', fails_at=2,
+             message_contains="Reset code"),
     ],
     takeaway="Read the last line of Python's message first. Then look at the line it names.",
     notes=(
@@ -341,7 +343,7 @@ WHAT_AN_ERROR_LOOKS_LIKE = dict(
         "Evidence: unclosed quotes on A-02 ('Fire Ball'), A-03 ('Fierball.'), A-04 ('Fireball'). "
         "No Assemble: the whole answer is one line. WAs: open quote (crash), starter unchanged, other quote "
         "mark, quote put back after the bracket, the period deleted instead of the quote, lower case, no print, "
-        "a space lost."
+        "a space lost, other words (points to Reset code)."
     ),
 )
 

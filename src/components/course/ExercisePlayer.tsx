@@ -976,8 +976,8 @@ export function ExercisePlayer({
           {activeCheckpoint && !done && crashed ? (
             // A crash checks nothing, so "step 1" may already be right: the line Python stopped at comes first.
             <p className="ex-task-line" data-testid="task-line" data-crash="true">
-              <span className="ex-task-label">First, mend {crashAt ? `line ${crashAt}` : "the error"}.</span> Python stopped
-              there, so it could not check your {noun.toLowerCase()}s yet. The message under your code says how.
+              <span className="ex-task-label">{`First, mend ${crashAt ? `line ${crashAt}` : "the error"}.`}</span>{" "}
+              {`Python stopped there, so it could not check your ${noun.toLowerCase()}s yet. The message under your code says how.`}
             </p>
           ) : activeCheckpoint && !done ? (
             // The task first, so a student who skims sees it before Mar'tu's words and the example.

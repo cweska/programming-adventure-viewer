@@ -1197,10 +1197,22 @@ BROKEN_SPELL_1B = dict(
         ),
         dict(
             id="line-3",
-            text="Line 3 should make a box named `hero`.",
+            text="Mend line 3 so `glug_sips` holds 3.",
+            dictated=True,
+            hints=[
+                "Start line 3 with `glug_sips = `.",
+                "Look at the sign between `glug_sips` and 3.",
+                "To put a value in a box, use `=`. The `-` sign subtracts.",
+            ],
+            checks=[box_check("glug_sips", foreign=["snack", "mana"]), num_check("glug_sips"),
+                    ("glug_sips is 3", "assert glug_sips == 3, 'Put 3 in `glug_sips`.'")],
+        ),
+        dict(
+            id="line-4",
+            text="Line 4 should make a box named `hero`.",
             dictated=False,
             hints=[
-                "Start line 3 with `hero = `.",
+                "Start line 4 with `hero = `.",
                 "Line 5 prints `hero`. Which line should make that box?",
                 "A value on its own is made and forgotten. Give it a label: `snack = \"glug\"`.",
             ],
@@ -1210,24 +1222,12 @@ BROKEN_SPELL_1B = dict(
                 bare_check(),
                 print_check("hero", missing="Keep `print(hero)`, so Python opens the box and shows what is inside."),
             ],
-        ),
-        dict(
-            id="line-4",
-            text="Mend line 4 so `glug_sips` holds 3.",
-            dictated=True,
-            hints=[
-                "Start line 4 with `glug_sips = `.",
-                "Look at the sign between `glug_sips` and 3.",
-                "To put a value in a box, use `=`. The `-` sign subtracts.",
-            ],
-            checks=[box_check("glug_sips", foreign=["snack", "mana"]), num_check("glug_sips"),
-                    ("glug_sips is 3", "assert glug_sips == 3, 'Put 3 in `glug_sips`.'")],
             pass_line="Bomb Shell: Works.",
         ),
     ],
-    solution='weapon = "Telegun"\ncompanion = "Gearshift"\nhero = "Lucky"\nglug_sips = 3\nprint(hero)\nprint(weapon)\n',
+    solution='weapon = "Telegun"\ncompanion = "Gearshift"\nglug_sips = 3\nhero = "Lucky"\nprint(hero)\nprint(weapon)\n',
     assemble=dict(
-        lines=['weapon = "Telegun"', 'companion = "Gearshift"', 'hero = "Lucky"', "glug_sips = 3", "print(hero)", "print(weapon)"],
+        lines=['weapon = "Telegun"', 'companion = "Gearshift"', "glug_sips = 3", 'hero = "Lucky"', "print(hero)", "print(weapon)"],
         distractors=['"weapon" = "Telegun"', 'def companion = "Gearshift"', "glug_sips - 3"],
     ),
     another_way=[
@@ -1280,46 +1280,55 @@ BROKEN_SPELL_1B = dict(
             ),
         ],
         solution=(
-            'weapon = "Telegun"\ncompanion = "Gearshift"\nhero = "Lucky"\nglug_sips = 3\nprint(hero)\nprint(weapon)\n'
+            'weapon = "Telegun"\ncompanion = "Gearshift"\nglug_sips = 3\nhero = "Lucky"\nprint(hero)\nprint(weapon)\n'
             "# glug left = 2\nglug_left = 2\n"
         ),
     ),
     takeaway="Every box is `name = value`: no quotes on the name, no `def`, no `-`.",
     wrong_answers=[
-        dict(why="the starter: a quoted name on line 1", code='"weapon" = "Telegun"\ndef companion = "Gearshift"\n"Lucky"\nglug_sips - 3\nprint(hero)\nprint(weapon)\n',
+        dict(why="the starter: a quoted name on line 1", code='"weapon" = "Telegun"\ndef companion = "Gearshift"\nglug_sips - 3\n"Lucky"\nprint(hero)\nprint(weapon)\n',
              fails_at=0, message_contains="literal"),
-        dict(why="def left on line 2", code='weapon = "Telegun"\ndef companion = "Gearshift"\nhero = "Lucky"\nglug_sips = 3\nprint(hero)\nprint(weapon)\n',
+        dict(why="def left on line 2", code='weapon = "Telegun"\ndef companion = "Gearshift"\nglug_sips = 3\nhero = "Lucky"\nprint(hero)\nprint(weapon)\n',
              fails_at=0, message_contains="expected '('"),
-        dict(why="def with brackets", code='weapon = "Telegun"\ndef companion() = "Gearshift"\nhero = "Lucky"\nglug_sips = 3\nprint(hero)\nprint(weapon)\n',
+        dict(why="def with brackets", code='weapon = "Telegun"\ndef companion() = "Gearshift"\nglug_sips = 3\nhero = "Lucky"\nprint(hero)\nprint(weapon)\n',
              fails_at=0, message_contains="expected ':'"),
-        dict(why="the dash left on line 4", code='weapon = "Telegun"\ncompanion = "Gearshift"\nhero = "Lucky"\nglug_sips - 3\nprint(hero)\nprint(weapon)\n',
+        dict(why="the dash left on line 3", code='weapon = "Telegun"\ncompanion = "Gearshift"\nglug_sips - 3\nhero = "Lucky"\nprint(hero)\nprint(weapon)\n',
              fails_at=0, message_contains="glug_sips"),
-        dict(why="line 3 as a bare name (explainer rule 7)", code='weapon = "Telegun"\ncompanion = "Gearshift"\nLucky\nglug_sips = 3\nprint(hero)\nprint(weapon)\n',
+        dict(why="lines 1 to 3 mended, the lone \"Lucky\" left on line 4: Python's next message is about `hero`",
+             code='weapon = "Telegun"\ncompanion = "Gearshift"\nglug_sips = 3\n"Lucky"\nprint(hero)\nprint(weapon)\n',
+             fails_at=0, message_contains="'hero' is not defined"),
+        dict(why="line 4 as a bare name (explainer rule 7)", code='weapon = "Telegun"\ncompanion = "Gearshift"\nglug_sips = 3\nLucky\nprint(hero)\nprint(weapon)\n',
              fails_at=0, message_contains="Lucky"),
-        dict(why="the lone value kept, hero made elsewhere", code='weapon = "Telegun"\ncompanion = "Gearshift"\n"Lucky"\nhero = "Lucky"\nglug_sips = 3\nprint(hero)\nprint(weapon)\n',
-             fails_at=3, message_contains="no box"),
-        dict(why="glug_sips in quotes", code='weapon = "Telegun"\ncompanion = "Gearshift"\nhero = "Lucky"\nglug_sips = "3"\nprint(hero)\nprint(weapon)\n',
-             fails_at=4, message_contains="quotes"),
+        dict(why="the lone value kept, hero made elsewhere", code='weapon = "Telegun"\ncompanion = "Gearshift"\nglug_sips = 3\n"Lucky"\nhero = "Lucky"\nprint(hero)\nprint(weapon)\n',
+             fails_at=4, message_contains="no box"),
+        dict(why="glug_sips in quotes", code='weapon = "Telegun"\ncompanion = "Gearshift"\nglug_sips = "3"\nhero = "Lucky"\nprint(hero)\nprint(weapon)\n',
+             fails_at=3, message_contains="quotes"),
         dict(why="prints mended by typing the values instead of using the boxes",
-             code='weapon = "Telegun"\ncompanion = "Gearshift"\nhero = "Lucky"\nglug_sips = 3\nprint("Lucky")\nprint("Telegun")\n',
+             code='weapon = "Telegun"\ncompanion = "Gearshift"\nglug_sips = 3\nhero = "Lucky"\nprint("Lucky")\nprint("Telegun")\n',
              fails_at=1, message_contains="typed by hand"),
         dict(why="print lines deleted instead of mending the boxes they need",
-             code='weapon = "Telegun"\ncompanion = "Gearshift"\nhero = "Lucky"\nglug_sips = 3\n',
+             code='weapon = "Telegun"\ncompanion = "Gearshift"\nglug_sips = 3\nhero = "Lucky"\n',
              fails_at=1, message_contains="Keep the last line"),
         dict(why="def made valid with brackets and a colon (a recipe, not a box)",
-             code='weapon = "Telegun"\ndef companion(): "Gearshift"\nhero = "Lucky"\nglug_sips = 3\nprint(hero)\nprint(weapon)\n',
+             code='weapon = "Telegun"\ndef companion(): "Gearshift"\nglug_sips = 3\nhero = "Lucky"\nprint(hero)\nprint(weapon)\n',
              fails_at=2, message_contains="`def` makes a recipe"),
-        dict(why="unclosed quote on line 3", code='weapon = "Telegun"\ncompanion = "Gearshift"\nhero = "Lucky\nglug_sips = 3\nprint(hero)\nprint(weapon)\n',
+        dict(why="unclosed quote on line 4", code='weapon = "Telegun"\ncompanion = "Gearshift"\nglug_sips = 3\nhero = "Lucky\nprint(hero)\nprint(weapon)\n',
              fails_at=0, message_contains="unterminated string"),
-        dict(why="Hero with a capital, on both lines", code='weapon = "Telegun"\ncompanion = "Gearshift"\nHero = "Lucky"\nglug_sips = 3\nprint(Hero)\nprint(weapon)\n',
-             fails_at=3, message_contains="letter for letter"),
+        dict(why="Hero with a capital, on both lines", code='weapon = "Telegun"\ncompanion = "Gearshift"\nglug_sips = 3\nHero = "Lucky"\nprint(Hero)\nprint(weapon)\n',
+             fails_at=4, message_contains="letter for letter"),
+        dict(why="glug_sips given the wrong number while mending the dash", code='weapon = "Telegun"\ncompanion = "Gearshift"\nglug_sips = 30\nhero = "Lucky"\nprint(hero)\nprint(weapon)\n',
+             fails_at=3, message_contains="Put 3"),
     ],
     notes=(
-        meta(starter_level="S4", path="CC", skills="make-variable,read-traceback", solo="false", dictates="1,2,4",
+        meta(starter_level="S4", path="CC", skills="make-variable,read-traceback", solo="false", dictates="1,2,3",
              foreign_names="snack,mana") + "\n"
-        "Rows fire in order: cannot assign to literal (line 1), the DEF row (line 2, G1 R15), then at runtime "
-        "rule 8 (the dash, line 4), then rule 4 (`hero` required, with the bare \"Lucky\" on line 3). "
+        "Teacher ruling: starter lines 3 and 4 swapped so the checkpoints follow Python's messages in order: "
+        "cannot assign to literal (line 1), the DEF row (line 2, G1 R15), then at runtime rule 8 (the dash, "
+        "line 3: `glug_sips` not defined), then rule 4 (`print(hero)` on line 5: `hero` not defined, with the "
+        "bare \"Lucky\" on line 4). The bare value raises no error of its own; Mar'tu's last Learn line warns "
+        "about it, and the WA 'lone \"Lucky\" left on line 4' proves Python's next message names `hero`. "
         "Checks run only once the program runs, so the per-line ticks all turn green together; no partials. "
+        "pass_line sits on the last checkpoint (line-4). "
         "Can be done in pairs (pair_talk); every student mends it on their own screen."
     ),
 )
@@ -1328,7 +1337,7 @@ SOLO_1B = dict(
     id="solo-1b",
     title="Show Mar'tu",
     martu=(
-        "Make one box of your own and show what is inside. Nobody helps on this one.\n"
+        "Your turn to show off: make one box of your own and show what is inside. "
         "You have done this already tonight, yes?"
     ),
     solo=True,
@@ -1359,7 +1368,7 @@ SOLO_1B = dict(
                 QUOTES_RULE,
             ],
             checks=[print_check("familiar")],
-            pass_line="Mar'tu: You did that alone. I saw.",
+            pass_line="Mar'tu: You did that on your own. On your map: ✓ make a box with `name = value`.",
         ),
     ],
     solution='# 1. Make a box named familiar that holds any creature, in quotes.\nfamiliar = "a grumpy moth"\n# 2. Print familiar.\nprint(familiar)\n',
@@ -1393,7 +1402,8 @@ SOLO_1B = dict(
              foreign_names="companion,character,hero,snack", seat_b="lantern_name (same checks, starter says lantern_name)") + "\n"
         "SOLO make-twin. Seat A (and anyone solo) gets familiar; seat B would get lantern_name once pair mode "
         "ships. Recorded, never blocking, never shown to a partner. Two hints only (schema); using one records "
-        "the pass 'with structure'."
+        "the pass 'with structure'. Teacher ruling: the solo reads as showing off, not being watched, so Learn "
+        "drops 'Nobody helps on this one' and the pass line ticks the skill on the student's map."
     ),
 )
 
@@ -1597,7 +1607,7 @@ NAME_AND_VALUE_AGAIN = dict(
             dictated=True,
             hints=[
                 "Start a line with `print(`.",
-                "Look at the Example's last two lines.",
+                "The Example prints each box by name, with no quotes. Do the same with `satchel` and `coins`.",
                 QUOTES_RULE,
             ],
             checks=[print_check("satchel"), print_check("coins")],

@@ -234,6 +234,8 @@ describe("server render", () => {
         compareOpen: false,
         showUnlocked: false,
         runNumber: 3,
+        crashed: true,
+        crashLine: 2,
         onReveal: () => "opened" as const,
         onDismissOffer: () => undefined,
         onOpenAssemble: () => undefined,
@@ -252,6 +254,44 @@ describe("server render", () => {
     expect(html).toContain('data-testid="help-show-locked"');
     expect(html).toContain('aria-disabled="true"');
     expect(html).toContain("ex-help is-offered");
+    // Right after a crash, Help first names the line to mend (a crash checks no step).
+    expect(html).toContain('data-testid="help-crash"');
+    expect(html).toContain("Mend line 2 first.");
+  });
+
+  it("under Keep it short, renders the trimmed stack with Start me off and More structure under More options", () => {
+    const checkpoint = { id: "make-caster", text: "Make caster.", hints: ["Look.", "Teach.", 'Write `caster = "Gearshift"`.'], checks: [{ name: "c", code: "assert True" }] };
+    const rungs = helpRungs(checkpoint, { anotherWayCount: 1, hasAssemble: true, solo: false });
+    const state = helpState(rungs, 0, false, { preset: "short" });
+    const html = renderToString(
+      createElement(HelpStack, {
+        noun: "Step",
+        stepNumber: 1,
+        checkpoint,
+        state,
+        anotherWay: [{ angle: "everyday", text: "Like a labelled jar." }],
+        glossary: [],
+        offer: "misses",
+        compareOpen: false,
+        showUnlocked: false,
+        runNumber: 3,
+        preset: "short",
+        onReveal: () => "opened" as const,
+        onDismissOffer: () => undefined,
+        onOpenAssemble: () => undefined,
+        onOpenCompare: () => undefined,
+        onInsertStart: () => undefined,
+      }),
+    );
+    expect(html).toContain("Help: Where to look");
+    expect(html).toContain('data-testid="help-more-options"');
+    expect(html).toContain('data-testid="help-extra-start"');
+    expect(html).toContain('data-testid="help-extra-another"');
+    expect(html).toContain('data-testid="help-extra-structure"');
+    expect(html).not.toContain('data-testid="help-rung-1"');
+    // No crash: Oogrish does not talk about a last line that is not there.
+    expect(html).toContain("Steady, now. Want a nudge?");
+    expect(html).not.toContain("Read the last line first");
   });
 
   it("renders Compare with Mar'tu's version side by side without touching the code", () => {

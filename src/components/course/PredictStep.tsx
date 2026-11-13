@@ -5,6 +5,31 @@ import type { GlossaryEntry, Playable } from "../../lib/course/schema";
 import { Prose } from "./Prose";
 
 /**
+ * Two choices that are the same once spaces are taken out: the spaces are the whole question (`burst: 37` or
+ * `burst:37`). Then every space is drawn as a faint dot, so a line break can never hide one.
+ */
+export function spacesMatter(choices: readonly string[]): boolean {
+  const squashed = choices.map((choice) => choice.replace(/[ \t]+/g, ""));
+  return squashed.some((value, index) => squashed.indexOf(value) !== index);
+}
+
+/** A choice's text with each space as a visible dot (a real space for copying and screen readers). */
+function ChoiceText({ text, showSpaces }: { text: string; showSpaces: boolean }) {
+  if (!showSpaces) return <span className="ex-predict-text">{text}</span>;
+  const parts = text.split(" ");
+  return (
+    <span className="ex-predict-text is-spaced">
+      {parts.map((part, index) => (
+        <span key={index}>
+          {index > 0 ? <span className="ex-vis-space"> </span> : null}
+          {part}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+/**
  * Predict before Run (curriculum §2.1 step 2): a one-click guess, free, and never in the way of Run.
  * `saved` is the remembered answer: a choice index, -1 for skipped, undefined for not asked yet.
  * A guess or skip from an earlier visit keeps the card closed.
@@ -38,6 +63,7 @@ export function PredictStep({
   const target = predict.code ?? starter;
   const showCode = target.trim() !== editorCode.trim();
   const right = guess !== null && guess === predict.answer;
+  const showSpaces = spacesMatter(predict.choices);
 
   function choose(index: number) {
     setGuess(index);
@@ -78,12 +104,17 @@ export function PredictStep({
               <span className="ex-predict-mark" aria-hidden="true">
                 {mark}
               </span>
-              <span className="ex-predict-text">{choice}</span>
+              <ChoiceText text={choice} showSpaces={showSpaces} />
               {isAnswer ? <span className="ex-sr-only"> (the right answer)</span> : null}
             </button>
           );
         })}
       </div>
+      {showSpaces ? (
+        <p className="ex-muted ex-predict-space-note" data-testid="predict-space-note">
+          Look closely at the spaces: each <span className="ex-vis-space ex-vis-space-key"> </span> dot is one space.
+        </p>
+      ) : null}
       <div aria-live="polite">
         {guess !== null ? (
           <div className={`ex-predict-result${right ? " is-right" : ""}`} data-testid="predict-result" data-correct={right}>
