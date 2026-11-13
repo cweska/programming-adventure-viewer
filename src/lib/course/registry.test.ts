@@ -91,7 +91,8 @@ describe("the bundled course", () => {
     const sample = findItem("sample", "first-words");
     if (!sample) return; // the sample unit may be removed later
     const terms = glossaryFor(sample.item).map((entry) => entry.term);
-    expect(terms).toEqual(expect.arrayContaining(["string", "output", "variable", "concatenate"]));
+    // [[concatenate|glue]] resolves through an alias to the one shared "glue" entry (Unit 1 defines it too).
+    expect(terms).toEqual(expect.arrayContaining(["string", "output", "variable", "glue"]));
   });
 });
 
