@@ -14,7 +14,7 @@ describe("explainCourseError: the class's real slips", () => {
     const result = explainRun('print("Hello)\n');
     expect(result.title).toBe("Missing quote");
     expect(result.hint).toBe(
-      'The text on line 1 is missing its closing quote. Text needs a quote at the start and at the end, like "Hello".',
+      'The text on line 1 is missing its closing quote. Text needs a quote at the start and at the end, like this: print("Hello")',
     );
   });
 
@@ -80,8 +80,8 @@ describe("explainCourseError: the class's real slips", () => {
     expect(mana.hint).toContain('print(caster + " has " + str(mana) + " mana.")');
     expect(explainRun('strength = 5\nprint("Strength:, strength)\n').hint).toContain('print("Strength:", strength)');
     // Real text with a comma or a plus sign keeps the plain advice.
-    expect(explainRun('print("Hello, world)\n').hint).toContain('like "Hello, world".');
-    expect(explainRun('print("2 + 2 = 4)\n').hint).toContain('like "2 + 2 = 4".');
+    expect(explainRun('print("Hello, world)\n').hint).toContain('like this: print("Hello, world")');
+    expect(explainRun('print("2 + 2 = 4)\n').hint).toContain('like this: print("2 + 2 = 4")');
   });
 
   it("offers the code's own variables when a lowercase name is unknown (a name copied from the example)", () => {
@@ -192,7 +192,7 @@ describe("explainCourseError: the class's real slips", () => {
   });
 
   it("explains other common beginner errors", () => {
-    expect(explainRun('print "hi"\n').hint).toBe('print needs parentheses around what it shows on line 1, like this: print("hi")');
+    expect(explainRun('print "hi"\n').hint).toBe('print needs brackets ( ) around what it shows on line 1, like this: print("hi")');
     expect(explainRun("x = 5\nif x = 5:\n    print(x)\n").title).toBe("Use == to compare");
     expect(explainRun('print("hi"\n').title).toBe("Missing )");
     expect(explainRun('print("hi"))\n').title).toBe("Extra )");
@@ -257,6 +257,7 @@ describe("explainCourseError: the class's real slips", () => {
     expect(other.hint).not.toContain("theater");
     expect(explainCourseError("KeyError: 'gate'", "").title).toBe("Missing key");
     expect(explainCourseError("Python could not load its lesson tools (HTTP 404). Reload the page.", "")).toEqual({
+      kind: "player-message",
       title: "Python had a problem",
       hint: "Python could not load its lesson tools (HTTP 404). Reload the page.",
       raw: "Python could not load its lesson tools (HTTP 404). Reload the page.",

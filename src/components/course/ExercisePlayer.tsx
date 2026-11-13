@@ -11,7 +11,8 @@ import { runCourse, whenPythonReady } from "../../lib/languages/python/run";
 import type { Explanation } from "../../lib/languages/types";
 import { publicPath } from "../../lib/site";
 import type { StageEvent } from "../../lib/stage/bridge";
-import { PythonEditor } from "../PythonEditor";
+import { PythonEditor, type PythonEditorHandle } from "../PythonEditor";
+import { CompareView } from "./CompareView";
 import {
   angleLabel,
   answersFromBox,
@@ -21,15 +22,21 @@ import {
   checkpointHeading,
   countsAsAttempt,
   effectiveSupport,
+  firstParagraph,
+  helpOffer,
+  helpRungs,
+  helpState,
   hintButtonLabel,
   hintsOpen,
   isBlankOrStarter,
   isSolutionCode,
   nextFailStreak,
+  pickInsertion,
+  presetOf,
   revealNextRung,
+  rungPaced,
   rungsShown,
   runOutcome,
-  shouldNudge,
   solutionUnlocked,
   stdinBoxText,
   stepNoun,
@@ -37,14 +44,19 @@ import {
   titleFromId,
   usesInput,
   type FailStreak,
+  type PlayerExtras,
   type PlayerMode,
   type Support,
 } from "./exercise-logic";
+import { HelpLocked, HelpStack, type RevealResult } from "./HelpStack";
 import { MarTu } from "./MarTu";
+import { NamesChips } from "./NamesChips";
 import { ParsonsBoard } from "./ParsonsBoard";
 import { seededShuffle } from "./parsons-logic";
+import { PredictStep } from "./PredictStep";
 import { Prose } from "./Prose";
 import { ReadAloud } from "./ReadAloud";
+import { SymbolTray } from "./SymbolTray";
 import { PYTHON_STATUS_TEXT, type PythonStatus } from "./usePythonStatus";
 
 /** The console shows at most this much output (a print loop can make 200,000 characters). */
@@ -104,7 +116,11 @@ type RunView = {
   runNumber: number;
   /** This crash is the same as the last run's (so the student can tell the run happened). */
   sameError?: boolean;
-  /** This run passed with Mar'tu's answer, put in by "Show solution". */
+  /** The same step failed with the same message as last run. */
+  sameMessage?: boolean;
+  /** Steps that passed for the first time in this run (the step list says "Done!" on them). */
+  newlyPassed: string[];
+  /** This run passed with Mar'tu's version, copied in with "Copy into my editor". */
   revealPass?: boolean;
 };
 
@@ -134,10 +150,11 @@ function stageLines(events: StageEvent[]): string[] {
 }
 
 /* ---------------------------------------------------------------------------------------------- */
-/* Visible time on this exercise (for "Show solution")                                             */
+/* Visible time on this exercise (for Mar'tu's version and Help offers)                            */
 /* ---------------------------------------------------------------------------------------------- */
 
-function useActiveTime(key: string): number {
+/** Visible time on the exercise: `total` across visits, `session` in this visit. */
+function useActiveTime(key: string): { total: number; session: number } {
   const [sessionMs, setSessionMs] = useState(0);
   const [storedMs, setStoredMs] = useState(0);
   const unsaved = useRef(0);
@@ -191,7 +208,7 @@ function useActiveTime(key: string): number {
     };
   }, [key]);
 
-  return storedMs + sessionMs;
+  return { total: storedMs + sessionMs, session: sessionMs };
 }
 
 /* ---------------------------------------------------------------------------------------------- */
@@ -338,97 +355,6 @@ function HintLadder({
       >
         <span aria-hidden="true">💡</span> {hintButtonLabel(shown, hints.length)}
       </button>
-    </div>
-  );
-}
-
-/** Predict before Run: one click, free, never blocks Run. */
-function PredictCard({ predict, starter, glossary }: { predict: NonNullable<Playable["predict"]>; starter: string; glossary: GlossaryEntry[] }) {
-  const [guess, setGuess] = useState<number | null>(null);
-  const titleId = useId();
-  const code = predict.code && predict.code.trim() !== starter.trim() ? predict.code : null;
-  const right = guess !== null && guess === predict.answer;
-  return (
-    <section className="ex-predict" data-testid="predict" aria-labelledby={titleId}>
-      <p className="ex-predict-title" id={titleId}>
-        <span className="ex-predict-tag">Predict first</span> <Prose text={predict.q} glossary={glossary} inline />
-      </p>
-      {code ? (
-        <pre className="ex-predict-code" aria-label="Code to predict">
-          <code>{code.replace(/\n$/, "")}</code>
-        </pre>
-      ) : (
-        <p className="ex-muted ex-predict-note">Read the code in the editor. Guess, then press Run to see.</p>
-      )}
-      <div className="ex-predict-choices" role="group" aria-label="Your guess">
-        {predict.choices.map((choice, index) => {
-          const chosen = guess === index;
-          const mark = guess === null ? "" : index === predict.answer ? "✓" : chosen ? "✗" : "";
-          return (
-            <button
-              key={index}
-              type="button"
-              className={`ex-predict-choice${chosen ? " is-chosen" : ""}${guess !== null && index === predict.answer ? " is-answer" : ""}`}
-              data-testid={`predict-choice-${index}`}
-              aria-pressed={chosen}
-              onClick={() => setGuess(index)}
-            >
-              <span className="ex-predict-mark" aria-hidden="true">
-                {mark}
-              </span>
-              <span className="ex-predict-text">{choice}</span>
-            </button>
-          );
-        })}
-      </div>
-      <div aria-live="polite">
-        {guess !== null ? (
-          <div className={`ex-predict-result${right ? " is-right" : ""}`} data-testid="predict-result" data-correct={right}>
-            <p className="ex-predict-verdict">{right ? "Yes, good guess." : "Not this time. Guesses are free: now see what really happens."}</p>
-            <Prose text={predict.explain} glossary={glossary} />
-            <p className="ex-muted">Press Run to check it.</p>
-          </div>
-        ) : null}
-      </div>
-    </section>
-  );
-}
-
-/** "Names to use", Mar'tu's pick, and the pair-talk prompt. */
-function StepExtras({ exercise, glossary }: { exercise: Playable; glossary: GlossaryEntry[] }) {
-  const names = exercise.names ?? [];
-  const pairTalk = exercise.pairTalk;
-  if (names.length === 0 && !exercise.pick && !pairTalk) return null;
-  return (
-    <div className="ex-extras">
-      {names.length > 0 ? (
-        <p className="ex-names" data-testid="names">
-          <span className="ex-names-label">Names to use:</span>{" "}
-          {names.map((name, index) => (
-            <span key={name}>
-              {index > 0 ? " " : null}
-              <code className="inline-code ex-name-chip">{name}</code>
-            </span>
-          ))}
-        </p>
-      ) : null}
-      {exercise.pick ? (
-        <div className="ex-pick" data-testid="pick">
-          <span className="ex-pick-label">Can&apos;t decide? Use Mar&apos;tu&apos;s pick:</span>{" "}
-          {exercise.pick.includes("\n") ? (
-            <pre className="ex-pick-text">{exercise.pick}</pre>
-          ) : (
-            <code className="inline-code">{exercise.pick}</code>
-          )}
-        </div>
-      ) : null}
-      {pairTalk ? (
-        <div className="ex-pair-talk" data-testid="pair-talk">
-          {/^pair talk\b/i.test(pairTalk) ? null : <span className="ex-pair-label">Pair talk: </span>}
-          <Prose text={pairTalk} glossary={glossary} inline />
-          <span className="ex-muted"> Each of you still does every step on your own screen.</span>
-        </div>
-      ) : null}
     </div>
   );
 }
