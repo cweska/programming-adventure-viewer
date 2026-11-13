@@ -18,7 +18,7 @@ import { HelpStack } from "./HelpStack";
 import { LessonPlayer } from "./LessonPlayer";
 import { NamesChips } from "./NamesChips";
 import { ParsonsBoard } from "./ParsonsBoard";
-import { PredictStep } from "./PredictStep";
+import { PredictStep, spacesMatter } from "./PredictStep";
 import { SymbolTray } from "./SymbolTray";
 
 const PLAYED = new Set(["lesson", "project", "challenge", "testout"]);
@@ -275,7 +275,6 @@ describe("server render", () => {
         compareOpen: false,
         showUnlocked: false,
         runNumber: 3,
-        preset: "short",
         onReveal: () => "opened" as const,
         onDismissOffer: () => undefined,
         onOpenAssemble: () => undefined,
@@ -348,6 +347,25 @@ describe("server render", () => {
     const tray = renderToString(createElement(SymbolTray, { onInsert: () => undefined, names: ["hero"] }));
     expect(tray).toContain('aria-label="Type double quote"');
     expect(tray).toContain('data-testid="tray-name-hero"');
+  });
+
+  it("draws spaces as dots when the choices differ only in spacing (a line break can never hide one)", () => {
+    expect(spacesMatter(["Hours until the next burst: 37", "Hours until the next burst:37"])).toBe(true);
+    expect(spacesMatter(["Gearshift", "companion"])).toBe(false);
+    const html = renderToString(
+      createElement(PredictStep, {
+        predict: { q: "What prints?", choices: ["burst: 37", "burst:37"], answer: 0, explain: "The comma becomes one space." },
+        editorCode: "",
+        starter: 'print("burst:", 37)\n',
+        glossary: [],
+        saved: undefined,
+        onAnswer: () => undefined,
+        onClose: () => undefined,
+      }),
+    );
+    expect(html).toContain("ex-predict-text is-spaced");
+    expect(html).toContain('class="ex-vis-space"> </span>');
+    expect(html).toContain('data-testid="predict-space-note"');
   });
 
   it("renders the Parsons board with every piece reachable by button", () => {

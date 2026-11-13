@@ -9,7 +9,9 @@ Who this is for: the class already played campaign Modules 1 and 2 and struggled
 nobody let the code combine values (everyone hard-coded 68), counts and prices were swapped, and `mana-bars` /
 `hold-the-barrier` felt like a wall. So every combine step is checked by BEHAVIOR: the check re-runs the
 student's program with other numbers (CMB, curriculum 2.5) and the message shows the little rerun table in one
-sentence ("with `lantern_count = 7`, `total_cost` stayed 22, but it should be 38").
+sentence ("Mar'tu's check tried your code with `lantern_count = 7` (only inside the check: leave your own numbers
+as they are). This time, `total_cost` stayed 22, but it should be 38."). Mar'tu says once, in chalk-math, that
+the checks swap in other numbers.
 
 Check builders below (plain string templates, no student values ever echoed back):
   slot()        NAME / LEFT / NEWBOX / BARE / TEXT-vs-NUM plus per-exercise rules, for one box's value
@@ -108,12 +110,19 @@ def _with_text(changes):
 
 
 def rerun(label, changes, pre, cond, msg):
-    """CMB. `pre` sets up names from the rerun (_r its namespace, _R = _r.get, _p its printed lines);
-    `cond` must hold; `msg` is an expression for the rest of the message after the lead."""
+    """CMB. Re-runs the student's program with `changes` swapped in, inside the check only (the student's own
+    code and numbers are never touched). `pre` sets up names from the rerun (_r its namespace, _R = _r.get, _p its
+    printed lines); `cond` must hold; `msg` is an expression for the rest of the message after the shared lead:
+    "Mar'tu's check tried your code with `last_gap = 41` (only inside the check: leave your own numbers as they
+    are). This time, " + msg. One lead for every rerun message, so the check reads as fair, not as a trick. A rerun
+    that crashes says "Mar'tu's check tried your code with ... (only inside the check) and it stopped: " + error."""
     kind = "numbers" if all(isinstance(v, int) for v in changes.values()) else "values"
-    lead = "Mar'tu tried other %s: with %s, " % (kind, _with_text(changes))
+    lead = (
+        "Mar'tu's check tried your code with %s (only inside the check: leave your own numbers as they are). "
+        "This time, " % _with_text(changes)
+    )
     keep = "`. Mar'tu's check changes that line to try other " + kind + ", so keep it as `name = value`."
-    crash = "Mar'tu tried other %s (%s) and your program stopped: " % (kind, _with_text(changes))
+    crash = "Mar'tu's check tried your code with %s (only inside the check) and it stopped: " % _with_text(changes)
     code = _RERUN_DEF + (
         f"_r, _p, _f, _e = _rerun({changes!r})\n"
         "_R = _r.get\n"
@@ -140,10 +149,13 @@ def rerun_box(label, changes, target, want, fix):
     )
 
 
-def rerun_line(label, changes, want, fix, show=True, hide="''"):
+def rerun_line(label, changes, want, fix, show=True, hide="''", word=False, starts=False):
     """CMB on printed output: after the rerun, the line `want` (an expression over _R) must be printed, by a
     line that FOLLOWED the change. A line that prints `want` in the normal run too (at the same place) is typed
     in: that stops `print(11)` + `print(7)` once the message has shown 7 (unless the rerun changed nothing).
+    word=True: a printed line counts when it holds `want` as a whole number (labelled output such as
+    `The gap shrank by 7` counts; `17`, `-7` and `7.5` do not). starts=True: a printed line counts when it starts
+    with `want` (a first bead such as `Tester has`). The typed-in test against the normal run uses the same match.
     `hide` (an expression over the student's names, e.g. a creative hero box) is never repeated back: the nearest
     printed line is left out of the message when it contains it (privacy, 2.11)."""
     shown = (
@@ -151,20 +163,41 @@ def rerun_line(label, changes, want, fix, show=True, hide="''"):
         if show
         else "''"
     )
+    if word:
+        hit = (
+            "import re as _re\n"
+            r"_pat = _re.compile(r'(?<![\w.-])' + _re.escape(_want) + r'(?![\w.])')" "\n"
+            "_hit = lambda _l: bool(_pat.search(_l))\n"
+        )
+    elif starts:
+        hit = "_hit = lambda _l: _l.startswith(_want)\n"
+    else:
+        hit = "_hit = lambda _l: _l == _want\n"
+    if starts:
+        typed = (
+            "('your program printed a line that starts with `' + _want + '`, but that line is the same even without "
+            "the change, so it is typed in. ')"
+        )
+        should = f"('your program should print a line that starts with `' + _want + '`' + {shown} + '. ')"
+    else:
+        typed = (
+            "('your program printed `' + _want + '`, but that line prints `' + _want + '` even without the change, "
+            "so it is typed in. ')"
+        )
+        should = f"('your program should print `' + _want + '`' + {shown} + '. ')"
     return rerun(
         label,
         changes,
         f"_want = {want}\n"
         f"_hide = str({hide} or '').strip()\n"
-        "_nn = _nearest(_p, _want) if _p else ''\n"
+        + hit
+        + "_nn = _nearest(_p, _want) if _p else ''\n"
         "_old = _lines()\n"
         f"_same = all(_g0.get(_k) == _v for _k, _v in {changes!r}.items())\n"
-        "_at = [_i for _i, _l in enumerate(_p) if _l == _want]\n"
-        "_ok = bool(_at) and (_same or any(_i >= len(_old) or _old[_i] != _want for _i in _at))",
+        "_at = [_i for _i, _l in enumerate(_p) if _hit(_l)]\n"
+        "_ok = bool(_at) and (_same or any(_i >= len(_old) or not _hit(_old[_i]) for _i in _at))",
         "_ok",
-        "(('your program printed `' + _want + '`, but that line prints `' + _want + '` even without the change, "
-        "so it is typed in. ') if _at else "
-        f"('your program should print `' + _want + '`' + {shown} + '. ')) + {fix!r}",
+        f"({typed} if _at else {should}) + {fix!r}",
     )
 
 
@@ -507,7 +540,9 @@ CHALK_MATH = dict(
     title="Mar'tu's chalk math",
     martu=(
         "Python does math with `+`, `-`, `*` and `/`. Guess each answer, then run.\n"
-        "These are the [[math signs]]. No quotes around the math, so Python works it out."
+        "These are the [[math signs]]. No quotes around the math, so Python works it out.\n"
+        "My checks are sneaky: they put other numbers in your boxes and run your code again, to see if your line "
+        "follows. Your own code is not changed. A typed answer can't keep up."
     ),
     introduces=["op:Add", "op:Sub", "op:Mult", "op:Div"],
     example="owl_hoots = 6\nwolf_howls = 3\nprint(owl_hoots + wolf_howls)\n",
@@ -515,18 +550,17 @@ CHALK_MATH = dict(
     names=["first_gap", "last_gap"],
     predict=dict(
         q="What will this print?",
-        code="print(46 + 44)\nprint(48 - 37)\nprint(9 * 2)\nprint(48 / 2)\n",
-        choices=["90\n11\n18\n24", "90\n11\n18\n24.0", "46 + 44\n48 - 37\n9 * 2\n48 / 2"],
-        answer=1,
+        code="print(46 + 44)\nprint(48 - 37)\nprint(9 * 2)\n",
+        choices=["90\n11\n18", "46 + 44\n48 - 37\n9 * 2", "90 11 18 all on one line"],
+        answer=0,
         explain=(
-            "Python works out each sum and prints the answer, not the sum.\n"
-            "Why `24.0`? Dividing with `/` always gives a [[decimal]], a number with a point. "
-            "`24.0` is the same amount as 24."
+            "Python works out each sum and prints the answer, not the sum. Now add `print(48 / 2)` and run. "
+            "Surprised? Dividing with `/` always gives a [[decimal]]: `24.0` is the same amount as 24."
         ),
     ),
     pair_talk=(
-        "Pair talk: each of you guesses the four answers first. Compare guesses, then each of you runs your own "
-        "code. Who called the `24.0`?"
+        "Pair talk: each of you guesses the three answers first. Compare, then each of you runs your own code. "
+        "Then both add `print(48 / 2)`: who expected the `.0`?"
     ),
     starter=(
         "first_gap = 48\n"
@@ -546,32 +580,41 @@ CHALK_MATH = dict(
                 "No quotes around it, so Python does the math.",
             ],
             checks=[
+                # Labelled output counts (A-06): a line holding 11 as a whole number, like `The gap shrank by 11`.
                 (
                     "no quotes around the math",
-                    "assert not any('first_gap' in _l or 'last_gap' in _l for _l in _lines()), "
+                    "import re as _re\n"
+                    r"_eleven = any(_re.search(r'(?<![\w.-])11(?![\w.])', _l) for _l in _lines())" "\n"
+                    "assert _eleven or not any('first_gap' in _l or 'last_gap' in _l for _l in _lines()), "
                     "'That printed the letters, because of the quotes. Take the quotes off so Python does the math. "
                     + QUOTES_RULE + "'",
                 ),
                 (
                     "bigger gap first",
-                    "assert '-11' not in _lines(), 'Your line printed -11. Put the bigger gap first: `first_gap - last_gap`.'",
+                    "import re as _re\n"
+                    r"assert not any(_re.search(r'(?<![\w.])-11(?![\w.])', _l) for _l in _lines()), "
+                    "'Your line printed -11. Put the bigger gap first: `first_gap - last_gap`.'",
                 ),
                 (
                     "prints 11",
-                    "assert '11' in _lines(), 'The gap shrank by 11, and your program does not print 11 yet. "
+                    "import re as _re\n"
+                    r"assert any(_re.search(r'(?<![\w.-])11(?![\w.])', _l) for _l in _lines()), "
+                    "'The gap shrank by 11, and your program does not print 11 yet. "
                     "Replace the 0 with the two boxes and a minus sign.'",
                 ),
                 rerun_line(
                     "the shrink is built from the boxes",
                     {"last_gap": 41},
                     "str(_R('first_gap') - _R('last_gap'))",
-                    "Use the two boxes, so Python does the math every time.",
+                    "Your 11 is right for 48 and 37. Use the two boxes, so Python does the math for any numbers.",
+                    word=True,
                 ),
                 rerun_line(
                     "the shrink uses first_gap too",
                     {"first_gap": 52},
                     "str(_R('first_gap') - _R('last_gap'))",
                     "Use the box `first_gap` too, not the number 48.",
+                    word=True,
                 ),
             ],
             pass_line="Gearshift: Math checks out.",
@@ -629,13 +672,16 @@ CHALK_MATH = dict(
         checks=[
             (
                 "prints the average",
-                "assert '42.5' in _lines(), 'Print the average: `(first_gap + last_gap) / 2` gives 42.5.'",
+                "import re as _re\n"
+                r"assert any(_re.search(r'(?<![\w.-])42\.5(?![\w.])', _l) for _l in _lines()), "
+                "'Print the average: `(first_gap + last_gap) / 2` gives 42.5.'",
             ),
             rerun_line(
                 "the average is built from the boxes",
                 {"last_gap": 41},
                 "str((_R('first_gap') + _R('last_gap')) / 2)",
                 "Use the two boxes in brackets, then `/ 2`.",
+                word=True,
             ),
         ],
         solution=(
@@ -668,12 +714,29 @@ CHALK_MATH = dict(
              code="first_gap = 48\nlast_gap = 37\nprint(11)\nprint(7)\n", fails_at=1, message_contains="typed in"),
         dict(why="the example's names copied (A-05/A-07/A-08 player_name)",
              code="first_gap = 48\nlast_gap = 37\nprint(owl_hoots - wolf_howls)\n", fails_at=0, message_contains="not defined"),
+        dict(why="labelled answer typed in whole (A-06 style, but no boxes)",
+             code='first_gap = 48\nlast_gap = 37\nprint("The gap shrank by 11")\n', fails_at=1,
+             message_contains="Your 11 is right for 48 and 37"),
+        dict(why="labelled output with the boxes the wrong way round",
+             code='first_gap = 48\nlast_gap = 37\nprint("The gap shrank by", last_gap - first_gap)\n', fails_at=1,
+             message_contains="bigger gap first"),
+        dict(why="labelled output typed in, then the 7 the message showed added (gaming, word match)",
+             code='first_gap = 48\nlast_gap = 37\nprint("The gap shrank by 11")\nprint("or by 7")\n', fails_at=1,
+             message_contains="typed in"),
+        dict(why="the math in quotes next to a typed label",
+             code='first_gap = 48\nlast_gap = 37\nprint("The gap shrank by", "first_gap - last_gap")\n', fails_at=1,
+             message_contains="exact letters"),
     ],
     notes=(
         meta(starter_level="S4", path="CC", skills="combine-values", solo="false", dictates="1",
              foreign_names="owl_hoots,wolf_howls,a,b") + "\n"
-        "Predict = the four sums from the spec; Investigate (why 24.0) is the predict explanation. "
+        "Predict = three of the spec's sums (90, 11, 18); Investigate (why 24.0) is the predict explanation, which "
+        "asks the student to add `print(48 / 2)` and run, so the `.0` is a discovery, not a trap. Mar'tu's Learn "
+        "text says once that the checks swap in other numbers (inside the check only), so the reruns read as fair. "
         "Try other numbers: the CMB rerun (last_gap 41 -> 7) is the mechanism; its message names the changed line. "
+        "Labelled output counts (A-06): every check matches 11 / the rerun's number as a whole number in any printed "
+        "line (`The gap shrank by 11` and `first_gap - last_gap = 11` pass; a typed `The gap shrank by 11` still "
+        "fails the reruns). "
         "WA evidence: everyone's hard-coded 68 (A-05, A-07, A-08, B-01, B-02, B-03, A-01, A-06)."
     ),
 )
@@ -894,8 +957,8 @@ LET_THE_CODE_COMBINE = dict(
     example_output="12",
     names=["lantern_cost", "rope_cost", "total_cost", "lantern_count", "lantern_price", "rope_count", "rope_price"],
     pair_talk=(
-        "Pair talk: one of you explains to the other why typing 22 is a trap. Hint: what happens when Lucky "
-        "changes `rope_count`? Then each of you finishes on your own screen."
+        "Pair talk: each of you gives one reason why typing 22 is a trap. Hint: what happens when Lucky changes "
+        "`rope_count`? Then each of you finishes on your own screen."
     ),
     starter=(
         COST_BOXES +
@@ -920,9 +983,16 @@ LET_THE_CODE_COMBINE = dict(
                 slot(
                     "lantern_cost multiplies the lantern boxes", "lantern_cost", "lantern_count * lantern_price",
                     known=COST_KNOWN, foreign=COST_FOREIGN,
-                    rules=[("_have == lantern_count + lantern_price",
-                            "That adds the two boxes. A cost is how many times the price of one: use `*`.")],
-                    default="Replace the 0 so Python multiplies the two lantern boxes.",
+                    rules=[
+                        ("_have == lantern_count + lantern_price",
+                         "That adds the two boxes. A cost is how many times the price of one: use `*`."),
+                        # LINE-TOTAL: `lantern_count * 12` multiplies by the line total again.
+                        ("_have in (lantern_count * lantern_count * lantern_price, "
+                         "lantern_price * lantern_count * lantern_price)",
+                         "12 is already the cost of all 3 lanterns, so multiplying by it again gives too much. "
+                         "Multiply how many by the price of one: `lantern_count * lantern_price`."),
+                    ],
+                    default="Make `lantern_cost` from the two lantern boxes: how many `*` the price of one.",
                 ),
                 rerun_box(
                     "lantern_cost follows its boxes", {"lantern_count": 7, "lantern_price": 5}, "lantern_cost",
@@ -945,8 +1015,14 @@ LET_THE_CODE_COMBINE = dict(
                 slot(
                     "rope_cost multiplies the rope boxes", "rope_cost", "rope_count * rope_price",
                     known=COST_KNOWN, foreign=COST_FOREIGN,
-                    rules=[("_have == rope_count + rope_price",
-                            "That adds the two boxes. A cost is how many times the price of one: use `*`.")],
+                    rules=[
+                        ("_have == rope_count + rope_price",
+                         "That adds the two boxes. A cost is how many times the price of one: use `*`."),
+                        # LINE-TOTAL: `rope_count * 10` multiplies by the line total again.
+                        ("_have in (rope_count * rope_count * rope_price, rope_price * rope_count * rope_price)",
+                         "10 is already the cost of all 5 coils, so multiplying by it again gives too much. "
+                         "Multiply how many by the price of one: `rope_count * rope_price`."),
+                    ],
                     default="Make `rope_cost` from the two rope boxes, the same way as `lantern_cost`.",
                 ),
                 rerun_box(
@@ -1164,6 +1240,13 @@ LET_THE_CODE_COMBINE = dict(
              code=COST_BOXES + "lantern_cost = lantern_count * lantern_price\nrope_cost = rope_count + rope_price\n"
              "total_cost = 0\nprint(total_cost)\n",
              fails_at=2, message_contains="use `*`"),
+        dict(why="LINE-TOTAL: the lantern count times the line total 12",
+             code=COST_BOXES + "lantern_cost = lantern_count * 12\nrope_cost = 0\ntotal_cost = 0\nprint(total_cost)\n",
+             fails_at=1, message_contains="already the cost"),
+        dict(why="LINE-TOTAL: the rope count times the line total 10",
+             code=COST_BOXES + "lantern_cost = lantern_count * lantern_price\nrope_cost = rope_count * 10\n"
+             "total_cost = 0\nprint(total_cost)\n",
+             fails_at=2, message_contains="already the cost"),
         dict(why="CP4 done as a new line at the bottom (side-work habit): the total never sees 1000",
              code=COST_BOXES + "lantern_cost = lantern_count * lantern_price\nrope_cost = rope_count * rope_price\n"
              "total_cost = lantern_cost + rope_cost\nprint(total_cost)\nrope_count = 1000\n",
@@ -1178,8 +1261,9 @@ LET_THE_CODE_COMBINE = dict(
         "against the student's own boxes, so they stay green at 1000. CMB uses two reruns on CP3 (lantern_count 7 -> "
         "38; lantern_price 5, rope_count 6, rope_price 3 -> 33): every input changes in some rerun, so a total with "
         "any one number typed in fails. set_once: `rope_count = 1000` added at the bottom (instead of changing line 3) "
-        "gets a top-down message, not a confusing slot message. PR (Seat B explains why typing 22 is a trap) is "
-        "the pair_talk prompt. Point-at-it: 'Which part of your line is the price of one?' after CP1 (site feature)."
+        "gets a top-down message, not a confusing slot message. LINE-TOTAL (`lantern_count * 12`, `rope_count * 10`) "
+        "gets its own message instead of the placeholder default. PR (each partner gives one reason why typing 22 is "
+        "a trap) is the pair_talk prompt. Point-at-it: 'Which part of your line is the price of one?' after CP1 (site feature)."
     ),
 )
 
@@ -1211,8 +1295,8 @@ SPEND_MANA = dict(
         ),
     ),
     pair_talk=(
-        "Pair talk: each of you picks an answer without showing. Reveal together. Then the one who was surprised "
-        "reads line 4 out loud, saying \"gets\" for `=`."
+        "Pair talk: each of you picks an answer without showing. Reveal together. Then both of you read line 4 "
+        "out loud, saying \"gets\" for `=`."
     ),
     starter=SPEND_STARTER,
     checkpoints=[
@@ -1257,7 +1341,10 @@ SPEND_MANA = dict(
                     "' times. Give the third cast its own line, `mana = mana - spell_cost`, so the box keeps the answer.'",
                 ),
             ],
-            pass_line="Mar'tu: 26, 23, 20, 17. The box keeps only the newest value, yes?",
+            pass_line=(
+                "Mar'tu: 26, 23, 20, 17. The box keeps only the newest value, yes? Halfway through tonight's math. "
+                "A good place to rest if you need one: your work is saved."
+            ),
         ),
     ],
     solution=SPEND_SOLUTION,

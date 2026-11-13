@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import type { AnotherWay, Checkpoint, GlossaryEntry } from "../../lib/course/schema";
-import { angleLabel, helpOfferLine, type HelpOffer, type HelpState, type Preset, type Rung } from "./exercise-logic";
+import { angleLabel, helpOfferLine, type HelpOffer, type HelpState, type Rung } from "./exercise-logic";
 import { Prose } from "./Prose";
 import { ReadAloud } from "./ReadAloud";
 
@@ -32,7 +32,6 @@ export function HelpStack({
   compareOpen,
   showUnlocked,
   runNumber,
-  preset = "more",
   crashed = false,
   crashLine = null,
   startInCode = () => false,
@@ -53,8 +52,6 @@ export function HelpStack({
   showUnlocked: boolean;
   /** Bumps on every Run (clears the "read that one first" note). */
   runNumber: number;
-  /** "Keep it short" trims the stack (the rest goes under More options). */
-  preset?: Preset;
   /** The last run crashed, at this line of the student's code (null when Python did not name one). */
   crashed?: boolean;
   crashLine?: number | null;

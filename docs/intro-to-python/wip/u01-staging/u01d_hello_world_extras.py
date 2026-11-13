@@ -190,18 +190,20 @@ _CMB_HEAD = r'''
     _what = _parts[0] if len(_parts) == 1 else ', '.join(_parts[:-1]) + ' and ' + _parts[-1]
     _ns, _out, _err, _miss = _rerun(_vals)
     assert not _miss, 'Keep the line that sets `' + _miss[0] + '`. Mar\'tu\'s check changes that line to try other ' + _kind + ', so keep it as `name = value`.'
-    assert not _err, 'Mar\'tu tried other ' + _kind + ' (' + _what + ') and your program stopped: ' + _err
+    assert not _err, 'Mar\'tu\'s check tried your code with ' + _what + ' (only inside the check) and it stopped: ' + _err
 '''
 
-# CMB message shape shared with u01c: "Mar'tu tried other numbers: with `a = 7`, `total` stayed 22, but it should be 38."
+# CMB message lead shared with u01c's rerun(): "Mar'tu's check tried your code with `a = 7` (only inside the check:
+# leave your own numbers as they are). This time, `total` stayed 22, but it should be 38." It says "values" instead
+# of "numbers" when the check also swaps in text (C3's hero name Tester).
 _CMB_VALUE = "for _vals, _want in __CASES__:" + _CMB_HEAD + r'''    _got = _ns.get('__TARGET__')
     _was = globals().get('__TARGET__')
-    assert _got == _want, 'Mar\'tu tried other ' + _kind + ': with ' + _what + ', `__TARGET__` ' + ('stayed ' if _got == _was else 'became ') + _show(_got) + ', but it should be ' + _show(_want) + '. ' + __TAIL__
+    assert _got == _want, 'Mar\'tu\'s check tried your code with ' + _what + ' (only inside the check: leave your own ' + _kind + ' as they are). This time, `__TARGET__` ' + ('stayed ' if _got == _was else 'became ') + _show(_got) + ', but it should be ' + _show(_want) + '. ' + __TAIL__
 '''
 
 _CMB_LINE = "for _vals, _want in __CASES__:" + _CMB_HEAD + r'''    _rows = [_l.strip() for _l in _out.splitlines() if _l.strip()]
     _said = ('it printed `' + _rows[-1] + '`') if _rows else 'it printed nothing'
-    assert _want in _rows, 'Mar\'tu tried other ' + _kind + ': with ' + _what + ', your program should print `' + _want + '`, but ' + _said + '. ' + __TAIL__
+    assert _want in _rows, 'Mar\'tu\'s check tried your code with ' + _what + ' (only inside the check: leave your own ' + _kind + ' as they are). This time, your program should print `' + _want + '`, but ' + _said + '. ' + __TAIL__
 '''
 
 
@@ -416,7 +418,7 @@ REPAINT_CHECK = (
     "ink holds a new mark",
     _NEAR_TEMPLATE.replace("__NAME__", "ink").replace("the task needs", "the sign uses")
     + "\nassert type(ink).__name__ == 'str' and ink.strip(), 'Keep `ink` as a mark in quotes, like `\"▓\"`.'\n"
-    "assert ink != '█', 'Change `ink` to another mark, like `\"▓\"` or `\"#\"`. Then run, and watch every letter follow.'\n"
+    "assert ink != '█', 'Change `ink` to another mark, like `\"#\"` or `\"@\"`. Then run, and watch every letter follow.'\n"
     + _INK_ROWS
     + "_now = _captured_stdout.split('\\n')\n"
     "_stale = [_i for _i in _ink_rows if _i < len(_now) and ink not in _now[_i]]\n"
@@ -525,21 +527,24 @@ WARD_SIGN = dict(
         ),
         dict(
             id="repaint",
-            text="Change `ink` to another mark, like `\"▓\"`. Run, and watch the whole sign repaint.",
+            text="Change `ink` to another mark, like `\"#\"` or `\"@\"`, or press Mar'tu's pick. Run, and watch the whole sign repaint.",
             dictated=True,
             hints=[
                 "Line 2 starts `ink = `. Change only what is inside the quotes.",
                 "Look at line 2: `ink = \"█\"`. That one box paints every letter.",
                 "A box holds one value at a time. Put a new mark in it, and every line that uses it changes. "
                 "In the Example, `chalk = \"*\"` would repaint the whole L.",
-                "`ink = \"▓\"`",
+                "`ink = \"#\"`",
             ],
             checks=[REPAINT_CHECK],
             pass_line="Mar'tu: One change, whole sign. That is why we keep the ink in a box.",
         ),
         dict(
             id="triple-letter",
-            text="Under `# D`, draw one more letter with triple quotes `\"\"\"`, five rows tall. Any letter you like.",
+            text=(
+                "Under `# D`, draw one more letter with triple quotes `\"\"\"`, five rows tall: your hero's first "
+                "letter, maybe. Draw it with any key: `#`, `@`, `X`."
+            ),
             dictated=False,
             hints=[
                 "Under `# D`, start with `print(\"\"\"` and press Enter.",
@@ -721,7 +726,10 @@ WARD_SIGN = dict(
         "marks, so a copied T, a column of marks or a filled block fails while any real O or R design passes; CP3 the border is the first "
         "line, not an ink row, stamped (a 1-3 character unit repeated), not typed as one literal, and repeated after "
         "the last ink row (a later side-quest line under the sign keeps it green); CP4 ink changed (near-miss name "
-        "caught first) AND the printed letters use the new mark (ink changed after the letters fails); CP5 one print with a triple-quoted string of 5+ non-blank rows. The triple-quoted letter does "
+        "caught first) AND the printed letters use the new mark (ink changed after the letters fails). CP4 suggests "
+        "`#` or `@` (or Mar'tu's pick ▓); any mark passes all five steps, `#`, `@`, `X`, `*` and even `=` (the "
+        "reruns use their own marks, so the `=` border is never an ink row). CP5 one print with a triple-quoted "
+        "string of 5+ non-blank rows, drawn with any key. The triple-quoted letter does "
         "not follow ink on purpose: CP5's pass line asks the student to notice that (the quotes rule again). "
         "Side quest (spec): sign the post in your hero's spell color, checked with a rerun (spell_color 'moth-grey'). "
         "Trial mode after a QC1 pass: premise + required output + the check table, from blank (site work)."
@@ -1198,7 +1206,8 @@ ASKING_THE_TRAVELER = dict(
 # Quick Check 1 (test-out). Form A and form B: five code tasks each, plus three questions each.
 # =============================================================================================
 
-_QC_MARTU = "No hints here. Show me what you already know, yes? "
+# The site's Quick Check intro already says "No hints in a Quick Check" once, so each task opens with its own lead.
+_QC_MARTU = ""
 
 
 def _qc_meta(skills, dictates, foreign="", form="A"):
@@ -1212,7 +1221,10 @@ def _c1(form, name, what, foreign, ex_code, ex_out, pick, wrong_value="Zelda", o
     return dict(
         id="make-a-box",
         title="A box with the right name",
-        martu=_QC_MARTU + f"Make a box with the exact name the task asks for. Any {what} works.",
+        martu=_QC_MARTU + (
+            f"Make a box with the exact name the task asks for. Any {what} works.\n"
+            "Stuck on one? Skip it, or go to Lesson 1A. Tasks you pass here stay ticked."
+        ),
         example=ex_code,
         example_output=ex_out,
         names=[name],
@@ -1237,7 +1249,7 @@ def _c1(form, name, what, foreign, ex_code, ex_out, pick, wrong_value="Zelda", o
                 dictated=True,
                 hints=[
                     "Start the line with `print(`.",
-                    "Look at the Example's second line.",
+                    f"The Example prints its box by name, with no quotes. Do the same with `{name}`.",
                     QUOTES_RULE,
                 ],
                 checks=[print_check(name)],
@@ -1308,7 +1320,7 @@ def _c2(form, story, a, b, total_name, a_vals, b_vals, cases, total):
     return dict(
         id="total-cost",
         title="Let the code combine it",
-        martu=_QC_MARTU + "Put each number from the story in its box. Then let the code work out the total.",
+        martu=_QC_MARTU + "Let the code combine it. First, put each number from the story in its own box.",
         names=[ac, ap, bc, bp, total_name],
         support="none",
         starter=starter,
@@ -1517,7 +1529,7 @@ def _c4(form, full, count_name, max_name, bar_name, count, maximum, label, cases
     return dict(
         id="mana-bar",
         title="A bar for any number",
-        martu=_QC_MARTU + "Full blocks for what is left, empty blocks for what is used. It must work for any numbers.",
+        martu=_QC_MARTU + "It must work for any numbers. Full blocks for what is left, empty blocks for what is used.",
         names=[bar_name],
         support="none",
         starter=starter,
@@ -1595,7 +1607,7 @@ def _c5(form, words, box, start, take, name_bad, name_good, value):
     return dict(
         id="mend-three",
         title="Mend three slips",
-        martu=_QC_MARTU + "Three lines, three slips you have seen before. Read the last line of Python's message first.",
+        martu=_QC_MARTU + "Three slips you have seen before, on three lines. Read the last line of Python's message first.",
         names=[box, name_good],
         support="none",
         starter=starter,
@@ -1655,6 +1667,11 @@ def _c5(form, words, box, start, take, name_bad, name_good, value):
                     ("the box is printed", f"assert {name_good} == {value} and {str(value)!r} in _lines(), "
                      f"'`{name_good}` should hold {value}, and line 5 should print it.'"),
                 ],
+                pass_line=(
+                    "Mar'tu: Mended. Since you skipped ahead, my notes: the gaps between bursts shrink, 48 hours, "
+                    "then 37. Bomb Shell thinks thirty-two, maybe less. My ledger is built from boxes, so one change "
+                    "fixes every line. The Night Watch Ledger is open whenever you like."
+                ),
             ),
         ],
         solution=fixed,
@@ -1691,7 +1708,9 @@ def _c5(form, words, box, start, take, name_bad, name_good, value):
         "QC1 C5 (G4 R1 #6). Every slip crashes until it is mended, so no partials: a program with any slip left "
         "fails every checkpoint with the explainer, which is the read-the-traceback skill being tested. CP2 accepts "
         "`-=` and reruns with a bigger start (a subtraction that does not start from the box stays put); CP3 also "
-        "fails a leftover wrong-case box and a typed number in the print.",
+        "fails a leftover wrong-case box and a typed number in the print. CP3's pass line carries the story for "
+        "students who test out and skip 1P1: the bursts' gaps shrink (48 h, 37 h), Bomb Shell thinks 32, and the "
+        "Night Watch Ledger is open.",
     )
 
 
@@ -1701,29 +1720,35 @@ QC1_A = dict(
     title="Quick Check 1 · Form A",
     optional=True,
     minutes=10,
-    summary="Five short tasks, no hints. Pass them all, plus the questions, to test out of Unit 1.",
+    summary=(
+        "Five short tasks, no hints. Pass all five to test out of Unit 1. "
+        "Stuck on one? The lessons teach all of it, and tasks you pass here stay ticked."
+    ),
     exercises=[
-        _c1("A", "character", "hero", ["companion"], 'companion = "Gearshift"\nprint(companion)\n', "Gearshift",
-            "Captain Glug"),
+        _c1("A", "party_leader", "hero", ["guide"], 'guide = "Gearshift"\nprint(guide)\n', "Gearshift", "Captain Glug"),
         _c2(
             "A",
-            "# Rope costs 2 coins a coil, and Mar'tu needs 5 coils.\n# Lanterns: Mar'tu needs 3, at 4 coins each.\n",
-            ("rope_count", "rope_price", "coils"),
-            ("lantern_count", "lantern_price", "lanterns"),
+            "# Bandages cost 2 coins each, and Oogrish needs 7.\n# Torches: Oogrish needs 3, at 5 coins each.\n",
+            ("bandage_count", "bandage_price", "bandages"),
+            ("torch_count", "torch_price", "torches"),
             "total_cost",
-            (5, 2),
-            (3, 4),
-            [({"lantern_count": 7}, 38), ({"rope_price": 3}, 27), ({"rope_count": 1, "lantern_price": 6}, 20)],
-            22,
+            (7, 2),
+            (3, 5),
+            [({"torch_count": 8}, 54), ({"bandage_price": 3}, 36), ({"bandage_count": 1, "torch_price": 6}, 20)],
+            29,
         ),
-        _c3("A", "hero_name", "Oogrish", 9, "spell_cost", 4, 13, 5, 13),
-        _c4("A", "█", "mana", "max_mana", "bar", 3, 5, "Mana",
-            [({"mana": 0}, "░░░░░"), ({"mana": 5}, "█████"), ({"mana": 2, "max_mana": 8}, "██░░░░░░")]),
-        _c5("A", "Shield up.", "mana", 20, 3, "Max_Mana", "max_mana", 18),
+        _c3("A", "scout_name", "Gearshift", 10, "spell_cost", 6, 13, 5, 13),
+        _c4("A", "█", "shield", "max_shield", "shield_bar", 4, 7, "Shield",
+            [({"shield": 0}, "░" * 7), ({"shield": 7}, "█" * 7), ({"shield": 2, "max_shield": 5}, "██░░░")]),
+        _c5("A", "The fire is low.", "stamina", 15, 4, "Max_Stamina", "max_stamina", 16),
     ],
     notes=(
-        "Quick Check 1, form A (code tasks). Questions live in qc1-a-questions. Pass = every code task plus 80% of "
-        "the questions; a retake draws form B. Coverage (lint d): make-variable, exact-names, quote-text -> C1 "
+        "Quick Check 1, form A (code tasks). Questions live in qc1-a-questions. Pass = every code task plus 2 of the "
+        "3 questions; a retake draws form B. The site currently gates on the code tasks only; question scoring joins "
+        "when QC scoring ships. Form A uses names and numbers no lesson uses, so it can't be passed from memory: "
+        "party_leader (example: guide), bandages 7 x 2 + torches 3 x 5 = 29 for Oogrish, scout Gearshift 10 -> "
+        "14/20 mana, the Shield bar 4 of 7, and 'The fire is low.' / stamina 15 - 4 / Max_Stamina. "
+        "Coverage (lint d): make-variable, exact-names, quote-text -> C1 "
         "(WA: example's name, lone value, unquoted text) and C5; combine-values -> C2, C3 (WA: typed totals); "
         "concat-str -> C3 (WA: typed line, str missing); reassign -> C3 (WA: mana typed, subtraction not put back) "
         "and Q2; repeat-string -> C4 (WA: no brackets, typed gap) and Q1; numbers-vs-text -> C2, C5; read-traceback "
@@ -1738,7 +1763,10 @@ QC1_B = dict(
     title="Quick Check 1 · Form B",
     optional=True,
     minutes=10,
-    summary="The same five skills with new names and numbers. Pass them all, plus the questions, to test out.",
+    summary=(
+        "Five short tasks, no hints. Pass all five to test out of Unit 1. "
+        "Stuck on one? The lessons teach all of it, and tasks you pass here stay ticked."
+    ),
     exercises=[
         _c1("B", "familiar", "creature", ["steed"], 'steed = "a brass jeep"\nprint(steed)\n', "a brass jeep",
             "a glowing newt", wrong_value="Kratos", other_name="pet"),
@@ -1761,7 +1789,9 @@ QC1_B = dict(
     notes=(
         "Quick Check 1, form B: every name and value changes (familiar, candles and oil, Bomb Shell's 12 -> 24, the "
         "▓ glug meter, Barrier's holding.). The stat names magical_affinity, max_mana and mana stay, because they "
-        "are the campaign's own names. Same coverage as form A."
+        "are the campaign's own names. Same coverage as form A. Questions live in qc1-b-questions. Pass = every code "
+        "task plus 2 of the 3 questions. The site currently gates on the code tasks only; question scoring joins "
+        "when QC scoring ships."
     ),
 )
 
@@ -1771,7 +1801,7 @@ QC1_A_QUESTIONS = dict(
     title="Quick Check 1 · Form A questions",
     optional=True,
     minutes=3,
-    summary="Three questions that go with Quick Check 1, form A.",
+    summary="Three questions that go with Quick Check 1. Two of three right is a pass.",
     questions=[
         dict(
             type="mc",
@@ -1812,7 +1842,11 @@ QC1_A_QUESTIONS = dict(
             notes="Skill exact-names. Evidence: A-06 `total pizzaparty`; A-02 `def (\"character\")` name-in-quotes.",
         ),
     ],
-    notes="Quick Check 1, form A questions (scored with qc1-a: 80% needed). No hints; read-aloud and glossary stay on.",
+    notes=(
+        "Quick Check 1, form A questions (scored with qc1-a: every code task plus 2 of the 3 questions). The site "
+        "currently gates on the code tasks only; question scoring joins when QC scoring ships. No hints; read-aloud "
+        "and glossary stay on."
+    ),
 )
 
 QC1_B_QUESTIONS = dict(
@@ -1821,7 +1855,7 @@ QC1_B_QUESTIONS = dict(
     title="Quick Check 1 · Form B questions",
     optional=True,
     minutes=3,
-    summary="Three questions that go with Quick Check 1, form B.",
+    summary="Three questions that go with Quick Check 1. Two of three right is a pass.",
     questions=[
         dict(
             type="mc",
@@ -1862,7 +1896,10 @@ QC1_B_QUESTIONS = dict(
             notes="Form B of which-name.",
         ),
     ],
-    notes="Quick Check 1, form B questions (scored with qc1-b: 80% needed).",
+    notes=(
+        "Quick Check 1, form B questions (scored with qc1-b: every code task plus 2 of the 3 questions). The site "
+        "currently gates on the code tasks only; question scoring joins when QC scoring ships."
+    ),
 )
 
 

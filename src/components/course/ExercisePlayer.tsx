@@ -1228,7 +1228,6 @@ export function ExercisePlayer({
               compareOpen={compare !== null}
               showUnlocked={showUnlocked}
               runNumber={runNumber}
-              preset={preset}
               crashed={crashed}
               crashLine={crashAt}
               startInCode={(start) => codeHasStart(code, start)}
