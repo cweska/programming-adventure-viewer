@@ -625,7 +625,8 @@
 }
 
 .unit-number {
-  color: var(--metal);
+  /* Lighter than --metal: 4.4:1 on the card was just under AA for text this small. */
+  color: #cfab70;
   font-size: 0.9rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -966,11 +967,26 @@
 }
 
 .quiz-dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 28px;
-  height: 8px;
+  height: 18px;
   border-radius: 999px;
   background: #3a3228;
   border: 1px solid var(--course-line);
+}
+
+.quiz-dot-mark {
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1;
+  color: #1a1612;
+}
+
+/* Missed questions are hollow as well as pink, so right and missed differ without colour. */
+.quiz-dot.is-wrong .quiz-dot-mark {
+  color: var(--course-wrong);
 }
 
 .quiz-dot.is-current {
@@ -984,8 +1000,8 @@
 }
 
 .quiz-dot.is-wrong {
-  background: var(--course-wrong);
-  border-color: var(--course-wrong);
+  background: transparent;
+  border: 2px dashed var(--course-wrong);
 }
 
 .quiz-card {

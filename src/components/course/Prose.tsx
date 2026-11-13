@@ -63,6 +63,14 @@ export function GlossaryTerm({ entry, children }: { entry: GlossaryEntry; childr
     const rect = box.getBoundingClientRect();
     const overflow = rect.right - (window.innerWidth - 12);
     setShift(overflow > 0 ? Math.max(0, Math.min(overflow, rect.left - 12)) : 0);
+    // A term near the bottom of a phone screen opens its box below the fold: scroll just enough to show it.
+    if (rect.bottom > window.innerHeight) {
+      try {
+        box.scrollIntoView({ block: "nearest" });
+      } catch {
+        // Old browsers: the box is still there, one scroll away.
+      }
+    }
   }, [open]);
 
   return (

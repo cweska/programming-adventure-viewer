@@ -206,6 +206,23 @@
   margin: 0;
 }
 
+.ex-task-line {
+  margin: 0;
+  padding: 8px 12px;
+  color: var(--parchment, #f3ead7);
+  background: var(--course-panel-raised, #2e2720);
+  border-left: 4px solid var(--course-violet, #b9a2ff);
+}
+
+.ex-task-label {
+  font-weight: 700;
+}
+
+.ex-same-error {
+  margin: 0 0 6px;
+  font-weight: 700;
+}
+
 .ex-section-title {
   margin: 0;
   font-family: var(--font-display), Palatino, serif;

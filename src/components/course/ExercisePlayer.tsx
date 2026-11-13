@@ -14,16 +14,18 @@ import type { StageEvent } from "../../lib/stage/bridge";
 import { PythonEditor } from "../PythonEditor";
 import {
   angleLabel,
+  answersFromBox,
   anotherWayOpen,
   applyRun,
   assembledCode,
   checkpointHeading,
+  countsAsAttempt,
   effectiveSupport,
   hintButtonLabel,
   hintsOpen,
   isBlankOrStarter,
+  isSolutionCode,
   nextFailStreak,
-  parseStdinBox,
   revealNextRung,
   rungsShown,
   runOutcome,
@@ -100,7 +102,18 @@ type RunView = {
   wasDone: boolean;
   /** Bumps every run so the live region re-announces the same words. */
   runNumber: number;
+  /** This crash is the same as the last run's (so the student can tell the run happened). */
+  sameError?: boolean;
+  /** This run passed with Mar'tu's answer, put in by "Show solution". */
+  revealPass?: boolean;
 };
+
+/** The student's line in a course traceback (the last `File "main.py", line N`). */
+function crashLine(traceback: string): number | null {
+  const frames = [...traceback.matchAll(/File "main\.py", line (\d+)/g)];
+  const last = frames.at(-1);
+  return last ? Number(last[1]) : null;
+}
 
 function bonusCheckpoint(bonus: Bonus): Checkpoint {
   return { id: BONUS_ID, text: bonus.text, hints: bonus.hints, checks: bonus.checks };
@@ -368,7 +381,10 @@ export function ExercisePlayer({
   const [saving, setSaving] = useState(true);
 
   const [python, setPython] = useState<PythonStatus>("loading");
+  /** Python has been ready once: from then on Run never gets `disabled` (that would drop keyboard focus). */
+  const [everReady, setEverReady] = useState(false);
   const [running, setRunning] = useState(false);
+  const lastRunSource = useRef<string | null>(null);
   const [view, setView] = useState<RunView | null>(null);
   const [justFinished, setJustFinished] = useState(false);
   const [missedThisVisit, setMissedThisVisit] = useState(false);
@@ -388,6 +404,8 @@ export function ExercisePlayer({
 
   const activeMs = useActiveTime(key);
   const runButton = useRef<HTMLButtonElement>(null);
+  const assembleHeading = useRef<HTMLHeadingElement>(null);
+  const nudgeThanks = useRef<HTMLButtonElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const confirmRef = useRef<HTMLDivElement>(null);
   const toolbarRef = useRef<HTMLDivElement>(null);
@@ -403,6 +421,10 @@ export function ExercisePlayer({
       alive = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (python === "ready") setEverReady(true);
+  }, [python]);
 
   useEffect(() => {
     const savedCode = getCourseProgress().exercises[key]?.code;
@@ -469,6 +491,11 @@ export function ExercisePlayer({
     if (confirm) confirmRef.current?.querySelector<HTMLButtonElement>(".reset-cancel")?.focus();
   }, [confirm]);
 
+  // "Assemble it" removes its own button: move the keyboard to the board instead of losing it.
+  useEffect(() => {
+    if (assembling) assembleHeading.current?.focus();
+  }, [assembling]);
+
   function changeCode(value: string) {
     codeRef.current = value;
     setCode(value);
@@ -485,10 +512,12 @@ export function ExercisePlayer({
 
   /* What is on screen. */
   const showInputBox = exercise.stdin !== undefined || usesInput(code);
-  const stdinAnswers = parseStdinBox(stdinText);
+  const stdinAnswers = answersFromBox(stdinText, exercise.stdin);
   const answersChanged = exercise.stdin !== undefined && !sameAnswers(stdinAnswers, exercise.stdin);
   const triedAndMissed = missedThisVisit || (saved?.failedRuns ?? 0) > 0 || passed.length > 0 || done;
   const hintsAreOpen = hintsOpen(support, triedAndMissed);
+  const firstOpen = exercise.checkpoints.findIndex((checkpoint) => !passed.includes(checkpoint.id));
+  const activeCheckpoint = firstOpen >= 0 ? exercise.checkpoints[firstOpen] : null;
   const canShowSolution =
     support !== "none" &&
     solutionUnlocked({
@@ -497,13 +526,16 @@ export function ExercisePlayer({
       failedRuns: saved?.failedRuns ?? 0,
       solutionAfterMinutes: settings.solutionAfterMinutes,
       solutionAfterFailedRuns: settings.solutionAfterFailedRuns,
+      hintsUsedUp:
+        activeCheckpoint !== null &&
+        activeCheckpoint.hints.length > 0 &&
+        rungsShown(saved?.hintsUsed, activeCheckpoint.id, activeCheckpoint.hints.length) >= activeCheckpoint.hints.length,
     });
   const canAssemble = Boolean(exercise.assemble) && support !== "none" && isBlankOrStarter(code, exercise.starter);
   const pieces = useMemo(
     () => (exercise.assemble ? seededShuffle([...exercise.assemble.lines, ...exercise.assemble.distractors], key) : []),
     [exercise.assemble, key],
   );
-  const firstOpen = exercise.checkpoints.findIndex((checkpoint) => !passed.includes(checkpoint.id));
 
   const stuckIndex = streak.checkpointId
     ? exercise.checkpoints.findIndex((checkpoint) => checkpoint.id === streak.checkpointId)
@@ -541,7 +573,8 @@ export function ExercisePlayer({
         setPython("ready");
       }
       const bonusCp = bonus ? bonusCheckpoint(bonus) : null;
-      const checks = [...flattenChecks(exercise.checkpoints), ...(bonusCp ? flattenChecks([bonusCp]) : [])];
+      const mainChecks = flattenChecks(exercise.checkpoints);
+      const checks = [...mainChecks, ...(bonusCp ? flattenChecks([bonusCp]) : [])];
       const answers = showInputBox ? stdinAnswers : (exercise.stdin ?? []);
       const result = await runCourse({
         code: source,
@@ -551,11 +584,18 @@ export function ExercisePlayer({
         engine: exercise.engine,
       });
       const grade = gradeCheckpoints(exercise.checkpoints, result, source);
-      const bonusGrade = bonusCp && !grade.crashed ? gradeCheckpoints([bonusCp], result, source) : null;
+      // The side quest's checks come after the main ones: grade them from their own slice, by position.
+      const bonusGrade =
+        bonusCp && !grade.crashed
+          ? gradeCheckpoints([bonusCp], { ...result, checks: (result.checks ?? []).slice(mainChecks.length) }, source)
+          : null;
       const savedBefore = getCourseProgress().exercises[key];
       const before = savedBefore?.passed ?? [];
       const wasDone = savedBefore?.done === true;
-      const outcome = runOutcome(grade, before);
+      const graded = runOutcome(grade, before);
+      // Only real tries count toward "Show solution": not the untouched starter, not the same code again.
+      const outcome = { ...graded, failed: graded.failed && countsAsAttempt(source, exercise.starter, lastRunSource.current) };
+      lastRunSource.current = source;
       updateExercise(key, (previous) => applyRun(previous, outcome, { code: source, bonusPassed: bonusGrade?.allPassed }));
 
       const stuckOn = stuckCheckpointId(exercise.checkpoints, grade, [...before, ...outcome.passedNow]);
@@ -569,15 +609,23 @@ export function ExercisePlayer({
       missAt.current = grade.allPassed ? null : Date.now();
       if (!grade.allPassed) setMissedThisVisit(true);
       const crashText = result.traceback || result.stderr || "";
+      const explanation = grade.crashed ? explainCourseError(crashText, source) : null;
+      const revealPass = grade.allPassed && savedBefore?.solutionShown === true && isSolutionCode(source, exercise.solution);
       setView((previous) => ({
         stdout: result.ok ? result.stdout + (result.stderr ?? "") : result.stdout,
         grade,
         bonus: bonusGrade,
-        explanation: grade.crashed ? explainCourseError(crashText, source) : null,
+        explanation,
         stage: result.stageEvents ?? [],
         allPassed: grade.allPassed,
         wasDone,
         runNumber: (previous?.runNumber ?? 0) + 1,
+        sameError:
+          explanation !== null &&
+          previous?.explanation != null &&
+          previous.explanation.raw === explanation.raw &&
+          previous.explanation.title === explanation.title,
+        revealPass,
       }));
       if (grade.allPassed) {
         setJustFinished(true);
@@ -660,6 +708,13 @@ export function ExercisePlayer({
     setAssembling(true);
   }
 
+  /** After a revealed answer passes: start again from the starter and write it yourself. */
+  function writeItMyself() {
+    doReset();
+    setJustFinished(false);
+    setView(null);
+  }
+
   function insertAssembled() {
     replaceCode(assembledCode(assembled));
     setAssembling(false);
@@ -730,6 +785,15 @@ export function ExercisePlayer({
               {exercise.title}
             </h2>
           ) : null}
+          {activeCheckpoint && !done ? (
+            // The task first, so a student who skims sees it before Mar'tu's words and the example.
+            <p className="ex-task-line" data-testid="task-line">
+              <span className="ex-task-label">
+                Your task ({noun.toLowerCase()} {firstOpen + 1} of {exercise.checkpoints.length}):
+              </span>{" "}
+              <Prose text={activeCheckpoint.text} glossary={glossary} inline />
+            </p>
+          ) : null}
           {light ? (
             <details className="ex-light-explain" data-testid="show-explanation">
               <summary>Show explanation</summary>
@@ -751,8 +815,12 @@ export function ExercisePlayer({
               type="button"
               className="ex-run"
               data-testid="run"
+              data-running={running ? "true" : "false"}
               onClick={() => void run()}
-              disabled={running || python === "loading"}
+              // Only before Python first loads is Run truly disabled. While it runs (or Python restarts
+              // after a timeout) it stays focusable, so the keyboard and screen readers keep their place.
+              disabled={!everReady && python === "loading"}
+              aria-disabled={running || python === "loading" ? true : undefined}
             >
               <span aria-hidden="true">▶</span> {runLabel}
             </button>
@@ -826,7 +894,9 @@ export function ExercisePlayer({
 
           {assembling && exercise.assemble ? (
             <section className="ex-assemble" data-testid="assemble-board" aria-label="Assemble it">
-              <h3 className="ex-section-title">Assemble it</h3>
+              <h3 className="ex-section-title" ref={assembleHeading} tabIndex={-1} data-testid="assemble-heading">
+                Assemble it
+              </h3>
               <p className="ex-muted">Build the program from pieces. Then press &ldquo;Put it in the editor&rdquo; and Run it.</p>
               <ParsonsBoard blocks={pieces} value={assembled} onChange={setAssembled} idPrefix="assemble" />
               <div className="ex-assemble-actions">
@@ -849,13 +919,22 @@ export function ExercisePlayer({
           ) : null}
 
           <div className="ex-editor" onKeyDownCapture={onEditorKeyDown}>
-            <PythonEditor code={code} onChange={changeCode} onBlur={() => saveCodeNow.current()} />
+            <PythonEditor
+              code={code}
+              onChange={changeCode}
+              onBlur={() => saveCodeNow.current()}
+              describedBy={`${inputId}-editor-keys`}
+              wrapLines
+            />
           </div>
           <p className="ex-editor-foot ex-muted">
             <span data-testid="autosave-status">
               {saving ? "Your code saves in this browser." : "This browser is not saving. Copy your code before you close the page."}
             </span>{" "}
             <span className="ex-shortcut">Tip: Ctrl+Enter runs your code.</span>
+            <span className="ex-editor-keys" id={`${inputId}-editor-keys`} data-testid="editor-keys">
+              In the editor, Tab adds spaces. To leave the editor, press Esc, then Tab.
+            </span>
           </p>
 
           {showInputBox ? (
@@ -895,7 +974,16 @@ export function ExercisePlayer({
                     Hint {nudgeHint.rung} of {stuck.hints.length} for {noun.toLowerCase()} {stuckIndex + 1}:
                   </p>
                   <Prose text={stuck.hints[nudgeHint.rung - 1]} glossary={glossary} />
-                  <button type="button" className="ex-quiet" data-testid="hint-nudge-no" onClick={() => setNudgeDismissed(true)}>
+                  <button
+                    type="button"
+                    className="ex-quiet"
+                    data-testid="hint-nudge-no"
+                    ref={nudgeThanks}
+                    onClick={() => {
+                      setNudgeDismissed(true);
+                      focusRun();
+                    }}
+                  >
                     Thanks
                   </button>
                 </>
@@ -910,11 +998,21 @@ export function ExercisePlayer({
                     onClick={() => {
                       revealHint(stuck.id, stuck.hints.length);
                       setNudgeHint({ checkpointId: stuck.id, rung: Math.min(stuck.hints.length, stuckShown + 1) });
+                      // This button is replaced by the hint: keep the keyboard in the nudge.
+                      window.setTimeout(() => nudgeThanks.current?.focus(), 0);
                     }}
                   >
                     Yes, show a hint
                   </button>
-                  <button type="button" className="ex-quiet" data-testid="hint-nudge-no" onClick={() => setNudgeDismissed(true)}>
+                  <button
+                    type="button"
+                    className="ex-quiet"
+                    data-testid="hint-nudge-no"
+                    onClick={() => {
+                      setNudgeDismissed(true);
+                      focusRun();
+                    }}
+                  >
                     No thanks
                   </button>
                 </>
@@ -923,12 +1021,23 @@ export function ExercisePlayer({
           ) : null}
 
           {done ? (
-            <div className={`ex-done${justFinished ? " is-fresh" : ""}`} data-testid="exercise-done">
+            <div className={`ex-done${justFinished ? " is-fresh" : ""}`} data-testid="exercise-done" data-reveal={view?.revealPass ? "true" : undefined}>
               <MarTu
-                text={justFinished ? "Good. Very good, yes?" : "You finished this one. Run it again any time, yes?"}
+                text={
+                  justFinished && view?.revealPass
+                    ? "That was my answer, so it works, yes? Now make it yours: press Write it myself and type it again without looking."
+                    : justFinished
+                      ? "Good. Very good, yes?"
+                      : "You finished this one. Run it again any time, yes?"
+                }
                 size="small"
                 testId="exercise-done-martu"
               >
+                {justFinished && view?.revealPass ? (
+                  <button type="button" className="ex-next" data-testid="write-it-myself" onClick={writeItMyself}>
+                    Write it myself
+                  </button>
+                ) : null}
                 {next ? (
                   next.href ? (
                     <Link className="course-button ex-next" href={next.href} data-testid="celebrate-next">
@@ -1009,7 +1118,13 @@ function ExerciseConsole({
           </p>
         ) : null}
         {view?.explanation ? (
-          <div className="explainer ex-explainer" data-testid="explainer">
+          <div className="explainer ex-explainer" data-testid="explainer" key={view.runNumber}>
+            {view.sameError ? (
+              <p className="ex-same-error" data-testid="same-error">
+                Same error as last time.{" "}
+                {crashLine(view.explanation.raw) ? `Look closely at line ${crashLine(view.explanation.raw)}.` : "Look closely at the line it names."}
+              </p>
+            ) : null}
             <p className="ex-explainer-title">{view.explanation.title}</p>
             <Prose text={view.explanation.hint} className="ex-explainer-hint" testId="explainer-hint" />
             {view.explanation.raw ? (

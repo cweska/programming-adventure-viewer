@@ -9,11 +9,19 @@ export function PythonEditor({
   code,
   onChange,
   onBlur,
+  describedBy,
+  wrapLines = false,
 }: {
   code: string;
   onChange: (value: string) => void;
   onBlur?: () => void;
+  /** id of visible text that explains the editor's keys (Tab indents; Esc, then Tab, moves on). */
+  describedBy?: string;
+  /** Wrap long lines instead of scrolling sideways (narrow phone screens). */
+  wrapLines?: boolean;
 }) {
+  const attributes: Record<string, string> = { "aria-label": "Python editor" };
+  if (describedBy) attributes["aria-describedby"] = describedBy;
   return (
     <div className="editor-shell" data-testid="editor">
       <CodeMirror
@@ -32,7 +40,8 @@ export function PythonEditor({
         extensions={[
           python(),
           pythonHighlighting,
-          EditorView.contentAttributes.of({ "aria-label": "Python editor" }),
+          EditorView.contentAttributes.of(attributes),
+          ...(wrapLines ? [EditorView.lineWrapping] : []),
           EditorView.domEventHandlers({
             blur: () => {
               onBlur?.();

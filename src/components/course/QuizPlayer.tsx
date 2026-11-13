@@ -429,7 +429,11 @@ function QuizRun({ unit, item, glossary, nextHref, settings }: ItemPageProps<Qui
         {questions.map((entry, at) => {
           const state = checked[entry.id] ? (checked[entry.id].correct ? "right" : "wrong") : at === index ? "current" : "todo";
           return (
-            <li key={entry.id} className={`quiz-dot is-${state}`}>
+            <li key={entry.id} className={`quiz-dot is-${state}`} data-state={state}>
+              {/* A mark as well as a colour, for students who can't tell green from pink. */}
+              <span className="quiz-dot-mark" aria-hidden="true">
+                {state === "right" ? "✓" : state === "wrong" ? "✗" : state === "current" ? "•" : ""}
+              </span>
               <span className="sr-only">
                 Question {at + 1}: {state === "right" ? "right" : state === "wrong" ? "missed" : state === "current" ? "now" : "not done"}
               </span>

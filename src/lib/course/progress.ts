@@ -285,19 +285,62 @@ export function createProgressStore(
   let saveWorks = true;
   let timer: ReturnType<typeof setTimeout> | null = null;
   let dirty = false;
+  /** This tab's updates since its last write. Replayed on top of another tab's save, so neither is lost. */
+  let pending: ProgressUpdate[] = [];
+  /** The stored text this tab last read or wrote (anything else there came from another tab). */
+  let synced: string | null = null;
   const listeners = new Set<() => void>();
+
+  /** The stored text, or undefined when it cannot be read. */
+  function readText(): string | null | undefined {
+    if (!storage) return undefined;
+    try {
+      return storage.getItem(PROGRESS_KEY);
+    } catch {
+      return undefined;
+    }
+  }
 
   function ensure(): CourseProgress {
     if (current === null) {
       storage = getStorage();
       saveWorks = storage !== null;
-      current = loadProgress(storage);
+      const text = readText();
+      current = parseProgress(text ?? null);
+      synced = text ?? null;
     }
     return current;
   }
 
   function emit() {
     for (const listener of [...listeners]) listener();
+  }
+
+  /**
+   * If another tab saved since this tab last synced, rebuild this tab's progress as that save plus this
+   * tab's unsaved updates (in order). Returns true when the progress changed.
+   */
+  function rebase(): boolean {
+    const text = readText();
+    if (text === undefined || text === null || text === synced) return false;
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      return false; // never build on a broken save; this tab's copy is written over it
+    }
+    if (!isRecord(parsed) || parsed.version !== 1) return false;
+    let merged = normalizeProgress(parsed);
+    for (const fn of pending) {
+      try {
+        merged = fn(merged);
+      } catch (error) {
+        console.error("Could not replay a course progress update.", error);
+      }
+    }
+    current = merged;
+    synced = text;
+    return true;
   }
 
   function flush() {
@@ -307,7 +350,21 @@ export function createProgressStore(
     }
     if (!dirty || current === null) return;
     dirty = false;
-    saveWorks = saveProgress(storage, current);
+    const changed = rebase();
+    pending = [];
+    if (storage) {
+      try {
+        const text = JSON.stringify(current);
+        storage.setItem(PROGRESS_KEY, text);
+        synced = text;
+        saveWorks = true;
+      } catch {
+        saveWorks = false;
+      }
+    } else {
+      saveWorks = false;
+    }
+    if (changed) emit();
   }
 
   function schedule() {
@@ -333,13 +390,16 @@ export function createProgressStore(
       }
       if (next === before) return before;
       current = next;
+      pending.push(fn);
       schedule();
       emit();
       return next;
     },
     replace(progress) {
       ensure();
-      current = normalizeProgress(progress);
+      const replacement = normalizeProgress(progress);
+      current = replacement;
+      pending = [() => replacement];
       schedule();
       emit();
     },
@@ -355,9 +415,16 @@ export function createProgressStore(
       return saveWorks;
     },
     reload() {
-      if (dirty) return; // our own unsaved change wins; it is written next
-      const fresh = loadProgress(storage ?? getStorage());
-      current = fresh;
+      ensure();
+      if (dirty) {
+        // Keep this tab's unsaved changes, on top of what the other tab saved; they are written next.
+        if (rebase()) emit();
+        return;
+      }
+      const text = readText();
+      if (text === undefined || text === synced) return;
+      current = parseProgress(text);
+      synced = text;
       emit();
     },
   };

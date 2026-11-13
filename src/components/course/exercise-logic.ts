@@ -64,14 +64,36 @@ export type SolutionGate = {
   failedRuns: number;
   solutionAfterMinutes: number;
   solutionAfterFailedRuns: number;
+  /** The active checkpoint's hint ladder is used up (architecture.md: a third way to unlock). */
+  hintsUsedUp?: boolean;
 };
 
-/** "Show solution" appears after N minutes of active time OR N failed runs (full and light support only). */
+/**
+ * "Show solution" appears after N minutes of active time, OR N failed runs, OR once the active step's hints
+ * are all open (full and light support only). Only real attempts count as failed runs: see
+ * countsAsAttempt().
+ */
 export function solutionUnlocked(gate: SolutionGate): boolean {
   if (gate.support === "none") return false;
   const minutes = Math.max(0, gate.solutionAfterMinutes);
   const runs = Math.max(0, gate.solutionAfterFailedRuns);
-  return gate.activeMs >= minutes * 60_000 || gate.failedRuns >= runs;
+  return gate.activeMs >= minutes * 60_000 || gate.failedRuns >= runs || gate.hintsUsedUp === true;
+}
+
+/**
+ * Whether a missed run counts toward "Show solution": only when the student wrote something (not blank,
+ * not the untouched starter) and changed it since their last run. Pressing Run four times on the starter
+ * is not four tries.
+ */
+export function countsAsAttempt(source: string, starter: string, lastRunSource: string | null): boolean {
+  if (isBlankOrStarter(source, starter)) return false;
+  return lastRunSource === null || normalize(source) !== normalize(lastRunSource);
+}
+
+/** The code is Mar'tu's answer as it was put in the editor (maybe with spacing changes). */
+export function isSolutionCode(code: string, solution: string): boolean {
+  const squash = (text: string) => meaningfulLines(text).map((line) => line.trim()).join("\n");
+  return squash(code) === squash(solution);
 }
 
 /* ------------------------------------------------------------------------------------------------ */
@@ -252,6 +274,15 @@ export function parseStdinBox(text: string): string[] {
 
 export function stdinBoxText(answers: readonly string[] | undefined): string {
   return (answers ?? []).join("\n");
+}
+
+/**
+ * The answers a run gets. While the box still shows Mar'tu's answers it sends them exactly, so an empty
+ * last answer ("Press Enter to open the door") is not lost to parseStdinBox's trimming.
+ */
+export function answersFromBox(text: string, scripted: readonly string[] | undefined): string[] {
+  if (scripted && text === stdinBoxText(scripted)) return [...scripted];
+  return parseStdinBox(text);
 }
 
 /* ------------------------------------------------------------------------------------------------ */
