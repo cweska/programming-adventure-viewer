@@ -47,6 +47,44 @@ describe("explainCourseError: the class's real slips", () => {
     expect(mismatch.hint).toContain(`like "Barrier's holding."`);
   });
 
+  it("explains Unit 1's name slips: a space or a dash in a name", () => {
+    const space = explainRun("Max_Mana = 18\nmagical affinity = 9\nprint(magical_affinity)\n");
+    expect(space.kind).toBe("space-in-name");
+    expect(space.hint).toBe(
+      "A name can't have spaces on line 2. Python reads magical and affinity as separate names. Join the words with _ instead: magical_affinity = 9",
+    );
+    const dash = explainRun("magical-affinity = 9\n");
+    expect(dash.kind).toBe("dash-in-name");
+    expect(dash.hint).toContain("Python reads - as minus. Join the words with _ instead: magical_affinity = 9");
+    // Other slips keep their own advice.
+    expect(explainRun("mana = 5\nif mana = 5:\n    print(mana)\n").kind).toBe("compare-with-double-equals");
+    expect(explainRun('def companion = "Gearshift"\n').kind).toBe("def-for-variable");
+  });
+
+  it("explains Unit 1's math slips: brackets for the gap, and a number in quotes", () => {
+    const bar = explainRun('full = "█"\nempty = "░"\nmana = 3\nmax_mana = 5\nbar = full * mana + empty * max_mana - mana\n');
+    expect(bar.kind).toBe("bar-needs-brackets");
+    expect(bar.hint).toContain("Put brackets around the subtraction so it happens first: bar = full * mana + empty * (max_mana - mana)");
+    expect(explainRun('mana = 3\nprint("░" * 5 - mana)\n').hint).toContain('print("░" * (5 - mana))');
+    expect(explainRun('mana = 3\nprint(5 - mana * "░")\n').hint).toContain('print((5 - mana) * "░")');
+    const quoted = explainRun('stamina = 15\nstamina = stamina - "4"\n');
+    expect(quoted.kind).toBe("number-in-quotes");
+    expect(quoted.hint).toBe('"4" on line 2 has quotes, so Python treats it as text, not a number. Numbers have no quotes: write 4.');
+    // Text that is really text still gets the general advice.
+    expect(explainRun('print("Mana" - 3)\n').kind).toBe("math-with-text");
+  });
+
+  it("explains two apostrophes typed for a double quote, and a ) typed inside the quotes", () => {
+    const twice = explainRun("print(''Shield up'')\n");
+    expect(twice.kind).toBe("two-single-quotes");
+    expect(twice.hint).toContain('Use one " at each end of the text: print("Shield up")');
+    const inside = explainRun('print("Shield up!)"\n');
+    expect(inside.kind).toBe("never-closed");
+    expect(inside.hint).toBe(
+      'The ) on line 1 is inside the quotes, so Python reads it as part of the text. Move it after the closing quote: print("Shield up!")',
+    );
+  });
+
   it("names the OPENING quote when only the closing one was typed", () => {
     const result = explainRun('print(Fireball")\n');
     expect(result.title).toBe("Missing quote");

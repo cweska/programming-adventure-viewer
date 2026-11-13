@@ -39,6 +39,8 @@ export type CourseErrorKind =
   | "name-goes-first"
   | "name-starts-with-number"
   | "number-stuck-to-name"
+  | "space-in-name"
+  | "dash-in-name"
   // names
   | "lone-name"
   | "example-name"
@@ -54,6 +56,7 @@ export type CourseErrorKind =
   | "extra-bracket"
   | "brackets-dont-match"
   | "missing-comma"
+  | "two-single-quotes"
   | "missing-comma-in-list"
   | "print-needs-brackets"
   | "compare-with-double-equals"
@@ -66,6 +69,8 @@ export type CourseErrorKind =
   | "text-plus-number"
   | "number-plus-text"
   | "math-with-text"
+  | "number-in-quotes"
+  | "bar-needs-brackets"
   | "name-taken"
   | "use-star-to-multiply"
   | "not-a-function"
@@ -400,6 +405,47 @@ function dashFix(text: string, name?: string): string | null {
   const match = codePart(text).match(new RegExp(`^\\s*(${who})\\s*-(?!=)\\s*(.+?)\\s*$`));
   if (!match || /=/.test(match[2])) return null;
   return `${match[1]} = ${match[2]}`;
+}
+
+/**
+ * `magical affinity = 9` or `magical-affinity = 9`: a name with a space or a dash, on the left of `=`.
+ * Python says "invalid syntax" or "Maybe you meant '=='", neither of which helps a beginner.
+ */
+function explainNameShape(text: string, line: number | null, raw: string): CourseExplanation | null {
+  const match = codePart(text).match(/^(\s*)([A-Za-z_]\w*(?:(?:\s+|\s*-\s*)[A-Za-z_]\w*)+)\s*=(?!=)\s*(.+?)\s*$/);
+  if (!match) return null;
+  const words = match[2].split(/\s*-\s*|\s+/);
+  // `if mana = 5:` or `def x = 1` are other slips with their own advice.
+  if (words.some((word) => KEYWORDS.has(word) || word === "print") || /:\s*$/.test(match[3])) return null;
+  const fixed = `${words.join("_")} = ${match[3]}`;
+  if (match[2].includes("-")) {
+    return explain(
+      "dash-in-name",
+      "No dashes in names",
+      `A name can't have a dash -${onLine(line)}. Python reads - as minus. Join the words with _ instead: ${fixed}`,
+      raw,
+    );
+  }
+  return explain(
+    "space-in-name",
+    "No spaces in names",
+    `A name can't have spaces${onLine(line)}. Python reads ${words.join(" and ")} as separate names. Join the words with _ instead: ${fixed}`,
+    raw,
+  );
+}
+
+/**
+ * `bar = full * mana + empty * max_mana - mana`: Python does `*` before `-`, so the text is stamped first and
+ * the subtraction then hits text. Returns the line with brackets around the subtraction, or null.
+ */
+function barBrackets(text: string): string | null {
+  const body = codePart(text).trim();
+  const operand = String.raw`(?:[A-Za-z_]\w*|\d+)`;
+  const textFirst = new RegExp(String.raw`((?:"[^"]*"|'[^']*'|[A-Za-z_]\w*)\s*\*\s*)(${operand}\s*-\s*${operand})(?![\w(])`);
+  if (textFirst.test(body)) return body.replace(textFirst, "$1($2)");
+  const countFirst = new RegExp(String.raw`(?<![\w)])(${operand}\s*-\s*${operand})(\s*\*\s*(?:"[^"]*"|'[^']*'|[A-Za-z_]\w*))`);
+  if (countFirst.test(body)) return body.replace(countFirst, "($1)$2");
+  return null;
 }
 
 const JOIN_CALLS = /^(str|int|float|len|round|input|abs|max|min|sum)\s*\(/;
@@ -799,6 +845,9 @@ function explainSyntax(
     );
   }
 
+  const shape = explainNameShape(text, line, raw);
+  if (shape) return shape;
+
   if (/cannot assign to literal/.test(lower)) {
     const swap = text.match(/^\s*(.+?)\s*=(?!=)\s*([A-Za-z_]\w*)\s*$/);
     const example = swap ? `${swap[2]} = ${swap[1]}` : `character = "Kratos"`;
@@ -823,6 +872,15 @@ function explainSyntax(
       "compare-with-double-equals",
       "Use == to compare",
       `To check if two things are equal${onLine(line)}, use two equals signs: ==. One = is only for making a variable.`,
+      raw,
+    );
+  }
+  if (/''[A-Za-z]/.test(codePart(text))) {
+    // `print(''Shield up'')`: two apostrophes typed for one double quote.
+    return explain(
+      "two-single-quotes",
+      "Two ' are not one \"",
+      `${lineWord(line)} has two ' marks side by side. Python reads '' as empty text, not as a " mark. Use one " at each end of the text: ${codePart(text).replace(/''/g, '"').trim()}`,
       raw,
     );
   }
@@ -858,6 +916,16 @@ function explainSyntax(
     const closing = CLOSER[opener] ?? ")";
     const scan = scanLine(text);
     const body = codePart(text);
+    // `print("Shield up!)"`: the ) went inside the quotes, so it is part of the text.
+    const inside = body.match(/^(.*)([)\]}])(["'])\s*$/);
+    if (inside && !scan.unterminated && scan.open.length === 1 && CLOSER[scan.open[0]] === inside[2]) {
+      return explain(
+        "never-closed",
+        `Missing ${closing}`,
+        `The ${inside[2]}${onLine(line)} is inside the quotes, so Python reads it as part of the text. Move it after the closing quote: ${inside[1]}${inside[3]}${inside[2]}`.trim(),
+        raw,
+      );
+    }
     if (body && !scan.unterminated && scan.open.length > 0 && !/[([{]$/.test(body)) {
       const fixed = `${body}${closersFor(scan.open)}`;
       return explain(
@@ -1161,6 +1229,28 @@ function explainType(message: string, code: string, text: string, line: number |
       "dash-for-equals",
       "Dash or equals?",
       `${lineWord(line)} uses a dash - where Python needs an equals sign =. To make a variable, write: ${dash}`,
+      raw,
+    );
+  }
+  const bar = /unsupported operand type\(s\) for -: '(str|int)' and '(int|str)'/.test(message) ? barBrackets(text) : null;
+  if (bar) {
+    return explain(
+      "bar-needs-brackets",
+      "Brackets for the gap",
+      `Python does * before -${onLine(line)}. So it stamps the text first, then tries to take a number away from text. Put brackets around the subtraction so it happens first: ${bar}`,
+      raw,
+    );
+  }
+  const quoted = /unsupported operand type\(s\) for [-*/%+]+: '\w+' and '\w+'/.test(message)
+    ? codePart(text).match(/[-*/%+]\s*(["'])(\d+(?:\.\d+)?)\1|(["'])(\d+(?:\.\d+)?)\3\s*[-*/%+]/)
+    : null;
+  if (quoted) {
+    const digits = quoted[2] ?? quoted[4];
+    const quote = quoted[1] ?? quoted[3];
+    return explain(
+      "number-in-quotes",
+      "Math with text",
+      `${quote}${digits}${quote}${onLine(line)} has quotes, so Python treats it as text, not a number. Numbers have no quotes: write ${digits}.`,
       raw,
     );
   }
