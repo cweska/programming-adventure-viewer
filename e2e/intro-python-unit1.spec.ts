@@ -52,6 +52,9 @@ const codeText = (value: Code | undefined) => (Array.isArray(value) ? `${value.j
 
 const itemPath = (itemId: string) => `/intro-python/${UNIT_ID}/${itemId}`;
 
+/** `optional` as schema.ts fills it in: challenges, cheatsheets and Quick Checks default to optional. */
+const isOptional = (item: RawItem) => item.optional ?? ["challenge", "cheatsheet", "testout"].includes(item.kind);
+
 /** Every played item (lesson, project, challenge, Quick Check, article try-it) with its exercises. */
 const playable = unit.items.flatMap((item) => {
   if (item.kind === "project" || item.kind === "challenge") return [{ item, exercises: [item], single: true }];
@@ -85,9 +88,11 @@ async function whyNot(page: Page): Promise<string> {
   return parts.join(" | ").slice(0, 600);
 }
 
-async function playExercise(page: Page, exercise: RawExercise, where: string) {
+async function playExercise(page: Page, exercise: RawExercise, where: string, single: boolean) {
   const player = page.getByTestId("exercise-player");
-  await expect(player.getByTestId("exercise-title")).toHaveText(exercise.title);
+  // A project or challenge is its own page: its title is the page heading, not the exercise's.
+  if (single) await expect(page.getByRole("heading", { level: 1 })).toHaveText(exercise.title);
+  else await expect(player.getByTestId("exercise-title")).toHaveText(exercise.title);
   await pythonReady(page);
   if (exercise.stdin) {
     const box = page.getByTestId("stdin-box");
@@ -240,7 +245,7 @@ test.describe("Intro to Python, Unit 1: Hello World", () => {
               new RegExp(`^(Exercise|Task) ${at + 1} of ${exercises.length}$`),
             );
           }
-          await playExercise(page, exercise, where);
+          await playExercise(page, exercise, where, single);
         }
       });
     }
@@ -289,7 +294,7 @@ test.describe("Intro to Python, Unit 1: Hello World", () => {
     await page.goto(`/intro-python/${UNIT_ID}`);
     await expect(page.getByTestId("quick-check-offer")).toContainText("You passed the Quick Check");
     await expect(page.getByTestId(`unit-status-${UNIT_ID}`)).toContainText("Tested out");
-    for (const item of unit.items.filter((entry) => !entry.optional && entry.kind !== "testout")) {
+    for (const item of unit.items.filter((entry) => !isOptional(entry))) {
       await expect(page.getByTestId(`item-status-${item.id}`), item.id).toHaveAttribute("data-status", "tested-out");
     }
     await page.goto("/intro-python");
