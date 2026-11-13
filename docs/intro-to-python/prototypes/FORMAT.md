@@ -142,7 +142,7 @@ Kinds:
 | `challenge` | every EXERCISE field directly on the item, plus `level="core"` or `"advanced"` (default core) and `variant_of="<challenge item id>"` for an advanced variant. `support` defaults to `"light"`. |
 | `article` | `body` (prose), `examples=[dict(code=..., output=..., stdin=[...])]` (runnable, output is verified; no `setup`), optional `exercises=[EXERCISE, ...]` (try-its) |
 | `cheatsheet` | `entries=[dict(concept=..., code=..., output=..., note=...)]`. If `output` is given the harness runs the code and checks it, so leave `output` out for code that calls `input()`. No `setup`/`stdin`. |
-| `testout` | `exercises=[EXERCISE, ...]`: the unit's Quick Check. Passing all of them tests out of the unit. Give each exercise `support="none"` (no hints shown; still write 2 hints, the schema needs them). |
+| `testout` | `exercises=[EXERCISE, ...]`: the unit's Quick Check. Passing all of them tests out of the unit. Give each exercise `support="none"` (no hints shown; still write 2 hints, the schema needs them). Optional `questions_to_pass=3` (JSON `questionsToPass`): the form passes only when its questions quiz, the `quiz` item with the id `<testout id>-questions`, also has that many right (best score); the unit page says so. The exporter and the harness check that the quiz exists and has enough questions. A test-out's check messages should be lean (the slip and the evidence, never the fix), like its explainer. |
 
 ## EXERCISE
 

@@ -966,3 +966,81 @@ describe("the explainer never throws", () => {
     }
   });
 });
+
+describe("explainCourseError: Unit 2 play-through findings", () => {
+  it("names `else` with a question as its own slip, not a missing colon (full and lean)", () => {
+    const code = "strength_roll = 14\nstrength_needed = 12\nif strength_roll >= strength_needed:\n    print(\"The latch pops open.\")\nelse strength_roll < strength_needed:\n    print(\"That latch hates me.\")\n";
+    const full = explainRun(code);
+    expect(full.kind).toBe("else-has-question");
+    expect(full.hint).toContain("Write just `else:`");
+    expect(full.hint).not.toMatch(/needs a colon/);
+    const noColon = explainRun(code.replace("strength_needed:\n    print(\"That", "strength_needed\n    print(\"That"));
+    expect(noColon.kind).toBe("else-has-question");
+    const lean = explainRun(code, [], { explainer: "lean" });
+    expect(lean.hint).toBe("The slip is on line 5: a question after `else`. Python's last line, below, says what it found. Mend it yourself, then Run again.");
+    // `else:` itself and `else if` keep their own words.
+    expect(explainRun("x = 1\nif x > 2:\n    print(1)\nelse if x > 0:\n    print(2)\n").kind).toBe("elif-spelling");
+  });
+
+  it("reads a capital on one of Python's words, and an elif with no question", () => {
+    const big = explainRun("hours_left = 2\nIf hours_left < 3:\n    print(\"Get inside!\")\n");
+    expect(big.kind).toBe("keyword-capital");
+    expect(big.hint).toBe("Line 2 starts with `If`. Python's own words are all small letters: `if`, not `If`. Write: `if hours_left < 3:`");
+    const otherwise = explainRun("x = 1\nif x < 3:\n    print(1)\nElse:\n    print(2)\n");
+    expect(otherwise.kind).toBe("keyword-capital");
+    expect(otherwise.hint).toContain("Write: `else:`");
+    const bare = explainRun("x = 1\nif x < 3:\n    print(1)\nelif:\n    print(2)\n");
+    expect(bare.kind).toBe("no-question");
+    expect(bare.hint).toContain("`elif:` with no question");
+    expect(bare.hint).toContain("write `else:` instead");
+    expect(explainRun("If hours_left <= 2:\n    print(1)\n", [], { explainer: "lean" }).hint).toContain(
+      "a capital letter in one of Python's words",
+    );
+  });
+
+  it("offers the task's names only when one is close, and never quotes for a number in math (Anatomy of a fizzle)", () => {
+    const starter =
+      'hero = "Bomb Shell"\nmana = 12\nspell_cost = 5\nprint("Mana left: " + str(mana - mana_cost))\nprint(hero + " casts Shield.")\n\nbad_line = 0\nerror_type = ""\nmissing_name = ""\n';
+    const result = explainRun(starter, [], { names: ["bad_line", "error_type", "missing_name"] });
+    expect(result.kind).toBe("unknown-name");
+    expect(result.hint).toBe("Python doesn't know mana_cost: no line in your code makes it. Line 3 makes `spell_cost`, which has a similar name.");
+    expect(result.hint).not.toContain("bad_line");
+    expect(result.hint).not.toContain("quotes");
+    // A task name a letter or two away is still offered, with the quotes when text could go there.
+    const near = explainRun('hero = "Lucky"\nprint(heroes_name)\n', [], { names: ["hero", "heros_name"] });
+    expect(near.hint).toContain("use this task's name: heros_name");
+  });
+
+  it("counts any run that now reads after a SyntaxError as further (Broken spell 2B's import on line 1)", () => {
+    const parse = tracebackOf("roll = random.randint(1, 20)\nx = 5\nif x <= 2:\n    print(1)\nelse:\n    print(2)\nelif x <= 12:\n    print(3)\n");
+    const named = explainRun("roll = random.randint(1, 20)\nx = 5\nif x <= 2:\n    print(1)\nelif x <= 12:\n    print(3)\nelse:\n    print(2)\n", [], {
+      previous: parse,
+      debugging: true,
+    });
+    expect(named.kind).toBe("missing-import");
+    expect(named.gotFurther).toBe(true);
+    // The same unquoted slip on the same line is still not a fix.
+    const shell = tracebackOf("companion = Bomb Shell\nprint(companion)\n");
+    expect(explainRun("companion = kratos\nprint(companion)\n", [], { previous: shell, names: ["companion"] }).gotFurther).toBeUndefined();
+  });
+
+  it("asks for a comparison sign, not ==, when Mar'tu's version prints the box with another sign", () => {
+    const solution = 'clock_color = "Red"\nclock_is_red = (clock_color == "red")\nprint(clock_is_red)\nprint(clock_color != "red")\n';
+    const result = explainRun('clock_color = "red"\nprint(clock_color = "red")\n', [], { solution, unitOrder: 2 });
+    expect(result.kind).toBe("equals-in-print");
+    expect(result.hint).toContain("such as `==` (is the same as) or `!=`");
+    expect(result.hint).not.toContain('print(clock_color == "red")');
+    // With == in Mar'tu's version (or no version at hand), the line is written as before.
+    expect(explainRun('clock_color = "red"\nprint(clock_color = "red")\n', [], { unitOrder: 2 }).hint).toContain('print(clock_color == "red")');
+  });
+
+  it("names def again when Python's 'expected (' led to a recipe, with no One fixed (= is not def)", () => {
+    const previous = tracebackOf('def hero = "Lucky"\nprint(hero + " is ready.")\n');
+    const result = explainRun('def hero(): "Lucky"\nprint(hero + " is ready.")\n', [], { previous, names: ["hero"], unitOrder: 2 });
+    expect(result.kind).toBe("def-for-variable");
+    expect(result.hint).toContain('`hero = "Lucky"`');
+    expect(result.hint).not.toContain("One fixed");
+    expect(result.gotFurther).toBeUndefined();
+    expect(result.hint).not.toContain("unsupported operand");
+  });
+});

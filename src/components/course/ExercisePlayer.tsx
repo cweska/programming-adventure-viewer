@@ -28,6 +28,7 @@ import {
   checkpointHeading,
   codeHasStart,
   countsAsAttempt,
+  crashAim,
   crashTarget,
   effectiveSupport,
   firstParagraph,
@@ -54,6 +55,7 @@ import {
   stuckCheckpointId,
   titleFromId,
   usesInput,
+  type CrashAim,
   type FailStreak,
   type PlayerMode,
   type Rung,
@@ -140,6 +142,11 @@ type RunView = {
   newlyPassed: string[];
   /** This run passed with Mar'tu's version, copied in with "Copy into my editor". */
   revealPass?: boolean;
+  /**
+   * A debugging exercise's crash: the step Help aims at (crashAim), or null for "only say which line to mend".
+   * Undefined outside debugging exercises and for runs that did not crash.
+   */
+  crashStep?: number | null;
 };
 
 /** The last line of Python's message ("SyntaxError: unterminated string literal ..."), or "" when there is none. */
@@ -449,6 +456,9 @@ export function ExercisePlayer({
   /** The miss streak when the student took up a "misses" offer by opening a rung (it then waits for 3 more). */
   const [streakTakenUp, setStreakTakenUp] = useState<FailStreak>({ checkpointId: null, count: 0 });
   const lastRungAt = useRef<number | null>(null);
+  /** A debugging exercise's crashes this visit and the step Help aimed at for each (crashAim), and the last one. */
+  const crashAims = useRef<CrashAim[]>([]);
+  const lastAim = useRef<CrashAim | null>(null);
   /** Steps whose Start me off Help stepped over (the line was there already), this visit. */
   const steppedOverStart = useRef<Set<string>>(new Set());
   const ranSinceRung = useRef(false);
@@ -594,12 +604,21 @@ export function ExercisePlayer({
   const slippedSinceDone = done && view?.grade != null && !view.grade.allPassed && !view.revealPass;
   // While a crash stands, Help aims at the line Python stopped on, never at step 1 under "Mend line 3 first.":
   // a step that names that line ("Mend line 3 ...") gets the Help. When the steps name other lines and none
-  // names this one, their Help would talk about a different line, so it waits until the code runs.
+  // names this one, their Help would talk about a different line, so it waits until the code runs. In a
+  // debugging exercise, a crash that got further than the last one aims past the slip just mended (crashAim).
+  const aimStep = crashed && view?.crashStep !== undefined ? view.crashStep : undefined;
   const crashStep = crashTarget(exercise.checkpoints, crashAt);
-  const crashOnlyHelp = crashed && crashAt !== null && crashStep < 0 && exercise.checkpoints.some((checkpoint) => namesALine(checkpoint.text));
-  const helpIndex = crashStep >= 0 ? crashStep : firstOpen;
+  const crashOnlyHelp =
+    aimStep !== undefined
+      ? aimStep === null
+      : crashed && crashAt !== null && crashStep < 0 && exercise.checkpoints.some((checkpoint) => namesALine(checkpoint.text));
+  const helpIndex = aimStep !== undefined && aimStep !== null ? aimStep : crashStep >= 0 ? crashStep : firstOpen;
   const helpCheckpoint = activeCheckpoint && helpIndex >= 0 ? exercise.checkpoints[helpIndex] : null;
-  const helpAvailable = support !== "none" && hintsOpen(support, triedAndMissed) && !done && activeCheckpoint !== null;
+  // Light support (projects, challenges): the full ladder waits for the first Run that does not finish, but the
+  // Point rung (and Start me off) is always there (curriculum §2.2 #4, R7): a student who stalls without running
+  // still gets "Where to look", and the 90-second nudge.
+  const lightBeforeRun = support === "light" && !hintsOpen(support, triedAndMissed);
+  const helpAvailable = support !== "none" && (hintsOpen(support, triedAndMissed) || lightBeforeRun) && !done && activeCheckpoint !== null;
   const showUnlocked =
     support !== "none" &&
     solutionUnlocked({
@@ -609,18 +628,19 @@ export function ExercisePlayer({
       solutionAfterMinutes: settings.solutionAfterMinutes,
       solutionAfterFailedRuns: settings.solutionAfterFailedRuns,
     });
-  const rungs = useMemo(
-    () =>
-      helpCheckpoint
-        ? helpRungs(helpCheckpoint, {
-            anotherWayCount: exercise.anotherWay.length,
-            hasAssemble: Boolean(exercise.assemble),
-            solo: exercise.solo === true,
-            solution: exercise.solution,
-          })
-        : [],
-    [helpCheckpoint, exercise.anotherWay.length, exercise.assemble, exercise.solo, exercise.solution],
-  );
+  const rungs = useMemo(() => {
+    if (!helpCheckpoint) return [];
+    const all = helpRungs(helpCheckpoint, {
+      anotherWayCount: exercise.anotherWay.length,
+      hasAssemble: Boolean(exercise.assemble),
+      solo: exercise.solo === true,
+      solution: exercise.solution,
+    });
+    // Before the first Run under light support: the ladder up to Where to look (a prefix, so the saved count
+    // still lines up once the rest opens).
+    const point = all.findIndex((rung) => rung.kind === "point");
+    return lightBeforeRun && point >= 0 ? all.slice(0, point + 1) : all;
+  }, [helpCheckpoint, exercise.anotherWay.length, exercise.assemble, exercise.solo, exercise.solution, lightBeforeRun]);
   /** Start me off has nothing to give when the line is already there, or right after a crash (mend that first). */
   const skipRung = (rung: Rung) => rung.kind === "start" && (crashed || codeHasStart(code, rung.start ?? ""));
   const climbed = helpState(rungs, helpCheckpoint ? rungsShown(saved?.hintsUsed, helpCheckpoint.id, rungs.length) : 0, showUnlocked, {
@@ -798,6 +818,25 @@ export function ExercisePlayer({
       if (!grade.allPassed) setMissedThisVisit(true);
       const crashText = result.traceback || result.stderr || "";
       const explanation = grade.crashed ? explainCourseError(crashText, source, context) : null;
+      // A debugging exercise's crash: which step Help aims at, past the slips already mended this visit.
+      let aim: CrashAim | null = null;
+      if (debugging && grade.crashed && explanation && explanation.kind !== "timeout") {
+        const line = crashLine(explanation.raw);
+        const signature = `${line ?? "?"}:${pythonLastLine(explanation.raw)}`;
+        const passedIds = [...before, ...outcome.passedNow];
+        const step = crashAim({
+          checkpoints: exercise.checkpoints,
+          crashLine: line,
+          signature,
+          seen: crashAims.current,
+          previous: lastAim.current,
+          gotFurther: explanation.gotFurther === true,
+          firstOpen: Math.max(0, exercise.checkpoints.findIndex((checkpoint) => !passedIds.includes(checkpoint.id))),
+        });
+        aim = { signature, step };
+        if (!crashAims.current.some((seen) => seen.signature === signature)) crashAims.current.push(aim);
+      }
+      lastAim.current = aim;
       if (grade.allPassed) {
         setCompare(null);
         setAssembling(false);
@@ -838,6 +877,7 @@ export function ExercisePlayer({
             failing.message === previousFailing.message,
           newlyPassed: outcome.newlyPassed,
           revealPass,
+          ...(aim ? { crashStep: aim.step } : {}),
         };
       });
       if (outcome.allPassed) {
@@ -1317,6 +1357,7 @@ export function ExercisePlayer({
               crashed={crashed}
               crashLine={crashAt}
               crashOnly={crashOnlyHelp}
+              moreAfterRun={lightBeforeRun}
               startInCode={(start) => codeHasStart(code, start)}
               onReveal={revealRung}
               onDismissOffer={() => {

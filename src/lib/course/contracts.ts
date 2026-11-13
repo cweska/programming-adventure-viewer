@@ -144,7 +144,17 @@ export type UnitSummary = {
   order: number;
   title: string;
   subtitle?: string;
-  items: { id: string; kind: Item["kind"]; title: string; optional: boolean }[];
+  items: {
+    id: string;
+    kind: Item["kind"];
+    title: string;
+    optional: boolean;
+    /** A Quick Check form: its task ids, and how many of its questions must be right (see progress.ts). */
+    exercises?: { id: string }[];
+    questionsToPass?: number;
+    /** A quiz: how many questions it has. */
+    questionCount?: number;
+  }[];
 };
 
 export type ItemPageProps<I extends Item = Item> = {

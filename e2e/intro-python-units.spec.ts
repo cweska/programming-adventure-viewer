@@ -44,6 +44,8 @@ type RawItem = RawExercise & {
   optional?: boolean;
   exercises?: RawExercise[];
   questions?: RawQuestion[];
+  /** A Quick Check form that needs this many of its questions (the quiz `<id>-questions`) right too. */
+  questionsToPass?: number;
 };
 type RawUnit = { id: string; order: number; title: string; published: boolean; items: RawItem[] };
 
@@ -297,7 +299,22 @@ for (const unit of units) {
           if (at < tasks.length - 1) await page.getByTestId("celebrate-next").click();
         }
 
-        await expect(page.getByTestId("testout-result")).toBeVisible();
+        if (quickCheck.questionsToPass) {
+          // The tasks alone do not pass this form: its questions count too, and the page says so.
+          const quiz = unit.items.find((entry) => entry.kind === "quiz" && entry.id === `${quickCheck.id}-questions`);
+          expect(quiz, `${quickCheck.id}-questions exists`).toBeTruthy();
+          await expect(page.getByTestId("testout-questions")).toContainText(
+            `Get ${quickCheck.questionsToPass} of the ${quiz?.questions?.length ?? 0} right`,
+          );
+          await expect(page.getByTestId("testout-result")).toHaveCount(0);
+          await page.goto(`/intro-python/${unit.id}`);
+          await expect(page.getByTestId(`unit-status-${unit.id}`)).not.toContainText("Tested out");
+          await expect(page.getByTestId("quick-check-more")).toContainText(`To pass, finish the tasks, then get ${quickCheck.questionsToPass} of the`);
+          await answerQuiz(page, unit, quiz as RawItem);
+          await expect(page.getByTestId("quiz-quick-check")).toHaveAttribute("data-passed", "true");
+        } else {
+          await expect(page.getByTestId("testout-result")).toBeVisible();
+        }
         await expect
           .poll(() =>
             page.evaluate(([key, unitId]) => JSON.parse(window.localStorage.getItem(key) ?? "{}")?.testedOut?.[unitId] ?? false, [

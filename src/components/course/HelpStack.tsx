@@ -37,6 +37,7 @@ export function HelpStack({
   crashed = false,
   crashLine = null,
   crashOnly = false,
+  moreAfterRun = false,
   startInCode = () => false,
   onReveal,
   onDismissOffer,
@@ -63,6 +64,8 @@ export function HelpStack({
    * rungs would talk about a different line, so they wait until the code runs. Only the crash note shows.
    */
   crashOnly?: boolean;
+  /** Light support before the first Run: only Where to look (and Start me off) are open yet; the rest follow a Run. */
+  moreAfterRun?: boolean;
   /** Whether the code already starts the step's line (Start me off then has nothing to add). */
   startInCode?: (start: string) => boolean;
   onReveal: () => RevealResult;
@@ -317,6 +320,11 @@ export function HelpStack({
       {state.nextLocked ? (
         <p className="ex-help-note ex-muted" data-testid="help-show-locked">
           Mar&apos;tu&apos;s version opens after a few more tries, or a few more minutes. Each change you run counts.
+        </p>
+      ) : null}
+      {moreAfterRun && !next ? (
+        <p className="ex-help-note ex-muted" data-testid="help-locked">
+          More help opens after you press Run once.
         </p>
       ) : null}
       {state.opened === 0 && !offer && !crashed ? (

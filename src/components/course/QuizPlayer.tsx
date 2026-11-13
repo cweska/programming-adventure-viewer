@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import type { ItemPageProps } from "../../lib/course/contracts";
-import { itemKey, recordQuiz, useCourseProgress } from "../../lib/course/progress";
+import { itemKey, markTestedOut, quickCheckPassed, quickCheckQuestions, recordQuiz, useCourseProgress } from "../../lib/course/progress";
 import type { GlossaryEntry, Question, QuizItem } from "../../lib/course/schema";
 import { runCourse } from "../../lib/languages/python/run";
 import { PythonEditor } from "../PythonEditor";
 import { KindBadge } from "./CourseBits";
+import { itemHref } from "./course-links";
 import { ParsonsBoard } from "./ParsonsBoard";
 import { Prose } from "./Prose";
 import {
@@ -253,6 +254,16 @@ function QuizRun({ unit, item, glossary, nextHref, settings }: ItemPageProps<Qui
   const resultRef = useRef<HTMLHeadingElement>(null);
   const moved = useRef(false);
 
+  // A Quick Check form's questions (the quiz `<form>-questions`, when the form needs them): a pass here can
+  // finish the Quick Check.
+  const form = unit.items.find((entry) => entry.kind === "testout" && `${entry.id}-questions` === item.id && entry.questionsToPass);
+  const gate = form ? quickCheckQuestions(unit.id, form, unit.items, progress) : null;
+  const formPassed = form ? quickCheckPassed(unit.id, form, unit.items, progress) : false;
+  const testedOut = progress.testedOut[unit.id] === true;
+  useEffect(() => {
+    if (formPassed && !testedOut) markTestedOut(unit.id);
+  }, [formPassed, testedOut, unit.id]);
+
   const needsPython = questions.some((question) => question.type === "bug" || question.type === "parsons");
   const pythonStatus = usePythonStatus(needsPython);
 
@@ -386,6 +397,25 @@ function QuizRun({ unit, item, glossary, nextHref, settings }: ItemPageProps<Qui
         <p className="quiz-best" data-testid="quiz-best">
           Your best: {best}%
         </p>
+        {form && gate ? (
+          <p className="quiz-quick-check" data-testid="quiz-quick-check" data-passed={formPassed || testedOut ? "true" : "false"}>
+            {formPassed || testedOut ? (
+              <>
+                <span aria-hidden="true">✓</span> <strong>You passed the Quick Check.</strong> This unit now counts as done.
+              </>
+            ) : gate.met ? (
+              <>
+                That is enough for the Quick Check. Finish{" "}
+                <Link href={itemHref(unit.id, form.id)} data-testid="quiz-quick-check-tasks">
+                  its tasks
+                </Link>{" "}
+                too, and this unit counts as done.
+              </>
+            ) : (
+              `The Quick Check needs ${gate.needed} of these ${gate.total} right. Look at the ones you missed, then try again.`
+            )}
+          </p>
+        ) : null}
         <ol className="quiz-review" data-testid="quiz-review">
           {questions.map((entry, at) => {
             const right = checked[entry.id]?.correct === true;

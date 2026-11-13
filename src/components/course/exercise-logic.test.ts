@@ -7,6 +7,7 @@ import {
   applyRun,
   assembledCode,
   checkpointHeading,
+  crashAim,
   effectiveSupport,
   exerciseIndexFromHash,
   hashForExercise,
@@ -270,5 +271,59 @@ describe("words", () => {
   it("turns ids into titles", () => {
     expect(titleFromId("leylines-awaken")).toBe("Leylines Awaken");
     expect(titleFromId("program-dialogue-prompt")).toBe("Program Dialogue Prompt");
+  });
+});
+
+describe("crashAim: Help in a Broken spell moves past the slips already mended", () => {
+  // Broken spell 2A: two steps name line 3 (the sign, then the text "15"), then a quiet bug.
+  const spell2a = [
+    { text: "Mend the sign on line 3 so `passed` asks whether `roll` is at least `needed`.", hints: ["a", "b"] },
+    { text: "Line 3 compares a number with text. Mend the line that makes `needed`, so it holds a number.", hints: ["a", "b"] },
+    { text: "`clock_is_red` prints `red`, not a yes/no answer.", hints: ["Line 6 has one `=`.", "b"] },
+  ];
+  // Broken spell 2B: no step names a line; the hints of the first one do.
+  const spell2b = [
+    { text: "Mend the line that asks whether `roll` is 20.", hints: ["Python's message names line 2.", "b"] },
+    { text: "Mend the line that checks the first option.", hints: ["a", "b"] },
+    { text: "Mend the clock chain.", hints: ["a", "b"] },
+    { text: "Mend the roll so Python knows where `random` comes from.", hints: ["a", "b"] },
+  ];
+
+  it("aims at the next step that names the crash line after a run that got further", () => {
+    const first = crashAim({ checkpoints: spell2a, crashLine: 3, signature: "3:SyntaxError", seen: [], previous: null, gotFurther: false, firstOpen: 0 });
+    expect(first).toBe(0);
+    const seen = [{ signature: "3:SyntaxError", step: first }];
+    const next = crashAim({ checkpoints: spell2a, crashLine: 3, signature: "3:TypeError", seen, previous: seen[0], gotFurther: true, firstOpen: 0 });
+    expect(next).toBe(1);
+    // The sign broken again: back to step 1's Help.
+    const all = [...seen, { signature: "3:TypeError", step: 1 }];
+    expect(crashAim({ checkpoints: spell2a, crashLine: 3, signature: "3:SyntaxError", seen: all, previous: all[1], gotFurther: false, firstOpen: 0 })).toBe(0);
+  });
+
+  it("steps on one at a time when no step names a line, and holds still for the same slip typed another way", () => {
+    let previous = { signature: "2:SyntaxError: a", step: crashAim({ checkpoints: spell2b, crashLine: 2, signature: "2:SyntaxError: a", seen: [], previous: null, gotFurther: false, firstOpen: 0 }) };
+    expect(previous.step).toBe(0);
+    const seen = [previous];
+    for (const [line, want] of [
+      [6, 1],
+      [16, 2],
+      [1, 3],
+    ] as const) {
+      const step = crashAim({ checkpoints: spell2b, crashLine: line, signature: `${line}:x`, seen, previous, gotFurther: true, firstOpen: 0 });
+      expect(step).toBe(want);
+      previous = { signature: `${line}:x`, step };
+      seen.push(previous);
+    }
+    // A new message that is not further keeps the step.
+    expect(crashAim({ checkpoints: spell2b, crashLine: 1, signature: "1:other", seen, previous, gotFurther: false, firstOpen: 0 })).toBe(3);
+  });
+
+  it("says only which line to mend when the steps name other lines, and keeps the old aim for a first crash", () => {
+    const named = [{ text: "Mend line 3 so it shows `Steady`.", hints: ["a", "b"] }, { text: "Mend line 5 so it adds.", hints: ["a", "b"] }];
+    const previous = { signature: "3:SyntaxError", step: 0 };
+    expect(crashAim({ checkpoints: named, crashLine: 4, signature: "4:NameError", seen: [previous], previous, gotFurther: true, firstOpen: 0 })).toBeNull();
+    expect(crashAim({ checkpoints: named, crashLine: 5, signature: "5:TypeError", seen: [previous], previous, gotFurther: true, firstOpen: 0 })).toBe(1);
+    expect(crashAim({ checkpoints: named, crashLine: 4, signature: "4:x", seen: [], previous: null, gotFurther: false, firstOpen: 0 })).toBeNull();
+    expect(crashAim({ checkpoints: spell2b, crashLine: 2, signature: "2:x", seen: [], previous: null, gotFurther: false, firstOpen: 2 })).toBe(2);
   });
 });

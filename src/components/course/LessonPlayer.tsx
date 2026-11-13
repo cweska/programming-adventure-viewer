@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import type { ItemPageProps } from "../../lib/course/contracts";
-import { getCourseProgress, markTestedOut, useCourseProgress } from "../../lib/course/progress";
+import { getCourseProgress, markTestedOut, quickCheckQuestions, useCourseProgress } from "../../lib/course/progress";
 import {
   exerciseKey,
   type ChallengeItem,
@@ -91,11 +91,15 @@ function ExerciseRow({
   const currentDone = doneFlags[index] === true;
   const last = index === exercises.length - 1;
   const testedOut = progress.testedOut[unit.id] === true;
+  // A form that needs its questions too (questionsToPass): the tasks alone do not pass it.
+  const form = mode === "testout" ? unit.items.find((entry) => entry.id === item.id) : undefined;
+  const questions = form ? quickCheckQuestions(unit.id, form, unit.items, progress) : null;
+  const passed = allDone && (questions === null || questions.met);
 
   // A Quick Check passed in full marks the unit as tested out.
   useEffect(() => {
-    if (mode === "testout" && allDone && !testedOut) markTestedOut(unit.id);
-  }, [mode, allDone, testedOut, unit.id]);
+    if (mode === "testout" && passed && !testedOut) markTestedOut(unit.id);
+  }, [mode, passed, testedOut, unit.id]);
 
   // After Back / Next / a dot, bring the top of the exercise into view and give it focus.
   useEffect(() => {
@@ -188,10 +192,12 @@ function ExerciseRow({
 
       {!embedded ? (
         <ItemFinish
-          complete={mode === "testout" ? allDone || testedOut : allDone}
+          complete={mode === "testout" ? passed || testedOut : allDone}
           mode={mode}
           nextHref={nextHref}
           unitHrefValue={unitHref(unit.id)}
+          tasksDone={allDone}
+          questions={questions ? { ...questions, href: itemHref(unit.id, questions.quizId) } : null}
         />
       ) : null}
     </div>
@@ -207,12 +213,31 @@ function ItemFinish({
   mode,
   nextHref,
   unitHrefValue,
+  tasksDone = false,
+  questions = null,
 }: {
   complete: boolean;
   mode: PlayerMode;
   nextHref: string;
   unitHrefValue: string;
+  /** A Quick Check: every task passed. */
+  tasksDone?: boolean;
+  /** A Quick Check form that needs its questions too: how many, and where they are. */
+  questions?: { needed: number; total: number; met: boolean; href: string } | null;
 }) {
+  if (mode === "testout" && !complete && tasksDone && questions) {
+    return (
+      <div className="item-footer ex-finish" id="item-finish" tabIndex={-1} data-testid="item-finish">
+        <p className="ex-finish-text" data-testid="testout-questions" role="status">
+          <span aria-hidden="true">✓</span> <strong>Every task done.</strong> Last part: the questions. Get {questions.needed} of
+          the {questions.total} right, and this unit counts as done.
+        </p>
+        <Link className="course-button" href={questions.href} data-testid="testout-questions-link">
+          Answer the questions
+        </Link>
+      </div>
+    );
+  }
   if (mode === "testout") {
     return (
       <div className="item-footer ex-finish" id="item-finish" tabIndex={-1} data-testid="item-finish">
@@ -223,7 +248,10 @@ function ItemFinish({
           </p>
         ) : (
           <p className="ex-muted" data-testid="testout-pending">
-            Pass every task to test out. Stuck? That is fine. The lessons teach all of it.
+            {questions
+              ? `Pass every task, then get ${questions.needed} of the ${questions.total} questions right, to test out.`
+              : "Pass every task to test out."}{" "}
+            Stuck? That is fine. The lessons teach all of it.
           </p>
         )}
         <Link className={complete ? "course-button" : "ex-quiet-link"} href={complete ? nextHref : unitHrefValue} data-testid="item-continue">

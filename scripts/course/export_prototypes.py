@@ -486,7 +486,7 @@ ITEM_KEYS = {
     "challenge": {"level", "variant_of"} | EXERCISE_KEYS,
     "article": {"body", "examples", "exercises"},
     "cheatsheet": {"entries"},
-    "testout": {"exercises"},
+    "testout": {"exercises", "questions_to_pass"},
 }
 # Harness-only item fields (they go to the .verify.json sidecar).
 ITEM_HARNESS_ONLY = {"introduces", "notes"}
@@ -526,6 +526,9 @@ def item(value: Any, where: str, ctx: Ctx, verify: dict) -> dict:
 
     if kind in ("lesson", "testout"):
         exercises(required=True)
+    if kind == "testout":
+        # The form passes only with this many of its questions right too (the `<id>-questions` quiz).
+        put(out, "questionsToPass", src, "questions_to_pass", integer, where, ctx)
     elif kind == "quiz":
         raw = src.get("questions")
         if not isinstance(raw, (list, tuple)) or not raw:
@@ -692,6 +695,13 @@ def export(sources: list[Path], content_dir: Path, ts_path: Path, root: Path, ct
         if not out["items"]:
             ctx.error(where, "the unit has no ITEMS")
         unique(out["items"], "id", f"{unit_id}.items", ctx)
+        for form in [entry for entry in out["items"] if entry.get("kind") == "testout" and "questionsToPass" in entry]:
+            quiz = next((entry for entry in out["items"] if entry.get("kind") == "quiz" and entry.get("id") == f"{form['id']}-questions"), None)
+            if quiz is None:
+                ctx.error(f"{unit_id}/{form['id']}", f"questions_to_pass needs a quiz with the id {form['id']}-questions")
+            elif not 1 <= form["questionsToPass"] <= len(quiz.get("questions", [])):
+                ctx.error(f"{unit_id}/{form['id']}", f"questions_to_pass is {form['questionsToPass']}, but "
+                          f"{quiz['id']} has {len(quiz.get('questions', []))} questions")
         outputs[content_dir / "units" / f"{unit_id}.json"] = render_json(out)
         outputs[content_dir / "units" / f"{unit_id}.verify.json"] = render_json(verify)
         units.append((out.get("order", 0), group["files"][0], unit_id))

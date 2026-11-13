@@ -284,13 +284,17 @@ export const cheatsheetItemSchema = z
   })
   .strict();
 
-/** Quick Check: pass every exercise (no hints) to test out of the unit's core items. */
+/**
+ * Quick Check: pass every exercise (no hints) to test out of the unit's core items. With `questionsToPass`, the
+ * form's questions (the quiz `<id>-questions`) count too: that many of them right, as well as every task.
+ */
 export const testoutItemSchema = z
   .object({
     kind: z.literal("testout"),
     ...itemBase,
     optional: z.boolean().default(true),
     exercises: z.array(exerciseSchema).min(1),
+    questionsToPass: z.number().int().min(1).optional(),
   })
   .strict();
 

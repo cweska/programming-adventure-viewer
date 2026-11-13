@@ -33,13 +33,23 @@ function QuickCheckMore({ unitId, forms }: { unitId: string; forms: QuickCheckFo
   if (!first || (!first.questions && others.length === 0)) return null;
   return (
     <p className="quick-check-more" data-testid="quick-check-more">
-      {first.questions ? (
+      {first.questions && first.form.questionsToPass ? (
+        // The questions count (questionsToPass): say so, with the number.
         <>
-          After the tasks, answer{" "}
+          To pass, finish the tasks, then get {first.form.questionsToPass} of the{" "}
+          {first.questions.questionCount ?? ""}{" "}
+          <Link href={itemHref(unitId, first.questions.id)} data-testid={`quick-check-link-${first.questions.id}`}>
+            Quick Check questions
+          </Link>{" "}
+          right.{" "}
+        </>
+      ) : first.questions ? (
+        <>
+          After the tasks, try{" "}
           <Link href={itemHref(unitId, first.questions.id)} data-testid={`quick-check-link-${first.questions.id}`}>
             the Quick Check questions
-          </Link>
-          .{" "}
+          </Link>{" "}
+          too, for practice: they don&apos;t change your pass.{" "}
         </>
       ) : null}
       {others.map(({ form, questions }) => (

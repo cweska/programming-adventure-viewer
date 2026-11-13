@@ -82,6 +82,9 @@ export type CourseErrorKind =
   | "elif-without-if"
   | "else-not-lined-up"
   | "elif-spelling"
+  | "else-has-question"
+  | "no-question"
+  | "keyword-capital"
   | "compare-number-text"
   | "equals-in-print"
   | "method-as-function"
@@ -1253,6 +1256,19 @@ function explainNumberAndText(op: string, code: string, text: string, line: numb
   );
 }
 
+/** The comparison signs Mar'tu's version uses right after `name` inside a print( ) (`print(clock_color != "red")`). */
+function solutionPrintSigns(solution: string | undefined, name: string): string[] {
+  if (!solution) return [];
+  const signs = new Set<string>();
+  const at = escapeRegExp(name);
+  for (const row of solution.split("\n")) {
+    const mask = maskStrings(codePart(row));
+    if (!/(^|[^\w.])print\s*\(/.test(mask)) continue;
+    for (const match of mask.matchAll(new RegExp(`(?<![\\w.])${at}\\s*(==|!=|>=|<=|<|>)`, "g"))) signs.add(match[1]);
+  }
+  return [...signs];
+}
+
 /** `print(clock_color = "red")`: one `=` inside print, where `==` (a question) belongs. */
 function explainEqualsInPrint(name: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation {
   const body = codePart(text);
@@ -1269,6 +1285,17 @@ function explainEqualsInPrint(name: string, text: string, line: number | null, r
     );
   }
   const fixed = at >= 0 ? `${body.slice(0, at)}==${body.slice(at + 1)}`.trim() : "";
+  // Mar'tu's version prints this box with another sign (`print(clock_color != "red")`): writing the `==` line
+  // would send the student the wrong way, so name the kind of sign instead.
+  const signs = solutionPrintSigns(context?.solution, name);
+  if (signs.length > 0 && !signs.includes("==")) {
+    return explain(
+      "equals-in-print",
+      "= makes a box",
+      `${lineWord(line)} has one \`=\` inside print( ). One \`=\` puts a value in a box, and print can't do that. To show the answer to a question, use a comparison sign, such as \`==\` (is the same as) or \`!=\` (is not the same as).`,
+      raw,
+    );
+  }
   return explain(
     "equals-in-print",
     "Use == to ask",
@@ -1308,6 +1335,49 @@ function headerWithColon(code: string, text: string, line: number | null): strin
   return `${header.trim().replace(/\s*;$/, "")}:`;
 }
 
+/** `else roll < needed:`: `else` has no question of its own (the Otherwise distractor, QC2's "else with a condition"). */
+function elseWithQuestion(text: string, line: number | null, raw: string): CourseExplanation {
+  const question = codePart(text).trim().replace(/^else\b\s*/, "").replace(/:\s*$/, "").trim();
+  return explain(
+    "else-has-question",
+    "else asks nothing",
+    `${lineWord(line)} gives \`else\` a question${question ? `, \`${question}\`` : ""}. \`else\` has no question of its own: it runs when every question above it was False. Write just \`else:\`. (A new question goes after \`elif\` instead.)`,
+    raw,
+  );
+}
+
+/** Python's own words that a student might type with a capital (`If`, `Else:`, `Import random`). */
+const LOWER_KEYWORDS = new Set(["if", "elif", "else", "import", "for", "while", "def", "return", "print"]);
+
+/**
+ * `If hours_left < 3:`, `Else:`, `Import random`: one of Python's words with a capital letter, which Python reads
+ * as an unknown name and then can't read the line. Also `elif:` / `if:` with no question. Null otherwise.
+ */
+function explainKeywordShape(text: string, line: number | null, raw: string): CourseExplanation | null {
+  const body = codePart(text).trim();
+  const first = body.match(/^([A-Za-z]+)\b/)?.[1] ?? "";
+  const small = first.toLowerCase();
+  if (first && first !== small && LOWER_KEYWORDS.has(small) && small !== "print") {
+    const fixed = `${small}${body.slice(first.length)}`;
+    return explain(
+      "keyword-capital",
+      "Small letters",
+      `${lineWord(line)} starts with \`${first}\`. Python's own words are all small letters: \`${small}\`, not \`${first}\`. Write: \`${fixed}\``,
+      raw,
+    );
+  }
+  const bare = body.match(/^(if|elif)\s*:$/)?.[1];
+  if (bare) {
+    return explain(
+      "no-question",
+      `${bare} needs a question`,
+      `${lineWord(line)} has \`${bare}:\` with no question. \`${bare}\` asks a question, so the question goes between \`${bare}\` and the colon. If this branch should run when nothing above it was True, write \`else:\` instead.`,
+      raw,
+    );
+  }
+  return null;
+}
+
 function explainMissingColon(code: string, text: string, line: number | null, raw: string): CourseExplanation {
   const elseIf = codePart(text).match(/^\s*else\s+if\b(.*)$/);
   if (elseIf) {
@@ -1319,6 +1389,8 @@ function explainMissingColon(code: string, text: string, line: number | null, ra
       raw,
     );
   }
+  // `else roll < needed:`: else never asks. Python says "expected ':'", but the colon is not what is missing.
+  if (/^\s*else\b(?!\s*:)\s*\S/.test(codePart(text))) return elseWithQuestion(text, line, raw);
   const fixed = headerWithColon(code, text, line);
   const word = codePart(text).trim().match(BLOCK_HEADER)?.[1];
   if (fixed && word) {
@@ -1415,6 +1487,11 @@ function explainSyntax(
       `def is for making functions, not variables. To make a variable, write the name, an equals sign, then the value, with no def: ${defFix}`,
       raw,
     );
+  }
+
+  if (/^invalid syntax/.test(lower)) {
+    const keyword = explainKeywordShape(text, line, raw);
+    if (keyword) return keyword;
   }
 
   const shape = explainNameShape(text, line, raw);
@@ -1891,12 +1968,34 @@ function explainName(
   const assignedHere = text.match(/^\s*([A-Za-z_]\w*)\s*=(?!=)/)?.[1];
   const earlier = taskNamesInstead(code, line, context, [name, ...(assignedHere ? [assignedHere] : [])]);
   if (/^[a-z][a-z0-9_]*$/.test(name) && earlier.length > 0) {
+    // `mana - mana_cost`: a number is wanted there, so quotes (text) would only lead to the next crash.
+    const quotes = inMath(text, name) ? "" : ` If it's text, put quotes around it: "${name}"`;
+    // Only names a letter or two away are worth offering as "use this one": a list of unrelated task names
+    // (bad_line, error_type ...) sends the student after the wrong thing.
+    const nearTask = (context?.names ?? []).filter((task) => task !== name && editDistance(task.toLowerCase(), name.toLowerCase()) <= 2);
+    if (nearTask.length > 0) {
+      return explain(
+        "unknown-name",
+        "Unknown name",
+        `Python doesn't know ${name}. If it's a variable, use this task's name: ${nearTask.slice(0, 2).join(" or ")} (spelled exactly).${quotes}`,
+        raw,
+      );
+    }
+    const similar = similarBox(name, defined, [name, ...(assignedHere ? [assignedHere] : [])]);
+    if (similar) {
+      return explain(
+        "unknown-name",
+        "Unknown name",
+        `Python doesn't know ${name}: no line in your code makes it. Line ${similar.line} makes \`${similar.name}\`, which has a similar name.${quotes}`,
+        raw,
+      );
+    }
     const shown = earlier.slice(-3).join(", ");
     const whose = context?.names?.length ? "this task's names" : "one your code made";
     return explain(
       "unknown-name",
       "Unknown name",
-      `Python doesn't know ${name}. If it's a variable, use ${whose}: ${shown} (spelled exactly). If it's text, put quotes around it: "${name}"`,
+      `Python doesn't know ${name}. If it's a variable, use ${whose}: ${shown} (spelled exactly).${quotes}`,
       raw,
     );
   }
@@ -1911,8 +2010,56 @@ function explainName(
   return explain("unknown-name", "Unknown name", `Python doesn't know ${name} yet${onLine(line)}. Make it first (${name} = ...), or check the spelling.`, raw);
 }
 
+/** `name` is a number in math on this line (`mana - mana_cost`, `cost * 2`, `3 + bonus`): text can't go there. */
+function inMath(text: string, name: string): boolean {
+  const mask = maskStrings(codePart(text));
+  const at = escapeRegExp(name);
+  if (new RegExp(`(?:[-*/%]\\s*${at}(?![\\w.(])|(?<![\\w.])${at}\\s*[-*/%])`).test(mask)) return true;
+  return new RegExp(`(?:\\d\\s*\\+\\s*${at}(?![\\w.(])|(?<![\\w.])${at}\\s*\\+\\s*\\d)`).test(mask);
+}
+
+/**
+ * A box the code makes whose name shares a word with `name` (`spell_cost` for `mana_cost`): the same ending
+ * first, then the same start, the nearest line first. Null when no box shares a word.
+ */
+function similarBox(name: string, defined: Definition[], skip: string[]): Definition | null {
+  const parts = name.toLowerCase().split("_").filter((part) => part.length >= 3);
+  if (parts.length === 0) return null;
+  const last = parts[parts.length - 1];
+  const first = parts[0];
+  const boxes = defined.filter((entry) => !skip.includes(entry.name) && !entry.name.startsWith("_"));
+  const words = (entry: Definition) => entry.name.toLowerCase().split("_");
+  const ending = boxes.find((entry) => words(entry).length > 1 && words(entry)[words(entry).length - 1] === last);
+  if (ending) return ending;
+  return boxes.find((entry) => words(entry).includes(first) || words(entry).includes(last)) ?? null;
+}
+
 function inputNames(code: string): string[] {
   return [...(code ?? "").matchAll(/^\s*([A-Za-z_]\w*)\s*=\s*input\s*\(/gm)].map((match) => match[1]);
+}
+
+/**
+ * `def hero(): "Lucky"` (the student followed Python's "expected '('"), then `print(hero + " is ready.")`: a
+ * TypeError about a 'function'. The slip is the def line, so it gets the def-for-variable advice.
+ */
+function explainRecipeUsedAsBox(message: string, code: string, text: string, raw: string): CourseExplanation | null {
+  if (!/'function'/.test(message)) return null;
+  const used = namesOnLine(text);
+  const lines = (code ?? "").split("\n");
+  for (let at = 0; at < lines.length; at += 1) {
+    const header = codePart(lines[at] ?? "").trim().match(/^def\s+([A-Za-z_]\w*)\s*\(\s*\)\s*:\s*(.*)$/);
+    if (!header || !used.includes(header[1])) continue;
+    const value = header[2].trim() || lines.slice(at + 1).map((row) => codePart(row).trim()).find(Boolean) || "";
+    const shown = value.replace(/^return\s+/, "");
+    const fix = shown && !/^(pass|print\b)/.test(shown) ? `${header[1]} = ${shown}` : `${header[1]} = "your value"`;
+    return explain(
+      "def-for-variable",
+      "def makes recipes",
+      `Line ${at + 1} uses \`def\`, so \`${header[1]}\` is a recipe, not a box, and line ${errorLine(raw) ?? "?"} can't use it as a value. \`def\` makes recipes, not boxes. A box needs only a name, \`=\` and a value, with no \`def\` and no brackets: \`${fix}\``,
+      raw,
+    );
+  }
+  return null;
 }
 
 function explainType(
@@ -1954,6 +2101,9 @@ function explainType(
       raw,
     );
   }
+  // `def hero(): "Lucky"` then `hero + " is ready."`: Python's own hint led to a recipe, not a box.
+  const recipe = explainRecipeUsedAsBox(message, code, text, raw);
+  if (recipe) return recipe;
   const dash = /unsupported operand type\(s\) for -/.test(message) ? dashFix(text) : null;
   if (dash && printOnlyTask(context)) return dashInPrintTask(text, line, raw, "dash-for-equals");
   if (dash) {
@@ -2227,10 +2377,17 @@ function nextErrorAfterFix(result: CourseExplanation, parsed: Parsed, raw: strin
   const previousLine = errorLine(previousRaw);
   if (line === null || previousLine === null) return result;
   const later = line > previousLine;
+  // The code could not be read before and now it can: that slip is mended, wherever the next error is (an
+  // `import` missing on line 1 after a SyntaxError on line 16). On the same line, the same unquoted slip again
+  // (`companion = Bomb Shell` -> `companion = kratos`) is not a fix.
   const nowParses =
-    line === previousLine && PARSE_ERRORS.has(previous.type) && !PARSE_ERRORS.has(parsed.type) && !STILL_UNQUOTED.has(result.kind);
+    PARSE_ERRORS.has(previous.type) &&
+    !PARSE_ERRORS.has(parsed.type) &&
+    (line !== previousLine || !STILL_UNQUOTED.has(result.kind));
   const otherRunTimeSlip =
     line === previousLine && !PARSE_ERRORS.has(previous.type) && !PARSE_ERRORS.has(parsed.type) && previous.type !== parsed.type;
+  // `def hero = "Lucky"` -> `def hero(): "Lucky"`: it reads now, but the box is still a recipe (no "One fixed!").
+  if (result.kind === "def-for-variable" && /^\s*def\b/.test(shownLine(previousRaw))) return result;
   if (!later && !nowParses && !otherRunTimeSlip) return result;
   if (context?.debugging) return { ...result, gotFurther: true };
   return { ...result, gotFurther: true, hint: `${ONE_FIXED_PREFIX} ${result.hint}` };
@@ -2290,6 +2447,9 @@ const SLIP_NAMES: Record<CourseErrorKind, string> = {
   "elif-without-if": "an `elif` or `else` with no `if` above it",
   "else-not-lined-up": "an `elif` or `else` not lined up with its `if`",
   "elif-spelling": "`else if` written as two words",
+  "else-has-question": "a question after `else`",
+  "no-question": "an `if` or `elif` with no question",
+  "keyword-capital": "a capital letter in one of Python's words",
   "compare-number-text": "a number compared with text",
   "equals-in-print": "one `=` inside print",
   "method-as-function": "a text method used without a dot",

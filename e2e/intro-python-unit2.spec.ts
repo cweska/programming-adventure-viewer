@@ -69,6 +69,11 @@ test.describe("Intro to Python, Unit 2: Control Flow", () => {
     await expect(page.getByTestId("got-further")).toHaveText(/Python got further: that slip is mended\./);
     await expect(page.getByTestId("explainer")).toHaveAttribute("data-kind", "compare-number-text");
     await expect(page.getByTestId("explainer-hint")).not.toContainText("One fixed");
+    // Help moves on with the student: step 2's rungs (the text "15"), not step 1's (the sign just mended).
+    await page.getByTestId("help-button").click();
+    await expect(page.getByTestId("help")).toHaveAttribute("data-step", "mend-needed");
+    await expect(page.getByTestId("help-rung-1")).toContainText("TypeError");
+    await expect(page.getByTestId("help-rung-1")).not.toContainText("SyntaxError");
 
     // The same slip again is not progress.
     await runAndWait(page, 3);

@@ -426,6 +426,53 @@ export function crashTarget(checkpoints: readonly Pick<Checkpoint, "text">[], cr
   return checkpoints.findIndex((checkpoint) => namesALine(checkpoint.text, crashLine));
 }
 
+/** A crash Help has aimed at this visit: its signature (line and Python's last line) and the step it got. */
+export type CrashAim = { signature: string; step: number | null };
+
+/**
+ * Where Help aims while a crash stands in a debugging exercise with several slips (a Broken spell). A crash checks
+ * no step, so the first open step stays at step 1 while the student mends slip after slip; Help must move on with
+ * them, or it talks about the line they just mended. Returns the step index, or null for "only say which line to
+ * mend" (the steps name other lines).
+ *
+ * - A crash seen before this visit gets the step it had (a slip mended and then broken again).
+ * - A crash that got further than the last one (`gotFurther`) aims past the last crash's step: the next step that
+ *   names the crash line in its text, else (when steps name lines) none, else the next step that names it in a
+ *   hint, else simply the next step.
+ * - Another new crash right after one (the same slip, typed another way) keeps the last crash's step.
+ * - Otherwise: the step that names the crash line, else the first open step (as before).
+ */
+export function crashAim(input: {
+  checkpoints: readonly Pick<Checkpoint, "text" | "hints">[];
+  crashLine: number | null;
+  signature: string;
+  /** Crashes Help aimed at earlier in this visit. */
+  seen: readonly CrashAim[];
+  /** The last run's crash, when the last run crashed too. */
+  previous: CrashAim | null;
+  gotFurther: boolean;
+  firstOpen: number;
+}): number | null {
+  const { checkpoints, crashLine, signature, seen, previous, gotFurther, firstOpen } = input;
+  const known = seen.find((aim) => aim.signature === signature);
+  if (known) return known.step;
+  const linesNamed = checkpoints.some((checkpoint) => namesALine(checkpoint.text));
+  if (previous && previous.step !== null && crashLine !== null) {
+    if (!gotFurther) return previous.step;
+    const after = checkpoints.map((checkpoint, index) => ({ checkpoint, index })).slice(previous.step + 1);
+    const byText = after.find(({ checkpoint }) => namesALine(checkpoint.text, crashLine));
+    if (byText) return byText.index;
+    if (linesNamed) return null;
+    const byHint = after.find(({ checkpoint }) => (checkpoint.hints ?? []).some((hint) => namesALine(hint, crashLine)));
+    if (byHint) return byHint.index;
+    return Math.min(previous.step + 1, checkpoints.length - 1);
+  }
+  const named = crashTarget(checkpoints, crashLine);
+  if (named >= 0) return named;
+  if (linesNamed && crashLine !== null) return null;
+  return firstOpen;
+}
+
 /** Whether the next rung must wait (a Run since the last rung, or RUNG_PACE_MS, lets it open). */
 export function rungPaced(lastRungAt: number | null, ranSinceRung: boolean, now: number): boolean {
   if (lastRungAt === null || ranSinceRung) return false;

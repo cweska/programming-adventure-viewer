@@ -36,6 +36,7 @@ Unit file format (plain Python data, no imports needed):
         dict(kind="project", id="...", title="...", **EXERCISE_FIELDS),         # checkpoints = project tasks
         dict(kind="challenge", id="...", title="...", level="core"|"advanced", **EXERCISE_FIELDS),
         dict(kind="testout", id="...", title="...", exercises=[EXERCISE, ...]),  # pass all => unit complete
+             # optional questions_to_pass=3: the quiz "<id>-questions" must have 3 right too
         dict(kind="article", id="...", title="...", body="...", examples=[dict(code=..., output=..., stdin=[...])],
              exercises=[...optional try-it EXERCISEs...]),
         dict(kind="cheatsheet", id="...", title="...", entries=[dict(concept=..., code=..., output=..., note=...)]),
@@ -578,8 +579,77 @@ def verify_question(q: dict, where: str, gate: ConceptGate, report: Report) -> N
         report.error(where, f"unknown question type {kind!r}")
 
 
+# Prose fields (FORMAT.md "Prose"): the marks the site renders are `code`, [[links]], *one star* and lists.
+PROSE_FIELDS = {"martu_intro", "goals", "summary", "intro", "martu", "text", "label", "hints", "pass_line", "why",
+                "takeaway", "q", "explain", "why_wrong", "body", "note", "pair_talk"}
+GLOSSARY_LINK = re.compile(r"\[\[[A-Za-z][^\]|]*(?:\|[^\]]*)?\]\]")
+EMPHASIS = re.compile(r"(?<![\w*])\*(?=[^\s*])([^*\n]*?[^\s*])\*(?![\w*])")
+
+
+def prose_mark_problems(text: str) -> list[str]:
+    """Marks the site would show as they are: a [[link]] inside `code`, **bold**, *stars* around a code span."""
+    plain = re.sub(r"```[\s\S]*?```", " ", text)
+    problems = [f"a [[glossary link]] inside `{span}`" for span in re.findall(r"`([^`\n]*)`", plain)
+                if GLOSSARY_LINK.search(span)]
+    words = re.sub(r"`[^`\n]*`", "CODE", plain)
+    if "**" in words:
+        problems.append("** (bold is not rendered: use *one star*)")
+    problems += [f"*stars* around a code span: {m.group(0)}" for m in EMPHASIS.finditer(words) if "CODE" in m.group(1)]
+    return problems
+
+
+def prose_strings(value, where=""):
+    """(where, text) for every prose string in a unit's data (code fields are skipped)."""
+    if isinstance(value, list):
+        for i, entry in enumerate(value):
+            yield from prose_strings(entry, f"{where}[{i}]")
+    elif isinstance(value, dict):
+        for key, child in value.items():
+            at = f"{where}.{key}" if where else str(key)
+            if key in PROSE_FIELDS:
+                values = child if isinstance(child, list) else list(child.values()) if isinstance(child, dict) else [child]
+                for i, text in enumerate(values):
+                    if isinstance(text, str):
+                        yield at if len(values) == 1 else f"{at}[{i}]", text
+            else:
+                yield from prose_strings(child, at)
+
+
+def ladder_warnings(ex: dict, where: str, report: Report) -> None:
+    """FORMAT.md's hint ladder: point first, the step's own line last (Start me off is cut from it)."""
+    ladders = [(f"checkpoint {i}", cp.get("hints") or []) for i, cp in enumerate(ex.get("checkpoints") or [], 1)]
+    if isinstance(ex.get("bonus"), dict):
+        ladders.append(("bonus", ex["bonus"].get("hints") or []))
+    for label, hints in ladders:
+        if hints and isinstance(hints[0], str) and hints[0].startswith("Start like this"):
+            report.warn(where, f"{label} hint 1 is a 'Start like this': the site shows hint 1 as Where to look. "
+                               "Put the step's own line in the last hint instead (FORMAT.md, checkpoint hints)")
+
+
 def verify_unit(path: Path, gate: ConceptGate, report: Report) -> None:
     unit, items = load_unit(path)
+    for at, text in prose_strings({"UNIT": unit, "ITEMS": items}):
+        for problem in prose_mark_problems(text):
+            report.warn(path.stem, f"{at}: {problem}")
+    # A Quick Check form that also needs its questions: the `<id>-questions` quiz must exist and have enough.
+    for item in items:
+        need = item.get("questions_to_pass")
+        if item.get("kind") != "testout" or need is None:
+            continue
+        quiz = next((q for q in items if q.get("kind") == "quiz" and q.get("id") == f"{item.get('id')}-questions"), None)
+        if isinstance(need, bool) or not isinstance(need, int) or need < 1:
+            report.error(f"{path.stem}/{item.get('id')}", "questions_to_pass must be a whole number, 1 or more")
+        elif quiz is None:
+            report.error(f"{path.stem}/{item.get('id')}", f"questions_to_pass needs a quiz with the id {item.get('id')}-questions")
+        elif need > len(quiz.get("questions", [])):
+            report.error(f"{path.stem}/{item.get('id')}", f"questions_to_pass is {need}, but the quiz has "
+                                                          f"{len(quiz.get('questions', []))} questions")
+    # Unit 1 predates the ladder rule and is frozen; from Unit 2 on, a 'Start like this' first hint is flagged.
+    if isinstance(unit.get("order"), int) and unit["order"] >= 2:
+        for item in items:
+            playables = [item] if item.get("kind") in ("project", "challenge") else item.get("exercises", [])
+            for ex in playables:
+                ladder_warnings(ex, f"{path.stem}/{item.get('id')}" + ("" if ex is item else f"/{ex.get('id')}"), report)
     summary = {"file": path.name, "id": unit.get("id"), "title": unit.get("title"), "items": []}
     for field in ("id", "order", "title", "martu_intro", "goals", "campaign_links"):
         if field not in unit:

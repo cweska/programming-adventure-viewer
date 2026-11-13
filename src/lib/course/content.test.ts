@@ -140,6 +140,21 @@ function withoutFences(text: string): string {
   return text.replace(/```[\s\S]*?```/g, " ");
 }
 
+/** Marks prose-format.ts would show as they are (see the prose rules test). */
+function proseMarkProblems(text: string): string[] {
+  const plain = withoutFences(text);
+  const problems: string[] = [];
+  for (const span of plain.matchAll(/`([^`\n]*)`/g)) {
+    if (/\[\[[A-Za-z][^\]|]*(?:\|[^\]]*)?\]\]/.test(span[1])) problems.push(`a [[glossary link]] inside \`${span[1]}\``);
+  }
+  const words = plain.replace(/`[^`\n]*`/g, "CODE");
+  if (/\*\*/.test(words)) problems.push("** (bold is not rendered: use *one star*)");
+  for (const emphasis of words.matchAll(/(?<![\w*])\*(?=[^\s*])([^*\n]*?[^\s*])\*(?![\w*])/g)) {
+    if (emphasis[1].includes("CODE")) problems.push(`*stars* around a code span: ${emphasis[0]}`);
+  }
+  return problems;
+}
+
 function glossaryLinks(text: string): string[] {
   const plain = withoutFences(text).replace(/`[^`\n]*`/g, " ");
   return [...plain.matchAll(/\[\[([^\]|]+)(?:\|[^\]]*)?\]\]/g)].map((match) => match[1].trim());
@@ -441,6 +456,18 @@ describe("exported course content", () => {
             if (/^\s*\d+[.)]\s/.test(cp.text)) problems.push(`${unit.id}/${item.id}/${exercise.id}/${cp.id}: leading number`);
           }
         }
+      }
+    }
+    expect(problems).toEqual([]);
+  });
+
+  it("uses only the marks prose-format.ts renders: no [[link]] inside `code`, no **bold**, no *stars* around `code`", () => {
+    // `random.[[randint]](1, 6)` showed the brackets as code, and **both ends** showed the stars: students copy
+    // what they see. A glossary link goes outside the code span; emphasis is single stars, around words only.
+    const problems: string[] = [];
+    for (const name of unitFiles) {
+      for (const { where, text } of proseStrings(readJson(path.join(UNITS_DIR, name)))) {
+        for (const problem of proseMarkProblems(text)) problems.push(`${name} ${where}: ${problem}`);
       }
     }
     expect(problems).toEqual([]);
