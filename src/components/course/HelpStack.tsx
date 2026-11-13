@@ -38,6 +38,7 @@ export function HelpStack({
   crashLine = null,
   crashOnly = false,
   moreAfterRun = false,
+  crashIsTask = false,
   startInCode = () => false,
   onReveal,
   onDismissOffer,
@@ -66,6 +67,8 @@ export function HelpStack({
   crashOnly?: boolean;
   /** Light support before the first Run: only Where to look (and Start me off) are open yet; the rest follow a Run. */
   moreAfterRun?: boolean;
+  /** The crash is part of the task (Mar'tu's version switches that line off): read the message, don't mend it. */
+  crashIsTask?: boolean;
   /** Whether the code already starts the step's line (Start me off then has nothing to add). */
   startInCode?: (start: string) => boolean;
   onReveal: () => RevealResult;
@@ -198,7 +201,12 @@ export function HelpStack({
     ) : null;
   }
 
-  const crashNote = crashed ? (
+  const crashNote = crashed && crashIsTask && crashLine ? (
+    <p className="ex-help-crash" data-testid="help-crash" data-switch-off="true">
+      <strong>{`Python stopped on line ${crashLine}.`}</strong> Read its message under your code: your{" "}
+      {noun.toLowerCase()}s come from it.
+    </p>
+  ) : crashed ? (
     <p className="ex-help-crash" data-testid="help-crash">
       <strong>{`Mend ${crashLine ? `line ${crashLine}` : "the error"} first.`}</strong> Python stopped there, so it could
       not check your steps yet. Read the message under your code.

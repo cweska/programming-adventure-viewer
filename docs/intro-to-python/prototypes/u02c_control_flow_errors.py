@@ -1923,6 +1923,7 @@ EQUALS_IS_NOT_DEF = dict(
                 "Read Python's last line: `expected '('`. After `def`, Python expects a recipe, not a box.",
                 "Look at line 1. One word is extra. A box is a name, `=`, and a value.",
                 "A box with other names: `snack = \"glug\"`. No `def`, and no brackets around the name.",
+                "Change line 1 to `hero = \"Lucky\"`, with no `def`.",
             ],
             checks=[
                 name_check("hero", foreign=["snack"]),
@@ -2099,6 +2100,7 @@ DEBUG_ROUTINE = dict(
                 "It can only glue text to text. Go to line 10, then check line 3: what kind of value does `roll` "
                 "hold?",
                 "`\"Gold: \" + str(gold)` turns the number into text first, so the glue works.",
+                "Change line 10 to `print(\"Rolled: \" + str(roll))`.",
             ],
             checks=[("the line shows the roll", _rerun_code() + _SHOWS_ROLL_LINE)],
         ),
@@ -2636,6 +2638,7 @@ TYPE_FIZZLES = dict(
                 "Read Python's last line. What can it only glue?",
                 "Look at line 2, the line Python names. Python can only glue text to text, and `mana` holds a number.",
                 "`\"Gold: \" + str(gold)` turns the number into text first.",
+                "Change line 2 to `print(\"Mana: \" + str(mana))`.",
             ],
             checks=[
                 lines_check("the mana line follows mana", [

@@ -996,6 +996,10 @@ describe("explainCourseError: Unit 2 play-through findings", () => {
     expect(explainRun("If hours_left <= 2:\n    print(1)\n", [], { explainer: "lean" }).hint).toContain(
       "a capital letter in one of Python's words",
     );
+    // Words typed without quotes that happen to start with a capital If are not read as Python's `if`.
+    expect(explainRun("If you dare, enter\n").kind).not.toBe("keyword-capital");
+    expect(explainRun("Import the dice\n").kind).not.toBe("keyword-capital");
+    expect(explainRun("Import random\nprint(random.randint(1, 6))\n").hint).toContain("Write: `import random`");
   });
 
   it("offers the task's names only when one is close, and never quotes for a number in math (Anatomy of a fizzle)", () => {

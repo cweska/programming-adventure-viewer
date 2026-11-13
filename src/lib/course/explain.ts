@@ -1346,8 +1346,19 @@ function elseWithQuestion(text: string, line: number | null, raw: string): Cours
   );
 }
 
-/** Python's own words that a student might type with a capital (`If`, `Else:`, `Import random`). */
-const LOWER_KEYWORDS = new Set(["if", "elif", "else", "import", "for", "while", "def", "return", "print"]);
+/**
+ * Python's own words that a student might type with a capital (`If`, `Else:`, `Import random`), each with the
+ * shape of the line that really uses it, so words typed without quotes (`If you dare, enter`) are not read as one.
+ */
+const CAPITAL_KEYWORD_SHAPES: Record<string, RegExp> = {
+  if: /^If\b.*(?::\s*$|[=!<>]=|[<>])/,
+  elif: /^Elif\b.*(?::\s*$|[=!<>]=|[<>])/,
+  while: /^While\b.*(?::\s*$|[=!<>]=|[<>])/,
+  else: /^Else\s*:?\s*$/,
+  for: /^For\s+[A-Za-z_]\w*\s+in\b/,
+  def: /^Def\s+[A-Za-z_]\w*\s*\(/,
+  import: /^Import\s+[A-Za-z_][\w.]*\s*$/,
+};
 
 /**
  * `If hours_left < 3:`, `Else:`, `Import random`: one of Python's words with a capital letter, which Python reads
@@ -1357,7 +1368,7 @@ function explainKeywordShape(text: string, line: number | null, raw: string): Co
   const body = codePart(text).trim();
   const first = body.match(/^([A-Za-z]+)\b/)?.[1] ?? "";
   const small = first.toLowerCase();
-  if (first && first !== small && LOWER_KEYWORDS.has(small) && small !== "print") {
+  if (first && first !== small && CAPITAL_KEYWORD_SHAPES[small]?.test(maskStrings(body))) {
     const fixed = `${small}${body.slice(first.length)}`;
     return explain(
       "keyword-capital",

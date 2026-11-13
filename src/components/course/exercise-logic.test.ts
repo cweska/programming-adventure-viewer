@@ -8,6 +8,7 @@ import {
   assembledCode,
   checkpointHeading,
   crashAim,
+  crashLineSwitchedOff,
   effectiveSupport,
   exerciseIndexFromHash,
   hashForExercise,
@@ -325,5 +326,33 @@ describe("crashAim: Help in a Broken spell moves past the slips already mended",
     expect(crashAim({ checkpoints: named, crashLine: 5, signature: "5:TypeError", seen: [previous], previous, gotFurther: true, firstOpen: 0 })).toBe(1);
     expect(crashAim({ checkpoints: named, crashLine: 4, signature: "4:x", seen: [], previous: null, gotFurther: false, firstOpen: 0 })).toBeNull();
     expect(crashAim({ checkpoints: spell2b, crashLine: 2, signature: "2:x", seen: [], previous: null, gotFurther: false, firstOpen: 2 })).toBe(2);
+  });
+
+  it("prefers the step whose Help names Python's error when several steps name the crash line", () => {
+    // `=>` mended to a lone `=` (it runs), then to `>=`: the TypeError comes with no crash just before it.
+    const withHints = [
+      { text: spell2a[0].text, hints: ["Read Python's last line: `SyntaxError: invalid syntax`.", "b"] },
+      { text: spell2a[1].text, hints: ["Read Python's last line: a `TypeError`.", "b"] },
+      spell2a[2],
+    ];
+    const typeError = "TypeError: '>=' not supported between instances of 'int' and 'str'";
+    expect(crashAim({ checkpoints: withHints, crashLine: 3, signature: `3:${typeError}`, seen: [], previous: null, gotFurther: false, firstOpen: 0, error: typeError })).toBe(1);
+    expect(crashAim({ checkpoints: withHints, crashLine: 3, signature: "3:SyntaxError: invalid syntax", seen: [], previous: null, gotFurther: false, firstOpen: 0, error: "SyntaxError: invalid syntax" })).toBe(0);
+    // No step's Help names the error: the first step that names the line, as before.
+    expect(crashAim({ checkpoints: spell2a, crashLine: 3, signature: `3:${typeError}`, seen: [], previous: null, gotFurther: false, firstOpen: 0, error: typeError })).toBe(0);
+  });
+});
+
+describe("crashLineSwitchedOff: a crash that is part of the task", () => {
+  const solution = 'hero = "Bomb Shell"\n# print("Mana left: " + str(mana - mana_cost))\nbad_line = 4\n';
+  it("is true when Mar'tu's version keeps the crash line switched off with #", () => {
+    expect(crashLineSwitchedOff('hero = "Bomb Shell"\nprint("Mana left: " + str(mana - mana_cost))\n', 2, solution)).toBe(true);
+    expect(crashLineSwitchedOff('hero = "Bomb Shell"\n  print("Mana left: " + str(mana - mana_cost))  \n', 2, solution)).toBe(true);
+  });
+  it("is false for any other line, an empty line, or no solution", () => {
+    expect(crashLineSwitchedOff('hero = "Bomb Shell"\nprint(mana_cost)\n', 2, solution)).toBe(false);
+    expect(crashLineSwitchedOff("\n\n", 2, solution)).toBe(false);
+    expect(crashLineSwitchedOff('print("Mana left: " + str(mana - mana_cost))\n', 1, undefined)).toBe(false);
+    expect(crashLineSwitchedOff('print("Mana left: " + str(mana - mana_cost))\n', null, solution)).toBe(false);
   });
 });

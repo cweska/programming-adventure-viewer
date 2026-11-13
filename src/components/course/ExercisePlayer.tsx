@@ -29,6 +29,7 @@ import {
   codeHasStart,
   countsAsAttempt,
   crashAim,
+  crashLineSwitchedOff,
   crashTarget,
   effectiveSupport,
   firstParagraph,
@@ -147,6 +148,8 @@ type RunView = {
    * Undefined outside debugging exercises and for runs that did not crash.
    */
   crashStep?: number | null;
+  /** The crash is part of the task: Mar'tu's version switches that line off with `#` (crashLineSwitchedOff). */
+  crashSwitchOff?: boolean;
 };
 
 /** The last line of Python's message ("SyntaxError: unterminated string literal ..."), or "" when there is none. */
@@ -832,6 +835,7 @@ export function ExercisePlayer({
           previous: lastAim.current,
           gotFurther: explanation.gotFurther === true,
           firstOpen: Math.max(0, exercise.checkpoints.findIndex((checkpoint) => !passedIds.includes(checkpoint.id))),
+          error: pythonLastLine(explanation.raw),
         });
         aim = { signature, step };
         if (!crashAims.current.some((seen) => seen.signature === signature)) crashAims.current.push(aim);
@@ -849,12 +853,16 @@ export function ExercisePlayer({
             : null;
         // Past the last crash: the error moved on (or is a new slip), or the code runs now and a step is next.
         const lastCrash = previous?.grade?.crashed === true ? previous.explanation : null;
+        // The code runs now, but the step that crash was about still fails (`=>` mended to a lone `=`, which
+        // runs): the slip is not mended, so no "that slip is mended" line.
+        const crashStepStillFails =
+          typeof previous?.crashStep === "number" && grade.firstFailing !== null && grade.firstFailing <= previous.crashStep;
         const gotFurther =
           debugging &&
           lastCrash !== null &&
           lastCrash.kind !== "timeout" &&
           !revealPass &&
-          (explanation?.gotFurther === true || (!grade.crashed && !grade.allPassed));
+          (explanation?.gotFurther === true || (!grade.crashed && !grade.allPassed && !crashStepStillFails));
         return {
           stdout: result.ok ? result.stdout + (result.stderr ?? "") : result.stdout,
           grade,
@@ -878,6 +886,9 @@ export function ExercisePlayer({
           newlyPassed: outcome.newlyPassed,
           revealPass,
           ...(aim ? { crashStep: aim.step } : {}),
+          ...(grade.crashed && explanation && crashLineSwitchedOff(source, crashLine(explanation.raw), exercise.solution)
+            ? { crashSwitchOff: true }
+            : {}),
         };
       });
       if (outcome.allPassed) {
@@ -1096,7 +1107,13 @@ export function ExercisePlayer({
               {exercise.title}
             </h2>
           ) : null}
-          {activeCheckpoint && !done && crashed ? (
+          {activeCheckpoint && !done && crashed && view?.crashSwitchOff && crashAt ? (
+            // The crash is part of the task (Anatomy of a fizzle): read the message first, then switch the line off.
+            <p className="ex-task-line" data-testid="task-line" data-crash="true" data-switch-off="true">
+              <span className="ex-task-label">{`Python stopped on line ${crashAt}.`}</span>{" "}
+              {`Read its message under your code first: your ${noun.toLowerCase()}s come from it. Then put # at the start of line ${crashAt} and Run again.`}
+            </p>
+          ) : activeCheckpoint && !done && crashed ? (
             // A crash checks nothing, so "step 1" may already be right: the line Python stopped at comes first.
             <p className="ex-task-line" data-testid="task-line" data-crash="true">
               <span className="ex-task-label">{`First, mend ${crashAt ? `line ${crashAt}` : "the error"}.`}</span>{" "}
@@ -1358,6 +1375,7 @@ export function ExercisePlayer({
               crashLine={crashAt}
               crashOnly={crashOnlyHelp}
               moreAfterRun={lightBeforeRun}
+              crashIsTask={view?.crashSwitchOff === true}
               startInCode={(start) => codeHasStart(code, start)}
               onReveal={revealRung}
               onDismissOffer={() => {

@@ -615,15 +615,37 @@ def prose_strings(value, where=""):
                 yield from prose_strings(child, at)
 
 
+def start_of_line(hints) -> str | None:
+    """The site's Start me off (exercise-logic.ts startOfLine): the first code span of the last hint, up to and
+    including its first `(` or lone `=`. None when there is nothing safe to give."""
+    last = hints[-1] if isinstance(hints, (list, tuple)) and len(hints) >= 2 and isinstance(hints[-1], str) else None
+    span = re.search(r"`([^`\n]+)`", last or "")
+    if not span:
+        return None
+    text = span.group(1).strip()
+    cut = re.match(r"^(.*?)(\(|[+\-*/]?=(?!=))", text)
+    if not cut or re.search(r"[=!<>]$", cut.group(1)):
+        return None
+    start = (cut.group(1) + cut.group(2)).strip()
+    return start if start and start != "(" and len(start) < len(text) else None
+
+
 def ladder_warnings(ex: dict, where: str, report: Report) -> None:
     """FORMAT.md's hint ladder: point first, the step's own line last (Start me off is cut from it)."""
-    ladders = [(f"checkpoint {i}", cp.get("hints") or []) for i, cp in enumerate(ex.get("checkpoints") or [], 1)]
+    ladders = [(f"checkpoint {i}", cp.get("hints") or [], ex.get("solution"))
+               for i, cp in enumerate(ex.get("checkpoints") or [], 1)]
     if isinstance(ex.get("bonus"), dict):
-        ladders.append(("bonus", ex["bonus"].get("hints") or []))
-    for label, hints in ladders:
+        ladders.append(("bonus", ex["bonus"].get("hints") or [], ex["bonus"].get("solution") or ex.get("solution")))
+    squash = lambda text: re.sub(r"\s+", "", text)  # noqa: E731
+    for label, hints, solution in ladders:
         if hints and isinstance(hints[0], str) and hints[0].startswith("Start like this"):
             report.warn(where, f"{label} hint 1 is a 'Start like this': the site shows hint 1 as Where to look. "
                                "Put the step's own line in the last hint instead (FORMAT.md, checkpoint hints)")
+        start = None if ex.get("solo") else start_of_line(hints)
+        if start and isinstance(solution, str) and squash(start) not in squash(solution):
+            report.warn(where, f"{label}: the last hint's first code span starts `{start}`, which Mar'tu's version "
+                               "never uses, so the site drops Start me off. Put the step's own line first in the "
+                               "last hint (FORMAT.md, checkpoint hints)")
 
 
 def verify_unit(path: Path, gate: ConceptGate, report: Report) -> None:

@@ -426,6 +426,18 @@ export function crashTarget(checkpoints: readonly Pick<Checkpoint, "text">[], cr
   return checkpoints.findIndex((checkpoint) => namesALine(checkpoint.text, crashLine));
 }
 
+/**
+ * The crash is part of the task: Mar'tu's version keeps the line Python stopped on, switched off with `#`
+ * (Anatomy of a fizzle: read the message, write it down, then switch line 4 off). "First, mend line 4" would
+ * contradict the task there, so the player says to read the message first. False for an empty line or no solution.
+ */
+export function crashLineSwitchedOff(code: string, crashLine: number | null, solution: string | undefined): boolean {
+  if (crashLine === null || !solution) return false;
+  const text = (code ?? "").split("\n")[crashLine - 1]?.trim() ?? "";
+  if (!text || text.startsWith("#")) return false;
+  return solution.split("\n").some((row) => /^\s*#/.test(row) && row.trim().replace(/^#\s*/, "") === text);
+}
+
 /** A crash Help has aimed at this visit: its signature (line and Python's last line) and the step it got. */
 export type CrashAim = { signature: string; step: number | null };
 
@@ -441,6 +453,10 @@ export type CrashAim = { signature: string; step: number | null };
  *   hint, else simply the next step.
  * - Another new crash right after one (the same slip, typed another way) keeps the last crash's step.
  * - Otherwise: the step that names the crash line, else the first open step (as before).
+ *
+ * When several steps name the crash line (Broken spell 2A: the sign and the text "15" are both on line 3), the one
+ * whose Help names Python's error (`TypeError`, from `error`, Python's last line) wins: a student who mends `=>`
+ * by way of a quiet `=` reaches the TypeError with no crash just before it, and step 1's rungs say SyntaxError.
  */
 export function crashAim(input: {
   checkpoints: readonly Pick<Checkpoint, "text" | "hints">[];
@@ -452,23 +468,34 @@ export function crashAim(input: {
   previous: CrashAim | null;
   gotFurther: boolean;
   firstOpen: number;
+  /** Python's last line (`TypeError: '>=' not supported ...`): its error's name breaks a tie between steps. */
+  error?: string;
 }): number | null {
   const { checkpoints, crashLine, signature, seen, previous, gotFurther, firstOpen } = input;
   const known = seen.find((aim) => aim.signature === signature);
   if (known) return known.step;
   const linesNamed = checkpoints.some((checkpoint) => namesALine(checkpoint.text));
+  const indexed = checkpoints.map((checkpoint, index) => ({ checkpoint, index }));
+  const errorName = input.error?.trim().match(/^([A-Z][A-Za-z]*(?:Error|Exception))\b/)?.[1];
+  const namesError = ({ checkpoint }: { checkpoint: Pick<Checkpoint, "hints"> }) =>
+    errorName !== undefined && (checkpoint.hints ?? []).some((hint) => new RegExp(`\\b${errorName}\\b`).test(hint));
+  /** Of the steps that name the crash line, the first whose Help names this error, else simply the first. */
+  const pick = (rows: typeof indexed) => {
+    const naming = rows.filter(({ checkpoint }) => crashLine !== null && namesALine(checkpoint.text, crashLine));
+    return (naming.find(namesError) ?? naming[0])?.index;
+  };
   if (previous && previous.step !== null && crashLine !== null) {
     if (!gotFurther) return previous.step;
-    const after = checkpoints.map((checkpoint, index) => ({ checkpoint, index })).slice(previous.step + 1);
-    const byText = after.find(({ checkpoint }) => namesALine(checkpoint.text, crashLine));
-    if (byText) return byText.index;
+    const after = indexed.slice(previous.step + 1);
+    const byText = pick(after);
+    if (byText !== undefined) return byText;
     if (linesNamed) return null;
     const byHint = after.find(({ checkpoint }) => (checkpoint.hints ?? []).some((hint) => namesALine(hint, crashLine)));
     if (byHint) return byHint.index;
     return Math.min(previous.step + 1, checkpoints.length - 1);
   }
-  const named = crashTarget(checkpoints, crashLine);
-  if (named >= 0) return named;
+  const named = pick(indexed);
+  if (named !== undefined) return named;
   if (linesNamed && crashLine !== null) return null;
   return firstOpen;
 }
