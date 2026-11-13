@@ -1,11 +1,76 @@
 [
   {
+    "term": ".lower()",
+    "aliases": [
+      "lower()",
+      "lower",
+      "lower-case copy"
+    ],
+    "plain": "The dot means: ask this text to do something. `.lower()` gives a copy in small letters. The text in the box does not change.",
+    "example": "\"YES\".lower()"
+  },
+  {
+    "term": "and",
+    "plain": "Joins two questions. `a and b` is `True` only when both are `True`.",
+    "example": "mana >= cost and affinity >= required"
+  },
+  {
+    "term": "assert",
+    "aliases": [
+      "asserts",
+      "seal",
+      "seals"
+    ],
+    "plain": "A line that says what must be true. If it is true, nothing happens. If it is not, Python stops with `AssertionError`.",
+    "example": "assert passed == True"
+  },
+  {
+    "term": "at least",
+    "aliases": [
+      ">=",
+      "at most",
+      "<=",
+      "exactly enough",
+      "boundary"
+    ],
+    "plain": "`>=` means *at least*: exactly the number still counts. `<=` means *at most*. `>` and `<` leave the number itself out.",
+    "example": "roll >= needed"
+  },
+  {
+    "term": "block",
+    "aliases": [
+      "blocks"
+    ],
+    "plain": "The indented lines under an `if`, `elif` or `else`. They run together, or not at all.",
+    "example": "if hours_left < 3:\n    print(\"Get inside!\")\n    print(\"Shield up.\")"
+  },
+  {
     "term": "brackets",
     "aliases": [
       "bracket"
     ],
     "plain": "The marks `(` and `)`. They come in pairs too. `print` keeps what it shows between them.",
     "example": "print(\"Hi\")"
+  },
+  {
+    "term": "branch",
+    "aliases": [
+      "branches"
+    ],
+    "plain": "One path through an `if` chain: the `if` part, one `elif` part, or the `else` part. Only one runs.",
+    "example": "elif choice == \"option 2\":"
+  },
+  {
+    "term": "bug",
+    "aliases": [
+      "bugs",
+      "debug",
+      "debugging",
+      "quiet bug",
+      "loud bug"
+    ],
+    "plain": "A slip in the code. A loud bug stops Python with a message. A quiet bug runs, but gives a wrong answer: print the values to find it.",
+    "example": "print(mana)\nprint(cost)"
   },
   {
     "term": "checkpoint",
@@ -15,12 +80,31 @@
     "plain": "One small task in an exercise. It turns green when your code does it."
   },
   {
+    "term": "colon",
+    "aliases": [
+      "colons"
+    ],
+    "plain": "The `:` mark at the end of an `if`, `elif` or `else` line. It says: here comes the block.",
+    "example": "if roll >= needed:"
+  },
+  {
     "term": "comment",
     "aliases": [
       "comments"
     ],
     "plain": "A line that starts with `#`. Python skips it. It is a note for people.",
     "example": "# Lucky's lines for tonight"
+  },
+  {
+    "term": "comparison",
+    "aliases": [
+      "comparisons",
+      "compare",
+      "comparison sign",
+      "comparison signs"
+    ],
+    "plain": "A yes/no question about two values, like `dex < needed`. The signs are `<` `>` `<=` `>=` `==` `!=`. Python answers `True` or `False`.",
+    "example": "dex < needed"
   },
   {
     "term": "console",
@@ -46,6 +130,22 @@
     ],
     "plain": "Made already. A name is defined once a line like `name = value` has run. \"Not defined\" means Python looked for something saved with that name and found nothing.",
     "example": "NameError: name 'hero' is not defined"
+  },
+  {
+    "term": "elif",
+    "aliases": [
+      "else if"
+    ],
+    "plain": "Short for else, if: another question, asked only when the ones above were `False`. Python takes the first branch whose answer is `True`.",
+    "example": "if hours_left <= 2:\n    color = \"red\"\nelif hours_left <= 12:\n    color = \"bright blue\""
+  },
+  {
+    "term": "else",
+    "aliases": [
+      "otherwise"
+    ],
+    "plain": "The part that runs when the `if` question was `False`. It has no question of its own.",
+    "example": "if roll >= needed:\n    print(\"It opens.\")\nelse:\n    print(\"It holds.\")"
   },
   {
     "term": "error message",
@@ -76,6 +176,34 @@
     "example": "\"Shield\" + \" up.\""
   },
   {
+    "term": "if",
+    "aliases": [
+      "if statement",
+      "if line"
+    ],
+    "plain": "A line that asks a yes-or-no question. When the answer is `True`, Python runs the indented lines under it. When it is `False`, Python skips them.",
+    "example": "if hours_left < 3:\n    print(\"Get inside!\")"
+  },
+  {
+    "term": "import",
+    "aliases": [
+      "imports",
+      "import random"
+    ],
+    "plain": "Brings in a set of tools Python keeps on the shelf. `import random` brings in Python's dice.",
+    "example": "import random"
+  },
+  {
+    "term": "indent",
+    "aliases": [
+      "indented",
+      "indentation",
+      "indents"
+    ],
+    "plain": "Spaces at the start of a line. Four spaces under an `if` mean: this line belongs to the `if`.",
+    "example": "if mana < 6:\n    print(\"Low mana.\")"
+  },
+  {
     "term": "input",
     "aliases": [
       "input()"
@@ -92,6 +220,26 @@
     "example": "sips = int(\"3\")"
   },
   {
+    "term": "is the same as",
+    "aliases": [
+      "==",
+      "double equals",
+      "is not the same as",
+      "!="
+    ],
+    "plain": "`==` asks whether two values are the same. `!=` asks whether they are different. One `=` does something else: it puts a value in a box (read it as *gets*).",
+    "example": "clock_color == \"red\""
+  },
+  {
+    "term": "match",
+    "aliases": [
+      "match statement",
+      "case"
+    ],
+    "plain": "Another way to choose: `match choice:` then one `case` for each value. `case _:` catches anything else.",
+    "example": "match choice:\n    case \"option 1\":\n        print(\"Then we leave at dawn.\")\n    case _:\n        print(\"Hm.\")"
+  },
+  {
     "term": "math signs",
     "aliases": [
       "math sign",
@@ -102,12 +250,31 @@
     "example": "print(48 - 37)"
   },
   {
+    "term": "NameError",
+    "aliases": [
+      "name error",
+      "name errors"
+    ],
+    "plain": "Python met a name that no line has made yet. Often a typo, a capital letter, missing quotes, or a box used before the line that makes it.",
+    "example": "print(mama)\nNameError: name 'mama' is not defined"
+  },
+  {
+    "term": "not",
+    "plain": "Flips a yes-or-no answer. `not True` is `False`, and `not False` is `True`.",
+    "example": "not barrier_up"
+  },
+  {
     "term": "number",
     "aliases": [
       "numbers"
     ],
     "plain": "A value Python can do math with. Numbers have no quotes: `3` is a number, `\"3\"` is text.",
     "example": "armor_bonus = 3"
+  },
+  {
+    "term": "or",
+    "plain": "Joins two questions. `a or b` is `True` when at least one of them is `True`.",
+    "example": "first_roll >= needed or second_roll >= needed"
   },
   {
     "term": "order of operations",
@@ -169,6 +336,15 @@
     "example": "\"Steady, now.\""
   },
   {
+    "term": "randint",
+    "aliases": [
+      "random.randint",
+      "random.randint()"
+    ],
+    "plain": "`random.randint(1, 6)` gives a random whole number from 1 to 6. Both ends are included.",
+    "example": "random.randint(1, 20)"
+  },
+  {
     "term": "remainder",
     "aliases": [
       "remainders",
@@ -223,6 +399,24 @@
     "example": "\"Shield up.\""
   },
   {
+    "term": "SyntaxError",
+    "aliases": [
+      "syntax error",
+      "syntax errors"
+    ],
+    "plain": "Python could not read a line: a missing quote, bracket or colon, or a sign it does not know. Nothing runs until it is mended.",
+    "example": "if mana < 6\nSyntaxError: expected ':'"
+  },
+  {
+    "term": "traceback",
+    "aliases": [
+      "tracebacks",
+      "full message"
+    ],
+    "plain": "Python's full message when a program stops. Read the last line first: the error's name, then what went wrong. Above it, the message names the line where Python stopped.",
+    "example": "File \"main.py\", line 4\nNameError: name 'mana_cost' is not defined"
+  },
+  {
     "term": "triple quotes",
     "aliases": [
       "triple-quoted",
@@ -230,6 +424,30 @@
     ],
     "plain": "Three quote marks in a row, `\"\"\"`. The text between two sets of them can run over many lines.",
     "example": "print(\"\"\"Line one\nLine two\"\"\")"
+  },
+  {
+    "term": "True and False",
+    "aliases": [
+      "True",
+      "False",
+      "True or False",
+      "bool",
+      "bools",
+      "boolean",
+      "booleans",
+      "yes/no answer"
+    ],
+    "plain": "Python's yes and no. They have capital letters and no quotes. A question like `6 > 15` gives back one of them.",
+    "example": "print(18 > 12)"
+  },
+  {
+    "term": "TypeError",
+    "aliases": [
+      "type error",
+      "type errors"
+    ],
+    "plain": "Two values that don't fit together, like text glued to a number. Turn the number into text with `str()`, or take the quotes off a number.",
+    "example": "print(\"Mana: \" + 7)\nTypeError: can only concatenate str (not \"int\") to str"
   },
   {
     "term": "value",
