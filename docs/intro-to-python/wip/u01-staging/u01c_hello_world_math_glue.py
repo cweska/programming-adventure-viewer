@@ -113,6 +113,8 @@ def rerun(label, changes, pre, cond, msg):
         "_R = _r.get\n"
         "_g0 = globals()\n"
         f"_miss = [_k for _k in {list(changes)!r} if _k not in _f]\n"
+        "assert not _miss or _miss[0] in _g0, 'Make a box named `' + (_miss[0] if _miss else '') + "
+        "'`: start a line with `' + (_miss[0] if _miss else '') + ' = `.'\n"
         f"assert not _miss, 'Keep the line that sets `' + (_miss[0] if _miss else '') + {keep!r}\n"
         f"assert not _e, {crash!r} + _e\n"
         f"{pre}\n"
@@ -132,12 +134,14 @@ def rerun_box(label, changes, target, want, fix):
     )
 
 
-def rerun_line(label, changes, want, fix, show=True):
+def rerun_line(label, changes, want, fix, show=True, hide="''"):
     """CMB on printed output: after the rerun, the line `want` (an expression over _R) must be printed, by a
     line that FOLLOWED the change. A line that prints `want` in the normal run too (at the same place) is typed
-    in: that stops `print(11)` + `print(7)` once the message has shown 7 (unless the rerun changed nothing)."""
+    in: that stops `print(11)` + `print(7)` once the message has shown 7 (unless the rerun changed nothing).
+    `hide` (an expression over the student's names, e.g. a creative hero box) is never repeated back: the nearest
+    printed line is left out of the message when it contains it (privacy, 2.11)."""
     shown = (
-        "(', but it printed `' + _nearest(_p, _want) + '`' if _p else ', but it printed nothing')"
+        "(', but it printed nothing' if not _p else ('' if (_hide and _hide in _nn) else ', but it printed `' + _nn + '`'))"
         if show
         else "''"
     )
@@ -145,6 +149,8 @@ def rerun_line(label, changes, want, fix, show=True):
         label,
         changes,
         f"_want = {want}\n"
+        f"_hide = str({hide} or '').strip()\n"
+        "_nn = _nearest(_p, _want) if _p else ''\n"
         "_old = _lines()\n"
         f"_same = all(_g0.get(_k) == _v for _k, _v in {changes!r}.items())\n"
         "_at = [_i for _i, _l in enumerate(_p) if _l == _want]\n"
@@ -248,9 +254,10 @@ def story_pair(label, count_name, price_name, count, price, things, *, known, wi
     return (label, code)
 
 
-def out_line(label, want, missing, privacy=False, spaces="Check the spaces in your line: every space counts."):
+def out_line(label, want, missing, privacy=False, spaces="Check the spaces in your line: every space counts.", hide="''"):
     """OUT diff: `want` (an expression) must be printed. Shows the nearest printed line and where it first
-    differs, unless privacy=True (the line holds the student's own creative text)."""
+    differs, unless privacy=True (the line holds the student's own creative text). `hide` (an expression, e.g. a
+    creative hero box) keeps other lines that hold the student's own text out of the diff."""
     if privacy:
         code = (
             f"_want = ({want}).strip()\n"
@@ -261,7 +268,9 @@ def out_line(label, want, missing, privacy=False, spaces="Check the spaces in yo
         return (label, code)
     code = (
         f"_want = {want}\n"
+        f"_hide = str({hide} or '').strip()\n"
         "_ls = _lines()\n"
+        "_cands = [_l for _l in _ls if not (_hide and _hide in _l)]\n"
         "def _pre(_l):\n"
         "    _k = 0\n"
         "    while _k < len(_l) and _k < len(_want) and _l[_k] == _want[_k]:\n"
@@ -270,8 +279,10 @@ def out_line(label, want, missing, privacy=False, spaces="Check the spaces in yo
         "_msg = ''\n"
         "if _want not in _ls and not _ls:\n"
         f"    _msg = 'Nothing is printed yet. ' + {missing!r}\n"
+        "elif _want not in _ls and not _cands:\n"
+        f"    _msg = 'Expected `' + _want + '`, and no printed line matches it yet. ' + {missing!r}\n"
         "elif _want not in _ls:\n"
-        "    _near = max(_ls, key=_pre)\n"
+        "    _near = max(_cands, key=_pre)\n"
         "    _i = _pre(_near)\n"
         "    _shown = _near.replace('`', \"'\")\n"
         "    _head = 'Expected `' + _want + '`, you printed `' + _shown + '`. '\n"
@@ -346,6 +357,15 @@ def near_names(label, names, known):
         "assert not _near, 'Python matches names letter for letter: you wrote `' + (_near[0][0] if _near else '') + "
         "'`, the task needs `' + (_near[0][1] if _near else '') + '`.'\n",
     )
+
+
+# The party's own names are no secret; any other value in a creative box is the student's and is never shown back.
+WORLD_NAMES = ("Lucky", "Oogrish", "Gearshift", "Bomb Shell", "Mar'tu", "Tester")
+
+
+def own(box):
+    """`hide` expression: the student's text in `box`, unless it is one of the party's names."""
+    return f"(globals().get({box!r}) if globals().get({box!r}) not in {WORLD_NAMES!r} else '')"
 
 
 def meta(**fields):
@@ -1386,7 +1406,7 @@ GLUE_WORDS = dict(
                 rerun_line(
                     "the line is built from the boxes", {"name": "Tester", "mana": 4},
                     "_R('name') + ' has ' + str(_R('mana')) + ' mana.'",
-                    "Build the line from `name` and `str(mana)`, so it follows the boxes.",
+                    "Build the line from `name` and `str(mana)`, so it follows the boxes.", hide=own("name"),
                 ),
                 (
                     "glued with + and str()",
@@ -1457,7 +1477,7 @@ GLUE_WORDS = dict(
             rerun_line(
                 "the of-line is built from the boxes", {"name": "Tester", "mana": 4, "max_mana": 30},
                 "_R('name') + ' has ' + str(_R('mana')) + ' of ' + str(_R('max_mana')) + ' mana.'",
-                "Build it from `name`, `str(mana)` and `str(max_mana)`.",
+                "Build it from `name`, `str(mana)` and `str(max_mana)`.", hide=own("name"),
             ),
         ],
         solution=(
@@ -1656,9 +1676,10 @@ STATUS_LINE_EX = dict(
             "Spend: `lucky_mana = lucky_mana - 3`. Then glue the line with `str()`.",
         ],
         checks=[
-            out_line("prints Lucky's line", "'Lucky: 23/26 mana'", "Print `Lucky: 23/26 mana`, built from the lucky boxes."),
+            out_line("prints Lucky's line", "'Lucky: 23/26 mana'", "Print `Lucky: 23/26 mana`, built from the lucky boxes.",
+                     hide=own("hero_name")),
             rerun_line("Lucky's line follows his boxes", {"lucky_affinity": 10}, "'Lucky: 17/20 mana'",
-                       "Build every number from `lucky_affinity`."),
+                       "Build every number from `lucky_affinity`.", hide=own("hero_name")),
         ],
         solution=_status("Oogrish") + (
             "lucky_affinity = 13\nlucky_max = lucky_affinity * 2\nlucky_mana = lucky_max\nlucky_mana = lucky_mana - 3\n"
@@ -2135,6 +2156,7 @@ SOLO_1C = dict(
                 "If `a = 2` and `b = 6`, then `c = a * b` puts 12 in `c`.",
             ],
             checks=[
+                loose_math("the math is kept in a box"),
                 slot("candle_cost multiplies the boxes", "candle_cost", "candle_count * candle_price",
                      known=CANDLE_KNOWN, foreign=["lantern_count", "lantern_price", "lantern_cost", "map_cost"],
                      default="Make `candle_cost` from the two candle boxes."),
@@ -2169,6 +2191,14 @@ SOLO_1C = dict(
         dict(why="capital letter in a name",
              code=CANDLE_STORY + "Candle_count = 4\ncandle_count = 0\ncandle_price = 2\ncandle_cost = 0\nprint(candle_cost)\n",
              fails_at=1, message_contains="letter for letter"),
+        dict(why="the math worked out on a line of its own, kept in no box",
+             code=CANDLE_STORY + "candle_count = 4\ncandle_price = 2\ncandle_cost = 0\ncandle_count * candle_price\nprint(candle_cost)\n",
+             fails_at=2, message_contains="keeps it nowhere"),
+        dict(why="the price typed into the cost",
+             code=CANDLE_STORY + "candle_count = 4\ncandle_price = 2\ncandle_cost = candle_count * 2\nprint(candle_cost)\n",
+             fails_at=2, message_contains="candle_price = 3"),
+        dict(why="numbers in quotes", code=CANDLE_STORY + 'candle_count = "4"\ncandle_price = 2\ncandle_cost = 0\nprint(candle_cost)\n',
+             fails_at=1, message_contains="quotes"),
     ],
     notes=(
         meta(starter_level="S3", path="CC", skills="combine-values", solo="true", dictates="",
@@ -2343,9 +2373,9 @@ COMBINE_AGAIN = dict(
                 slot("supply_total adds both costs", "supply_total", SUPPLY_TOTAL, known=SUPPLY_KNOWN,
                      rules=[("_have == map_count + oil_count", "You added how many, not costs. Each cost is how many times the price.")],
                      default="Make `supply_total` from the boxes: map cost plus oil cost."),
-                rerun_box("supply_total follows the maps", {"map_count": 5}, "supply_total",
+                rerun_box("supply_total follows the maps", {"map_count": 5, "map_price": 7}, "supply_total",
                           "_R('map_count') * _R('map_price') + _R('oil_count') * _R('oil_price')", COMBINE_FIX),
-                rerun_box("supply_total follows the oil", {"oil_price": 4}, "supply_total",
+                rerun_box("supply_total follows the oil", {"oil_count": 9, "oil_price": 4}, "supply_total",
                           "_R('map_count') * _R('map_price') + _R('oil_count') * _R('oil_price')", COMBINE_FIX),
             ],
         ),
@@ -2370,6 +2400,12 @@ COMBINE_AGAIN = dict(
         dict(why="the total typed by hand",
              code="map_count = 2\nmap_price = 6\noil_count = 4\noil_price = 3\nsupply_total = 24\nprint(supply_total)\n",
              fails_at=2, message_contains="stayed 24"),
+        dict(why="map price typed inside the total (passes a count-only rerun)",
+             code="map_count = 2\nmap_price = 6\noil_count = 4\noil_price = 3\nsupply_total = map_count * 6 + oil_count * oil_price\nprint(supply_total)\n",
+             fails_at=2, message_contains="map_price = 7"),
+        dict(why="oil count typed inside the total (passes a price-only rerun)",
+             code="map_count = 2\nmap_price = 6\noil_count = 4\noil_price = 3\nsupply_total = map_count * map_price + 4 * oil_price\nprint(supply_total)\n",
+             fails_at=2, message_contains="oil_count = 9"),
     ],
     notes=(
         meta(starter_level="S4", path="pool", skills="combine-values", solo="false", dictates="",
@@ -2543,6 +2579,37 @@ def _ledger(a1=LEDGER_A1, a2=LEDGER_A2, b3=LEDGER_B3, b4=LEDGER_B4, c5=LEDGER_C5
     return a1 + a2 + b3 + b4 + LEDGER_C + c5 + c6 + (c7 if c7 is not None else _c7("Bomb Shell"))
 
 
+# Any hero passes (lint e). When it does not, say why without ever repeating the hero back (privacy, 2.11):
+# a near-miss name (NAME), a lone value (BARE), the hero in another box (NEWBOX / a hint's `guard`), no quotes.
+WATCH_KEEPER_CHECK = (
+    "watch_keeper holds a hero",
+    _NAMES_PRE + (
+        f"_known = {LEDGER_KNOWN!r}\n"
+        "_have = _g.get('watch_keeper')\n"
+        "_ok = type(_have).__name__ == 'str' and _have.strip() != ''\n"
+        "_msg = ''\n"
+        "if not _ok:\n"
+        "    _near = [_m for _m in _made if _m not in _known and _close(_m, 'watch_keeper')]\n"
+        "    _newb = [_m for _m in _made if _m not in _known and type(_g.get(_m)).__name__ == 'str' and _g[_m].strip()]\n"
+        "    if _near:\n"
+        "        _msg = 'Python matches names letter for letter: you wrote `' + _near[0] + '`, the task needs `watch_keeper`.'\n"
+        "    elif _bare:\n"
+        "        _msg = 'Line ' + str(_bare[0]) + ' is a value with no box, so Python made it and forgot it. "
+        "Put `watch_keeper = ` in front of it.'\n"
+        "    elif _newb:\n"
+        "        _msg = 'Your new box `' + _newb[0] + '` holds the hero, but `watch_keeper` is still empty. "
+        "Put the hero in `watch_keeper`.'\n"
+        "    elif 'watch_keeper' not in _g:\n"
+        "        _msg = 'Make a box named `watch_keeper`: start a line with `watch_keeper = `.'\n"
+        "    elif type(_have).__name__ != 'str':\n"
+        "        _msg = '`watch_keeper` should hold a hero, in quotes.'\n"
+        "    else:\n"
+        "        _msg = '`watch_keeper` holds empty quotes. Put any hero between them, or use Mar' + chr(39) + 'tu' + "
+        "chr(39) + 's pick.'\n"
+        "assert _ok, _msg\n"
+    ),
+)
+
 PROJECT_1P1 = dict(
     kind="project",
     id="night-watch-ledger",
@@ -2611,12 +2678,13 @@ PROJECT_1P1 = dict(
                 "If `days = 3` and `meals_per_day = 2`, then `days * meals_per_day` is 6 meals.",
             ],
             checks=[
+                loose_math("the math is kept in a box"),
                 slot("mana_needed multiplies the boxes", "mana_needed", "hours_until_burst * mana_per_hour",
                      known=LEDGER_KNOWN, foreign=["days", "meals_per_day"],
                      rules=[("_have == hours_until_burst + mana_per_hour",
                              "You added. The barrier needs 2 mana for each hour: multiply with `*`.")],
                      default="Make `mana_needed` from `hours_until_burst` and `mana_per_hour`."),
-                rerun_box("mana_needed follows the hours", {"hours_until_burst": 32}, "mana_needed",
+                rerun_box("mana_needed follows the hours", {"hours_until_burst": 32, "mana_per_hour": 3}, "mana_needed",
                           "_R('hours_until_burst') * _R('mana_per_hour')", LEDGER_FIX),
             ],
             pass_line="Gearshift: Math checks out.",
@@ -2631,6 +2699,7 @@ PROJECT_1P1 = dict(
                 "If `bags = 4` and `bag_price = 5`, then `bags * bag_price` is 20 coins.",
             ],
             checks=[
+                loose_math("the math is kept in a box"),
                 slot("oil_needed multiplies the boxes", "oil_needed", "hours_until_burst * oil_per_hour",
                      known=LEDGER_KNOWN, foreign=["bags", "bag_price"],
                      default="Make `oil_needed` from `hours_until_burst` and `oil_per_hour`."),
@@ -2639,7 +2708,7 @@ PROJECT_1P1 = dict(
                      default="Make `oil_cost` from `oil_needed` and `oil_price`."),
                 rerun_box("oil_needed follows the boxes", {"hours_until_burst": 32, "oil_per_hour": 2}, "oil_needed",
                           "_R('hours_until_burst') * _R('oil_per_hour')", LEDGER_FIX),
-                rerun_box("oil_cost follows the boxes", {"hours_until_burst": 32, "oil_per_hour": 2}, "oil_cost",
+                rerun_box("oil_cost follows the boxes", {"hours_until_burst": 32, "oil_per_hour": 2, "oil_price": 5}, "oil_cost",
                           "_R('hours_until_burst') * _R('oil_per_hour') * _R('oil_price')", LEDGER_FIX),
             ],
         ),
@@ -2654,9 +2723,10 @@ PROJECT_1P1 = dict(
             ],
             checks=[
                 out_line("prints the mana line", "'Mana for the barrier: ' + str(hours_until_burst * mana_per_hour)",
-                         "Print `Mana for the barrier: ` glued to `str(mana_needed)`."),
-                rerun_line("the mana line follows the hours", {"hours_until_burst": 32},
-                           "'Mana for the barrier: ' + str(_R('hours_until_burst') * _R('mana_per_hour'))", LEDGER_FIX),
+                         "Print `Mana for the barrier: ` glued to `str(mana_needed)`.", hide=own("watch_keeper")),
+                rerun_line("the mana line follows the hours", {"hours_until_burst": 32, "mana_per_hour": 3},
+                           "'Mana for the barrier: ' + str(_R('hours_until_burst') * _R('mana_per_hour'))", LEDGER_FIX,
+                           hide=own("watch_keeper")),
             ],
         ),
         dict(
@@ -2671,11 +2741,12 @@ PROJECT_1P1 = dict(
             checks=[
                 out_line("prints the oil line",
                          OIL_LINE % ("hours_until_burst * oil_per_hour", "hours_until_burst * oil_per_hour * oil_price"),
-                         "Print the oil line, glued from text, `str(oil_needed)` and `str(oil_cost)`."),
-                rerun_line("the oil line follows the hours", {"hours_until_burst": 32},
+                         "Print the oil line, glued from text, `str(oil_needed)` and `str(oil_cost)`.",
+                         hide=own("watch_keeper")),
+                rerun_line("the oil line follows the hours", {"hours_until_burst": 32, "oil_per_hour": 2, "oil_price": 5},
                            OIL_LINE % ("_R('hours_until_burst') * _R('oil_per_hour')",
                                        "_R('hours_until_burst') * _R('oil_per_hour') * _R('oil_price')"),
-                           LEDGER_FIX),
+                           LEDGER_FIX, hide=own("watch_keeper")),
             ],
         ),
         dict(
@@ -2688,17 +2759,7 @@ PROJECT_1P1 = dict(
                 "`\"Guard: \" + guard` glues fixed words to the text inside the box `guard`.",
             ],
             checks=[
-                (
-                    "watch_keeper holds a hero",
-                    "import ast as _ast\n"
-                    "_bare = [_n.lineno for _n in _ast.parse(_source).body if type(_n).__name__ == 'Expr' "
-                    "and type(_n.value).__name__ == 'Constant']\n"
-                    "assert not _bare, 'Line ' + str(_bare[0] if _bare else 0) + ' is a value with no box, so Python "
-                    "made it and forgot it. Put `watch_keeper = ` in front of it.'\n"
-                    "assert type(watch_keeper).__name__ == 'str', '`watch_keeper` should hold a hero, in quotes.'\n"
-                    "assert watch_keeper.strip(), '`watch_keeper` holds empty quotes. Put any hero between them, "
-                    "or use Mar\\'tu\\'s pick.'",
-                ),
+                WATCH_KEEPER_CHECK,
                 out_line("prints the watch line", "'First watch: ' + watch_keeper",
                          "Print `First watch: ` glued to `watch_keeper`. For a hero named Tester, that is "
                          "`First watch: Tester`.", privacy=True,
@@ -2798,7 +2859,7 @@ PROJECT_1P1 = dict(
                       "_R('hours_until_burst') * _R('oil_per_hour') * _R('oil_price') + _R('glug_fee')",
                       "Build it from `oil_cost` and `glug_fee`."),
             rerun_line("reserve bar follows its boxes", {"reserve": 1, "reserve_max": 6}, "'[█░░░░░]'",
-                       "Stamp `\"█\" * reserve`, then `\"░\" * (reserve_max - reserve)`."),
+                       "Stamp `\"█\" * reserve`, then `\"░\" * (reserve_max - reserve)`.", hide=own("watch_keeper")),
         ],
         solution=LEDGER_SOLUTION + (
             "glug_sips = 4\nglug_price = 2\nglug_fee = glug_sips * glug_price\nprint(\"~\" * 24)\n"
@@ -2840,6 +2901,35 @@ PROJECT_1P1 = dict(
         dict(why="the oil line with a missing space",
              code=_ledger(c6='print("Lantern oil: " + str(oil_needed) + "flasks for " + str(oil_cost) + " coins")\n'),
              fails_at=6, message_contains="space"),
+        dict(why="mana per hour typed into mana_needed (passes an hours-only rerun)",
+             code=_ledger(b3="\n# B. Let the code combine it\nmana_needed = hours_until_burst * 2\n"),
+             fails_at=3, message_contains="mana_per_hour = 3"),
+        dict(why="oil price typed into oil_cost (passes an hours-only rerun)",
+             code=_ledger(b4="oil_needed = hours_until_burst * oil_per_hour\noil_cost = oil_needed * 3\n"),
+             fails_at=4, message_contains="oil_price = 5"),
+        dict(why="gaming the message: the typed watch line plus the Tester line the message showed",
+             code=_ledger(c7='watch_keeper = "Bomb Shell"\nprint("First watch: Bomb Shell")\nprint("First watch: Tester")\n'),
+             fails_at=7, message_contains="typed in"),
+        dict(why="the hint's name copied: the hero in `guard`, watch_keeper left empty",
+             code=_ledger(c7='watch_keeper = ""\nguard = "Bomb Shell"\nprint("First watch: " + guard)\n'),
+             fails_at=7, message_contains="new box `guard`"),
+        dict(why="capital letter: Watch_keeper",
+             code=_ledger(c7='watch_keeper = ""\nWatch_keeper = "Bomb Shell"\nprint("First watch: " + Watch_keeper)\n'),
+             fails_at=7, message_contains="letter for letter"),
+        dict(why="a number in quotes", code=_ledger(a1='# A. What we know\nhours_until_burst = "37"\n'),
+             fails_at=1, message_contains="quotes"),
+        dict(why="a one-word hero with no quotes (A-08 kratos)",
+             code=_ledger(c7='watch_keeper = Kratos\nprint("First watch: " + watch_keeper)\n'),
+             fails_at=0, message_contains="not defined"),
+        dict(why="def used to make the box (A-02)",
+             code=_ledger(c7='def watch_keeper = "Bomb Shell"\nprint("First watch: " + watch_keeper)\n'),
+             fails_at=0, message_contains="SyntaxError"),
+        dict(why="the closing quote missing (A-02/A-03/A-04)",
+             code=_ledger(c7='watch_keeper = "Bomb Shell\nprint("First watch: " + watch_keeper)\n'),
+             fails_at=0, message_contains="SyntaxError"),
+        dict(why="the mana line built from the hours and a typed 2, skipping mana_needed",
+             code=_ledger(c5='print("Mana for the barrier: " + str(hours_until_burst * 2))\n'),
+             fails_at=5, message_contains="mana_per_hour = 3"),
     ],
     notes=(
         meta(starter_level="S2", path="SC", skills="combine-values,concat-str,make-variable", solo="false",
