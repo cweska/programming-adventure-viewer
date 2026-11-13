@@ -436,6 +436,9 @@ export function ExercisePlayer({
   const [insertNote, setInsertNote] = useState("");
 
   const time = useActiveTime(key);
+  /** time.session for callbacks (typing, Run, Help), which may run with an older render's values. */
+  const sessionNow = useRef(0);
+  sessionNow.current = time.session;
   const runButton = useRef<HTMLButtonElement>(null);
   const assembleHeading = useRef<HTMLHeadingElement>(null);
   const stepsHeading = useRef<HTMLHeadingElement>(null);
@@ -528,7 +531,7 @@ export function ExercisePlayer({
   function changeCode(value: string) {
     codeRef.current = value;
     setCode(value);
-    activityAt.current = time.session;
+    activityAt.current = sessionNow.current;
     // Mar'tu's version is gone from the editor (cleared, or reset): a pass from here is the student's own.
     if (copiedSolution.current && isBlankOrStarter(value, exercise.starter)) forgetCopiedSolution();
     pendingSave.current = value;
@@ -621,8 +624,8 @@ export function ExercisePlayer({
     ranSinceRung.current = false;
     helpSinceRun.current = true;
     // Taking up Help answers an offer: it goes away (a "misses" offer comes back only after 3 more misses).
-    activityAt.current = time.session;
-    if (offer === "time") progressAtSessionMs.current = time.session;
+    activityAt.current = sessionNow.current;
+    if (offer === "time") progressAtSessionMs.current = sessionNow.current;
     if (offer === "misses") setStreakTakenUp(streakRef.current);
     if (help.next.kind === "show") openCompare();
     if (help.next.kind === "structure") openAssemble();
@@ -721,7 +724,7 @@ export function ExercisePlayer({
       helpSinceRun.current = false;
       ranSinceRung.current = true;
       updateExercise(key, (previous) => applyRun(previous, outcome, { code: source, bonusPassed: revealPass ? false : bonusGrade?.allPassed }));
-      if (outcome.newlyPassed.length > 0) progressAtSessionMs.current = time.session;
+      if (outcome.newlyPassed.length > 0) progressAtSessionMs.current = sessionNow.current;
       // The student's own pass: Mar'tu's version is no longer what is in the editor.
       if (outcome.allPassed && copiedSolution.current) forgetCopiedSolution();
 
@@ -729,7 +732,7 @@ export function ExercisePlayer({
       const nextStreak = nextFailStreak(streakRef.current, stuckOn);
       streakRef.current = nextStreak;
       setStreak(nextStreak);
-      activityAt.current = time.session;
+      activityAt.current = sessionNow.current;
       if (!grade.allPassed) setMissedThisVisit(true);
       const crashText = result.traceback || result.stderr || "";
       const explanation = grade.crashed ? explainCourseError(crashText, source, context) : null;

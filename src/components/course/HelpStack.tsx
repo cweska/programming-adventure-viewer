@@ -138,7 +138,7 @@ export function HelpStack({
         return (
           <div className="ex-help-start">
             <p data-testid="help-start-done">
-              Your code already starts this line: <code className="inline-code">{rung.start}</code> Finish that line yourself.
+              Your code already starts this line (<code className="inline-code">{rung.start}</code>). Finish it yourself.
             </p>
           </div>
         );

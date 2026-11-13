@@ -2566,9 +2566,15 @@ THE_SHORT_WAY = dict(
     ),
 )
 
-SUPPLY_STORY = "# Maps cost 6 coins each, and Oogrish wants 2.\n# Oil costs 3 coins a flask, and he needs 4.\n"
-SUPPLY_KNOWN = ["map_count", "map_price", "oil_count", "oil_price", "supply_total", "map_cost", "oil_cost"]
-SUPPLY_TOTAL = "map_count * map_price + oil_count * oil_price"
+SUPPLY_STORY = "# Chalk costs 5 coins a stick, and Oogrish wants 3.\n# Oil costs 3 coins a flask, and he needs 4.\n"
+SUPPLY_KNOWN = ["chalk_count", "chalk_price", "oil_count", "oil_price", "supply_total", "chalk_cost", "oil_cost"]
+SUPPLY_TOTAL = "chalk_count * chalk_price + oil_count * oil_price"
+SUPPLY_BOXES = "chalk_count = 3\nchalk_price = 5\noil_count = 4\noil_price = 3\n"
+
+
+def _supply(total_line):
+    return SUPPLY_STORY + SUPPLY_BOXES + total_line + "\nprint(supply_total)\n"
+
 
 COMBINE_AGAIN = dict(
     id="combine-again",
@@ -2577,21 +2583,21 @@ COMBINE_AGAIN = dict(
         "Same idea, new shop. Both lines of this story give the price first. "
         "Ask each number its question, then let the code combine it."
     ),
-    names=["map_count", "map_price", "oil_count", "oil_price", "supply_total"],
-    starter=SUPPLY_STORY + "map_count = 0\nmap_price = 0\noil_count = 0\noil_price = 0\nsupply_total = 0\nprint(supply_total)\n",
+    names=["chalk_count", "chalk_price", "oil_count", "oil_price", "supply_total"],
+    starter=SUPPLY_STORY + "chalk_count = 0\nchalk_price = 0\noil_count = 0\noil_price = 0\nsupply_total = 0\nprint(supply_total)\n",
     checkpoints=[
         dict(
             id="supply-boxes",
             text="Fill in the four boxes from the story.",
             dictated=False,
             hints=[
-                "Start with maps: how many does Oogrish want? That goes after `map_count = `.",
+                "Start with chalk: how many sticks does Oogrish want? That goes after `chalk_count = `.",
                 "Each line gives the price first. Ask: how many? how much is one?",
                 "'Candles cost 1 coin each, and I need 3': 3 is how many, 1 is the price of one.",
             ],
             checks=[
-                story_pair("the map boxes match the story", "map_count", "map_price", 2, 6, "maps",
-                           known=SUPPLY_KNOWN, wild="The story says Oogrish wants 2 maps.", price_first=True),
+                story_pair("the chalk boxes match the story", "chalk_count", "chalk_price", 3, 5, "sticks",
+                           known=SUPPLY_KNOWN, wild="The story says Oogrish wants 3 sticks.", price_first=True),
                 story_pair("the oil boxes match the story", "oil_count", "oil_price", 4, 3, "flasks",
                            known=SUPPLY_KNOWN, wild="The story says he needs 4 flasks.", price_first=True),
             ],
@@ -2601,52 +2607,73 @@ COMBINE_AGAIN = dict(
             text="Make `supply_total` the cost of everything, built from the boxes.",
             dictated=False,
             hints=[
-                "Start like this: `supply_total = map_count * map_price + `",
-                "Two costs: maps, then oil. Each is how many times the price of one.",
+                "Start like this: `supply_total = chalk_count * chalk_price + `",
+                "Two costs: chalk, then oil. Each is how many times the price of one.",
                 "If `a = 2`, `b = 6`, `c = 4` and `d = 3`, then `a * b + c * d` is 24. Python does `*` before `+`.",
             ],
             checks=[
                 slot("supply_total adds both costs", "supply_total", SUPPLY_TOTAL, known=SUPPLY_KNOWN,
-                     rules=[("_have == map_count + oil_count", "You added how many, not costs. Each cost is how many times the price.")],
-                     default="Make `supply_total` from the boxes: map cost plus oil cost."),
-                rerun_box("supply_total follows the maps", {"map_count": 5, "map_price": 7}, "supply_total",
-                          "_R('map_count') * _R('map_price') + _R('oil_count') * _R('oil_price')", COMBINE_FIX),
+                     rules=[("_have == chalk_count + oil_count", "You added how many, not costs. Each cost is how many times the price.")],
+                     default="Make `supply_total` from the boxes: chalk cost plus oil cost."),
+                rerun_box("supply_total follows the chalk", {"chalk_count": 5, "chalk_price": 7}, "supply_total",
+                          "_R('chalk_count') * _R('chalk_price') + _R('oil_count') * _R('oil_price')", COMBINE_FIX),
                 rerun_box("supply_total follows the oil", {"oil_count": 9, "oil_price": 4}, "supply_total",
-                          "_R('map_count') * _R('map_price') + _R('oil_count') * _R('oil_price')", COMBINE_FIX),
+                          "_R('chalk_count') * _R('chalk_price') + _R('oil_count') * _R('oil_price')", COMBINE_FIX),
             ],
         ),
     ],
-    solution=SUPPLY_STORY + "map_count = 2\nmap_price = 6\noil_count = 4\noil_price = 3\n"
-    "supply_total = map_count * map_price + oil_count * oil_price\nprint(supply_total)\n",
-    partials=[SUPPLY_STORY + "map_count = 2\nmap_price = 6\noil_count = 4\noil_price = 3\nsupply_total = 0\nprint(supply_total)\n"],
+    solution=_supply("supply_total = chalk_count * chalk_price + oil_count * oil_price"),
+    partials=[_supply("supply_total = 0")],
     assemble=dict(
-        lines=["map_count = 2", "map_price = 6", "oil_count = 4", "oil_price = 3",
-               "supply_total = map_count * map_price + oil_count * oil_price", "print(supply_total)"],
-        distractors=["supply_total = 24", "map_count = 6"],
+        lines=["chalk_count = 3", "chalk_price = 5", "oil_count = 4", "oil_price = 3",
+               "supply_total = chalk_count * chalk_price + oil_count * oil_price", "print(supply_total)"],
+        distractors=["supply_total = 27", "chalk_count = 5"],
     ),
     another_way=[
-        dict(angle="step-by-step", text="1. Fill the four boxes. 2. Map cost: `map_count * map_price`. 3. Oil cost the same way. 4. Add them."),
-        dict(angle="shorter", text="`supply_total = map_count * map_price + oil_count * oil_price`, never 24."),
+        dict(
+            angle="step-by-step",
+            text=(
+                "1. Fill the four boxes. 2. Chalk cost: `chalk_count * chalk_price`. 3. Oil cost the same way. "
+                "4. Add them."
+            ),
+        ),
+        dict(angle="shorter", text="`supply_total = chalk_count * chalk_price + oil_count * oil_price`, never 27."),
     ],
     takeaway="Price first or count first, ask the question. Then combine: count `*` price `+` count `*` price.",
     wrong_answers=[
-        dict(why="map numbers in reading order",
-             code="map_count = 6\nmap_price = 2\noil_count = 4\noil_price = 3\nsupply_total = 24\nprint(supply_total)\n",
+        dict(why="chalk numbers in reading order (price first)",
+             code="chalk_count = 5\nchalk_price = 3\noil_count = 4\noil_price = 3\nsupply_total = 27\nprint(supply_total)\n",
              fails_at=1, message_contains="swapped"),
         dict(why="the total typed by hand",
-             code="map_count = 2\nmap_price = 6\noil_count = 4\noil_price = 3\nsupply_total = 24\nprint(supply_total)\n",
-             fails_at=2, message_contains="stayed 24"),
-        dict(why="map price typed inside the total (passes a count-only rerun)",
-             code="map_count = 2\nmap_price = 6\noil_count = 4\noil_price = 3\nsupply_total = map_count * 6 + oil_count * oil_price\nprint(supply_total)\n",
-             fails_at=2, message_contains="map_price = 7"),
+             code=_supply("supply_total = 27"),
+             fails_at=2, message_contains="stayed 27"),
+        dict(why="chalk price typed inside the total (passes a count-only rerun)",
+             code=_supply("supply_total = chalk_count * 5 + oil_count * oil_price"),
+             fails_at=2, message_contains="chalk_price = 7"),
         dict(why="oil count typed inside the total (passes a price-only rerun)",
-             code="map_count = 2\nmap_price = 6\noil_count = 4\noil_price = 3\nsupply_total = map_count * map_price + 4 * oil_price\nprint(supply_total)\n",
+             code=_supply("supply_total = chalk_count * chalk_price + 4 * oil_price"),
              fails_at=2, message_contains="oil_count = 9"),
+        dict(why="the line totals typed as numbers",
+             code=_supply("supply_total = 15 + 12"),
+             fails_at=2, message_contains="stayed 27"),
+        dict(why="adds the counts, not the costs",
+             code=_supply("supply_total = chalk_count + oil_count"),
+             fails_at=2, message_contains="how many, not costs"),
+        dict(why="the line total in the chalk price box",
+             code="chalk_count = 3\nchalk_price = 15\noil_count = 4\noil_price = 3\nsupply_total = 0\nprint(supply_total)\n",
+             fails_at=1, message_contains="all 3 sticks"),
+        dict(why="the earlier exercise's map names (the Example's names)",
+             code="map_count = 3\nmap_price = 5\nchalk_count = 0\nchalk_price = 0\noil_count = 4\noil_price = 3\n"
+             "supply_total = 0\nprint(supply_total)\n",
+             fails_at=1, message_contains="new box `map_count`"),
     ],
     notes=(
         meta(starter_level="S4", path="pool", skills="combine-values", solo="false", dictates="",
              foreign_names="a,b,c,d") + "\n"
-        "1C-T: the price-first twin (C9), for deferral time and the spaced queue."
+        "1C-T: the price-first twin (C9), for deferral time and the spaced queue. Chalk (not maps) so the twin "
+        "never reuses the let-the-code-combine Example's names (map_count, map_price). Chalk 3 x 5 + oil 4 x 3 = "
+        "27. CMB: one rerun changes both chalk boxes (5, 7 -> 47), one both oil boxes (9, 4 -> 51), so any typed "
+        "number in the total fails."
     ),
 )
 
@@ -2788,6 +2815,7 @@ LEDGER_STARTER = (
 )
 
 LEDGER_A1 = "# A. What we know\nhours_until_burst = 37\n"
+LEDGER_A1_32 = "# A. What we know\nhours_until_burst = 32\n"  # the last task: Bomb Shell's thirty-two hours
 LEDGER_A2 = "mana_per_hour = 2\noil_per_hour = 1\noil_price = 3\n"
 LEDGER_A2_ZERO = "mana_per_hour = 0\noil_per_hour = 0\noil_price = 0\n"
 LEDGER_B3 = "\n# B. Let the code combine it\nmana_needed = hours_until_burst * mana_per_hour\n"
@@ -2804,7 +2832,8 @@ def _c7(hero):
     return f'watch_keeper = "{hero}"  # any hero, in quotes\nprint("First watch: " + watch_keeper)\n'
 
 
-LEDGER_SOLUTION = LEDGER_A1 + LEDGER_A2 + LEDGER_B3 + LEDGER_B4 + LEDGER_C + LEDGER_C5 + LEDGER_C6 + _c7("Captain Glug")
+LEDGER_AT_37 = LEDGER_A1 + LEDGER_A2 + LEDGER_B3 + LEDGER_B4 + LEDGER_C + LEDGER_C5 + LEDGER_C6 + _c7("Captain Glug")
+LEDGER_SOLUTION = LEDGER_AT_37.replace(LEDGER_A1, LEDGER_A1_32)
 LEDGER_KNOWN = ["hours_until_burst", "mana_per_hour", "oil_per_hour", "oil_price", "mana_needed", "oil_needed",
                 "oil_cost", "watch_keeper"]
 OIL_LINE = "'Lantern oil: ' + str(%s) + ' flasks for ' + str(%s) + ' coins'"
@@ -2850,12 +2879,13 @@ PROJECT_1P1 = dict(
     kind="project",
     id="night-watch-ledger",
     title="The Night Watch Ledger",
-    minutes=18,
+    minutes=19,
     summary="Mar'tu's ledger for the long night: mana for the barrier, oil for the lanterns, and who keeps watch.",
     intro=(
         "The barrier must hold until the next burst, 37 hours away. Mar'tu keeps a ledger of what the night will "
         "cost: mana for the barrier, and flasks of lantern oil.\n"
-        "Three parts, in order: A. what we know, B. let the code combine it, C. write the ledger."
+        "Three parts, in order: A. what we know, B. let the code combine it, C. write the ledger.\n"
+        "The barrier eats 2 mana an hour. The lanterns burn 1 flask of oil an hour, and a flask costs 3 coins."
     ),
     martu=(
         "Thirty-seven hours, yes? I do not want to do these sums by hand at 3 in the morning. "
@@ -2877,16 +2907,18 @@ PROJECT_1P1 = dict(
                 "A box gets a number with `name = value`, no quotes: `steps = 12`.",
             ],
             checks=[
-                slot("hours_until_burst is 37", "hours_until_burst", "37", known=LEDGER_KNOWN,
+                # 32 is accepted too, so this task stays green after the last task (thirty-two-hours).
+                slot("hours_until_burst is 37", "hours_until_burst",
+                     "(32 if globals().get('hours_until_burst') == 32 else 37)", known=LEDGER_KNOWN,
                      default="The burst is 37 hours away: `hours_until_burst = 37`."),
             ],
         ),
         dict(
             id="what-we-know",
-            text="A. Make `mana_per_hour = 2`, `oil_per_hour = 1` and `oil_price = 3`.",
-            dictated=True,
+            text="A. Fill in the other three boxes from the story: mana per hour, flasks per hour, and the price of one flask.",
+            dictated=False,
             hints=[
-                "Change the three 0s under `hours_until_burst`.",
+                "Start like this: `mana_per_hour = 2`. The other two numbers are in the story too.",
                 "The barrier eats 2 mana an hour. The lanterns burn 1 flask an hour. A flask costs 3 coins.",
                 "Each box gets its own number: how much per hour, or how much is one.",
             ],
@@ -2915,10 +2947,18 @@ PROJECT_1P1 = dict(
             ],
             checks=[
                 loose_math("the math is kept in a box"),
+                set_once("each box is set once, at the top", ["hours_until_burst", "mana_per_hour"]),
                 slot("mana_needed multiplies the boxes", "mana_needed", "hours_until_burst * mana_per_hour",
                      known=LEDGER_KNOWN, foreign=["days", "meals_per_day"],
-                     rules=[("_have == hours_until_burst + mana_per_hour",
-                             "You added. The barrier needs 2 mana for each hour: multiply with `*`.")],
+                     rules=[
+                         ("_have == hours_until_burst + mana_per_hour",
+                          "You added. The barrier needs 2 mana for each hour: multiply with `*`."),
+                         # LINE-TOTAL (no numbers in the message: the hours change in the last task).
+                         ("_have in (hours_until_burst * hours_until_burst * mana_per_hour, "
+                          "mana_per_hour * hours_until_burst * mana_per_hour)",
+                          "That multiplies by a total that is already worked out. Multiply the hours by the mana for "
+                          "ONE hour: `hours_until_burst * mana_per_hour`."),
+                     ],
                      default="Make `mana_needed` from `hours_until_burst` and `mana_per_hour`."),
                 rerun_box("mana_needed follows the hours", {"hours_until_burst": 32, "mana_per_hour": 3}, "mana_needed",
                           "_R('hours_until_burst') * _R('mana_per_hour')", LEDGER_FIX),
@@ -2936,11 +2976,19 @@ PROJECT_1P1 = dict(
             ],
             checks=[
                 loose_math("the math is kept in a box"),
+                set_once("each box is set once, at the top", ["hours_until_burst", "oil_per_hour", "oil_price"]),
                 slot("oil_needed multiplies the boxes", "oil_needed", "hours_until_burst * oil_per_hour",
                      known=LEDGER_KNOWN, foreign=["bags", "bag_price"],
                      default="Make `oil_needed` from `hours_until_burst` and `oil_per_hour`."),
                 slot("oil_cost multiplies the boxes", "oil_cost", "hours_until_burst * oil_per_hour * oil_price",
                      known=LEDGER_KNOWN, foreign=["bags", "bag_price"],
+                     rules=[
+                         # LINE-TOTAL: the flasks times the whole oil cost (or the price times it).
+                         ("_have in (hours_until_burst * oil_per_hour * hours_until_burst * oil_per_hour * oil_price, "
+                          "oil_price * hours_until_burst * oil_per_hour * oil_price)",
+                          "That multiplies by a total that is already worked out. Multiply the flasks by the price of "
+                          "ONE flask: `oil_needed * oil_price`."),
+                     ],
                      default="Make `oil_cost` from `oil_needed` and `oil_price`."),
                 rerun_box("oil_needed follows the boxes", {"hours_until_burst": 32, "oil_per_hour": 2}, "oil_needed",
                           "_R('hours_until_burst') * _R('oil_per_hour')", LEDGER_FIX),
@@ -2972,7 +3020,7 @@ PROJECT_1P1 = dict(
             hints=[
                 "Start like this: `print(\"Lantern oil: \" + str(oil_needed) + `",
                 "Two numbers come from boxes: the flasks and the coins. Everything else is fixed words.",
-                "Beads: text, `str()` of a box, text, `str()` of a box, text. Every space goes inside the quotes.",
+                "`print(\"Lantern oil: \" + str(___) + \" flasks for \" + str(___) + \" coins\")`",
             ],
             checks=[
                 out_line("prints the oil line",
@@ -3007,6 +3055,38 @@ PROJECT_1P1 = dict(
             ],
             pass_line="Mar'tu: Hm. Noted. First watch is theirs, then.",
         ),
+        dict(
+            id="thirty-two-hours",
+            text=(
+                "Bomb Shell studied the chalk wall: thirty-two hours, maybe less. Change only `hours_until_burst` to "
+                "32 and run. Watch every ledger line follow."
+            ),
+            dictated=True,
+            hints=[
+                "Change line 2 to `hours_until_burst = 32`.",
+                "Which box holds the hours? Change only that one.",
+                "Change a box at the top, and every line built from it follows.",
+            ],
+            checks=[
+                set_once("the hours are set once, at the top", ["hours_until_burst"]),
+                ("hours_until_burst is 32",
+                 "assert hours_until_burst == 32, 'Change line 2 to `hours_until_burst = 32`, then run.'"),
+                ("the mana line shows 64",
+                 "assert 'Mana for the barrier: 64' in _lines(), 'With 32 hours, your mana line should print "
+                 "`Mana for the barrier: 64`. Change only line 2, and keep the line built from `mana_needed`.'"),
+                # Back to 37 inside the check: a line with 32 typed into it (e.g. `32 * mana_per_hour`) cannot follow.
+                rerun_line("the mana line still follows the hours", {"hours_until_burst": 37},
+                           "'Mana for the barrier: ' + str(_R('hours_until_burst') * _R('mana_per_hour'))",
+                           "Change only line 2, and keep every ledger line built from the boxes.",
+                           hide=own("watch_keeper")),
+                rerun_line("the oil line still follows the hours", {"hours_until_burst": 37},
+                           OIL_LINE % ("_R('hours_until_burst') * _R('oil_per_hour')",
+                                       "_R('hours_until_burst') * _R('oil_per_hour') * _R('oil_price')"),
+                           "Change only line 2, and keep every ledger line built from the boxes.",
+                           hide=own("watch_keeper")),
+            ],
+            pass_line="Mar'tu: 64 mana, 32 flasks, 96 coins. You changed one box. The ledger did the rest.",
+        ),
     ],
     solution=LEDGER_SOLUTION,
     partials=[
@@ -3016,15 +3096,16 @@ PROJECT_1P1 = dict(
         LEDGER_A1 + LEDGER_A2 + LEDGER_B3 + LEDGER_B4 + LEDGER_C + LEDGER_C7_EMPTY,
         LEDGER_A1 + LEDGER_A2 + LEDGER_B3 + LEDGER_B4 + LEDGER_C + LEDGER_C5 + LEDGER_C7_EMPTY,
         LEDGER_A1 + LEDGER_A2 + LEDGER_B3 + LEDGER_B4 + LEDGER_C + LEDGER_C5 + LEDGER_C6 + LEDGER_C7_EMPTY,
+        LEDGER_AT_37,
     ],
     assemble=dict(
         lines=[
-            "hours_until_burst = 37", "mana_per_hour = 2", "oil_per_hour = 1", "oil_price = 3",
+            "hours_until_burst = 32", "mana_per_hour = 2", "oil_per_hour = 1", "oil_price = 3",
             "mana_needed = hours_until_burst * mana_per_hour",
             "oil_needed = hours_until_burst * oil_per_hour", "oil_cost = oil_needed * oil_price",
             LEDGER_C5.strip(), LEDGER_C6.strip(), 'watch_keeper = "Bomb Shell"', 'print("First watch: " + watch_keeper)',
         ],
-        distractors=["mana_needed = 74", 'print("Mana for the barrier: 74")',
+        distractors=["mana_needed = 64", 'print("Mana for the barrier: 64")',
                      'print("Mana for the barrier: " + mana_needed)'],
     ),
     another_way=[
@@ -3096,7 +3177,7 @@ PROJECT_1P1 = dict(
                 "assert total_coins == oil_cost + glug_fee, 'Make `total_coins = oil_cost + glug_fee`.'\n"
                 "assert any(str(total_coins) in _l for _l in _lines()), 'Print `total_coins`.'",
             ),
-            rerun_box("total coins follows the hours", {"hours_until_burst": 32}, "total_coins",
+            rerun_box("total coins follows the hours", {"hours_until_burst": 30}, "total_coins",
                       "_R('hours_until_burst') * _R('oil_per_hour') * _R('oil_price') + _R('glug_fee')",
                       "Build it from `oil_cost` and `glug_fee`."),
             rerun_line("reserve bar follows its boxes", {"reserve": 1, "reserve_max": 6}, "'[█░░░░░]'",
@@ -3173,10 +3254,32 @@ PROJECT_1P1 = dict(
         dict(why="the mana line built from the hours and a typed 2, skipping mana_needed",
              code=_ledger(c5='print("Mana for the barrier: " + str(hours_until_burst * 2))\n'),
              fails_at=5, message_contains="mana_per_hour = 3"),
+        dict(why="LINE-TOTAL: the hours times the mana total 74",
+             code=_ledger(b3="\n# B. Let the code combine it\nmana_needed = hours_until_burst * 74\n"),
+             fails_at=3, message_contains="already worked out"),
+        dict(why="LINE-TOTAL: the flasks times the oil total 111",
+             code=_ledger(b4="oil_needed = hours_until_burst * oil_per_hour\noil_cost = oil_needed * 111\n"),
+             fails_at=4, message_contains="price of ONE flask"),
+        dict(why="the last task not done: the hours still 37", code=_ledger(), fails_at=8,
+             message_contains="`hours_until_burst = 32`"),
+        dict(why="the last task as a new line at the bottom (side-work habit): the ledger never sees 32",
+             code=_ledger() + "hours_until_burst = 32\n", fails_at=3, message_contains="top down"),
+        dict(why="the last task changes the wrong box (mana_per_hour to 32)",
+             code=_ledger(a2="mana_per_hour = 32\noil_per_hour = 1\noil_price = 3\n"), fails_at=2,
+             message_contains="2 mana each hour"),
+        dict(why="after the change, 64 typed into mana_needed",
+             code=_ledger(a1=LEDGER_A1_32, b3="\n# B. Let the code combine it\nmana_needed = 64\n"),
+             fails_at=3, message_contains="stayed 64"),
+        dict(why="after the change, the hours typed into mana_needed (passes every rerun at 32)",
+             code=_ledger(a1=LEDGER_A1_32, b3="\n# B. Let the code combine it\nmana_needed = 32 * mana_per_hour\n"),
+             fails_at=8, message_contains="`hours_until_burst = 37`"),
+        dict(why="after the change, the hours typed into oil_needed (passes every rerun at 32)",
+             code=_ledger(a1=LEDGER_A1_32, b4="oil_needed = 32 * oil_per_hour\noil_cost = oil_needed * oil_price\n"),
+             fails_at=8, message_contains="Lantern oil: 37 flasks for 111 coins"),
     ],
     notes=(
         meta(starter_level="S2", path="SC", skills="combine-values,concat-str,make-variable", solo="false",
-             dictates="1,2", foreign_names="days,meals_per_day,bags,bag_price,guard,steps,sips") + "\n"
+             dictates="1,8", foreign_names="days,meals_per_day,bags,bag_price,guard,steps,sips") + "\n"
         "Starter: the task-group headers (always) plus the `= 0` placeholders, because 'Show me more' is the "
         "default preset and the prototype has one starter. CMB: every combine task and ledger line is rerun with "
         "hours_until_burst = 32 and every other input it reads changed too (mana_per_hour 3; oil_per_hour 2, "
@@ -3185,7 +3288,15 @@ PROJECT_1P1 = dict(
         "the hero (Tester only). Echo spot: the site would repeat the hero in the pass line through the blocklist; "
         "a static pass_line cannot, so it says 'Noted'. Side quest WA (typed ~~~ divider -> 'repetition') is "
         "proven by the u01c self-test, since harness wrong_answers only run against the main checkpoints. "
-        "Trial mode (after a QC1 pass) is a site feature, not in this prototype."
+        "Trial mode (after a QC1 pass) is a site feature, not in this prototype. "
+        "The story numbers (2 mana, 1 flask, 3 coins) are in the intro, so task A2 is not dictated (find them). "
+        "LINE-TOTAL rules on mana_needed and oil_cost name no numbers, because the hours change in the last task. "
+        "Last task (thirty-two-hours) mirrors the 1000 ropes: Bomb Shell's 32 hours, change one box, every line "
+        "follows (64 / 32 / 96). So every task can pass in one run, task 1 accepts 37 or 32, and the solution "
+        "uses 32 (the ledger at 37 is the last partial). set_once on tasks 3, 4 and 8 gives `hours_until_burst = 32` "
+        "added at the bottom a top-down message (task 8's copy matters on the site, where task 3 stays green from "
+        "an earlier run). Task 8 reruns at 37: a line with 32 typed into it cannot follow. The side quest's total "
+        "reruns at 30 hours (the finished ledger is already at 32)."
     ),
 )
 
