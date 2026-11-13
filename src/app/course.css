@@ -419,9 +419,16 @@
 }
 
 .course-placement-done {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
   padding: 10px 14px;
   color: var(--course-muted);
   border: 1px dashed var(--course-line);
+}
+
+.course-placement-done p {
+  margin: 0;
 }
 
 .course-settings-note {

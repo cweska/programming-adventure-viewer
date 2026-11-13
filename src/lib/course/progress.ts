@@ -96,6 +96,10 @@ function cleanExercise(value: unknown): ExerciseProgress | null {
     if (typeof value[field] === "boolean") out[field] = value[field] as boolean;
     else delete out[field];
   }
+  // Predict before Run: a choice index, or -1 for skipped.
+  const predicted = finiteNumber(value.predicted);
+  if (predicted !== undefined && Number.isInteger(predicted) && predicted >= -1) out.predicted = predicted;
+  else delete out.predicted;
   return out;
 }
 
@@ -169,11 +173,17 @@ export function needsPlacement(progress: CourseProgress): boolean {
   );
 }
 
-/** The placement answers (curriculum §2.3, as the teacher set it): only "yes" starts with "Keep it short". */
+/** The placement answers (curriculum §2.3). Every answer starts on "Show me more"; "yes" is offered the Quick Check. */
 export type PlacementAnswer = "no" | "a-little" | "yes" | "skip";
 
+/**
+ * Self-report can only add support (curriculum §2.3, C1): "yes" also starts on "Show me more" and is offered
+ * the Quick Check instead. Support fades only on performance; the student can still switch any time.
+ */
+const PRESET_FOR_ANSWER: Record<PlacementAnswer, CoursePreset> = { no: "more", "a-little": "more", yes: "more", skip: "more" };
+
 export function presetForAnswer(answer: PlacementAnswer): CoursePreset {
-  return answer === "yes" ? "short" : "more";
+  return PRESET_FOR_ANSWER[answer] ?? "more";
 }
 
 /** Repair any value into a valid CourseProgress, keeping every part that is still good. */

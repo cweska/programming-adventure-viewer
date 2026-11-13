@@ -101,6 +101,17 @@ describe("reading saved progress", () => {
     expect(progress.settings).toEqual({ preset: "short", light: true });
   });
 
+  it("keeps a Predict answer only when it is a choice index or -1 (skipped)", () => {
+    const exercises = (predicted: unknown) =>
+      normalizeProgress({ version: 1, exercises: { "u/i/e": { passed: [], predicted } } }).exercises["u/i/e"];
+    expect(exercises(2).predicted).toBe(2);
+    expect(exercises(-1).predicted).toBe(-1);
+    expect(exercises(0).predicted).toBe(0);
+    expect(exercises(-3)).not.toHaveProperty("predicted");
+    expect(exercises(1.5)).not.toHaveProperty("predicted");
+    expect(exercises("1")).not.toHaveProperty("predicted");
+  });
+
   it("survives storage that throws", () => {
     expect(loadProgress(blocked)).toEqual(emptyProgress());
     expect(saveProgress(blocked, emptyProgress())).toBe(false);
@@ -180,11 +191,12 @@ describe("presets (curriculum §2.3)", () => {
     expect(needsPlacement(withQuiz("u/q", 50)(emptyProgress()))).toBe(false);
   });
 
-  it("maps the answers: no, a little or skip -> Show me more; yes -> Keep it short", () => {
+  it("maps every answer to Show me more (yes is offered the Quick Check instead)", () => {
     expect(presetForAnswer("no")).toBe("more");
     expect(presetForAnswer("a-little")).toBe("more");
     expect(presetForAnswer("skip")).toBe("more");
-    expect(presetForAnswer("yes")).toBe("short");
+    // Self-report never removes support (curriculum §2.3 C1): "yes" is offered the Quick Check instead.
+    expect(presetForAnswer("yes")).toBe("more");
   });
 });
 

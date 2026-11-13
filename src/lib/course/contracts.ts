@@ -12,7 +12,8 @@
  * Keep these types stable. If one must change, change it here first.
  */
 import type { Checkpoint, CourseCheck, GlossaryEntry, Item } from "./schema";
-import type { Explanation, RunResult } from "../languages/types";
+import type { RunResult } from "../languages/types";
+import type { CourseExplanation, ExplainContext } from "./explain";
 
 /* ------------------------------------------------------------------------------------------------ */
 /* Running code                                                                                      */
@@ -56,11 +57,18 @@ export type GradeResult = {
   allPassed: boolean;
 };
 
-export type GradeCheckpoints = (checkpoints: Checkpoint[], result: RunResult) => GradeResult;
+/**
+ * `code` is the student's source (for the quiet-slip messages); `context` lets messages say "that name is
+ * from the example" and "One fixed! Python found the next one." (see ExplainContext in explain.ts).
+ */
+export type GradeCheckpoints = (checkpoints: Checkpoint[], result: RunResult, code?: string, context?: ExplainContext) => GradeResult;
 export type FlattenChecks = (checkpoints: Checkpoint[]) => CourseCheck[];
 
-/** Friendly explanation that also knows the class's common slips (missing quotes, def vs =, ...). */
-export type ExplainCourseError = (traceback: string, code: string) => Explanation;
+/**
+ * Friendly explanation that also knows the class's common slips (missing quotes, def vs =, ...). Every
+ * explanation has a stable `kind`. Pass `context.previous` only when the previous run crashed too.
+ */
+export type ExplainCourseError = (traceback: string, code: string, context?: ExplainContext) => CourseExplanation;
 
 /* ------------------------------------------------------------------------------------------------ */
 /* Progress (localStorage key "intro-python:v1")                                                     */
@@ -73,15 +81,21 @@ export type ExerciseProgress = {
   passed: string[];
   /** Every checkpoint passed in one run. */
   done: boolean;
-  /** Hint rungs revealed per checkpoint id. */
+  /**
+   * Help rungs opened per checkpoint id, counted in helpRungs() order (exercise-logic.ts). "__bonus" counts
+   * the side quest's hints.
+   */
   hintsUsed: Record<string, number>;
   failedRuns: number;
   /** ms since epoch when first opened (for solution gating). */
   firstSeenAt?: number;
   /** Minutes actually spent (visible tab), accumulated. */
   activeMs?: number;
+  /** Mar'tu's version was opened (Compare view). */
   solutionShown?: boolean;
   bonusDone?: boolean;
+  /** Predict before Run: the chosen choice index, or -1 when skipped. Absent: not answered yet. */
+  predicted?: number;
 };
 
 export type QuizProgress = { best: number; attempts: number; lastAnswers?: Record<string, string> };

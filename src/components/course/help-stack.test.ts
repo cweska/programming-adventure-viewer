@@ -15,11 +15,12 @@ import {
   NUDGE_IDLE_MS,
   NUDGE_NO_PROGRESS_MS,
   pickInsertion,
-  presetOf,
   RUNG_PACE_MS,
   rungPaced,
   solutionUnlocked,
+  startOfLine,
 } from "./exercise-logic";
+import { coursePreset as presetOf } from "../../lib/course/progress";
 
 const threeHints = { hints: ["start", "look", "teach"] };
 
@@ -38,9 +39,9 @@ describe("presets", () => {
 describe("the Help rungs", () => {
   const full = { anotherWayCount: 3, hasAssemble: true, solo: false };
 
-  it("climbs Start me off, Where to look, Another way, Teach me, More structure, Show me", () => {
-    const rungs = helpRungs({ hints: ["a", "b", "c", "d"] }, full);
-    expect(rungs.map((rung) => rung.kind)).toEqual(["start", "point", "another", "teach", "teach", "structure", "show"]);
+  it("climbs Start me off, Where to look, Another way, Teach me, More structure, Show me how, Compare", () => {
+    const rungs = helpRungs({ hints: ["point", "teach", "teach more", "Write `caster = \"Gearshift\"`."] }, full);
+    expect(rungs.map((rung) => rung.kind)).toEqual(["start", "point", "another", "teach", "teach", "structure", "how", "show"]);
     expect(rungs.map((rung) => rung.label)).toEqual([
       "Start me off",
       "Where to look",
@@ -48,28 +49,49 @@ describe("the Help rungs", () => {
       "Teach me",
       "Teach me more",
       "More structure",
-      "Show me",
+      "Show me how",
+      "Compare with Mar'tu's version",
     ]);
+    expect(rungs[0].start).toBe("caster =");
+    // Authored hints are point -> teach -> show: the nearly-the-answer hint comes after every gentler rung.
     expect(rungs.filter((rung) => rung.hint !== undefined).map((rung) => rung.hint)).toEqual([0, 1, 2, 3]);
   });
 
   it("skips what the exercise does not have", () => {
     const rungs = helpRungs({ hints: ["a", "b"] }, { anotherWayCount: 0, hasAssemble: false, solo: false });
-    expect(rungs.map((rung) => rung.kind)).toEqual(["start", "point", "show"]);
+    expect(rungs.map((rung) => rung.kind)).toEqual(["point", "how", "show"]);
+    const twoHints = helpRungs({ hints: ["Numbers need no quotes.", "Write `mana = 20` on its own line."] }, full);
+    expect(twoHints.map((rung) => rung.kind)).toEqual(["start", "point", "another", "structure", "how", "show"]);
   });
 
   it("starts a SOLO exercise at Where to look", () => {
-    const rungs = helpRungs(threeHints, { ...full, solo: true });
+    const rungs = helpRungs({ hints: ["a", "b", "Try `print(name)`."] }, { ...full, solo: true });
     expect(rungs[0].kind).toBe("point");
     expect(rungs.some((rung) => rung.kind === "start")).toBe(false);
     expect(rungs.at(-1)?.kind).toBe("show");
+  });
+
+  it("Start me off gives only the first tokens of the step's line, never the whole answer", () => {
+    expect(startOfLine(["a", "Write `caster = \"Gearshift\"` on the first line."])).toBe("caster =");
+    expect(startOfLine(["a", "b", 'Try `print("Welcome to the cabin, " + name)`.'])).toBe("print(");
+    expect(startOfLine(["a", "Then `print(leader + \" has \" + str(max_mana) + \" mana.\")`."])).toBe("print(");
+    expect(startOfLine(["a", "Add `total += 5`."])).toBe("total +=");
+    expect(startOfLine(["a", "Use `name = input(\"Who? \")`."])).toBe("name =");
+    // Nothing safe to give: no code, no ( or =, a comparison, or only one hint.
+    expect(startOfLine(["a", "Just press Run and look at the console."])).toBeNull();
+    expect(startOfLine(["a", "Use `mana`."])).toBeNull();
+    expect(startOfLine(["a", "Check `mana == 20`."])).toBeNull();
+    expect(startOfLine(["a", "Check `mana >= 20`."])).toBeNull();
+    expect(startOfLine(["a", "Write `(1 + 2)`."])).toBeNull();
+    expect(startOfLine(["Write `mana = 20`."])).toBeNull();
+    expect(startOfLine(undefined)).toBeNull();
   });
 
   it("knows what is open and what comes next", () => {
     const rungs = helpRungs(threeHints, full);
     let state = helpState(rungs, 0, false);
     expect(state.open).toEqual([]);
-    expect(state.next?.kind).toBe("start");
+    expect(state.next?.kind).toBe("point");
     expect(state.nextLocked).toBe(false);
     expect(state.left).toBe(rungs.length - 1);
 
@@ -121,9 +143,14 @@ describe("proactive Help offers", () => {
     expect(NUDGE_IDLE_MS).toBe(90_000);
   });
 
-  it("stays quiet under Keep it short, without Help, when done, dismissed, or with nothing left", () => {
+  it("under Keep it short, offers only after repeated misses (curriculum §2.3)", () => {
+    expect(helpOffer({ ...quiet, preset: "short", missesInARow: NUDGE_AFTER_MISSES })).toBe("misses");
+    expect(helpOffer({ ...quiet, preset: "short", msSinceProgress: NUDGE_NO_PROGRESS_MS })).toBeNull();
+    expect(helpOffer({ ...quiet, preset: "short", idleSinceMissMs: NUDGE_IDLE_MS })).toBeNull();
+  });
+
+  it("stays quiet without Help, when done, dismissed, or with nothing left", () => {
     const ready = { ...quiet, missesInARow: 5 };
-    expect(helpOffer({ ...ready, preset: "short" })).toBeNull();
     expect(helpOffer({ ...ready, helpAvailable: false })).toBeNull();
     expect(helpOffer({ ...ready, done: true })).toBeNull();
     expect(helpOffer({ ...ready, dismissed: true })).toBeNull();

@@ -39,6 +39,6 @@ describe("CourseSettings", () => {
 
 describe("PlacementQuestion", () => {
   it("is not in the server render (it waits for the saved progress, so returning students never see it flash)", () => {
-    expect(renderToStaticMarkup(createElement(PlacementQuestion))).toBe("");
+    expect(renderToStaticMarkup(createElement(PlacementQuestion, {}))).toBe("");
   });
 });

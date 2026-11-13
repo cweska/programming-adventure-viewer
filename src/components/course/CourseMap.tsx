@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { coursePreset, unitProgress, useCourseProgress, type ProgressUnit, type UnitProgress } from "../../lib/course/progress";
 import type { GlossaryEntry } from "../../lib/course/schema";
 import { ProgressBar } from "./CourseBits";
-import { unitHref } from "./course-links";
+import { itemHref, unitHref } from "./course-links";
 import { CourseSettings, PlacementQuestion } from "./CourseSettings";
 import { MarTu } from "./MarTu";
 import { Prose } from "./Prose";
@@ -53,6 +53,10 @@ export function CourseMap({ title, intro, units, glossary }: CourseMapProps) {
   const visible = units.filter((unit) => preview || unit.published);
   const stats = visible.map((unit) => ({ unit, progress: unitProgress(unit, progress) }));
   const nextUp = stats.find((entry) => !entry.progress.complete)?.unit.id;
+  // "Yes, I have typed code before" is offered the first unit's Quick Check (curriculum §2.3).
+  const firstUnit = visible[0];
+  const firstCheck = firstUnit?.items.find((item) => item.kind === "testout");
+  const quickCheck = firstUnit && firstCheck ? { href: itemHref(firstUnit.id, firstCheck.id), unitTitle: firstUnit.title } : undefined;
 
   return (
     <main className="course-page" data-testid="course-map">
@@ -70,7 +74,7 @@ export function CourseMap({ title, intro, units, glossary }: CourseMapProps) {
         </p>
       ) : null}
 
-      <PlacementQuestion />
+      <PlacementQuestion quickCheck={quickCheck} />
 
       <MarTu text={intro} glossary={glossary} light={coursePreset(progress.settings) === "short"} />
 

@@ -2,19 +2,13 @@
  * Pure logic for the Intro to Python exercise player (ExercisePlayer.tsx / LessonPlayer.tsx).
  * Client-safe, no React, no Python: everything here is unit tested in exercise-logic.test.ts.
  */
-import type { CourseSettings, ExerciseProgress, GradeResult } from "../../lib/course/contracts";
+import type { ExerciseProgress, GradeResult } from "../../lib/course/contracts";
 import type { AnotherWay, Checkpoint } from "../../lib/course/schema";
 
 export type Support = "full" | "light" | "none";
 export type PlayerMode = "lesson" | "project" | "challenge" | "testout" | "try-it";
-/** curriculum §2.3: "Show me more" (the default) or "Keep it short". */
+/** curriculum §2.3: "Show me more" (the default) or "Keep it short". Read it with coursePreset() (progress.ts). */
 export type Preset = "more" | "short";
-
-/** The player's extra saved fields (kept by progress.ts, which preserves fields it does not know). */
-export type PlayerExtras = {
-  /** Predict before Run: the chosen choice index, or -1 when skipped. */
-  predicted?: number;
-};
 
 /* ------------------------------------------------------------------------------------------------ */
 /* Stepper: the current exercise lives in the URL hash (#<exerciseId>)                              */
@@ -45,12 +39,6 @@ export function hashForExercise(id: string): string {
 export function effectiveSupport(mode: PlayerMode, support: Support | undefined): Support {
   if (mode === "testout") return "none";
   return support ?? "full";
-}
-
-/** The student's preset. Legacy `light: true` (the old "Fewer words" switch) means "short". */
-export function presetOf(settings: CourseSettings | undefined): Preset {
-  if (settings?.preset === "short" || settings?.preset === "more") return settings.preset;
-  return settings?.light === true ? "short" : "more";
 }
 
 /**
@@ -221,8 +209,8 @@ export type HelpOffer = "misses" | "time" | "idle";
 
 /**
  * Proactive Help offers (curriculum §2.2): a highlighted Help control with one line, never a popup.
- * Only under "Show me more", only while Help is available and has something left to give, and one
- * dismiss silences offers for the exercise.
+ * Only while Help is available and has something left to give; under "Keep it short" only after repeated
+ * misses; and one dismiss silences offers for the exercise.
  */
 export function helpOffer(input: {
   preset: Preset;
@@ -238,8 +226,10 @@ export function helpOffer(input: {
   /** ms since the last keystroke or run, counted only after a failed run (null otherwise). */
   idleSinceMissMs: number | null;
 }): HelpOffer | null {
-  if (input.preset !== "more" || !input.helpAvailable || input.done || input.dismissed || input.rungsLeft <= 0) return null;
+  if (!input.helpAvailable || input.done || input.dismissed || input.rungsLeft <= 0) return null;
   if (input.missesInARow >= NUDGE_AFTER_MISSES) return "misses";
+  // Under "Keep it short" only the failed-runs trigger is active (curriculum §2.3).
+  if (input.preset !== "more") return null;
   if (input.msSinceProgress >= NUDGE_NO_PROGRESS_MS) return "time";
   if (input.idleSinceMissMs !== null && input.idleSinceMissMs >= NUDGE_IDLE_MS) return "idle";
   return null;
@@ -256,23 +246,46 @@ export function helpOfferLine(offer: HelpOffer): string {
 /* The Help stack (curriculum §2.2): one climbing Help control per exercise                          */
 /* ------------------------------------------------------------------------------------------------ */
 
-export type RungKind = "start" | "point" | "another" | "teach" | "structure" | "show";
+export type RungKind = "start" | "point" | "another" | "teach" | "how" | "structure" | "show";
 
 export type Rung = {
   kind: RungKind;
   /** What the Help control says before this rung opens, and the rung's title once open. */
   label: string;
-  /** For start / point / teach: the checkpoint hint this rung shows. */
+  /** For point / teach / how: the checkpoint hint this rung shows. */
   hint?: number;
+  /** For start: the first tokens of the step's line (e.g. `caster =` or `print(`). */
+  start?: string;
 };
 
 /** Each rung waits for a Run or this long after the last one, so each one gets read. */
 export const RUNG_PACE_MS = 10_000;
 
 /**
- * The Help rungs for one step, in order: Start me off (hints[0]), Where to look (hints[1]), Another way
- * (the exercise's angles), Teach me (hints[2], hints[3] ...), More structure (Assemble it), Show me
- * (Mar'tu's version side by side). Missing pieces are skipped. A SOLO exercise starts at Where to look.
+ * "Start me off" (curriculum §2.2 rung 0): the first tokens of the step's line, up to and including its
+ * first `(` or `=` (`caster =`, `print(`). Taken from the first code span of the step's last hint (the
+ * "show" rung of the authored point -> teach -> show ladder). Null when there is nothing safe to give:
+ * no code span, or a line with no `(` or `=` (it would be the whole answer).
+ */
+export function startOfLine(hints: readonly string[] | undefined): string | null {
+  const last = hints && hints.length >= 2 ? hints[hints.length - 1] : undefined;
+  const span = last?.match(/`([^`\n]+)`/)?.[1]?.trim();
+  if (!span) return null;
+  // The first "(" or a lone "=" (also +=, -= ...), never ==, <=, >= or !=.
+  const cut = span.match(/^(.*?)(\(|[+\-*/]?=(?!=))/);
+  if (!cut || /[=!<>]$/.test(cut[1])) return null;
+  const start = `${cut[1]}${cut[2]}`.trim();
+  if (!start || start === "(" || start.length >= span.length) return null;
+  return start;
+}
+
+/**
+ * The Help rungs for one step, in the curriculum's order (§2.2): Start me off (derived, see startOfLine),
+ * Where to look (hints[0]), Another way (the exercise's angles), Teach me (the middle hints), More structure
+ * (Assemble it), Show me how (the last hint: the step's own line), and Compare with Mar'tu's version (the
+ * whole program side by side, unlocked by time or tries). Authored hints are point -> teach -> show (FORMAT.md),
+ * so the nearly-the-answer hint always comes after the gentler rungs. Missing pieces are skipped. A SOLO
+ * exercise starts at Where to look.
  */
 export function helpRungs(
   checkpoint: Pick<Checkpoint, "hints">,
@@ -280,14 +293,16 @@ export function helpRungs(
 ): Rung[] {
   const hints = checkpoint.hints ?? [];
   const rungs: Rung[] = [];
-  if (!exercise.solo && hints.length > 0) rungs.push({ kind: "start", label: "Start me off", hint: 0 });
-  if (hints.length > 1) rungs.push({ kind: "point", label: "Where to look", hint: 1 });
+  const start = exercise.solo ? null : startOfLine(hints);
+  if (start) rungs.push({ kind: "start", label: "Start me off", start });
+  if (hints.length > 0) rungs.push({ kind: "point", label: "Where to look", hint: 0 });
   if (exercise.anotherWayCount > 0) rungs.push({ kind: "another", label: "Another way" });
-  for (let index = 2; index < hints.length; index += 1) {
-    rungs.push({ kind: "teach", label: index === 2 ? "Teach me" : "Teach me more", hint: index });
+  for (let index = 1; index < hints.length - 1; index += 1) {
+    rungs.push({ kind: "teach", label: index === 1 ? "Teach me" : "Teach me more", hint: index });
   }
   if (exercise.hasAssemble) rungs.push({ kind: "structure", label: "More structure" });
-  rungs.push({ kind: "show", label: "Show me" });
+  if (hints.length > 1) rungs.push({ kind: "how", label: "Show me how", hint: hints.length - 1 });
+  rungs.push({ kind: "show", label: "Compare with Mar'tu's version" });
   return rungs;
 }
 

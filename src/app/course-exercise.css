@@ -1119,6 +1119,24 @@
   font-weight: 600;
 }
 
+.ex-help-start {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ex-help-start-code {
+  align-self: flex-start;
+  max-width: 100%;
+  margin: 0;
+  padding: 6px 10px;
+  color: #f4f7fb;
+  background: var(--course-code-bg, #121417);
+  border: 1px solid var(--course-code-line, #3c4452);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 .ex-help-actions {
   display: flex;
   flex-wrap: wrap;

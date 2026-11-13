@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 import {
   coursePreset,
@@ -110,14 +111,15 @@ const ANSWERS: { answer: Exclude<PlacementAnswer, "skip">; label: string }[] = [
 
 /**
  * The one-time question on a first visit to the course map: "Have you typed code before?" (curriculum §2.3).
- * No / A little / Skip -> "Show me more"; Yes -> "Keep it short". It only sets the preset, never anything else,
- * and it shows only after hydration, when nothing has been chosen or done yet in this browser.
+ * Every answer starts on "Show me more" (self-report can only add support); "Yes" is also offered the first
+ * unit's Quick Check. It never sets anything else, and it shows only after hydration, when nothing has been
+ * chosen or done yet in this browser.
  */
-export function PlacementQuestion() {
+export function PlacementQuestion({ quickCheck }: { quickCheck?: { href: string; unitTitle: string } }) {
   const progress = useCourseProgress();
   const ready = useProgressReady();
-  const [answered, setAnswered] = useState(false);
-  const doneRef = useRef<HTMLParagraphElement>(null);
+  const [answered, setAnswered] = useState<PlacementAnswer | null>(null);
+  const doneRef = useRef<HTMLDivElement>(null);
   const headingId = useId();
 
   useEffect(() => {
@@ -127,22 +129,34 @@ export function PlacementQuestion() {
 
   if (answered) {
     return (
-      <p ref={doneRef} tabIndex={-1} className="course-placement-done" role="status" data-testid="placement-done">
-        Got it. You can change how much Mar&apos;tu explains any time, under Help options.
-      </p>
+      <div ref={doneRef} tabIndex={-1} className="course-placement-done" role="status" data-testid="placement-done">
+        <p>
+          Good. We start small. When you are stuck, Mar&apos;tu will offer help. You can change how much Mar&apos;tu
+          explains any time, under Help options.
+        </p>
+        {answered === "yes" && quickCheck ? (
+          <p data-testid="placement-quick-check">
+            Already know some Python? Try the{" "}
+            <Link href={quickCheck.href} data-testid="placement-quick-check-link">
+              {quickCheck.unitTitle} Quick Check
+            </Link>
+            . Pass it and you can skip that unit&apos;s lessons. A miss costs nothing.
+          </p>
+        ) : null}
+      </div>
     );
   }
   if (!ready || !needsPlacement(progress)) return null;
 
   const choose = (answer: PlacementAnswer) => {
     setPreset(presetForAnswer(answer));
-    setAnswered(true);
+    setAnswered(answer);
   };
 
   return (
     <section className="course-placement" aria-labelledby={headingId} data-testid="placement">
       <h2 id={headingId}>Have you typed code before?</h2>
-      <p>Your answer only sets how much Mar&apos;tu explains. You can change it any time. Every lesson stays open to you.</p>
+      <p>Your answer only helps Mar&apos;tu choose where to start. You can change it any time. Every lesson stays open to you.</p>
       <div className="course-placement-actions" role="group" aria-labelledby={headingId}>
         {ANSWERS.map(({ answer, label }) => (
           <button key={answer} type="button" onClick={() => choose(answer)} data-testid={`placement-${answer}`}>

@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import type { ExerciseProgress, GradeResult } from "../../lib/course/contracts";
-import { explainCourseError } from "../../lib/course/explain";
+import { explainCourseError, type ExplainContext } from "../../lib/course/explain";
 import { flattenChecks, gradeCheckpoints } from "../../lib/course/grading";
-import { getCourseProgress, progressIsSaving, updateExercise, useCourseProgress } from "../../lib/course/progress";
+import { coursePreset, getCourseProgress, progressIsSaving, updateExercise, useCourseProgress } from "../../lib/course/progress";
 import type { Bonus, Checkpoint, GlossaryEntry, Playable } from "../../lib/course/schema";
 import { runCourse, whenPythonReady } from "../../lib/languages/python/run";
 import type { Explanation } from "../../lib/languages/types";
@@ -32,7 +32,6 @@ import {
   isSolutionCode,
   nextFailStreak,
   pickInsertion,
-  presetOf,
   revealNextRung,
   rungPaced,
   rungsShown,
@@ -44,7 +43,6 @@ import {
   titleFromId,
   usesInput,
   type FailStreak,
-  type PlayerExtras,
   type PlayerMode,
   type Support,
 } from "./exercise-logic";
@@ -381,11 +379,11 @@ export function ExercisePlayer({
   onDone,
 }: ExercisePlayerProps) {
   const progress = useCourseProgress();
-  const saved = progress.exercises[key] as (ExerciseProgress & PlayerExtras) | undefined;
+  const saved: ExerciseProgress | undefined = progress.exercises[key];
   const passed = useMemo(() => saved?.passed ?? [], [saved]);
   const done = saved?.done === true;
   const support: Support = effectiveSupport(mode, exercise.support);
-  const preset = presetOf(progress.settings);
+  const preset = coursePreset(progress.settings);
   const short = preset === "short";
   const noun = stepNoun(mode);
   const bonus = mode === "testout" ? undefined : exercise.bonus;
@@ -664,11 +662,18 @@ export function ExercisePlayer({
         stdin: answers,
         engine: exercise.engine,
       });
-      const grade = gradeCheckpoints(exercise.checkpoints, result, source);
+      // What the messages may mention: the example's names, the task's names, and the last crash (for
+      // "One fixed! Python found the next one."), passed only when the last run crashed too.
+      const context: ExplainContext = {
+        example: exercise.example?.code,
+        names: exercise.names,
+        previous: view?.explanation?.raw || undefined,
+      };
+      const grade = gradeCheckpoints(exercise.checkpoints, result, source, context);
       // The side quest's checks come after the main ones: grade them from their own slice, by position.
       const bonusGrade =
         bonusCp && !grade.crashed
-          ? gradeCheckpoints([bonusCp], { ...result, checks: (result.checks ?? []).slice(mainChecks.length) }, source)
+          ? gradeCheckpoints([bonusCp], { ...result, checks: (result.checks ?? []).slice(mainChecks.length) }, source, context)
           : null;
       const savedBefore = getCourseProgress().exercises[key];
       const before = savedBefore?.passed ?? [];
@@ -692,7 +697,7 @@ export function ExercisePlayer({
       missAt.current = grade.allPassed ? null : Date.now();
       if (!grade.allPassed) setMissedThisVisit(true);
       const crashText = result.traceback || result.stderr || "";
-      const explanation = grade.crashed ? explainCourseError(crashText, source) : null;
+      const explanation = grade.crashed ? explainCourseError(crashText, source, context) : null;
       const revealPass = grade.allPassed && copiedSolution.current && isSolutionCode(source, exercise.solution);
       if (grade.allPassed) {
         setCompare(null);
@@ -978,12 +983,7 @@ export function ExercisePlayer({
               starter={exercise.starter}
               glossary={glossary}
               saved={saved?.predicted}
-              onAnswer={(choice) =>
-                updateExercise(key, (previous) => {
-                  const nextProgress: ExerciseProgress & PlayerExtras = { ...previous, predicted: choice };
-                  return nextProgress;
-                })
-              }
+              onAnswer={(choice) => updateExercise(key, (previous) => ({ ...previous, predicted: choice }))}
               onClose={focusRun}
             />
           ) : null}
@@ -1165,6 +1165,7 @@ export function ExercisePlayer({
               }}
               onOpenAssemble={openAssemble}
               onOpenCompare={openCompare}
+              onInsertStart={(start) => insertAtCursor(/[=,]$/.test(start) ? `${start} ` : start, start)}
             />
           ) : support === "light" && !done && activeCheckpoint ? (
             <HelpLocked />

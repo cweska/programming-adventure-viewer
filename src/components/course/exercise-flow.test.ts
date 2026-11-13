@@ -152,7 +152,8 @@ describe("server render", () => {
     if (!entry) return;
     const html = renderToString(createElement(LessonPlayer, itemPageProps(entry.unit.id, entry.item.id)!));
     expect(html.match(/data-testid="help-button"/g)?.length).toBe(1);
-    expect(html).toContain("Help: Start me off");
+    // The first rung is Start me off when the step's last hint has a line to start from, else Where to look.
+    expect(html).toMatch(/Help: (Start me off|Where to look)/);
     expect(html).not.toMatch(/data-testid="hint-button-\d/);
   });
 
@@ -214,7 +215,9 @@ describe("server render", () => {
   it("renders the Help stack's open rungs, a highlighted offer, and a locked Show me", () => {
     const checkpoint = unitOneStyle.checkpoints[0];
     const rungs = helpRungs(checkpoint, { anotherWayCount: 0, hasAssemble: false, solo: false });
-    const state = helpState(rungs, 3, false);
+    // Every rung open but the last: Compare with Mar'tu's version is next, and still locked.
+    expect(rungs.map((rung) => rung.kind)).toEqual(["start", "point", "teach", "how", "show"]);
+    const state = helpState(rungs, rungs.length - 1, false);
     const html = renderToString(
       createElement(HelpStack, {
         noun: "Step",
@@ -231,9 +234,13 @@ describe("server render", () => {
         onDismissOffer: () => undefined,
         onOpenAssemble: () => undefined,
         onOpenCompare: () => undefined,
+        onInsertStart: () => undefined,
       }),
     );
     expect(html).toContain('data-testid="help-rung-1"');
+    expect(html).toContain('data-testid="help-start-code"');
+    expect(html).toContain("<code>snack =</code>");
+    expect(html).toContain('data-kind="how"');
     expect(html).toContain('data-testid="help-rung-3"');
     expect(html).toContain('data-kind="teach"');
     expect(html).toContain('data-testid="help-offer"');

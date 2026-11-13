@@ -10,11 +10,12 @@ export type RevealResult = "opened" | "paced" | "locked" | "none";
 
 /**
  * The Help stack (curriculum §2.2): ONE climbing Help control for the current step. Each press opens the
- * next rung (Start me off, Where to look, Another way, Teach me, More structure, Show me). Rungs stay
- * open so they can be read again; using them never costs anything.
+ * next rung (Start me off, Where to look, Another way, Teach me, More structure, Show me how, Compare with
+ * Mar'tu's version). Rungs stay open so they can be read again; using them never costs anything.
  *
  * testids: help, help-button, help-rung-<n> (n from 1, in order), help-offer, help-offer-dismiss,
- * help-paced, help-show-locked, help-another-next, assemble-open, compare-open, help-locked.
+ * help-paced, help-show-locked, help-another-next, help-start-code, help-start-insert, assemble-open,
+ * compare-open, help-locked.
  */
 export function HelpStack({
   noun,
@@ -31,6 +32,7 @@ export function HelpStack({
   onDismissOffer,
   onOpenAssemble,
   onOpenCompare,
+  onInsertStart,
 }: {
   noun: string;
   stepNumber: number;
@@ -47,6 +49,8 @@ export function HelpStack({
   onDismissOffer: () => void;
   onOpenAssemble: () => void;
   onOpenCompare: () => void;
+  /** "Start me off": put the first tokens of the line in the editor. */
+  onInsertStart: (text: string) => void;
 }) {
   const baseId = useId();
   const [note, setNote] = useState<"paced" | null>(null);
@@ -106,6 +110,19 @@ export function HelpStack({
               Try another angle: {angleLabel(anotherWay[(angle + 1) % anotherWay.length])}
             </button>
           ) : null}
+        </div>
+      );
+    }
+    if (rung.kind === "start" && rung.start) {
+      return (
+        <div className="ex-help-start">
+          <p>Start your line like this, then finish it yourself:</p>
+          <pre className="ex-help-start-code" data-testid="help-start-code">
+            <code>{rung.start}</code>
+          </pre>
+          <button type="button" className="ex-quiet" data-testid="help-start-insert" onClick={() => onInsertStart(rung.start ?? "")}>
+            Put it in my code
+          </button>
         </div>
       );
     }
