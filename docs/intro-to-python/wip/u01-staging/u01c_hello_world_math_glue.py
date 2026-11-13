@@ -565,7 +565,7 @@ WHAT_EACH_NUMBER_MEANS = dict(
     martu=(
         "Before any math, ask two questions about each number: how many? how much is one? "
         "Put each number in the box that means that.\n"
-        "Numbers in the wrong boxes caught a lot of us in the campaign. Normal. Now we ask first, yes?"
+        "A number in the wrong box trips up everyone once. Normal. Now we ask first, yes?"
     ),
     names=["lantern_count", "lantern_price", "rope_count", "rope_price"],
     pair_talk=(

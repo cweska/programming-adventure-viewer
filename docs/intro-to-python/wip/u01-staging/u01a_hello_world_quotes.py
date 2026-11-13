@@ -111,23 +111,55 @@ NOTES = (
 )
 
 
-def shows(text, where, extra_ok=(".",)):
+def shows(text, where, extra_ok=(".",), starts_ok=False):
     """A check that some printed line is exactly `text` (a final mark in extra_ok is optional).
 
-    A line that matches apart from capitals gets its own message: Python shows exactly what is in the quotes.
+    With starts_ok, a line that starts with `text` and goes on after a space or mark counts too
+    ("Get inside, yes?" shows "Get inside"). A curly apostrophe counts as a straight one (phone and tablet
+    keyboards type them). When the line is not there, the message names the nearest slip, in this order:
+      1. the words are in quotes on their own line with no `print` (BARE),
+      2. a printed line differs only by capitals (STREXACT),
+      3. only by spaces or marks (STREXACT),
+      4. by a letter or two (a spelling slip),
+      5. the words are inside a longer printed line,
+    and otherwise says the line is not showing yet, plus `where`.
     """
     bare = text.rstrip(".!?")
     options = [bare] + [bare + mark for mark in extra_ok]
-    near_message = (
-        "The task needs `" + text + "`, and your line shows `%s`: capitals count, "
-        "because Python shows exactly what is inside the quotes."
-    )
-    missing_message = "`" + text + "` is not showing yet. " + where
+    head = "The task needs `" + text + "`, and your line shows `"
+    longer = ("`, which has more than `" + text + "` in it. Show `" + text + "` on a line of its own.")
+    missing = "`" + text + "` is not showing yet. " + where
     return (
         f"_want = {options!r}\n"
-        "_near = [l for l in _lines() if l.lower().rstrip('.!?') == _want[0].lower() and l not in _want]\n"
-        f"assert any(l in _want for l in _lines()) or not _near, {near_message!r} % (_near[0] if _near else '')\n"
-        f"assert any(l in _want for l in _lines()), {missing_message!r}"
+        "_fix = lambda s: s.replace('\\u2019', \"'\")\n"
+        f"_starts = {bool(starts_ok)!r}\n"
+        "_ok = lambda l: _fix(l) in _want or (_starts and _fix(l).startswith(_want[0]) "
+        "and _fix(l)[len(_want[0]):][:1] in (' ', ',', '.', '!', '?'))\n"
+        "_msg = ''\n"
+        "if not any(_ok(l) for l in _lines()):\n"
+        "    import ast as _ast, difflib as _dl\n"
+        "    _key = lambda s: ''.join(c for c in _fix(s).lower() if c.isalnum())\n"
+        "    _sim = lambda s: _dl.SequenceMatcher(None, _key(s), _key(_want[0])).ratio()\n"
+        "    _bare = [n.lineno for n in _ast.parse(_source).body if isinstance(n, _ast.Expr) "
+        "and isinstance(n.value, _ast.Constant) and isinstance(n.value.value, str) "
+        "and _key(n.value.value) == _key(_want[0])]\n"
+        "    _close = sorted(_lines(), key=lambda l: -_sim(l))\n"
+        "    _l = _close[0] if _close else ''\n"
+        "    _longer = [l for l in _lines() if _key(_want[0]) in _key(l)]\n"
+        "    if _bare:\n"
+        "        _msg = ('Line ' + str(_bare[0]) + ' has the words in quotes, but no `print`, so Python made them '\n"
+        "                'and forgot them. Write `print(` before the quotes and `)` after.')\n"
+        "    elif _l and _fix(_l).lower().rstrip('.!?') == _want[0].lower():\n"
+        f"        _msg = {head!r} + _l + '`. Capitals count: Python shows exactly what is inside the quotes.'\n"
+        "    elif _l and _key(_l) == _key(_want[0]):\n"
+        f"        _msg = {head!r} + _l + '`. Every space and mark counts: Python shows exactly what is inside the quotes.'\n"
+        "    elif _l and _sim(_l) >= 0.75:\n"
+        f"        _msg = {head!r} + _l + '`. Check it letter by letter: Python shows exactly what is inside the quotes.'\n"
+        "    elif _longer:\n"
+        f"        _msg = 'Your line shows `' + _longer[0] + {longer!r}\n"
+        "    else:\n"
+        f"        _msg = {missing!r}\n"
+        "assert not _msg, _msg"
     )
 
 

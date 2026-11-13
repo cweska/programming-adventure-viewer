@@ -504,3 +504,42 @@ describe("explainQuietSlip: lines that run with no error and do nothing", () => 
     expect(runCourseChecks('"chick-fa-le_women"\n', []).ok).toBe(true);
   });
 });
+
+describe("the explainer never throws", () => {
+  it("handles any traceback and any code (fuzzed)", () => {
+    let seed = 12345;
+    const random = () => {
+      seed = (seed * 1103515245 + 12345) % 2147483648;
+      return seed / 2147483648;
+    };
+    const pieces = [
+      "print(", ")", "(", '"', "'", "def", ":", "=", "-", "+", "5P", "name", "caster", "\n", "  ", "#", "[", "]", "{", "}",
+      '"""', "\\", ",", "traveler", "1st", "None", "if", "x", "€", "“", "\t",
+    ];
+    const messages = [
+      "SyntaxError: unterminated string literal (detected at line 1)",
+      "SyntaxError: invalid syntax",
+      "SyntaxError: invalid syntax. Perhaps you forgot a comma?",
+      "SyntaxError: '(' was never closed",
+      "SyntaxError: '{' was never closed",
+      "SyntaxError: invalid decimal literal",
+      "NameError: name 'caster' is not defined",
+      "NameError: name 'x' is not defined. Did you mean: 'X'?",
+      "TypeError: unsupported operand type(s) for -: 'str' and 'str'",
+      "TypeError: can only concatenate str (not \"int\") to str",
+      "IndentationError: unexpected indent",
+      "ValueError",
+      "",
+    ];
+    for (let round = 0; round < 400; round += 1) {
+      const code = Array.from({ length: Math.floor(random() * 14) }, () => pieces[Math.floor(random() * pieces.length)]).join("");
+      const line = 1 + Math.floor(random() * 4);
+      const raw = `Traceback (most recent call last):\n  File "main.py", line ${line}, in <module>\n${messages[Math.floor(random() * messages.length)]}`;
+      const previous = random() < 0.5 ? undefined : raw.replace(`line ${line}`, `line ${line + 1}`);
+      const result = explainCourseError(raw, code, { example: code.split("").reverse().join(""), names: ["name"], previous });
+      expect(typeof result.hint, JSON.stringify({ code, raw })).toBe("string");
+      expect(result.hint.length).toBeGreaterThan(0);
+      expect(() => explainQuietSlip(code, { missingName: "name" })).not.toThrow();
+    }
+  });
+});

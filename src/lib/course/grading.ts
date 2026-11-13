@@ -46,7 +46,13 @@ export function checkMessage(raw: string, code = "", context?: ExplainContext): 
     return message || NOT_DONE_MESSAGE;
   }
   const missing = text.match(/^NameError: name '([^']+)' is not defined/);
-  if (missing) return cantFind(missing[1], code, context);
+  if (missing) {
+    try {
+      return cantFind(missing[1], code, context);
+    } catch {
+      return cantFind(missing[1], "");
+    }
+  }
   if (/^[A-Za-z_][\w.]*(Error|Exception):/.test(text)) {
     return `Checking this step hit a problem: ${text}. Look at the values your code makes.`;
   }

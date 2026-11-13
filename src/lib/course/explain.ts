@@ -1337,8 +1337,20 @@ export function explainCourseError(traceback: string, code: string, context?: Ex
       raw,
     );
   }
-  const result = explainParsed(parsed, raw, code ?? "", context);
-  return nextErrorAfterFix(result, parsed, raw, context);
+  try {
+    const result = explainParsed(parsed, raw, code ?? "", context);
+    return nextErrorAfterFix(result, parsed, raw, context);
+  } catch (error) {
+    // Never let a surprise in the explainer hide the student's error: fall back to Python's own words.
+    console.error("Could not explain this error.", error);
+    const line = errorLine(raw);
+    return explain(
+      "other",
+      "Python stopped",
+      `Python stopped with ${parsed.type}${onLine(line)}${parsed.message ? `: ${parsed.message}` : ""}. Read the last line of the error: it says what went wrong.`,
+      raw,
+    );
+  }
 }
 
 /** "One fixed. Python found the next one.": a different error, at or after the previous one's line. */
@@ -1394,6 +1406,15 @@ const NUMBER_LITERAL = /^-?\d+(?:\.\d+)?$/;
  * `missingName` is a name a check looked for and could not find ("put `character = ` in front of it").
  */
 export function explainQuietSlip(code: string, options: { missingName?: string } = {}): QuietSlip | null {
+  try {
+    return findQuietSlip(code, options);
+  } catch (error) {
+    console.error("Could not look for quiet slips.", error);
+    return null;
+  }
+}
+
+function findQuietSlip(code: string, options: { missingName?: string }): QuietSlip | null {
   const lines = (code ?? "").split("\n");
   const defined = new Set(definedNames(code).map((entry) => entry.name));
   let open: string[] = [];
