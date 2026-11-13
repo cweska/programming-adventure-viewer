@@ -65,10 +65,13 @@ const playable = unit.items.flatMap((item) => {
 });
 const quizzes = unit.items.filter((item) => item.kind === "quiz");
 
+/** The lines CodeMirror shows for `code`: one per "\n"-separated piece, so a final "\n" shows an empty last line. */
+const editorLines = (code: string) => code.split("\n");
+
 /** The editor holds exactly `code` (no auto-closed brackets or auto-indent crept in). */
 async function setCode(page: Page, code: string) {
   await replaceEditor(page, code);
-  const expected = code.replace(/\n$/, "").split("\n");
+  const expected = editorLines(code);
   await expect
     .poll(() => page.locator('[data-testid="exercise-player"] [data-testid="editor"] .cm-line').allTextContents())
     .toEqual(expected);
@@ -160,7 +163,7 @@ async function answerQuiz(page: Page, quiz: RawItem) {
         await replaceEditor(page, fix);
         await expect
           .poll(() => page.locator('[data-testid="editor"] .cm-line').allTextContents())
-          .toEqual(fix.replace(/\n$/, "").split("\n"));
+          .toEqual(editorLines(fix));
         await page.getByTestId("quiz-bug-run").click();
         const firstLine = (question.expectedOutput ?? "").split("\n")[0];
         await expect(page.getByTestId("quiz-bug-output")).toContainText(firstLine, { timeout: 120_000 });
