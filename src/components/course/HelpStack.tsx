@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import type { AnotherWay, Checkpoint, GlossaryEntry } from "../../lib/course/schema";
-import { angleLabel, helpOfferLine, type HelpOffer, type HelpState, type Rung } from "./exercise-logic";
+import { angleLabel, helpOfferLine, type HelpOffer, type HelpState, type Preset, type Rung } from "./exercise-logic";
 import { Prose } from "./Prose";
 import { ReadAloud } from "./ReadAloud";
 
@@ -13,9 +13,13 @@ export type RevealResult = "opened" | "paced" | "locked" | "none";
  * next rung (Start me off, Where to look, Another way, Teach me, More structure, Show me how, Compare with
  * Mar'tu's version). Rungs stay open so they can be read again; using them never costs anything.
  *
+ * Under "Keep it short" the control climbs Where to look, Teach me, Show me how and Mar'tu's version; Start me
+ * off, Another way and More structure sit under "More options" (curriculum §2.3). Right after a crash, Help
+ * first says which line to mend (a crash checks no step), and Start me off waits.
+ *
  * testids: help, help-button, help-rung-<n> (n from 1, in order), help-offer, help-offer-dismiss,
- * help-paced, help-show-locked, help-another-next, help-start-code, help-start-insert, assemble-open,
- * compare-open, help-locked.
+ * help-paced, help-show-locked, help-another-next, help-start-code, help-start-insert, help-start-done,
+ * help-crash, help-more-options, help-extra-<kind>, assemble-open, compare-open, help-locked.
  */
 export function HelpStack({
   noun,
@@ -28,6 +32,10 @@ export function HelpStack({
   compareOpen,
   showUnlocked,
   runNumber,
+  preset = "more",
+  crashed = false,
+  crashLine = null,
+  startInCode = () => false,
   onReveal,
   onDismissOffer,
   onOpenAssemble,
@@ -45,6 +53,13 @@ export function HelpStack({
   showUnlocked: boolean;
   /** Bumps on every Run (clears the "read that one first" note). */
   runNumber: number;
+  /** "Keep it short" trims the stack (the rest goes under More options). */
+  preset?: Preset;
+  /** The last run crashed, at this line of the student's code (null when Python did not name one). */
+  crashed?: boolean;
+  crashLine?: number | null;
+  /** Whether the code already starts the step's line (Start me off then has nothing to add). */
+  startInCode?: (start: string) => boolean;
   onReveal: () => RevealResult;
   onDismissOffer: () => void;
   onOpenAssemble: () => void;
@@ -122,6 +137,15 @@ export function HelpStack({
       );
     }
     if (rung.kind === "start" && rung.start) {
+      if (startInCode(rung.start)) {
+        return (
+          <div className="ex-help-start">
+            <p data-testid="help-start-done">
+              Your code already starts this line: <code className="inline-code">{rung.start}</code> Finish that line yourself.
+            </p>
+          </div>
+        );
+      }
       return (
         <div className="ex-help-start">
           <p>Start your line like this, then finish it yourself:</p>
@@ -131,6 +155,7 @@ export function HelpStack({
           <button type="button" className="ex-quiet" data-testid="help-start-insert" onClick={() => onInsertStart(rung.start ?? "")}>
             Put it in my code
           </button>
+          <p className="ex-muted ex-help-start-note">It goes on a new line of its own.</p>
         </div>
       );
     }
@@ -166,7 +191,7 @@ export function HelpStack({
   }
 
   const buttonText = next
-    ? `${state.open.length === 0 ? "Help" : "More help"}: ${next.label}${state.nextLocked ? " (opens soon)" : ""}`
+    ? `${state.opened === 0 ? "Help" : "More help"}${crashed ? ` with ${stepLabel}` : ""}: ${next.label}${state.nextLocked ? " (opens soon)" : ""}`
     : "";
 
   return (
@@ -179,12 +204,19 @@ export function HelpStack({
       {offer ? (
         <div className="ex-help-offer" data-testid="help-offer" data-offer={offer}>
           <p id={offerId} role="status">
-            {helpOfferLine(offer)}
+            {helpOfferLine(offer, crashed)}
           </p>
           <button type="button" className="ex-link-button" data-testid="help-offer-dismiss" onClick={onDismissOffer}>
             No thanks
           </button>
         </div>
+      ) : null}
+
+      {crashed ? (
+        <p className="ex-help-crash" data-testid="help-crash">
+          <strong>Mend {crashLine ? `line ${crashLine}` : "the error"} first.</strong> Python stopped there, so it could not
+          check your steps yet. Read the message under your code: its last line says what went wrong.
+        </p>
       ) : null}
 
       {state.open.length > 0 ? (
@@ -234,6 +266,23 @@ export function HelpStack({
         ) : null}
       </div>
 
+      {state.extras.length > 0 ? (
+        <details className="ex-help-more" data-testid="help-more-options">
+          <summary>More options</summary>
+          <ul className="ex-help-rungs ex-help-extras">
+            {state.extras.map((rung) => (
+              <li key={rung.kind} className={`ex-help-rung is-${rung.kind}`} data-testid={`help-extra-${rung.kind}`} data-kind={rung.kind}>
+                <p className="ex-help-rung-label">
+                  {rung.label}
+                  <span className="ex-sr-only"> (help for {stepLabel})</span>
+                </p>
+                {rungBody(rung)}
+              </li>
+            ))}
+          </ul>
+        </details>
+      ) : null}
+
       <div aria-live="polite">
         {note === "paced" ? (
           <p className="ex-help-note" data-testid="help-paced">
@@ -246,7 +295,7 @@ export function HelpStack({
           Mar&apos;tu&apos;s version opens after a few more tries, or a few more minutes. Each change you run counts.
         </p>
       ) : null}
-      {state.open.length === 0 && !offer ? (
+      {state.opened === 0 && !offer && !crashed ? (
         <p className="ex-help-note ex-muted">Help never costs you anything.</p>
       ) : null}
     </section>

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   angleLabel,
   answersFromBox,
+  codeHasStart,
   compareLines,
   countInputCalls,
   countsAsAttempt,
@@ -15,8 +16,12 @@ import {
   NUDGE_IDLE_MS,
   NUDGE_NO_PROGRESS_MS,
   pickInsertion,
+  pickIsNote,
+  revealNextRung,
   RUNG_PACE_MS,
+  rungInStack,
   rungPaced,
+  soloUnaided,
   solutionUnlocked,
   startOfLine,
 } from "./exercise-logic";
@@ -114,6 +119,52 @@ describe("the Help rungs", () => {
     expect(helpState(rungs, -3, true).open).toEqual([]);
   });
 
+  it("Keep it short climbs Where to look, Teach me, Show me how and Compare; the rest wait under More options", () => {
+    const rungs = helpRungs({ hints: ["point", "teach", "Write `caster = \"Gearshift\"`."] }, full);
+    expect(rungs.map((rung) => rung.kind)).toEqual(["start", "point", "another", "teach", "structure", "how", "show"]);
+    let state = helpState(rungs, 0, false, { preset: "short" });
+    expect(state.next?.kind).toBe("point");
+    expect(state.nextIndex).toBe(1);
+    expect(state.extras.map((rung) => rung.kind)).toEqual(["start", "another", "structure"]);
+    expect(state.left).toBe(3);
+    // Opening Where to look saves 2 (Start me off is stepped over); the next press opens Teach me.
+    state = helpState(rungs, 2, false, { preset: "short" });
+    expect(state.open.map((rung) => rung.kind)).toEqual(["point"]);
+    expect(state.opened).toBe(2);
+    expect(state.next?.kind).toBe("teach");
+    state = helpState(rungs, 4, false, { preset: "short" });
+    expect(state.next?.kind).toBe("how");
+    state = helpState(rungs, 6, false, { preset: "short" });
+    expect(state.next?.kind).toBe("show");
+    expect(state.nextLocked).toBe(true);
+    // Show me more keeps every rung in the stack and nothing under More options.
+    expect(helpState(rungs, 0, false).extras).toEqual([]);
+    expect(rungInStack("start", "more")).toBe(true);
+    expect(rungInStack("start", "short")).toBe(false);
+    expect(rungInStack("how", "short")).toBe(true);
+    // The saved count runs over the whole list: switching presets never opens Mar'tu's version early.
+    expect(helpState(rungs, 5, true, { preset: "short" }).open.map((rung) => rung.kind)).toEqual(["point", "teach"]);
+  });
+
+  it("steps over Start me off when it has nothing to give (the line is there, or right after a crash)", () => {
+    const rungs = helpRungs({ hints: ["point", "teach", "Write `caster = \"Gearshift\"`."] }, full);
+    const skipStart = (rung: { kind: string }) => rung.kind === "start";
+    const state = helpState(rungs, 0, false, { skip: skipStart });
+    expect(state.next?.kind).toBe("point");
+    expect(state.nextIndex).toBe(1);
+    expect(state.left).toBe(rungs.length - 2);
+    expect(revealNextRung({}, "make-caster", rungs.length, state.nextIndex + 1)).toEqual({ "make-caster": 2 });
+    // Never closes rungs, never past the top.
+    expect(revealNextRung({ a: 4 }, "a", 7, 2)).toEqual({ a: 4 });
+    expect(revealNextRung({ a: 4 }, "a", 7, 99)).toEqual({ a: 7 });
+    expect(revealNextRung({ a: 4 }, "a", 7)).toEqual({ a: 5 });
+    expect(codeHasStart('# 1. Make caster\ncaster="Gearshift"\n', "caster =")).toBe(true);
+    expect(codeHasStart("# caster = here\n", "caster =")).toBe(false);
+    expect(codeHasStart('print("Welcome to the cabin, Lucky")\n', "print(")).toBe(true);
+    expect(codeHasStart('name = input("Who? ")\n', "print(")).toBe(false);
+    expect(codeHasStart("anything\n", "")).toBe(false);
+  });
+
   it("paces rungs: a Run or a few seconds opens the next one", () => {
     expect(rungPaced(null, false, 1_000)).toBe(false);
     expect(rungPaced(1_000, false, 1_000 + RUNG_PACE_MS - 1)).toBe(true);
@@ -131,16 +182,16 @@ describe("proactive Help offers", () => {
     rungsLeft: 3,
     missesInARow: 0,
     msSinceProgress: 0,
-    idleSinceMissMs: null,
+    idleMs: null,
   };
 
-  it("offers after 3 misses on a step, 4 minutes without progress, or 90 seconds idle after a miss", () => {
+  it("offers after 3 misses on a step, 4 minutes without progress, or 90 seconds idle (also before any Run)", () => {
     expect(helpOffer(quiet)).toBeNull();
     expect(helpOffer({ ...quiet, missesInARow: NUDGE_AFTER_MISSES - 1 })).toBeNull();
     expect(helpOffer({ ...quiet, missesInARow: NUDGE_AFTER_MISSES })).toBe("misses");
     expect(helpOffer({ ...quiet, msSinceProgress: NUDGE_NO_PROGRESS_MS })).toBe("time");
-    expect(helpOffer({ ...quiet, idleSinceMissMs: NUDGE_IDLE_MS - 1 })).toBeNull();
-    expect(helpOffer({ ...quiet, idleSinceMissMs: NUDGE_IDLE_MS })).toBe("idle");
+    expect(helpOffer({ ...quiet, idleMs: NUDGE_IDLE_MS - 1 })).toBeNull();
+    expect(helpOffer({ ...quiet, idleMs: NUDGE_IDLE_MS })).toBe("idle");
     expect(NUDGE_AFTER_MISSES).toBe(3);
     expect(NUDGE_NO_PROGRESS_MS).toBe(240_000);
     expect(NUDGE_IDLE_MS).toBe(90_000);
@@ -149,7 +200,7 @@ describe("proactive Help offers", () => {
   it("under Keep it short, offers only after repeated misses (curriculum §2.3)", () => {
     expect(helpOffer({ ...quiet, preset: "short", missesInARow: NUDGE_AFTER_MISSES })).toBe("misses");
     expect(helpOffer({ ...quiet, preset: "short", msSinceProgress: NUDGE_NO_PROGRESS_MS })).toBeNull();
-    expect(helpOffer({ ...quiet, preset: "short", idleSinceMissMs: NUDGE_IDLE_MS })).toBeNull();
+    expect(helpOffer({ ...quiet, preset: "short", idleMs: NUDGE_IDLE_MS })).toBeNull();
   });
 
   it("stays quiet without Help, when done, dismissed, or with nothing left", () => {
@@ -160,8 +211,10 @@ describe("proactive Help offers", () => {
     expect(helpOffer({ ...ready, rungsLeft: 0 })).toBeNull();
   });
 
-  it("says one kind line", () => {
-    expect(helpOfferLine("misses")).toContain("Read the last line first");
+  it("says one kind line, and \"read the last line\" only after a crash (there is an error message to read)", () => {
+    expect(helpOfferLine("misses", true)).toContain("Read the last line first");
+    expect(helpOfferLine("misses")).not.toContain("last line");
+    expect(helpOfferLine("misses")).toContain("Steady, now. Want a nudge?");
     expect(helpOfferLine("time")).toMatch(/nudge/);
     expect(helpOfferLine("idle")).toMatch(/nudge/);
   });
@@ -237,6 +290,13 @@ describe("Mar'tu's pick", () => {
     expect(pickInsertion("a\nb", "")).toBe("a\nb");
   });
 
+  it("puts a pick that is a # note in as it is, never in quotes", () => {
+    expect(pickIsNote("# Night watch at the cabin.")).toBe(true);
+    expect(pickIsNote("Steady, now.")).toBe(false);
+    expect(pickInsertion("# Night watch at the cabin.", "")).toBe("# Night watch at the cabin.");
+    expect(pickInsertion("  # Night watch at the cabin.", 'print("')).toBe("# Night watch at the cabin.");
+  });
+
   it("uses a pick written as a quoted literal as it is", () => {
     expect(pickInsertion('"Welcome to the cabin, "', "print(")).toBe('"Welcome to the cabin, "');
     expect(pickInsertion('"Welcome to the cabin, "', 'print("')).toBe("Welcome to the cabin, ");
@@ -285,5 +345,16 @@ describe("angle labels", () => {
     expect(angleLabel({ angle: "in Tor" })).toBe("In Tor");
     expect(angleLabel({ angle: "contrast" })).toBe("Not this");
     expect(angleLabel({ angle: "sentence frame" })).toBe("Fill the frame");
+  });
+});
+
+describe("the SOLO line", () => {
+  it("says \"You did that alone\" only when no Help went past Where to look and Mar'tu's version stayed closed", () => {
+    expect(soloUnaided(undefined)).toBe(true);
+    expect(soloUnaided({ hintsUsed: {} })).toBe(true);
+    expect(soloUnaided({ hintsUsed: { "step-1": 1 } })).toBe(true);
+    expect(soloUnaided({ hintsUsed: { "step-1": 2 } })).toBe(false);
+    expect(soloUnaided({ hintsUsed: { "step-1": 1, __bonus: 3 } })).toBe(true);
+    expect(soloUnaided({ hintsUsed: {}, solutionShown: true })).toBe(false);
   });
 });

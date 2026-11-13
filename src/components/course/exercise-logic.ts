@@ -112,14 +112,29 @@ export function rungsShown(hintsUsed: Record<string, number> | undefined, checkp
   return Math.max(0, Math.min(total, Math.floor(used)));
 }
 
-/** Open one more rung (never past the top). Returns a new hintsUsed record. */
+/**
+ * Open one more rung (never past the top), or, given `upTo`, every rung up to and including that many (Help
+ * steps over rungs it skips, see helpState). Never closes rungs. Returns a new hintsUsed record.
+ */
 export function revealNextRung(
   hintsUsed: Record<string, number> | undefined,
   checkpointId: string,
   total: number,
+  upTo?: number,
 ): Record<string, number> {
   const shown = rungsShown(hintsUsed, checkpointId, total);
-  return { ...(hintsUsed ?? {}), [checkpointId]: Math.min(total, shown + 1) };
+  const next = upTo === undefined ? shown + 1 : Math.max(shown, Math.floor(upTo));
+  return { ...(hintsUsed ?? {}), [checkpointId]: Math.min(total, next) };
+}
+
+/**
+ * A SOLO pass counts as "alone" (curriculum §2.1 step 7) when no Help went past Where to look for any step
+ * (the first rung of a SOLO exercise), and Mar'tu's version was never opened.
+ */
+export function soloUnaided(saved: Pick<ExerciseProgress, "hintsUsed" | "solutionShown"> | undefined): boolean {
+  if (!saved) return true;
+  if (saved.solutionShown) return false;
+  return Object.entries(saved.hintsUsed ?? {}).every(([id, count]) => id.startsWith("__") || count <= 1);
 }
 
 /** The hint button's words: "Hint (1 of 3)" before opening, "Another hint (2 of 3)" after, then done. */
@@ -198,7 +213,7 @@ export function nextFailStreak(previous: FailStreak, stuckOn: string | null): Fa
   return { checkpointId: stuckOn, count: 1 };
 }
 
-/** Offer Help after this long without typing or running, counted from a failed run. */
+/** Offer Help after this long without typing or running (the silent stall, also before the first Run). */
 export const NUDGE_IDLE_MS = 90_000;
 /** Offer Help after this many failed runs in a row on one step. */
 export const NUDGE_AFTER_MISSES = 3;
@@ -223,21 +238,31 @@ export function helpOffer(input: {
   missesInARow: number;
   /** Visible ms on this exercise since the last new step passed (or since opening it). */
   msSinceProgress: number;
-  /** ms since the last keystroke or run, counted only after a failed run (null otherwise). */
-  idleSinceMissMs: number | null;
+  /**
+   * Visible ms since the student last typed, ran or opened Help (or since the exercise opened): the silent
+   * stall, which also counts before the first Run (curriculum §2.2, G3). Null when not measured.
+   */
+  idleMs: number | null;
 }): HelpOffer | null {
   if (!input.helpAvailable || input.done || input.dismissed || input.rungsLeft <= 0) return null;
   if (input.missesInARow >= NUDGE_AFTER_MISSES) return "misses";
   // Under "Keep it short" only the failed-runs trigger is active (curriculum §2.3).
   if (input.preset !== "more") return null;
   if (input.msSinceProgress >= NUDGE_NO_PROGRESS_MS) return "time";
-  if (input.idleSinceMissMs !== null && input.idleSinceMissMs >= NUDGE_IDLE_MS) return "idle";
+  if (input.idleMs !== null && input.idleMs >= NUDGE_IDLE_MS) return "idle";
   return null;
 }
 
-/** The one line that highlights Help (Oogrish's line after repeated misses, §2.2). */
-export function helpOfferLine(offer: HelpOffer): string {
-  if (offer === "misses") return "Oogrish: \u201cSteady, now. Read the last line first. Want a nudge?\u201d";
+/**
+ * The one line that highlights Help (Oogrish's line after repeated misses, §2.2). "Read the last line first"
+ * is about Python's error message, so it is said only when the last run crashed.
+ */
+export function helpOfferLine(offer: HelpOffer, crashed = false): string {
+  if (offer === "misses") {
+    return crashed
+      ? "Oogrish: \u201cSteady, now. Read the last line first. Want a nudge?\u201d"
+      : "Oogrish: \u201cSteady, now. Want a nudge?\u201d";
+  }
   if (offer === "time") return "This one is taking a while. That is normal. Want a nudge?";
   return "Still thinking? A nudge is one click away.";
 }
@@ -310,24 +335,72 @@ export function helpRungs(
   return rungs;
 }
 
+/**
+ * Which rungs the Help control climbs (curriculum §2.2, §2.3). "Show me more": all of them. "Keep it short":
+ * Where to look, Teach me, Show me how and Mar'tu's version; Start me off, Another way and More structure wait
+ * under "More options".
+ */
+export function rungInStack(kind: RungKind, preset: Preset = "more"): boolean {
+  if (preset === "more") return true;
+  return kind === "point" || kind === "teach" || kind === "how" || kind === "show";
+}
+
 export type HelpState = {
-  /** The rungs open now (from hintsUsed), in order. */
+  /** The rungs open now (from hintsUsed) that the stack shows, in order. */
   open: Rung[];
+  /** How many rungs of helpRungs() are open or stepped over (the saved count). */
+  opened: number;
   /** The rung the Help control opens next, or null when every rung is open. */
   next: Rung | null;
+  /** next's index in helpRungs() (-1 when there is none): opening it saves `nextIndex + 1`. */
+  nextIndex: number;
   /** The next rung is Show me, but Mar'tu's version is not unlocked yet. */
   nextLocked: boolean;
   /** Rungs the student could still open now (a locked Show me does not count). */
   left: number;
+  /** "Keep it short": the rungs under "More options" (open any time, in any order). Empty otherwise. */
+  extras: Rung[];
 };
 
-export function helpState(rungs: readonly Rung[], used: number, showUnlocked: boolean): HelpState {
+/**
+ * The Help control's state. The saved count always runs over the whole helpRungs() list, whatever the preset,
+ * so switching presets never opens Mar'tu's version early. The control steps over rungs that are not in this
+ * preset's stack, and over rungs `skip` says have nothing to give right now (Start me off when the line is
+ * already there, or right after a crash).
+ */
+export function helpState(
+  rungs: readonly Rung[],
+  used: number,
+  showUnlocked: boolean,
+  options: { preset?: Preset; skip?: (rung: Rung) => boolean } = {},
+): HelpState {
+  const preset = options.preset ?? "more";
+  const skip = options.skip ?? (() => false);
   const count = Math.max(0, Math.min(rungs.length, Math.floor(used)));
-  const open = rungs.slice(0, count);
-  const next = rungs[count] ?? null;
-  const rest = rungs.slice(count);
-  const left = rest.filter((rung) => rung.kind !== "show" || showUnlocked).length;
-  return { open, next, nextLocked: next?.kind === "show" && !showUnlocked, left };
+  const open = rungs.slice(0, count).filter((rung) => rungInStack(rung.kind, preset));
+  const climbable = (rung: Rung) => rungInStack(rung.kind, preset) && !skip(rung);
+  let nextIndex = -1;
+  for (let index = count; index < rungs.length; index += 1) {
+    if (climbable(rungs[index])) {
+      nextIndex = index;
+      break;
+    }
+  }
+  const next = nextIndex >= 0 ? rungs[nextIndex] : null;
+  const left = rungs.slice(count).filter((rung) => climbable(rung) && (rung.kind !== "show" || showUnlocked)).length;
+  const extras = preset === "more" ? [] : rungs.filter((rung) => !rungInStack(rung.kind, preset));
+  return { open, opened: count, next, nextIndex, nextLocked: next?.kind === "show" && !showUnlocked, left, extras };
+}
+
+/**
+ * The code already starts the step's line (Start me off has nothing to add): a line outside notes that begins
+ * with `start`, ignoring spaces (`caster =` matches `caster="Gearshift"`).
+ */
+export function codeHasStart(code: string, start: string): boolean {
+  const squash = (text: string) => text.replace(/\s+/g, "");
+  const wanted = squash(start);
+  if (!wanted) return false;
+  return meaningfulLines(code).some((line) => squash(line).startsWith(wanted));
 }
 
 /** Whether the next rung must wait (a Run since the last rung, or RUNG_PACE_MS, lets it open). */
@@ -490,13 +563,19 @@ export function insideString(lineBefore: string): boolean {
   return quote !== null;
 }
 
+/** Mar'tu's pick is a `#` note (it goes in as it is, on a line of its own). */
+export function pickIsNote(pick: string): boolean {
+  return (pick ?? "").trimStart().startsWith("#");
+}
+
 /**
- * What Mar'tu's pick puts in the editor: the value itself for a number or a multi-line pick; inside an open
- * string, the bare words; otherwise the words in quotes. A pick authored as a quoted literal
- * (`"Welcome, "`) is used as it is (or without its quotes inside an open string).
+ * What Mar'tu's pick puts in the editor: a `#` note as it is; the value itself for a number or a multi-line
+ * pick; inside an open string, the bare words; otherwise the words in quotes. A pick authored as a quoted
+ * literal (`"Welcome, "`) is used as it is (or without its quotes inside an open string).
  */
 export function pickInsertion(pick: string, lineBefore: string): string {
   const value = pick ?? "";
+  if (pickIsNote(value)) return value.trim();
   const literal = value.trim().match(/^(["'])([\s\S]*)\1$/);
   if (literal && value.trim().length >= 2) return insideString(lineBefore) ? literal[2] : value.trim();
   if (value.includes("\n") || /^-?\d+(\.\d+)?$/.test(value.trim()) || insideString(lineBefore)) return value;

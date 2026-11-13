@@ -260,9 +260,7 @@ LABEL_A_BOX = dict(
     martu=(
         "A box ([[variable]]) has a label and something inside. `companion = \"Gearshift\"` makes a box labeled "
         "`companion` and puts the text inside. Read `=` as gets: companion gets Gearshift.\n"
-        "```\n  companion\n+-----------+\n| Gearshift |\n+-----------+\n```\n"
-        "After you run it, try this: delete `companion = ` from line 1 and run again. "
-        "Python will complain. That is the point, yes?"
+        "```\n  companion\n+-----------+\n| Gearshift |\n+-----------+\n```"
     ),
     introduces=["node:Assign"],
     names=["companion"],
@@ -287,7 +285,7 @@ LABEL_A_BOX = dict(
             text="Make sure line 1 starts with `companion = `. Then change the hero in the quotes to a different hero.",
             dictated=True,
             hints=[
-                "Line 1 starts `companion = \"`. Type a new hero right after that first quote.",
+                "Delete `Gearshift`, then type a new hero between the quotes.",
                 "The label is left of `=`. The hero goes on the right, in quotes.",
                 "Read it as: companion gets Gearshift. A box is `name = value`, so `snack = \"glug\"` makes a box "
                 "named `snack` with glug inside. " + QUOTES_RULE,
@@ -403,7 +401,7 @@ LABEL_A_BOX = dict(
     wrong_answers=[
         dict(why="value left as the example's Gearshift", code='companion = "Gearshift"\nprint(companion)\nprint("companion")\n',
              fails_at=1, message_contains="example"),
-        dict(why="the investigate step left undone: a bare value with no box", code='"Gearshift"\nprint(companion)\nprint("companion")\n',
+        dict(why="`companion = ` deleted: a bare value with no box", code='"Gearshift"\nprint(companion)\nprint("companion")\n',
              fails_at=0, message_contains="companion"),
         dict(why="hero name with no quotes", code="companion = Bomb Shell\nprint(companion)\n",
              fails_at=0, message_contains="invalid syntax"),
@@ -424,8 +422,10 @@ LABEL_A_BOX = dict(
     notes=(
         meta(starter_level="S4", path="CC", skills="make-variable", solo="false", dictates="1",
              foreign_names="snack", twin='rival = "<any>" then print(rival)') + "\n"
-        "Investigate (G3 R2) is folded into the Learn text: deleting `companion = ` leaves a bare value, so "
-        "line 2 raises NameError and explainer rule 4 fires with the 'made, not kept' picture. "
+        "Investigate (G3 R2) moved out of the Learn text (teacher ruling): the 'delete `companion = `' dare is now "
+        "the name-and-value predict (a value with no name, then `print(character)` -> not defined), so Learn ends "
+        "on the box picture. CP hints[0] says to delete Gearshift and type between the quotes, so following it "
+        "cannot break a quote. "
         "C3: the example's value fails with an inline offer of Mar'tu's pick. TR = the step-by-step angle."
     ),
 )
@@ -445,6 +445,16 @@ NAME_AND_VALUE = dict(
     pair_talk=(
         "Pair talk: each of you makes your own box on your own screen. Then read your partner's line 1 out "
         "loud, saying \"gets\" for `=`."
+    ),
+    predict=dict(
+        q="What will this print?",
+        code='"Bomb Shell"\nprint(character)\n',
+        choices=["Bomb Shell", "ERROR: name 'character' is not defined", "character"],
+        answer=1,
+        explain=(
+            "Line 1 is a value with no name, so Python makes it and forgets it. No box called `character` was "
+            "ever made, so line 2 says *not defined*. A box needs a name AND a value: `character = \"Bomb Shell\"`."
+        ),
     ),
     starter="# Your box goes here:\n\n# Print it here:\n",
     checkpoints=[
@@ -470,7 +480,7 @@ NAME_AND_VALUE = dict(
             dictated=True,
             hints=[
                 "Start the line with `print(`.",
-                "Look at the Example's second line.",
+                "The Example prints its box by name, with no quotes. Do the same with your box: `character`.",
                 QUOTES_RULE,
             ],
             checks=[print_check("character")],
@@ -590,6 +600,13 @@ NAME_AND_VALUE = dict(
              foreign_names="companion,player_name,hero,snack", echo="character", twin='familiar = "<any>" then print(familiar)') + "\n"
         "Echo spot: on a CP1 pass Mar'tu says '*<value>.* Hm. Welcome to the cabin.' through the blocklist (§2.11); "
         "pass_line is the fallback. "
+        "Predict (teacher ruling) carries the old 1B-01 investigate dare: a lone \"Bomb Shell\" then "
+        "`print(character)` is a NameError. The right choice reads 'ERROR: ...' because the harness matches an "
+        "error answer only by that prefix (same form as u01a's Fireball predict); the teacher's wording was "
+        "'An error: name 'character' is not defined'. "
+        "WA `\"character\" = \"Zelda\"` checks Python's raw text ('literal'): the harness never runs explain.ts. "
+        "Once the explain.ts change lands, the site's row for it reads 'The name of a box never goes in quotes'; "
+        "switch message_contains to 'never goes in quotes' when the harness checks crashes through explain.ts. "
         "WA evidence: lone value (B-02, B-03, A-04); def (A-02); dash (A-04); player_name (A-05, A-07, A-08); "
         "unquoted text (A-08 Kratos shape, B-01); multi-word (G2 R2); misspelling (A-03, A-08)."
     ),
@@ -1000,9 +1017,10 @@ CHANGE_THE_BOX = dict(
                     "Put the new line above the `print`.'",
                 ),
                 (
-                    "only the newest value is printed",
+                    "the last printed line shows 14",
                     "import re as _re\n"
-                    "assert not any(_re.search(r'\\b26\\b', _l) for _l in _lines()), 'Your program printed 26 too. Keep one `print(mana)`, at the end.'",
+                    "assert _lines() and _re.search(r'\\b14\\b', _lines()[-1]), "
+                    "'Your last printed line should show 14. Keep `print(mana)` at the end, below `mana = 14`.'",
                 ),
             ],
             pass_line="Mar'tu: 26, then 21, then 14. The old ones are gone, yes?",
@@ -1048,10 +1066,13 @@ CHANGE_THE_BOX = dict(
     bonus=dict(
         by="lucky",
         title="What's in it for me?",
-        text="Lucky's glug goes 5, then 3, then 1. Make `glug_sips` and print it after each change.",
+        text=(
+            "Lucky's glug goes 5, then 3, then 1. Make `glug_sips` and print it after each change. "
+            "Put these lines at the top, above `mana = 26`, so `mana` still gets the last word."
+        ),
         hints=[
-            "Start with `glug_sips = 5` and `print(glug_sips)`.",
-            "Then `glug_sips = 3`, print again, then `glug_sips = 1`, print again.",
+            "Click at the start of line 1 and press Enter. On the new top line: `glug_sips = 5`, then `print(glug_sips)`.",
+            "Then `glug_sips = 3`, print again, then `glug_sips = 1`, print again. All of it above `mana = 26`.",
         ],
         checks=[
             (
@@ -1066,8 +1087,8 @@ CHANGE_THE_BOX = dict(
             ),
         ],
         solution=(
-            "mana = 26\nmana = 21\nmana = 14\nprint(mana)\n"
             "glug_sips = 5\nprint(glug_sips)\nglug_sips = 3\nprint(glug_sips)\nglug_sips = 1\nprint(glug_sips)\n"
+            "mana = 26\nmana = 21\nmana = 14\nprint(mana)\n"
         ),
     ),
     campaign_link=dict(
@@ -1090,8 +1111,12 @@ CHANGE_THE_BOX = dict(
              fails_at=1, message_contains="use `=`"),
         dict(why="the number in quotes", code='mana = 26\nmana = 21\nmana = "14"\nprint(mana)\n',
              fails_at=1, message_contains="quotes"),
-        dict(why="prints every value, believing they all stay", code="mana = 26\nprint(mana)\nmana = 21\nmana = 14\nprint(mana)\n",
-             fails_at=1, message_contains="26"),
+        dict(why="the word mana printed last, so the last line is not 14",
+             code='mana = 26\nmana = 21\nmana = 14\nprint(mana)\nprint("mana")\n',
+             fails_at=1, message_contains="last printed line should show 14"),
+        dict(why="an old value typed into a print below the box's print",
+             code="mana = 26\nmana = 21\nmana = 14\nprint(mana)\nprint(21)\n",
+             fails_at=1, message_contains="last printed line should show 14"),
         dict(why="typed 14 in the print instead of using the box", code="mana = 26\nmana = 21\nmana = 14\nprint(14)\n",
              fails_at=1, message_contains="typed by hand"),
         dict(why="typed \"14\" as text in the print", code='mana = 26\nmana = 21\nmana = 14\nprint("14")\n',
@@ -1114,10 +1139,17 @@ CHANGE_THE_BOX = dict(
              foreign_names="glow,max_mana,magical_affinity") + "\n"
         "Static step table: in the predict explanation (shown after any predict, so a wrong one sees it, G2 R16) "
         "and as the first angle (TR, open by default under Show me more). "
-        "Catches 'both values stay' and 'print shows everything computed earlier' (A-03, A-04). "
+        "Catches 'both values stay' (the predict and its step table) and 'print shows everything computed "
+        "earlier' (the new line below the `print` -> '14 is printed') (A-03, A-04). "
         "The step says ADD a line, so the checks keep `mana = 26` and `mana = 21` (deleting them, or changing line 2 "
         "to 14, skips watching the box change), need `print(mana)` itself (not a typed 14), and catch NEWBOX "
-        "(14 put in a new box). Printed values are matched as whole words, so `print(\"mana is\", mana)` passes."
+        "(14 put in a new box). Printed values are matched as whole words, so `print(\"mana is\", mana)` passes.\n"
+        "Teacher ruling: the old no-26 rule ('only the newest value is printed') is gone, so printing after each "
+        "change is allowed (`mana = 26`, `print(mana)`, `mana = 21`, `print(mana)`, `mana = 14`, `print(mana)` "
+        "passes). In its place, 'the last printed line shows 14' (`_lines()[-1]`), which keeps `print(mana)` at "
+        "the end, below `mana = 14`. The WA 'prints every value, believing they all stay' now passes and was "
+        "removed. Because the last printed line must show 14, the side quest's glug lines go at the TOP (its text, "
+        "hints and solution say so); appended at the bottom they would turn CP1 red on that run."
     ),
 )
 
@@ -1127,14 +1159,15 @@ BROKEN_SPELL_1B = dict(
     martu=(
         "Four lines, four slips you have seen before. Mend them one at a time.\n"
         "Read the last line of Python's message first. Then look at the line it names. "
-        "Mend that line, run again, and see what Python finds next."
+        "Mend that line, run again, and see what Python finds next.\n"
+        "One slip Python stays quiet about: a value with no box."
     ),
-    names=["weapon", "companion", "hero", "glug_sips"],
+    names=["weapon", "companion", "glug_sips", "hero"],
     pair_talk=(
         "Pair talk: take turns. One of you reads the last line of Python's message out loud; the other points "
         "at the line it names. Each of you mends it on your own screen."
     ),
-    starter='"weapon" = "Telegun"\ndef companion = "Gearshift"\n"Lucky"\nglug_sips - 3\nprint(hero)\nprint(weapon)\n',
+    starter='"weapon" = "Telegun"\ndef companion = "Gearshift"\nglug_sips - 3\n"Lucky"\nprint(hero)\nprint(weapon)\n',
     checkpoints=[
         dict(
             id="line-1",

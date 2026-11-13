@@ -11,6 +11,7 @@ import { runCourse, whenPythonReady } from "../../lib/languages/python/run";
 import type { Explanation } from "../../lib/languages/types";
 import { publicPath } from "../../lib/site";
 import type { StageEvent } from "../../lib/stage/bridge";
+import type { InsertWhere } from "../editor-insert";
 import { PythonEditor, type PythonEditorHandle } from "../PythonEditor";
 import { CompareView } from "./CompareView";
 import {
@@ -20,6 +21,7 @@ import {
   applyRun,
   assembledCode,
   checkpointHeading,
+  codeHasStart,
   countsAsAttempt,
   effectiveSupport,
   firstParagraph,
@@ -32,10 +34,12 @@ import {
   isSolutionCode,
   nextFailStreak,
   pickInsertion,
+  pickIsNote,
   revealNextRung,
   rungPaced,
   rungsShown,
   runOutcome,
+  soloUnaided,
   solutionUnlocked,
   stdinBoxText,
   stepNoun,
@@ -44,6 +48,7 @@ import {
   usesInput,
   type FailStreak,
   type PlayerMode,
+  type Rung,
   type Support,
 } from "./exercise-logic";
 import { HelpLocked, HelpStack, type RevealResult } from "./HelpStack";
@@ -407,12 +412,13 @@ export function ExercisePlayer({
   const [missedThisVisit, setMissedThisVisit] = useState(false);
   const [streak, setStreak] = useState<FailStreak>({ checkpointId: null, count: 0 });
   const streakRef = useRef<FailStreak>({ checkpointId: null, count: 0 });
-  const missAt = useRef<number | null>(null);
-  const typedAt = useRef<number>(0);
-  const [now, setNow] = useState(0);
+  /** Visible ms (time.session) when the student last typed, ran or opened Help: for the silent-stall offer. */
+  const activityAt = useRef(0);
 
   /* Help: offers, pacing, and what counts as a try for Mar'tu's version. */
   const [offerDismissed, setOfferDismissed] = useState(false);
+  /** The miss streak when the student took up a "misses" offer by opening a rung (it then waits for 3 more). */
+  const [streakTakenUp, setStreakTakenUp] = useState<FailStreak>({ checkpointId: null, count: 0 });
   const lastRungAt = useRef<number | null>(null);
   const ranSinceRung = useRef(false);
   const helpSinceRun = useRef(false);
@@ -454,12 +460,15 @@ export function ExercisePlayer({
   }, [python]);
 
   useEffect(() => {
-    const savedCode = getCourseProgress().exercises[key]?.code;
+    const savedEntry = getCourseProgress().exercises[key];
+    const savedCode = savedEntry?.code;
     if (savedCode !== undefined && savedCode !== codeRef.current) {
       codeRef.current = savedCode;
       setCode(savedCode);
       setResumed(savedCode.trim() !== exercise.starter.trim());
     }
+    // Mar'tu's version is still in the editor from last time: a pass with it is not the student's own yet.
+    copiedSolution.current = savedEntry?.copiedSolution === true;
     setSaving(progressIsSaving());
     // Restore once per exercise (exercise.starter belongs to the same key); later changes come from here.
   }, [key]);
@@ -491,14 +500,6 @@ export function ExercisePlayer({
     };
   }, []);
 
-  /* A slow clock for the idle Help offer (only while an offer could appear). */
-  const offersPossible = support !== "none" && preset === "more" && !done && !offerDismissed;
-  useEffect(() => {
-    if (!offersPossible) return;
-    const timer = window.setInterval(() => setNow(Date.now()), TICK_MS);
-    return () => window.clearInterval(timer);
-  }, [offersPossible]);
-
   /* After each run, bring the result into view (on a phone the console is below the editor). */
   const runNumber = view?.runNumber ?? 0;
   useEffect(() => {
@@ -527,7 +528,9 @@ export function ExercisePlayer({
   function changeCode(value: string) {
     codeRef.current = value;
     setCode(value);
-    typedAt.current = Date.now();
+    activityAt.current = time.session;
+    // Mar'tu's version is gone from the editor (cleared, or reset): a pass from here is the student's own.
+    if (copiedSolution.current && isBlankOrStarter(value, exercise.starter)) forgetCopiedSolution();
     pendingSave.current = value;
     if (saveTimer.current !== null) window.clearTimeout(saveTimer.current);
     saveTimer.current = window.setTimeout(() => saveCodeNow.current(), CODE_SAVE_MS);
@@ -567,17 +570,26 @@ export function ExercisePlayer({
         : [],
     [activeCheckpoint, exercise.anotherWay.length, exercise.assemble, exercise.solo, exercise.solution],
   );
-  const help = helpState(rungs, activeCheckpoint ? rungsShown(saved?.hintsUsed, activeCheckpoint.id, rungs.length) : 0, showUnlocked);
-  const idleSinceMiss = missAt.current !== null && now > 0 ? now - Math.max(missAt.current, typedAt.current) : null;
+  /* The last run crashed: Python stopped before it could check any step (so "step 1" may already be right). */
+  const crashed = view?.grade?.crashed === true;
+  const crashAt = crashed && view?.explanation ? crashLine(view.explanation.raw) : null;
+  /** Start me off has nothing to give when the line is already there, or right after a crash (mend that first). */
+  const skipRung = (rung: Rung) => rung.kind === "start" && (crashed || codeHasStart(code, rung.start ?? ""));
+  const help = helpState(rungs, activeCheckpoint ? rungsShown(saved?.hintsUsed, activeCheckpoint.id, rungs.length) : 0, showUnlocked, {
+    preset,
+    skip: skipRung,
+  });
+  const streakHere = activeCheckpoint && streak.checkpointId === activeCheckpoint.id ? streak.count : 0;
+  const takenUp = activeCheckpoint && streakTakenUp.checkpointId === activeCheckpoint.id ? streakTakenUp.count : 0;
   const offer = helpOffer({
     preset,
     helpAvailable,
     done,
     dismissed: offerDismissed,
     rungsLeft: help.left,
-    missesInARow: activeCheckpoint && streak.checkpointId === activeCheckpoint.id ? streak.count : 0,
+    missesInARow: Math.max(0, streakHere - takenUp),
     msSinceProgress: time.session - progressAtSessionMs.current,
-    idleSinceMissMs: idleSinceMiss,
+    idleMs: time.session - activityAt.current,
   });
   const pieces = useMemo(
     () => (exercise.assemble ? seededShuffle([...exercise.assemble.lines, ...exercise.assemble.distractors], key) : []),
@@ -603,39 +615,54 @@ export function ExercisePlayer({
     if (rungPaced(lastRungAt.current, ranSinceRung.current, at)) return "paced";
     const id = activeCheckpoint.id;
     const total = rungs.length;
-    updateExercise(key, (previous) => ({ ...previous, hintsUsed: revealNextRung(previous.hintsUsed, id, total) }));
+    const upTo = help.nextIndex + 1;
+    updateExercise(key, (previous) => ({ ...previous, hintsUsed: revealNextRung(previous.hintsUsed, id, total, upTo) }));
     lastRungAt.current = at;
     ranSinceRung.current = false;
     helpSinceRun.current = true;
+    // Taking up Help answers an offer: it goes away (a "misses" offer comes back only after 3 more misses).
+    activityAt.current = time.session;
+    if (offer === "time") progressAtSessionMs.current = time.session;
+    if (offer === "misses") setStreakTakenUp(streakRef.current);
     if (help.next.kind === "show") openCompare();
     if (help.next.kind === "structure") openAssemble();
     return "opened";
   }
 
-  /* Inserting names, symbols and Mar'tu's pick at the cursor. */
-  function insertAtCursor(text: string, spoken: string) {
-    if (editorRef.current?.insert(text)) setInsertNote(`${spoken} is in your code.`);
+  /*
+   * Inserting names, Mar'tu's pick and Start me off. Names and picks go at the cursor, but never inside a `#`
+   * note; Start me off always starts a line of its own (editor-insert.ts).
+   */
+  function insertInCode(text: string | ((lineBefore: string) => string), spoken: string, where: InsertWhere) {
+    if (editorRef.current?.insert(text, where)) setInsertNote(`${spoken} is in your code.`);
     else setInsertNote(`Type ${spoken} in your code.`);
   }
 
   async function usePick(pick: string) {
     const context = editorRef.current?.cursorContext();
-    if (context?.placed) {
-      insertAtCursor(pickInsertion(pick, context.lineBefore), "Mar'tu's pick");
+    // A note needs no place in a line: it goes on a line of its own (at the top until the student clicks in).
+    if (pickIsNote(pick)) {
+      insertInCode(pick.trim(), "Mar'tu's pick", "note");
       return;
     }
-    // The student has not clicked into the code yet, so there is no place to put it: copy it instead.
+    if (context?.placed) {
+      insertInCode((lineBefore) => pickInsertion(pick, lineBefore), "Mar'tu's pick", "code");
+      return;
+    }
+    // The student has not clicked into the code yet, so Mar'tu cannot know where it goes: copy it (with its
+    // quotes, ready to paste) and ask for a click first.
+    const ready = pickInsertion(pick, "");
     let copied = false;
     try {
-      await navigator.clipboard.writeText(pick);
+      await navigator.clipboard.writeText(ready);
       copied = true;
     } catch {
       // No clipboard (old browser or blocked): the words below still say what to do.
     }
     setInsertNote(
       copied
-        ? `Copied Mar'tu's pick: ${pick}. Click where it goes in your code and paste it, or press the pick button again.`
-        : `Click where it goes in your code, then press the pick button again. Mar'tu's pick is ${pick}.`,
+        ? `Click in your code where Mar'tu's pick should go. Then press the pick again. (It is also copied, ready to paste: ${ready})`
+        : `Click in your code where Mar'tu's pick should go. Then press the pick again. Mar'tu's pick is ${ready}`,
     );
   }
 
@@ -679,7 +706,12 @@ export function ExercisePlayer({
       const savedBefore = getCourseProgress().exercises[key];
       const before = savedBefore?.passed ?? [];
       const wasDone = savedBefore?.done === true;
-      const graded = runOutcome(grade, before);
+      // A pass with Mar'tu's version, copied in: it shows the code works, but it does not finish the exercise
+      // (or tick any step) until the student writes it themselves (curriculum §2.2, the immediate typed twin).
+      const revealPass = grade.allPassed && !wasDone && copiedSolution.current && isSolutionCode(source, exercise.solution);
+      const graded = revealPass
+        ? { passedNow: [], newlyPassed: [], allPassed: false, failed: false }
+        : runOutcome(grade, before);
       // Only real tries count toward Mar'tu's version: changed code, or a Help rung opened since the last run.
       const outcome = {
         ...graded,
@@ -688,18 +720,19 @@ export function ExercisePlayer({
       lastRunSource.current = source;
       helpSinceRun.current = false;
       ranSinceRung.current = true;
-      updateExercise(key, (previous) => applyRun(previous, outcome, { code: source, bonusPassed: bonusGrade?.allPassed }));
+      updateExercise(key, (previous) => applyRun(previous, outcome, { code: source, bonusPassed: revealPass ? false : bonusGrade?.allPassed }));
       if (outcome.newlyPassed.length > 0) progressAtSessionMs.current = time.session;
+      // The student's own pass: Mar'tu's version is no longer what is in the editor.
+      if (outcome.allPassed && copiedSolution.current) forgetCopiedSolution();
 
-      const stuckOn = stuckCheckpointId(exercise.checkpoints, grade, [...before, ...outcome.passedNow]);
+      const stuckOn = revealPass ? null : stuckCheckpointId(exercise.checkpoints, grade, [...before, ...outcome.passedNow]);
       const nextStreak = nextFailStreak(streakRef.current, stuckOn);
       streakRef.current = nextStreak;
       setStreak(nextStreak);
-      missAt.current = grade.allPassed ? null : Date.now();
+      activityAt.current = time.session;
       if (!grade.allPassed) setMissedThisVisit(true);
       const crashText = result.traceback || result.stderr || "";
       const explanation = grade.crashed ? explainCourseError(crashText, source, context) : null;
-      const revealPass = grade.allPassed && copiedSolution.current && isSolutionCode(source, exercise.solution);
       if (grade.allPassed) {
         setCompare(null);
         setAssembling(false);
@@ -716,7 +749,7 @@ export function ExercisePlayer({
           bonus: bonusGrade,
           explanation,
           stage: result.stageEvents ?? [],
-          allPassed: grade.allPassed,
+          allPassed: grade.allPassed && !revealPass,
           wasDone,
           runNumber: (previous?.runNumber ?? 0) + 1,
           sameError:
@@ -733,7 +766,7 @@ export function ExercisePlayer({
           revealPass,
         };
       });
-      if (grade.allPassed) {
+      if (outcome.allPassed) {
         setJustFinished(true);
         onDone?.();
       }
@@ -790,19 +823,32 @@ export function ExercisePlayer({
     }
   }
 
+  /** Mar'tu's version left the editor: a pass from now on is the student's own. */
+  function forgetCopiedSolution() {
+    copiedSolution.current = false;
+    if (getCourseProgress().exercises[key]?.copiedSolution) {
+      updateExercise(key, (previous) => {
+        const next = { ...previous };
+        delete next.copiedSolution;
+        return next;
+      });
+    }
+  }
+
   function doReset() {
     replaceCode(exercise.starter);
     setStdinText(stdinBoxText(exercise.stdin));
     setConfirm(null);
     setResumed(false);
     setSolutionNote(false);
-    copiedSolution.current = false;
+    forgetCopiedSolution();
     focusRun();
   }
 
   function copySolution() {
     replaceCode(exercise.solution);
     copiedSolution.current = true;
+    updateExercise(key, (previous) => ({ ...previous, copiedSolution: true }));
     setCompare(null);
     setSolutionNote(true);
     setResumed(false);
@@ -815,11 +861,12 @@ export function ExercisePlayer({
     setAssembling(true);
   }
 
-  /** After a copied answer passes: start again from the starter and write it yourself. */
+  /** After a copied answer passes: start again from the starter and write it yourself (steps and Help stay on). */
   function writeItMyself() {
     doReset();
     setJustFinished(false);
     setView(null);
+    editorRef.current?.focus();
   }
 
   function insertAssembled() {
@@ -865,7 +912,7 @@ export function ExercisePlayer({
           names={names}
           pick={exercise.pick}
           prominent={activeCheckpoint?.dictated === false}
-          onInsertName={(name) => insertAtCursor(name, name)}
+          onInsertName={(name) => insertInCode(name, name, "code")}
           onPick={(pick) => void usePick(pick)}
         />
       ) : null}
@@ -926,7 +973,13 @@ export function ExercisePlayer({
               {exercise.title}
             </h2>
           ) : null}
-          {activeCheckpoint && !done ? (
+          {activeCheckpoint && !done && crashed ? (
+            // A crash checks nothing, so "step 1" may already be right: the line Python stopped at comes first.
+            <p className="ex-task-line" data-testid="task-line" data-crash="true">
+              <span className="ex-task-label">First, mend {crashAt ? `line ${crashAt}` : "the error"}.</span> Python stopped
+              there, so it could not check your {noun.toLowerCase()}s yet. The message under your code says how.
+            </p>
+          ) : activeCheckpoint && !done ? (
             // The task first, so a student who skims sees it before Mar'tu's words and the example.
             <p className="ex-task-line" data-testid="task-line">
               <span className="ex-task-label">
@@ -1102,6 +1155,7 @@ export function ExercisePlayer({
               onBlur={() => saveCodeNow.current()}
               describedBy={`${inputId}-editor-keys`}
               wrapLines
+              tabMovesOn
               handleRef={editorRef}
             />
           </div>
@@ -1112,7 +1166,7 @@ export function ExercisePlayer({
             </span>{" "}
             <span className="ex-shortcut">Tip: Ctrl+Enter runs your code.</span>
             <span className="ex-editor-keys" id={`${inputId}-editor-keys`} data-testid="editor-keys">
-              In the editor, Tab adds spaces. To leave the editor, press Esc, then Tab.
+              Tab moves past the editor until you type in it. Once you type, Tab adds spaces: press Esc, then Tab to move on.
             </span>
           </p>
 
@@ -1144,7 +1198,22 @@ export function ExercisePlayer({
             </div>
           ) : null}
 
-          <ExerciseConsole view={view} noun={noun} bonus={bonus} done={done} />
+          <ExerciseConsole view={view} noun={noun} bonus={bonus} done={done} hasNext={Boolean(next)} />
+
+          {view?.revealPass && !done ? (
+            // Mar'tu's version passed. It does not count yet: one way on, and it is writing it yourself.
+            <div className="ex-done ex-reveal is-fresh" data-testid="reveal-pass">
+              <MarTu
+                text="That was my version, so it works, yes? Now make it yours. Press Write it myself and type it again without looking. Your steps and Help are still here."
+                size="small"
+                testId="reveal-pass-martu"
+              >
+                <button type="button" className="ex-next" data-testid="write-it-myself" onClick={writeItMyself}>
+                  Write it myself
+                </button>
+              </MarTu>
+            </div>
+          ) : null}
 
           {helpAvailable && activeCheckpoint ? (
             <HelpStack
@@ -1159,6 +1228,10 @@ export function ExercisePlayer({
               compareOpen={compare !== null}
               showUnlocked={showUnlocked}
               runNumber={runNumber}
+              preset={preset}
+              crashed={crashed}
+              crashLine={crashAt}
+              startInCode={(start) => codeHasStart(code, start)}
               onReveal={revealRung}
               onDismissOffer={() => {
                 setOfferDismissed(true);
@@ -1166,32 +1239,26 @@ export function ExercisePlayer({
               }}
               onOpenAssemble={openAssemble}
               onOpenCompare={openCompare}
-              onInsertStart={(start) => insertAtCursor(/[=,]$/.test(start) ? `${start} ` : start, start)}
+              onInsertStart={(start) => insertInCode(/[=,]$/.test(start) ? `${start} ` : start, start, "line")}
             />
           ) : support === "light" && !done && activeCheckpoint ? (
             <HelpLocked />
           ) : null}
 
           {done ? (
-            <div className={`ex-done${justFinished ? " is-fresh" : ""}`} data-testid="exercise-done" data-reveal={view?.revealPass ? "true" : undefined}>
+            <div className={`ex-done${justFinished ? " is-fresh" : ""}`} data-testid="exercise-done">
               <MarTu
                 text={
-                  justFinished && view?.revealPass
-                    ? "That was my version, so it works, yes? Now make it yours: press Write it myself and type it again without looking."
-                    : justFinished && exercise.solo
-                      ? "You did that alone. I saw."
-                      : justFinished
-                        ? "Good. Very good, yes?"
-                        : "You finished this one. Run it again any time, yes?"
+                  // "You did that alone" only when it is true: no Help past Where to look, no Mar'tu's version.
+                  justFinished && exercise.solo && mode !== "testout" && soloUnaided(saved)
+                    ? "You did that alone. I saw."
+                    : justFinished
+                      ? "Good. Very good, yes?"
+                      : "You finished this one. Run it again any time, yes?"
                 }
                 size="small"
                 testId="exercise-done-martu"
               >
-                {justFinished && view?.revealPass ? (
-                  <button type="button" className="ex-next" data-testid="write-it-myself" onClick={writeItMyself}>
-                    Write it myself
-                  </button>
-                ) : null}
                 {next ? (
                   next.href ? (
                     <Link className="course-button ex-next" href={next.href} data-testid="celebrate-next">
@@ -1242,11 +1309,14 @@ function ExerciseConsole({
   noun,
   bonus,
   done,
+  hasNext,
 }: {
   view: RunView | null;
   noun: string;
   bonus: Bonus | undefined;
   done: boolean;
+  /** The done panel under the console has a Next button (said once, so keyboard users know to look). */
+  hasNext: boolean;
 }) {
   const grade = view?.grade ?? null;
   const stage = view ? stageLines(view.stage) : [];
@@ -1314,9 +1384,14 @@ function ExerciseConsole({
             <Prose text={failing.message} inline testId={`checkpoint-message-${(grade.firstFailing ?? 0) + 1}`} />
           </p>
         ) : null}
-        {grade?.allPassed ? (
+        {view?.revealPass ? (
+          <p className="ex-result is-reveal" data-testid="reveal-passed">
+            <span aria-hidden="true">✓</span> Mar&apos;tu&apos;s version works. Now write it yourself: the button is just below.
+          </p>
+        ) : view?.allPassed ? (
           <p className="ex-result is-all" data-testid="all-passed">
             <span aria-hidden="true">★</span> Every {noun.toLowerCase()} is done!
+            {hasNext && !view.wasDone ? <span className="ex-sr-only"> The Next button is below.</span> : null}
           </p>
         ) : null}
         {done && bonus && view?.bonus ? (

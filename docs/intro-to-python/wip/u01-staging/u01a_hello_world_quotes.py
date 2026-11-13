@@ -184,9 +184,11 @@ HOW_MARTU_TEACHES = dict(
     notes=(
         "meta: path=CC; kind=card; words<=60. Draft text from the curriculum (49 words) plus the checkpoint "
         "legend line. Still needed from the site: the three pictures (Run button -> console; the Help control "
-        "under a checkpoint; the checkpoint list) and the two buttons [Start 1A] / [Take Quick Check 1]. "
+        "under a checkpoint; the checkpoint list) and the [Start 1A] button. The lessons are the main path. "
+        "The Quick Check is not a button on this card: the site's unit page already shows its offer to everyone "
+        "as a quieter secondary choice ('Already know this? About 12 minutes, no hints'). "
         "The article schema has no image or button fields, so they are not in this prototype. Every other "
-        "feature is introduced by just-in-time coach marks (2.2)."
+        "feature is introduced by just-in-time coach marks (2.2). Body unchanged (words<=60)."
     ),
 )
 
@@ -198,28 +200,78 @@ WHAT_AN_ERROR_LOOKS_LIKE = dict(
     id="what-an-error-looks-like",
     title="What an error looks like",
     martu=(
-        "Run it. Python's [[error message|message]] is not a mark against you. It says what Python could not read.\n"
+        "Press Run first. Then you will break it on purpose and read Python's [[error message|message]]. "
+        "A message is not a mark against you: it says what Python could not read. "
         "Read the last line first. Then look at the line it names."
     ),
     introduces=["call:print", "const:str"],
-    starter='print("Shield up.)\n',
+    starter='print("Shield up.")\n',
     checkpoints=[
         dict(
-            id="close-the-quote",
-            text='Add the missing `"` and run again.',
+            id="press-run",
+            text="Press Run.",
             dictated=True,
             hints=[
-                "Click just after the period in `Shield up.`",
-                "Look at the end of the words. Is there a closing quote?",
+                "You don't need to type anything. Just press Run.",
+                "Run is the button above the editor.",
+                'Run sends your line to Python. What `print` holds appears below: `print("Fine.")` shows `Fine.`',
+            ],
+            checks=[
+                ("shows a line", "assert _lines(), 'Press Run to see the line.'"),
+            ],
+            pass_line="Mar'tu: Shield up. Now we break it, on purpose. That is safe, yes?",
+        ),
+        dict(
+            id="close-the-quote",
+            text=(
+                'Break it on purpose: delete the last `"` and Run. Read the last line of Python\'s message. '
+                'Then put the `"` back, change the `.` to `!`, and Run.'
+            ),
+            dictated=True,
+            hints=[
+                'Click just after `Shield up."` and press Backspace once. Then Run.',
+                "*Unterminated* means the words never ended: the closing quote is missing. "
+                "Put it back after the words.",
                 'Quotes come in pairs. `print("Fine.")` has one `"` before the words and one after.',
             ],
             checks=[
-                ("shows Shield up", shows("Shield up.", 'Add a `"` after the period, then press Run.')),
+                (
+                    "shows Shield up!",
+                    "import ast as _ast\n"
+                    "_l = [l.replace('\\u2019', \"'\") for l in _lines()]\n"
+                    "_key = lambda s: ''.join(c for c in s.lower() if c.isalnum())\n"
+                    "_bare = [n.lineno for n in _ast.parse(_source).body if isinstance(n, _ast.Expr) "
+                    "and isinstance(n.value, _ast.Constant) and isinstance(n.value.value, str)]\n"
+                    "_near = [l for l in _l if _key(l) == 'shieldup']\n"
+                    "_msg = ''\n"
+                    "if 'Shield up!' not in _l:\n"
+                    "    if _bare:\n"
+                    "        _msg = ('Line ' + str(_bare[0]) + ' has the words in quotes, but no `print`, so Python '\n"
+                    "                'made them and forgot them. Write `print(` before the quotes and `)` after.')\n"
+                    "    elif 'Shield up.' in _l:\n"
+                    "        _msg = ('Your line still shows `Shield up.`, with a `.` at the end. Break it on purpose '\n"
+                    "                'first: delete the last `\"` and Run, and read the last line of the message. '\n"
+                    "                'Then put the `\"` back, change the `.` to `!`, and Run.')\n"
+                    "    elif _near and _near[0].rstrip('.!?') != 'Shield up' and _near[0].rstrip('.!?').lower() == 'shield up':\n"
+                    "        _msg = ('Your line shows `' + _near[0] + '`. Capitals count: Python shows exactly what is '\n"
+                    "                'inside the quotes. Make it `Shield up!`, with a capital S.')\n"
+                    "    elif _near and _near[0].rstrip('.!?') == 'Shield up':\n"
+                    "        _msg = ('Your line shows `' + _near[0] + '`. The task needs `!` at the end: '\n"
+                    "                'make it `Shield up!`, then Run.')\n"
+                    "    elif _near:\n"
+                    "        _msg = ('Your line shows `' + _near[0] + '`. Spaces, marks and capitals all count: '\n"
+                    "                'make it `Shield up!`, then Run.')\n"
+                    "    else:\n"
+                    "        _msg = ('`Shield up!` is not showing yet. Keep the line `print(\"Shield up.\")`, '\n"
+                    "                'change the `.` to `!`, and Run.')\n"
+                    "assert not _msg, _msg",
+                ),
             ],
             pass_line="Mar'tu: You read the message. Good. That is the whole trick.",
         ),
     ],
-    solution='print("Shield up.")\n',
+    solution='print("Shield up!")\n',
+    partials=['print("Shield up.")\n'],
     another_way=[
         dict(
             angle="picture",
@@ -245,29 +297,51 @@ WHAT_AN_ERROR_LOOKS_LIKE = dict(
         dict(
             angle="shorter",
             label="Say it shorter",
-            text='One `"` is missing. Add it after `Shield up.`',
+            text='Delete the last `"`. Run. Read. Put the `"` back, make the `.` a `!`, and Run.',
         ),
     ],
     wrong_answers=[
-        dict(why="starter unchanged: the quote is still open", code='print("Shield up.)\n', fails_at=0,
+        dict(why="broken on purpose and not mended yet: the quote is still open", code='print("Shield up.)\n',
+             fails_at=0, message_contains="unterminated"),
+        dict(why="starter unchanged: ran it, but never broke it or changed the mark", code='print("Shield up.")\n',
+             fails_at=2, message_contains="change the `.` to `!`"),
+        dict(why="puts the quote back with the other quote mark", code="print(\"Shield up!')\n", fails_at=0,
              message_contains="unterminated"),
-        dict(why="closes with the other quote mark", code="print(\"Shield up.')\n", fails_at=0,
-             message_contains="unterminated"),
-        dict(why="removes the opening quote instead of adding the closing one", code="print(Shield up.)\n",
+        dict(why="puts the quote back after the bracket instead of before it", code='print("Shield up!)"\n',
+             fails_at=0, message_contains="never closed"),
+        dict(why="removes the opening quote instead of the closing one", code="print(Shield up.)\n",
              fails_at=0, message_contains="comma"),
-        dict(why="check-breaker: words in quotes with no print (BARE)", code='"Shield up."\n', fails_at=1,
-             message_contains="no `print`"),
-        dict(why="check-breaker: retyped in lower case", code='print("shield up.")\n', fails_at=1,
-             message_contains="capitals"),
+        dict(why="deletes the `.` instead of the quote, and never adds `!`", code='print("Shield up")\n',
+             fails_at=2, message_contains="`!` at the end"),
+        dict(why="retyped in lower case", code='print("shield up!")\n', fails_at=2, message_contains="Capitals"),
+        dict(why="words in quotes with no print: nothing shows at all", code='"Shield up!"\n', fails_at=1,
+             message_contains="Press Run"),
+        dict(why="check-breaker: old line kept, new words added with no print (BARE)",
+             code='print("Shield up.")\n"Shield up!"\n', fails_at=2, message_contains="no `print`"),
+        dict(why="check-breaker: a space lost", code='print("Shieldup!")\n', fails_at=2,
+             message_contains="Spaces, marks and capitals"),
     ],
     takeaway="Read the last line of Python's message first. Then look at the line it names.",
     notes=(
         "meta: starter_level=S4; path=CC; contingent=show-me-more (K); skills=print-text,read-traceback; "
-        "solo=false; dictates=1; foreign_names=. "
+        "solo=false; dictates=1,2; foreign_names=. "
         "Teaches the explainer footer ('Read the last line first. Then look at the line it names.'), which the "
-        "site shows on every crash from here on. The starter is deliberately not valid Python, so the harness "
-        "warns about it. Evidence: unclosed quotes on A-02 ('Fire Ball'), A-03 ('Fierball.'), A-04 ('Fireball'). "
-        "No Assemble: the whole answer is one line. Check-breaker pass: shows() names the nearest slip (words with no print, capitals, spaces or marks, a longer line, a letter or two) and accepts a curly apostrophe from tablet keyboards. WAs added: no print, lower case."
+        "site shows on every crash from here on. Teacher ruling: the starter is valid and the first Run is a win "
+        "for a Show-me-more student (G1: a success in the first two minutes): it turns CP1 green (proven by "
+        "partial 1, which is the starter). CP2 then has them break the quote on purpose, read 'unterminated', "
+        "and mend it. starter_passes stays False on purpose: that field means the starter passes EVERY "
+        "checkpoint (harness rule, the site's exercise-flow test, and the 'Run it and read the output' "
+        "heading), and here the starter passes CP1 only. CP2 checks for exactly `Shield up!` (the "
+        "`.` to `!` change proves they edited and re-ran; shows() would treat the end mark as optional, so the "
+        "check is written directly). Checkpoint passes are a union across runs, so CP1 stays green while the "
+        "line is broken; the deliberate crash is the point of CP2 and never blocks the exercise. A bare "
+        "`\"Shield up!\"` fails CP1 in a single run (nothing printed); the site shows CP2's message, which names "
+        "the missing print (proven by the check-breaker WA). Hint 1 says `Shield up.\"` (with the quote) so "
+        "clicking there and pressing Backspace deletes the quote, not the period. "
+        "Evidence: unclosed quotes on A-02 ('Fire Ball'), A-03 ('Fierball.'), A-04 ('Fireball'). "
+        "No Assemble: the whole answer is one line. WAs: open quote (crash), starter unchanged, other quote "
+        "mark, quote put back after the bracket, the period deleted instead of the quote, lower case, no print, "
+        "a space lost."
     ),
 )
 
@@ -441,7 +515,7 @@ YOUR_OWN_WORDS = dict(
     title="Your own words",
     martu=(
         "The words inside the [[quotes]] are yours. Python shows them exactly. "
-        "Change them to something Oogrish might say."
+        "Change them to something Oogrish might say. Stuck for words? Press Mar'tu's pick."
     ),
     example='print("Shield up.")\n',
     example_output="Shield up.",
@@ -735,7 +809,7 @@ WORDS_NEED_QUOTES = dict(
             text="Make line 1 show the word `Fireball`.",
             dictated=True,
             hints=[
-                'Put a `"` just before `Fireball`.',
+                'Put a `"` just before `Fireball` and another just after it.',
                 "Which word do you want to see on the screen? It needs quotes.",
                 "Words you want to show need quotes. Without quotes, Python looks for something saved earlier "
                 'with that name. `print("Lantern")` shows `Lantern`.',
@@ -1119,11 +1193,11 @@ NOTES_FOR_HUMANS = dict(
     checkpoints=[
         dict(
             id="switch-off-the-glug",
-            text="Put `#` in front of the line Lucky shouldn't say out loud.",
+            text="Line 2 is Lucky's secret. Put `#` at the very start of line 2.",
             dictated=True,
             hints=[
                 "Click at the very start of line 2.",
-                "Which line would Lucky regret? The one about his canteen.",
+                "Line 2 is the one about his canteen.",
                 'Python skips a line that starts with `#`. So `# print("Hi")` shows nothing.',
             ],
             checks=[
@@ -1351,7 +1425,7 @@ BROKEN_SPELL_1A = dict(
             text="Mend line 3 so it shows `Steady`.",
             dictated=True,
             hints=[
-                'Put a `"` just before `Steady`.',
+                'Put a `"` just before `Steady` and another just after it.',
                 "Line 3. Is `Steady` a word to show, or a name Python should look up?",
                 "Words you want to show need quotes. Without quotes, Python looks for something saved earlier "
                 "with that name.",
@@ -1471,7 +1545,7 @@ BROKEN_SPELL_1A = dict(
 SOLO_1A = dict(
     id="solo-1a",
     title="Show Mar'tu",
-    martu="One line, one slip. This one is yours alone.",
+    martu="One line, one slip. Your turn to show off.",
     starter='print("The lantern is lit.)\n',
     solo=True,
     checkpoints=[
@@ -1486,7 +1560,7 @@ SOLO_1A = dict(
             checks=[
                 ("shows the lantern line", shows("The lantern is lit.", "Mend the line so it prints.")),
             ],
-            pass_line="Mar'tu: You did that alone. I saw.",
+            pass_line="Mar'tu: You did that on your own. On your map: ✓ words in matching quotes.",
         ),
     ],
     solution='print("The lantern is lit.")\n',
