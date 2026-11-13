@@ -4,10 +4,11 @@ Spec: design/curriculum.md, "## Unit 1", items 4 and 5 (1b-remembers; 1B-01 to 1
 Introduces node:Assign (1B-01), const:int (1B-03) and const:multiline_str (1A-07, pool).
 
 The check code is built by the small helpers below, so every box check gives the same kind of message:
-  NAME / LEFT  a near-miss name, or an example's name, instead of the task's name
+  DEF          `def` used to make a box (valid Python like `def hero(): "Zelda"`, so no crash catches it)
+  NAME / LEFT  a near-miss name, or an example's name (or a misspelling of one), instead of the task's name
   BARE         a value on a line by itself (made and forgotten), which raises no error
   TEXT / NUM   text needs quotes, numbers don't
-  PRINT        print(name) with no quotes, and the box's value really appears
+  PRINT        print(name) with no quotes and not a value typed by hand, and the box's value really appears
 Messages use invented values only and never repeat a student's text back.
 """
 
@@ -131,18 +132,6 @@ def value_check(name, value):
     )
 
 
-def assigned_check(name, value, message):
-    """Some line puts this exact number in the box (later lines may change it, e.g. in a side quest)."""
-    return (
-        f"{name} gets {value!r}",
-        "import ast as _ast\n"
-        "_hits = [_n for _n in _ast.walk(_ast.parse(_source)) if type(_n).__name__ == 'Assign' "
-        f"and any(type(_t).__name__ == 'Name' and _t.id == '{name}' for _t in _n.targets) "
-        f"and type(_n.value).__name__ == 'Constant' and type(_n.value.value).__name__ == 'int' and _n.value.value == {value!r}]\n"
-        f"assert _hits, {message!r}",
-    )
-
-
 def meta(**fields):
     """The §2.12 rule 14 `meta:` line (first line of an exercise's notes until the schema has these fields)."""
     return "meta: " + "; ".join(f"{key}={value}" for key, value in fields.items())
@@ -232,9 +221,12 @@ REMEMBERS_1B = dict(
             type="mc",
             id="glug-in-quotes",
             q="Which line shows the word glug on the screen?",
-            choices=["print(glug)", 'print("glug")'],
+            choices=["print(glug)", 'print("glug")', 'print("glug)'],
             answer=1,
-            why_wrong={0: "With no quotes, Python looks for something saved with the name glug, and finds nothing."},
+            why_wrong={
+                0: "With no quotes, Python looks for something saved with the name glug, and finds nothing.",
+                2: "The quote opens but never closes, so Python can't tell where the words end. It stops with an error.",
+            },
             explain="Words you want to show need quotes. `print(\"glug\")` shows glug.",
         ),
         dict(
@@ -982,6 +974,10 @@ CHANGE_THE_BOX = dict(
                     "assert type(_v).__name__ != 'str', \"`mana` holds text, because of the quotes. Numbers don't need quotes.\"\n"
                     "assert _v == 14 or not _near, 'Python matches names letter for letter: you wrote `' + _near[0] + "
                     "'`, the task needs `mana`.'\n"
+                    "_newbox = [_t.id for _n in _sets for _t in _n.targets if type(_t).__name__ == 'Name' "
+                    "and _t.id != 'mana' and globals().get(_t.id) == 14]\n"
+                    "assert _v == 14 or not _newbox, 'Your new box `' + _newbox[0] + '` holds 14, but `mana` still holds ' + "
+                    "str(_v) + '. Put 14 in `mana` itself: `mana = 14`.'\n"
                     "assert _v == 14 or 14 not in _mine, '`mana` got 14, but a later line put ' + str(_v) + "
                     "' back in. Put `mana = 14` last, just above the `print`.'\n"
                     "assert _v == 14, '`mana` still holds ' + str(_v) + '. To put a new value in a box, use `=`: `mana = 14`.'",
@@ -999,12 +995,14 @@ CHANGE_THE_BOX = dict(
                 ),
                 (
                     "14 is printed",
-                    "assert '14' in _lines(), '`print(mana)` ran before `mana` got 14, so it showed the old value. "
+                    "import re as _re\n"
+                    "assert any(_re.search(r'\\b14\\b', _l) for _l in _lines()), '`print(mana)` ran before `mana` got 14, so it showed the old value. "
                     "Put the new line above the `print`.'",
                 ),
                 (
                     "only the newest value is printed",
-                    "assert '26' not in _lines(), 'Your program printed 26 too. Keep one `print(mana)`, at the end.'",
+                    "import re as _re\n"
+                    "assert not any(_re.search(r'\\b26\\b', _l) for _l in _lines()), 'Your program printed 26 too. Keep one `print(mana)`, at the end.'",
                 ),
             ],
             pass_line="Mar'tu: 26, then 21, then 14. The old ones are gone, yes?",
@@ -1106,13 +1104,20 @@ CHANGE_THE_BOX = dict(
              fails_at=1, message_contains="a later line put 21 back"),
         dict(why="capital M on the new line", code="mana = 26\nmana = 21\nMana = 14\nprint(mana)\n",
              fails_at=1, message_contains="letter for letter"),
+        dict(why="14 put in a new box, printed instead of mana (NEWBOX)", code="mana = 26\nmana = 21\nnew_mana = 14\nprint(new_mana)\n",
+             fails_at=1, message_contains="Your new box `new_mana`"),
+        dict(why="line 2 changed to 14 instead of adding a line", code="mana = 26\nmana = 14\nprint(mana)\n",
+             fails_at=1, message_contains="Keep `mana = 26` and `mana = 21`"),
     ],
     notes=(
         meta(starter_level="S4", path="CC", skills="reassign", solo="false", dictates="1",
              foreign_names="glow,max_mana,magical_affinity") + "\n"
         "Static step table: in the predict explanation (shown after any predict, so a wrong one sees it, G2 R16) "
         "and as the first angle (TR, open by default under Show me more). "
-        "Catches 'both values stay' and 'print shows everything computed earlier' (A-03, A-04)."
+        "Catches 'both values stay' and 'print shows everything computed earlier' (A-03, A-04). "
+        "The step says ADD a line, so the checks keep `mana = 26` and `mana = 21` (deleting them, or changing line 2 "
+        "to 14, skips watching the box change), need `print(mana)` itself (not a typed 14), and catch NEWBOX "
+        "(14 put in a new box). Printed values are matched as whole words, so `print(\"mana is\", mana)` passes."
     ),
 )
 
@@ -1375,6 +1380,31 @@ LESSON_1B = dict(
 
 _NOTE_PICK = "Hours between bursts:\n48, 48, 47, 46\nThe decay is speeding up, yes?"
 
+# For 1A-07: the most lines one `print` shows (_best), and whether that note is written in triple quotes
+# (_best_triple; a triple quote inside a comment does not count). A note kept in a box and printed by name counts too.
+NOTE_LINES = (
+    "import ast as _ast\n"
+    "_tree = _ast.parse(_source)\n"
+    "def _note(_node):\n"
+    "    if type(_node).__name__ == 'Constant' and type(_node.value).__name__ == 'str':\n"
+    "        _seg = (_ast.get_source_segment(_source, _node) or '').lstrip('rRuU')\n"
+    "        return len([_l for _l in _node.value.splitlines() if _l.strip()]), _seg[:3] in (chr(34) * 3, chr(39) * 3)\n"
+    "    return None\n"
+    "_boxes = {}\n"
+    "for _n in _ast.walk(_tree):\n"
+    "    if type(_n).__name__ == 'Assign' and _note(_n.value):\n"
+    "        for _t in _n.targets:\n"
+    "            if type(_t).__name__ == 'Name':\n"
+    "                _boxes[_t.id] = _note(_n.value)\n"
+    "_best, _best_triple = 0, False\n"
+    "for _n in _ast.walk(_tree):\n"
+    "    if type(_n).__name__ == 'Call' and type(_n.func).__name__ == 'Name' and _n.func.id == 'print':\n"
+    "        for _a in _n.args:\n"
+    "            _info = _note(_a) or (_boxes.get(_a.id) if type(_a).__name__ == 'Name' else None)\n"
+    "            if _info and (_info[0] > _best or (_info[0] == _best and _info[1])):\n"
+    "                _best, _best_triple = _info\n"
+)
+
 MANY_LINES_AT_ONCE = dict(
     id="many-lines-at-once",
     title="Many lines at once",
@@ -1407,13 +1437,7 @@ MANY_LINES_AT_ONCE = dict(
             checks=[
                 (
                     "one print shows 3 or more lines",
-                    "import ast as _ast\n"
-                    "_best = 0\n"
-                    "for _n in _ast.walk(_ast.parse(_source)):\n"
-                    "    if type(_n).__name__ == 'Call' and type(_n.func).__name__ == 'Name' and _n.func.id == 'print':\n"
-                    "        for _a in _n.args:\n"
-                    "            if type(_a).__name__ == 'Constant' and type(_a.value).__name__ == 'str':\n"
-                    "                _best = max(_best, len([_l for _l in _a.value.splitlines() if _l.strip()]))\n"
+                    NOTE_LINES +
                     "assert _best >= 2 or _count('call:print') < 3, "
                     "'Those are separate `print` lines. Put the whole note inside one `print`, with triple quotes.'\n"
                     "assert _best >= 3, 'Your longest `print` shows ' + str(_best) + (' line' if _best == 1 else ' lines') + "
@@ -1421,7 +1445,8 @@ MANY_LINES_AT_ONCE = dict(
                 ),
                 (
                     "uses triple quotes",
-                    "assert _uses('const:multiline_str'), 'Use triple quotes `\"\"\"` around the note, so it can run over many lines.'",
+                    NOTE_LINES +
+                    "assert _best_triple, 'Use triple quotes `\"\"\"` around the note, so it can run over many lines.'",
                 ),
             ],
             pass_line="Mar'tu: Three lines, one spell. Good chalk.",
@@ -1487,6 +1512,13 @@ MANY_LINES_AT_ONCE = dict(
              fails_at=1, message_contains="one `print`"),
         dict(why="closing triple quotes missing", code='print("""Hours between bursts:\n48, 48, 47\nGet inside.)\n',
              fails_at=0, message_contains="unterminated triple-quoted"),
+        dict(why="no triple quotes: line breaks typed as \\n, with a triple quote hidden in a comment",
+             code='# """\nprint("Hours between bursts:\\n48, 48, 47\\nGet inside.")\n',
+             fails_at=1, message_contains="triple quotes"),
+        dict(why="two prints of 2 lines each", code='print("""Hours between bursts:\n48, 48""")\nprint("""47, 46\nGet inside.""")\n',
+             fails_at=1, message_contains="2 lines"),
+        dict(why="blank lines padding a 2-line note", code='print("""Hours between bursts:\n\n\n48, 48, 47""")\n',
+             fails_at=1, message_contains="2 lines"),
     ],
     notes=(
         meta(starter_level="S4", path="pool", skills="print-text", solo="false", dictates="",
