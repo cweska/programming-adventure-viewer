@@ -196,6 +196,60 @@ describe("the store", () => {
     spy.mockRestore();
   });
 
+  it("keeps both tabs' changes when one tab saves while the other has an unsaved change", () => {
+    const storage = memoryStorage();
+    // Two visible tabs share one localStorage; each hears the other's writes (the "storage" event).
+    const tabs: ReturnType<typeof createProgressStore>[] = [];
+    const shared = {
+      getItem: (key: string) => storage.getItem(key),
+      setItem: (key: string, value: string) => {
+        storage.setItem(key, value);
+        for (const tab of tabs) if (tab !== writer) tab.reload();
+      },
+    };
+    let writer: ReturnType<typeof createProgressStore> | null = null;
+    const a = createProgressStore(() => shared, { debounceMs: 60_000 });
+    const b = createProgressStore(() => shared, { debounceMs: 60_000 });
+    tabs.push(a, b);
+    a.get();
+    b.get();
+
+    // Tab A has an unsaved keystroke when tab B finishes an exercise and saves.
+    a.update(withExercise("u/lesson/ex1", (previous) => ({ ...previous, code: "print('hi')" })));
+    b.update(withExercise("u/lesson/ex2", (previous) => ({ ...previous, done: true })));
+    writer = b;
+    b.flush();
+    expect(a.get().exercises["u/lesson/ex2"]?.done).toBe(true);
+    expect(a.get().exercises["u/lesson/ex1"]?.code).toBe("print('hi')");
+
+    // Then tab A saves: nothing of tab B's is lost, in storage or in either tab.
+    writer = a;
+    a.flush();
+    const stored = JSON.parse(storage.getItem(PROGRESS_KEY) ?? "{}");
+    expect(stored.exercises["u/lesson/ex2"].done).toBe(true);
+    expect(stored.exercises["u/lesson/ex1"].code).toBe("print('hi')");
+    expect(b.get().exercises["u/lesson/ex2"]?.done).toBe(true);
+    expect(b.get().exercises["u/lesson/ex1"]?.code).toBe("print('hi')");
+  });
+
+  it("replays unsaved updates on top of another tab's save even when no storage event arrived", () => {
+    const storage = memoryStorage();
+    const a = createProgressStore(() => storage, { debounceMs: 60_000 });
+    a.get();
+    a.update(withExercise("u/l/e", (previous) => ({ ...previous, activeMs: (previous.activeMs ?? 0) + 15_000 })));
+    // Another tab saved meanwhile (its event was missed).
+    const other = withExercise("u/l/e", (previous) => ({ ...previous, activeMs: 60_000, done: true }))(emptyProgress());
+    storage.setItem(PROGRESS_KEY, JSON.stringify(other));
+    a.flush();
+    const stored = JSON.parse(storage.getItem(PROGRESS_KEY) ?? "{}");
+    expect(stored.exercises["u/l/e"]).toMatchObject({ done: true, activeMs: 75_000 });
+    // A broken save from elsewhere is never built on: this tab's copy is written over it.
+    storage.setItem(PROGRESS_KEY, "{not json");
+    a.update(withRead("u/r"));
+    a.flush();
+    expect(JSON.parse(storage.getItem(PROGRESS_KEY) ?? "{}").read).toEqual({ "u/r": true });
+  });
+
   it("reloads what another tab saved", () => {
     const storage = memoryStorage();
     const store = createProgressStore(() => storage, { debounceMs: 0 });

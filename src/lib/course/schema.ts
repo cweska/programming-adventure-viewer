@@ -39,6 +39,8 @@ export const checkpointSchema = z
     checks: z.array(courseCheckSchema).min(1),
     /** A short in-world line shown when the checkpoint turns green. */
     passLine: z.string().optional(),
+    /** True when the text spells out the code to type; false for "goal and names only" steps. */
+    dictated: z.boolean().optional(),
   })
   .strict();
 
@@ -81,6 +83,21 @@ export const exampleSchema = z
 
 export const supportSchema = z.enum(["full", "light", "none"]);
 
+/** Predict before Run: a one-click guess at what the code prints. Free, never blocks Run. */
+export const exercisePredictSchema = z
+  .object({
+    q: prose,
+    /** The code to predict (the harness runs it to prove the answer). Absent: the starter. */
+    code: codeSchema.optional(),
+    choices: z.array(z.string()).min(2),
+    /** Index of the right choice. */
+    answer: z.number().int().min(0),
+    /** Shown after the guess, right or wrong. */
+    explain: prose,
+  })
+  .strict()
+  .refine((value) => value.answer < value.choices.length, { message: "predict answer is not one of the choices" });
+
 const exerciseShape = {
   id: slug,
   title: z.string().min(1),
@@ -114,6 +131,16 @@ const exerciseShape = {
     .optional(),
   /** One line for the unit cheatsheet / skill map. */
   takeaway: z.string().optional(),
+  /** Predict before Run (shown above the editor until the student guesses). */
+  predict: exercisePredictSchema.optional(),
+  /** "Names to use" chips: the names the steps ask for. */
+  names: z.array(z.string().min(1)).default([]),
+  /** Mar'tu's pick: a value to use when the student can't decide (every other value is still accepted). */
+  pick: z.string().optional(),
+  /** An optional "Pair talk" prompt. Each student still does every step on their own device. */
+  pairTalk: prose.optional(),
+  /** The lesson's SOLO item: done alone. */
+  solo: z.boolean().default(false),
 };
 
 export const exerciseSchema = z.object(exerciseShape).strict();

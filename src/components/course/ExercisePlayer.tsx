@@ -342,6 +342,97 @@ function HintLadder({
   );
 }
 
+/** Predict before Run: one click, free, never blocks Run. */
+function PredictCard({ predict, starter, glossary }: { predict: NonNullable<Playable["predict"]>; starter: string; glossary: GlossaryEntry[] }) {
+  const [guess, setGuess] = useState<number | null>(null);
+  const titleId = useId();
+  const code = predict.code && predict.code.trim() !== starter.trim() ? predict.code : null;
+  const right = guess !== null && guess === predict.answer;
+  return (
+    <section className="ex-predict" data-testid="predict" aria-labelledby={titleId}>
+      <p className="ex-predict-title" id={titleId}>
+        <span className="ex-predict-tag">Predict first</span> <Prose text={predict.q} glossary={glossary} inline />
+      </p>
+      {code ? (
+        <pre className="ex-predict-code" aria-label="Code to predict">
+          <code>{code.replace(/\n$/, "")}</code>
+        </pre>
+      ) : (
+        <p className="ex-muted ex-predict-note">Read the code in the editor. Guess, then press Run to see.</p>
+      )}
+      <div className="ex-predict-choices" role="group" aria-label="Your guess">
+        {predict.choices.map((choice, index) => {
+          const chosen = guess === index;
+          const mark = guess === null ? "" : index === predict.answer ? "✓" : chosen ? "✗" : "";
+          return (
+            <button
+              key={index}
+              type="button"
+              className={`ex-predict-choice${chosen ? " is-chosen" : ""}${guess !== null && index === predict.answer ? " is-answer" : ""}`}
+              data-testid={`predict-choice-${index}`}
+              aria-pressed={chosen}
+              onClick={() => setGuess(index)}
+            >
+              <span className="ex-predict-mark" aria-hidden="true">
+                {mark}
+              </span>
+              <span className="ex-predict-text">{choice}</span>
+            </button>
+          );
+        })}
+      </div>
+      <div aria-live="polite">
+        {guess !== null ? (
+          <div className={`ex-predict-result${right ? " is-right" : ""}`} data-testid="predict-result" data-correct={right}>
+            <p className="ex-predict-verdict">{right ? "Yes, good guess." : "Not this time. Guesses are free: now see what really happens."}</p>
+            <Prose text={predict.explain} glossary={glossary} />
+            <p className="ex-muted">Press Run to check it.</p>
+          </div>
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
+/** "Names to use", Mar'tu's pick, and the pair-talk prompt. */
+function StepExtras({ exercise, glossary }: { exercise: Playable; glossary: GlossaryEntry[] }) {
+  const names = exercise.names ?? [];
+  const pairTalk = exercise.pairTalk;
+  if (names.length === 0 && !exercise.pick && !pairTalk) return null;
+  return (
+    <div className="ex-extras">
+      {names.length > 0 ? (
+        <p className="ex-names" data-testid="names">
+          <span className="ex-names-label">Names to use:</span>{" "}
+          {names.map((name, index) => (
+            <span key={name}>
+              {index > 0 ? " " : null}
+              <code className="inline-code ex-name-chip">{name}</code>
+            </span>
+          ))}
+        </p>
+      ) : null}
+      {exercise.pick ? (
+        <div className="ex-pick" data-testid="pick">
+          <span className="ex-pick-label">Can&apos;t decide? Use Mar&apos;tu&apos;s pick:</span>{" "}
+          {exercise.pick.includes("\n") ? (
+            <pre className="ex-pick-text">{exercise.pick}</pre>
+          ) : (
+            <code className="inline-code">{exercise.pick}</code>
+          )}
+        </div>
+      ) : null}
+      {pairTalk ? (
+        <div className="ex-pair-talk" data-testid="pair-talk">
+          {/^pair talk\b/i.test(pairTalk) ? null : <span className="ex-pair-label">Pair talk: </span>}
+          <Prose text={pairTalk} glossary={glossary} inline />
+          <span className="ex-muted"> Each of you still does every step on your own screen.</span>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 type CheckpointState = "passed" | "active" | "pending";
 
 const STATE_MARK: Record<CheckpointState, { icon: string; words: string }> = {
@@ -804,11 +895,20 @@ export function ExercisePlayer({
           )}
           {exercise.example ? <WorkedExample example={exercise.example} /> : null}
           {anotherWayOpen(support, exercise.anotherWay) ? <AnotherWay exercise={exercise} glossary={glossary} /> : null}
+          {exercise.solo ? (
+            <p className="ex-solo" data-testid="solo">
+              <span className="ex-solo-tag">Solo</span> This one is yours alone. No partner, no hints from a friend.
+            </p>
+          ) : null}
+          {mode === "testout" ? null : <StepExtras exercise={exercise} glossary={glossary} />}
           {checkpointList}
           {exercise.campaignLink && mode !== "testout" ? <CampaignLink link={exercise.campaignLink} glossary={glossary} /> : null}
         </section>
 
         <section className="ex-work" aria-label="Your code" data-testid="work-pane">
+          {exercise.predict && mode !== "testout" ? (
+            <PredictCard predict={exercise.predict} starter={exercise.starter} glossary={glossary} />
+          ) : null}
           <div className="toolbar ex-toolbar" ref={toolbarRef}>
             <button
               ref={runButton}
@@ -1026,9 +1126,11 @@ export function ExercisePlayer({
                 text={
                   justFinished && view?.revealPass
                     ? "That was my answer, so it works, yes? Now make it yours: press Write it myself and type it again without looking."
-                    : justFinished
-                      ? "Good. Very good, yes?"
-                      : "You finished this one. Run it again any time, yes?"
+                    : justFinished && exercise.solo
+                      ? "You did that alone. I saw."
+                      : justFinished
+                        ? "Good. Very good, yes?"
+                        : "You finished this one. Run it again any time, yes?"
                 }
                 size="small"
                 testId="exercise-done-martu"

@@ -373,6 +373,9 @@ def verify_exercise(ex: dict, where: str, gate: ConceptGate, report: Report, kin
         hints = cp.get("hints") or []
         if len(hints) < 2:
             report.error(where, f"checkpoint {i} needs a hint ladder of at least 2 hints (has {len(hints)})")
+        names = [name for name, _ in normalize_checks(cp.get("checks"))]
+        if len(names) != len(set(names)):
+            report.error(where, f"checkpoint {i} has two checks with the same name (the site tells them apart by name)")
         words, grade = reading_stats(cp.get("text", ""))
         if grade > 9:
             report.warn(where, f"checkpoint {i} text reads at grade {grade}")
@@ -436,6 +439,10 @@ def verify_exercise(ex: dict, where: str, gate: ConceptGate, report: Report, kin
         gate.check(report, where, "predict code", p_code, preview, exempt)
         answer = predict.get("answer")
         choices = predict.get("choices") or []
+        if len(choices) < 2:
+            report.error(where, "predict needs at least 2 choices (the site shows a one-click choice)")
+        elif isinstance(answer, str) and answer not in choices:
+            report.error(where, f"predict answer {answer!r} is not one of the choices")
         if isinstance(answer, int):
             if not (0 <= answer < len(choices)):
                 report.error(where, "predict answer index out of range")
@@ -448,9 +455,14 @@ def verify_exercise(ex: dict, where: str, gate: ConceptGate, report: Report, kin
             if _norm(str(answer)) != actual and not (str(answer).startswith("ERROR") and actual.startswith("ERROR")):
                 report.error(where, f"predict answer {answer!r} but the code prints {actual!r}")
 
-    for field in ("names", "pick", "pair_talk", "solo"):
-        if field in ex and field == "names" and not all(isinstance(n, str) for n in ex["names"]):
-            report.error(where, "names must be a list of strings")
+    names = ex.get("names")
+    if names is not None and not (isinstance(names, (list, tuple)) and all(isinstance(n, str) and n for n in names)):
+        report.error(where, "names must be a list of strings")
+    for field in ("pick", "pair_talk"):
+        if field in ex and not (isinstance(ex[field], str) and ex[field].strip()):
+            report.error(where, f"{field} must be text")
+    if "solo" in ex and not isinstance(ex["solo"], bool):
+        report.error(where, "solo must be True or False")
 
     bonus = ex.get("bonus")
     if bonus:

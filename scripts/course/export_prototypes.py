@@ -212,17 +212,25 @@ def check(value: Any, where: str, ctx: Ctx) -> dict:
     return {"name": text(name, f"{where}.name", ctx), "code": check_code(code, f"{where}.code", ctx)}
 
 
+def checks_list(value: Any, where: str, ctx: Ctx) -> list:
+    """A checkpoint's (or side quest's) checks. Names must differ: the site regroups results by name."""
+    out = list_of(check)(value, where, ctx)
+    unique(out, "name", where, ctx)
+    return out
+
+
 def checkpoint(cp: Any, index: int, where: str, ctx: Ctx) -> dict:
     cp = as_dict(cp, where, ctx)
-    unknown_keys(cp, {"id", "text", "hints", "checks", "pass_line"}, where, ctx)
+    unknown_keys(cp, {"id", "text", "hints", "checks", "pass_line", "dictated"}, where, ctx)
     out: dict = {"id": slug(cp["id"], f"{where}.id", ctx) if "id" in cp else f"step-{index}"}
     if "text" in cp:
         out["text"] = LEADING_NUMBER.sub("", text(cp["text"], f"{where}.text", ctx), count=1)
     else:
         ctx.error(where, "missing field 'text'")
     put(out, "hints", cp, "hints", list_of(text), where, ctx, required=True)
-    put(out, "checks", cp, "checks", list_of(check), where, ctx, required=True)
+    put(out, "checks", cp, "checks", checks_list, where, ctx, required=True)
     put(out, "passLine", cp, "pass_line", text, where, ctx)
+    put(out, "dictated", cp, "dictated", boolean, where, ctx)
     return out
 
 
@@ -244,7 +252,7 @@ def bonus(value: Any, where: str, ctx: Ctx) -> dict:
     put(out, "title", value, "title", text, where, ctx)
     put(out, "text", value, "text", text, where, ctx, required=True)
     put(out, "hints", value, "hints", list_of(text), where, ctx)
-    put(out, "checks", value, "checks", list_of(check), where, ctx, required=True)
+    put(out, "checks", value, "checks", checks_list, where, ctx, required=True)
     put(out, "solution", value, "solution", code_lines, where, ctx, required=True)
     return out
 
@@ -291,10 +299,38 @@ def cheatsheet_entry(value: Any, where: str, ctx: Ctx) -> dict:
     return out
 
 
+def exercise_predict(value: Any, where: str, ctx: Ctx) -> dict:
+    """Predict before Run: dict(q=..., code=<optional>, choices=[...], answer=<index or exact text>, explain=...)."""
+    value = as_dict(value, where, ctx)
+    unknown_keys(value, {"q", "code", "choices", "answer", "explain"}, where, ctx, hint=" for an exercise predict")
+    out: dict = {}
+    put(out, "q", value, "q", text, where, ctx, required=True)
+    put(out, "code", value, "code", code_lines, where, ctx)
+    put(out, "choices", value, "choices", str_list, where, ctx, required=True)
+    choices = out.get("choices", [])
+    if "choices" in value and len(choices) < 2:
+        ctx.error(where, "predict needs at least 2 choices (the site shows a one-click choice)")
+    answer = value.get("answer")
+    if isinstance(answer, bool) or answer is None:
+        ctx.error(where, "predict needs an answer: the index of the right choice, or its exact text")
+    elif isinstance(answer, int):
+        if not 0 <= answer < len(choices):
+            ctx.error(where, f"predict answer {answer} is not a choice index (0 to {len(choices) - 1})")
+        out["answer"] = answer
+    elif isinstance(answer, str):
+        if answer not in choices:
+            ctx.error(where, f"predict answer {answer!r} is not one of the choices")
+        out["answer"] = choices.index(answer) if answer in choices else 0
+    else:
+        ctx.error(where, f"predict answer must be a choice index or text, got {answer!r}")
+    put(out, "explain", value, "explain", text, where, ctx, required=True)
+    return out
+
+
 EXERCISE_KEYS = {
     "id", "title", "martu", "example", "example_output", "another_way", "introduces", "preview",
     "engine", "setup", "stdin", "starter", "checkpoints", "solution", "starter_passes", "tracer", "support", "bonus",
-    "assemble", "campaign_link", "takeaway",
+    "assemble", "campaign_link", "takeaway", "predict", "names", "pick", "pair_talk", "solo",
 }
 EXERCISE_HARNESS_ONLY = {"partials", "wrong_answers", "notes"}
 
@@ -342,6 +378,11 @@ def exercise_fields(ex: dict, where: str, ctx: Ctx, verify: dict, verify_key: st
     put(out, "assemble", ex, "assemble", assemble, where, ctx)
     put(out, "campaignLink", ex, "campaign_link", campaign_link, where, ctx)
     put(out, "takeaway", ex, "takeaway", text, where, ctx)
+    put(out, "predict", ex, "predict", exercise_predict, where, ctx)
+    put(out, "names", ex, "names", str_list, where, ctx)
+    put(out, "pick", ex, "pick", text, where, ctx)
+    put(out, "pairTalk", ex, "pair_talk", text, where, ctx)
+    put(out, "solo", ex, "solo", boolean, where, ctx)
 
     sidecar: dict = {}
     put(sidecar, "partials", ex, "partials", list_of(code_lines), where, ctx)

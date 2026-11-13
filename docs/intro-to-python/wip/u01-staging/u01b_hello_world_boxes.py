@@ -172,7 +172,7 @@ GLOSSARY = [
         aliases=["not defined", "define"],
         plain=(
             "Made already. A name is defined once a line like `name = value` has run. "
-            "\"Not defined\" means Python found no box with that label."
+            "\"Not defined\" means Python looked for something saved with that name and found nothing."
         ),
         example="NameError: name 'hero' is not defined",
     ),
@@ -269,7 +269,8 @@ LABEL_A_BOX = dict(
             hints=[
                 "Line 1 starts `companion = \"`. Type a new hero right after that first quote.",
                 "The label is left of `=`. The hero goes on the right, in quotes.",
-                "A box is `name = value`. `snack = \"glug\"` makes a box named `snack` with glug inside. " + QUOTES_RULE,
+                "Read it as: companion gets Gearshift. A box is `name = value`, so `snack = \"glug\"` makes a box "
+                "named `snack` with glug inside. " + QUOTES_RULE,
             ],
             checks=[
                 box_check("companion", foreign=["snack"]),
@@ -1196,6 +1197,10 @@ SOLO_1B = dict(
         distractors=['"a grumpy moth"', 'print("familiar")'],
     ),
     another_way=[
+        dict(
+            angle="picture",
+            text="```\n  familiar\n+---------------+\n| your creature |\n+---------------+\n```\nThe label has no quotes. What goes inside does.",
+        ),
         dict(angle="sentence frame", label="Fill the frame", text="Name, no quotes, gets value in quotes. Then print the name."),
         dict(angle="shorter", text="`familiar = ` a creature in quotes. Then `print(familiar)`."),
     ],
@@ -1413,6 +1418,14 @@ NAME_AND_VALUE_AGAIN = dict(
         dict(
             angle="picture",
             text="```\nsatchel = \"three candles and a map\"   words: quotes\ncoins = 7                            number: no quotes\n```",
+        ),
+        dict(
+            angle="in Tor",
+            label="In Tor",
+            text=(
+                "Two jars on my shelf. One label says `satchel`, and inside is a note in quotes. "
+                "The other says `coins`, and inside are coins you can count. No quotes on coins."
+            ),
         ),
         dict(angle="shorter", text="Words in quotes, numbers alone, names never in quotes."),
     ],

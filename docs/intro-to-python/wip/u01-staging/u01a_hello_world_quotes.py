@@ -23,27 +23,21 @@ UNIT = dict(
     subtitle="Words by the Fire",
     published=True,
     martu_intro=(
-        "Every spell begins as words. Python is fussy about words. More fussy than Lucky is about glug, yes?\n"
+        "Hi. It is me, Mar'tu. Before we continue on our adventure, we go back to the first words, yes?\n"
         "A lot of that campaign code felt like a wall, yes? We will take the wall apart, one stone at a time.\n"
-        "Tonight: how to say something, how to keep something in a box, and how to let Python do the sums.\n"
-        "You will see error messages. Everyone does. They are information, not a mark."
+        "Every spell begins as words. Python is fussy about words. More fussy than Lucky is about glug, yes?\n"
+        "Tonight: how to say something, how to keep something in a box, and how to let Python do the sums."
     ),
     goals=[
-        "Show words on the screen with `print()`, in matching quotes, one line after another",
-        "Write `#` notes, and use `#` to switch a line off",
-        "Make a box with `name = value`, spelled exactly as the task asks",
-        "Change what a box holds, like `mana = mana - cost`",
-        "Do sums with `+ - * /` and let the code do the working",
-        "Join text with `+`, and turn numbers into text with `str()`",
-        "Draw a mana bar with `\"█\" * mana`",
-        "Read Python's message, then mend a missing quote or bracket, or a wrong name",
+        "Show words on the screen with `print()`, in matching quotes",
+        "Write `#` notes for humans, and switch a line off",
+        "Make a box (variable) with `name = value`, using the exact name the task asks for",
+        "Put a new value in a box, like `mana = mana - cost`",
+        "Do math with `+`, `-`, `*` and `/`, and let the code combine your boxes",
+        "Glue text together with `+` and `str()`, and draw a bar with `\"█\" * mana`",
+        "Read Python's message and mend the slips everyone makes",
     ],
     campaign_links=["leylines-awaken", "friends-in-low-places"],
-    notes=(
-        "Unit 1 is split into u01a (1-A1, 1W, 1A), u01b (1B, 1X-AB), u01c (1C, 1X-C, Quiz 1, 1P1) and "
-        "u01d (1P2, 1-A2, 1-A3, QC1, Cheatsheet 1). Every part repeats this UNIT dict exactly. "
-        "The struggle is named once, in martu_intro (teacher decision 2)."
-    ),
 )
 
 GLOSSARY = [
@@ -87,12 +81,6 @@ GLOSSARY = [
         plain="Python's note that it could not finish your code. It is information, not a mark. "
         "Read the last line first, then look at the line it names.",
         example="SyntaxError: unterminated string literal",
-    ),
-    dict(
-        term="not defined",
-        aliases=["defined"],
-        plain="Python's way to say: I looked for something saved with this name. I found nothing.",
-        example="NameError: name 'Fireball' is not defined",
     ),
     dict(
         term="comment",
@@ -178,7 +166,7 @@ WHAT_AN_ERROR_LOOKS_LIKE = dict(
     id="what-an-error-looks-like",
     title="What an error looks like",
     martu=(
-        "Run it. Python's message is not a mark against you. It says what Python could not read.\n"
+        "Run it. Python's [[error message|message]] is not a mark against you. It says what Python could not read.\n"
         "Read the last line first. Then look at the line it names."
     ),
     introduces=["call:print", "const:str"],
@@ -351,7 +339,7 @@ PRESS_RUN = dict(
         answer=0,
         explain=(
             "`print` shows the words inside the quotes. The quotes stay in the code; "
-            "they only mark where the words start and stop."
+            "they only mark where the words start and stop. Words in quotes are called a [[string]]."
         ),
     ),
     checkpoints=[
@@ -414,7 +402,7 @@ YOUR_OWN_WORDS = dict(
     id="your-own-words",
     title="Your own words",
     martu=(
-        "The words inside the quotes are yours. Python shows them exactly. "
+        "The words inside the [[quotes]] are yours. Python shows them exactly. "
         "Change them to something Oogrish might say."
     ),
     example='print("Shield up.")\n',
@@ -533,7 +521,7 @@ CLOSE_THE_QUOTE = dict(
     id="close-the-quote",
     title="Quotes and brackets come in pairs",
     martu=(
-        "Quotes come in pairs: one before the words, one after. Brackets come in pairs too. "
+        "[[quotes|Quotes]] come in pairs: one before the words, one after. [[brackets|Brackets]] come in pairs too. "
         "This line is missing one. Run it, read the message, then mend it."
     ),
     example='print("Two quotes, two brackets.")\n',
@@ -664,7 +652,7 @@ WORDS_NEED_QUOTES = dict(
     id="words-need-quotes",
     title="Words need quotes",
     martu=(
-        "Words you want to show need quotes. Without quotes, Python thinks you mean the name of something "
+        "Words you want to show need [[quotes]]. Without quotes, Python thinks you mean the name of something "
         "saved earlier, and it finds nothing."
     ),
     example='print("Lantern")\n',
@@ -677,7 +665,7 @@ WORDS_NEED_QUOTES = dict(
         answer=1,
         explain=(
             "No quotes, so Python looked for something saved earlier called `Fireball`. It found nothing, "
-            "so it says [[not defined]]. It is not about spelling, and the word is not too long."
+            "so it says *not defined*. It is not about spelling, and the word is not too long."
         ),
     ),
     checkpoints=[
@@ -1016,7 +1004,7 @@ NOTES_FOR_HUMANS = dict(
     id="notes-for-humans",
     title="Notes for humans",
     martu=(
-        "A line that starts with `#` is a note for humans. Python skips it. "
+        "A line that starts with `#` is a [[comment|note for humans]]. Python skips it. "
         "Put `#` in front of a line to switch it off."
     ),
     example='# This note is for humans.\nprint("Python reads this.")\n# print("Python skips this.")\n',
