@@ -13,9 +13,15 @@ sentence ("with `lantern_count = 7`, `total_cost` stayed 22, but it should be 38
 
 Check builders below (plain string templates, no student values ever echoed back):
   slot()        NAME / LEFT / NEWBOX / BARE / TEXT-vs-NUM plus per-exercise rules, for one box's value
-  story_pair()  SWAP / LINE-TOTAL / wild count / placeholder, for a count box and a price box from a story
-  rerun()       CMB: re-runs _source with some input lines changed (the "Try other numbers" mechanism)
-  out_line()    OUT diff: the expected line, the nearest printed line, and where they first differ
+  story_pair()  SWAP / LINE-TOTAL / wild count / placeholder / NEWBOX, for a count box and a price box from a story
+                (a right pair always passes; the diagnosis runs only when it is wrong)
+  rerun()       CMB: re-runs _source with some input lines changed (the "Try other numbers" mechanism). Every
+                input a combine line reads is changed by at least one rerun, so no half-typed line survives.
+  rerun_line()  CMB on output. The wanted line must come from a line that CHANGED with the inputs: a line that
+                prints the same in both runs is typed in (stops `print(11)` + `print(7)` after the message shows 7).
+  out_line()    OUT diff: the expected line, the nearest printed line, and where they first differ. `hide=own(box)`
+                keeps lines holding a student's creative value out of every diff (privacy, 2.11).
+  loose_math() / set_once() / near_names()   BARE math, a box re-set below its uses, NAME on its own
 Help ladder as fields: hints[0] Start me off, hints[1] Point, another_way, hints[2] Teach (other names),
 assemble = More structure, solution = Show.
 """
@@ -212,6 +218,7 @@ def story_pair(label, count_name, price_name, count, price, things, *, known, wi
     if price_first:
         swap += " This story gives the price first."
     line_total = "%d is already the cost of all %d %s. This box wants the price of one." % (count * price, count, things)
+    count_total = "%d is already the cost of all %d %s. This box wants how many." % (count * price, count, things)
     code = _NAMES_PRE + (
         f"_names = {[count_name, price_name]!r}\n"
         f"_known = {list(known)!r}\n"
@@ -238,6 +245,8 @@ def story_pair(label, count_name, price_name, count, price, things, *, known, wi
         f"        _msg = {swap!r}\n"
         f"    elif _p == {count * price}:\n"
         f"        _msg = {line_total!r}\n"
+        f"    elif _c == {count * price}:\n"
+        f"        _msg = {count_total!r}\n"
         "    elif _newb:\n"
         "        _msg = 'Your new box `' + _newb[0][0] + '` holds ' + str(_wants[_newb[0][1]]) + ', but `' + _newb[0][1] + "
         "'` still holds 0. Put the number in `' + _newb[0][1] + '`.'\n"
@@ -830,6 +839,9 @@ WHAT_EACH_NUMBER_MEANS = dict(
         dict(why="the line total in the price box",
              code="lantern_count = 3\nlantern_price = 12\nrope_count = 5\nrope_price = 2\n",
              fails_at=1, message_contains="all 3"),
+        dict(why="the line total in the count box (A-05/A-07/A-08 'numbers from my math')",
+             code="lantern_count = 12\nlantern_price = 4\nrope_count = 5\nrope_price = 2\n",
+             fails_at=1, message_contains="wants how many"),
         dict(why="a number in quotes",
              code='lantern_count = "3"\nlantern_price = 4\nrope_count = 5\nrope_price = 2\n',
              fails_at=1, message_contains="quotes"),
@@ -1164,7 +1176,9 @@ LET_THE_CODE_COMBINE = dict(
              "map_cost and supply_total (price-first, C9)") + "\n"
         "The Investigate (rope_count = 1000, total 2012) is checkpoint 4 so everyone does it; checks 1-3 compare "
         "against the student's own boxes, so they stay green at 1000. CMB uses two reruns on CP3 (lantern_count 7 -> "
-        "38; rope_price 3 -> 27) so a half-typed total also fails. PR (Seat B explains why typing 22 is a trap) is "
+        "38; lantern_price 5, rope_count 6, rope_price 3 -> 33): every input changes in some rerun, so a total with "
+        "any one number typed in fails. set_once: `rope_count = 1000` added at the bottom (instead of changing line 3) "
+        "gets a top-down message, not a confusing slot message. PR (Seat B explains why typing 22 is a trap) is "
         "the pair_talk prompt. Point-at-it: 'Which part of your line is the price of one?' after CP1 (site feature)."
     ),
 )
@@ -1223,6 +1237,8 @@ SPEND_MANA = dict(
                     "Put `print(mana)` below the third cast.'\n"
                     "assert '17' in _lines() or mana != 20, '`mana` is 20, which is two casts. "
                     "Add one more `mana = mana - spell_cost` line above the `print`.'\n"
+                    "assert '17' in _lines() or mana != 14, '`mana` is 14, which is four casts. "
+                    "Keep three `mana = mana - spell_cost` lines, then the `print`.'\n"
                     "assert '17' in _lines(), 'Three casts of 3 from 26 leave 17. "
                     "Add a third `mana = mana - spell_cost` line above the `print`.'",
                 ),
@@ -1330,6 +1346,8 @@ SPEND_MANA = dict(
         dict(why="capital letter: a new box Mana (prints 17, but mana is still 20)",
              code="mana = 26\nspell_cost = 3\nmana = mana - spell_cost\nmana = mana - spell_cost\nMana = mana - spell_cost\nprint(Mana)\n",
              fails_at=1, message_contains="letter for letter"),
+        dict(why="one cast too many", code=SPEND_SOLUTION.replace("print(mana)", "mana = mana - spell_cost\nprint(mana)"),
+             fails_at=1, message_contains="four casts"),
         dict(why="the third cast worked out inside the print, never stored (mana stays 20)",
              code="mana = 26\nspell_cost = 3\nmana = mana - spell_cost\nmana = mana - spell_cost\nprint(mana - spell_cost)\n",
              fails_at=1, message_contains="only changed 2 times"),
@@ -1542,7 +1560,10 @@ GLUE_WORDS = dict(
         meta(starter_level="S4", path="CC", skills="concat-str", solo="false", dictates="",
              foreign_names="drink,sips,pet") + "\n"
         "Investigate 1 (`\"Mana: \" + 26`, TypeError + explainer) is the Learn pane's try-it line; Investigate 2 "
-        "(missing space) is the predict. OUT diff shows the first difference; CMB reruns with Tester / 4. "
+        "(missing space) is the predict. OUT diff shows the first difference; CMB reruns with Tester / 4 and Zelda / 7 (two, so setting the boxes to "
+        "the rerun's values and typing the line still fails). Any name a student puts in `name` passes; its diff "
+        "never repeats it. The last check asks for `+` and `str()` (commas give the same output but skip the "
+        "lesson), with a kind message. "
         "WA evidence: Lucky has26mana (spaces), typed answers (68)."
     ),
 )
@@ -1748,7 +1769,9 @@ STATUS_LINE_EX = dict(
         meta(starter_level="S3", path="CC", skills="combine-values,concat-str,reassign", solo="false", dictates="2",
              foreign_names="power,double,spare,backpack") + "\n"
         "Lint (e): the solution uses another hero (Captain Glug) and passes; the assemble lines use Mar'tu's pick "
-        "(Oogrish). The status-line check never echoes the student's hero: its message uses Tester. More structure "
+        "(Oogrish). The status-line check never echoes the student's hero: its message uses Tester / Zelda, and the side "
+        "quest's diffs hide lines holding the hero (own('hero_name')). CP3 also needs `mana` read somewhere, so "
+        "`str(max_mana)` twice (same output while mana starts full) is caught. More structure "
         "(G1 R13): the Teach hint gives the frame with ___ blanks. Lucky's side quest uses new lucky_* boxes so it "
         "never turns a finished checkpoint red."
     ),
@@ -1952,7 +1975,8 @@ REPEAT_A_MARK = dict(
         meta(starter_level="S4", path="CC", skills="repeat-string", solo="false", dictates="1,2",
              foreign_names="stars,a,b", twin="a glug bar with ▓: glug = 2 of 6 -> [▓▓░░░░]") + "\n"
         "Skill gate pattern:StrRepeat (op:Mult on text; no new token). Blocks are pre-typed (G1 R8). "
-        "CP2's reruns set mana AND max_mana, so they stay true after CP3 changes the boxes to 20/20. "
+        "CP2's reruns set mana AND max_mana, so they stay true after CP3 changes the boxes to 20/20; the 2-of-6 "
+        "rerun catches `(5 - mana)`, which passes every max-5 rerun and the 20/20 bar. "
         "Point-at-it (G2 R9) is CP2's pass line. BQ variant for students who read 1-A2 (`//`, 10 blocks wide) "
         "needs a per-student condition the schema does not have."
     ),
@@ -2887,8 +2911,11 @@ PROJECT_1P1 = dict(
             (
                 "divider made with repetition",
                 "import ast as _ast\n"
-                "_typed = [_n for _n in _ast.walk(_ast.parse(_source)) if type(_n).__name__ == 'Constant' "
-                "and type(_n.value).__name__ == 'str' and '~~' in _n.value]\n"
+                "_tree = _ast.parse(_source)\n"
+                "_stamped = [id(_s) for _n in _ast.walk(_tree) if type(_n).__name__ == 'BinOp' "
+                "and type(_n.op).__name__ == 'Mult' for _s in (_n.left, _n.right)]\n"
+                "_typed = [_n for _n in _ast.walk(_tree) if type(_n).__name__ == 'Constant' "
+                "and type(_n.value).__name__ == 'str' and '~~' in _n.value and id(_n) not in _stamped]\n"
                 "assert not _typed, 'Make the divider with repetition: `\"~\" * 24`. Typing the marks is how Lucky loses count.'\n"
                 "assert '~' * 24 in _lines(), 'Print a divider of exactly 24 marks: `print(\"~\" * 24)`.'",
             ),
@@ -2980,7 +3007,8 @@ PROJECT_1P1 = dict(
              dictates="1,2", foreign_names="days,meals_per_day,bags,bag_price,guard,steps,sips") + "\n"
         "Starter: the task-group headers (always) plus the `= 0` placeholders, because 'Show me more' is the "
         "default preset and the prototype has one starter. CMB: every combine task and ledger line is rerun with "
-        "hours_until_burst = 32 (oil also with oil_per_hour = 2, so hours * price fails). Lint (e): the solution "
+        "hours_until_burst = 32 and every other input it reads changed too (mana_per_hour 3; oil_per_hour 2, "
+        "oil_price 5), so `hours_until_burst * 2` or `oil_needed * 3` fail. C5/C6 diffs hide lines holding the hero. Lint (e): the solution "
         "uses Captain Glug, the assemble lines use Mar'tu's pick (Bomb Shell); the watch line check never echoes "
         "the hero (Tester only). Echo spot: the site would repeat the hero in the pass line through the blocklist; "
         "a static pass_line cannot, so it says 'Noted'. Side quest WA (typed ~~~ divider -> 'repetition') is "
