@@ -33,6 +33,29 @@ describe("explainCourseError: the class's real slips", () => {
     );
   });
 
+  it("reads an apostrophe inside double-quoted text as an apostrophe, not a closing quote", () => {
+    // Unit 1's first exercise: the closing quote dropped from Mar'tu's line. Not "Quotes don't match ... like "Hi. It is me, Mar"".
+    const result = explainRun('print("Hi. It is me, Mar\'tu.)\n');
+    expect(result.title).toBe("Missing quote");
+    expect(result.hint).toBe(
+      'The text on line 1 is missing its closing quote. Text needs a quote at the start and at the end, like this: print("Hi. It is me, Mar\'tu.")',
+    );
+    expect(explainRun('print("The guards\' post is cold)\n').hint).toContain('print("The guards\' post is cold")');
+    // A real mismatch with an apostrophe earlier in the text is still a mismatch.
+    const mismatch = explainRun("print(\"Barrier's holding.')\n");
+    expect(mismatch.title).toBe("Quotes don't match");
+    expect(mismatch.hint).toContain(`like "Barrier's holding."`);
+  });
+
+  it("names the OPENING quote when only the closing one was typed", () => {
+    const result = explainRun('print(Fireball")\n');
+    expect(result.title).toBe("Missing quote");
+    expect(result.hint).toBe(
+      'The text on line 1 is missing its opening quote. Text needs a quote at the start and at the end, like this: print("Fireball")',
+    );
+    expect(explainRun('hero = Bomb Shell"\n').hint).toContain('hero = "Bomb Shell"');
+  });
+
   it("explains an apostrophe inside single quotes", () => {
     const result = explainRun("print('It's fun')\n");
     expect(result.title).toBe("Apostrophe in text");

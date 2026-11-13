@@ -462,13 +462,28 @@ function quotesProblem(text: string, line: number | null, raw: string, code = ""
         raw,
       );
     }
-    // `print("fireball')`: one kind of quote at the start, the other kind at the end.
-    if (!tail.includes(quote) && tail.includes(other)) {
-      const words = tail.slice(0, tail.lastIndexOf(other));
+    // `print("fireball')`: one kind of quote at the start, the other kind at the end. The other kind only
+    // ENDS the text when no word follows it: in `print("Hi. It is me, Mar'tu.)` or `"the guards' post)` it is
+    // an apostrophe, and the slip is the missing closing quote (below), not a mismatch.
+    const lastOther = tail.lastIndexOf(other);
+    const endsText = lastOther >= 0 && !/^\s*\w/.test(tail.slice(lastOther + 1));
+    if (!tail.includes(quote) && endsText) {
+      const words = tail.slice(0, lastOther);
       return explain(
         "quotes-dont-match",
         "Quotes don't match",
         `The text${onLine(line)} starts with ${quote} but ends with ${other}. Use the same kind of quote at both ends, like ${quote}${words}${quote}.`,
+        raw,
+      );
+    }
+    // `print(Fireball")`: the quote that is there closes the words, so the OPENING quote is the missing one.
+    const unopened = text.slice(0, start).match(/^(.*[(=,+]\s*)([A-Za-z][^"'()=+,]*)$/);
+    if (unopened && tail.replace(/[)\]}\s]/g, "").length === 0) {
+      const fixed = `${unopened[1]}${quote}${unopened[2]}${quote}${tail.trim()}`;
+      return explain(
+        "missing-quote",
+        "Missing quote",
+        `The text${onLine(line)} is missing its opening quote. Text needs a quote at the start and at the end, like this: ${fixed}`,
         raw,
       );
     }
