@@ -201,7 +201,7 @@ print(json.dumps({
   });
 
   it("is fetched by the worker before the network is disabled", () => {
-    const load = worker.indexOf('new URL("course_helpers.py", import.meta.url)');
+    const load = worker.indexOf("new URL(`course_helpers.py${version}`, import.meta.url)");
     const helpersAwaited = worker.indexOf("courseHelpers = await helpers;");
     const disabled = worker.indexOf("globalThis.fetch = () => Promise.reject");
     expect(load).toBeGreaterThan(-1);

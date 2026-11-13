@@ -16,6 +16,9 @@ import {
   withRead,
   withSettings,
   withTestedOut,
+  coursePreset,
+  needsPlacement,
+  presetForAnswer,
   type ProgressStorage,
   type ProgressUnit,
 } from "./progress";
@@ -94,7 +97,8 @@ describe("reading saved progress", () => {
     expect(progress.quizzes).toEqual({ "u/q": { best: 100, attempts: 2, lastAnswers: { q1: "1" } } });
     expect(progress.read).toEqual({ "u/a": true });
     expect(progress.testedOut).toEqual({});
-    expect(progress.settings).toEqual({ light: true });
+    // The old "Fewer words" switch became the "Keep it short" preset.
+    expect(progress.settings).toEqual({ preset: "short", light: true });
   });
 
   it("survives storage that throws", () => {
@@ -131,14 +135,56 @@ describe("updates", () => {
   });
 
   it("marks read, tested out and settings, and can undo them", () => {
-    let progress = apply(emptyProgress(), withRead("u/a"), withTestedOut("u"), withSettings({ light: true }));
+    let progress = apply(emptyProgress(), withRead("u/a"), withTestedOut("u"), withSettings({ preset: "short" }));
     expect(progress.read).toEqual({ "u/a": true });
     expect(progress.testedOut).toEqual({ u: true });
-    expect(progress.settings).toEqual({ light: true });
+    expect(progress.settings).toEqual({ preset: "short", light: true });
     progress = apply(progress, withRead("u/a", false), withTestedOut("u", false), withSettings({ readAloud: true }));
     expect(progress.read).toEqual({});
     expect(progress.testedOut).toEqual({});
-    expect(progress.settings).toEqual({ light: true, readAloud: true });
+    expect(progress.settings).toEqual({ preset: "short", light: true, readAloud: true });
+  });
+});
+
+describe("presets (curriculum §2.3)", () => {
+  it("defaults to Show me more, and moves the old light switch to Keep it short", () => {
+    expect(coursePreset({})).toBe("more");
+    expect(coursePreset(undefined)).toBe("more");
+    expect(coursePreset({ light: true })).toBe("short");
+    expect(coursePreset({ light: false })).toBe("more");
+    expect(coursePreset({ preset: "more", light: true })).toBe("more");
+    expect(normalizeProgress({ version: 1, settings: { light: true } }).settings).toEqual({ preset: "short", light: true });
+    expect(normalizeProgress({ version: 1, settings: { light: false } }).settings).toEqual({ light: false });
+    expect(normalizeProgress({ version: 1, settings: { preset: "more", light: true } }).settings).toEqual({ preset: "more", light: false });
+    expect(normalizeProgress({ version: 1, settings: { preset: "huge", readAloud: true } }).settings).toEqual({ readAloud: true });
+  });
+
+  it("keeps the legacy light flag in step with the preset, both ways", () => {
+    expect(withSettings({ preset: "short" })(emptyProgress()).settings).toEqual({ preset: "short", light: true });
+    expect(apply(emptyProgress(), withSettings({ preset: "short" }), withSettings({ preset: "more" })).settings).toEqual({
+      preset: "more",
+      light: false,
+    });
+    expect(withSettings({ light: true })(emptyProgress()).settings).toEqual({ preset: "short", light: true });
+    expect(withSettings({ readAloud: true })(emptyProgress()).settings).toEqual({ readAloud: true });
+  });
+
+  it("asks the placement question once, only on a first visit", () => {
+    expect(needsPlacement(emptyProgress())).toBe(true);
+    expect(needsPlacement(withSettings({ preset: "more" })(emptyProgress()))).toBe(false);
+    expect(needsPlacement(withSettings({ readAloud: true })(emptyProgress()))).toBe(true);
+    expect(needsPlacement(normalizeProgress({ version: 1, settings: { light: false } }))).toBe(false);
+    // Someone who already started (a link straight to a lesson) is not asked.
+    expect(needsPlacement(withRead("u/a")(emptyProgress()))).toBe(false);
+    expect(needsPlacement(withExercise("u/i/e", (previous) => previous)(emptyProgress()))).toBe(false);
+    expect(needsPlacement(withQuiz("u/q", 50)(emptyProgress()))).toBe(false);
+  });
+
+  it("maps the answers: no, a little or skip -> Show me more; yes -> Keep it short", () => {
+    expect(presetForAnswer("no")).toBe("more");
+    expect(presetForAnswer("a-little")).toBe("more");
+    expect(presetForAnswer("skip")).toBe("more");
+    expect(presetForAnswer("yes")).toBe("short");
   });
 });
 

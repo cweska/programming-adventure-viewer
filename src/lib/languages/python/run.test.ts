@@ -1,3 +1,6 @@
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 type Listener = (event: { data: unknown }) => void;
@@ -84,7 +87,7 @@ describe("runCourse", () => {
       stageEvents: [{ type: "move", direction: "left" }],
     });
     const worker = FakeWorker.instances[0];
-    expect(worker?.url).toMatch(/\/workers\/python-worker\.js$/);
+    expect(worker?.url).toMatch(/\/workers\/python-worker\.js\?v=[0-9a-f]{12}$/);
     expect(worker?.options).toEqual({ type: "module" });
     expect(worker?.posted[0]).toEqual({
       type: "course-run",
@@ -125,5 +128,28 @@ describe("runCourse", () => {
     const next = await runCourse({ code: "print(2)\n", checks: [] });
     expect(next.stdout).toBe("2\n");
     expect(FakeWorker.instances).toHaveLength(2);
+  });
+});
+
+describe("the worker's version (cache busting)", () => {
+  it("matches the worker and course helpers files, so a changed worker gets a new URL", async () => {
+    const { PYTHON_WORKER_VERSION } = await import("./run");
+    const hash = createHash("sha256");
+    for (const file of ["public/workers/python-worker.js", "public/workers/course_helpers.py"]) {
+      hash.update(readFileSync(path.join(process.cwd(), file)));
+      hash.update("\0");
+    }
+    const expected = hash.digest("hex").slice(0, 12);
+    expect(
+      PYTHON_WORKER_VERSION,
+      `python-worker.js or course_helpers.py changed: set PYTHON_WORKER_VERSION in src/lib/languages/python/run.ts to "${expected}"`,
+    ).toBe(expected);
+  });
+
+  it("answers a message type it does not know instead of staying silent", () => {
+    const worker = readFileSync(path.join(process.cwd(), "public/workers/python-worker.js"), "utf8");
+    expect(worker).toContain("Python needs a newer version of this page. Reload the page.");
+    // The helpers are fetched with the worker's own ?v=, so the two always come from the same release.
+    expect(worker).toContain("new URL(`course_helpers.py${version}`, import.meta.url)");
   });
 });

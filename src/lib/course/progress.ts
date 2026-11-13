@@ -126,13 +126,54 @@ function cleanFlags(value: unknown): Record<string, true> {
   return out;
 }
 
+export type CoursePreset = NonNullable<CourseSettings["preset"]>;
+
+function isPreset(value: unknown): value is CoursePreset {
+  return value === "more" || value === "short";
+}
+
+/**
+ * Settings, with the old "Fewer words" switch (`light`) moved to the preset it became: light=true is
+ * "Keep it short". `light` is kept in step with the preset so code that still reads it keeps working.
+ */
 function cleanSettings(value: unknown): CourseSettings {
   const out: CourseSettings = {};
   if (isRecord(value)) {
-    if (typeof value.light === "boolean") out.light = value.light;
+    if (isPreset(value.preset)) out.preset = value.preset;
+    else if (value.light === true) out.preset = "short";
+    if (out.preset) out.light = out.preset === "short";
+    else if (typeof value.light === "boolean") out.light = value.light;
     if (typeof value.readAloud === "boolean") out.readAloud = value.readAloud;
   }
   return out;
+}
+
+/** The student's support preset (curriculum §2.3): "more" ("Show me more", the default) or "short". */
+export function coursePreset(settings: CourseSettings | undefined): CoursePreset {
+  if (isPreset(settings?.preset)) return settings.preset;
+  return settings?.light === true ? "short" : "more";
+}
+
+/**
+ * Whether to ask the one-time "Have you typed code before?" question: no preset chosen yet and nothing done
+ * yet in this browser. Answering or skipping it sets a preset, so it is never asked twice.
+ */
+export function needsPlacement(progress: CourseProgress): boolean {
+  const { settings } = progress;
+  if (isPreset(settings.preset) || typeof settings.light === "boolean") return false;
+  return (
+    Object.keys(progress.exercises).length === 0 &&
+    Object.keys(progress.quizzes).length === 0 &&
+    Object.keys(progress.read).length === 0 &&
+    Object.keys(progress.testedOut).length === 0
+  );
+}
+
+/** The placement answers (curriculum §2.3, as the teacher set it): only "yes" starts with "Keep it short". */
+export type PlacementAnswer = "no" | "a-little" | "yes" | "skip";
+
+export function presetForAnswer(answer: PlacementAnswer): CoursePreset {
+  return answer === "yes" ? "short" : "more";
 }
 
 /** Repair any value into a valid CourseProgress, keeping every part that is still good. */
@@ -254,8 +295,14 @@ export function withTestedOut(unitId: string, testedOut = true): ProgressUpdate 
   };
 }
 
+/** Change settings. A preset also sets the legacy `light` flag to match (and an old `light` sets the preset). */
 export function withSettings(patch: Partial<CourseSettings>): ProgressUpdate {
-  return (progress) => ({ ...progress, settings: { ...progress.settings, ...patch } });
+  return (progress) => {
+    const next: CourseSettings = { ...progress.settings, ...patch };
+    if (isPreset(patch.preset)) next.light = patch.preset === "short";
+    else if (typeof patch.light === "boolean") next.preset = patch.light ? "short" : "more";
+    return { ...progress, settings: next };
+  };
 }
 
 /* ------------------------------------------------------------------------------------------------ */
@@ -521,6 +568,16 @@ export function markTestedOut(unitId: string, testedOut = true): CourseProgress 
 
 export function setSettings(patch: Partial<CourseSettings>): CourseProgress {
   return store.update(withSettings(patch));
+}
+
+/** Switch between "Show me more" and "Keep it short". */
+export function setPreset(preset: CoursePreset): CourseProgress {
+  return store.update(withSettings({ preset }));
+}
+
+/** The student's preset, live (the default "more" during the server render and hydration). */
+export function useCoursePreset(): CoursePreset {
+  return coursePreset(useCourseProgress().settings);
 }
 
 /* ------------------------------------------------------------------------------------------------ */

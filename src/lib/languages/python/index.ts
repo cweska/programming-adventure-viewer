@@ -19,4 +19,6 @@ export {
   whenPythonReady,
   PythonTimeoutError,
   COURSE_TIMEOUT_TRACEBACK,
+  PYTHON_WORKER_VERSION,
+  pythonWorkerUrl,
 } from "./run";

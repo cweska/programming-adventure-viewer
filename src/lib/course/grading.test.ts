@@ -201,3 +201,60 @@ describe("grading a real course run", () => {
     expect(missingGrade.checkpoints[0]?.message).toBe("Can't find `hero`. Make sure your code makes `hero`, spelled exactly like that.");
   });
 });
+
+describe("grading: the slips a check alone would hide", () => {
+  const makeCharacter = [
+    checkpoint("make-character", [["value", "assert character == 'Zelda', 'Store the text Zelda in character.'"]]),
+    checkpoint("show-character", [["prints", "assert 'Zelda' in _lines(), 'Print character.'"]]),
+  ];
+
+  function grade(code: string, context?: Parameters<typeof gradeCheckpoints>[3]) {
+    return gradeCheckpoints(makeCharacter, runCourseChecks(code, flattenChecks(makeCharacter)), code, context);
+  }
+
+  it("names a lone quoted string (no error at all) and puts the missing name in front of it", () => {
+    const result = grade('"Zelda"\n');
+    expect(result.crashed).toBe(false);
+    expect(result.checkpoints[0]?.message).toBe(
+      'Line 1 is a value on its own: "Zelda". Python reads it, then forgets it, because no variable keeps it. To keep it, put character = in front of it: character = "Zelda"',
+    );
+  });
+
+  it("names a value that was never printed when the run printed nothing", () => {
+    const show = [checkpoint("show", [["prints", "assert 'Hello' in _lines(), 'Print Hello.'"]])];
+    const code = '"Hello"\n';
+    const result = gradeCheckpoints(show, runCourseChecks(code, flattenChecks(show)), code);
+    expect(result.checkpoints[0]?.message).toContain('To show it, put it inside print( ): print("Hello")');
+  });
+
+  it("keeps the check's own message when the slip is not what failed", () => {
+    // Something printed, and the check found its variable: the stray line is not this step's problem.
+    const code = 'character = "Link"\nprint(character)\n"Zelda"\n';
+    expect(grade(code).checkpoints[0]?.message).toBe("Store the text Zelda in character.");
+  });
+
+  it("names a dash that kept nothing, when the check is about that name", () => {
+    const mana = [checkpoint("mana", [["value", "assert mana == 20, 'Store the number 20 in mana.'"]])];
+    const code = "mana = 3\nmana - 20\n";
+    const result = gradeCheckpoints(mana, runCourseChecks(code, flattenChecks(mana)), code);
+    expect(result.checkpoints[0]?.message).toBe("Line 2 uses a dash - where = belongs, so nothing is kept. To store the value, write: mana = 20");
+  });
+
+  it("says when the code made a name with other capital letters, or the example's name", () => {
+    expect(grade('Character = "Zelda"\nprint(Character)\n').checkpoints[0]?.message).toBe(
+      "Can't find `character`. Your code made `Character`, but capital letters matter: use `character`.",
+    );
+    const example = 'hero = "Link"\nprint(hero)\n';
+    expect(grade('hero = "Zelda"\nprint(hero)\n', { example, names: ["character"] }).checkpoints[0]?.message).toBe(
+      "Can't find `character`. Your code made `hero`, the name from the example. This task uses `character`.",
+    );
+  });
+
+  it("passes the context on to the crash explanation", () => {
+    const example = 'traveler = input("Name? ")\nprint("Hello, " + traveler)\n';
+    const code = 'character = "Zelda"\nprint(traveler)\n';
+    const result = grade(code, { example, names: ["character"] });
+    expect(result.crashed).toBe(true);
+    expect(result.checkpoints[0]?.message).toBe("traveler is the name from the example. This task uses character, so write character here.");
+  });
+});

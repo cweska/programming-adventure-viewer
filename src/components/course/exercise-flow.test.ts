@@ -10,10 +10,16 @@ import type { ExerciseProgress } from "../../lib/course/contracts";
 import { flattenChecks, gradeCheckpoints } from "../../lib/course/grading";
 import { allUnits, itemPageProps } from "../../lib/course/registry";
 import { runCourseChecks } from "../../lib/course/run-course";
-import { playablesOf, type Checkpoint, type Playable } from "../../lib/course/schema";
-import { applyRun, assembledCode, isBlankOrStarter, runOutcome } from "./exercise-logic";
+import { exerciseSchema, playablesOf, type Checkpoint, type Playable } from "../../lib/course/schema";
+import { CompareView } from "./CompareView";
+import { applyRun, assembledCode, helpRungs, helpState, isBlankOrStarter, runOutcome } from "./exercise-logic";
+import { ExercisePlayer } from "./ExercisePlayer";
+import { HelpStack } from "./HelpStack";
 import { LessonPlayer } from "./LessonPlayer";
+import { NamesChips } from "./NamesChips";
 import { ParsonsBoard } from "./ParsonsBoard";
+import { PredictStep } from "./PredictStep";
+import { SymbolTray } from "./SymbolTray";
 
 const PLAYED = new Set(["lesson", "project", "challenge", "testout"]);
 
@@ -36,7 +42,12 @@ function press(exercise: Playable, code: string, progress: ExerciseProgress) {
     engine: exercise.engine,
   });
   const grade = gradeCheckpoints(exercise.checkpoints, result, code);
-  const bonusGrade = bonus.length > 0 && !grade.crashed ? gradeCheckpoints(bonus, result, code) : null;
+  // As the player does it: the side quest's checks are graded from their own slice, by position.
+  const mainCount = flattenChecks(exercise.checkpoints).length;
+  const bonusGrade =
+    bonus.length > 0 && !grade.crashed
+      ? gradeCheckpoints(bonus, { ...result, checks: (result.checks ?? []).slice(mainCount) }, code)
+      : null;
   const outcome = runOutcome(grade, progress.passed);
   return { grade, bonusGrade, next: applyRun(progress, outcome, { code, bonusPassed: bonusGrade?.allPassed }) };
 }
@@ -112,6 +123,8 @@ describe("server render", () => {
       if (item.kind === "lesson" || item.kind === "testout") expect(html).toContain('data-testid="exercise-rail"');
       if (item.kind === "testout") {
         expect(html).toContain('data-testid="testout-intro"');
+        expect(html).not.toContain('data-testid="help"');
+        expect(html).not.toContain('data-testid="help-button"');
         expect(html).not.toContain('data-testid="hint-button-1"');
         expect(html).not.toContain('data-testid="another-way"');
       }
@@ -132,6 +145,158 @@ describe("server render", () => {
     );
     expect(html).toContain('data-kind="try-it"');
     expect(html).not.toContain('data-testid="item-continue"');
+  });
+
+  it("renders one Help control (not per-step hint lists) on a full-support lesson", () => {
+    const entry = items.find(({ item }) => item.kind === "lesson");
+    if (!entry) return;
+    const html = renderToString(createElement(LessonPlayer, itemPageProps(entry.unit.id, entry.item.id)!));
+    expect(html.match(/data-testid="help-button"/g)?.length).toBe(1);
+    expect(html).toContain("Help: Start me off");
+    expect(html).not.toMatch(/data-testid="hint-button-\d/);
+  });
+
+  const unitOneStyle = exerciseSchema.parse({
+    id: "label-a-box",
+    title: "A box with a label",
+    martu: "A box has a label and something inside.\nRead `=` as gets.",
+    example: { code: 'snack = "glug"\nprint(snack)\n', output: "glug\n" },
+    starter: 'companion = "Gearshift"\nprint(companion)\n',
+    solution: 'companion = "Bomb Shell"\nprint(companion)\n',
+    names: ["companion"],
+    pick: "Bomb Shell",
+    pairTalk: "Pair talk: tell your partner what line 2 shows.",
+    solo: true,
+    predict: { q: "What will this print?", choices: ["Gearshift", "companion"], answer: 0, explain: "No quotes: look inside the box." },
+    checkpoints: [
+      {
+        id: "another-hero",
+        text: "Change the hero.",
+        dictated: false,
+        hints: ["Line 1.", "The value goes in quotes.", "`snack = \"glug\"` makes a box."],
+        checks: [{ name: "c", code: "assert companion != 'Gearshift', 'Pick another hero.'" }],
+      },
+    ],
+  });
+
+  it("renders Predict, Names to use, Mar'tu's pick, Pair talk, Solo and the symbol tray", () => {
+    const html = renderToString(
+      createElement(ExercisePlayer, {
+        unitId: "u",
+        itemId: "i",
+        exerciseKey: "u/i/label-a-box",
+        exercise: unitOneStyle,
+        glossary: [],
+        settings: { solutionAfterMinutes: 5, solutionAfterFailedRuns: 4 },
+        mode: "lesson",
+      }),
+    );
+    expect(html).toContain('data-testid="predict"');
+    expect(html).toContain('data-testid="predict-skip"');
+    expect(html).toContain('data-testid="name-chip-companion"');
+    expect(html).toContain('aria-label="Put companion in your code"');
+    expect(html).toContain('data-testid="pick-use"');
+    expect(html).toContain("Bomb Shell");
+    expect(html).toContain('data-testid="pair-talk"');
+    expect(html).toContain('data-testid="pair-talk-dismiss"');
+    expect(html).toContain('data-testid="solo"');
+    expect(html).toContain('data-testid="symbol-tray"');
+    // Non-dictated step: the names are shown prominently.
+    expect(html).toContain("ex-extras is-prominent");
+    // SOLO: Help starts at Where to look.
+    expect(html).toContain("Help: Where to look");
+    expect(html).not.toContain("Start me off");
+    // Mar'tu's version is never shown before it is asked for.
+    expect(html).not.toContain('data-testid="compare"');
+    expect(html).not.toContain("Bomb Shell\nprint");
+  });
+
+  it("renders the Help stack's open rungs, a highlighted offer, and a locked Show me", () => {
+    const checkpoint = unitOneStyle.checkpoints[0];
+    const rungs = helpRungs(checkpoint, { anotherWayCount: 0, hasAssemble: false, solo: false });
+    const state = helpState(rungs, 3, false);
+    const html = renderToString(
+      createElement(HelpStack, {
+        noun: "Step",
+        stepNumber: 1,
+        checkpoint,
+        state,
+        anotherWay: [],
+        glossary: [],
+        offer: "misses",
+        compareOpen: false,
+        showUnlocked: false,
+        runNumber: 3,
+        onReveal: () => "opened",
+        onDismissOffer: () => undefined,
+        onOpenAssemble: () => undefined,
+        onOpenCompare: () => undefined,
+      }),
+    );
+    expect(html).toContain('data-testid="help-rung-1"');
+    expect(html).toContain('data-testid="help-rung-3"');
+    expect(html).toContain('data-kind="teach"');
+    expect(html).toContain('data-testid="help-offer"');
+    expect(html).toContain("Read the last line first");
+    expect(html).toContain('data-testid="help-show-locked"');
+    expect(html).toContain('aria-disabled="true"');
+    expect(html).toContain("ex-help is-offered");
+  });
+
+  it("renders Compare with Mar'tu's version side by side without touching the code", () => {
+    const html = renderToString(
+      createElement(CompareView, {
+        code: 'companion = Bomb Shell\nprint(companion)\n',
+        solution: 'companion = "Bomb Shell"\nprint(companion)\n',
+        retyping: false,
+        onRetype: () => undefined,
+        onLookAgain: () => undefined,
+        onCopy: () => undefined,
+        onClose: () => undefined,
+      }),
+    );
+    expect(html).toContain('data-testid="compare-mine"');
+    expect(html).toContain('data-testid="compare-theirs"');
+    expect(html).toContain('data-testid="compare-retype"');
+    expect(html).toContain('data-testid="compare-copy"');
+    expect(html).not.toContain('data-testid="compare-copy-yes"');
+    expect(html.match(/data-changed="true"/g)?.length).toBe(2);
+    expect(html).toContain("(different)");
+  });
+
+  it("renders the small pieces on their own", () => {
+    const predict = renderToString(
+      createElement(PredictStep, {
+        predict: unitOneStyle.predict!,
+        editorCode: "print(1)\n",
+        starter: unitOneStyle.starter,
+        glossary: [],
+        saved: undefined,
+        onAnswer: () => undefined,
+        onClose: () => undefined,
+      }),
+    );
+    expect(predict).toContain('data-testid="predict-code"');
+    expect(predict).toContain('data-testid="predict-choice-1"');
+    const answeredEarlier = renderToString(
+      createElement(PredictStep, {
+        predict: unitOneStyle.predict!,
+        editorCode: unitOneStyle.starter,
+        starter: unitOneStyle.starter,
+        glossary: [],
+        saved: -1,
+        onAnswer: () => undefined,
+        onClose: () => undefined,
+      }),
+    );
+    expect(answeredEarlier).toBe("");
+    const chips = renderToString(
+      createElement(NamesChips, { names: [], pick: "Zelda", prominent: false, onInsertName: () => undefined, onPick: () => undefined }),
+    );
+    expect(chips).toContain("Mar&#x27;tu&#x27;s pick");
+    const tray = renderToString(createElement(SymbolTray, { onInsert: () => undefined, names: ["hero"] }));
+    expect(tray).toContain('aria-label="Type double quote"');
+    expect(tray).toContain('data-testid="tray-name-hero"');
   });
 
   it("renders the Parsons board with every piece reachable by button", () => {

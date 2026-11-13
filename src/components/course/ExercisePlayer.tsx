@@ -381,11 +381,12 @@ export function ExercisePlayer({
   onDone,
 }: ExercisePlayerProps) {
   const progress = useCourseProgress();
-  const saved: ExerciseProgress | undefined = progress.exercises[key];
+  const saved = progress.exercises[key] as (ExerciseProgress & PlayerExtras) | undefined;
   const passed = useMemo(() => saved?.passed ?? [], [saved]);
   const done = saved?.done === true;
   const support: Support = effectiveSupport(mode, exercise.support);
-  const light = progress.settings.light === true;
+  const preset = presetOf(progress.settings);
+  const short = preset === "short";
   const noun = stepNoun(mode);
   const bonus = mode === "testout" ? undefined : exercise.bonus;
   const inputId = useId();
@@ -396,6 +397,7 @@ export function ExercisePlayer({
   const saveTimer = useRef<number | null>(null);
   const [resumed, setResumed] = useState(false);
   const [saving, setSaving] = useState(true);
+  const editorRef = useRef<PythonEditorHandle>(null);
 
   const [python, setPython] = useState<PythonStatus>("loading");
   /** Python has been ready once: from then on Run never gets `disabled` (that would drop keyboard focus). */
@@ -407,22 +409,32 @@ export function ExercisePlayer({
   const [missedThisVisit, setMissedThisVisit] = useState(false);
   const [streak, setStreak] = useState<FailStreak>({ checkpointId: null, count: 0 });
   const streakRef = useRef<FailStreak>({ checkpointId: null, count: 0 });
-  const [nudgeDismissed, setNudgeDismissed] = useState(false);
-  const [nudgeHint, setNudgeHint] = useState<{ checkpointId: string; rung: number } | null>(null);
   const missAt = useRef<number | null>(null);
   const typedAt = useRef<number>(0);
   const [now, setNow] = useState(0);
 
-  const [confirm, setConfirm] = useState<"reset" | "solution" | null>(null);
+  /* Help: offers, pacing, and what counts as a try for Mar'tu's version. */
+  const [offerDismissed, setOfferDismissed] = useState(false);
+  const lastRungAt = useRef<number | null>(null);
+  const ranSinceRung = useRef(false);
+  const helpSinceRun = useRef(false);
+  const progressAtSessionMs = useRef(0);
+
+  const [confirm, setConfirm] = useState<"reset" | null>(null);
+  const [compare, setCompare] = useState<"open" | "retype" | null>(null);
+  const copiedSolution = useRef(false);
   const [solutionNote, setSolutionNote] = useState(false);
   const [assembling, setAssembling] = useState(false);
   const [assembled, setAssembled] = useState<string[]>([]);
   const [stdinText, setStdinText] = useState(stdinBoxText(exercise.stdin));
+  const [fullExplanation, setFullExplanation] = useState(false);
+  const [pairTalkHidden, setPairTalkHidden] = useState(false);
+  const [insertNote, setInsertNote] = useState("");
 
-  const activeMs = useActiveTime(key);
+  const time = useActiveTime(key);
   const runButton = useRef<HTMLButtonElement>(null);
   const assembleHeading = useRef<HTMLHeadingElement>(null);
-  const nudgeThanks = useRef<HTMLButtonElement>(null);
+  const stepsHeading = useRef<HTMLHeadingElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const confirmRef = useRef<HTMLDivElement>(null);
   const toolbarRef = useRef<HTMLDivElement>(null);
@@ -481,12 +493,13 @@ export function ExercisePlayer({
     };
   }, []);
 
-  /* A slow clock for the "Want a hint?" nudge after a quiet minute and a half. */
+  /* A slow clock for the idle Help offer (only while an offer could appear). */
+  const offersPossible = support !== "none" && preset === "more" && !done && !offerDismissed;
   useEffect(() => {
-    if (support !== "full") return;
+    if (!offersPossible) return;
     const timer = window.setInterval(() => setNow(Date.now()), TICK_MS);
     return () => window.clearInterval(timer);
-  }, [support]);
+  }, [offersPossible]);
 
   /* After each run, bring the result into view (on a phone the console is below the editor). */
   const runNumber = view?.runNumber ?? 0;
@@ -504,11 +517,11 @@ export function ExercisePlayer({
   }, [runNumber]);
 
   useEffect(() => {
-    // Start on the safe choice ("Keep my code" / "Not yet").
+    // Start on the safe choice ("Keep my code").
     if (confirm) confirmRef.current?.querySelector<HTMLButtonElement>(".reset-cancel")?.focus();
   }, [confirm]);
 
-  // "Assemble it" removes its own button: move the keyboard to the board instead of losing it.
+  // "Assemble it" opens a board: move the keyboard to it.
   useEffect(() => {
     if (assembling) assembleHeading.current?.focus();
   }, [assembling]);
@@ -529,51 +542,102 @@ export function ExercisePlayer({
 
   /* What is on screen. */
   const showInputBox = exercise.stdin !== undefined || usesInput(code);
-  const stdinAnswers = answersFromBox(stdinText, exercise.stdin);
+  const stdinAnswers = answersFromBox(stdinText, exercise.stdin, code);
   const answersChanged = exercise.stdin !== undefined && !sameAnswers(stdinAnswers, exercise.stdin);
   const triedAndMissed = missedThisVisit || (saved?.failedRuns ?? 0) > 0 || passed.length > 0 || done;
-  const hintsAreOpen = hintsOpen(support, triedAndMissed);
   const firstOpen = exercise.checkpoints.findIndex((checkpoint) => !passed.includes(checkpoint.id));
   const activeCheckpoint = firstOpen >= 0 ? exercise.checkpoints[firstOpen] : null;
-  const canShowSolution =
+  const helpAvailable = support !== "none" && hintsOpen(support, triedAndMissed) && !done && activeCheckpoint !== null;
+  const showUnlocked =
     support !== "none" &&
     solutionUnlocked({
       support,
-      activeMs,
+      activeMs: time.total,
       failedRuns: saved?.failedRuns ?? 0,
       solutionAfterMinutes: settings.solutionAfterMinutes,
       solutionAfterFailedRuns: settings.solutionAfterFailedRuns,
-      hintsUsedUp:
-        activeCheckpoint !== null &&
-        activeCheckpoint.hints.length > 0 &&
-        rungsShown(saved?.hintsUsed, activeCheckpoint.id, activeCheckpoint.hints.length) >= activeCheckpoint.hints.length,
     });
-  const canAssemble = Boolean(exercise.assemble) && support !== "none" && isBlankOrStarter(code, exercise.starter);
+  const rungs = useMemo(
+    () =>
+      activeCheckpoint
+        ? helpRungs(activeCheckpoint, {
+            anotherWayCount: exercise.anotherWay.length,
+            hasAssemble: Boolean(exercise.assemble),
+            solo: exercise.solo === true,
+          })
+        : [],
+    [activeCheckpoint, exercise.anotherWay.length, exercise.assemble, exercise.solo],
+  );
+  const help = helpState(rungs, activeCheckpoint ? rungsShown(saved?.hintsUsed, activeCheckpoint.id, rungs.length) : 0, showUnlocked);
+  const idleSinceMiss = missAt.current !== null && now > 0 ? now - Math.max(missAt.current, typedAt.current) : null;
+  const offer = helpOffer({
+    preset,
+    helpAvailable,
+    done,
+    dismissed: offerDismissed,
+    rungsLeft: help.left,
+    missesInARow: activeCheckpoint && streak.checkpointId === activeCheckpoint.id ? streak.count : 0,
+    msSinceProgress: time.session - progressAtSessionMs.current,
+    idleSinceMissMs: idleSinceMiss,
+  });
   const pieces = useMemo(
     () => (exercise.assemble ? seededShuffle([...exercise.assemble.lines, ...exercise.assemble.distractors], key) : []),
     [exercise.assemble, key],
   );
+  const names = exercise.names ?? [];
 
-  const stuckIndex = streak.checkpointId
-    ? exercise.checkpoints.findIndex((checkpoint) => checkpoint.id === streak.checkpointId)
-    : -1;
-  const stuck = stuckIndex >= 0 ? exercise.checkpoints[stuckIndex] : null;
-  const stuckShown = stuck ? rungsShown(saved?.hintsUsed, stuck.id, stuck.hints.length) : 0;
-  const idleSinceMiss =
-    missAt.current !== null && now > 0 ? now - Math.max(missAt.current, typedAt.current) : null;
-  const nudging =
-    !done &&
-    Boolean(stuck) &&
-    shouldNudge({
-      support,
-      streak,
-      idleSinceMissMs: idleSinceMiss,
-      hintsLeft: stuck ? stuck.hints.length - stuckShown : 0,
-      dismissed: nudgeDismissed,
-    });
+  function openCompare() {
+    setCompare("open");
+    setAssembling(false);
+    setConfirm(null);
+    helpSinceRun.current = true;
+    if (getCourseProgress().exercises[key]?.solutionShown !== true) {
+      updateExercise(key, (previous) => ({ ...previous, solutionShown: true }));
+    }
+  }
 
-  function revealHint(checkpointId: string, total: number) {
-    updateExercise(key, (previous) => ({ ...previous, hintsUsed: revealNextRung(previous.hintsUsed, checkpointId, total) }));
+  /** The Help control: open the next rung for the current step (see HelpStack). */
+  function revealRung(): RevealResult {
+    if (!activeCheckpoint || !help.next) return "none";
+    if (help.nextLocked) return "locked";
+    const at = Date.now();
+    if (rungPaced(lastRungAt.current, ranSinceRung.current, at)) return "paced";
+    const id = activeCheckpoint.id;
+    const total = rungs.length;
+    updateExercise(key, (previous) => ({ ...previous, hintsUsed: revealNextRung(previous.hintsUsed, id, total) }));
+    lastRungAt.current = at;
+    ranSinceRung.current = false;
+    helpSinceRun.current = true;
+    if (help.next.kind === "show") openCompare();
+    if (help.next.kind === "structure") openAssemble();
+    return "opened";
+  }
+
+  /* Inserting names, symbols and Mar'tu's pick at the cursor. */
+  function insertAtCursor(text: string, spoken: string) {
+    if (editorRef.current?.insert(text)) setInsertNote(`${spoken} is in your code.`);
+    else setInsertNote(`Type ${spoken} in your code.`);
+  }
+
+  async function usePick(pick: string) {
+    const context = editorRef.current?.cursorContext();
+    if (context?.placed) {
+      insertAtCursor(pickInsertion(pick, context.lineBefore), "Mar'tu's pick");
+      return;
+    }
+    // The student has not clicked into the code yet, so there is no place to put it: copy it instead.
+    let copied = false;
+    try {
+      await navigator.clipboard.writeText(pick);
+      copied = true;
+    } catch {
+      // No clipboard (old browser or blocked): the words below still say what to do.
+    }
+    setInsertNote(
+      copied
+        ? `Copied Mar'tu's pick: ${pick}. Click where it goes in your code and paste it, or press the pick button again.`
+        : `Click where it goes in your code, then press the pick button again. Mar'tu's pick is ${pick}.`,
+    );
   }
 
   async function run() {
@@ -592,7 +656,7 @@ export function ExercisePlayer({
       const bonusCp = bonus ? bonusCheckpoint(bonus) : null;
       const mainChecks = flattenChecks(exercise.checkpoints);
       const checks = [...mainChecks, ...(bonusCp ? flattenChecks([bonusCp]) : [])];
-      const answers = showInputBox ? stdinAnswers : (exercise.stdin ?? []);
+      const answers = showInputBox ? answersFromBox(stdinText, exercise.stdin, source) : (exercise.stdin ?? []);
       const result = await runCourse({
         code: source,
         checks,
@@ -610,40 +674,59 @@ export function ExercisePlayer({
       const before = savedBefore?.passed ?? [];
       const wasDone = savedBefore?.done === true;
       const graded = runOutcome(grade, before);
-      // Only real tries count toward "Show solution": not the untouched starter, not the same code again.
-      const outcome = { ...graded, failed: graded.failed && countsAsAttempt(source, exercise.starter, lastRunSource.current) };
+      // Only real tries count toward Mar'tu's version: changed code, or a Help rung opened since the last run.
+      const outcome = {
+        ...graded,
+        failed: graded.failed && countsAsAttempt(source, exercise.starter, lastRunSource.current, helpSinceRun.current),
+      };
       lastRunSource.current = source;
+      helpSinceRun.current = false;
+      ranSinceRung.current = true;
       updateExercise(key, (previous) => applyRun(previous, outcome, { code: source, bonusPassed: bonusGrade?.allPassed }));
+      if (outcome.newlyPassed.length > 0) progressAtSessionMs.current = time.session;
 
       const stuckOn = stuckCheckpointId(exercise.checkpoints, grade, [...before, ...outcome.passedNow]);
       const nextStreak = nextFailStreak(streakRef.current, stuckOn);
-      if (nextStreak.checkpointId !== streakRef.current.checkpointId) {
-        setNudgeDismissed(false);
-        setNudgeHint(null);
-      }
       streakRef.current = nextStreak;
       setStreak(nextStreak);
       missAt.current = grade.allPassed ? null : Date.now();
       if (!grade.allPassed) setMissedThisVisit(true);
       const crashText = result.traceback || result.stderr || "";
       const explanation = grade.crashed ? explainCourseError(crashText, source) : null;
-      const revealPass = grade.allPassed && savedBefore?.solutionShown === true && isSolutionCode(source, exercise.solution);
-      setView((previous) => ({
-        stdout: result.ok ? result.stdout + (result.stderr ?? "") : result.stdout,
-        grade,
-        bonus: bonusGrade,
-        explanation,
-        stage: result.stageEvents ?? [],
-        allPassed: grade.allPassed,
-        wasDone,
-        runNumber: (previous?.runNumber ?? 0) + 1,
-        sameError:
-          explanation !== null &&
-          previous?.explanation != null &&
-          previous.explanation.raw === explanation.raw &&
-          previous.explanation.title === explanation.title,
-        revealPass,
-      }));
+      const revealPass = grade.allPassed && copiedSolution.current && isSolutionCode(source, exercise.solution);
+      if (grade.allPassed) {
+        setCompare(null);
+        setAssembling(false);
+      }
+      setView((previous) => {
+        const failing = grade.firstFailing !== null && !grade.crashed ? grade.checkpoints[grade.firstFailing] : null;
+        const previousFailing =
+          previous?.grade && !previous.grade.crashed && previous.grade.firstFailing !== null
+            ? previous.grade.checkpoints[previous.grade.firstFailing]
+            : null;
+        return {
+          stdout: result.ok ? result.stdout + (result.stderr ?? "") : result.stdout,
+          grade,
+          bonus: bonusGrade,
+          explanation,
+          stage: result.stageEvents ?? [],
+          allPassed: grade.allPassed,
+          wasDone,
+          runNumber: (previous?.runNumber ?? 0) + 1,
+          sameError:
+            explanation !== null &&
+            previous?.explanation != null &&
+            previous.explanation.raw === explanation.raw &&
+            previous.explanation.title === explanation.title,
+          sameMessage:
+            failing !== null &&
+            previousFailing !== null &&
+            failing.id === previousFailing.id &&
+            failing.message === previousFailing.message,
+          newlyPassed: outcome.newlyPassed,
+          revealPass,
+        };
+      });
       if (grade.allPassed) {
         setJustFinished(true);
         onDone?.();
@@ -668,6 +751,7 @@ export function ExercisePlayer({
         allPassed: false,
         wasDone: false,
         runNumber: (previous?.runNumber ?? 0) + 1,
+        newlyPassed: [],
       }));
     } finally {
       setRunning(false);
@@ -682,23 +766,21 @@ export function ExercisePlayer({
     }
   }
 
-  /** Put the keyboard back on Run (or, while Python loads, on the button that opened a panel). */
-  function focusRun(fallback?: string) {
+  /** Put the keyboard back on Run (or, while Python first loads, on Reset code). */
+  function focusRun() {
     const run = runButton.current;
     if (run && !run.disabled) {
       run.focus();
       return;
     }
-    const other = fallback ? toolbarRef.current?.querySelector<HTMLElement>(`[data-testid="${fallback}"]`) : null;
-    (other ?? toolbarRef.current?.querySelector<HTMLElement>('[data-testid="reset-code"]'))?.focus();
+    toolbarRef.current?.querySelector<HTMLElement>('[data-testid="reset-code"]')?.focus();
   }
 
   function onConfirmKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
     if (event.key === "Escape") {
       event.preventDefault();
-      const opener = confirm === "solution" ? "show-solution" : "reset-code";
       setConfirm(null);
-      focusRun(opener);
+      focusRun();
     }
   }
 
@@ -708,13 +790,14 @@ export function ExercisePlayer({
     setConfirm(null);
     setResumed(false);
     setSolutionNote(false);
+    copiedSolution.current = false;
     focusRun();
   }
 
-  function doShowSolution() {
+  function copySolution() {
     replaceCode(exercise.solution);
-    updateExercise(key, (previous) => ({ ...previous, solutionShown: true }));
-    setConfirm(null);
+    copiedSolution.current = true;
+    setCompare(null);
     setSolutionNote(true);
     setResumed(false);
     focusRun();
@@ -722,10 +805,11 @@ export function ExercisePlayer({
 
   function openAssemble() {
     setAssembled([]);
+    setCompare(null);
     setAssembling(true);
   }
 
-  /** After a revealed answer passes: start again from the starter and write it yourself. */
+  /** After a copied answer passes: start again from the starter and write it yourself. */
   function writeItMyself() {
     doReset();
     setJustFinished(false);
@@ -744,18 +828,51 @@ export function ExercisePlayer({
 
   /* ------------------------------------------------------------------------------------------ */
 
-  const learnMartu = <MarTu text={exercise.martu} glossary={glossary} />;
+  const martuShort = firstParagraph(exercise.martu);
+  const learnMartu =
+    short && martuShort.more && !fullExplanation ? (
+      <MarTu text={martuShort.first} glossary={glossary}>
+        <button
+          type="button"
+          className="ex-quiet"
+          data-testid="show-explanation"
+          aria-expanded={false}
+          onClick={() => setFullExplanation(true)}
+        >
+          Show the full explanation
+        </button>
+      </MarTu>
+    ) : (
+      <MarTu text={exercise.martu} glossary={glossary} />
+    );
+
+  const pairTalkText = exercise.pairTalk ? exercise.pairTalk.replace(/^\s*pair talk\s*:?\s*/i, "") : "";
+  const showNames = names.length > 0 || Boolean(exercise.pick);
 
   const checkpointList = (
     <section className="ex-checkpoints" aria-labelledby={`${inputId}-steps`}>
-      <h3 id={`${inputId}-steps`} className="ex-section-title">
+      <h3 id={`${inputId}-steps`} className="ex-section-title" ref={stepsHeading} tabIndex={-1}>
         {checkpointHeading(mode, exercise.starterPasses)}
       </h3>
+      {showNames ? (
+        <NamesChips
+          names={names}
+          pick={exercise.pick}
+          prominent={activeCheckpoint?.dictated === false}
+          onInsertName={(name) => insertAtCursor(name, name)}
+          onPick={(pick) => void usePick(pick)}
+        />
+      ) : null}
+      {insertNote ? (
+        <p className="ex-insert-note ex-muted" data-testid="insert-note" role="status">
+          {insertNote}
+        </p>
+      ) : null}
       <ol className="ex-checkpoint-list" data-testid="checkpoints">
         {exercise.checkpoints.map((checkpoint, index) => {
           const n = index + 1;
           const state: CheckpointState = passed.includes(checkpoint.id) ? "passed" : index === firstOpen ? "active" : "pending";
-          const shown = rungsShown(saved?.hintsUsed, checkpoint.id, checkpoint.hints.length);
+          const justPassed = state === "passed" && view?.newlyPassed.includes(checkpoint.id) === true;
           return (
             <li
               key={checkpoint.id}
@@ -774,18 +891,12 @@ export function ExercisePlayer({
               </div>
               <Prose text={checkpoint.text} glossary={glossary} className="ex-checkpoint-text" />
               <ReadAloud text={checkpoint.text} label={`Read ${noun.toLowerCase()} ${n} aloud`} testId={`read-aloud-step-${n}`} />
-              <HintLadder
-                hints={checkpoint.hints}
-                shown={shown}
-                open={hintsAreOpen && state !== "passed"}
-                lockedNote={
-                  support === "light" && state !== "passed" && index === firstOpen ? "Hints open after you press Run once." : null
-                }
-                glossary={glossary}
-                onReveal={() => revealHint(checkpoint.id, checkpoint.hints.length)}
-                testPrefix={String(n)}
-                label={`${noun.toLowerCase()} ${n}`}
-              />
+              {justPassed ? (
+                <p className="ex-checkpoint-done" data-testid={`checkpoint-pass-${n}`}>
+                  <span aria-hidden="true">✓</span> <strong>Done!</strong>
+                  {checkpoint.passLine ? <span className="ex-pass-line"> {checkpoint.passLine}</span> : null}
+                </p>
+              ) : null}
             </li>
           );
         })}
@@ -794,7 +905,14 @@ export function ExercisePlayer({
   );
 
   return (
-    <div ref={rootRef} className={`ex-player${done ? " is-done" : ""}`} data-testid="exercise-player" data-mode={mode} data-done={done}>
+    <div
+      ref={rootRef}
+      className={`ex-player${done ? " is-done" : ""}`}
+      data-testid="exercise-player"
+      data-mode={mode}
+      data-done={done}
+      data-preset={preset}
+    >
       <div className="ex-grid">
         <section className="ex-learn" aria-label="Learn" data-testid="learn-pane">
           {mode === "lesson" || mode === "testout" || mode === "try-it" ? (
@@ -811,29 +929,63 @@ export function ExercisePlayer({
               <Prose text={activeCheckpoint.text} glossary={glossary} inline />
             </p>
           ) : null}
-          {light ? (
-            <details className="ex-light-explain" data-testid="show-explanation">
-              <summary>Show explanation</summary>
-              {learnMartu}
-            </details>
-          ) : (
-            learnMartu
-          )}
-          {exercise.example ? <WorkedExample example={exercise.example} /> : null}
-          {anotherWayOpen(support, exercise.anotherWay) ? <AnotherWay exercise={exercise} glossary={glossary} /> : null}
-          {exercise.solo ? (
+          {exercise.solo && mode !== "testout" ? (
             <p className="ex-solo" data-testid="solo">
-              <span className="ex-solo-tag">Solo</span> This one is yours alone. No partner, no hints from a friend.
+              <span className="ex-solo-tag">Solo</span> Just you this time. Help is still here if you need it.
             </p>
           ) : null}
-          {mode === "testout" ? null : <StepExtras exercise={exercise} glossary={glossary} />}
+          {learnMartu}
+          {exercise.example ? (
+            short ? (
+              <details className="ex-example-toggle" data-testid="example-toggle">
+                <summary>Show the example</summary>
+                <WorkedExample example={exercise.example} />
+              </details>
+            ) : (
+              <WorkedExample example={exercise.example} />
+            )
+          ) : null}
+          {anotherWayOpen(support, exercise.anotherWay) ? <AnotherWay exercise={exercise} glossary={glossary} /> : null}
+          {exercise.pairTalk && !pairTalkHidden && mode !== "testout" ? (
+            <aside className="ex-pair-talk" data-testid="pair-talk" aria-label="Pair talk">
+              <p className="ex-pair-text">
+                <span className="ex-pair-label">Pair talk</span> <span className="ex-muted">(optional)</span>{" "}
+                <Prose text={pairTalkText} glossary={glossary} inline />
+              </p>
+              <p className="ex-muted ex-pair-note">Each of you still does every step on your own screen.</p>
+              <button
+                type="button"
+                className="ex-link-button"
+                data-testid="pair-talk-dismiss"
+                onClick={() => {
+                  setPairTalkHidden(true);
+                  stepsHeading.current?.focus();
+                }}
+              >
+                Hide pair talk
+              </button>
+            </aside>
+          ) : null}
           {checkpointList}
           {exercise.campaignLink && mode !== "testout" ? <CampaignLink link={exercise.campaignLink} glossary={glossary} /> : null}
         </section>
 
         <section className="ex-work" aria-label="Your code" data-testid="work-pane">
-          {exercise.predict && mode !== "testout" ? (
-            <PredictCard predict={exercise.predict} starter={exercise.starter} glossary={glossary} />
+          {exercise.predict && mode !== "testout" && !done ? (
+            <PredictStep
+              predict={exercise.predict}
+              editorCode={code}
+              starter={exercise.starter}
+              glossary={glossary}
+              saved={saved?.predicted}
+              onAnswer={(choice) =>
+                updateExercise(key, (previous) => {
+                  const nextProgress: ExerciseProgress & PlayerExtras = { ...previous, predicted: choice };
+                  return nextProgress;
+                })
+              }
+              onClose={focusRun}
+            />
           ) : null}
           <div className="toolbar ex-toolbar" ref={toolbarRef}>
             <button
@@ -854,22 +1006,6 @@ export function ExercisePlayer({
               {pythonText}
             </span>
             <span className="ex-toolbar-end">
-              {canAssemble && !assembling ? (
-                <button type="button" className="ex-quiet" data-testid="assemble-open" onClick={openAssemble}>
-                  Assemble it
-                </button>
-              ) : null}
-              {canShowSolution ? (
-                <button
-                  type="button"
-                  className="ex-quiet"
-                  data-testid="show-solution"
-                  onClick={() => setConfirm("solution")}
-                  aria-expanded={confirm === "solution"}
-                >
-                  Show solution
-                </button>
-              ) : null}
               <button
                 type="button"
                 className="ex-quiet"
@@ -888,27 +1024,18 @@ export function ExercisePlayer({
               <button type="button" data-testid="reset-yes" onClick={doReset}>
                 Yes, reset
               </button>
-              <button type="button" className="reset-cancel" data-testid="reset-cancel" onClick={() => setConfirm(null)}>
+              <button type="button" className="reset-cancel" data-testid="reset-cancel" onClick={() => {
+                setConfirm(null);
+                focusRun();
+              }}>
                 Keep my code
-              </button>
-            </div>
-          ) : null}
-
-          {confirm === "solution" ? (
-            <div className="reset-confirm ex-confirm" data-testid="solution-confirm" ref={confirmRef} role="group" aria-label="Show solution?" onKeyDown={onConfirmKeyDown}>
-              <p>Put Mar&apos;tu&apos;s answer in the editor? It replaces your code. That is okay: read it, then run it.</p>
-              <button type="button" data-testid="solution-yes" onClick={doShowSolution}>
-                Show it
-              </button>
-              <button type="button" className="reset-cancel" data-testid="solution-cancel" onClick={() => setConfirm(null)}>
-                Not yet
               </button>
             </div>
           ) : null}
 
           {solutionNote ? (
             <p className="ex-note" data-testid="solution-note" role="status">
-              This is Mar&apos;tu&apos;s answer. Read each line, then press Run to see it work.
+              This is Mar&apos;tu&apos;s version. Read each line, then press Run to see it work.
             </p>
           ) : null}
 
@@ -918,12 +1045,35 @@ export function ExercisePlayer({
             </p>
           ) : null}
 
+          {compare ? (
+            <CompareView
+              code={code}
+              solution={exercise.solution}
+              retyping={compare === "retype"}
+              onRetype={() => {
+                setCompare("retype");
+                editorRef.current?.focus();
+              }}
+              onLookAgain={() => setCompare("open")}
+              onCopy={copySolution}
+              onClose={() => {
+                setCompare(null);
+                focusRun();
+              }}
+            />
+          ) : null}
+
           {assembling && exercise.assemble ? (
             <section className="ex-assemble" data-testid="assemble-board" aria-label="Assemble it">
               <h3 className="ex-section-title" ref={assembleHeading} tabIndex={-1} data-testid="assemble-heading">
                 Assemble it
               </h3>
               <p className="ex-muted">Build the program from pieces. Then press &ldquo;Put it in the editor&rdquo; and Run it.</p>
+              {isBlankOrStarter(code, exercise.starter) ? null : (
+                <p className="ex-muted" data-testid="assemble-replaces">
+                  Putting it in the editor replaces the code there now.
+                </p>
+              )}
               <ParsonsBoard blocks={pieces} value={assembled} onChange={setAssembled} idPrefix="assemble" />
               <div className="ex-assemble-actions">
                 <button type="button" data-testid="assemble-insert" onClick={insertAssembled} disabled={assembled.length === 0}>
@@ -951,8 +1101,10 @@ export function ExercisePlayer({
               onBlur={() => saveCodeNow.current()}
               describedBy={`${inputId}-editor-keys`}
               wrapLines
+              handleRef={editorRef}
             />
           </div>
+          <SymbolTray names={names} onInsert={(text) => editorRef.current?.insert(text)} />
           <p className="ex-editor-foot ex-muted">
             <span data-testid="autosave-status">
               {saving ? "Your code saves in this browser." : "This browser is not saving. Copy your code before you close the page."}
@@ -967,7 +1119,8 @@ export function ExercisePlayer({
             <div className="ex-stdin">
               <label htmlFor={`${inputId}-stdin`}>Input for your program</label>
               <p className="ex-muted" id={`${inputId}-stdin-help`}>
-                One answer per line. Each <code className="inline-code">input()</code> takes the next answer.
+                One answer per line. Each <code className="inline-code">input()</code> takes the next answer. An empty line
+                is like pressing Enter.
               </p>
               <textarea
                 id={`${inputId}-stdin`}
@@ -990,60 +1143,31 @@ export function ExercisePlayer({
             </div>
           ) : null}
 
-          <ExerciseConsole view={view} exercise={exercise} noun={noun} bonus={bonus} done={done} />
+          <ExerciseConsole view={view} noun={noun} bonus={bonus} done={done} />
 
-          {nudging && stuck ? (
-            <div className="ex-nudge" data-testid="hint-nudge" role="status">
-              {nudgeHint && nudgeHint.checkpointId === stuck.id ? (
-                <>
-                  <p className="ex-nudge-title">
-                    Hint {nudgeHint.rung} of {stuck.hints.length} for {noun.toLowerCase()} {stuckIndex + 1}:
-                  </p>
-                  <Prose text={stuck.hints[nudgeHint.rung - 1]} glossary={glossary} />
-                  <button
-                    type="button"
-                    className="ex-quiet"
-                    data-testid="hint-nudge-no"
-                    ref={nudgeThanks}
-                    onClick={() => {
-                      setNudgeDismissed(true);
-                      focusRun();
-                    }}
-                  >
-                    Thanks
-                  </button>
-                </>
-              ) : (
-                <>
-                  <p className="ex-nudge-title">
-                    Want a hint for {noun.toLowerCase()} {stuckIndex + 1}? Hints never cost you anything.
-                  </p>
-                  <button
-                    type="button"
-                    data-testid="hint-nudge-yes"
-                    onClick={() => {
-                      revealHint(stuck.id, stuck.hints.length);
-                      setNudgeHint({ checkpointId: stuck.id, rung: Math.min(stuck.hints.length, stuckShown + 1) });
-                      // This button is replaced by the hint: keep the keyboard in the nudge.
-                      window.setTimeout(() => nudgeThanks.current?.focus(), 0);
-                    }}
-                  >
-                    Yes, show a hint
-                  </button>
-                  <button
-                    type="button"
-                    className="ex-quiet"
-                    data-testid="hint-nudge-no"
-                    onClick={() => {
-                      setNudgeDismissed(true);
-                      focusRun();
-                    }}
-                  >
-                    No thanks
-                  </button>
-                </>
-              )}
-            </div>
+          {helpAvailable && activeCheckpoint ? (
+            <HelpStack
+              key={activeCheckpoint.id}
+              noun={noun}
+              stepNumber={firstOpen + 1}
+              checkpoint={activeCheckpoint}
+              state={help}
+              anotherWay={exercise.anotherWay}
+              glossary={glossary}
+              offer={offer}
+              compareOpen={compare !== null}
+              showUnlocked={showUnlocked}
+              runNumber={runNumber}
+              onReveal={revealRung}
+              onDismissOffer={() => {
+                setOfferDismissed(true);
+                toolbarRef.current?.closest(".ex-work")?.querySelector<HTMLElement>('[data-testid="help-button"]')?.focus();
+              }}
+              onOpenAssemble={openAssemble}
+              onOpenCompare={openCompare}
+            />
+          ) : support === "light" && !done && activeCheckpoint ? (
+            <HelpLocked />
           ) : null}
 
           {done ? (
@@ -1051,7 +1175,7 @@ export function ExercisePlayer({
               <MarTu
                 text={
                   justFinished && view?.revealPass
-                    ? "That was my answer, so it works, yes? Now make it yours: press Write it myself and type it again without looking."
+                    ? "That was my version, so it works, yes? Now make it yours: press Write it myself and type it again without looking."
                     : justFinished && exercise.solo
                       ? "You did that alone. I saw."
                       : justFinished
@@ -1093,7 +1217,12 @@ export function ExercisePlayer({
               shown={rungsShown(saved?.hintsUsed, BONUS_ID, bonus.hints.length)}
               glossary={glossary}
               support={support}
-              onReveal={() => revealHint(BONUS_ID, bonus.hints.length)}
+              onReveal={() =>
+                updateExercise(key, (previous) => ({
+                  ...previous,
+                  hintsUsed: revealNextRung(previous.hintsUsed, BONUS_ID, bonus.hints.length),
+                }))
+              }
             />
           ) : null}
         </section>
@@ -1108,19 +1237,18 @@ export function ExercisePlayer({
 
 function ExerciseConsole({
   view,
-  exercise,
   noun,
   bonus,
   done,
 }: {
   view: RunView | null;
-  exercise: Playable;
   noun: string;
   bonus: Bonus | undefined;
   done: boolean;
 }) {
   const grade = view?.grade ?? null;
   const stage = view ? stageLines(view.stage) : [];
+  const failing = grade && !grade.crashed && grade.firstFailing !== null ? grade.checkpoints[grade.firstFailing] : null;
   return (
     <section className="console ex-console" data-testid="console" aria-label="Console">
       <h3>Console</h3>
@@ -1140,6 +1268,12 @@ function ExerciseConsole({
         </div>
       ) : null}
       <div className="ex-results" role="status" aria-live="polite" data-testid="checkpoint-results">
+        {view ? (
+          // Every run changes this region's words, so a screen reader announces a rerun with the same result.
+          <span className="ex-sr-only" data-testid="run-count">
+            Run {view.runNumber} finished.{" "}
+          </span>
+        ) : null}
         {view?.failure ? (
           <p className="ex-result is-error" data-testid="run-failure">
             {view.failure}
@@ -1163,33 +1297,20 @@ function ExerciseConsole({
             ) : null}
           </div>
         ) : null}
-        {grade && !grade.crashed ? (
-          <ul className="ex-result-list" key={view?.runNumber}>
-            {grade.checkpoints.map((result, index) => {
-              const checkpoint = exercise.checkpoints[index];
-              if (result.passed) {
-                return (
-                  <li key={result.id} className="ex-result is-pass" data-testid={`checkpoint-pass-${index + 1}`}>
-                    <span aria-hidden="true">✓</span>{" "}
-                    <strong>
-                      {noun} {index + 1} done!
-                    </strong>
-                    {checkpoint?.passLine ? <span className="ex-pass-line"> {checkpoint.passLine}</span> : null}
-                  </li>
-                );
-              }
-              if (index !== grade.firstFailing) return null;
-              return (
-                <li key={result.id} className="ex-result is-miss" data-testid="checkpoint-message">
-                  <span aria-hidden="true">→</span>{" "}
-                  <strong>
-                    {noun} {index + 1}, not yet:
-                  </strong>{" "}
-                  <Prose text={result.message} inline testId={`checkpoint-message-${index + 1}`} />
-                </li>
-              );
-            })}
-          </ul>
+        {failing && grade ? (
+          // One message per failed run: the first step that is not done yet. The step list shows the rest.
+          <p className="ex-result is-miss" data-testid="checkpoint-message" key={view?.runNumber}>
+            <span aria-hidden="true">→</span>{" "}
+            {view?.sameMessage ? (
+              <span className="ex-same-error" data-testid="same-message">
+                Same as last time.{" "}
+              </span>
+            ) : null}
+            <strong>
+              {noun} {(grade.firstFailing ?? 0) + 1}, not yet:
+            </strong>{" "}
+            <Prose text={failing.message} inline testId={`checkpoint-message-${(grade.firstFailing ?? 0) + 1}`} />
+          </p>
         ) : null}
         {grade?.allPassed ? (
           <p className="ex-result is-all" data-testid="all-passed">
@@ -1201,7 +1322,7 @@ function ExerciseConsole({
             <p className="ex-result is-pass" data-testid="side-quest-pass">
               <span aria-hidden="true">✓</span> <strong>Side quest done!</strong> {CAMEO_NAMES[bonus.by]} is impressed.
             </p>
-          ) : view.wasDone && view.bonus.firstFailing !== null ? (
+          ) : view.allPassed && view.wasDone && view.bonus.firstFailing !== null ? (
             <p className="ex-result is-side" data-testid="side-quest-message">
               <span aria-hidden="true">→</span> <strong>Side quest, not yet:</strong>{" "}
               <Prose text={view.bonus.checkpoints[view.bonus.firstFailing]?.message ?? ""} inline />

@@ -9,7 +9,10 @@ function pyodideBase() {
 async function loadCourseHelpers() {
   // Never rejects: a missing helpers file must not stop campaign runs from working.
   try {
-    const response = await fetch(new URL("course_helpers.py", import.meta.url).href);
+    // The page loads this worker as python-worker.js?v=<version> (run.ts PYTHON_WORKER_VERSION). Ask for the
+    // helpers with the same version, so a browser never pairs a new worker with old cached helpers.
+    const version = new URL(import.meta.url).search;
+    const response = await fetch(new URL(`course_helpers.py${version}`, import.meta.url).href);
     if (!response.ok) throw new Error(`course_helpers.py returned HTTP ${response.status}`);
     return { source: await response.text(), error: "" };
   } catch (error) {
@@ -359,6 +362,18 @@ self.onmessage = async (event) => {
   if (data.type === "run") result = await runProgram(data);
   else if (data.type === "course-run") result = await runCourse(data);
   else if (data.type === "session-start" || data.type === "session-call") result = await runSession(data);
-  else return;
+  else {
+    // A message this worker does not know (a newer page talking to an older worker): answer at once
+    // instead of leaving the page waiting for its time limit.
+    if (data.requestId === undefined) return;
+    result = {
+      ok: false,
+      stdout: "",
+      stderr: "",
+      traceback: "Python needs a newer version of this page. Reload the page.",
+      checks: [],
+      stageEvents: [],
+    };
+  }
   self.postMessage({ type: "result", requestId: data.requestId, ...result });
 };

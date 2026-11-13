@@ -248,9 +248,9 @@
   border: 1px solid var(--course-line, #4a3f33);
 }
 
-/* Light mode: Mar'tu's words fold away */
+/* Keep it short: the example folds away */
 
-.ex-light-explain > summary {
+.ex-example-toggle > summary {
   list-style: none;
   cursor: pointer;
   min-height: 44px;
@@ -262,21 +262,260 @@
   width: fit-content;
 }
 
-.ex-light-explain > summary::-webkit-details-marker {
+.ex-example-toggle > summary::-webkit-details-marker {
   display: none;
 }
 
-.ex-light-explain > summary::before {
+.ex-example-toggle > summary::before {
   content: "▸";
   margin-right: 8px;
 }
 
-.ex-light-explain[open] > summary::before {
+.ex-example-toggle[open] > summary::before {
   content: "▾";
 }
 
-.ex-light-explain[open] > summary {
+.ex-example-toggle[open] > summary {
   margin-bottom: 12px;
+}
+
+.ex-example-toggle > summary:focus-visible {
+  outline: 3px solid var(--course-focus, #f0d7a2);
+  outline-offset: 2px;
+}
+
+/* Solo badge and Pair talk */
+
+.ex-solo {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+}
+
+.ex-solo-tag,
+.ex-pair-label,
+.ex-predict-tag {
+  display: inline-block;
+  padding: 1px 8px;
+  color: #1d1610;
+  background: #cdb88f;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
+.ex-solo-tag {
+  background: var(--course-violet, #b9a2ff);
+}
+
+.ex-pair-talk {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 10px 12px;
+  background: var(--course-violet-bg, #221b30);
+  border: 1px solid var(--course-violet-deep, #4a3478);
+  border-left: 4px solid var(--course-violet, #b9a2ff);
+}
+
+.ex-pair-talk p {
+  margin: 0;
+}
+
+/* ---------------------------------------------------------------- Predict first */
+
+.ex-predict {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--course-panel, #241f1a);
+  border: 1px solid var(--course-line, #4a3f33);
+  border-left: 4px solid var(--course-violet, #b9a2ff);
+}
+
+.ex-predict p {
+  margin: 0;
+}
+
+.ex-predict-title {
+  font-weight: 600;
+}
+
+.ex-predict-code {
+  margin: 0;
+  padding: 8px 10px;
+  color: #f4f7fb;
+  background: var(--course-code-bg, #121417);
+  border: 1px solid var(--course-code-line, #3c4452);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.ex-predict-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ex-predict-choice,
+.course-page .ex-predict-choice {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 6rem;
+  color: #f4f7fb;
+  background: var(--course-code-bg, #121417);
+  border: 1px solid var(--course-code-line, #3c4452);
+  text-align: left;
+}
+
+.ex-predict-choice.is-chosen {
+  border-color: var(--course-focus, #f0d7a2);
+  border-width: 2px;
+}
+
+.ex-predict-choice.is-answer {
+  border-color: var(--course-right, #9fd98a);
+}
+
+.ex-predict-mark {
+  min-width: 1em;
+  font-weight: 700;
+}
+
+.ex-predict-choice.is-answer .ex-predict-mark {
+  color: var(--course-right, #9fd98a);
+}
+
+.ex-predict-text {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.ex-predict-result {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  background: var(--course-panel-raised, #2e2720);
+  border-left: 4px solid #cdb88f;
+}
+
+.ex-predict-result.is-right {
+  border-left-color: var(--course-right, #9fd98a);
+}
+
+.ex-predict-verdict {
+  font-weight: 700;
+}
+
+.ex-predict-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* ---------------------------------------------------------------- Names to use, Mar'tu's pick */
+
+.ex-extras {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ex-names {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.ex-names-label {
+  color: var(--course-muted, #d9c7a4);
+  font-weight: 600;
+}
+
+.ex-name-chip,
+.course-page .ex-name-chip {
+  min-height: 44px;
+  padding: 4px 10px;
+  color: #f4f7fb;
+  background: var(--course-code-bg, #121417);
+  border: 1px solid var(--course-code-line, #3c4452);
+  border-radius: 999px;
+}
+
+.ex-name-chip code {
+  font-family: var(--font-mono), ui-monospace, monospace;
+}
+
+.ex-name-chip:hover {
+  border-color: var(--metal, #b8925a);
+}
+
+.ex-extras.is-prominent .ex-names {
+  padding: 8px 10px;
+  background: var(--course-panel-raised, #2e2720);
+  border: 1px solid var(--course-focus, #f0d7a2);
+}
+
+.ex-extras.is-prominent .ex-names-label {
+  color: var(--course-focus, #f0d7a2);
+  font-size: 1.05rem;
+}
+
+.ex-extras.is-prominent .ex-name-chip {
+  font-size: 1.1rem;
+  border-color: var(--course-focus, #f0d7a2);
+}
+
+.ex-pick {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.ex-pick-button,
+.course-page .ex-pick-button {
+  color: var(--parchment, #f3ead7);
+  background: transparent;
+  border: 1px dashed #8f8270;
+  text-align: left;
+}
+
+.ex-pick-button code {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  color: #f0d7a2;
+}
+
+.ex-pick-text {
+  flex: 1 1 100%;
+  margin: 0;
+  padding: 6px 10px;
+  color: #f4f7fb;
+  background: var(--course-code-bg, #121417);
+  white-space: pre-wrap;
+}
+
+.ex-insert-note {
+  margin: 0;
+}
+
+.ex-checkpoint-done {
+  margin: 0;
+  color: var(--course-right, #9fd98a);
+}
+
+.ex-checkpoint-done .ex-pass-line {
+  color: var(--parchment, #f3ead7);
 }
 
 /* ---------------------------------------------------------------- worked example (not the task) */
@@ -614,6 +853,36 @@
   }
 }
 
+/* Symbol tray: only on touch screens and narrow windows, where " ( ) : = are slow to type. */
+.ex-symbols {
+  display: none;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: -8px;
+}
+
+@media (pointer: coarse), (max-width: 720px) {
+  .ex-symbols {
+    display: flex;
+  }
+}
+
+.ex-symbol,
+.course-page .ex-symbol {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 4px 8px;
+  color: #f4f7fb;
+  background: #1d222b;
+  border: 1px solid #3c4452;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 1.1rem;
+}
+
+.ex-symbol.is-name {
+  font-size: 0.95rem;
+}
+
 .ex-stdin {
   display: flex;
   flex-direction: column;
@@ -765,27 +1034,230 @@
   border-color: var(--course-violet-deep, #4a3478);
 }
 
-/* "Want a hint?" */
+/* ---------------------------------------------------------------- Help stack (one climbing control) */
 
-.ex-nudge {
+.ex-help {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--course-panel, #241f1a);
+  border: 1px solid var(--course-line, #4a3f33);
+}
+
+.ex-help.is-offered {
+  border-color: #f0d7a2;
+  box-shadow: 0 0 0 2px rgba(240, 215, 162, 0.35);
+}
+
+.ex-help-offer {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px 10px;
-  padding: 10px 12px;
-  background: #2b2416;
-  border: 1px solid #b8925a;
+  gap: 4px 12px;
 }
 
-.ex-nudge .prose {
-  flex: 1 0 100%;
-}
-
-.ex-nudge-title {
-  flex: 1 0 100%;
+.ex-help-offer p {
   margin: 0;
-  font-weight: 600;
+  flex: 1 1 16rem;
   color: #f0d7a2;
+  font-weight: 600;
+}
+
+.ex-help-rungs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ex-help-rung {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 12px;
+  background: #2b2416;
+  border: 1px solid #6e5a30;
+  border-left-width: 4px;
+}
+
+.ex-help-rung.is-newest {
+  border-left-color: #f0d7a2;
+}
+
+.ex-help-rung:focus-visible {
+  outline: 3px solid var(--course-focus, #f0d7a2);
+  outline-offset: 2px;
+}
+
+.ex-help-rung p {
+  margin: 0;
+}
+
+.ex-help-rung-label {
+  color: #f0d7a2;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.ex-help-rung .read-aloud,
+.ex-help-rung .ex-quiet {
+  align-self: flex-start;
+}
+
+.ex-help-another {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ex-help-angle {
+  font-weight: 600;
+}
+
+.ex-help-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ex-help-button,
+.course-page .ex-help-button {
+  color: #f0d7a2;
+  background: transparent;
+  border: 1px solid #8a7240;
+  text-align: left;
+}
+
+.ex-help-button.is-offered {
+  color: #1d1610;
+  background: #f0d7a2;
+  border-color: #f0d7a2;
+  font-weight: 700;
+}
+
+.ex-help-button[aria-disabled="true"] {
+  cursor: default;
+  opacity: 0.75;
+}
+
+.ex-help-note {
+  margin: 0;
+}
+
+/* A text-style button ("No thanks", "Skip", "Hide pair talk"). */
+.ex-link-button,
+.course-page .ex-link-button {
+  min-height: 44px;
+  padding: 4px 6px;
+  color: var(--course-violet-soft, #d8ccff);
+  background: transparent;
+  border: 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.ex-link-button:hover {
+  color: #ffffff;
+}
+
+/* ---------------------------------------------------------------- Compare with Mar'tu's version */
+
+.ex-compare {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--course-panel, #241f1a);
+  border: 1px solid var(--metal, #b8925a);
+  container-type: inline-size;
+}
+
+.ex-compare h3:focus-visible {
+  outline: 3px solid var(--course-focus, #f0d7a2);
+  outline-offset: 2px;
+}
+
+.ex-compare-note {
+  margin: 0;
+}
+
+.ex-compare-cols {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+}
+
+@container (min-width: 560px) {
+  .ex-compare-cols {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+.ex-compare-col {
+  margin: 0;
+  min-width: 0;
+  padding: 8px;
+  background: var(--course-code-bg, #121417);
+  border: 1px solid var(--course-code-line, #3c4452);
+}
+
+.ex-compare-title {
+  margin-bottom: 6px;
+  font-weight: 700;
+}
+
+.ex-compare-lines {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.9rem;
+}
+
+.ex-compare-line {
+  display: grid;
+  grid-template-columns: 2em 1.2em minmax(0, 1fr);
+  align-items: start;
+  padding: 1px 4px;
+  color: #f4f7fb;
+  border-left: 3px solid transparent;
+}
+
+.ex-compare-line.is-changed {
+  background: #3a2c12;
+  border-left-color: #f0d7a2;
+}
+
+.ex-compare-number {
+  color: #9aa3b2;
+  text-align: right;
+  padding-right: 4px;
+}
+
+.ex-compare-mark {
+  color: #f0d7a2;
+  font-weight: 700;
+  text-align: center;
+}
+
+.ex-compare-line code {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.ex-compare-empty {
+  margin: 0;
+}
+
+.ex-compare-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 /* ---------------------------------------------------------------- done, side quest */

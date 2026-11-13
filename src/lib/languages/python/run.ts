@@ -5,6 +5,18 @@ import { parseStageMessage, type StageEvent } from "../../stage/bridge";
 
 const TIMEOUT_MS = 5000;
 
+/**
+ * The version of public/workers/python-worker.js and course_helpers.py, sent as `?v=` on the worker's URL
+ * (the worker asks for the helpers with the same `?v=`). Browsers cache the worker file, and an old
+ * cached worker silently ignores newer messages such as "course-run", so a changed worker needs a new URL.
+ * run.test.ts fails until this matches the files; it prints the value to paste here.
+ */
+export const PYTHON_WORKER_VERSION = "cf0a8d079198";
+
+export function pythonWorkerUrl(): string {
+  return publicPath(`/workers/python-worker.js?v=${PYTHON_WORKER_VERSION}`);
+}
+
 type WorkerResult = {
   type: "result";
   requestId: number;
@@ -30,7 +42,7 @@ let queue: Promise<unknown> = Promise.resolve();
 function boot(): Promise<void> {
   if (ready && worker) return ready;
   failReason = null;
-  worker = new Worker(publicPath("/workers/python-worker.js"), { type: "module" });
+  worker = new Worker(pythonWorkerUrl(), { type: "module" });
   const currentWorker = worker;
   ready = new Promise((resolve, reject) => {
     if (!currentWorker) {
