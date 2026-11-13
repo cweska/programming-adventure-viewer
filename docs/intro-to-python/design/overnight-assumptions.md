@@ -18,3 +18,8 @@ without them. Each one is easy to change in the morning.
 ## Questions saved for the morning
 
 (Added here as they come up, instead of waiting for an answer overnight.)
+
+- **(2:30am MST) Weekly usage is at 87%.** It rose about 4–5 points an hour with two workflows running. Shipping
+  Unit 1 (export, full tests, a browser check that every Unit 1 solution passes, the pull request) comes first and
+  should fit. Units 2+ will probably need your monthly reset, or Tuesday's weekly reset (3:00pm MST). Everything
+  is saved on the branch, so work can pick up right where it stopped.
