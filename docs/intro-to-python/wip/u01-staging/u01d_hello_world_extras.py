@@ -173,24 +173,24 @@ def _rerun(_values=None, _answers=None):
     return _ns, _buf.getvalue(), _err, sorted(_left)
 '''
 
-_CMB_VALUE = r'''
-for _vals, _want in __CASES__:
+_CMB_HEAD = r'''
+    _kind = 'numbers' if all(type(_v).__name__ == 'int' for _v in _vals.values()) else 'values'
+    _parts = ['`' + _k + ' = ' + _show(_v) + '`' for _k, _v in _vals.items()]
+    _what = _parts[0] if len(_parts) == 1 else ', '.join(_parts[:-1]) + ' and ' + _parts[-1]
     _ns, _out, _err, _miss = _rerun(_vals)
-    _what = ' and '.join('`' + _k + '` became ' + _show(_v) for _k, _v in _vals.items())
-    assert not _miss, 'Keep the line `' + _miss[0] + ' = ...` with a plain value in it, so Mar\'tu can try other numbers.'
-    assert not _err, 'When ' + _what + ', the program stopped: ' + _err
-    _got = _ns.get('__TARGET__')
-    assert _got == _want, 'When ' + _what + ', `__TARGET__` was ' + _show(_got) + '. It should be ' + _show(_want) + '. ' + __TAIL__
+    assert not _miss, 'Keep the line that sets `' + _miss[0] + '`. Mar\'tu\'s check changes that line to try other ' + _kind + ', so keep it as `name = value`.'
+    assert not _err, 'Mar\'tu tried other ' + _kind + ' (' + _what + ') and your program stopped: ' + _err
 '''
 
-_CMB_LINE = r'''
-for _vals, _want in __CASES__:
-    _ns, _out, _err, _miss = _rerun(_vals)
-    _what = ' and '.join('`' + _k + '` became ' + _show(_v) for _k, _v in _vals.items())
-    assert not _miss, 'Keep the line `' + _miss[0] + ' = ...` with a plain value in it, so Mar\'tu can try other values.'
-    assert not _err, 'When ' + _what + ', the program stopped: ' + _err
-    _rows = [_l.strip() for _l in _out.splitlines() if _l.strip()]
-    assert _want in _rows, 'When ' + _what + ', your program printed `' + (_rows[-1] if _rows else 'nothing') + '`. It should print `' + _want + '`. ' + __TAIL__
+# CMB message shape shared with u01c: "Mar'tu tried other numbers: with `a = 7`, `total` stayed 22, but it should be 38."
+_CMB_VALUE = "for _vals, _want in __CASES__:" + _CMB_HEAD + r'''    _got = _ns.get('__TARGET__')
+    _was = globals().get('__TARGET__')
+    assert _got == _want, 'Mar\'tu tried other ' + _kind + ': with ' + _what + ', `__TARGET__` ' + ('stayed ' if _got == _was else 'became ') + _show(_got) + ', but it should be ' + _show(_want) + '. ' + __TAIL__
+'''
+
+_CMB_LINE = "for _vals, _want in __CASES__:" + _CMB_HEAD + r'''    _rows = [_l.strip() for _l in _out.splitlines() if _l.strip()]
+    _said = ('it printed `' + _rows[-1] + '`') if _rows else 'it printed nothing'
+    assert _want in _rows, 'Mar\'tu tried other ' + _kind + ': with ' + _what + ', your program should print `' + _want + '`, but ' + _said + '. ' + __TAIL__
 '''
 
 
@@ -217,7 +217,8 @@ def out_line_check(expr, label, tail):
         "while _at < min(len(_want), len(_got)) and _want[_at] == _got[_at]:\n"
         "    _at += 1\n"
         "_same = (' They match up to `' + _want[:_at] + '`, then differ.') if _at else ''\n"
-        "assert _want in _rows, 'Expected `' + _want + '`. You printed `' + (_got or 'nothing') + '`.' + _same + "
+        "assert _rows, 'Print the line, built from the boxes. It should show `' + _want + '`.'\n"
+        "assert _want in _rows, 'Expected `' + _want + '`. You printed `' + _got + '`.' + _same + "
         f"{(' ' + tail) if tail else ''!r}",
     )
 
@@ -296,8 +297,8 @@ GLOSSARY = [
         example='input("How many sips? ")',
     ),
     dict(
-        term="int",
-        aliases=["int()"],
+        term="int()",
+        aliases=["int"],
         plain="Turns text that looks like a whole number into a real number, so you can do math with it. `int(\"3\")` gives 3.",
         example='sips = int("3")',
     ),
@@ -373,7 +374,7 @@ def ink_rows_check(at_least, letter):
         + "assert 'ink' not in _texts, 'That `\"ink\"` is in quotes, so it is just the word ink. "
         "Take the quotes off so Python opens the box.'\n"
         + f"assert len(_ink_rows) >= {at_least}, 'Mar\\'tu repainted the sign with `#`, and only ' + str(len(_ink_rows)) + "
-        f"' rows changed. Draw every row of the {letter} with `ink`, never a typed █, so the whole sign repaints.'",
+        f"' rows changed. Draw all five rows of the {letter} with `ink`, not a typed █, so they repaint too.'",
     )
 
 
@@ -1061,11 +1062,11 @@ ASKING_THE_TRAVELER = dict(
     summary="Let your program ask a question. The answer is always text, so `int()` turns it into a number.",
     introduces=["call:input", "call:int"],
     body=(
-        "Sometimes a program should ask. [[input|`input()`]] shows a question, called the [[prompt]], "
+        "Sometimes a program should ask. The [[input]] command, `input()`, shows a question, called the [[prompt]], "
         "and waits for an answer.\n"
         "Whatever comes back is text. Even `3` comes back as the text `\"3\"`.\n"
-        "Text cannot do math. `\"3\" + \"3\"` glues to `33`. To get a real number, wrap the answer in "
-        "[[int|`int()`]]: `int(input(\"Sips? \"))`.\n"
+        "Text cannot do math. `\"3\" + \"3\"` glues to `33`. To get a real number, use [[int]]: "
+        "`int(input(\"Sips? \"))`.\n"
         "On this site, the answers come from the box called Input for your program, one answer per line. "
         "Change them and run again, as often as you like.\n"
         "You have seen this before. In the campaign, `user.clicked()` handed back text, like `\"option 1\"`. "
@@ -1409,9 +1410,11 @@ def _c4(form, full, count_name, max_name, bar_name, count, maximum, label, cases
                     (
                         "the bar has both parts",
                         f"_want = full * {count_name} + empty * ({max_name} - {count_name})\n"
+                        f"assert {bar_name} != '', '`{bar_name}` is still empty. Fill it: full blocks for `{count_name}`, "
+                        f"then empty blocks for the rest.'\n"
                         f"assert {bar_name} != full * {count_name}, '`{bar_name}` has the full blocks but no empty ones. "
                         f"Add `empty` times what is used: `({max_name} - {count_name})`.'\n"
-                        f"assert {bar_name} == _want, '`{bar_name}` holds ' + repr({bar_name}) + '. It should be ' + repr(_want) + '.'",
+                        f"assert {bar_name} == _want, '`{bar_name}` holds \"' + str({bar_name}) + '\". With these numbers it should hold \"' + _want + '\".'",
                     ),
                     cmb_check(bar_name, cases, tail=f"Build it from `{count_name}` and `{max_name}`, so it follows."),
                 ],

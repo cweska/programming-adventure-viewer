@@ -439,7 +439,7 @@ describe("explainCourseError: the reviewer's findings", () => {
     const join = explainRun('name = "Lucky"\nprint("Welcome, + name)\n');
     expect(join.hint).toContain('print("Welcome, " + name)');
     // The apostrophe and mismatched cases keep their own advice.
-    expect(explainRun("print('It\'s fun')\n").kind).toBe("apostrophe");
+    expect(explainRun("print('It's fun')\n").kind).toBe("apostrophe");
     expect(explainRun("print(\"It's fun')\n").hint).toContain('like "It\'s fun"');
   });
 });

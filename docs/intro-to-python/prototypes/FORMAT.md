@@ -113,7 +113,7 @@ writes code as an array of lines; the site joins them with `\n` and adds a final
 `starter="print('hi')\n"`, or use implicit string concatenation as the sample unit does.
 
 Code fields: `starter`, `solution`, `setup`, `example`, `partials`, wrong-answer `code`, bonus `solution`,
-`campaign_link.snippet`, question `code` / `fix`, article example `code`, cheatsheet `code`.
+`campaign_link.snippet`, `predict.code`, question `code` / `fix`, article example `code`, cheatsheet `code`.
 A check's code stays a string when it is one line, and becomes an array of lines when longer.
 
 ## ITEMS
@@ -169,6 +169,11 @@ Kinds:
 | `assemble` | dict | `assemble` | "Assemble it": the solution as shuffled lines, `dict(lines=[...in order...], distractors=[...])` (a string is split into lines) |
 | `campaign_link` | dict | `campaignLink` | Lucky's "What's in it for me?" box: `dict(module="leylines-awaken", part="program-dialogue-prompt", snippet="code", why="prose")`. `snippet` optional. |
 | `takeaway` | str | `takeaway` | one line for the cheatsheet / skill map |
+| `predict` | dict | `predict` | Predict before Run, see [below](#predict-before-run). Free: a thinking prompt, never a test, and it never blocks Run. Hidden in Quick Checks. |
+| `names` | list of str | `names` | the "Names to use" chips: every exact name the steps ask for (variables, functions, parameters), e.g. `["caster", "mana"]`. Shown in every preset. The harness warns about a name the solution never uses. |
+| `pick` | str | `pick` | Mar'tu's pick: a value to use when the student can't decide, e.g. `'"Gearshift"'` (shown as code; a value with `\n` shows as a block). Every other value the checks allow is still accepted, so only use it where the checks accept any value. |
+| `pair_talk` | prose | `pairTalk` | an optional "Pair talk" prompt, e.g. "Tell your partner why `mana` needs `str()`." The site adds the "Pair talk:" label. Every student still does every step on their own device (no shared-device steps). |
+| `solo` | bool | `solo` | `True` for the lesson's SOLO item (one per lesson, about 2 minutes, done alone). Recorded, never blocking. Default `False`. |
 | `partials` | list of code | sidecar only | staged solutions: partial *k* passes checkpoints 1..k and fails k+1 |
 | `wrong_answers` | list | sidecar only | `dict(why="...", code="...", fails_at=2, message_contains="quotes")`: a known wrong answer must fail at checkpoint `fails_at` (0 = it crashes before the checks) with a message containing `message_contains` |
 | `notes` | str | sidecar only | designer notes |
@@ -182,6 +187,7 @@ dict(
     hints=["point at the idea", "teach it", "show nearly the answer"],
     checks=[("caster holds Gearshift", "assert caster == 'Gearshift', 'Store the text Gearshift in caster.'")],
     pass_line="Gearshift: Visor dims. Name logged.",   # optional, shown when it turns green
+    dictated=True,                          # optional: the text spells out the code to type
 )
 ```
 
@@ -192,6 +198,7 @@ dict(
 | `hints` | `hints` | the hint ladder, 2 to 5 rungs: point, teach, show |
 | `checks` | `checks` | `(name, code)` pairs (or `dict(name=..., code=...)`) |
 | `pass_line` | `passLine` | optional in-world line |
+| `dictated` | `dictated` | optional bool. `True` when the text spells out the code to type ("Write `mana = 20`"); `False` for a goal-only step that gives the goal and the names, never the code ("Print a greeting that uses `name`."). The curriculum asks for at least one `dictated=False` step in every lesson (§2.1, lint g). Left out: not marked either way. |
 
 **Checks** run after the student's code, in the same namespace, only if the code ran without an error.
 The assert message is what the student sees: one plain sentence. Besides the student's own names a
@@ -206,6 +213,26 @@ Rules the harness and the grading rely on:
 - A check that names a variable the student has not made raises `NameError`; the site turns that into a
   friendly "I looked for `caster` but could not find it" message, so you do not need to guard for it.
 - Stop hard-coding with `_source` checks (`'Lucky' not in _source`) and prove it with a `wrong_answers` entry.
+
+### Predict before Run
+
+```python
+predict=dict(
+    q="Before you press Run: what will this line print?",
+    code='print("Hours until the next burst:", 37)\n',   # optional: left out, the student predicts the starter
+    choices=["Hours until the next burst: 37", "Hours until the next burst:37", '"Hours until the next burst:", 37'],
+    answer=0,                                   # the right choice: its index, or its exact text
+    explain="The quotes are not printed. The comma becomes one space.",   # shown after the guess, right or wrong
+)
+```
+
+| Field | JSON | Notes |
+| --- | --- | --- |
+| `q` | `q` | prose: the question |
+| `code` | `code` | optional code to predict. Left out, it is the exercise's `starter`. It runs with the exercise's `setup` and `stdin`, and the concept gate checks it. |
+| `choices` | `choices` | 2 or more one-click choices. Write each one exactly as the console would show it. |
+| `answer` | `answer` | the index of the right choice, or its exact text (the exporter turns text into the index). The harness runs `code` and fails if the right choice is not exactly what it prints. |
+| `explain` | `explain` | prose shown after the guess, right or wrong |
 
 ### Bonus (side quest)
 
@@ -268,6 +295,7 @@ Harness-only data never reaches a page. It lands in `units/<unit-id>.verify.json
 | `starter_passes` | `starterPasses` |
 | `campaign_link` | `campaignLink` |
 | `pass_line` | `passLine` |
+| `pair_talk` | `pairTalk` |
 | `variant_of` | `variantOf` |
 | `why_wrong` | `whyWrong` |
 | `expected_output` | `expectedOutput` |
@@ -280,6 +308,7 @@ Everything else keeps its name. Fields left out stay out of the JSON (the schema
 ## The sample unit
 
 `scripts/course/sample/u00_sample.py` (unit id `sample`, order 99, unpublished) uses every item kind,
-every question type and every exercise feature above. It is the teacher's tour of the player and the e2e
+every question type and every exercise feature above, including `predict`, `names`, `pick`, `pair_talk`,
+`solo` and `dictated` (both `True` and `False`). It is the teacher's tour of the player and the e2e
 fixture, so keep it passing and keep it covering everything (`content.test.ts` checks the coverage).
 Open it on the site with `?preview=1`.

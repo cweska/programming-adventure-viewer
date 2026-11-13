@@ -517,6 +517,28 @@ describe("sample unit coverage", () => {
     expect(testout?.kind === "testout" && testout.exercises.every((exercise) => exercise.support === "none")).toBe(true);
   });
 
+  it("uses every newer exercise field: predict, names, pick, pair talk, solo, and dictated true and false", () => {
+    const predict = playables.find((exercise) => exercise.predict)?.predict;
+    expect(predict?.choices.length).toBeGreaterThanOrEqual(2);
+    expect(predict?.choices[predict.answer]).toBeTruthy();
+    expect(playables.some((exercise) => exercise.names.length > 0)).toBe(true);
+    expect(playables.some((exercise) => exercise.pick)).toBe(true);
+    expect(playables.some((exercise) => exercise.pairTalk)).toBe(true);
+    expect(playables.some((exercise) => exercise.solo)).toBe(true);
+    const dictated = playables.flatMap((exercise) => exercise.checkpoints.map((cp) => cp.dictated));
+    expect(dictated).toContain(true);
+    expect(dictated).toContain(false);
+  });
+
+  it("keeps the worked example visibly different from the task (other names, not the task with new values)", () => {
+    for (const exercise of playables) {
+      if (!exercise.example) continue;
+      const exampleNames = new Set([...exercise.example.code.matchAll(/^([A-Za-z_]\w*)\s*=/gm)].map((match) => match[1]));
+      const taskNames = [...exercise.solution.matchAll(/^([A-Za-z_]\w*)\s*=/gm)].map((match) => match[1]);
+      expect(taskNames.filter((name) => exampleNames.has(name)), exercise.id).toEqual([]);
+    }
+  });
+
   it("links prose to the glossary", () => {
     const links = proseStrings(readJson(path.join(UNITS_DIR, "sample.json"))).flatMap(({ text }) => glossaryLinks(text));
     expect(links.length).toBeGreaterThan(3);
