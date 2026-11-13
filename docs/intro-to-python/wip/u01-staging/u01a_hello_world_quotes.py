@@ -152,7 +152,7 @@ def shows(text, where, extra_ok=(".",), starts_ok=False):
         "    elif _l and _fix(_l).lower().rstrip('.!?') == _want[0].lower() and _fix(_l).rstrip('.!?') != _want[0]:\n"
         f"        _msg = {head!r} + _l + '`. Capitals count: Python shows exactly what is inside the quotes.'\n"
         "    elif _l and _key(_l) == _key(_want[0]):\n"
-        f"        _msg = {head!r} + _l + '`. Every space and mark counts: Python shows exactly what is inside the quotes.'\n"
+        f"        _msg = {head!r} + _l + '`. Spaces, marks and capitals all count: Python shows exactly what is inside the quotes.'\n"
         "    elif _longer:\n"
         f"        _msg = 'Your line shows `' + _longer[0] + {longer!r}\n"
         "    elif _l and _sim(_l) >= 0.75:\n"
@@ -267,7 +267,7 @@ WHAT_AN_ERROR_LOOKS_LIKE = dict(
         "Teaches the explainer footer ('Read the last line first. Then look at the line it names.'), which the "
         "site shows on every crash from here on. The starter is deliberately not valid Python, so the harness "
         "warns about it. Evidence: unclosed quotes on A-02 ('Fire Ball'), A-03 ('Fierball.'), A-04 ('Fireball'). "
-        "No Assemble: the whole answer is one line."
+        "No Assemble: the whole answer is one line. Check-breaker pass: shows() names the nearest slip (words with no print, capitals, spaces or marks, a longer line, a letter or two) and accepts a curly apostrophe from tablet keyboards. WAs added: no print, lower case."
     ),
 )
 
@@ -305,7 +305,7 @@ KEYBOARD_SYMBOLS = dict(
                     "_best = max(_lines(), key=lambda line: sum(s in line for s in '_-='))\n"
                     "_missing = [s for s in '_-=' if s not in _best]\n"
                     "assert not _missing, 'Your line is missing ' + ' and '.join('`' + s + '`' for s in _missing) "
-                    "+ '. Put all three inside the quotes.'",
+                    "+ '. Put all three inside one pair of quotes, in one `print` line.'",
                 ),
             ],
             pass_line="Mar'tu: Now you know where they live.",
@@ -354,7 +354,7 @@ KEYBOARD_SYMBOLS = dict(
     notes=(
         "meta: starter_level=S2; path=CC; contingent=show-me-more (K); skills=print-text; solo=false; "
         "dictates=; foreign_names=. G1 R30 (dash for =: A-04 `chicken_sandwich - \"Fireball`). Any line with "
-        "all three symbols passes; Mar'tu's pick is the solution's line."
+        "all three symbols passes; Mar'tu's pick is the solution's line. Check-breaker: WA for one symbol per line."
     ),
 )
 
@@ -571,7 +571,7 @@ YOUR_OWN_WORDS = dict(
         "starter='print(\"Write Gearshift's words here\")', checks=first line is not the placeholder or the "
         "example, solution='print(\"Barrier's holding.\")'. "
         "Evidence: B-02/B-03 bare values (\"Spiderman\" with no name), A-05/A-07/A-08 copying the example, "
-        "A-08/B-01 unquoted text."
+        "A-08/B-01 unquoted text. Check-breaker pass: the placeholder is caught on any printed line and when only part of it is deleted ('Write words here'); the example check ignores capitals, spaces and marks ('Shield up?'); a new TEXT check needs quoted words in a print, because `print(42)` used to pass. Concatenation, two arguments, apostrophes and any silly line still pass."
     ),
 )
 
@@ -637,8 +637,8 @@ CLOSE_THE_QUOTE = dict(
             'Python only looks for the same mark it opened with: `print("It\'s late.")` works.',
         ],
         checks=[
-            ("prints Gearshift's line", "assert \"Barrier's holding.\" in _lines(), "
-             "'Print the line exactly, with the apostrophe: Barrier\\'s holding.'"),
+            ("prints Gearshift's line", shows("Barrier's holding.", "Add a new `print` line with Gearshift's words, "
+                                              "inside `\"` quotes.")),
         ],
         solution='print("It is not a compass")\nprint("Shield up.")\nprint("Barrier\'s holding.")\n',
     ),
@@ -704,7 +704,8 @@ CLOSE_THE_QUOTE = dict(
         "after it is mended, the site prefixes line 2's error with 'One fixed. Python found the next one:'. "
         "Both checkpoints turn green together, because Python reads the whole file before it runs any of it. "
         "The starter is deliberately not valid Python, so the harness warns about it. "
-        "Evidence: A-02 '(\"Fire Ball', A-03 '\"Fierball.', A-04 '\"Fireball', A-01 '\"Fireball\\''."
+        "Evidence: A-02 '(\"Fire Ball', A-03 '\"Fierball.', A-04 '\"Fireball', A-01 '\"Fireball\\''. "
+        "Check-breaker pass: shows() names the nearest slip (words with no print, capitals, spaces or marks, a longer line, a letter or two) and accepts a curly apostrophe from tablet keyboards. WA: both lines in one print. Swapping the two lines still passes (both are mended)."
     ),
 )
 
@@ -781,7 +782,7 @@ WORDS_NEED_QUOTES = dict(
             'Like this shape: `print("Bob\'s Big Day!")`',
         ],
         checks=[
-            ("announces the spell", "assert \"Lucky's Fire Ball!\" in _lines(), "
+            ("announces the spell", "assert \"Lucky's Fire Ball!\" in [l.replace('\\u2019', \"'\") for l in _lines()], "
              "'Print it exactly, capitals and all: Lucky\\'s Fire Ball!'"),
         ],
         solution='print("Fireball")\nprint("Get inside")\nprint("Lucky\'s Fire Ball!")\n',
@@ -871,7 +872,8 @@ WORDS_NEED_QUOTES = dict(
         "the real slip `print(Get inside)` (proven by a wrong answer). "
         "The Investigate ('Why does Python say not defined?' with its three options) is the predict step; its "
         "explanation answers all three options. Single quotes pass (not a wrong answer). "
-        "Evidence: A-05 `fireball`, A-08 `kratos` / `spartin rage ...`, B-01 `fireball` (unquoted text)."
+        "Evidence: A-05 `fireball`, A-08 `kratos` / `spartin rage ...`, B-01 `fireball` (unquoted text). "
+        "Check-breaker pass: shows() names the nearest slip (words with no print, capitals, spaces or marks, a longer line, a letter or two) and accepts a curly apostrophe from tablet keyboards. Loosened: `Fireball!` and `Fireball.` pass, and so does a line that starts with `Get inside` (`Get inside, yes?`). `print(\"Get\", \"inside\")` passes too (it shows the words). WAs added: `Fire Ball` in quotes (A-02), words with no print, both words on one line."
     ),
 )
 
@@ -1095,7 +1097,7 @@ TOP_TO_BOTTOM = dict(
         "stages=P,R,M; trace=static step table (another_way). "
         "PR (pair prompt): own devices, so 'Seat A predicts, Seat B runs' became predict-and-compare, each on "
         "their own device. The blank-line check reads the raw output, so `print(\"\")` and `print(\" \")` "
-        "pass too. Checks stay true when Lucky's side quest adds lines after the warning."
+        "pass too. Checks stay true when Lucky's side quest adds lines after the warning. Check-breaker pass: copying the warning to the bottom (it prints twice) now fails with its own message; CP2 names an empty code line and a bare `print` with no brackets (both silently print nothing). Loosened: the side quest accepts more than one blank line before Lucky's reply."
     ),
 )
 
@@ -1297,7 +1299,7 @@ NOTES_FOR_HUMANS = dict(
         "meta: starter_level=S4; path=SC; skills=print-text; solo=false; dictates=1; foreign_names=; "
         "stages=I,M. SC inside a CC lesson (deferrable by the teacher's switch). Notes are found with the "
         "tokenizer, so a `#` inside quotes is not a note. Any note text passes (lint e); Mar'tu's pick is the "
-        "solution's note. Starter lines avoid the red-clock spoiler."
+        "solution's note. Starter lines avoid the red-clock spoiler. Check-breaker pass: the switched-off note must still hold `print`, so deleting the line and writing a note about it, or swapping `print(` for `#`, no longer passes CP1."
     ),
 )
 
@@ -1461,7 +1463,8 @@ BROKEN_SPELL_1A = dict(
         "mended line appears in the console before the next message. All three ticks turn green on the "
         "run where the last slip is mended. The spec's WA `print(steady)` -> CP3 is a crash (NameError), so it "
         "is fails_at=0 here; the CP3 case is `print(\"steady\")` (capitals). Can be done in pairs (pair_talk); "
-        "each student mends their own copy. The starter is deliberately not valid Python, so the harness warns."
+        "each student mends their own copy. The starter is deliberately not valid Python, so the harness warns. "
+        "Check-breaker pass: shows() names the nearest slip (words with no print, capitals, spaces or marks, a longer line, a letter or two) and accepts a curly apostrophe from tablet keyboards. WAs added: single quotes around `Barrier's` (crash), the apostrophe dropped, line 3 quoted with no print."
     ),
 )
 
@@ -1506,7 +1509,7 @@ SOLO_1A = dict(
         "foreign_names=; one-bug SOLO (C6). Two hints only (schema minimum); using one records the pass "
         "'with structure'. No Assemble or another_way, on purpose: this one is theirs. "
         "Seat B variant for when pair mode ships: starter `print(The lantern is lit)` (no quotes, C13 row), "
-        "same check. Every student has their own device, so everyone gets seat A's starter."
+        "same check. Every student has their own device, so everyone gets seat A's starter. Check-breaker pass: shows() names the nearest slip (words with no print, capitals, spaces or marks, a longer line, a letter or two) and accepts a curly apostrophe from tablet keyboards."
     ),
 )
 
