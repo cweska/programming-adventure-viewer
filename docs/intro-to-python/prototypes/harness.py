@@ -52,6 +52,7 @@ Unit file format (plain Python data, no imports needed):
         partials=["code after checkpoint 1", ...],     # optional, len < len(checkpoints)
         wrong_answers=[dict(why="hard-codes 68", code="...", fails_at=1, message_contains="variable")],
         starter_passes=False,
+        engine=False,                        # True: also load the campaign objects (party, print_prompt, ...)
         tracer=True,                         # offer the step-through tracer on this exercise
         bonus=dict(text="Lucky's side quest ...", checks=[...], solution="..."),
         notes="designer notes (not shown to students)",
@@ -64,8 +65,11 @@ Unit file format (plain Python data, no imports needed):
         dict(type="parsons", q="...", lines=["correct", "order"], distractors=["..."], expected_output="...", explain="...")
         dict(type="bug", q="...", code="buggy", fix="fixed", expected_output="...", explain="...")
 
-Checks run after the student's code in the same namespace, exactly like the site. Besides everything the
-student defined, a check can use:
+Code runs exactly like a course run on the site, because every host executes the same file,
+public/workers/course_helpers.py: a fresh namespace, the import guard, the check helpers and the input() shim,
+the campaign objects (party, user, stage, print_prompt, ...) only when the exercise sets engine=True, then
+setup, then the student's code. Checks run after the student's code in the same namespace. Besides everything
+the student defined, a check can use:
     _captured_stdout     everything printed
     _lines()             printed lines, stripped, blanks removed
     _source              the student's code as text
@@ -90,7 +94,6 @@ CONCEPT TOKENS (produced by ``concept_tokens``):
 from __future__ import annotations
 
 import ast
-import builtins
 import importlib.util
 import json
 import os
@@ -102,13 +105,14 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[2]
 WORKER = REPO / "public" / "workers" / "python-worker.js"
+HELPERS = REPO / "public" / "workers" / "course_helpers.py"
 TIMEOUT_SECONDS = 6
 
 BASE_TOKENS = {"node:Module", "node:Expr", "node:Name", "node:Call"}
-BUILTIN_NAMES = set(dir(builtins))
 
 
 def worker_prelude() -> str:
+    """The campaign GUARD from python-worker.js (loaded only for engine=True exercises)."""
     text = WORKER.read_text(encoding="utf8")
     match = re.search(r"const GUARD = `([\s\S]*?)`;", text)
     if not match:
@@ -125,184 +129,66 @@ PRELUDE_NAMES = {
 }
 
 # ---------------------------------------------------------------------------------------------
-# Concept tokens
+# Concept tokens: the tokenizer lives in course_helpers.py, so the concept gate, the checks' _uses(),
+# and the browser all share one copy. Loading it as "course_helpers" skips its import guard.
 # ---------------------------------------------------------------------------------------------
 
-_NODE_NAMES = {
-    ast.Assign: "node:Assign", ast.AugAssign: "node:AugAssign", ast.AnnAssign: "node:Assign",
-    ast.If: "node:If", ast.For: "node:For", ast.While: "node:While", ast.Break: "node:Break",
-    ast.Continue: "node:Continue", ast.FunctionDef: "node:FunctionDef", ast.Return: "node:Return",
-    ast.Lambda: "node:Lambda", ast.List: "node:List", ast.Tuple: "node:Tuple", ast.Dict: "node:Dict",
-    ast.Set: "node:Set", ast.Subscript: "node:Subscript", ast.Slice: "node:Slice",
-    ast.ListComp: "node:ListComp", ast.DictComp: "node:DictComp", ast.SetComp: "node:ListComp",
-    ast.GeneratorExp: "node:ListComp", ast.JoinedStr: "node:FString", ast.Import: "node:Import",
-    ast.ImportFrom: "node:Import", ast.Match: "node:Match", ast.Try: "node:Try", ast.Pass: "node:Pass",
-    ast.IfExp: "node:IfExp", ast.Global: "node:Global", ast.Nonlocal: "node:Global",
-    ast.Starred: "node:Starred", ast.Assert: "node:Assert", ast.With: "node:With", ast.ClassDef: "node:Class",
-    ast.Expr: "node:Expr", ast.Module: "node:Module", ast.Name: "node:Name", ast.Call: "node:Call",
-    ast.Delete: "node:Delete", ast.Raise: "node:Raise",
-}
-
-_OP_NAMES = {
-    ast.Add: "op:Add", ast.Sub: "op:Sub", ast.Mult: "op:Mult", ast.Div: "op:Div", ast.FloorDiv: "op:FloorDiv",
-    ast.Mod: "op:Mod", ast.Pow: "op:Pow", ast.Eq: "op:Eq", ast.NotEq: "op:NotEq", ast.Lt: "op:Lt",
-    ast.LtE: "op:LtE", ast.Gt: "op:Gt", ast.GtE: "op:GtE", ast.In: "op:In", ast.NotIn: "op:NotIn",
-    ast.Is: "op:Is", ast.IsNot: "op:IsNot", ast.And: "op:And", ast.Or: "op:Or", ast.Not: "op:Not",
-    ast.USub: "op:USub", ast.UAdd: "op:USub",
-}
-
-_ESCAPE = re.compile(r"\\[ntr\\'\"]")
+HELPERS_SOURCE = HELPERS.read_text(encoding="utf8")
+_HELPERS: dict = {"__name__": "course_helpers"}
+exec(compile(HELPERS_SOURCE, str(HELPERS), "exec"), _HELPERS)
 
 
 def concept_tokens(code: str, exempt_names: set[str] | None = None) -> list[str]:
     """Every concept token in ``code``, with repeats (so callers can count)."""
-    exempt = set(PRELUDE_NAMES) | set(exempt_names or ())
-    tree = ast.parse(code)
-    defined = {n.name for n in ast.walk(tree) if isinstance(n, (ast.FunctionDef, ast.ClassDef))}
-    found: list[str] = []
-    for node in ast.walk(tree):
-        kind = type(node)
-        if kind in _NODE_NAMES:
-            found.append(_NODE_NAMES[kind])
-        if isinstance(node, ast.BinOp) or isinstance(node, ast.AugAssign):
-            found.append(_OP_NAMES.get(type(node.op), f"op:{type(node.op).__name__}"))
-        elif isinstance(node, ast.UnaryOp):
-            found.append(_OP_NAMES.get(type(node.op), f"op:{type(node.op).__name__}"))
-        elif isinstance(node, ast.BoolOp):
-            found.append(_OP_NAMES[type(node.op)])
-        elif isinstance(node, ast.Compare):
-            found.extend(_OP_NAMES.get(type(op), f"op:{type(op).__name__}") for op in node.ops)
-        elif isinstance(node, ast.Constant):
-            value = node.value
-            if isinstance(value, bool):
-                found.append("const:bool")
-            elif value is None:
-                found.append("const:None")
-            elif isinstance(value, int):
-                found.append("const:int")
-            elif isinstance(value, float):
-                found.append("const:float")
-            elif isinstance(value, str):
-                found.append("const:str")
-        elif isinstance(node, ast.Call):
-            if isinstance(node.func, ast.Name):
-                name = node.func.id
-                if name in BUILTIN_NAMES and name not in exempt and name not in defined:
-                    found.append(f"call:{name}")
-            if node.keywords:
-                found.append("node:KeywordArg")
-        elif isinstance(node, ast.Attribute):
-            base = node.value
-            while isinstance(base, ast.Attribute):
-                base = base.value
-            if isinstance(base, ast.Name) and base.id in exempt:
-                continue
-            found.append(f"attr:{node.attr}")
-        elif isinstance(node, ast.arguments):
-            if node.defaults or node.kw_defaults:
-                found.append("node:DefaultArg")
-        elif isinstance(node, (ast.Import, ast.ImportFrom)):
-            names = [a.name for a in node.names] if isinstance(node, ast.Import) else [node.module or ""]
-            found.extend(f"import:{n.split('.')[0]}" for n in names)
-    # string-literal features that the AST hides
-    for match in re.finditer(r"(\"\"\"|''')", code):
-        found.append("const:multiline_str")
-        break
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Constant) and isinstance(node.value, str):
-            segment = ast.get_source_segment(code, node) or ""
-            if _ESCAPE.search(segment):
-                found.append("const:escape")
-                break
-    return found
+    return _HELPERS["_concept_tokens"](code, exempt_names)
 
+
+def _check_helpers_match_guard() -> None:
+    # The tokenizer exempts attributes on the campaign objects; its list must match GUARD.
+    if set(_HELPERS["_COURSE_CAMPAIGN_NAMES"]) != PRELUDE_NAMES:
+        raise SystemExit(
+            "_COURSE_CAMPAIGN_NAMES in course_helpers.py is out of date with GUARD in python-worker.js; "
+            f"set it to {sorted(PRELUDE_NAMES)}"
+        )
+
+
+_check_helpers_match_guard()
 
 # ---------------------------------------------------------------------------------------------
-# Running code exactly like the site does (prelude, setup, student code, then checks)
+# Running code exactly like the site does (course_helpers.py, GUARD when engine=True, setup, code, checks)
 # ---------------------------------------------------------------------------------------------
 
-RUNNER = r'''
-import ast, builtins, io, json, sys
+RESULT_MARKER = "\n@@course-run-result@@\n"
+
+RUNNER = r"""
+import json, sys
 payload = json.loads(sys.stdin.read())
-buffer = io.StringIO()
-real_stdout = sys.stdout
-sys.stdout = buffer
 ns = {"__name__": "__main__"}
 events = []
-for name in ["_stage_say", "_stage_flare", "_stage_focus", "_stage_move", "_stage_prompt", "_stage_options",
-             "_stage_speak", "_stage_highlight", "_stage_cast", "_stage_mana", "_stage_roll"]:
-    ns[name] = (lambda n: (lambda *a: events.append([n] + [str(x) for x in a])))(name)
-ns["_stage_option"] = lambda *a: None
-exec(payload["prelude"], ns, ns)
-_inputs = list(payload.get("stdin", []))
-_used = [0]
-def _fake_input(prompt=""):
-    print(prompt, end="")
-    if _used[0] >= len(_inputs):
-        raise EOFError("The program asked for more input than this exercise provides.")
-    value = _inputs[_used[0]]
-    _used[0] += 1
-    print(value)
-    return value
-ns["input"] = _fake_input
-exec(payload["tokenizer"], ns, ns)
-source = payload["code"]
-ns["_source"] = source
-ns["_inputs_used"] = lambda: _used[0]
-ok, error = True, ""
-try:
-    exec(payload.get("setup", ""), ns, ns)
-    exec(compile(source, "<student>", "exec"), ns, ns)
-except Exception as exc:
-    ok, error = False, f"{type(exc).__name__}: {exc}"
-ns["_captured_stdout"] = buffer.getvalue()
-results = []
-if ok:
+if payload["engine"]:
+    for name in ["_stage_say", "_stage_flare", "_stage_focus", "_stage_move", "_stage_prompt", "_stage_options",
+                 "_stage_speak", "_stage_highlight", "_stage_cast", "_stage_mana", "_stage_roll"]:
+        ns[name] = (lambda n: (lambda *a: events.append([n] + [str(x) for x in a])))(name)
+    ns["_stage_option"] = lambda *a: None
+exec(compile(payload["helpers"], "course_helpers.py", "exec"), ns)
+if payload["engine"]:
+    exec(compile(payload["prelude"], "<guard>", "exec"), ns)
+flat = [{"name": name, "code": code} for group in payload["checkpoints"] for name, code in group]
+result = ns["_course_run"](payload["code"], payload["setup"], flat, payload["stdin"])
+rows, at = [], 0
+if result["ok"]:
     for group in payload["checkpoints"]:
         row = []
-        for name, code in group:
-            try:
-                exec(code, ns, ns)
-                row.append([name, True, ""])
-            except Exception as exc:
-                row.append([name, False, f"{type(exc).__name__}: {exc}"])
-        results.append(row)
-sys.stdout = real_stdout
-json.dump({"ok": ok, "error": error, "stdout": ns["_captured_stdout"], "checkpoints": results}, sys.stdout)
-'''
-
-CHECK_HELPERS = r'''
-import ast as _ast
-def _lines():
-    return [line.strip() for line in _captured_stdout.splitlines() if line.strip()]
-def _uses(token):
-    return token in _concept_tokens(_source)
-def _count(token):
-    return _concept_tokens(_source).count(token)
-def _assigned_from_expression(name):
-    for node in _ast.walk(_ast.parse(_source)):
-        if isinstance(node, _ast.Assign) and any(isinstance(t, _ast.Name) and t.id == name for t in node.targets):
-            if not isinstance(node.value, _ast.Constant):
-                return True
-    return False
-'''
-
-
-def _tokenizer_source() -> str:
-    # Ship concept_tokens (and what it needs) into the sandbox so checks can call _uses(...).
-    src = Path(__file__).read_text(encoding="utf8")
-    start = src.index("_NODE_NAMES = {")
-    end = src.index("# ---------------------------------------------------------------------------------------------\n# Running code")
-    body = src[start:end].replace("def concept_tokens(", "def _concept_tokens(")
-    header = (
-        "import ast, re, builtins\n"
-        f"PRELUDE_NAMES = set({sorted(PRELUDE_NAMES)!r})\n"
-        "BUILTIN_NAMES = set(dir(builtins))\n"
-    )
-    return header + body + CHECK_HELPERS
-
-
-TOKENIZER = _tokenizer_source()
+        for _ in group:
+            check = result["checks"][at]
+            at += 1
+            row.append([check["name"], check["passed"], check["message"]])
+        rows.append(row)
+sys.__stdout__.write(payload["marker"] + json.dumps({
+    "ok": result["ok"], "error": result["error"], "traceback": result["traceback"],
+    "stdout": result["stdout"], "checkpoints": rows,
+}))
+"""
 
 
 def normalize_checks(checks) -> list[list[str]]:
@@ -316,14 +202,16 @@ def normalize_checks(checks) -> list[list[str]]:
     return out
 
 
-def run(code: str, checkpoints: list, setup: str = "", stdin: list | None = None) -> dict:
+def run(code: str, checkpoints: list, setup: str = "", stdin: list | None = None, engine: bool = False) -> dict:
     payload = {
-        "prelude": PRELUDE,
-        "tokenizer": TOKENIZER,
+        "helpers": HELPERS_SOURCE,
+        "prelude": PRELUDE if engine else "",
+        "engine": bool(engine),
         "setup": setup or "",
         "code": code,
         "stdin": list(stdin or []),
         "checkpoints": [normalize_checks(cp.get("checks")) for cp in checkpoints],
+        "marker": RESULT_MARKER,
     }
     try:
         child = subprocess.run(
@@ -334,10 +222,13 @@ def run(code: str, checkpoints: list, setup: str = "", stdin: list | None = None
             timeout=TIMEOUT_SECONDS,
         )
     except subprocess.TimeoutExpired:
-        return {"ok": False, "error": "Timeout: the code ran too long (infinite loop?)", "stdout": "", "checkpoints": []}
-    if child.returncode != 0:
-        return {"ok": False, "error": (child.stderr or child.stdout).strip()[-800:], "stdout": "", "checkpoints": []}
-    return json.loads(child.stdout)
+        return {"ok": False, "error": "Timeout: the code ran too long (infinite loop?)", "traceback": "",
+                "stdout": "", "checkpoints": []}
+    at = child.stdout.rfind(RESULT_MARKER)
+    if child.returncode != 0 or at < 0:
+        return {"ok": False, "error": (child.stderr or child.stdout).strip()[-800:], "traceback": "",
+                "stdout": "", "checkpoints": []}
+    return json.loads(child.stdout[at + len(RESULT_MARKER):])
 
 
 def checkpoint_status(result: dict, count: int) -> list[bool]:
@@ -452,6 +343,7 @@ def verify_exercise(ex: dict, where: str, gate: ConceptGate, report: Report, kin
     report.stats["checkpoints"] += len(checkpoints)
     setup = ex.get("setup", "")
     stdin = ex.get("stdin", [])
+    engine = bool(ex.get("engine", False))
     exempt = defined_names(setup)
     for field in ("id", "title", "starter", "solution"):
         if field not in ex:
@@ -485,13 +377,13 @@ def verify_exercise(ex: dict, where: str, gate: ConceptGate, report: Report, kin
     if grade > 9:
         report.warn(where, f"Mar'tu's explanation reads at grade {grade}")
 
-    solution = run(ex["solution"], checkpoints, setup, stdin)
+    solution = run(ex["solution"], checkpoints, setup, stdin, engine)
     status = checkpoint_status(solution, len(checkpoints))
     if not all(status):
         index, message = first_failure(solution)
         report.error(where, f"solution fails at checkpoint {index}: {message}")
 
-    starter = run(ex["starter"], checkpoints, setup, stdin)
+    starter = run(ex["starter"], checkpoints, setup, stdin, engine)
     starter_status = checkpoint_status(starter, len(checkpoints))
     if ex.get("starter_passes"):
         if not all(starter_status):
@@ -500,7 +392,7 @@ def verify_exercise(ex: dict, where: str, gate: ConceptGate, report: Report, kin
         report.error(where, "starter code already passes every checkpoint")
 
     for k, partial in enumerate(ex.get("partials") or [], 1):
-        result = run(partial, checkpoints, setup, stdin)
+        result = run(partial, checkpoints, setup, stdin, engine)
         st = checkpoint_status(result, len(checkpoints))
         if not all(st[:k]):
             report.error(where, f"partial {k} should pass checkpoints 1..{k} but got {st} ({first_failure(result)[1]})")
@@ -509,7 +401,7 @@ def verify_exercise(ex: dict, where: str, gate: ConceptGate, report: Report, kin
 
     for wrong in ex.get("wrong_answers") or []:
         report.stats["wrong_answers"] += 1
-        result = run(wrong["code"], checkpoints, setup, stdin)
+        result = run(wrong["code"], checkpoints, setup, stdin, engine)
         index, message = first_failure(result)
         label = f"wrong answer ({wrong.get('why', '?')})"
         if index is None:
@@ -523,7 +415,7 @@ def verify_exercise(ex: dict, where: str, gate: ConceptGate, report: Report, kin
             report.error(where, f"{label} message {message!r} does not mention {needle!r}")
 
     if ex.get("example") and "example_output" in ex:
-        result = run(ex["example"], [], setup, stdin)
+        result = run(ex["example"], [], setup, stdin, engine)
         if not result["ok"]:
             report.error(where, f"example crashes: {result['error']}")
         elif result["stdout"].rstrip() != str(ex["example_output"]).rstrip():
@@ -532,10 +424,10 @@ def verify_exercise(ex: dict, where: str, gate: ConceptGate, report: Report, kin
     bonus = ex.get("bonus")
     if bonus:
         bonus_cp = [{"checks": bonus.get("checks")}]
-        result = run(bonus.get("solution", ""), bonus_cp, setup, stdin)
+        result = run(bonus.get("solution", ""), bonus_cp, setup, stdin, engine)
         if not all(checkpoint_status(result, 1)):
             report.error(where, f"bonus solution fails: {first_failure(result)[1]}")
-        base = run(ex["solution"], bonus_cp, setup, stdin)
+        base = run(ex["solution"], bonus_cp, setup, stdin, engine)
         if all(checkpoint_status(base, 1)):
             report.warn(where, "the plain solution already passes the bonus checks")
 
@@ -555,7 +447,7 @@ def verify_question(q: dict, where: str, gate: ConceptGate, report: Report) -> N
         gate.check(report, where, "question code", q.get("code"))
     elif kind == "predict":
         gate.check(report, where, "question code", q["code"])
-        result = run(q["code"], [], q.get("setup", ""), q.get("stdin"))
+        result = run(q["code"], [], q.get("setup", ""), q.get("stdin"), q.get("engine", False))
         actual = _norm(result["stdout"]) if result["ok"] else f"ERROR: {result['error']}"
         if _norm(q["answer"]) != actual and not (str(q["answer"]).startswith("ERROR") and actual.startswith("ERROR")):
             report.error(where, f"predict answer {q['answer']!r} but code prints {actual!r}")
@@ -566,21 +458,21 @@ def verify_question(q: dict, where: str, gate: ConceptGate, report: Report) -> N
         gate.check(report, where, "question code", q["code"].replace("___", str(q["answer"])))
         for answer in [q["answer"], *q.get("accept", [])]:
             code = q["code"].replace("___", str(answer))
-            result = run(code, [], q.get("setup", ""), q.get("stdin"))
+            result = run(code, [], q.get("setup", ""), q.get("stdin"), q.get("engine", False))
             if not result["ok"] or _norm(result["stdout"]) != _norm(q["expected_output"]):
                 report.error(where, f"fill answer {answer!r} gives {result['stdout'] or result['error']!r}")
     elif kind == "parsons":
         code = "\n".join(q["lines"]) + "\n"
         gate.check(report, where, "question code", code)
-        result = run(code, [], q.get("setup", ""), q.get("stdin"))
+        result = run(code, [], q.get("setup", ""), q.get("stdin"), q.get("engine", False))
         if not result["ok"] or _norm(result["stdout"]) != _norm(q["expected_output"]):
             report.error(where, f"parsons lines in order give {result['stdout'] or result['error']!r}")
     elif kind == "bug":
         gate.check(report, where, "question fix", q["fix"])
-        fixed = run(q["fix"], [], q.get("setup", ""), q.get("stdin"))
+        fixed = run(q["fix"], [], q.get("setup", ""), q.get("stdin"), q.get("engine", False))
         if not fixed["ok"] or _norm(fixed["stdout"]) != _norm(q["expected_output"]):
             report.error(where, f"bug fix gives {fixed['stdout'] or fixed['error']!r}")
-        buggy = run(q["code"], [], q.get("setup", ""), q.get("stdin"))
+        buggy = run(q["code"], [], q.get("setup", ""), q.get("stdin"), q.get("engine", False))
         if buggy["ok"] and _norm(buggy["stdout"]) == _norm(q["expected_output"]):
             report.error(where, "the buggy code already prints the expected output")
     else:
@@ -605,7 +497,8 @@ def verify_unit(path: Path, gate: ConceptGate, report: Report) -> None:
                 gate.introduce(item.get("introduces"), where)
                 gate.check(report, where, "article example", example.get("code"))
                 if "output" in example:
-                    result = run(example["code"], [], example.get("setup", ""), example.get("stdin"))
+                    result = run(example["code"], [], example.get("setup", ""), example.get("stdin"),
+                                 example.get("engine", False))
                     if not result["ok"] or _norm(result["stdout"]) != _norm(example["output"]):
                         report.error(where, f"article example prints {result['stdout'] or result['error']!r}")
             for ex in item.get("exercises", []):
@@ -618,7 +511,8 @@ def verify_unit(path: Path, gate: ConceptGate, report: Report) -> None:
         elif kind == "cheatsheet":
             for entry in item.get("entries", []):
                 if entry.get("code") and "output" in entry:
-                    result = run(entry["code"], [], entry.get("setup", ""), entry.get("stdin"))
+                    result = run(entry["code"], [], entry.get("setup", ""), entry.get("stdin"),
+                                 entry.get("engine", False))
                     if not result["ok"] or _norm(result["stdout"]) != _norm(entry["output"]):
                         report.error(where, f"cheatsheet {entry.get('concept')} prints {result['stdout'] or result['error']!r}")
         else:

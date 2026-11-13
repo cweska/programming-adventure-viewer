@@ -1,0 +1,59 @@
+[
+  {
+    "term": "checkpoint",
+    "aliases": [
+      "checkpoints"
+    ],
+    "plain": "One small task in an exercise. It turns green when your code does it."
+  },
+  {
+    "term": "comment",
+    "aliases": [
+      "comments"
+    ],
+    "plain": "A line that starts with `#`. Python skips it. It is a note for people.",
+    "example": "# Mar'tu was here"
+  },
+  {
+    "term": "concatenate",
+    "aliases": [
+      "concatenation",
+      "glue"
+    ],
+    "plain": "Join strings end to end with `+`.",
+    "example": "\"Shield\" + \" up.\""
+  },
+  {
+    "term": "input",
+    "aliases": [
+      "input()"
+    ],
+    "plain": "Something the person running the program types in. `input()` waits for it and hands it back as a string.",
+    "example": "name = input(\"Who goes there? \")"
+  },
+  {
+    "term": "output",
+    "aliases": [
+      "prints",
+      "printed"
+    ],
+    "plain": "What your program shows on the screen when it runs."
+  },
+  {
+    "term": "string",
+    "aliases": [
+      "strings",
+      "text"
+    ],
+    "plain": "Text inside quotes. Python treats it as words, not as code.",
+    "example": "\"Barrier is holding.\""
+  },
+  {
+    "term": "variable",
+    "aliases": [
+      "variables"
+    ],
+    "plain": "A name that holds a value, so you can use the value later.",
+    "example": "mana = 20"
+  }
+]

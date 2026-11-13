@@ -1,4 +1,5 @@
 import { publicPath } from "../../site";
+import type { CourseRunInput } from "../../course/contracts";
 import type { LiveSession, RunInput, RunResult } from "../types";
 import { parseStageMessage, type StageEvent } from "../../stage/bridge";
 
@@ -126,6 +127,41 @@ function send(message: Record<string, unknown>): Promise<RunResult> {
 
 export function runPython(input: RunInput): Promise<RunResult> {
   return send({ type: "run", code: input.code, checks: input.checks, setup: input.setup ?? "" });
+}
+
+/** The traceback a course run reports when it hits the time limit (explainCourseError knows it). */
+export const COURSE_TIMEOUT_TRACEBACK = "TimeoutError: The program ran too long and was stopped.";
+
+/**
+ * One Intro to Python course run (contracts.ts RunCourse): fresh globals, the course helpers, the campaign
+ * engine only when `engine` is true, scripted input() answers, setup, the code, then the checks.
+ * A run that hits the time limit resolves with `timedOut: true` (the worker is restarted); it only
+ * rejects when Python itself cannot load.
+ */
+export async function runCourse(input: CourseRunInput): Promise<RunResult> {
+  try {
+    return await send({
+      type: "course-run",
+      code: input.code,
+      checks: input.checks.map((check) => ({ name: check.name, code: check.code })),
+      setup: input.setup ?? "",
+      stdin: input.stdin ?? [],
+      engine: input.engine === true,
+    });
+  } catch (error) {
+    if (error instanceof PythonTimeoutError) {
+      return {
+        ok: false,
+        stdout: "",
+        stderr: "",
+        traceback: COURSE_TIMEOUT_TRACEBACK,
+        checks: [],
+        stageEvents: [],
+        timedOut: true,
+      };
+    }
+    throw error;
+  }
 }
 
 export async function startPythonSession(input: {

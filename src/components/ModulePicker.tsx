@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Module } from "../lib/lesson/schema";
+import { publicPath } from "../lib/site";
 
 function partCount(module: Module): number {
   return module.lessons
@@ -14,6 +15,15 @@ export function ModulePicker({ modules }: { modules: Module[] }) {
         <h1>Choose today&apos;s module</h1>
         <p>Your teacher will tell you which module the party plays today.</p>
       </section>
+      <aside className="intro-python-callout" data-testid="intro-python-callout">
+        <img className="intro-python-callout-portrait" src={publicPath("/sprites/mar-tu.svg")} alt="" aria-hidden="true" />
+        <p>
+          <strong>New to Python?</strong> Learn it with Mar&apos;tu first, one small step at a time.
+        </p>
+        <Link className="intro-python-callout-link" href="/intro-python" data-testid="intro-python-start">
+          Start Intro to Python
+        </Link>
+      </aside>
       <ul className="module-list" data-testid="module-list">
         {modules.map((module) => (
           <li key={module.id} className="module-card" data-testid={`module-card-${module.id}`}>

@@ -1,0 +1,10 @@
+{
+  "id": "intro-python",
+  "title": "Intro to Python",
+  "intro": "Hi. It is me, Mar'tu. Before we continue on our adventure you must learn some of the language we call, Python.\nThe barrier, the Ley Clock, the game screen: all of them listen to Python, yes? So you will learn to speak it.\nWe go one small step at a time. Each lesson has short tasks, hints when you are stuck, and a quiz at the end. Nothing here is a test you can fail.\nAlready know some Python? Every unit has a Quick Check. Pass it and move on.\nCome. Sit by the fire. We begin with words.",
+  "settings": {
+    "solutionAfterMinutes": 5,
+    "solutionAfterFailedRuns": 4,
+    "quizReadyPercent": 70
+  }
+}
