@@ -227,7 +227,7 @@ describe("server render", () => {
         compareOpen: false,
         showUnlocked: false,
         runNumber: 3,
-        onReveal: () => "opened",
+        onReveal: () => "opened" as const,
         onDismissOffer: () => undefined,
         onOpenAssemble: () => undefined,
         onOpenCompare: () => undefined,

@@ -8,7 +8,7 @@
   },
   "exercises": {
     "first-words/read-the-chalk": {
-      "notes": "Run-and-read: the starter passes on purpose, so the first press of Run is a win."
+      "notes": "Run-and-read: the starter passes on purpose, so the first press of Run is a win. The predict is free and never blocks Run."
     },
     "first-words/ask-the-traveler": {
       "wrongAnswers": [
@@ -65,7 +65,7 @@
           "messageContains": "can only concatenate"
         }
       ],
-      "notes": "The crash wrong answer (fails_at=0) proves the TypeError path reaches the explainer."
+      "notes": "The crash wrong answer (fails_at=0) proves the TypeError path reaches the explainer. The example uses other names (guard, arrows) and another sentence shape, so it cannot be copied as the answer."
     },
     "night-watch-sign": {
       "partials": [

@@ -10,15 +10,19 @@ docs/intro-to-python/prototypes/FORMAT.md.
 
 What it covers:
   lesson "first-words"
-    1. read-the-chalk     starter_passes ("run and read"), worked example, preview token
-    2. ask-the-traveler   stdin + input(), a known wrong answer
-    3. barrier-report     3 checkpoints with hint ladders and pass lines, another_way, bonus, assemble,
-                          campaign_link, tracer, takeaway, partials, wrong answers (one that crashes)
+    1. read-the-chalk     starter_passes ("run and read"), worked example, preview token, predict (one click,
+                          with its own code)
+    2. ask-the-traveler   stdin + input(), a known wrong answer, names ("Names to use"), pick (Mar'tu's pick),
+                          a goal-only checkpoint (dictated=False)
+    3. barrier-report     3 checkpoints with hint ladders and pass lines, dictated=True, another_way, bonus,
+                          assemble, campaign_link, tracer, takeaway, partials, wrong answers (one that crashes),
+                          names, pair_talk
   quiz "chalk-quiz"        mc (with and without code), predict, fill, parsons, bug
   project "night-watch-sign"   hidden setup, intro, light support
   challenge "mar-tu-speaks"    engine helpers (print_prompt), core level
   challenge "mar-tu-speaks-advanced"   advanced variant_of the core challenge, stdin
   article "asking-the-traveler"   body with a list, code fence and glossary links, runnable examples, a try-it
+                                  that is a SOLO item (solo=True)
   cheatsheet "chalk-notes"
   testout "quick-check"
 """
@@ -115,7 +119,7 @@ READ_THE_CHALK = dict(
         dict(
             text="1. Press Run and read what prints.",
             hints=[
-                "The Run button is under the code.",
+                "Press the Run button. Pressing Ctrl and Enter together works too.",
                 "You do not need to change anything. Just press Run and look at the console.",
             ],
             checks=[
@@ -130,8 +134,19 @@ READ_THE_CHALK = dict(
         'print("Hours until the next burst:", 37)\n'
     ),
     starter_passes=True,
+    predict=dict(
+        q="Before you press Run: what will this line print?",
+        code='print("Hours until the next burst:", 37)\n',
+        choices=[
+            "Hours until the next burst: 37",
+            "Hours until the next burst:37",
+            '"Hours until the next burst:", 37',
+        ],
+        answer=0,
+        explain="The quotes are not printed. The comma becomes one space between the words and the number.",
+    ),
     takeaway="`print()` shows words and numbers on the screen.",
-    notes="Run-and-read: the starter passes on purpose, so the first press of Run is a win.",
+    notes="Run-and-read: the starter passes on purpose, so the first press of Run is a win. The predict is free and never blocks Run.",
 )
 
 ASK_THE_TRAVELER = dict(
@@ -152,6 +167,7 @@ ASK_THE_TRAVELER = dict(
         dict(
             id="greet",
             text="Print a greeting that uses `name`.",
+            dictated=False,
             hints=[
                 "The traveler's answer is stored in `name`.",
                 "Glue words and `name` together with `+` inside `print()`.",
@@ -170,6 +186,8 @@ ASK_THE_TRAVELER = dict(
         ),
     ],
     solution='name = input("Who goes there? ")\nprint("Welcome to the cabin, " + name)\n',
+    names=["name"],
+    pick='"Welcome to the cabin, "',
     wrong_answers=[
         dict(
             why="types the name instead of using the variable",
@@ -191,11 +209,11 @@ BARRIER_REPORT = dict(
         "Three small steps, yes? Then the report."
     ),
     example=(
-        'caster = "Bomb Shell"\n'
-        "mana = 24\n"
-        'print(caster + " has " + str(mana) + " mana.")\n'
+        'guard = "Oogrish"\n'
+        "arrows = 12\n"
+        'print("Arrows left for " + guard + ": " + str(arrows))\n'
     ),
-    example_output="Bomb Shell has 24 mana.",
+    example_output="Arrows left for Oogrish: 12",
     another_way=[
         dict(
             angle="analogy",
@@ -225,6 +243,7 @@ BARRIER_REPORT = dict(
         dict(
             id="make-caster",
             text='1. Make a variable called `caster` that holds the text `"Gearshift"`.',
+            dictated=True,
             hints=[
                 "A variable is a name, an equals sign, then a value.",
                 "Text needs quotes around it.",
@@ -315,7 +334,12 @@ BARRIER_REPORT = dict(
         why="In the campaign you keep Mar'tu's line in a [[variable]] and hand it to `print_prompt()`. Same idea as `caster`, yes?",
     ),
     takeaway="Keep values in variables. Use `str()` to glue a number to text.",
-    notes="The crash wrong answer (fails_at=0) proves the TypeError path reaches the explainer.",
+    names=["caster", "mana"],
+    pair_talk="Tell your partner why `mana` needs `str()` but `caster` does not. Then each of you types your own report.",
+    notes=(
+        "The crash wrong answer (fails_at=0) proves the TypeError path reaches the explainer. The example uses "
+        "other names (guard, arrows) and another sentence shape, so it cannot be copied as the answer."
+    ),
 )
 
 # ---------------------------------------------------------------------------------------------
@@ -537,10 +561,12 @@ ITEMS = [
         summary="How `input()` works on this site.",
         body=(
             "On this site, `input()` does not wait for you to type. Each exercise brings its own answers, yes?\n"
-            "When your code asks a question, the console shows the question and the answer together, like this:\n"
+            "This line asks for a name:\n"
             "```python\n"
             'name = input("Your name? ")\n'
             "```\n"
+            "If the answer is `Gearshift`, the console shows the question and the answer together on one line: "
+            "`Your name? Gearshift`\n"
             "Three things to remember:\n"
             "1. `input()` always hands back a [[string]], even when the answer looks like a number.\n"
             "2. Keep the answer in a [[variable]], or it is gone.\n"
@@ -556,6 +582,7 @@ ITEMS = [
                 id="try-it",
                 title="Try it: Bomb Shell's words",
                 martu="Bomb Shell talks in short sentences. Change the words in quotes so he says `Shield up.`",
+                solo=True,
                 starter="print(\"Write Bomb Shell's words here\")\n",
                 checkpoints=[
                     dict(

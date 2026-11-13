@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import {
+  coursePreset,
   itemStatus,
   nextUpItem,
   unitProgress,
@@ -30,7 +31,7 @@ export function UnitPage({ unit, campaign, glossary }: UnitPageProps) {
   const quickCheck = unit.items.find((item) => item.kind === "testout");
   const items = unit.items.filter((item) => item.kind !== "testout");
   const nextUp = nextUpItem(unit.id, items, progress);
-  const light = progress.settings.light === true;
+  const light = coursePreset(progress.settings) === "short";
 
   return (
     <main className="course-page" data-testid="unit-page" data-unit={unit.id}>

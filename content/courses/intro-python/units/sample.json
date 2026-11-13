@@ -51,7 +51,7 @@
               "id": "step-1",
               "text": "Press Run and read what prints.",
               "hints": [
-                "The Run button is under the code.",
+                "Press the Run button. Pressing Ctrl and Enter together works too.",
                 "You do not need to change anything. Just press Run and look at the console."
               ],
               "checks": [
@@ -69,7 +69,20 @@
             "print(\"Hours until the next burst:\", 37)"
           ],
           "starterPasses": true,
-          "takeaway": "`print()` shows words and numbers on the screen."
+          "takeaway": "`print()` shows words and numbers on the screen.",
+          "predict": {
+            "q": "Before you press Run: what will this line print?",
+            "code": [
+              "print(\"Hours until the next burst:\", 37)"
+            ],
+            "choices": [
+              "Hours until the next burst: 37",
+              "Hours until the next burst:37",
+              "\"Hours until the next burst:\", 37"
+            ],
+            "answer": 0,
+            "explain": "The quotes are not printed. The comma becomes one space between the words and the number."
+          }
         },
         {
           "id": "ask-the-traveler",
@@ -120,14 +133,19 @@
                   "code": "assert 'Lucky' not in _source, 'Use the variable name instead of typing Lucky.'"
                 }
               ],
-              "passLine": "Lucky: Took you long enough."
+              "passLine": "Lucky: Took you long enough.",
+              "dictated": false
             }
           ],
           "solution": [
             "name = input(\"Who goes there? \")",
             "print(\"Welcome to the cabin, \" + name)"
           ],
-          "takeaway": "`input()` asks a question. `=` keeps the answer in a variable."
+          "takeaway": "`input()` asks a question. `=` keeps the answer in a variable.",
+          "names": [
+            "name"
+          ],
+          "pick": "\"Welcome to the cabin, \""
         },
         {
           "id": "barrier-report",
@@ -135,11 +153,11 @@
           "martu": "Every night, someone reports who holds the barrier and how much mana they have left.\nA [[variable]] keeps a value under a name. Text needs quotes. Numbers do not.\nYou cannot glue a number straight onto a string. Turn it into text first with `str()`.\nThree small steps, yes? Then the report.",
           "example": {
             "code": [
-              "caster = \"Bomb Shell\"",
-              "mana = 24",
-              "print(caster + \" has \" + str(mana) + \" mana.\")"
+              "guard = \"Oogrish\"",
+              "arrows = 12",
+              "print(\"Arrows left for \" + guard + \": \" + str(arrows))"
             ],
-            "output": "Bomb Shell has 24 mana."
+            "output": "Arrows left for Oogrish: 12"
           },
           "anotherWay": [
             {
@@ -176,7 +194,8 @@
                   "code": "assert caster == 'Gearshift', 'Store the text Gearshift in caster, with quotes.'"
                 }
               ],
-              "passLine": "Gearshift: Visor dims. Name logged."
+              "passLine": "Gearshift: Visor dims. Name logged.",
+              "dictated": true
             },
             {
               "id": "make-mana",
@@ -266,7 +285,12 @@
             ],
             "why": "In the campaign you keep Mar'tu's line in a [[variable]] and hand it to `print_prompt()`. Same idea as `caster`, yes?"
           },
-          "takeaway": "Keep values in variables. Use `str()` to glue a number to text."
+          "takeaway": "Keep values in variables. Use `str()` to glue a number to text.",
+          "names": [
+            "caster",
+            "mana"
+          ],
+          "pairTalk": "Tell your partner why `mana` needs `str()` but `caster` does not. Then each of you types your own report."
         }
       ]
     },
@@ -560,7 +584,7 @@
       "optional": true,
       "minutes": 6,
       "summary": "How `input()` works on this site.",
-      "body": "On this site, `input()` does not wait for you to type. Each exercise brings its own answers, yes?\nWhen your code asks a question, the console shows the question and the answer together, like this:\n```python\nname = input(\"Your name? \")\n```\nThree things to remember:\n1. `input()` always hands back a [[string]], even when the answer looks like a number.\n2. Keep the answer in a [[variable]], or it is gone.\n3. If your code asks more questions than the exercise has answers, Python stops with an `EOFError`.\nRun the examples below. Then try it yourself.",
+      "body": "On this site, `input()` does not wait for you to type. Each exercise brings its own answers, yes?\nThis line asks for a name:\n```python\nname = input(\"Your name? \")\n```\nIf the answer is `Gearshift`, the console shows the question and the answer together on one line: `Your name? Gearshift`\nThree things to remember:\n1. `input()` always hands back a [[string]], even when the answer looks like a number.\n2. Keep the answer in a [[variable]], or it is gone.\n3. If your code asks more questions than the exercise has answers, Python stops with an `EOFError`.\nRun the examples below. Then try it yourself.",
       "examples": [
         {
           "code": [
@@ -607,7 +631,8 @@
           ],
           "solution": [
             "print(\"Shield up.\")"
-          ]
+          ],
+          "solo": true
         }
       ]
     },

@@ -376,6 +376,54 @@
   font-size: 0.98rem;
 }
 
+/* "Show me more" / "Keep it short": a radio pair inside Help options. */
+.course-preset {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0 0 12px;
+  border: 0;
+  border-bottom: 1px solid var(--course-line);
+}
+
+.course-preset legend {
+  margin-bottom: 8px;
+  padding: 0;
+  color: var(--parchment);
+  font-weight: 600;
+}
+
+/* The one-time "Have you typed code before?" question on the course map. */
+.course-placement {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 18px;
+  background: var(--course-violet-bg);
+  border: 1px solid var(--course-violet);
+}
+
+.course-page .course-placement h2 {
+  font-size: 1.3rem;
+}
+
+.course-placement-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.course-placement-actions button {
+  min-width: 88px;
+}
+
+.course-placement-done {
+  padding: 10px 14px;
+  color: var(--course-muted);
+  border: 1px dashed var(--course-line);
+}
+
 .course-settings-note {
   max-width: 340px;
   padding: 8px 12px;
@@ -476,6 +524,12 @@
   font-size: 0.96rem;
   line-height: 1.45;
   text-align: left;
+}
+
+/* No room below (a word near the bottom of a phone screen): open above the word instead. */
+.glossary-popover.is-above {
+  top: auto;
+  bottom: calc(100% + 6px);
 }
 
 .glossary-popover .inline-code {

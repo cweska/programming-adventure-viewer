@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { unitProgress, useCourseProgress, type ProgressUnit, type UnitProgress } from "../../lib/course/progress";
+import { coursePreset, unitProgress, useCourseProgress, type ProgressUnit, type UnitProgress } from "../../lib/course/progress";
 import type { GlossaryEntry } from "../../lib/course/schema";
 import { ProgressBar } from "./CourseBits";
 import { unitHref } from "./course-links";
-import { CourseSettings } from "./CourseSettings";
+import { CourseSettings, PlacementQuestion } from "./CourseSettings";
 import { MarTu } from "./MarTu";
 import { Prose } from "./Prose";
 
@@ -70,7 +70,9 @@ export function CourseMap({ title, intro, units, glossary }: CourseMapProps) {
         </p>
       ) : null}
 
-      <MarTu text={intro} glossary={glossary} light={progress.settings.light === true} />
+      <PlacementQuestion />
+
+      <MarTu text={intro} glossary={glossary} light={coursePreset(progress.settings) === "short"} />
 
       <section aria-labelledby="course-units-title" className="course-units">
         <h2 id="course-units-title">Units</h2>

@@ -28,6 +28,7 @@ function SimpleInline({ text }: { text: string }) {
 export function GlossaryTerm({ entry, children }: { entry: GlossaryEntry; children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const [shift, setShift] = useState(0);
+  const [above, setAbove] = useState(false);
   const wrapRef = useRef<HTMLSpanElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const popoverRef = useRef<HTMLSpanElement>(null);
@@ -52,10 +53,12 @@ export function GlossaryTerm({ entry, children }: { entry: GlossaryEntry; childr
     };
   }, [open]);
 
-  // Keep the box on screen at phone width: slide it left if it would run off the right edge.
+  // Keep the box on screen at phone width: slide it left if it would run off the right edge, and open it
+  // above the word when there is no room below (a term near the bottom of a phone screen).
   useIsoLayoutEffect(() => {
     if (!open) {
       setShift(0);
+      setAbove(false);
       return;
     }
     const box = popoverRef.current;
@@ -63,13 +66,17 @@ export function GlossaryTerm({ entry, children }: { entry: GlossaryEntry; childr
     const rect = box.getBoundingClientRect();
     const overflow = rect.right - (window.innerWidth - 12);
     setShift(overflow > 0 ? Math.max(0, Math.min(overflow, rect.left - 12)) : 0);
-    // A term near the bottom of a phone screen opens its box below the fold: scroll just enough to show it.
-    if (rect.bottom > window.innerHeight) {
-      try {
-        box.scrollIntoView({ block: "nearest" });
-      } catch {
-        // Old browsers: the box is still there, one scroll away.
-      }
+    if (rect.bottom <= window.innerHeight - 8) return;
+    const term = buttonRef.current?.getBoundingClientRect();
+    if (term && term.top - rect.height - 6 >= 8) {
+      setAbove(true);
+      return;
+    }
+    // No room above either (a very short window): scroll just enough to show it.
+    try {
+      box.scrollIntoView({ block: "nearest" });
+    } catch {
+      // Old browsers: the box is still there, one scroll away.
     }
   }, [open]);
 
@@ -91,7 +98,7 @@ export function GlossaryTerm({ entry, children }: { entry: GlossaryEntry; childr
           ref={popoverRef}
           id={id}
           role="note"
-          className="glossary-popover"
+          className={`glossary-popover${above ? " is-above" : ""}`}
           data-testid="glossary-popover"
           style={shift ? { transform: `translateX(-${shift}px)` } : undefined}
         >

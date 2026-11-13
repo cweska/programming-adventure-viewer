@@ -36,32 +36,40 @@ test.describe("Intro to Python", () => {
     await expect(page.getByTestId("course-breadcrumbs")).toContainText("Intro to Python");
   });
 
-  test("a lesson exercise: the starter misses a step, hints open rung by rung, the solution passes and stays done", async ({ page }) => {
+  test("a lesson exercise: the starter misses a step, Help climbs rung by rung, the solution passes and stays done", async ({ page }) => {
     await openExercise(page, "first-words", "barrier-report");
     await expect(page.getByTestId("exercise-label")).toHaveText("Exercise 3 of 3");
     await expect(checkpoint(page, 1)).toHaveAttribute("data-state", "active");
-    // Full support: the hint button is there from the start, but no rung is shown until asked for.
-    await expect(page.getByTestId("hint-button-1")).toBeVisible();
-    await expect(page.getByTestId("hint-1-1")).toHaveCount(0);
+    // Full support: ONE Help control from the start, but no rung is shown until asked for.
+    const help = page.getByTestId("help-button");
+    await expect(help).toHaveCount(1);
+    await expect(help).toContainText("Help: Start me off");
+    await expect(page.getByTestId("help-rung-1")).toHaveCount(0);
+    await expect(page.locator('[data-testid^="hint-button-"]')).toHaveCount(0);
 
-    // The starter is only comments: step 1 fails with its friendly message.
+    // The starter is only comments: step 1 fails with its friendly message (one message, nothing else).
     await page.getByTestId("run").click();
     await expect(page.getByTestId("checkpoint-message-1")).toContainText("Can't find caster");
+    await expect(page.getByTestId("checkpoint-message")).toHaveCount(1);
     await expect(page.getByTestId("stdout")).toHaveText("(Nothing was printed.)");
     await expect(checkpoint(page, 1)).toHaveAttribute("data-state", "active");
 
-    // The hint ladder reveals one rung at a time, then stops.
-    const hintButton = page.getByTestId("hint-button-1");
-    await expect(hintButton).toBeVisible();
-    await expect(page.getByTestId("hint-1-1")).toHaveCount(0);
-    await hintButton.click();
-    await expect(page.getByTestId("hint-1-1")).toContainText("Hint 1 of 3");
-    await expect(page.getByTestId("hint-1-2")).toHaveCount(0);
-    await hintButton.click();
-    await expect(page.getByTestId("hint-1-2")).toContainText("Hint 2 of 3");
-    await hintButton.click();
-    await expect(page.getByTestId("hint-1-3")).toContainText("Hint 3 of 3");
-    await expect(hintButton).toHaveAttribute("aria-disabled", "true");
+    // Help opens one rung per press, in order. Pressing again straight away asks to read it first;
+    // a Run lets the next rung open.
+    await help.click();
+    await expect(page.getByTestId("help-rung-1")).toHaveAttribute("data-kind", "start");
+    await expect(help).toContainText("More help: Where to look");
+    await help.click();
+    await expect(page.getByTestId("help-paced")).toBeVisible();
+    await expect(page.getByTestId("help-rung-2")).toHaveCount(0);
+    await runCode(page, "# thinking\n");
+    await help.click();
+    await expect(page.getByTestId("help-rung-2")).toHaveAttribute("data-kind", "point");
+    await page.getByTestId("run").click();
+    await expect(page.getByTestId("run")).toBeEnabled({ timeout: 30_000 });
+    await help.click();
+    await expect(page.getByTestId("help-rung-3")).toHaveAttribute("data-kind", "another");
+    await expect(page.getByTestId("help-another-next")).toBeVisible();
     await expectSaved(page, `${SAMPLE}/first-words/barrier-report`, (entry) => {
       const hints = entry.hintsUsed as Record<string, number> | undefined;
       return hints?.["make-caster"] === 3;
@@ -73,12 +81,15 @@ test.describe("Intro to Python", () => {
     await expect(page.getByTestId("explainer-hint")).toContainText("quotes");
     await expect(page.getByTestId("traceback")).toBeHidden();
 
-    // Two steps done, one still to go.
+    // Two steps done, one still to go: the step list marks them, the console says only what is next.
     await runCode(page, 'caster = "Gearshift"\nmana = 20\n');
     await expect(page.getByTestId("checkpoint-pass-1")).toBeVisible();
     await expect(page.getByTestId("checkpoint-pass-2")).toBeVisible();
     await expect(page.getByTestId("checkpoint-message-3")).toContainText("Gearshift has 20 mana.");
     await expect(checkpoint(page, 3)).toHaveAttribute("data-state", "active");
+    // Help moved on to step 3 and starts again at its first rung.
+    await expect(page.getByTestId("help")).toHaveAttribute("data-step", "print-report");
+    await expect(page.getByTestId("help-rung-1")).toHaveCount(0);
 
     await runCode(page, BARRIER_SOLUTION);
     await expect(page.getByTestId("all-passed")).toBeVisible();
@@ -122,10 +133,74 @@ test.describe("Intro to Python", () => {
     await expect(box).toHaveValue("Lucky");
     await expect(page.getByTestId("stdin-note")).toHaveCount(0);
 
-    // Running out of answers is explained, not a crash dump.
+    // An empty box answers like pressing Enter: the program runs, it does not crash.
     await box.fill("");
     await page.getByTestId("run").click();
-    await expect(page.getByTestId("explainer")).toBeVisible();
+    await expect(stdout).toContainText("Welcome to the cabin,");
+    await expect(page.getByTestId("explainer")).toHaveCount(0);
+  });
+
+  test("Compare with Mar'tu's version opens after real tries, side by side, and never overwrites the code", async ({ page }) => {
+    await openExercise(page, "first-words", "barrier-report");
+    // Untouched starter code is not a try: four Runs of it do not open Mar'tu's version.
+    for (let run = 0; run < 4; run += 1) {
+      await page.getByTestId("run").click();
+      await expect(page.getByTestId("run")).toBeEnabled({ timeout: 30_000 });
+    }
+    await expect(page.getByTestId("compare-open")).toHaveCount(0);
+
+    // Four changed tries do.
+    for (const value of ["1", "2", "3", "4"]) await runCode(page, `cast = ${value}\n`);
+    const open = page.getByTestId("compare-open");
+    await expect(open).toBeVisible();
+    await open.click();
+    await expect(page.getByTestId("compare")).toBeVisible();
+    await expect(page.getByTestId("compare-heading")).toBeFocused();
+    await expect(page.getByTestId("compare-theirs")).toContainText('caster = "Gearshift"');
+    await expect(page.getByTestId("compare-mine")).toContainText("cast = 4");
+    await expect(page.locator('[data-testid="editor"] .cm-content')).toContainText("cast = 4");
+    await expectSaved(page, `${SAMPLE}/first-words/barrier-report`, (entry) => entry.solutionShown === true);
+
+    // "Now type it yourself" folds Mar'tu's version away and hands the keyboard to the editor.
+    await page.getByTestId("compare-retype").click();
+    await expect(page.getByTestId("compare-theirs")).toHaveCount(0);
+    await expect(page.locator('[data-testid="editor"] .cm-content')).toBeFocused();
+    await page.getByTestId("compare-look-again").click();
+    await expect(page.getByTestId("compare-theirs")).toBeVisible();
+
+    // Copying is an escape hatch behind a second confirm, starting on the safe choice.
+    await page.getByTestId("compare-copy").click();
+    await expect(page.getByTestId("compare-copy-no")).toBeFocused();
+    await page.getByTestId("compare-copy-no").click();
+    await expect(page.locator('[data-testid="editor"] .cm-content')).toContainText("cast = 4");
+    await page.getByTestId("compare-copy").click();
+    await page.getByTestId("compare-copy-yes").click();
+    await expect(page.locator('[data-testid="editor"] .cm-content')).toContainText("mana = 20");
+    await page.getByTestId("run").click();
+    await expect(page.getByTestId("all-passed")).toBeVisible();
+    await expect(page.getByTestId("write-it-myself")).toBeVisible();
+  });
+
+  test("the keyboard is never lost: Run keeps focus, and Esc then Tab leaves the editor", async ({ page }) => {
+    await openExercise(page, "first-words", "barrier-report");
+    await expect(page.getByTestId("editor-keys")).toContainText("Esc, then Tab");
+    const run = page.getByTestId("run");
+    await run.focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByTestId("checkpoint-message-1")).toBeVisible();
+    await expect(run).toBeFocused();
+    // The same result again is still announced (the live region's words change every run).
+    await expect(page.getByTestId("run-count")).toContainText("Run 1");
+    await page.keyboard.press("Enter");
+    await expect(page.getByTestId("run-count")).toContainText("Run 2");
+
+    const content = page.locator('[data-testid="editor"] .cm-content');
+    await content.click();
+    await page.keyboard.press("Tab");
+    await expect(content).toBeFocused();
+    await page.keyboard.press("Escape");
+    await page.keyboard.press("Tab");
+    await expect(content).not.toBeFocused();
   });
 
   test("an engine challenge shows print_prompt() on the game screen", async ({ page }) => {
@@ -233,8 +308,9 @@ test.describe("Intro to Python", () => {
     // No help in a Quick Check, even after a miss.
     await page.getByTestId("run").click();
     await expect(page.getByTestId("checkpoint-message-1")).toContainText("Can't find leader");
+    await expect(page.getByTestId("help-button")).toHaveCount(0);
     await expect(page.locator('[data-testid^="hint-button-"]')).toHaveCount(0);
-    await expect(page.getByTestId("show-solution")).toHaveCount(0);
+    await expect(page.getByTestId("compare-open")).toHaveCount(0);
 
     await runCode(page, 'leader = "Oogrish"\nprint(leader)\n');
     await expect(page.getByTestId("all-passed")).toBeVisible();

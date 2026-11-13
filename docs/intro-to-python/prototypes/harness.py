@@ -19,6 +19,9 @@ It checks, for every exercise / project / challenge / test-out item:
   * no code a student SEES (starter, solution, example, partials, quiz code) uses a concept that has not been
     introduced yet, in course order (see CONCEPT TOKENS below),
   * every checkpoint has a hint ladder of at least two hints,
+  * an exercise ``predict`` has 2+ choices, an explanation, and an answer that IS what its code prints,
+  * the exercise fields ``names`` (every name is used by the solution), ``pick``, ``pair_talk`` and ``solo``,
+    and the checkpoint field ``dictated``, have the right types,
 and for quizzes, it EXECUTES predict / fill / parsons / bug questions to prove the keyed answer is right.
 
 It also reports reading load (word count and a Flesch-Kincaid grade estimate) for Mar'tu's text and the
@@ -52,7 +55,8 @@ Unit file format (plain Python data, no imports needed):
         stdin=["Oogrish"],                  # answers fed to input(), in order
         starter="...",
         checkpoints=[dict(text="1. ...", hints=["nudge", "more specific", "nearly the answer"],
-                          checks=[("check name", "assert ..., 'student-facing message'")])],
+                          checks=[("check name", "assert ..., 'student-facing message'")],
+                          dictated=True)],     # True: the text spells out the code; False: goal and names only
         solution="...",
         partials=["code after checkpoint 1", ...],     # optional, len < len(checkpoints)
         wrong_answers=[dict(why="hard-codes 68", code="...", fails_at=1, message_contains="variable")],
@@ -61,6 +65,12 @@ Unit file format (plain Python data, no imports needed):
         tracer=True,                         # offer the step-through tracer on this exercise
         bonus=dict(text="Lucky's side quest ...", checks=[...], solution="..."),
         assemble=dict(lines=["first line", "second line"], distractors=["a wrong line"]),
+        predict=dict(q="What will this print?", code="...optional, defaults to the starter...",
+                     choices=["right output", "a likely wrong one"], answer=0, explain="..."),   # Predict before Run
+        names=["caster", "mana"],          # "Names to use" chips: the exact names the steps ask for
+        pick='"Gearshift"',                 # Mar'tu's pick: a value to use when the student can't decide
+        pair_talk="Tell your partner ...",  # an optional Pair talk prompt (every step is still done solo)
+        solo=False,                         # True for the lesson's SOLO item, done alone
         notes="designer notes (not shown to students)",
     )
 
@@ -343,6 +353,21 @@ def defined_names(setup: str) -> set[str]:
     return names
 
 
+def solution_names(code: str) -> set[str]:
+    """Every name a piece of code uses or makes: variables, functions, parameters, attributes."""
+    found: set[str] = set()
+    for node in ast.walk(ast.parse(code)):
+        if isinstance(node, ast.Name):
+            found.add(node.id)
+        elif isinstance(node, (ast.FunctionDef, ast.ClassDef)):
+            found.add(node.name)
+        elif isinstance(node, ast.arg):
+            found.add(node.arg)
+        elif isinstance(node, ast.Attribute):
+            found.add(node.attr)
+    return found
+
+
 def verify_exercise(ex: dict, where: str, gate: ConceptGate, report: Report, kind: str = "exercise") -> None:
     report.stats["exercises"] += 1
     checkpoints = ex.get("checkpoints") or []
@@ -376,6 +401,8 @@ def verify_exercise(ex: dict, where: str, gate: ConceptGate, report: Report, kin
         names = [name for name, _ in normalize_checks(cp.get("checks"))]
         if len(names) != len(set(names)):
             report.error(where, f"checkpoint {i} has two checks with the same name (the site tells them apart by name)")
+        if "dictated" in cp and not isinstance(cp["dictated"], bool):
+            report.error(where, f"checkpoint {i} dictated must be True or False")
         words, grade = reading_stats(cp.get("text", ""))
         if grade > 9:
             report.warn(where, f"checkpoint {i} text reads at grade {grade}")
@@ -458,6 +485,15 @@ def verify_exercise(ex: dict, where: str, gate: ConceptGate, report: Report, kin
     names = ex.get("names")
     if names is not None and not (isinstance(names, (list, tuple)) and all(isinstance(n, str) and n for n in names)):
         report.error(where, "names must be a list of strings")
+    elif names:
+        # "Names to use" chips must be names the solution really uses (a typo there teaches the typo).
+        try:
+            used = solution_names(ex["solution"])
+        except SyntaxError:
+            used = None
+        for name in names if used is not None else []:
+            if name not in used:
+                report.warn(where, f"names lists {name!r}, but the solution never uses it")
     for field in ("pick", "pair_talk"):
         if field in ex and not (isinstance(ex[field], str) and ex[field].strip()):
             report.error(where, f"{field} must be text")
