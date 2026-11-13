@@ -154,6 +154,9 @@ function quietSlipFor(code: string, raw: string, stdout: string, context?: Expla
       return printedNothing ? slip.hint : null;
     case "dash-no-effect":
       return slip.name && (missingName === slip.name || new RegExp(`\\b${slip.name}\\b`).test(raw)) ? slip.hint : null;
+    case "comparison-alone":
+      // Only in place of "Can't find `passed`": a check written for this slip keeps its own words.
+      return missingName ? slip.hint : null;
     default:
       return null;
   }

@@ -16,8 +16,7 @@ Rung 0 follows the help-stack contract (2.2) as written: the line's left side or
 before the sign (`passed = roll `, `print(clock_color `), so it never makes the step's decision. A bonus's rung 0
 is a few tokens (`close_call = `). In the debug steps (2A-05, 2A-S) rung 0 is "Read Python's last line" (or, for a
 quiet bug, the last line the program printed). The SOLO sets `explainer="lean"`: the crash explainer names the
-kind of slip and the line, not the fix (not applied back to the live Unit 1). The key is commented out
-until the exporter and schema accept an `explainer` field.
+kind of slip and the line, not the fix (not applied back to the live Unit 1).
 Terminology (2.9): "box (variable)" in Units 1-2; `=` is read "gets", `==` is read "is the same as".
 
 Check builders below (plain string templates; messages never repeat a student's own text back):
@@ -483,7 +482,7 @@ UNIT = dict(
     order=2,
     title="Control Flow",
     subtitle="The Ley Clock Decides",
-    published=False,
+    published=True,
     martu_intro=(
         "The Ley Clock does not panic. It checks. If the hand is near the arc, it warns. Otherwise, it waits.\n"
         "Today you teach Python to check the same way. And you learn to roll dice, because the world is not fair, "
@@ -1903,8 +1902,7 @@ SOLO_2A = dict(
     solo=True,
     # Teacher ruling on the Unit 2 reviews: in Unit 2 SOLO items (and every QC2 exercise) the crash explainer
     # names the kind of slip and the line, but not the fix. Python's own text stays visible.
-    # explainer="lean" (teacher ruling) waits for site support: the exporter and schema have no
-    # explainer field yet, so the key would fail the export. Restore it once the site renders it.
+    explainer="lean",
     names=["mana", "cost", "can_cast"],
     starter=SOLO_STARTER,
     checkpoints=[

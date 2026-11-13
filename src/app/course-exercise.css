@@ -1055,6 +1055,18 @@
   font-style: italic;
 }
 
+/* A debugging exercise: the run got further than the last one (one slip mended). */
+.ex-result.is-further {
+  color: #d9f5cd;
+  background: var(--course-right-bg, #18291a);
+  border-color: #3f6b33;
+  font-weight: 600;
+}
+
+.ex-result.is-further > [aria-hidden="true"] {
+  color: var(--course-right, #9fd98a);
+}
+
 .ex-result.is-miss,
 .ex-result.is-side {
   color: #f8ecd2;

@@ -12,8 +12,7 @@ Teacher ruling on the Unit 2 reviews, as applied here:
     slips plus a quiet `.lower()` slip, a copy made and forgotten) and C3 "Hold the barrier" (`can_cast` with `and`,
     then cast_spell's chain rebuilt, where the order and the exact boundary both matter) all gate test-out. Every
     QC2 exercise and the SOLO set `explainer="lean"`: the crash explainer names the kind of slip and the line, and
-    leaves out the fix (Python's own text stays visible). Not applied back to the live Unit 1. The key is
-    commented out until the exporter and schema accept an `explainer` field. QC2 is 15 minutes.
+    leaves out the fix (Python's own text stays visible). Not applied back to the live Unit 1. QC2 is 15 minutes.
   * Rerun messages start with the fix, say what happened, and end with the evidence in brackets, "(Mar'tu's check
     tried X, only inside the check.)", in about 35 words or fewer. One order rule: "first, the test that lets the
     fewest numbers through". A box still holding the starter's placeholder is named as such ("still holds the
@@ -831,7 +830,7 @@ UNIT = dict(
     order=2,
     title="Control Flow",
     subtitle="The Ley Clock Decides",
-    published=False,
+    published=True,
     martu_intro=(
         "The Ley Clock does not panic. It checks. If the hand is near the arc, it warns. Otherwise, it waits.\n"
         "Today you teach Python to check the same way. And you learn to roll dice, because the world is not fair, "
@@ -2128,8 +2127,7 @@ SOLO_2C = dict(
     solo=True,
     # Teacher ruling on the Unit 2 reviews: in Unit 2 SOLO items (and every QC2 exercise) the crash explainer
     # names the kind of slip and the line, and leaves out the fix. Python's own text stays visible.
-    # explainer="lean" (teacher ruling) waits for site support: the exporter and schema have no
-    # explainer field yet, so the key would fail the export. Restore it once the site renders it.
+    explainer="lean",
     names=["mana", "str"],
     starter=SOLO_2C_STARTER,
     checkpoints=[
@@ -2821,8 +2819,7 @@ def _qc_roll(form, faces, needed, win, lose):
         support="none",
         # Teacher ruling on the Unit 2 reviews: every QC2 exercise (and the Unit 2 SOLOs) gets the lean explainer:
         # the kind of slip and the line, not the fix. Python's own text stays visible.
-        # explainer="lean" (teacher ruling) waits for site support: the exporter and schema have no
-        # explainer field yet, so the key would fail the export. Restore it once the site renders it.
+        explainer="lean",
         starter=starter,
         checkpoints=[
             dict(
@@ -2976,8 +2973,7 @@ def _qc_mend(form, first, second, first_line, second_line):
         ),
         names=["choice", "lower"],
         support="none",
-        # explainer="lean" (teacher ruling) waits for site support: the exporter and schema have no
-        # explainer field yet, so the key would fail the export. Restore it once the site renders it.
+        explainer="lean",
         starter=starter,
         checkpoints=[
             dict(
@@ -3160,8 +3156,7 @@ def _qc_barrier(form, hero, spell, mana, affinity, lines, pass_line):
         ),
         names=["can_cast", "mana", "cost", "affinity", "required"],
         support="none",
-        # explainer="lean" (teacher ruling) waits for site support: the exporter and schema have no
-        # explainer field yet, so the key would fail the export. Restore it once the site renders it.
+        explainer="lean",
         starter=starter,
         checkpoints=[
             dict(

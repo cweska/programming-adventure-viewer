@@ -14,6 +14,7 @@ import { z } from "zod";
  *   - `backticks` render as inline code
  *   - ```python fenced blocks``` render as code blocks
  *   - [[term]] or [[term|shown text]] link to the glossary
+ *   - *words in stars* are emphasis (a star with a space after it stays a star: `5 * 3`)
  */
 
 const slug = z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "ids are lower-case words joined by dashes");
@@ -144,6 +145,12 @@ const exerciseShape = {
   pairTalk: prose.optional(),
   /** The lesson's SOLO item: done alone. */
   solo: z.boolean().default(false),
+  /**
+   * How much the crash explainer says. full: what happened and what to try (the fixed line when it can).
+   * lean: the kind of slip and the line, never the fix (Unit 2's SOLO items and Quick Check 2, by the
+   * teacher's ruling). Python's own last line stays on screen either way.
+   */
+  explainer: z.enum(["full", "lean"]).default("full"),
 };
 
 export const exerciseSchema = z.object(exerciseShape).strict();

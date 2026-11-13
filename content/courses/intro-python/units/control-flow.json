@@ -3,7 +3,7 @@
   "order": 2,
   "title": "Control Flow",
   "subtitle": "The Ley Clock Decides",
-  "published": false,
+  "published": true,
   "martuIntro": "The Ley Clock does not panic. It checks. If the hand is near the arc, it warns. Otherwise, it waits.\nToday you teach Python to check the same way. And you learn to roll dice, because the world is not fair, yes?\nYou have seen this code already: the four dialogue options, the trap-door skill checks. It felt like a wall. Now we take it apart, one stone at a time.",
   "goals": [
     "Ask yes-or-no questions with `==`, `!=`, `<`, `>`, `<=` and `>=`, and get `True` or `False`",
@@ -3474,7 +3474,8 @@
             "cost",
             "can_cast"
           ],
-          "solo": true
+          "solo": true,
+          "explainer": "lean"
         }
       ]
     },
@@ -7994,7 +7995,8 @@
           "names": [
             "hours_left"
           ],
-          "solo": true
+          "solo": true,
+          "explainer": "lean"
         }
       ]
     },
@@ -11792,7 +11794,8 @@
             "mana",
             "str"
           ],
-          "solo": true
+          "solo": true,
+          "explainer": "lean"
         }
       ]
     },
@@ -13417,7 +13420,8 @@
           "names": [
             "needed",
             "roll"
-          ]
+          ],
+          "explainer": "lean"
         },
         {
           "id": "mend-the-choices",
@@ -13836,7 +13840,8 @@
           "names": [
             "choice",
             "lower"
-          ]
+          ],
+          "explainer": "lean"
         },
         {
           "id": "hold-the-barrier",
@@ -14231,7 +14236,8 @@
             "cost",
             "affinity",
             "required"
-          ]
+          ],
+          "explainer": "lean"
         }
       ]
     },
@@ -14755,7 +14761,8 @@
           "names": [
             "needed",
             "roll"
-          ]
+          ],
+          "explainer": "lean"
         },
         {
           "id": "mend-the-choices",
@@ -15174,7 +15181,8 @@
           "names": [
             "choice",
             "lower"
-          ]
+          ],
+          "explainer": "lean"
         },
         {
           "id": "hold-the-barrier",
@@ -15569,7 +15577,8 @@
             "cost",
             "affinity",
             "required"
-          ]
+          ],
+          "explainer": "lean"
         }
       ]
     },

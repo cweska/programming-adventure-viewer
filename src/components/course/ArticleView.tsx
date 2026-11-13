@@ -20,6 +20,7 @@ function TryIt({ unit, item, glossary, settings }: ItemPageProps<ArticleItem>) {
         <ExercisePlayer
           key={exercise.id}
           unitId={unit.id}
+          unitOrder={unit.order}
           itemId={item.id}
           exerciseKey={exerciseKey(unit.id, item.id, exercise.id)}
           exercise={exercise}
@@ -64,6 +65,7 @@ export function ArticleView(props: ItemPageProps<ArticleItem>) {
               code={example.code}
               stdin={example.stdin}
               index={index + 1}
+              unitOrder={unit.order}
               testPrefix="article-example"
             />
           ))}

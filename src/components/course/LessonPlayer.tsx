@@ -154,6 +154,7 @@ function ExerciseRow({
       <ExercisePlayer
         key={keys[index]}
         unitId={unit.id}
+        unitOrder={unit.order}
         itemId={item.id}
         exerciseKey={keys[index]}
         exercise={current}
@@ -268,6 +269,7 @@ function SinglePlayable({ props, item }: { props: ItemPageProps; item: ProjectIt
       <ExercisePlayer
         key={key}
         unitId={unit.id}
+        unitOrder={unit.order}
         itemId={item.id}
         exerciseKey={key}
         exercise={item}

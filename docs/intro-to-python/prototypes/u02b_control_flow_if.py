@@ -505,7 +505,7 @@ UNIT = dict(
     order=2,
     title="Control Flow",
     subtitle="The Ley Clock Decides",
-    published=False,
+    published=True,
     martu_intro=(
         "The Ley Clock does not panic. It checks. If the hand is near the arc, it warns. Otherwise, it waits.\n"
         "Today you teach Python to check the same way. And you learn to roll dice, because the world is not fair, "
@@ -2509,8 +2509,7 @@ SOLO_2B = dict(
     title="Show Mar'tu",
     martu="A short one, just for you. One slip. Read the message, then mend it.",
     solo=True,
-    # explainer="lean" (teacher ruling) waits for site support: the exporter and schema have no
-    # explainer field yet, so the key would fail the export. Restore it once the site renders it.
+    explainer="lean",
     names=["hours_left"],
     starter=SOLO_STARTER,
     checkpoints=[

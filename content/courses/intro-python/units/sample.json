@@ -632,7 +632,8 @@
           "solution": [
             "print(\"Shield up.\")"
           ],
-          "solo": true
+          "solo": true,
+          "explainer": "lean"
         }
       ]
     },

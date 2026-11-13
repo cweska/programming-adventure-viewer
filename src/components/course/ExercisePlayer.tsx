@@ -3,12 +3,17 @@
 import Link from "next/link";
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import type { ExerciseProgress, GradeResult } from "../../lib/course/contracts";
-import { explainCourseError, isPrintOnlyTask, type ExplainContext } from "../../lib/course/explain";
+import {
+  explainCourseError,
+  GOT_FURTHER_LINE,
+  isPrintOnlyTask,
+  type CourseExplanation,
+  type ExplainContext,
+} from "../../lib/course/explain";
 import { flattenChecks, gradeCheckpoints } from "../../lib/course/grading";
 import { coursePreset, getCourseProgress, progressIsSaving, updateExercise, useCourseProgress } from "../../lib/course/progress";
 import type { Bonus, Checkpoint, GlossaryEntry, Playable } from "../../lib/course/schema";
 import { runCourse, whenPythonReady } from "../../lib/languages/python/run";
-import type { Explanation } from "../../lib/languages/types";
 import { publicPath } from "../../lib/site";
 import type { StageEvent } from "../../lib/stage/bridge";
 import type { InsertText, InsertWhere } from "../editor-insert";
@@ -32,6 +37,7 @@ import {
   hintButtonLabel,
   hintsOpen,
   isBlankOrStarter,
+  isDebugExercise,
   isSolutionCode,
   namesALine,
   nextFailStreak,
@@ -93,6 +99,8 @@ export type ExerciseNext = { label: string; onClick?: () => void; href?: string 
 
 export type ExercisePlayerProps = {
   unitId: string;
+  /** The unit's order on the course map: the explainer's advice follows what the class has met so far. */
+  unitOrder?: number;
   itemId: string;
   /** exerciseKey(unitId, itemId, exerciseId?) from schema.ts: where progress is saved. */
   exerciseKey: string;
@@ -110,7 +118,12 @@ type RunView = {
   stdout: string;
   grade: GradeResult | null;
   bonus: GradeResult | null;
-  explanation: Explanation | null;
+  explanation: CourseExplanation | null;
+  /**
+   * A debugging exercise, and this run got further than the last one, which crashed: the error moved on, or
+   * the code now runs. The console shows GOT_FURTHER_LINE (one line, in place of "One fixed!").
+   */
+  gotFurther?: boolean;
   /** Python itself could not run the code. */
   failure?: string;
   stage: StageEvent[];
@@ -391,6 +404,7 @@ const SLIPPED_MARK = { icon: "↺", words: "Was done. Check it again" };
 
 export function ExercisePlayer({
   exerciseKey: key,
+  unitOrder,
   exercise,
   glossary,
   settings,
@@ -638,6 +652,8 @@ export function ExercisePlayer({
   const names = exercise.names ?? [];
   /** The task only prints (Lesson 1A): a pick on a line of its own goes in as `print("...")`. */
   const printOnly = isPrintOnlyTask({ names, solution: exercise.solution });
+  /** A Broken spell ("Mend line 3 ..."): a run that gets further shows its own progress line. */
+  const debugging = isDebugExercise(exercise);
 
   function openCompare() {
     setCompare("open");
@@ -734,12 +750,17 @@ export function ExercisePlayer({
         engine: exercise.engine,
       });
       // What the messages may mention: the example's names, the task's names, and the last crash (for
-      // "One fixed! Python found the next one."), passed only when the last run crashed too.
+      // "One fixed! Python found the next one."), passed only when the last run crashed too. The unit's order
+      // keeps advice to what the class has met; a debugging exercise shows its own progress line; a lean
+      // exercise names the slip and the line, not the fix.
       const context: ExplainContext = {
         example: exercise.example?.code,
         names: exercise.names,
         previous: view?.explanation?.raw || undefined,
         solution: exercise.solution,
+        unitOrder,
+        debugging,
+        explainer: exercise.explainer,
       };
       const grade = gradeCheckpoints(exercise.checkpoints, result, source, context);
       // The side quest's checks come after the main ones: grade them from their own slice, by position.
@@ -787,11 +808,20 @@ export function ExercisePlayer({
           previous?.grade && !previous.grade.crashed && previous.grade.firstFailing !== null
             ? previous.grade.checkpoints[previous.grade.firstFailing]
             : null;
+        // Past the last crash: the error moved on (or is a new slip), or the code runs now and a step is next.
+        const lastCrash = previous?.grade?.crashed === true ? previous.explanation : null;
+        const gotFurther =
+          debugging &&
+          lastCrash !== null &&
+          lastCrash.kind !== "timeout" &&
+          !revealPass &&
+          (explanation?.gotFurther === true || (!grade.crashed && !grade.allPassed));
         return {
           stdout: result.ok ? result.stdout + (result.stderr ?? "") : result.stdout,
           grade,
           bonus: bonusGrade,
           explanation,
+          gotFurther,
           stage: result.stageEvents ?? [],
           allPassed: grade.allPassed && !revealPass,
           wasDone,
@@ -1030,7 +1060,10 @@ export function ExercisePlayer({
             // A crash checks nothing, so "step 1" may already be right: the line Python stopped at comes first.
             <p className="ex-task-line" data-testid="task-line" data-crash="true">
               <span className="ex-task-label">{`First, mend ${crashAt ? `line ${crashAt}` : "the error"}.`}</span>{" "}
-              {`Python stopped there, so it could not check your ${noun.toLowerCase()}s yet. The message under your code says how.`}
+              {`Python stopped there, so it could not check your ${noun.toLowerCase()}s yet. ${
+                // A lean explainer names the slip, not the fix: the line promises only what the message gives.
+                exercise.explainer === "lean" ? "The message under your code names the slip." : "The message under your code says how."
+              }`}
             </p>
           ) : activeCheckpoint && !done ? (
             // The task first, so a student who skims sees it before Mar'tu's words and the example.
@@ -1412,8 +1445,20 @@ function ExerciseConsole({
             {view.failure}
           </p>
         ) : null}
+        {view?.gotFurther ? (
+          // One progress line in a debugging exercise (the explanation under it has no "One fixed!" of its own).
+          <p className="ex-result is-further" data-testid="got-further" key={`further-${view.runNumber}`}>
+            <span aria-hidden="true">✓</span> {GOT_FURTHER_LINE}
+          </p>
+        ) : null}
         {view?.explanation ? (
-          <div className="explainer ex-explainer" data-testid="explainer" key={view.runNumber}>
+          <div
+            className="explainer ex-explainer"
+            data-testid="explainer"
+            data-kind={view.explanation.kind}
+            data-explainer={view.explanation.explainer ?? "full"}
+            key={view.runNumber}
+          >
             {view.sameError ? (
               <p className="ex-same-error" data-testid="same-error">
                 Same error as last time.{" "}

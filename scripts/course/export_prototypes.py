@@ -330,7 +330,7 @@ def exercise_predict(value: Any, where: str, ctx: Ctx) -> dict:
 EXERCISE_KEYS = {
     "id", "title", "martu", "example", "example_output", "another_way", "introduces", "preview",
     "engine", "setup", "stdin", "starter", "checkpoints", "solution", "starter_passes", "tracer", "support", "bonus",
-    "assemble", "campaign_link", "takeaway", "predict", "names", "pick", "pair_talk", "solo",
+    "assemble", "campaign_link", "takeaway", "predict", "names", "pick", "pair_talk", "solo", "explainer",
 }
 EXERCISE_HARNESS_ONLY = {"partials", "wrong_answers", "notes"}
 
@@ -383,6 +383,7 @@ def exercise_fields(ex: dict, where: str, ctx: Ctx, verify: dict, verify_key: st
     put(out, "pick", ex, "pick", text, where, ctx)
     put(out, "pairTalk", ex, "pair_talk", text, where, ctx)
     put(out, "solo", ex, "solo", boolean, where, ctx)
+    put(out, "explainer", ex, "explainer", one_of(("full", "lean")), where, ctx)
 
     sidecar: dict = {}
     put(sidecar, "partials", ex, "partials", list_of(code_lines), where, ctx)

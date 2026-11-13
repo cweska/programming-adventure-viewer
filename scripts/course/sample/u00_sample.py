@@ -22,7 +22,7 @@ What it covers:
   challenge "mar-tu-speaks"    engine helpers (print_prompt), core level
   challenge "mar-tu-speaks-advanced"   advanced variant_of the core challenge, stdin
   article "asking-the-traveler"   body with a list, code fence and glossary links, runnable examples, a try-it
-                                  that is a SOLO item (solo=True)
+                                  that is a SOLO item (solo=True) with the lean explainer (explainer="lean")
   cheatsheet "chalk-notes"
   testout "quick-check"
 """
@@ -584,6 +584,7 @@ ITEMS = [
                 title="Try it: Bomb Shell's words",
                 martu="Bomb Shell talks in short sentences. Change the words in quotes so he says `Shield up.`",
                 solo=True,
+                explainer="lean",
                 starter="print(\"Write Bomb Shell's words here\")\n",
                 checkpoints=[
                     dict(

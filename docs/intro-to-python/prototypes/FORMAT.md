@@ -99,6 +99,7 @@ aliases must not repeat across entries. Every `[[link]]` in any prose must resol
 - `` `backticks` `` render as inline code. Keep them balanced (CI checks).
 - A fenced block renders as code: ` ```python\n...\n``` ` (CI checks fences are closed).
 - `[[term]]` or `[[term|shown text]]` links to the glossary.
+- `*words in stars*` are emphasis ("`>=` means *at least*"). A star with a space after it stays a star.
 - Plain, short sentences: students are 11 to 15 and several read slowly. The harness warns above about a
   grade 9 reading level and above 230 words of Mar'tu text.
 - Mar'tu's voice: dry, kind, short sentences, the occasional ", yes?". Keep the world (Tor, the Ley Clock,
@@ -174,6 +175,7 @@ Kinds:
 | `pick` | str | `pick` | Mar'tu's pick: a value to use when the student can't decide, e.g. `'"Gearshift"'` (shown as code; a value with `\n` shows as a block). Every other value the checks allow is still accepted, so only use it where the checks accept any value. The player wraps plain words in quotes; a pick that starts with `#` is a note and goes in as it is, on a line of its own. |
 | `pair_talk` | prose | `pairTalk` | an optional "Pair talk" prompt, e.g. "Tell your partner why `mana` needs `str()`." The site adds the "Pair talk:" label. Every student still does every step on their own device (no shared-device steps). |
 | `solo` | bool | `solo` | `True` for the lesson's SOLO item (one per lesson, about 2 minutes, done alone). Recorded, never blocking. Default `False`. |
+| `explainer` | `"full"` / `"lean"` | `explainer` | How much the crash explainer says. `"full"` (default): what happened and what to try, with the line written right when it can. `"lean"`: the **kind** of slip and the **line**, never the fix ("The slip is on line 3: a sign typed backwards."); Python's own last line stays on screen. From Unit 2 on, by the teacher's ruling, every SOLO item and every Quick Check exercise is `"lean"` (Unit 1 stays `"full"`). |
 | `partials` | list of code | sidecar only | staged solutions: partial *k* passes checkpoints 1..k and fails k+1 |
 | `wrong_answers` | list | sidecar only | `dict(why="...", code="...", fails_at=2, message_contains="quotes")`: a known wrong answer must fail at checkpoint `fails_at` (0 = it crashes before the checks) with a message containing `message_contains` |
 | `notes` | str | sidecar only | designer notes |
@@ -194,7 +196,7 @@ dict(
 | Field | JSON | Notes |
 | --- | --- | --- |
 | `id` | `id` | slug, unique within the exercise. Give real ids once students use a unit: progress is saved by id, so renaming or reordering a `step-N` checkpoint resets it. |
-| `text` | `text` | one action, at most two sentences. A leading `1. ` is stripped (the site numbers checkpoints). |
+| `text` | `text` | one action, at most two sentences. A leading `1. ` is stripped (the site numbers checkpoints). A debugging step says **Mend** ("Mend line 3 so it shows `Steady`."): an exercise with a "Mend" step is a debugging exercise, and when a run gets further than the one before, the site shows "Python got further: that slip is mended." on a line of its own. |
 | `hints` | `hints` | the hint ladder, 2 to 5 rungs: point, teach, show. The site's Help control shows them as "Where to look" (the first), "Teach me" (the middle ones) and "Show me how" (the last), with "Another way" and "More structure" (Assemble it) in between, then "Compare with Mar'tu's version". Write the last hint with the step's own line in backticks (``Write `mana = 20` on its own line.``): its start up to the first `(` or `=` becomes "Start me off" (`mana =`), but only if the solution uses it. Never show an example's names there. |
 | `checks` | `checks` | `(name, code)` pairs (or `dict(name=..., code=...)`) |
 | `pass_line` | `passLine` | optional in-world line |
@@ -309,6 +311,6 @@ Everything else keeps its name. Fields left out stay out of the JSON (the schema
 
 `scripts/course/sample/u00_sample.py` (unit id `sample`, order 99, unpublished) uses every item kind,
 every question type and every exercise feature above, including `predict`, `names`, `pick`, `pair_talk`,
-`solo` and `dictated` (both `True` and `False`). It is the teacher's tour of the player and the e2e
+`solo`, `explainer="lean"` and `dictated` (both `True` and `False`). It is the teacher's tour of the player and the e2e
 fixture, so keep it passing and keep it covering everything (`content.test.ts` checks the coverage).
 Open it on the site with `?preview=1`.
