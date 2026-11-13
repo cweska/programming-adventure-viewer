@@ -39,6 +39,26 @@ describe("inline parts", () => {
     expect(inlineParts("a ` b")).toEqual([{ kind: "text", text: "a ` b" }]);
     expect(inlineParts("`grid = [[0]]`")).toEqual([{ kind: "code", text: "grid = [[0]]" }]);
   });
+
+  it("reads *words in stars* as emphasis, but never a times sign or a star in code", () => {
+    expect(inlineParts("`>=` means *at least*: exactly enough counts.")).toEqual([
+      { kind: "code", text: ">=" },
+      { kind: "text", text: " means " },
+      { kind: "em", text: "at least" },
+      { kind: "text", text: ": exactly enough counts." },
+    ]);
+    expect(inlineParts("Read *Python's last line* first, see [[string]].")).toEqual([
+      { kind: "text", text: "Read " },
+      { kind: "em", text: "Python's last line" },
+      { kind: "text", text: " first, see " },
+      { kind: "term", term: "string", text: "string" },
+      { kind: "text", text: "." },
+    ]);
+    for (const text of ["2 * 3 * 4 is 24", "a*b*c", "** not this **", "`x * y`"]) {
+      expect(inlineParts(text).some((part) => part.kind === "em"), text).toBe(false);
+    }
+    expect(plainText("It asks *at most*.")).toBe("It asks at most.");
+  });
 });
 
 describe("prose blocks", () => {

@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { closeName, definedNames, explainCourseError, explainQuietSlip, type ExplainContext } from "./explain";
+import {
+  closeName,
+  definedNames,
+  explainCourseError,
+  explainQuietSlip,
+  GOT_FURTHER_LINE,
+  leanExplanation,
+  slipName,
+  type ExplainContext,
+} from "./explain";
 import { flattenChecks, gradeCheckpoints } from "./grading";
 import { runCourseChecks } from "./run-course";
 
@@ -631,6 +640,230 @@ describe("explainCourseError: Unit 1 play-through findings", () => {
     const symbols = explainRun("print(_ - =)\n");
     expect(symbols.hint).toContain('`print("_ - =")`');
     expect(symbols.hint).not.toContain("colon");
+  });
+});
+
+describe("explainCourseError: Unit 2's slips (questions, if / elif / else, random, assert)", () => {
+  const unit2: ExplainContext = { unitOrder: 2 };
+
+  it("names a sign typed backwards, and writes the line with the sign the right way round", () => {
+    const ge = explainRun("roll = 14\nneeded = 15\npassed = roll => needed\n", [], unit2);
+    expect(ge.kind).toBe("sign-backwards");
+    expect(ge.hint).toBe(
+      "Line 3 has `=>`, a sign typed backwards. In Python the `=` always comes second: `>=`. Write: `passed = roll >= needed`",
+    );
+    expect(explainRun("roll = 5\nif roll =< 3:\n    print(roll)\n", [], unit2).hint).toContain("Write: `if roll <= 3:`");
+    expect(explainRun('color = "red"\nprint(color =! "red")\n', [], unit2).hint).toContain('Write: `print(color != "red")`');
+    // Signs inside text are words, not code.
+    expect(explainRun('print("=> here"\n', [], unit2).kind).toBe("never-closed");
+  });
+
+  it("names a blank `___` left from the starter (not 'make it first')", () => {
+    const blank = explainRun("roll = 12\nif ___:\n    print(roll)\n", [], unit2);
+    expect(blank.kind).toBe("blank-left");
+    expect(blank.title).toBe("Fill in the blank");
+    expect(blank.hint).toContain("Line 2 still has the blank `___`");
+    expect(blank.hint).not.toContain("___ =");
+    expect(explainRun("import random\nroll = random.___(1, 6)\n", [], unit2).kind).toBe("blank-left");
+  });
+
+  it("names a comparison standing alone: `==` asks, and keeps nothing", () => {
+    const made = explainRun('hero == "Lucky"\nprint(hero)\n', [], unit2);
+    expect(made.kind).toBe("comparison-alone");
+    expect(made.hint).toBe(
+      'Line 1 uses `==`, which only asks "is it the same?". It makes nothing, so `hero` was never made. To put a value in a box, use one `=`: `hero = "Lucky"`',
+    );
+    // With no error at all, it is a quiet slip: a check that cannot find the box says why.
+    const quiet = explainQuietSlip("roll = 14\nneeded = 15\nroll >= needed\n", { missingName: "passed" });
+    expect(quiet).toMatchObject({ kind: "comparison-alone", line: 3 });
+    expect(quiet?.hint).toContain("`passed = roll >= needed`");
+    const changed = explainQuietSlip('hero = "Bob"\nhero == "Lucky"\n');
+    expect(changed?.hint).toContain('use one `=`: `hero = "Lucky"`');
+    expect(changed?.hint).toContain('`print(hero == "Lucky")`');
+    // Real code is left alone: a box made from a question, a printed question, an if, a type note, a shift.
+    for (const code of ["passed = 3 >= 2\n", "print(3 >= 2)\n", "if 3 >= 2:\n    print(1)\n", "passed: bool = 3 >= 2\n", "x = 1\nx << 2\n"]) {
+      expect(explainQuietSlip(code)?.kind, code).not.toBe("comparison-alone");
+    }
+  });
+
+  it("names unquoted text in an option, one word or several", () => {
+    const words = explainRun('choice = "option 2"\nif choice == "option 1":\n    print(1)\nelif choice == option 2:\n    print(2)\n', [], unit2);
+    expect(words.kind).toBe("unquoted-option");
+    expect(words.hint).toBe(
+      'Line 4 compares with option 2, words with no quotes, so Python tries to read them as code. Text in a comparison needs quotes too, like this: `elif choice == "option 2":`',
+    );
+    const word = explainRun('hero = "Lucky"\nprint(hero == Lucky)\n', [], unit2);
+    expect(word.kind).toBe("unquoted-option");
+    expect(word.hint).toContain('`print(hero == "Lucky")`');
+  });
+
+  it("names an elif or else out of place: after the else, with no if, or not lined up", () => {
+    const after = explainRun("x = 1\nif x > 2:\n    print(1)\nelse:\n    print(2)\nelif x > 0:\n    print(3)\n", [], unit2);
+    expect(after.kind).toBe("else-not-last");
+    expect(after.hint).toContain("Line 6 has `elif` after the `else` on line 4");
+    const second = explainRun("x = 1\nif x > 2:\n    print(1)\nelse:\n    print(2)\nelse:\n    print(3)\n", [], unit2);
+    expect(second.kind).toBe("else-not-last");
+    expect(second.hint).toContain("a second `else`");
+    const alone = explainRun("x = 1\nelif x > 0:\n    print(3)\n", [], unit2);
+    expect(alone.kind).toBe("elif-without-if");
+    expect(alone.title).toBe("elif needs an if");
+    const indented = explainRun("roll = 5\nif roll > 3:\n    print(1)\n    else:\n    print(2)\n", [], unit2);
+    expect(indented.kind).toBe("else-not-lined-up");
+    expect(indented.hint).toContain("the same spaces in front as line 2");
+    const spelled = explainRun("roll = 5\nif roll > 3:\n    print(1)\nelse if roll > 1:\n    print(2)\n", [], unit2);
+    expect(spelled.kind).toBe("elif-spelling");
+    expect(spelled.hint).toContain("Write: `elif roll > 1:`");
+    // A for loop's else is real Python, and a right chain with another slip keeps that slip's advice.
+    expect(explainRun('choice = "a"\nif choice == "b":\n    print(1)\nelif choice == option 2:\n    print(2)\n', [], unit2).kind).toBe(
+      "unquoted-option",
+    );
+  });
+
+  it("names a number compared with text, and says which line made the text", () => {
+    const made = explainRun('roll = 14\nneeded = "15"\npassed = roll >= needed\n', [], unit2);
+    expect(made.kind).toBe("compare-number-text");
+    expect(made.hint).toBe(
+      'Line 2 makes `needed` with quotes: `needed = "15"`. Quotes make text, even when it looks like a number, so line 3 can\'t compare it with a number. Take the quotes off on line 2: `needed = 15`',
+    );
+    expect(explainRun('mana = 9\ncan_cast = mana >= "9"\n', [], unit2).hint).toContain("Numbers have no quotes: `can_cast = mana >= 9`");
+    expect(explainRun('age = input("Age? ")\nprint(age > 12)\n', ["13"], unit2).hint).toContain("int(age)");
+  });
+
+  it("names one `=` inside print (a question in Unit 2, a box in Unit 1)", () => {
+    const code = 'clock_color = "red"\nprint(clock_color = "red")\n';
+    const asked = explainRun(code, [], unit2);
+    expect(asked.kind).toBe("equals-in-print");
+    expect(asked.hint).toContain('use `==`: `print(clock_color == "red")`');
+    const unit1 = explainRun(code, [], { unitOrder: 1 });
+    expect(unit1.kind).toBe("equals-in-print");
+    expect(unit1.hint).not.toContain("==");
+    expect(unit1.hint).toContain('`clock_color = "red"`, then show it: `print(clock_color)`');
+  });
+
+  it("names lower(answer): it is answer.lower()", () => {
+    const result = explainRun('answer = "YES"\nsaid_yes = lower(answer) == "yes"\n', [], unit2);
+    expect(result.kind).toBe("method-as-function");
+    expect(result.hint).toContain('Write: `said_yes = answer.lower() == "yes"`');
+  });
+
+  it("names randint without random. (with or without the import), and random without its import", () => {
+    const bare = explainRun("import random\nroll = randint(1, 6)\n", [], unit2);
+    expect(bare.kind).toBe("randint-needs-random");
+    expect(bare.hint).toContain("`roll = random.randint(1, 6)`");
+    expect(bare.hint).not.toContain("import random");
+    const none = explainRun("roll = randint(1, 20)\n", [], unit2);
+    expect(none.kind).toBe("randint-needs-random");
+    expect(none.hint).toContain("Add `import random` as the first line");
+    expect(explainRun("roll = random.randint(1, 6)\n", [], unit2).kind).toBe("missing-import");
+  });
+
+  it("names the student's own assert that came out False", () => {
+    const result = explainRun("roll = 14\nneeded = 15\npassed = roll >= needed\nassert passed == True\n", [], unit2);
+    expect(result.kind).toBe("assert-failed");
+    expect(result.hint).toContain("The `assert` on line 4 asked `passed == True` and got False");
+    expect(explainRun('roll = 5\nassert roll > 9, "too low"\n', [], unit2).hint).toContain("Its note says: too low.");
+  });
+
+  it("names a missing colon (or a semicolon for one) with the line written right, and one = in a question", () => {
+    const colon = explainRun("hours_left = 2\nif hours_left < 3\n    print(1)\n", [], unit2);
+    expect(colon.kind).toBe("missing-colon");
+    expect(colon.hint).toContain("Write: `if hours_left < 3:`");
+    const semicolon = explainRun("hours_left = 2\nif hours_left < 3;\n    print(1)\n", [], unit2);
+    expect(semicolon.kind).toBe("missing-colon");
+    expect(semicolon.hint).toContain("not a semicolon `;`");
+    expect(explainRun("roll = 5\nif roll > 3:\n    print(1)\nelse\n    print(2)\n", [], unit2).hint).toContain("Write: `else:`");
+    expect(explainRun("roll = 5\nif roll = 3:\n    print(1)\n", [], unit2).hint).toContain("Write: `if roll == 3:`");
+    expect(explainRun('answer = "YES"\nsaid_yes = answer.lower() = "yes"\n', [], unit2).hint).toContain(
+      'Write: `said_yes = answer.lower() == "yes"`',
+    );
+    expect(explainRun("passed = True\nassert passed = False\n", [], unit2).kind).toBe("compare-with-double-equals");
+  });
+
+  it("never says 'make it with def' before the Functions unit", () => {
+    expect(explainRun('shout("hi")\n', [], { unitOrder: 1 }).hint).not.toContain("def");
+    expect(explainRun('shout("hi")\n', [], { unitOrder: 2 }).hint).not.toContain("def");
+    expect(explainRun('shout("hi")\n', [], { unitOrder: 3 }).hint).toContain("make it with def");
+    // Without a unit (an old caller), the advice is unchanged.
+    expect(explainRun('shout("hi")\n').hint).toContain("make it with def");
+  });
+});
+
+describe("explainCourseError: the lean explainer (explainer: \"lean\")", () => {
+  it("names the kind of slip and the line, and leaves out the fix", () => {
+    const code = "roll = 14\nneeded = 15\npassed = roll => needed\n";
+    const lean = explainRun(code, [], { unitOrder: 2, explainer: "lean" });
+    expect(lean.kind).toBe("sign-backwards");
+    expect(lean.explainer).toBe("lean");
+    expect(lean.title).toBe("Sign typed backwards");
+    expect(lean.hint).toBe(
+      "The slip is on line 3: a sign typed backwards. Python's last line, below, says what it found. Mend it yourself, then Run again.",
+    );
+    expect(lean.hint).not.toContain(">=");
+    // Python's own message is kept whole, for the player to show.
+    expect(lean.raw).toContain("SyntaxError: invalid syntax");
+  });
+
+  it("never gives the fixed line for any Unit 2 slip, and keeps titles free of code marks", () => {
+    const codes = [
+      "roll = 5\nif ___:\n    print(1)\n",
+      'hero == "Lucky"\nprint(hero)\n',
+      'choice = "a"\nif choice == option 2:\n    print(2)\n',
+      'roll = 14\nneeded = "15"\npassed = roll >= needed\n',
+      'clock_color = "red"\nprint(clock_color = "red")\n',
+      'answer = "YES"\nprint(lower(answer))\n',
+      "import random\nroll = randint(1, 6)\n",
+      "x = 1\nelif x > 0:\n    print(3)\n",
+      "roll = 5\nif roll > 3\n    print(1)\n",
+    ];
+    for (const code of codes) {
+      const full = explainRun(code, [], { unitOrder: 2 });
+      const lean = explainRun(code, [], { unitOrder: 2, explainer: "lean" });
+      expect(lean.kind, code).toBe(full.kind);
+      expect(lean.hint, code).toContain(slipName(full.kind));
+      expect(lean.hint, code).not.toContain("Write:");
+      expect(lean.title, code).not.toContain("`");
+    }
+  });
+
+  it("leaves a run that took too long as it is (there is no slip to name)", () => {
+    const timeout = explainCourseError("TimeoutError: The program ran too long and was stopped.", "while True:\n    x = 1\n", {
+      explainer: "lean",
+    });
+    expect(timeout.kind).toBe("timeout");
+    expect(timeout.hint).toContain("while loop");
+    expect(leanExplanation(timeout)).toBe(timeout);
+  });
+});
+
+describe("explainCourseError: a run that got further", () => {
+  const first = 'print("Shield up.)\nprint(Steady)\n';
+  const second = 'print("Shield up.")\nprint(Steady)\n';
+
+  it("in a debugging exercise, marks the progress and leaves the hint without a prefix (the player shows one line)", () => {
+    const previous = tracebackOf(first);
+    const result = explainRun(second, [], { previous, debugging: true });
+    expect(result.gotFurther).toBe(true);
+    expect(result.hint).not.toContain("One fixed");
+    expect(GOT_FURTHER_LINE).toBe("Python got further: that slip is mended.");
+    // Elsewhere the hint keeps its "One fixed!" start, as before.
+    const ordinary = explainRun(second, [], { previous });
+    expect(ordinary.gotFurther).toBe(true);
+    expect(ordinary.hint).toMatch(/^One fixed! Python found the next one\./);
+  });
+
+  it("counts a different run-time slip on the same line as progress, but never the same error again", () => {
+    const named = tracebackOf('roll = 12\nprint("Rolled: " + rol)\n');
+    const typed = explainRun('roll = 12\nprint("Rolled: " + roll)\n', [], { previous: named, debugging: true });
+    expect(typed.kind).toBe("text-plus-number");
+    expect(typed.gotFurther).toBe(true);
+    expect(explainRun('roll = 12\nprint("Rolled: " + rol)\n', [], { previous: named, debugging: true }).gotFurther).toBeUndefined();
+  });
+
+  it("keeps the progress mark in a lean explainer, with its prefix outside a debugging exercise", () => {
+    const previous = tracebackOf(first);
+    const lean = explainRun(second, [], { previous, explainer: "lean" });
+    expect(lean.gotFurther).toBe(true);
+    expect(lean.hint).toMatch(/^One fixed! Python found the next one\. The slip is on line 2/);
   });
 });
 

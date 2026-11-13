@@ -325,6 +325,11 @@ button:disabled {
   font-weight: 600;
 }
 
+/* Inline code and the punctuation typed right after it ("`!=`,"): one piece, so a line never starts with ",". */
+.prose-nowrap {
+  white-space: nowrap;
+}
+
 .inline-code {
   padding: 1px 5px;
   color: #f4f7fb;

@@ -8,12 +8,14 @@
  *   - `backticks` become inline code
  *   - ```python fenced blocks``` become code blocks (kept exactly as written)
  *   - [[term]] or [[term|shown text]] link to the glossary
+ *   - *words in stars* are emphasis
  */
 import type { GlossaryEntry } from "../../lib/course/schema";
 
 export type InlinePart =
   | { kind: "text"; text: string }
   | { kind: "code"; text: string }
+  | { kind: "em"; text: string }
   | { kind: "term"; term: string; text: string };
 
 export type ProseBlock =
@@ -26,19 +28,39 @@ const BULLET = /^[-*]\s+/;
 const FENCE = /^```\s*([A-Za-z0-9_+-]*)\s*$/;
 const TERM = /\[\[([^\]|]+?)(?:\|([^\]]+?))?\]\]/g;
 
-/** Plain text with [[term]] / [[term|text]] links. */
+/**
+ * *Words in stars* are said with weight ("`>=` means *at least*"). A star with a space after it, or one
+ * inside a word, is a times sign or a star, not emphasis: `5 * 3` and `**` stay as they are.
+ */
+const EMPHASIS = /(?<![\w*])\*(?=[^\s*])([^*\n]*?[^\s*])\*(?![\w*])/g;
+
+/** Plain text with *emphasis* split out. */
+function emphasisParts(text: string): InlinePart[] {
+  const parts: InlinePart[] = [];
+  let last = 0;
+  for (const match of text.matchAll(EMPHASIS)) {
+    const at = match.index ?? 0;
+    if (at > last) parts.push({ kind: "text", text: text.slice(last, at) });
+    parts.push({ kind: "em", text: match[1] });
+    last = at + match[0].length;
+  }
+  if (last < text.length) parts.push({ kind: "text", text: text.slice(last) });
+  return parts;
+}
+
+/** Plain text with [[term]] / [[term|text]] links (and *emphasis* in the text between them). */
 function termParts(text: string): InlinePart[] {
   const parts: InlinePart[] = [];
   let last = 0;
   for (const match of text.matchAll(TERM)) {
     const at = match.index ?? 0;
-    if (at > last) parts.push({ kind: "text", text: text.slice(last, at) });
+    if (at > last) parts.push(...emphasisParts(text.slice(last, at)));
     const term = match[1].trim();
     const shown = (match[2] ?? match[1]).trim();
     parts.push({ kind: "term", term, text: shown });
     last = at + match[0].length;
   }
-  if (last < text.length) parts.push({ kind: "text", text: text.slice(last) });
+  if (last < text.length) parts.push(...emphasisParts(text.slice(last)));
   return parts;
 }
 

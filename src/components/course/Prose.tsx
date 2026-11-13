@@ -11,11 +11,11 @@ const useIsoLayoutEffect = typeof window === "undefined" ? useEffect : useLayout
 function SimpleInline({ text }: { text: string }) {
   return (
     <>
-      {inlineParts(text).map((part, index) =>
+      {gluePunctuation(inlineParts(text)).map((part, index) =>
         part.kind === "code" ? (
-          <code key={index} className="inline-code">
-            {part.text}
-          </code>
+          <InlineCode key={index} text={part.text} after={part.after} />
+        ) : part.kind === "em" ? (
+          <em key={index}>{part.text}</em>
         ) : (
           <span key={index}>{part.text}</span>
         ),
@@ -134,17 +134,46 @@ export function GlossaryTerm({ entry, children }: { entry: GlossaryEntry; childr
   );
 }
 
+/** Punctuation typed right after inline code (`!=`, `<`): it stays on the code's line, never starts the next. */
+const STUCK_PUNCTUATION = /^[,.;:!?)\]]+/;
+
+/**
+ * The parts with each code span's following punctuation moved into it: `{ code, after }`, so the comma in
+ * "`!=`, `<`" is drawn with `!=` and a line never starts with ", <".
+ */
+function gluePunctuation(parts: InlinePart[]): (InlinePart & { after?: string })[] {
+  const out: (InlinePart & { after?: string })[] = [];
+  for (const part of parts) {
+    const last = out.at(-1);
+    const stuck = part.kind === "text" && last?.kind === "code" && !last.after ? part.text.match(STUCK_PUNCTUATION)?.[0] : undefined;
+    if (stuck && last) {
+      last.after = stuck;
+      if (part.text.length > stuck.length) out.push({ kind: "text", text: part.text.slice(stuck.length) });
+      continue;
+    }
+    out.push({ ...part });
+  }
+  return out;
+}
+
+function InlineCode({ text, after }: { text: string; after?: string }) {
+  const code = <code className="inline-code">{text}</code>;
+  return after ? (
+    <span className="prose-nowrap">
+      {code}
+      {after}
+    </span>
+  ) : (
+    code
+  );
+}
+
 function Inline({ parts, glossary }: { parts: InlinePart[]; glossary: readonly GlossaryEntry[] }) {
   return (
     <>
-      {parts.map((part, index) => {
-        if (part.kind === "code") {
-          return (
-            <code key={index} className="inline-code">
-              {part.text}
-            </code>
-          );
-        }
+      {gluePunctuation(parts).map((part, index) => {
+        if (part.kind === "code") return <InlineCode key={index} text={part.text} after={part.after} />;
+        if (part.kind === "em") return <em key={index}>{part.text}</em>;
         if (part.kind === "term") {
           const entry = findGlossaryEntry(glossary, part.term);
           return entry ? (

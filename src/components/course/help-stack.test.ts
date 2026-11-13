@@ -13,6 +13,7 @@ import {
   helpRungs,
   helpState,
   insideString,
+  isDebugExercise,
   namesALine,
   NUDGE_AFTER_MISSES,
   NUDGE_IDLE_MS,
@@ -191,6 +192,14 @@ describe("Help after a crash", () => {
     expect(crashTarget([{ text: "Mend line 12." }, { text: "Mend line 1." }], 1)).toBe(1);
     expect(namesALine("Line 2 is Lucky's secret.")).toBe(true);
     expect(namesALine("Print a line that has `_`, `-` and `=` in it.")).toBe(false);
+  });
+
+  it("knows a debugging exercise by its \"Mend ...\" steps (it gets the \"Python got further\" line)", () => {
+    expect(isDebugExercise({ checkpoints: brokenSpell })).toBe(true);
+    expect(isDebugExercise({ checkpoints: [{ text: "Make `hero` a box." }, { text: "Mend the `if` line." }] })).toBe(true);
+    expect(isDebugExercise({ checkpoints: [{ text: "Make `hero` a box that holds `\"Lucky\"`." }] })).toBe(false);
+    // "amend" or "mended" in other words is not the debugging verb.
+    expect(isDebugExercise({ checkpoints: [{ text: "Print the amended total." }] })).toBe(false);
   });
 });
 

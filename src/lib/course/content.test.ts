@@ -1,4 +1,4 @@
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -45,11 +45,36 @@ function python(args: string[], env: Record<string, string> = {}) {
   return { status: child.status, output: `${child.stdout ?? ""}${child.stderr ?? ""}`, error: child.error };
 }
 
+/**
+ * python3 without blocking: the harness takes over a minute, and a blocked test worker misses vitest's
+ * heartbeat ("Timeout calling onTaskUpdate"), which fails the whole run even when every test passes.
+ */
+function pythonAsync(args: string[], env: Record<string, string> = {}): Promise<{ status: number | null; output: string }> {
+  return new Promise((resolve) => {
+    const child = spawn("python3", args, { cwd: ROOT, env: { ...process.env, ...env } });
+    let output = "";
+    const keep = (chunk: Buffer) => {
+      output = `${output}${chunk.toString("utf8")}`.slice(-64 * 1024);
+    };
+    child.stdout.on("data", keep);
+    child.stderr.on("data", keep);
+    const timer = setTimeout(() => child.kill("SIGKILL"), SLOW - 10_000);
+    child.on("error", (error) => {
+      clearTimeout(timer);
+      resolve({ status: null, output: `${output}${String(error)}` });
+    });
+    child.on("close", (status) => {
+      clearTimeout(timer);
+      resolve({ status, output });
+    });
+  });
+}
+
 type HarnessReport = { errors: string[]; stats?: { units?: unknown[] } };
 
-function runHarness(dir: string): { status: number | null; errors: string[]; units: number | null; output: string } {
+async function runHarness(dir: string): Promise<{ status: number | null; errors: string[]; units: number | null; output: string }> {
   const reportPath = path.join(tempDir(), "report.json");
-  const result = python([HARNESS, "--json", reportPath], { PROTOTYPE_DIR: dir });
+  const result = await pythonAsync([HARNESS, "--json", reportPath], { PROTOTYPE_DIR: dir });
   const report: HarnessReport | null = existsSync(reportPath) ? JSON.parse(readFileSync(reportPath, "utf8")) : null;
   return {
     status: result.status,
@@ -137,10 +162,10 @@ function itemsWithExercises(unit: Unit): { item: Item; checkpoints: number; key:
 describe("prototype harness", () => {
   it(
     "verifies every course unit in docs/intro-to-python/prototypes",
-    () => {
+    async () => {
       const files = readdirSync(PROTOTYPES).filter((name) => PROTOTYPE_FILE.test(name));
       if (files.length === 0) return; // no units written yet: nothing to verify
-      const result = runHarness(PROTOTYPES);
+      const result = await runHarness(PROTOTYPES);
       expect(result.errors, result.output).toEqual([]);
       expect(result.status, result.output).toBe(0);
     },
@@ -149,8 +174,8 @@ describe("prototype harness", () => {
 
   it(
     "verifies the sample unit in scripts/course/sample",
-    () => {
-      const result = runHarness(SAMPLE_DIR);
+    async () => {
+      const result = await runHarness(SAMPLE_DIR);
       expect(result.errors, result.output).toEqual([]);
       expect(result.status, result.output).toBe(0);
       if (result.units !== null) expect(result.units, "the harness should find the sample unit").toBe(1);
@@ -533,7 +558,7 @@ describe("sample unit coverage", () => {
     expect(testout?.kind === "testout" && testout.exercises.every((exercise) => exercise.support === "none")).toBe(true);
   });
 
-  it("uses every newer exercise field: predict, names, pick, pair talk, solo, and dictated true and false", () => {
+  it("uses every newer exercise field: predict, names, pick, pair talk, solo, the lean explainer, and dictated true and false", () => {
     const predict = playables.find((exercise) => exercise.predict)?.predict;
     expect(predict?.choices.length).toBeGreaterThanOrEqual(2);
     expect(predict?.choices[predict.answer]).toBeTruthy();
@@ -541,6 +566,7 @@ describe("sample unit coverage", () => {
     expect(playables.some((exercise) => exercise.pick)).toBe(true);
     expect(playables.some((exercise) => exercise.pairTalk)).toBe(true);
     expect(playables.some((exercise) => exercise.solo)).toBe(true);
+    expect(playables.some((exercise) => exercise.explainer === "lean")).toBe(true);
     const dictated = playables.flatMap((exercise) => exercise.checkpoints.map((cp) => cp.dictated));
     expect(dictated).toContain(true);
     expect(dictated).toContain(false);

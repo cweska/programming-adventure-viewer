@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { explainCourseError } from "../../lib/course/explain";
+import { explainCourseError, type ExplainContext } from "../../lib/course/explain";
 import { runCourse } from "../../lib/languages/python/run";
 import type { Explanation, RunResult } from "../../lib/languages/types";
 import { Prose } from "./Prose";
@@ -17,9 +17,10 @@ export type RunView = {
   failure?: string;
 };
 
-export function runView(code: string, result: RunResult): RunView {
+/** `context`: what the explainer may assume (the unit's order: no "make it with def" before Functions). */
+export function runView(code: string, result: RunResult, context?: ExplainContext): RunView {
   if (result.ok) return { stdout: result.stdout, explanation: null };
-  return { stdout: result.stdout, explanation: explainCourseError(result.traceback || result.stderr, code) };
+  return { stdout: result.stdout, explanation: explainCourseError(result.traceback || result.stderr, code, context) };
 }
 
 export const PYTHON_FAILED = "Python could not run this. Check the internet, then press Run again.";
@@ -69,9 +70,12 @@ export function RunnableExample({
   index,
   testPrefix = "example",
   title,
+  unitOrder,
 }: {
   code: string;
   stdin?: string[];
+  /** The unit's order on the course map (for the explainer: no "make it with def" before Functions). */
+  unitOrder?: number;
   /** 1-based number for labels and test ids (`${testPrefix}-run-${index}`). */
   index: number;
   testPrefix?: string;
@@ -87,7 +91,7 @@ export function RunnableExample({
     setRunning(true);
     try {
       const result = await runCourse({ code, checks: [], stdin });
-      setView(runView(code, result));
+      setView(runView(code, result, { unitOrder }));
     } catch {
       setView({ stdout: "", explanation: null, failure: PYTHON_FAILED });
     } finally {

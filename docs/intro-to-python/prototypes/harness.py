@@ -20,8 +20,8 @@ It checks, for every exercise / project / challenge / test-out item:
     introduced yet, in course order (see CONCEPT TOKENS below),
   * every checkpoint has a hint ladder of at least two hints,
   * an exercise ``predict`` has 2+ choices, an explanation, and an answer that IS what its code prints,
-  * the exercise fields ``names`` (every name is used by the solution), ``pick``, ``pair_talk`` and ``solo``,
-    and the checkpoint field ``dictated``, have the right types,
+  * the exercise fields ``names`` (every name is used by the solution), ``pick``, ``pair_talk``, ``solo`` and
+    ``explainer`` ("full" or "lean"), and the checkpoint field ``dictated``, have the right types,
 and for quizzes, it EXECUTES predict / fill / parsons / bug questions to prove the keyed answer is right.
 
 It also reports reading load (word count and a Flesch-Kincaid grade estimate) for Mar'tu's text and the
@@ -71,6 +71,7 @@ Unit file format (plain Python data, no imports needed):
         pick='"Gearshift"',                 # Mar'tu's pick: a value to use when the student can't decide
         pair_talk="Tell your partner ...",  # an optional Pair talk prompt (every step is still done solo)
         solo=False,                         # True for the lesson's SOLO item, done alone
+        explainer="full",                   # "lean": the crash explainer names the slip and the line, not the fix
         notes="designer notes (not shown to students)",
     )
 
@@ -499,6 +500,8 @@ def verify_exercise(ex: dict, where: str, gate: ConceptGate, report: Report, kin
             report.error(where, f"{field} must be text")
     if "solo" in ex and not isinstance(ex["solo"], bool):
         report.error(where, "solo must be True or False")
+    if "explainer" in ex and ex["explainer"] not in ("full", "lean"):
+        report.error(where, "explainer must be \"full\" or \"lean\"")
 
     bonus = ex.get("bonus")
     if bonus:

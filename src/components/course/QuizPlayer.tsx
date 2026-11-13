@@ -289,7 +289,7 @@ function QuizRun({ unit, item, glossary, nextHref, settings }: ItemPageProps<Qui
   const runCode = async (code: string): Promise<RunView> => {
     try {
       const run = await runCourse({ code, checks: [] });
-      return runView(code, run);
+      return runView(code, run, { unitOrder: unit.order });
     } catch {
       return { stdout: "", explanation: null, failure: PYTHON_FAILED };
     }

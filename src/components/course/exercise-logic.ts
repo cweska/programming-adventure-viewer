@@ -409,6 +409,15 @@ export function namesALine(text: string, line?: number): boolean {
 }
 
 /**
+ * A debugging exercise (curriculum §2.1 step 6, the Broken spell; also the Quick Check "mend" tasks): one of its
+ * steps says "Mend ..." ("Mend line 3 so it shows `Steady`."). There a run that gets further than the last one
+ * shows "Python got further: that slip is mended." on a line of its own (FORMAT.md, checkpoint `text`).
+ */
+export function isDebugExercise(exercise: { checkpoints: readonly Pick<Checkpoint, "text">[] }): boolean {
+  return exercise.checkpoints.some((checkpoint) => /\bmend\b/i.test(checkpoint.text ?? ""));
+}
+
+/**
  * After a crash on `crashLine`: the step whose text names that line (broken spells: "Mend line 3 ..."), or -1.
  * Help aims there, so it never talks about line 1 under "Mend line 3 first."
  */

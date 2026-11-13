@@ -240,6 +240,20 @@ describe("grading: the slips a check alone would hide", () => {
     expect(result.checkpoints[0]?.message).toBe("Line 2 uses a dash - where = belongs, so nothing is kept. To store the value, write: mana = 20");
   });
 
+  it("names a question on its own line in place of \"Can't find\", and leaves a check's own words alone", () => {
+    const passed = [checkpoint("passed", [["value", "assert passed == (roll >= needed), 'Make passed from roll >= needed.'"]])];
+    const alone = "roll = 14\nneeded = 15\nroll >= needed\n";
+    const result = gradeCheckpoints(passed, runCourseChecks(alone, flattenChecks(passed)), alone);
+    expect(result.checkpoints[0]?.message).toBe(
+      "Line 3 asks `roll >= needed` and gets True or False, but nothing keeps or shows the answer. To keep it, put a box name and `=` in front: `passed = roll >= needed`. To show it, put it inside print( ).",
+    );
+    // The box is there (made with ==, from the starter): the check's own message is the right one.
+    const kept = "roll = 16\nneeded = 15\npassed = False\npassed == roll >= needed\n";
+    expect(gradeCheckpoints(passed, runCourseChecks(kept, flattenChecks(passed)), kept).checkpoints[0]?.message).toBe(
+      "Make passed from roll >= needed.",
+    );
+  });
+
   it("says when the code made a name with other capital letters, or the example's name", () => {
     expect(grade('Character = "Zelda"\nprint(Character)\n').checkpoints[0]?.message).toBe(
       "Can't find `character`. Your code made `Character`, but capital letters matter: use `character`.",
