@@ -207,6 +207,12 @@ describe("Mar'tu's pick", () => {
     expect(pickInsertion("a\nb", "")).toBe("a\nb");
   });
 
+  it("uses a pick written as a quoted literal as it is", () => {
+    expect(pickInsertion('"Welcome to the cabin, "', "print(")).toBe('"Welcome to the cabin, "');
+    expect(pickInsertion('"Welcome to the cabin, "', 'print("')).toBe("Welcome to the cabin, ");
+    expect(pickInsertion("'Zelda'", "hero = ")).toBe("'Zelda'");
+  });
+
   it("reads open strings on a line", () => {
     expect(insideString('x = "abc')).toBe(true);
     expect(insideString('x = "abc"')).toBe(false);

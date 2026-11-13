@@ -63,11 +63,18 @@ export function GlossaryTerm({ entry, children }: { entry: GlossaryEntry; childr
     }
     const box = popoverRef.current;
     if (!box) return;
+    const term = buttonRef.current?.getBoundingClientRect();
+    // On a phone the box is a sheet fixed to the screen (course.css), so it can never run off the edge:
+    // it goes to the top of the screen when the word is in the lower half, so it never covers the word.
+    if (getComputedStyle(box).position === "fixed") {
+      setShift(0);
+      setAbove(term ? term.top + term.height / 2 > window.innerHeight / 2 : false);
+      return;
+    }
     const rect = box.getBoundingClientRect();
     const overflow = rect.right - (window.innerWidth - 12);
     setShift(overflow > 0 ? Math.max(0, Math.min(overflow, rect.left - 12)) : 0);
     if (rect.bottom <= window.innerHeight - 8) return;
-    const term = buttonRef.current?.getBoundingClientRect();
     if (term && term.top - rect.height - 6 >= 8) {
       setAbove(true);
       return;

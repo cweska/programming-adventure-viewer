@@ -266,7 +266,7 @@ def no_bare_math(label, box):
         "_loose = [_n.lineno for _n in _ast.parse(_source).body if type(_n).__name__ == 'Expr' "
         "and type(_n.value).__name__ == 'BinOp']\n"
         "assert not _loose, 'Line ' + str(_loose[0] if _loose else 0) + "
-        f"{' works out a new number, but `' + box + '` did not change: put the answer back with `' + box + ' = ` in front.'!r}",
+        f"{' works out a new number, but `' + box + '` didn' + chr(39) + 't change: put the answer back with `' + box + ' = ` in front.'!r}",
     )
 
 
@@ -452,7 +452,7 @@ CHALK_MATH = dict(
                 (
                     "prints 11",
                     "assert '11' in _lines(), 'The gap shrank by 11, and your program does not print 11 yet. "
-                    "Replace the 0 with `first_gap - last_gap`.'",
+                    "Replace the 0 with the two boxes and a minus sign.'",
                 ),
                 rerun_line(
                     "the shrink is built from the boxes",
@@ -1059,7 +1059,7 @@ SPEND_MANA = dict(
         dict(
             id="three-casts",
             text="Make it three casts.",
-            dictated=False,
+            dictated=True,
             hints=[
                 "Click at the end of line 4, press Enter, and type `mana = `.",
                 "Which line spends mana? You need one more of it, above the `print`.",
@@ -1158,7 +1158,7 @@ SPEND_MANA = dict(
              fails_at=1, message_contains="5"),
         dict(why="subtracts but never stores it",
              code="mana = 26\nspell_cost = 3\nmana = mana - spell_cost\nmana = mana - spell_cost\nmana - spell_cost\nprint(mana)\n",
-             fails_at=1, message_contains="did not change"),
+             fails_at=1, message_contains="didn't change"),
         dict(why="a number instead of spell_cost",
              code="mana = 26\nspell_cost = 3\nmana = mana - spell_cost\nmana = mana - spell_cost\nmana = mana - 3\nprint(mana)\n",
              fails_at=1, message_contains="spell_cost"),
@@ -1168,7 +1168,7 @@ SPEND_MANA = dict(
         dict(why="the starter left as two casts", code=SPEND_STARTER, fails_at=1, message_contains="two casts"),
     ],
     notes=(
-        meta(starter_level="S4", path="CC", skills="reassign", solo="false", dictates="",
+        meta(starter_level="S4", path="CC", skills="reassign", solo="false", dictates="1",
              foreign_names="glow") + "\n"
         "The step table is the predict explanation (shown after any guess) and the step-by-step angle (TR). "
         "Checks read the printed 17 (not the final value) so Lucky's +2 side quest does not undo the checkpoint. "
@@ -2076,7 +2076,8 @@ THE_SHORT_WAY = dict(
     notes=(
         meta(starter_level="S4", path="pool", skills="reassign", solo="false", dictates="1", foreign_names="glow") + "\n"
         "1C-05 (kept id). node:AugAssign is pool-only: no core starter or solution shows `+=`, and every later "
-        "check accepts both forms."
+        "check accepts both forms. The spec's CP1 (values right) and CP2 (_uses AugAssign) become one checkpoint "
+        "per rewritten line, each checking that box's value and its `+=` / `-=`."
     ),
 )
 

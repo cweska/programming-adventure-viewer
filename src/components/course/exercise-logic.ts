@@ -472,11 +472,14 @@ export function insideString(lineBefore: string): boolean {
 }
 
 /**
- * What Mar'tu's pick puts in the editor: the value itself inside an open string or for a number (or a
- * multi-line pick), otherwise the value in quotes.
+ * What Mar'tu's pick puts in the editor: the value itself for a number or a multi-line pick; inside an open
+ * string, the bare words; otherwise the words in quotes. A pick authored as a quoted literal
+ * (`"Welcome, "`) is used as it is (or without its quotes inside an open string).
  */
 export function pickInsertion(pick: string, lineBefore: string): string {
   const value = pick ?? "";
+  const literal = value.trim().match(/^(["'])([\s\S]*)\1$/);
+  if (literal && value.trim().length >= 2) return insideString(lineBefore) ? literal[2] : value.trim();
   if (value.includes("\n") || /^-?\d+(\.\d+)?$/.test(value.trim()) || insideString(lineBefore)) return value;
   return value.includes('"') && !value.includes("'") ? `'${value}'` : `"${value.replace(/"/g, '\\"')}"`;
 }

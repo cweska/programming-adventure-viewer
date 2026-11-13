@@ -181,6 +181,55 @@ test.describe("Intro to Python", () => {
     await expect(page.getByTestId("write-it-myself")).toBeVisible();
   });
 
+  test("Predict first, Names to use and Mar'tu's pick help without getting in the way", async ({ page }) => {
+    await openExercise(page, "first-words", "read-the-chalk");
+    // Predict: one click, right or wrong, then explained. It never blocks Run, and it is remembered.
+    await expect(page.getByTestId("predict")).toBeVisible();
+    await page.getByTestId("predict-choice-1").click();
+    await expect(page.getByTestId("predict-result")).toHaveAttribute("data-correct", "false");
+    await expect(page.getByTestId("predict-choice-0")).toContainText("✓");
+    await expectSaved(page, `${SAMPLE}/first-words/read-the-chalk`, (entry) => entry.predicted === 1);
+    await page.getByTestId("predict-close").click();
+    await expect(page.getByTestId("predict")).toHaveCount(0);
+    await expect(page.getByTestId("run")).toBeFocused();
+    await page.reload();
+    await expect(page.getByTestId("exercise-player")).toBeVisible();
+    await expect(page.getByTestId("predict")).toHaveCount(0);
+
+    await openExercise(page, "first-words", "ask-the-traveler");
+    const content = page.locator('[data-testid="editor"] .cm-content');
+    await content.click();
+    await page.keyboard.press("ControlOrMeta+End");
+    await page.keyboard.insertText("\nprint(");
+    await page.getByTestId("pick-use").click();
+    await page.keyboard.insertText(" + ");
+    await page.getByTestId("name-chip-name").click();
+    await page.keyboard.insertText(")");
+    await expect(content).toContainText('print("Welcome to the cabin, " + name)');
+    await page.getByTestId("run").click();
+    await expect(page.getByTestId("all-passed")).toBeVisible();
+  });
+
+  test("Keep it short folds Mar'tu's words and the example, and never hides steps or Help", async ({ page }) => {
+    await page.goto(itemUrl("first-words", "barrier-report"));
+    await page.evaluate((key) => {
+      window.localStorage.setItem(
+        key,
+        JSON.stringify({ version: 1, exercises: {}, quizzes: {}, read: {}, testedOut: {}, settings: { preset: "short" } }),
+      );
+    }, PROGRESS_KEY);
+    await openExercise(page, "first-words", "barrier-report");
+    await expect(page.getByTestId("exercise-player")).toHaveAttribute("data-preset", "short");
+    await expect(page.getByTestId("show-explanation")).toBeVisible();
+    await expect(page.getByTestId("worked-example")).toBeHidden();
+    await expect(page.getByTestId("checkpoint-3")).toBeVisible();
+    await expect(page.getByTestId("help-button")).toBeVisible();
+    await page.getByTestId("show-explanation").click();
+    await expect(page.getByTestId("show-explanation")).toHaveCount(0);
+    await page.getByTestId("example-toggle").locator("summary").click();
+    await expect(page.getByTestId("worked-example")).toBeVisible();
+  });
+
   test("the keyboard is never lost: Run keeps focus, and Esc then Tab leaves the editor", async ({ page }) => {
     await openExercise(page, "first-words", "barrier-report");
     await expect(page.getByTestId("editor-keys")).toContainText("Esc, then Tab");

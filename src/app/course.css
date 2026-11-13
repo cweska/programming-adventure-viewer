@@ -526,10 +526,33 @@
   text-align: left;
 }
 
-/* No room below (a word near the bottom of a phone screen): open above the word instead. */
+/* No room below (a word near the bottom of the window): open above the word instead. */
 .glossary-popover.is-above {
   top: auto;
   bottom: calc(100% + 6px);
+}
+
+/*
+ * Phones: a box hanging off a word would stick out past the screen edge (and phones then zoom the whole page
+ * out). Show it as a sheet fixed to the bottom of the screen instead, or to the top when the word is low down.
+ */
+@media (max-width: 600px) {
+  .glossary-popover,
+  .glossary-popover.is-above {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    top: auto;
+    bottom: 12px;
+    width: auto;
+    max-height: 60vh;
+    overflow-y: auto;
+  }
+
+  .glossary-popover.is-above {
+    top: 12px;
+    bottom: auto;
+  }
 }
 
 .glossary-popover .inline-code {
