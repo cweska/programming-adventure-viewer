@@ -265,9 +265,10 @@ export const RUNG_PACE_MS = 10_000;
  * "Start me off" (curriculum §2.2 rung 0): the first tokens of the step's line, up to and including its
  * first `(` or `=` (`caster =`, `print(`). Taken from the first code span of the step's last hint (the
  * "show" rung of the authored point -> teach -> show ladder). Null when there is nothing safe to give:
- * no code span, or a line with no `(` or `=` (it would be the whole answer).
+ * no code span, a line with no `(` or `=` (it would be the whole answer), or (given `solution`) a start that
+ * Mar'tu's version does not use.
  */
-export function startOfLine(hints: readonly string[] | undefined): string | null {
+export function startOfLine(hints: readonly string[] | undefined, solution?: string): string | null {
   const last = hints && hints.length >= 2 ? hints[hints.length - 1] : undefined;
   const span = last?.match(/`([^`\n]+)`/)?.[1]?.trim();
   if (!span) return null;
@@ -276,6 +277,9 @@ export function startOfLine(hints: readonly string[] | undefined): string | null
   if (!cut || /[=!<>]$/.test(cut[1])) return null;
   const start = `${cut[1]}${cut[2]}`.trim();
   if (!start || start === "(" || start.length >= span.length) return null;
+  // A hint may show an example with other names: only give a start that Mar'tu's version really uses.
+  const squash = (text: string) => text.replace(/\s+/g, "");
+  if (solution !== undefined && !squash(solution).includes(squash(start))) return null;
   return start;
 }
 
@@ -289,11 +293,11 @@ export function startOfLine(hints: readonly string[] | undefined): string | null
  */
 export function helpRungs(
   checkpoint: Pick<Checkpoint, "hints">,
-  exercise: { anotherWayCount: number; hasAssemble: boolean; solo: boolean },
+  exercise: { anotherWayCount: number; hasAssemble: boolean; solo: boolean; solution?: string },
 ): Rung[] {
   const hints = checkpoint.hints ?? [];
   const rungs: Rung[] = [];
-  const start = exercise.solo ? null : startOfLine(hints);
+  const start = exercise.solo ? null : startOfLine(hints, exercise.solution);
   if (start) rungs.push({ kind: "start", label: "Start me off", start });
   if (hints.length > 0) rungs.push({ kind: "point", label: "Where to look", hint: 0 });
   if (exercise.anotherWayCount > 0) rungs.push({ kind: "another", label: "Another way" });

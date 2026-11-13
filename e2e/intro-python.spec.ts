@@ -58,6 +58,11 @@ test.describe("Intro to Python", () => {
     // a Run lets the next rung open.
     await help.click();
     await expect(page.getByTestId("help-rung-1")).toHaveAttribute("data-kind", "start");
+    // Start me off gives only the start of the line, never the whole answer, and can put it in the editor.
+    await expect(page.getByTestId("help-start-code")).toHaveText("caster =");
+    await page.getByTestId("help-start-insert").click();
+    await expect(page.locator('[data-testid="editor"] .cm-content')).toContainText("caster =");
+    await expect(page.locator('[data-testid="editor"] .cm-content')).not.toContainText("Gearshift");
     await expect(help).toContainText("More help: Where to look");
     await help.click();
     await expect(page.getByTestId("help-paced")).toBeVisible();
@@ -110,6 +115,65 @@ test.describe("Intro to Python", () => {
     // The unit page shows the lesson as started.
     await page.goto(`/intro-python/${SAMPLE}`);
     await expect(page.getByTestId("item-status-first-words")).toHaveAttribute("data-status", "in-progress");
+  });
+
+  test("Help climbs every rung to Show me how, offers itself after misses, then opens Compare without changing the code", async ({ page }) => {
+    await openExercise(page, "first-words", "ask-the-traveler");
+    const help = page.getByTestId("help-button");
+    const content = page.locator('[data-testid="editor"] .cm-content');
+    let runs = 0;
+    const run = async () => {
+      runs += 1;
+      await page.getByTestId("run").click();
+      await expect(page.getByTestId("run-count")).toContainText(`Run ${runs} finished`, { timeout: 30_000 });
+    };
+
+    // Rung 1, Start me off: the start of the step's line, put in the editor on request.
+    await expect(help).toContainText("Help: Start me off");
+    await help.click();
+    await expect(page.getByTestId("help-start-code")).toHaveText("print(");
+    await page.getByTestId("help-start-insert").click();
+    await expect(content).toContainText("print(");
+    await run();
+    await expect(page.getByTestId("explainer")).toBeVisible();
+
+    // Rungs 2 to 4, one per press after each Run: Where to look, Teach me, Show me how.
+    for (const [n, kind] of [
+      [2, "point"],
+      [3, "teach"],
+      [4, "how"],
+    ] as const) {
+      await help.click();
+      await expect(page.getByTestId(`help-rung-${n}`)).toHaveAttribute("data-kind", kind);
+      await expect(help).toBeFocused();
+      if (n < 4) await run();
+      if (n === 3) {
+        // Three misses in a row on the step: Help is highlighted with Oogrish's one line (no popup).
+        await expect(page.getByTestId("help-offer")).toContainText("Read the last line first");
+        await expect(help).toHaveClass(/is-offered/);
+      }
+    }
+    await expect(page.getByTestId("help-rung-4")).toContainText('print("Welcome to the cabin, " + name)');
+
+    // Compare with Mar'tu's version is next, but it waits for one more real try.
+    await expect(help).toContainText("Compare with Mar'tu's version");
+    await expect(help).toHaveAttribute("aria-disabled", "true");
+    await expect(page.getByTestId("help-show-locked")).toBeVisible();
+    await run();
+    await expect(help).not.toHaveAttribute("aria-disabled", "true");
+    await help.click();
+    await expect(page.getByTestId("compare")).toBeVisible();
+    await expect(page.getByTestId("compare-heading")).toBeFocused();
+    await expect(page.getByTestId("compare-mine")).toContainText("print(");
+    await expect(page.getByTestId("compare-theirs")).toContainText('print("Welcome to the cabin, " + name)');
+    await expect(content).not.toContainText("Welcome to the cabin");
+    // Every rung stays open to read again; the count is saved per step.
+    for (const n of [1, 2, 3, 4, 5]) await expect(page.getByTestId(`help-rung-${n}`)).toBeVisible();
+    await expect(help).toHaveCount(0);
+    await expectSaved(page, `${SAMPLE}/first-words/ask-the-traveler`, (entry) => {
+      const hints = entry.hintsUsed as Record<string, number> | undefined;
+      return hints?.greet === 5 && entry.solutionShown === true;
+    });
   });
 
   test("an input() exercise reads its answers from the Input box", async ({ page }) => {
@@ -208,6 +272,44 @@ test.describe("Intro to Python", () => {
     await expect(content).toContainText('print("Welcome to the cabin, " + name)');
     await page.getByTestId("run").click();
     await expect(page.getByTestId("all-passed")).toBeVisible();
+  });
+
+  test("the first map visit asks once about typing code; every answer starts on Show me more, and Help options switch", async ({ page }) => {
+    await page.goto("/intro-python?preview=1");
+    const placement = page.getByTestId("placement");
+    await expect(placement).toBeVisible();
+    await expect(placement.getByRole("heading")).toHaveText("Have you typed code before?");
+
+    // "Yes" never takes support away: it stays on Show me more and is offered the Quick Check instead.
+    await page.getByTestId("placement-yes").click();
+    await expect(page.getByTestId("placement-done")).toBeFocused();
+    await expect(page.getByTestId("placement-quick-check-link")).toHaveAttribute("href", /\/intro-python\/sample\/quick-check\/?$/);
+    await expect
+      .poll(() => page.evaluate((key) => JSON.parse(window.localStorage.getItem(key) ?? "{}")?.settings?.preset ?? null, PROGRESS_KEY))
+      .toBe("more");
+    await page.reload();
+    await expect(page.getByTestId("course-map")).toBeVisible();
+    await expect(page.getByTestId("unit-card-sample")).toBeVisible();
+    await expect(page.getByTestId("placement")).toHaveCount(0);
+
+    // Skip also starts on Show me more, with no Quick Check offer.
+    await page.evaluate((key) => window.localStorage.removeItem(key), PROGRESS_KEY);
+    await page.reload();
+    await page.getByTestId("placement-skip").click();
+    await expect(page.getByTestId("placement-done")).toBeVisible();
+    await expect(page.getByTestId("placement-quick-check")).toHaveCount(0);
+
+    // Help options switch to Keep it short; nothing on the page shows which preset is on.
+    await page.getByTestId("help-options").locator("summary").click();
+    await expect(page.getByTestId("setting-preset-more")).toBeChecked();
+    await page.getByTestId("setting-preset-short").check();
+    await expect
+      .poll(() => page.evaluate((key) => JSON.parse(window.localStorage.getItem(key) ?? "{}")?.settings?.preset ?? null, PROGRESS_KEY))
+      .toBe("short");
+    await openExercise(page, "first-words", "barrier-report");
+    await expect(page.getByTestId("exercise-player")).toHaveAttribute("data-preset", "short");
+    await expect(page.getByTestId("show-explanation")).toBeVisible();
+    await expect(page.getByTestId("help-button")).toBeVisible();
   });
 
   test("Keep it short folds Mar'tu's words and the example, and never hides steps or Help", async ({ page }) => {

@@ -214,6 +214,10 @@ describe("server render", () => {
 
   it("renders the Help stack's open rungs, a highlighted offer, and a locked Show me", () => {
     const checkpoint = unitOneStyle.checkpoints[0];
+    // The last hint shows the example's box, not the task's: no Start me off from it.
+    expect(
+      helpRungs(checkpoint, { anotherWayCount: 0, hasAssemble: false, solo: false, solution: unitOneStyle.solution }).map((rung) => rung.kind),
+    ).toEqual(["point", "teach", "how", "show"]);
     const rungs = helpRungs(checkpoint, { anotherWayCount: 0, hasAssemble: false, solo: false });
     // Every rung open but the last: Compare with Mar'tu's version is next, and still locked.
     expect(rungs.map((rung) => rung.kind)).toEqual(["start", "point", "teach", "how", "show"]);

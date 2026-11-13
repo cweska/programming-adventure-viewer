@@ -85,6 +85,9 @@ describe("the Help rungs", () => {
     expect(startOfLine(["a", "Write `(1 + 2)`."])).toBeNull();
     expect(startOfLine(["Write `mana = 20`."])).toBeNull();
     expect(startOfLine(undefined)).toBeNull();
+    // A hint that shows an example with other names gives no start: Mar'tu's version must use it.
+    expect(startOfLine(["a", "`snack = \"glug\"` makes a box."], 'companion = "Bomb Shell"\n')).toBeNull();
+    expect(startOfLine(["a", "Write `mana = 20`."], "caster = 'G'\nmana=20\n")).toBe("mana =");
   });
 
   it("knows what is open and what comes next", () => {

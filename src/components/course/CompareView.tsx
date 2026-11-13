@@ -69,14 +69,27 @@ export function CompareView({
     headingRef.current?.focus();
   }, []);
 
+  const copyRef = useRef<HTMLButtonElement>(null);
+  const backToCopy = useRef(false);
+
   useEffect(() => {
     if (confirmCopy) confirmRef.current?.querySelector<HTMLButtonElement>('[data-testid="compare-copy-no"]')?.focus();
+    else if (backToCopy.current) {
+      // "No, I'll type it" (or Esc) removed the button that had the keyboard: give it to "Copy into my editor".
+      backToCopy.current = false;
+      copyRef.current?.focus();
+    }
   }, [confirmCopy]);
+
+  function cancelCopy() {
+    backToCopy.current = true;
+    setConfirmCopy(false);
+  }
 
   function onConfirmKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
     if (event.key === "Escape") {
       event.preventDefault();
-      setConfirmCopy(false);
+      cancelCopy();
     }
   }
 
@@ -122,7 +135,7 @@ export function CompareView({
           >
             Yes, copy it
           </button>
-          <button type="button" className="reset-cancel" data-testid="compare-copy-no" onClick={() => setConfirmCopy(false)}>
+          <button type="button" className="reset-cancel" data-testid="compare-copy-no" onClick={cancelCopy}>
             No, I&apos;ll type it
           </button>
         </div>
@@ -140,6 +153,7 @@ export function CompareView({
         )}
         {confirmCopy ? null : (
           <button
+            ref={copyRef}
             type="button"
             className="ex-quiet"
             data-testid="compare-copy"

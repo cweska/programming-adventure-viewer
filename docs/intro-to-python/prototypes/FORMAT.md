@@ -166,7 +166,7 @@ Kinds:
 | `tracer` | bool | `tracer` | offer the step-through tracer |
 | `support` | `"full"` / `"light"` / `"none"` | `support` | full: hints, another way, solution after gating. light: hints after the first failed run. none: test-outs. |
 | `bonus` | dict | `bonus` | a side quest, see below |
-| `assemble` | dict | `assemble` | "Assemble it": the solution as shuffled lines, `dict(lines=[...in order...], distractors=[...])` (a string is split into lines) |
+| `assemble` | dict | `assemble` | "Assemble it": the solution as shuffled lines, `dict(lines=[...in order...], distractors=[...])` (a string is split into lines). Students reach it through Help, under "More structure". |
 | `campaign_link` | dict | `campaignLink` | Lucky's "What's in it for me?" box: `dict(module="leylines-awaken", part="program-dialogue-prompt", snippet="code", why="prose")`. `snippet` optional. |
 | `takeaway` | str | `takeaway` | one line for the cheatsheet / skill map |
 | `predict` | dict | `predict` | Predict before Run, see [below](#predict-before-run). Free: a thinking prompt, never a test, and it never blocks Run. Hidden in Quick Checks. |
@@ -195,7 +195,7 @@ dict(
 | --- | --- | --- |
 | `id` | `id` | slug, unique within the exercise. Give real ids once students use a unit: progress is saved by id, so renaming or reordering a `step-N` checkpoint resets it. |
 | `text` | `text` | one action, at most two sentences. A leading `1. ` is stripped (the site numbers checkpoints). |
-| `hints` | `hints` | the hint ladder, 2 to 5 rungs: point, teach, show |
+| `hints` | `hints` | the hint ladder, 2 to 5 rungs: point, teach, show. The site's Help control shows them as "Where to look" (the first), "Teach me" (the middle ones) and "Show me how" (the last), with "Another way" and "More structure" (Assemble it) in between, then "Compare with Mar'tu's version". Write the last hint with the step's own line in backticks (``Write `mana = 20` on its own line.``): its start up to the first `(` or `=` becomes "Start me off" (`mana =`), but only if the solution uses it. Never show an example's names there. |
 | `checks` | `checks` | `(name, code)` pairs (or `dict(name=..., code=...)`) |
 | `pass_line` | `passLine` | optional in-world line |
 | `dictated` | `dictated` | optional bool. `True` when the text spells out the code to type ("Write `mana = 20`"); `False` for a goal-only step that gives the goal and the names, never the code ("Print a greeting that uses `name`."). The curriculum asks for at least one `dictated=False` step in every lesson (§2.1, lint g). Left out: not marked either way. |

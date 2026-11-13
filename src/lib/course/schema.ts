@@ -34,7 +34,7 @@ export const checkpointSchema = z
     id: slug,
     /** One action. The UI numbers checkpoints, so no leading "1. ". */
     text: prose,
-    /** The hint ladder: point -> teach -> show (2 to 5 rungs). */
+    /** The hint ladder: point -> teach -> show (2 to 5 rungs). Help shows them as Where to look, Teach me, Show me how. */
     hints: z.array(prose).min(2).max(5),
     checks: z.array(courseCheckSchema).min(1),
     /** A short in-world line shown when the checkpoint turns green. */
@@ -327,9 +327,9 @@ export const courseMetaSchema = z
     intro: prose,
     settings: z
       .object({
-        /** Show solution unlocks after this many minutes on an exercise... */
+        /** "Compare with Mar'tu's version" unlocks after this many minutes on an exercise... */
         solutionAfterMinutes: z.number().default(5),
-        /** ...or this many failed runs, whichever comes first. */
+        /** ...or this many counted failed runs (changed code, or Help opened since), whichever comes first. */
         solutionAfterFailedRuns: z.number().int().default(4),
         /** Quiz score that earns the "Ready" badge (never blocks anything). */
         quizReadyPercent: z.number().default(70),

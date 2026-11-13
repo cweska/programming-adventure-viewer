@@ -63,14 +63,18 @@ if "__NAME__" not in globals():
         _msg = "`" + _left[0] + "` is a name from an example or an earlier step. This task's box is `__NAME__`."
     elif _bare:
         _msg = "Line " + str(_bare[0]) + " is a value with no box, so Python made it and forgot it. Put `__NAME__ = ` in front of it."
+    elif [_m for _m in _made if _m not in __SKIP__]:
+        _msg = "You made a box named `" + [_m for _m in _made if _m not in __SKIP__][0] + "`, but this task's box is `__NAME__`. Python matches names letter for letter."
     else:
         _msg = "Make a box named `__NAME__`: start a line with `__NAME__ = `."
     assert False, _msg'''
 
 
-def box_check(name, foreign=()):
-    """NAME + LEFT + BARE: the box exists, or the message says why not."""
-    code = _BOX_TEMPLATE.replace("__NAME__", name).replace("__FOREIGN__", repr(list(foreign)))
+def box_check(name, foreign=(), skip=()):
+    """NAME + LEFT + BARE (+ another name): the box exists, or the message says why not.
+    `skip` = boxes the starter already makes, never named as the student's wrong box."""
+    code = (_BOX_TEMPLATE.replace("__NAME__", name).replace("__FOREIGN__", repr(list(foreign)))
+            .replace("__SKIP__", repr(list(skip))))
     return (f"there is a box named {name}", code)
 
 
@@ -97,13 +101,13 @@ def bare_check():
 
 
 def print_check(name):
-    """PRINT: print(name) with no quotes, and the box's value shows in the console."""
+    """PRINT: a print uses the box (alone, or glued: `print("Hero: " + name)`), and its value shows."""
     return (
         f"prints the box {name}",
         "import ast as _ast\n"
         "_args = [_a for _n in _ast.walk(_ast.parse(_source)) if type(_n).__name__ == 'Call' "
         "and type(_n.func).__name__ == 'Name' and _n.func.id == 'print' for _a in _n.args]\n"
-        f"_named = [_a for _a in _args if type(_a).__name__ == 'Name' and _a.id == '{name}']\n"
+        f"_named = [_x for _a in _args for _x in _ast.walk(_a) if type(_x).__name__ == 'Name' and _x.id == '{name}']\n"
         f"_quoted = [_a for _a in _args if type(_a).__name__ == 'Constant' and _a.value == '{name}']\n"
         f"assert _named or not _quoted, 'That prints the word \"{name}\". Take the quotes off so Python opens the box.'\n"
         f"assert _named, 'Add a line that prints the box: `print({name})`.'\n"
@@ -152,13 +156,18 @@ import sys as _sys
 def _show(_v):
     return '"' + _v + '"' if type(_v).__name__ == 'str' else str(_v)
 def _rerun(_values=None, _answers=None):
+    # Every plain `name = value` line of a changed box gets the new value (not only the first), so a student
+    # who added a new line under the starter's placeholder instead of editing it is still rerun fairly.
     _tree = _ast.parse(_source)
-    _left = dict(_values or {})
+    _vals = dict(_values or {})
+    _seen = set()
     for _n in _tree.body:
         if type(_n).__name__ == 'Assign' and len(_n.targets) == 1 and type(_n.targets[0]).__name__ == 'Name':
             _id = _n.targets[0].id
-            if _id in _left and type(_n.value).__name__ == 'Constant':
-                _n.value = _ast.copy_location(_ast.Constant(_left.pop(_id)), _n.value)
+            if _id in _vals and type(_n.value).__name__ == 'Constant':
+                _n.value = _ast.copy_location(_ast.Constant(_vals[_id]), _n.value)
+                _seen.add(_id)
+    _left = [_k for _k in _vals if _k not in _seen]
     _ns = {'__name__': '__main__', 'input': input}
     _buf, _old, _err = _io.StringIO(), _sys.stdout, ''
     _sys.stdout = _buf
@@ -367,14 +376,21 @@ _texts = [_n.value for _n in _ast.walk(_ast.parse(_source)) if type(_n).__name__
 '''
 
 
-def ink_rows_check(at_least, letter):
+def ink_rows_check(at_least, letter, group, shape_msg):
+    """CMB with ink, plus: no row half-typed (a mark that stays put when ink changes), and the letter's own five
+    ink rows (group 1 = O, 2 = R, after the T's five) have a gap row, so a copied T or a column of marks fails."""
     return (
         f"at least {at_least} rows follow ink",
         _INK_ROWS
         + "assert 'ink' not in _texts, 'That `\"ink\"` is in quotes, so it is just the word ink. "
         "Take the quotes off so Python opens the box.'\n"
         + f"assert len(_ink_rows) >= {at_least}, 'Mar\\'tu repainted the sign with `#`, and only ' + str(len(_ink_rows)) + "
-        f"' rows changed. Draw all five rows of the {letter} with `ink`, not a typed █, so they repaint too.'",
+        f"' rows changed. Draw all five rows of the {letter} with `ink`, not a typed █, so they repaint too.'\n"
+        + "_mixed = [_i for _i in _ink_rows if any(_x == _y and _x.strip() for _x, _y in zip(_ra[_i], _rb[_i]))]\n"
+        "assert not _mixed, 'When Mar\\'tu repainted with `#`, one row came out `' + _ra[_mixed[0]].strip() + "
+        "'`. Part of it is a typed mark. Make every mark in that row come from `ink`.'\n"
+        + f"_mine = _ink_rows[{5 * group}:{5 * group + 5}]\n"
+        + "assert any(_re.search(r'#\\s+#', _ra[_i]) for _i in _mine), " + repr(shape_msg),
     )
 
 
@@ -398,7 +414,12 @@ REPAINT_CHECK = (
     "ink holds a new mark",
     _NEAR_TEMPLATE.replace("__NAME__", "ink").replace("the task needs", "the sign uses")
     + "\nassert type(ink).__name__ == 'str' and ink.strip(), 'Keep `ink` as a mark in quotes, like `\"▓\"`.'\n"
-    "assert ink != '█', 'Change `ink` to another mark, like `\"▓\"` or `\"#\"`. Then run, and watch every letter follow.'",
+    "assert ink != '█', 'Change `ink` to another mark, like `\"▓\"` or `\"#\"`. Then run, and watch every letter follow.'\n"
+    + _INK_ROWS
+    + "_now = _captured_stdout.split('\\n')\n"
+    "_stale = [_i for _i in _ink_rows if _i < len(_now) and ink not in _now[_i]]\n"
+    "assert not _stale, 'The sign still prints the old mark, because `ink` changes after the letters are drawn. "
+    "Change the `ink = ` line near the top instead, so every row below it uses the new mark.'",
 )
 
 TRIPLE_LETTER_CHECK = (
@@ -408,8 +429,9 @@ _best = 0
 for _n in _ast.walk(_ast.parse(_source)):
     if type(_n).__name__ == 'Call' and type(_n.func).__name__ == 'Name' and _n.func.id == 'print':
         for _a in _n.args:
-            if type(_a).__name__ == 'Constant' and type(_a.value).__name__ == 'str':
-                _best = max(_best, len([_l for _l in _a.value.splitlines() if _l.strip()]))
+            _v = _a.value if type(_a).__name__ == 'Constant' else globals().get(_a.id) if type(_a).__name__ == 'Name' else None
+            if type(_v).__name__ == 'str':
+                _best = max(_best, len([_l for _l in _v.splitlines() if _l.strip()]))
 assert _uses('const:multiline_str'), 'Draw one more letter inside one `print`, between triple quotes `"""`.'
 assert _best >= 5, 'Your triple-quoted letter has ' + str(_best) + (' row' if _best == 1 else ' rows') + '. Make it five rows tall, like the others.'
 ''',
@@ -465,7 +487,8 @@ WARD_SIGN = dict(
                 "With other names, `print(chalk + \"  \" + chalk)` shows `#  #`.",
                 "Top and bottom: `print(ink * 5)`. The three rows between: `print(ink + \"   \" + ink)`.",
             ],
-            checks=[ink_rows_check(10, "O")],
+            checks=[ink_rows_check(10, "O", 1, "Your O has no hole in the middle. Draw its sides with a gap between two "
+                                  "marks: `ink + \"   \" + ink`.")],
             pass_line="Mar'tu: An O. Round enough for a post, yes?",
         ),
         dict(
@@ -480,7 +503,8 @@ WARD_SIGN = dict(
                 "```python\nprint(ink * 4)\nprint(ink + \"   \" + ink)\nprint(ink * 4)\n"
                 "print(ink + \"  \" + ink)\nprint(ink + \"   \" + ink)\n```",
             ],
-            checks=[ink_rows_check(15, "R")],
+            checks=[ink_rows_check(15, "R", 2, "Your R needs rows with a gap between two marks, for its side and its "
+                                  "leg: `ink + \"   \" + ink`.")],
             pass_line="Mar'tu: T, O, R. Tor. Good.",
         ),
         dict(
@@ -860,45 +884,75 @@ CLOCK_MATH = dict(
 # Article 1-A3 "Asking the Traveler: input()" (optional, 15 min) and try-it 1-A3a
 # =============================================================================================
 
+# The try-it's checks run the program again twice with fixed answers (Lucky/3 and Tester/5), whatever the
+# student typed in their own Input box. The answer is NOT echoed in these runs, so line i of one run can be
+# compared with line i of the other: a line that FOLLOWS the answer was built from the box; a typed one stays put.
+_QUIET = r'''import io as _io
+import re as _re
+import sys as _sys
+def _show(_v):
+    return '"' + _v + '"' if type(_v).__name__ == 'str' else str(_v)
+def _quiet(_answers):
+    _left, _asked = list(_answers), []
+    def _ask(_prompt=''):
+        _asked.append(_prompt)
+        _sys.stdout.write(str(_prompt) + '\n')
+        if not _left:
+            raise EOFError('This program asked for more input than it was given.')
+        return _left.pop(0)
+    _ns = {'__name__': '__main__', 'input': _ask}
+    _buf, _old, _err = _io.StringIO(), _sys.stdout, ''
+    _sys.stdout = _buf
+    try:
+        exec(compile(_source, 'main.py', 'exec'), _ns)
+    except Exception as _e:
+        _err = type(_e).__name__ + ': ' + str(_e)
+    finally:
+        _sys.stdout = _old
+    return _ns, [_l.strip() for _l in _buf.getvalue().split('\n')], _err, len(_asked)
+_nsA, _a, _errA, _usedA = _quiet(['Lucky', '3'])
+_nsB, _b, _errB, _usedB = _quiet(['Tester', '5'])
+_pairs = list(zip(_a, _b))
+'''
+
 _GREET_CHECK = (
     "the greeting is built from traveler",
-    _RERUN
+    _QUIET
     + r'''
-_rows = _lines()
-assert not any('traveler' in _l for _l in _rows), 'That prints the word traveler. Take the quotes off so Python opens the box.'
-_ns, _out, _err, _miss = _rerun(None, ['Tester', '5'])
-assert not _err or 'EOF' in _err, 'When the traveler typed Tester, the program stopped: ' + _err
-_hits = [_l for _l in _out.splitlines() if 'Tester' in _l]
-_typed = len([_l for _l in _rows if 'Lucky' in _l]) >= 2
-assert len(_hits) >= 2 or not _typed, 'When the traveler was Tester, your greeting still said Lucky. Build it from `traveler`, like `"Welcome, " + traveler`.'
-assert len(_hits) >= 2, 'Print a greeting with the traveler\'s name in it, like `print("Welcome, " + traveler + ".")`.'
+assert _usedA >= 1, 'Your program never asks the traveler\'s name. Keep line 1: `traveler = input("Who goes there? ")`.'
+assert not _errB or 'EOF' in _errB, 'When the traveler typed Tester, the program stopped: ' + _errB
+_follow = [_y for _x, _y in _pairs if 'Lucky' in _x and 'Tester' in _y]
+assert _follow or not any('traveler' in _x for _x in _a), 'That prints the word traveler. Take the quotes off so Python opens the box.'
+assert _follow or not any('Lucky' in _x for _x in _a), 'When the traveler typed Tester, your greeting still said Lucky. Build it from `traveler`, like `"Welcome, " + traveler`.'
+assert _follow, 'Print a greeting with the traveler\'s name in it, like `print("Welcome, " + traveler + ".")`.'
+assert any(_y.replace('Tester', '').strip(' .,!?:;-') for _y in _follow), 'Your line shows only the name. Add a greeting word too, like `print("Welcome, " + traveler)`.'
 ''',
 )
 
 _SIPS_CHECK = (
     "sips holds a number from a second input()",
-    _RERUN
+    _QUIET
     + r'''
-_ns, _out, _err, _miss = _rerun(None, ['Lucky', '3'])
-_used = _inputs_used()
-assert _used == 2, 'Your program asked ' + str(_used) + (' question' if _used == 1 else ' questions') + '. It needs 2: the name, then the sips.'
-assert type(sips).__name__ != 'str', '`sips` holds the text ' + _show(sips) + '. `input()` always hands back text. Wrap it to make a number: `int(input(...))`.'
-assert type(sips).__name__ == 'int' and sips == 3, '`sips` should hold the answer to the sips question, as a number.'
+assert _usedA == 2, 'Your program asked ' + str(_usedA) + (' question' if _usedA == 1 else ' questions') + '. It needs 2: the name, then the sips.'
+_s = _nsA.get('sips')
+assert type(_s).__name__ != 'str', '`sips` holds the text ' + _show(_s) + '. `input()` always hands back text. Wrap it to make a number: `int(input(...))`.'
+assert type(_s).__name__ != 'float', '`sips` holds ' + str(_s) + ', a decimal. Use `int()` for a whole number of sips.'
+assert type(_s).__name__ == 'int' and _s == 3, '`sips` should hold the answer to the sips question, as a number. When the traveler answered 3, it held ' + _show(_s) + '.'
+assert _nsB.get('sips') == 5, 'When the traveler asked for 5 sips, `sips` still held ' + _show(_nsB.get('sips')) + '. Keep the answer itself in `sips`: `sips = int(input("How many sips? "))`.'
 ''',
 )
 
 _DOUBLE_CHECK = (
     "prints double the sips, and follows other answers",
-    _RERUN
+    _QUIET
     + r'''
-_nums = [_t for _l in _lines() for _t in _re.findall(r'\d+', _l)]
-assert 'sipssips' not in _captured_stdout, 'That doubles the word sips. Take the quotes off so Python opens the box.'
-assert '33' not in _nums, 'Your program printed 33. That is the text "3" twice. Make `sips` a number with `int()` first.'
-assert '6' in _nums, 'Print double the sips: 3 sips should show 6. Try `print(sips * 2)`.'
-_ns, _out, _err, _miss = _rerun(None, ['Tester', '5'])
-assert not _err, 'When the traveler asked for 5 sips, the program stopped: ' + _err
-_more = [_t for _l in _out.splitlines() for _t in _re.findall(r'\d+', _l)]
-assert '10' in _more, 'When the traveler asked for 5 sips, your program did not print 10. Build it from `sips`, like `print(sips * 2)`.'
+def _nums(_l):
+    return _re.findall(r'\d+', _l)
+assert not any('sipssips' in _x for _x in _a), 'That doubles the word sips. Take the quotes off so Python opens the box.'
+assert not any('33' in _nums(_x) for _x in _a), 'Your program printed 33. That is the text "3" twice. Make `sips` a number with `int()` first.'
+assert any('6' in _nums(_x) for _x in _a), 'Print double the sips: 3 sips should show 6. Try `print(sips * 2)`.'
+assert not _errB, 'When the traveler asked for 5 sips, the program stopped: ' + _errB
+assert any('6' in _nums(_x) and '10' in _nums(_y) for _x, _y in _pairs), 'When the traveler asked for 5 sips, your line that showed 6 did not change to 10. Build it from `sips`, like `print(sips * 2)`.'
 ''',
 )
 
@@ -957,7 +1011,7 @@ WHO_GOES_THERE = dict(
                 "With other names: `coins = int(input(\"Coins? \"))`.",
                 "`sips = int(input(\"How many sips? \"))`",
             ],
-            checks=[box_check("sips", foreign=["visitor", "coins"]), _SIPS_CHECK],
+            checks=[box_check("sips", foreign=["visitor", "coins"], skip=["traveler"]), _SIPS_CHECK],
         ),
         dict(
             id="double",

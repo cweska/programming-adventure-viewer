@@ -562,9 +562,10 @@ export function ExercisePlayer({
             anotherWayCount: exercise.anotherWay.length,
             hasAssemble: Boolean(exercise.assemble),
             solo: exercise.solo === true,
+            solution: exercise.solution,
           })
         : [],
-    [activeCheckpoint, exercise.anotherWay.length, exercise.assemble, exercise.solo],
+    [activeCheckpoint, exercise.anotherWay.length, exercise.assemble, exercise.solo, exercise.solution],
   );
   const help = helpState(rungs, activeCheckpoint ? rungsShown(saved?.hintsUsed, activeCheckpoint.id, rungs.length) : 0, showUnlocked);
   const idleSinceMiss = missAt.current !== null && now > 0 ? now - Math.max(missAt.current, typedAt.current) : null;
