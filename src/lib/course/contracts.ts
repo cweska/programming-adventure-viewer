@@ -93,6 +93,12 @@ export type ExerciseProgress = {
   activeMs?: number;
   /** Mar'tu's version was opened (Compare view). */
   solutionShown?: boolean;
+  /**
+   * "Copy into my editor" put Mar'tu's version in the editor, and the student has not cleared it since. A pass
+   * with that code does not finish the exercise: the student writes it themselves first (curriculum §2.2, the
+   * immediate typed twin).
+   */
+  copiedSolution?: boolean;
   bonusDone?: boolean;
   /** Predict before Run: the chosen choice index, or -1 when skipped. Absent: not answered yet. */
   predicted?: number;

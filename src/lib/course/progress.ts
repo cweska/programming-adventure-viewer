@@ -92,7 +92,7 @@ function cleanExercise(value: unknown): ExerciseProgress | null {
     if (number !== undefined && number >= 0) out[field] = number;
     else delete out[field];
   }
-  for (const field of ["solutionShown", "bonusDone"] as const) {
+  for (const field of ["solutionShown", "copiedSolution", "bonusDone"] as const) {
     if (typeof value[field] === "boolean") out[field] = value[field] as boolean;
     else delete out[field];
   }
