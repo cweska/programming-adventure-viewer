@@ -312,7 +312,7 @@ export function LessonPlayer(props: ItemPageProps) {
         {item.kind === "challenge" && item.level === "advanced" ? <span className="optional-tag ex-level">Advanced</span> : null}
         {item.optional && item.kind !== "testout" ? <span className="optional-tag">Optional</span> : null}
         <h1>{item.title}</h1>
-        {item.summary ? <p className="item-summary">{item.summary}</p> : null}
+        {item.summary ? <Prose text={item.summary} glossary={props.glossary} className="item-summary" /> : null}
         {item.minutes ? <p className="item-meta">About {item.minutes} min</p> : null}
         {variant ? (
           <p className="item-meta">

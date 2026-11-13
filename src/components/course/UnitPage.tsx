@@ -7,6 +7,7 @@ import {
   nextUpItem,
   unitProgress,
   useCourseProgress,
+  type ProgressItem,
   type ProgressUnit,
 } from "../../lib/course/progress";
 import type { GlossaryEntry } from "../../lib/course/schema";
@@ -24,12 +25,63 @@ export type UnitPageProps = {
   glossary: GlossaryEntry[];
 };
 
+type QuickCheckForm = { form: ProgressItem; questions?: ProgressItem };
+
+/** The rest of the Quick Check: the first form's questions, and the other forms for a fresh try. */
+function QuickCheckMore({ unitId, forms }: { unitId: string; forms: QuickCheckForm[] }) {
+  const [first, ...others] = forms;
+  if (!first || (!first.questions && others.length === 0)) return null;
+  return (
+    <p className="quick-check-more" data-testid="quick-check-more">
+      {first.questions ? (
+        <>
+          After the tasks, answer{" "}
+          <Link href={itemHref(unitId, first.questions.id)} data-testid={`quick-check-link-${first.questions.id}`}>
+            the Quick Check questions
+          </Link>
+          .{" "}
+        </>
+      ) : null}
+      {others.map(({ form, questions }) => (
+        <span key={form.id}>
+          Want different tasks? Try{" "}
+          <Link href={itemHref(unitId, form.id)} data-testid={`quick-check-link-${form.id}`}>
+            {formLabel(form.title ?? "another form")}
+          </Link>
+          {questions ? (
+            <>
+              {" "}
+              and{" "}
+              <Link href={itemHref(unitId, questions.id)} data-testid={`quick-check-link-${questions.id}`}>
+                its questions
+              </Link>
+            </>
+          ) : null}
+          .{" "}
+        </span>
+      ))}
+    </p>
+  );
+}
+
+/** "Quick Check 1 · Form B" -> "Form B" (the part after the last ·), or the whole title. */
+function formLabel(title: string): string {
+  const part = title.split("·").pop()?.trim();
+  return part && part !== title.trim() ? part : title;
+}
+
 /** A unit: Mar'tu's intro, the goals, the Quick Check offer, and every item with its status. */
 export function UnitPage({ unit, campaign, glossary }: UnitPageProps) {
   const progress = useCourseProgress();
   const stats = unitProgress(unit, progress);
-  const quickCheck = unit.items.find((item) => item.kind === "testout");
-  const items = unit.items.filter((item) => item.kind !== "testout");
+  // A Quick Check can have more than one form (qc1-a, qc1-b), each with its questions quiz (qc1-a-questions).
+  // They all live in the Quick Check offer, not in the lesson list.
+  const forms = unit.items
+    .filter((item) => item.kind === "testout")
+    .map((form) => ({ form, questions: unit.items.find((item) => item.kind === "quiz" && item.id === `${form.id}-questions`) }));
+  const quickCheck = forms[0]?.form;
+  const inOffer = new Set(forms.flatMap(({ form, questions }) => (questions ? [form.id, questions.id] : [form.id])));
+  const items = unit.items.filter((item) => !inOffer.has(item.id));
   const nextUp = nextUpItem(unit.id, items, progress);
   const light = coursePreset(progress.settings) === "short";
 
@@ -94,6 +146,7 @@ export function UnitPage({ unit, campaign, glossary }: UnitPageProps) {
               </Link>
             </>
           )}
+          <QuickCheckMore unitId={unit.id} forms={forms} />
         </aside>
       ) : null}
 

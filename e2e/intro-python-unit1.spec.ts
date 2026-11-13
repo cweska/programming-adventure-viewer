@@ -206,19 +206,26 @@ test.describe("Intro to Python, Unit 1: Hello World", () => {
     await expect(page.getByTestId("unpublished-banner")).toHaveCount(0);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(unit.title);
 
-    // Every item but the Quick Checks is listed, in order; the Quick Check is offered up front.
-    const listed = unit.items.filter((item) => item.kind !== "testout").map((item) => item.id);
+    // Every item but the Quick Check (its forms and their question quizzes) is listed, in order.
+    const testouts = unit.items.filter((item) => item.kind === "testout");
+    const quickCheckIds = new Set(testouts.flatMap((form) => [form.id, `${form.id}-questions`]));
+    const listed = unit.items.filter((item) => !quickCheckIds.has(item.id));
     const rows = page.locator('[data-testid^="item-row-"]');
     await expect(rows).toHaveCount(listed.length);
     expect(await rows.evaluateAll((els) => els.map((el) => el.getAttribute("data-testid")))).toEqual(
-      listed.map((id) => `item-row-${id}`),
+      listed.map((item) => `item-row-${item.id}`),
     );
-    for (const item of unit.items.filter((entry) => entry.kind !== "testout")) {
-      await expect(page.getByTestId(`item-link-${item.id}`)).toHaveText(item.title);
-    }
-    const firstTestout = unit.items.find((item) => item.kind === "testout");
+    for (const item of listed) await expect(page.getByTestId(`item-link-${item.id}`)).toHaveText(item.title);
+
+    // The Quick Check is offered up front: Form A, its questions, and Form B with its questions for a fresh try.
     await expect(page.getByTestId("quick-check-offer")).toBeVisible();
-    await expect(page.getByTestId("testout-start")).toHaveAttribute("href", new RegExp(`/${UNIT_ID}/${firstTestout?.id}/?$`));
+    await expect(page.getByTestId("testout-start")).toHaveAttribute("href", new RegExp(`/${UNIT_ID}/${testouts[0]?.id}/?$`));
+    const offered = [...quickCheckIds].filter((id) => id !== testouts[0]?.id && unit.items.some((item) => item.id === id));
+    expect(offered.length, "Form A's questions, Form B and Form B's questions").toBe(3);
+    for (const id of offered) {
+      await expect(page.getByTestId(`quick-check-link-${id}`)).toHaveAttribute("href", new RegExp(`/${UNIT_ID}/${id}/?$`));
+    }
+    await expect(page.getByTestId("quick-check-more")).toContainText("Want different tasks? Try Form B and its questions.");
 
     // An item link opens the player; the breadcrumbs lead back to the unit and the map.
     await page.getByTestId("item-link-words-in-quotes").click();

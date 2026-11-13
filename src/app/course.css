@@ -794,6 +794,13 @@
   flex: 1 1 320px;
 }
 
+.quick-check-offer .quick-check-more {
+  flex: 1 1 100%;
+  margin: 0;
+  color: var(--course-muted, #d9c7a4);
+  font-size: 0.95rem;
+}
+
 .quick-check-offer.is-passed a {
   color: var(--course-violet-soft);
 }

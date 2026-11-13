@@ -10934,7 +10934,7 @@
         {
           "id": "make-a-box",
           "title": "A box with the right name",
-          "martu": "Make a box with the exact name the task asks for. Any hero works.\nStuck on one? Skip it, or go to Lesson 1A. Tasks you pass here stay ticked.",
+          "martu": "Make a box with the exact name the task asks for. Any hero works.\nStuck on one? Skip it, or try the lesson Boxes With Labels. Tasks you pass here stay ticked.",
           "example": {
             "code": [
               "guide = \"Gearshift\"",
@@ -11901,7 +11901,7 @@
         {
           "id": "make-a-box",
           "title": "A box with the right name",
-          "martu": "Make a box with the exact name the task asks for. Any creature works.\nStuck on one? Skip it, or go to Lesson 1A. Tasks you pass here stay ticked.",
+          "martu": "Make a box with the exact name the task asks for. Any creature works.\nStuck on one? Skip it, or try the lesson Boxes With Labels. Tasks you pass here stay ticked.",
           "example": {
             "code": [
               "steed = \"a brass jeep\"",

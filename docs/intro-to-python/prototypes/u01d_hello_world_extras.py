@@ -1223,7 +1223,7 @@ def _c1(form, name, what, foreign, ex_code, ex_out, pick, wrong_value="Zelda", o
         title="A box with the right name",
         martu=_QC_MARTU + (
             f"Make a box with the exact name the task asks for. Any {what} works.\n"
-            "Stuck on one? Skip it, or go to Lesson 1A. Tasks you pass here stay ticked."
+            "Stuck on one? Skip it, or try the lesson Boxes With Labels. Tasks you pass here stay ticked."
         ),
         example=ex_code,
         example_output=ex_out,
