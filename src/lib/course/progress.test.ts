@@ -9,6 +9,8 @@ import {
   nextUpItem,
   normalizeProgress,
   parseProgress,
+  quickCheckPassed,
+  quickCheckQuestions,
   saveProgress,
   unitProgress,
   withExercise,
@@ -416,5 +418,32 @@ describe("unit progress", () => {
     const progress = apply(emptyProgress(), withExercise("hello/lesson/a", done), withExercise("hello/lesson/b", done));
     expect(nextUpItem("hello", unit.items, progress)?.id).toBe("quiz");
     expect(nextUpItem("hello", unit.items, withTestedOut("hello")(emptyProgress()))).toBeUndefined();
+  });
+});
+
+describe("quickCheckPassed: a Quick Check form that needs its questions too", () => {
+  const form = { id: "qc2-a", kind: "testout" as const, optional: true, exercises: [{ id: "c1" }, { id: "c2" }], questionsToPass: 3 };
+  const quiz = { id: "qc2-a-questions", kind: "quiz" as const, optional: true, questionCount: 4 };
+  const items = [form, quiz];
+  const tasksDone = [withExercise("u/qc2-a/c1", (entry) => ({ ...entry, done: true })), withExercise("u/qc2-a/c2", (entry) => ({ ...entry, done: true }))];
+  const apply = (updates: ((progress: CourseProgress) => CourseProgress)[]) => updates.reduce((progress, update) => update(progress), emptyProgress());
+
+  it("needs every task and 3 of the 4 questions (the best score counts)", () => {
+    expect(quickCheckPassed("u", form, items, apply(tasksDone))).toBe(false);
+    expect(quickCheckQuestions("u", form, items, apply(tasksDone))).toEqual({ quizId: "qc2-a-questions", needed: 3, total: 4, met: false });
+    expect(quickCheckPassed("u", form, items, apply([...tasksDone, withQuiz("u/qc2-a-questions", 50)]))).toBe(false);
+    expect(quickCheckPassed("u", form, items, apply([...tasksDone, withQuiz("u/qc2-a-questions", 75)]))).toBe(true);
+    expect(quickCheckPassed("u", form, items, apply([...tasksDone, withQuiz("u/qc2-a-questions", 100), withQuiz("u/qc2-a-questions", 25)]))).toBe(true);
+    // The questions alone are not enough.
+    expect(quickCheckPassed("u", form, items, apply([withQuiz("u/qc2-a-questions", 100)]))).toBe(false);
+  });
+
+  it("rounds a whole percent fairly (2 of 3 is 67), and leaves a form with no questionsToPass as before", () => {
+    const three = { ...quiz, questionCount: 3 };
+    const twoOfThree = { ...form, questionsToPass: 2 };
+    expect(quickCheckPassed("u", twoOfThree, [twoOfThree, three], apply([...tasksDone, withQuiz("u/qc2-a-questions", (2 / 3) * 100)]))).toBe(true);
+    const plain = { ...form, questionsToPass: undefined };
+    expect(quickCheckQuestions("u", plain, [plain, quiz], apply(tasksDone))).toBeNull();
+    expect(quickCheckPassed("u", plain, [plain, quiz], apply(tasksDone))).toBe(true);
   });
 });

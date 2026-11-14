@@ -116,8 +116,17 @@ export function unitSummary(unit: Unit): UnitSummary {
     order: unit.order,
     title: unit.title,
     ...(unit.subtitle ? { subtitle: unit.subtitle } : {}),
-    items: unit.items.map((item) => ({ id: item.id, kind: item.kind, title: item.title, optional: item.optional })),
+    items: unit.items.map((item) => ({ id: item.id, kind: item.kind, title: item.title, optional: item.optional, ...gateFields(item) })),
   };
+}
+
+/** What a Quick Check's pass needs to know: a form's tasks and question count to pass, a quiz's size. */
+function gateFields(item: Item): { exercises?: { id: string }[]; questionsToPass?: number; questionCount?: number } {
+  if (item.kind === "testout") {
+    return { exercises: exerciseIdsOf(item).map((id) => ({ id })), ...(item.questionsToPass ? { questionsToPass: item.questionsToPass } : {}) };
+  }
+  if (item.kind === "quiz") return { questionCount: item.questions.length };
+  return {};
 }
 
 /** The exercise ids an item contains (lessons, test-outs, articles); empty for one-exercise items. */
@@ -141,6 +150,8 @@ export function unitOutline(unit: Unit): ProgressUnit {
       ...(item.summary ? { summary: item.summary } : {}),
       ...(item.minutes ? { minutes: item.minutes } : {}),
       exercises: exerciseIdsOf(item).map((id) => ({ id })),
+      ...(item.kind === "testout" && item.questionsToPass ? { questionsToPass: item.questionsToPass } : {}),
+      ...(item.kind === "quiz" ? { questionCount: item.questions.length } : {}),
     })),
   };
 }

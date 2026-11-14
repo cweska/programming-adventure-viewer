@@ -38,6 +38,10 @@ export type ProgressItem = {
   minutes?: number;
   /** Lessons, test-outs and articles: their exercise ids. Projects and challenges have none. */
   exercises?: readonly { id: string }[];
+  /** A test-out form that also needs this many of its questions (the quiz `<id>-questions`) right. */
+  questionsToPass?: number;
+  /** A quiz: how many questions it has (a Quick Check's questions are scored against questionsToPass). */
+  questionCount?: number;
 };
 
 export type ProgressUnit = {
@@ -663,6 +667,34 @@ export function itemStatus(unitId: string, item: ProgressItem, progress: CourseP
   const status = rawStatus(unitId, item, progress);
   if (status !== "done" && progress.testedOut[unitId] && !item.optional && item.kind !== "testout") return "tested-out";
   return status;
+}
+
+/**
+ * A Quick Check form's questions, when the form needs them (`questionsToPass`): the quiz `<form id>-questions`,
+ * and whether its best score has that many right. Null when the form needs no questions.
+ */
+export function quickCheckQuestions(
+  unitId: string,
+  form: ProgressItem,
+  items: readonly ProgressItem[],
+  progress: CourseProgress,
+): { quizId: string; needed: number; total: number; met: boolean } | null {
+  if (form.kind !== "testout" || !form.questionsToPass) return null;
+  const quizId = `${form.id}-questions`;
+  const quiz = items.find((item) => item.kind === "quiz" && item.id === quizId);
+  const total = quiz?.questionCount ?? 0;
+  const needed = form.questionsToPass;
+  // The best score is kept as a whole percent (2 of 3 is 67): compare with half a point to spare.
+  const best = progress.quizzes[itemKey(unitId, quizId)]?.best ?? 0;
+  const met = total > 0 && best + 0.5 >= (100 * needed) / total;
+  return { quizId, needed, total, met };
+}
+
+/** A Quick Check form is passed: every task done, and its questions when it needs them. */
+export function quickCheckPassed(unitId: string, form: ProgressItem, items: readonly ProgressItem[], progress: CourseProgress): boolean {
+  if (form.kind !== "testout" || !exercisesStatus(unitId, form, progress).done) return false;
+  const questions = quickCheckQuestions(unitId, form, items, progress);
+  return questions === null || questions.met;
 }
 
 export type UnitProgress = {

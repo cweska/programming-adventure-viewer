@@ -1,5 +1,38 @@
 [
   {
+    "term": ".capitalize()",
+    "aliases": [
+      "capitalize()",
+      "capitalize"
+    ],
+    "plain": "Makes a copy of the text with the first letter big and every other letter small.",
+    "example": "\"wELCOME\".capitalize()   # Welcome"
+  },
+  {
+    "term": ".count()",
+    "aliases": [
+      "count()"
+    ],
+    "plain": "Counts how many items in a list are the same as the value you hand it. A value that isn't there counts 0.",
+    "example": "[48, 48, 47].count(48)"
+  },
+  {
+    "term": ".get()",
+    "aliases": [
+      "get()"
+    ],
+    "plain": "Reads a key gently. `hero.get(\"glug\", 0)` gives the value, or 0 when the key is missing, with no KeyError.",
+    "example": "hero.get(\"glug\", 0)"
+  },
+  {
+    "term": ".insert()",
+    "aliases": [
+      "insert()"
+    ],
+    "plain": "Puts a new item into a list at a position: the position first, then the value. Every item after it moves one place along.",
+    "example": "wall.insert(2, 47)"
+  },
+  {
     "term": ".lower()",
     "aliases": [
       "lower()",
@@ -10,9 +43,44 @@
     "example": "\"YES\".lower()"
   },
   {
+    "term": ".pop()",
+    "aliases": [
+      "pop()"
+    ],
+    "plain": "Takes the last item off a list and hands it back. `.pop(0)` takes the first item instead. The list gets shorter.",
+    "example": "newest = wall.pop()"
+  },
+  {
+    "term": ".remove()",
+    "aliases": [
+      "remove()"
+    ],
+    "plain": "Takes the first item that is the same as the value you hand it out of a list. You give the value, not the position. If the value isn't there, Python stops with a ValueError.",
+    "example": "wall.remove(99)"
+  },
+  {
     "term": "and",
     "plain": "Joins two questions. `a and b` is `True` only when both are `True`.",
     "example": "mana >= cost and affinity >= required"
+  },
+  {
+    "term": "append",
+    "aliases": [
+      ".append()",
+      "append()",
+      "appends"
+    ],
+    "plain": "Adds one item to the end of a list. It changes the list itself and hands back nothing.",
+    "example": "chalk_wall.append(33)"
+  },
+  {
+    "term": "argument",
+    "aliases": [
+      "arguments",
+      "what you hand over"
+    ],
+    "plain": "The value you hand over when you call a recipe. In `warn(\"Lucky\")`, the argument is `\"Lucky\"`.",
+    "example": "warn(\"Lucky\")"
   },
   {
     "term": "assert",
@@ -35,6 +103,14 @@
     ],
     "plain": "`>=` means *at least*: exactly the number still counts. `<=` means *at most*. `>` and `<` leave the number itself out.",
     "example": "roll >= needed"
+  },
+  {
+    "term": "AttributeError",
+    "aliases": [
+      "attribute error"
+    ],
+    "plain": "Python's message when a dot asks for something that is not there. Read a dictionary with square brackets, not a dot: `lucky[\"mana\"]`, not `lucky.mana`.",
+    "example": "AttributeError: 'dict' object has no attribute 'mana'"
   },
   {
     "term": "block",
@@ -71,6 +147,17 @@
     ],
     "plain": "A slip in the code. A loud bug stops Python with a message. A quiet bug runs, but gives a wrong answer: print the values to find it.",
     "example": "print(mana)\nprint(cost)"
+  },
+  {
+    "term": "call",
+    "aliases": [
+      "calls",
+      "calling",
+      "called",
+      "call it"
+    ],
+    "plain": "Running a recipe: its name, then brackets. `say_steady()` runs the steps once. No brackets, no run.",
+    "example": "say_steady()"
   },
   {
     "term": "checkpoint",
@@ -123,6 +210,14 @@
     "example": "print(48 / 2)"
   },
   {
+    "term": "def",
+    "aliases": [
+      "def line"
+    ],
+    "plain": "The word that makes a recipe: `def`, the recipe's name, brackets, and a colon. The steps go under it, indented. `def` never makes a box.",
+    "example": "def barrier_report():"
+  },
+  {
     "term": "defined",
     "aliases": [
       "not defined",
@@ -130,6 +225,16 @@
     ],
     "plain": "Made already. A name is defined once a line like `name = value` has run. \"Not defined\" means Python looked for something saved with that name and found nothing.",
     "example": "NameError: name 'hero' is not defined"
+  },
+  {
+    "term": "dictionary",
+    "aliases": [
+      "dictionaries",
+      "dict",
+      "dicts"
+    ],
+    "plain": "Values kept under keys, in curly brackets. Each key, then a colon, then its value. Commas go between.",
+    "example": "{\"name\": \"Lucky\", \"mana\": 26}"
   },
   {
     "term": "elif",
@@ -194,6 +299,14 @@
     "example": "import random"
   },
   {
+    "term": "in",
+    "aliases": [
+      "in (a list)"
+    ],
+    "plain": "Asks whether a value is somewhere in a list. Python answers `True` or `False`.",
+    "example": "32 in wall"
+  },
+  {
     "term": "indent",
     "aliases": [
       "indented",
@@ -202,6 +315,26 @@
     ],
     "plain": "Spaces at the start of a line. Four spaces under an `if` mean: this line belongs to the `if`.",
     "example": "if mana < 6:\n    print(\"Low mana.\")"
+  },
+  {
+    "term": "index",
+    "aliases": [
+      "indexes",
+      "indices",
+      "position",
+      "positions"
+    ],
+    "plain": "An item's place in a list. Counting starts at 0, so `[0]` is the first item. `[-1]` counts from the end: the last item.",
+    "example": "chalk_wall[0]"
+  },
+  {
+    "term": "IndexError",
+    "aliases": [
+      "index error",
+      "list index out of range"
+    ],
+    "plain": "Python's message when you ask for a position the list doesn't have. A list of 7 items has positions 0 to 6, so `[7]` is out of range.",
+    "example": "IndexError: list index out of range"
   },
   {
     "term": "input",
@@ -231,6 +364,60 @@
     "example": "clock_color == \"red\""
   },
   {
+    "term": "key",
+    "aliases": [
+      "keys",
+      "tag"
+    ],
+    "plain": "The tag on one value in a dictionary. A key is text, so it has quotes: `\"mana\"`. Read its value with the key in square brackets.",
+    "example": "lucky[\"mana\"]"
+  },
+  {
+    "term": "KeyError",
+    "aliases": [
+      "key error",
+      "key errors"
+    ],
+    "plain": "Python's message when a dictionary has no key spelled exactly like that. Check the spelling, the capitals and the spaces.",
+    "example": "KeyError: 'Max_Mana'"
+  },
+  {
+    "term": "len()",
+    "aliases": [
+      "len",
+      "length"
+    ],
+    "plain": "Counts the items in a list. The last position is always one less than `len()`, because counting starts at 0.",
+    "example": "len(chalk_wall)"
+  },
+  {
+    "term": "list",
+    "aliases": [
+      "lists"
+    ],
+    "plain": "Many values kept under one name, in order. Square brackets hold the list, and commas go between the items.",
+    "example": "chalk_wall = [48, 48, 47]"
+  },
+  {
+    "term": "list inside a list",
+    "aliases": [
+      "lists inside lists",
+      "nested list",
+      "nested lists"
+    ],
+    "plain": "A list whose items are lists, like rows on a shelf. Read the row first, then the item in it: `roster[3][1]`.",
+    "example": "roster[3][1]"
+  },
+  {
+    "term": "list of dictionaries",
+    "aliases": [
+      "lists of dictionaries",
+      "list of sheets"
+    ],
+    "plain": "A list whose items are dictionaries. Pick a sheet by its position first, then read it by key.",
+    "example": "roster[2][\"name\"]"
+  },
+  {
     "term": "match",
     "aliases": [
       "match statement",
@@ -250,6 +437,15 @@
     "example": "print(48 - 37)"
   },
   {
+    "term": "max() and min()",
+    "aliases": [
+      "max()",
+      "min()"
+    ],
+    "plain": "`max()` hands back the biggest item in a list, and `min()` the smallest, wherever they are.",
+    "example": "max([41, 46, 39])"
+  },
+  {
     "term": "NameError",
     "aliases": [
       "name error",
@@ -259,9 +455,36 @@
     "example": "print(mama)\nNameError: name 'mama' is not defined"
   },
   {
+    "term": "nested dictionary",
+    "aliases": [
+      "nested dictionaries",
+      "dictionary inside a dictionary",
+      "inner dictionary",
+      "inner card"
+    ],
+    "plain": "A dictionary kept as a value inside another dictionary. Read it with two keys in a row: the outer key first, then the inner key.",
+    "example": "bomb_shell[\"abilities\"][\"wisdom\"]"
+  },
+  {
+    "term": "None",
+    "aliases": [
+      "NoneType"
+    ],
+    "plain": "Python's word for nothing. A recipe with no `return` line hands back `None`.",
+    "example": "print(lucky_max)   # None"
+  },
+  {
     "term": "not",
     "plain": "Flips a yes-or-no answer. `not True` is `False`, and `not False` is `True`.",
     "example": "not barrier_up"
+  },
+  {
+    "term": "not in",
+    "aliases": [
+      "in (a dictionary)"
+    ],
+    "plain": "`in` asks whether a key is in a dictionary, and gives `True` or `False`. `not in` asks whether it is missing. Both look at the keys only, never the values.",
+    "example": "\"Glow\" not in spell_book"
   },
   {
     "term": "number",
@@ -291,6 +514,30 @@
       "printed"
     ],
     "plain": "What your program shows on the screen when it runs."
+  },
+  {
+    "term": "parallel lists",
+    "aliases": [
+      "parallel list",
+      "lists in step"
+    ],
+    "plain": "Two lists kept in step: item 0 of one goes with item 0 of the other, and so on. Change one, and you must change the other the same way.",
+    "example": "parts = [\"lens\", \"coil\"]\ncounts = [3, 7]"
+  },
+  {
+    "term": "parameter",
+    "aliases": [
+      "parameters",
+      "ingredient",
+      "ingredients"
+    ],
+    "plain": "An ingredient's name on the recipe card, in the brackets on the `def` line. It is a box that gets filled each time the recipe is called.",
+    "example": "def warn(hero_name):"
+  },
+  {
+    "term": "pass",
+    "plain": "A line that does nothing. A recipe needs at least one line inside it, so `pass` holds the spot, like a blank recipe card, until you write a real step.",
+    "example": "def step_north():\n    pass"
   },
   {
     "term": "placeholder",
@@ -345,6 +592,24 @@
     "example": "random.randint(1, 20)"
   },
   {
+    "term": "range()",
+    "aliases": [
+      "range"
+    ],
+    "plain": "Counts from a start number up to a stop number. The stop is left out: `range(1, 7)` gives 1 to 6. `list(range(1, 7))` turns the count into a list.",
+    "example": "list(range(1, 7))"
+  },
+  {
+    "term": "recipe",
+    "aliases": [
+      "recipes",
+      "function",
+      "functions"
+    ],
+    "plain": "A named set of steps, made with `def`. Making a recipe does not run it. Calling its name with `()` runs the steps. Python calls a recipe a function.",
+    "example": "def say_steady():\n    print(\"Steady, now.\")\n\nsay_steady()"
+  },
+  {
     "term": "remainder",
     "aliases": [
       "remainders",
@@ -352,6 +617,18 @@
     ],
     "plain": "What is left over after dividing. `50 % 12` is 2: four 12s make 48, and 2 is left.",
     "example": "print(50 % 12)"
+  },
+  {
+    "term": "return",
+    "aliases": [
+      "returns",
+      "hands back",
+      "hand back",
+      "handed back",
+      "return value"
+    ],
+    "plain": "Hands a value back to the line that called the recipe, and ends the recipe. Catch it in a box, or it is gone: `lucky_max = max_mana_for(13)`.",
+    "example": "def max_mana_for(affinity):\n    total = affinity * 2\n    return total"
   },
   {
     "term": "run",
@@ -370,6 +647,26 @@
     ],
     "plain": "Build a value from boxes, like `total_cost = lantern_cost + rope_cost`, instead of typing the answer. Then it stays right when a box changes.",
     "example": "total_cost = lantern_cost + rope_cost"
+  },
+  {
+    "term": "slice",
+    "aliases": [
+      "slices",
+      "slicing"
+    ],
+    "plain": "A copy of part of a list, made with a colon: `[2:5]` takes positions 2, 3 and 4. The end is left out. The list itself does not change.",
+    "example": "chalk_wall[-3:]"
+  },
+  {
+    "term": "sorted()",
+    "aliases": [
+      "sorted",
+      ".sort()",
+      "sort()",
+      "sort"
+    ],
+    "plain": "`sorted(wall)` hands back a new list, smallest first, and leaves `wall` as it is. `wall.sort()` sorts the list itself and hands back nothing.",
+    "example": "shortest_first = sorted(chalk_wall)"
   },
   {
     "term": "stamp",
@@ -397,6 +694,14 @@
     ],
     "plain": "Words inside quotes. Python shows them exactly as you typed them.",
     "example": "\"Shield up.\""
+  },
+  {
+    "term": "sum()",
+    "aliases": [
+      "sum"
+    ],
+    "plain": "Adds up every number in a list and hands back the total.",
+    "example": "sum([3, 9, 2])"
   },
   {
     "term": "SyntaxError",
@@ -441,6 +746,14 @@
     "example": "print(18 > 12)"
   },
   {
+    "term": "tuple",
+    "aliases": [
+      "tuples"
+    ],
+    "plain": "Like a list that can't change. Round brackets instead of square ones. You read it by position, like a list, but you can't add, remove or swap its items.",
+    "example": "hero = (\"Lucky\", 26)"
+  },
+  {
     "term": "TypeError",
     "aliases": [
       "type error",
@@ -458,6 +771,14 @@
     "example": "mana = 26"
   },
   {
+    "term": "ValueError",
+    "aliases": [
+      "value error"
+    ],
+    "plain": "The value is the right kind, but Python can't use it here. With a list, often `.remove()` of a value that is not in it.",
+    "example": "[48, 47].remove(99)\nValueError: list.remove(x): x not in list"
+  },
+  {
     "term": "variable",
     "aliases": [
       "variables",
@@ -466,5 +787,13 @@
     ],
     "plain": "A box with a label. The label is the name. Inside is a value. You make one with `name = value`.",
     "example": "companion = \"Gearshift\""
+  },
+  {
+    "term": "zip()",
+    "aliases": [
+      "zip"
+    ],
+    "plain": "Pairs up two lists, item by item: first with first, second with second. Each pair is a tuple. Wrap it in `list()` to see the pairs.",
+    "example": "list(zip(heroes, manas))"
   }
 ]

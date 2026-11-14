@@ -3,20 +3,25 @@
 import Link from "next/link";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import type { ItemPageProps } from "../../lib/course/contracts";
-import { itemKey, recordQuiz, useCourseProgress } from "../../lib/course/progress";
+import { itemKey, markTestedOut, quickCheckPassed, quickCheckQuestions, recordQuiz, useCourseProgress } from "../../lib/course/progress";
 import type { GlossaryEntry, Question, QuizItem } from "../../lib/course/schema";
+import { useStudentSeed } from "../../lib/course/student-seed";
 import { runCourse } from "../../lib/languages/python/run";
 import { PythonEditor } from "../PythonEditor";
 import { KindBadge } from "./CourseBits";
+import { itemHref } from "./course-links";
 import { ParsonsBoard } from "./ParsonsBoard";
 import { Prose } from "./Prose";
 import {
+  choiceOrder,
+  choiceSeed,
   emptyResponse,
   gradeWithoutPython,
   hasAnswer,
   outputMatches,
   parsonsBlocks,
   parsonsCode,
+  questionsNeeded,
   quizPercent,
   responseText,
   type QuizResponse,
@@ -56,9 +61,15 @@ function CodeBlock({ code, label = "Python code" }: { code: string; label?: stri
   );
 }
 
+/**
+ * The choices, in `order` (choiceOrder: shuffled for this student, question and attempt). Every index is the
+ * AUTHORED one (the grading, `answer`, why_wrong and `data-testid="quiz-choice-<id>-<index>"`); the display order,
+ * and so the screen-reader order, follows `order`. Hidden while `order` is null (before hydration), so it never jumps.
+ */
 function ChoiceList({
   question,
   choices,
+  order,
   chosen,
   locked,
   output,
@@ -66,15 +77,24 @@ function ChoiceList({
 }: {
   question: Question;
   choices: string[];
+  order: readonly number[] | null;
   chosen: number | null;
   locked: boolean;
   output: boolean;
   onChoose: (index: number) => void;
 }) {
   const name = useId();
+  const shown = order ?? choices.map((_, index) => index);
   return (
-    <div className="quiz-choices" role="radiogroup" aria-label="Answers">
-      {choices.map((choice, index) => {
+    <div
+      className="quiz-choices"
+      role="radiogroup"
+      aria-label="Answers"
+      data-ready={order !== null}
+      style={order === null ? { visibility: "hidden" } : undefined}
+    >
+      {shown.map((index) => {
+        const choice = choices[index] ?? "";
         const id = `${name}-${index}`;
         return (
           <label
@@ -235,6 +255,7 @@ function Feedback({
  */
 function QuizRun({ unit, item, glossary, nextHref, settings }: ItemPageProps<QuizItem>) {
   const progress = useCourseProgress();
+  const student = useStudentSeed();
   const key = itemKey(unit.id, item.id);
   const saved = progress.quizzes[key];
   const questions = item.questions;
@@ -252,6 +273,16 @@ function QuizRun({ unit, item, glossary, nextHref, settings }: ItemPageProps<Qui
   const feedbackRef = useRef<HTMLDivElement>(null);
   const resultRef = useRef<HTMLHeadingElement>(null);
   const moved = useRef(false);
+
+  // A Quick Check form's questions (the quiz `<form>-questions`, when the form needs them): a pass here can
+  // finish the Quick Check.
+  const form = unit.items.find((entry) => entry.kind === "testout" && `${entry.id}-questions` === item.id && entry.questionsToPass);
+  const gate = form ? quickCheckQuestions(unit.id, form, unit.items, progress) : null;
+  const formPassed = form ? quickCheckPassed(unit.id, form, unit.items, progress) : false;
+  const testedOut = progress.testedOut[unit.id] === true;
+  useEffect(() => {
+    if (formPassed && !testedOut) markTestedOut(unit.id);
+  }, [formPassed, testedOut, unit.id]);
 
   const needsPython = questions.some((question) => question.type === "bug" || question.type === "parsons");
   const pythonStatus = usePythonStatus(needsPython);
@@ -386,6 +417,25 @@ function QuizRun({ unit, item, glossary, nextHref, settings }: ItemPageProps<Qui
         <p className="quiz-best" data-testid="quiz-best">
           Your best: {best}%
         </p>
+        {form && gate ? (
+          <p className="quiz-quick-check" data-testid="quiz-quick-check" data-passed={formPassed || testedOut ? "true" : "false"}>
+            {formPassed || testedOut ? (
+              <>
+                <span aria-hidden="true">✓</span> <strong>You passed the Quick Check.</strong> This unit now counts as done.
+              </>
+            ) : gate.met ? (
+              <>
+                That is enough for the Quick Check. Finish{" "}
+                <Link href={itemHref(unit.id, form.id)} data-testid="quiz-quick-check-tasks">
+                  its tasks
+                </Link>{" "}
+                too, and this unit counts as done.
+              </>
+            ) : (
+              `The Quick Check needs ${questionsNeeded(gate.needed, gate.total, "of these")}${gate.needed >= gate.total ? " of these" : ""} right. Look at the ones you missed, then try again.`
+            )}
+          </p>
+        ) : null}
         <ol className="quiz-review" data-testid="quiz-review">
           {questions.map((entry, at) => {
             const right = checked[entry.id]?.correct === true;
@@ -412,6 +462,12 @@ function QuizRun({ unit, item, glossary, nextHref, settings }: ItemPageProps<Qui
 
   const choices =
     question.type === "mc" ? question.choices : question.type === "predict" && question.choices?.length ? question.choices : null;
+  // The same order all through an attempt (a reload too: the saved attempts only change when one finishes), a new
+  // one on a retake.
+  const order =
+    choices && student !== null
+      ? choiceOrder(choices.length, choiceSeed(student, `${key}/${question.id}`, saved?.attempts ?? 0))
+      : null;
 
   return (
     <section className="quiz" data-testid="quiz">
@@ -455,6 +511,7 @@ function QuizRun({ unit, item, glossary, nextHref, settings }: ItemPageProps<Qui
           <ChoiceList
             question={question}
             choices={choices}
+            order={order}
             chosen={response.type === "mc" || response.type === "predict" ? response.choice : null}
             locked={locked}
             output={question.type === "predict"}

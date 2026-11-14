@@ -6,7 +6,7 @@
  */
 import type { CheckResult, RunResult } from "../languages/types";
 import type { CheckpointGrade, GradeResult } from "./contracts";
-import { closeName, definedNames, explainCourseError, explainQuietSlip, type ExplainContext } from "./explain";
+import { closeName, definedNames, explainCourseError, explainQuietSlip, slipName, type ExplainContext } from "./explain";
 import type { Checkpoint, CourseCheck } from "./schema";
 
 export const CHECK_SEPARATOR = "::";
@@ -146,17 +146,19 @@ function quietSlipFor(code: string, raw: string, stdout: string, context?: Expla
   const slip = explainQuietSlip(code, { missingName, context });
   if (!slip) return null;
   const printedNothing = stdout.trim() === "";
+  // A lean exercise (SOLO, Quick Check) names the slip and its line, never the fix, as its explainer does.
+  const hint = context?.explainer === "lean" ? `The slip is on line ${slip.line}: ${slipName(slip.kind)}. Mend it yourself, then Run again.` : slip.hint;
   switch (slip.kind) {
     case "bare-value":
-      return missingName || printedNothing ? slip.hint : null;
+      return missingName || printedNothing ? hint : null;
     case "bare-name":
     case "print-without-brackets":
-      return printedNothing ? slip.hint : null;
+      return printedNothing ? hint : null;
     case "dash-no-effect":
-      return slip.name && (missingName === slip.name || new RegExp(`\\b${slip.name}\\b`).test(raw)) ? slip.hint : null;
+      return slip.name && (missingName === slip.name || new RegExp(`\\b${slip.name}\\b`).test(raw)) ? hint : null;
     case "comparison-alone":
       // Only in place of "Can't find `passed`": a check written for this slip keeps its own words.
-      return missingName ? slip.hint : null;
+      return missingName ? hint : null;
     default:
       return null;
   }

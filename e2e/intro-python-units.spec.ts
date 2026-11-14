@@ -13,6 +13,8 @@
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { expect, test, type Page } from "@playwright/test";
+import { plainText } from "../src/components/course/prose-format";
+import { questionsNeeded } from "../src/components/course/quiz-grading";
 import { buildParsons, checkpoint, PROGRESS_KEY } from "./course";
 import { pythonReady, replaceEditor } from "./editor";
 
@@ -44,6 +46,8 @@ type RawItem = RawExercise & {
   optional?: boolean;
   exercises?: RawExercise[];
   questions?: RawQuestion[];
+  /** A Quick Check form that needs this many of its questions (the quiz `<id>-questions`) right too. */
+  questionsToPass?: number;
 };
 type RawUnit = { id: string; order: number; title: string; published: boolean; items: RawItem[] };
 
@@ -100,7 +104,8 @@ async function playExercise(page: Page, exercise: RawExercise, where: string, si
   const player = page.getByTestId("exercise-player");
   // A project or challenge is its own page: its title is the page heading, not the exercise's.
   if (single) await expect(page.getByRole("heading", { level: 1 })).toHaveText(exercise.title);
-  else await expect(player.getByTestId("exercise-title")).toHaveText(exercise.title);
+  // A title's `code` shows as code (no backticks): "`sorted` or `.sort`".
+  else await expect(player.getByTestId("exercise-title")).toHaveText(plainText(exercise.title));
   await pythonReady(page);
   if (exercise.stdin) {
     const box = page.getByTestId("stdin-box");
@@ -297,7 +302,21 @@ for (const unit of units) {
           if (at < tasks.length - 1) await page.getByTestId("celebrate-next").click();
         }
 
-        await expect(page.getByTestId("testout-result")).toBeVisible();
+        if (quickCheck.questionsToPass) {
+          // The tasks alone do not pass this form: its questions count too, and the page says so.
+          const quiz = unit.items.find((entry) => entry.kind === "quiz" && entry.id === `${quickCheck.id}-questions`);
+          expect(quiz, `${quickCheck.id}-questions exists`).toBeTruthy();
+          const needed = questionsNeeded(quickCheck.questionsToPass, quiz?.questions?.length ?? 0);
+          await expect(page.getByTestId("testout-questions")).toContainText(`Get ${needed} right`);
+          await expect(page.getByTestId("testout-result")).toHaveCount(0);
+          await page.goto(`/intro-python/${unit.id}`);
+          await expect(page.getByTestId(`unit-status-${unit.id}`)).not.toContainText("Tested out");
+          await expect(page.getByTestId("quick-check-more")).toContainText(`To pass, finish the tasks, then get ${needed}`);
+          await answerQuiz(page, unit, quiz as RawItem);
+          await expect(page.getByTestId("quiz-quick-check")).toHaveAttribute("data-passed", "true");
+        } else {
+          await expect(page.getByTestId("testout-result")).toBeVisible();
+        }
         await expect
           .poll(() =>
             page.evaluate(([key, unitId]) => JSON.parse(window.localStorage.getItem(key) ?? "{}")?.testedOut?.[unitId] ?? false, [

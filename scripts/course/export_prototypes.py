@@ -234,13 +234,53 @@ def checkpoint(cp: Any, index: int, where: str, ctx: Ctx) -> dict:
     return out
 
 
+def card_sort(value: Any, where: str, ctx: Ctx) -> dict:
+    """A one-click card sort on an Another way angle: dict(groups=[2 or 3 names], cards=[(code, group index), ...],
+    explain="prose shown after Check my sort"). Every group gets at least one card."""
+    value = as_dict(value, where, ctx)
+    unknown_keys(value, {"groups", "cards", "explain"}, where, ctx)
+    out: dict = {}
+    put(out, "groups", value, "groups", str_list, where, ctx, required=True)
+    groups = out.get("groups", [])
+    if not 2 <= len(groups) <= 3:
+        ctx.error(f"{where}.groups", f"a card sort needs 2 or 3 groups, got {len(groups)}")
+    cards = []
+    raw = value.get("cards")
+    if not isinstance(raw, (list, tuple)) or len(raw) < 2:
+        ctx.error(f"{where}.cards", "a card sort needs 2 or more cards")
+        raw = []
+    for i, card in enumerate(raw):
+        at = f"{where}.cards[{i}]"
+        if isinstance(card, dict):
+            unknown_keys(card, {"text", "group"}, at, ctx)
+            shown, group = card.get("text"), card.get("group")
+        elif isinstance(card, (list, tuple)) and len(card) == 2:
+            shown, group = card
+        else:
+            ctx.error(at, "a card is (text, group index) or dict(text=..., group=...)")
+            continue
+        if not isinstance(shown, str) or not shown.strip():
+            ctx.error(at, "a card needs its text")
+        if isinstance(group, bool) or not isinstance(group, int) or not 0 <= group < len(groups):
+            ctx.error(at, f"a card's group must be 0 to {len(groups) - 1}")
+            continue
+        cards.append({"text": shown, "group": group})
+    for g in range(len(groups)):
+        if cards and not any(card["group"] == g for card in cards):
+            ctx.error(f"{where}.cards", f"no card goes in group {g} ({groups[g]!r})")
+    out["cards"] = cards
+    put(out, "explain", value, "explain", text, where, ctx, required=True)
+    return out
+
+
 def another_way(value: Any, where: str, ctx: Ctx) -> dict:
     value = as_dict(value, where, ctx)
-    unknown_keys(value, {"angle", "label", "text"}, where, ctx)
+    unknown_keys(value, {"angle", "label", "text", "sort"}, where, ctx)
     out: dict = {}
     put(out, "angle", value, "angle", text, where, ctx, required=True)
     put(out, "label", value, "label", text, where, ctx)
     put(out, "text", value, "text", text, where, ctx, required=True)
+    put(out, "sort", value, "sort", card_sort, where, ctx)
     return out
 
 
@@ -376,6 +416,10 @@ def exercise_fields(ex: dict, where: str, ctx: Ctx, verify: dict, verify_key: st
     put(out, "support", ex, "support", one_of(("full", "light", "none")), where, ctx)
     put(out, "bonus", ex, "bonus", bonus, where, ctx)
     put(out, "assemble", ex, "assemble", assemble, where, ctx)
+    # More structure for the step a student is on (the teacher's Unit 5 ruling): the harness's partials go to the
+    # site with Assemble it, so the board shuffles only the lines the active step adds and keeps the rest in place.
+    if "assemble" in out and isinstance(ex.get("partials"), (list, tuple)) and ex["partials"]:
+        out["assemble"]["steps"] = list_of(code_lines)(ex["partials"], f"{where}.partials", ctx)
     put(out, "campaignLink", ex, "campaign_link", campaign_link, where, ctx)
     put(out, "takeaway", ex, "takeaway", text, where, ctx)
     put(out, "predict", ex, "predict", exercise_predict, where, ctx)
@@ -486,7 +530,7 @@ ITEM_KEYS = {
     "challenge": {"level", "variant_of"} | EXERCISE_KEYS,
     "article": {"body", "examples", "exercises"},
     "cheatsheet": {"entries"},
-    "testout": {"exercises"},
+    "testout": {"exercises", "questions_to_pass"},
 }
 # Harness-only item fields (they go to the .verify.json sidecar).
 ITEM_HARNESS_ONLY = {"introduces", "notes"}
@@ -526,6 +570,9 @@ def item(value: Any, where: str, ctx: Ctx, verify: dict) -> dict:
 
     if kind in ("lesson", "testout"):
         exercises(required=True)
+    if kind == "testout":
+        # The form passes only with this many of its questions right too (the `<id>-questions` quiz).
+        put(out, "questionsToPass", src, "questions_to_pass", integer, where, ctx)
     elif kind == "quiz":
         raw = src.get("questions")
         if not isinstance(raw, (list, tuple)) or not raw:
@@ -692,6 +739,13 @@ def export(sources: list[Path], content_dir: Path, ts_path: Path, root: Path, ct
         if not out["items"]:
             ctx.error(where, "the unit has no ITEMS")
         unique(out["items"], "id", f"{unit_id}.items", ctx)
+        for form in [entry for entry in out["items"] if entry.get("kind") == "testout" and "questionsToPass" in entry]:
+            quiz = next((entry for entry in out["items"] if entry.get("kind") == "quiz" and entry.get("id") == f"{form['id']}-questions"), None)
+            if quiz is None:
+                ctx.error(f"{unit_id}/{form['id']}", f"questions_to_pass needs a quiz with the id {form['id']}-questions")
+            elif not 1 <= form["questionsToPass"] <= len(quiz.get("questions", [])):
+                ctx.error(f"{unit_id}/{form['id']}", f"questions_to_pass is {form['questionsToPass']}, but "
+                          f"{quiz['id']} has {len(quiz.get('questions', []))} questions")
         outputs[content_dir / "units" / f"{unit_id}.json"] = render_json(out)
         outputs[content_dir / "units" / f"{unit_id}.verify.json"] = render_json(verify)
         units.append((out.get("order", 0), group["files"][0], unit_id))

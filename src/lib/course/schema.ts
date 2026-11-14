@@ -45,11 +45,25 @@ export const checkpointSchema = z
   })
   .strict();
 
+/**
+ * A one-click card sort on an Another way angle (the quotes sort): each card goes in one of 2 or 3 groups, then
+ * "Check my sort" marks each card and shows `explain`.
+ */
+export const cardSortSchema = z
+  .object({
+    groups: z.array(z.string().min(1)).min(2).max(3),
+    cards: z.array(z.object({ text: z.string().min(1), group: z.number().int().min(0) }).strict()).min(2),
+    explain: prose,
+  })
+  .strict()
+  .refine((value) => value.cards.every((card) => card.group < value.groups.length), { message: "a card's group is not one of the groups" });
+
 export const anotherWaySchema = z
   .object({
     angle: z.string().min(1),
     label: z.string().optional(),
     text: prose,
+    sort: cardSortSchema.optional(),
   })
   .strict();
 
@@ -71,6 +85,11 @@ export const assembleSchema = z
   .object({
     lines: z.array(z.string()).min(2),
     distractors: z.array(z.string()).default([]),
+    /**
+     * Mar'tu's version after each step but the last (the harness's partials, exported with Assemble it). With them,
+     * More structure on step k shuffles only the lines step k adds and keeps the rest of the program in place.
+     */
+    steps: z.array(codeSchema).optional(),
   })
   .strict();
 
@@ -284,13 +303,17 @@ export const cheatsheetItemSchema = z
   })
   .strict();
 
-/** Quick Check: pass every exercise (no hints) to test out of the unit's core items. */
+/**
+ * Quick Check: pass every exercise (no hints) to test out of the unit's core items. With `questionsToPass`, the
+ * form's questions (the quiz `<id>-questions`) count too: that many of them right, as well as every task.
+ */
 export const testoutItemSchema = z
   .object({
     kind: z.literal("testout"),
     ...itemBase,
     optional: z.boolean().default(true),
     exercises: z.array(exerciseSchema).min(1),
+    questionsToPass: z.number().int().min(1).optional(),
   })
   .strict();
 

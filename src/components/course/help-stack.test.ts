@@ -24,6 +24,7 @@ import {
   RUNG_PACE_MS,
   rungInStack,
   rungPaced,
+  soloPassLine,
   soloUnaided,
   solutionUnlocked,
   startOfLine,
@@ -96,6 +97,14 @@ describe("the Help rungs", () => {
     // A hint that shows an example with other names gives no start: Mar'tu's version must use it.
     expect(startOfLine(["a", "`snack = \"glug\"` makes a box."], 'companion = "Bomb Shell"\n')).toBeNull();
     expect(startOfLine(["a", "Write `mana = 20`."], "caster = 'G'\nmana=20\n")).toBe("mana =");
+    // Lists: a bare `print(` that reads a list runs on to its bracket, and a `(` inside [ ] cuts at the bracket.
+    const wall = "chalk_wall = [48, 37]\nprint(chalk_wall[len(chalk_wall) - 1])\n";
+    expect(startOfLine(["a", "Write `print(chalk_wall[len(chalk_wall) - 1])` under the `# 1.` note."], wall)).toBe("print(chalk_wall[");
+    expect(startOfLine(["a", "Write `return wall[len(wall) - 1]` in place of `return 0`."], "    return wall[-1]\n")).toBe("return wall[");
+    // Not in Mar'tu's version: the plain start, as before. Other lines keep their start.
+    expect(startOfLine(["a", "Write `print(colors[1])`."], "print(chalk_wall[0])\n")).toBe("print(");
+    expect(startOfLine(["a", "Write `log[0][1] = log[0][1] + 2` under task 3."], "log[0][1] = log[0][1] + 2\n")).toBe("log[0][1] =");
+    expect(startOfLine(["a", "Write `print(len(chalk_wall))`."], "print(len(chalk_wall))\n")).toBe("print(");
   });
 
   it("knows what is open and what comes next", () => {
@@ -166,6 +175,14 @@ describe("the Help rungs", () => {
     expect(codeHasStart('print("Welcome to the cabin, Lucky")\n', "print(")).toBe(true);
     expect(codeHasStart('name = input("Who? ")\n', "print(")).toBe(false);
     expect(codeHasStart("anything\n", "")).toBe(false);
+    // Mar'tu's other finished lines (the starter's, an earlier step's) are not this step's line begun.
+    const step = { solution: "w = [1, 2]\nprint(len(w))\nprint(w[0])\nprint(w[-1])\n", line: "print(w[-1])" };
+    expect(codeHasStart("w = [1, 2]\nprint(len(w))\n", "print(", step)).toBe(false);
+    expect(codeHasStart("w = [1, 2]\nprint(len(w))\nprint(w[0])\n", "print(w[", step)).toBe(false);
+    expect(codeHasStart("w = [1, 2]\nprint(w[0])\nprint(w[\n", "print(w[", step)).toBe(true);
+    expect(codeHasStart("w = [1, 2]\nprint(w[0])\nprint(w[-1])\n", "print(w[", step)).toBe(true);
+    // A Broken spell's line is not in Mar'tu's version: it is still the line to mend.
+    expect(codeHasStart("print(Steady)\n", "print(", { solution: 'print("Steady")\n', line: 'print("Steady")' })).toBe(true);
   });
 
   it("paces rungs: a Run or a few seconds opens the next one", () => {
@@ -365,6 +382,14 @@ describe("Keep it short: the first paragraph", () => {
     const text = "```\n  companion\n+---+\n```\nAfter.";
     expect(firstParagraph(text)).toEqual({ first: "```\n  companion\n+---+\n```", more: true });
   });
+
+  it("keeps the code block a first line introduces with a colon (a card, a picture)", () => {
+    const card = "Notes so far. Make the sheet from this card:\n```text\nLUCKY\nname  Lucky\n```\nCopy each key.";
+    expect(firstParagraph(card)).toEqual({ first: "Notes so far. Make the sheet from this card:\n```text\nLUCKY\nname  Lucky\n```", more: true });
+    // A colon with no code block right under it is still one line; a code block after a plain line waits.
+    expect(firstParagraph("Look:\nThen more.")).toEqual({ first: "Look:", more: true });
+    expect(firstParagraph("One.\n```\nx\n```")).toEqual({ first: "One.", more: true });
+  });
 });
 
 describe("the input box", () => {
@@ -397,6 +422,12 @@ describe("the SOLO line", () => {
     expect(soloUnaided({ hintsUsed: {} })).toBe(true);
     expect(soloUnaided({ hintsUsed: { "step-1": 1 } })).toBe(true);
     expect(soloUnaided({ hintsUsed: { "step-1": 2 } })).toBe(false);
+    // The pass line agrees with the bubble: "on your own" only when it is true.
+    const line = "Mar'tu: You did that on your own. On your map: ✓ slices.";
+    expect(soloPassLine(line, true, true)).toBe(line);
+    expect(soloPassLine(line, true, false)).toBe("Mar'tu: You did that with some help this time. On your map: ✓ slices.");
+    expect(soloPassLine(line, false, false)).toBe(line);
+    expect(soloPassLine("Bomb Shell: Shield up.", true, false)).toBe("Bomb Shell: Shield up.");
     expect(soloUnaided({ hintsUsed: { "step-1": 1, __bonus: 3 } })).toBe(true);
     expect(soloUnaided({ hintsUsed: {}, solutionShown: true })).toBe(false);
   });

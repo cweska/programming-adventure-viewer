@@ -69,6 +69,11 @@ test.describe("Intro to Python, Unit 2: Control Flow", () => {
     await expect(page.getByTestId("got-further")).toHaveText(/Python got further: that slip is mended\./);
     await expect(page.getByTestId("explainer")).toHaveAttribute("data-kind", "compare-number-text");
     await expect(page.getByTestId("explainer-hint")).not.toContainText("One fixed");
+    // Help moves on with the student: step 2's rungs (the text "15"), not step 1's (the sign just mended).
+    await page.getByTestId("help-button").click();
+    await expect(page.getByTestId("help")).toHaveAttribute("data-step", "mend-needed");
+    await expect(page.getByTestId("help-rung-1")).toContainText("TypeError");
+    await expect(page.getByTestId("help-rung-1")).not.toContainText("SyntaxError");
 
     // The same slip again is not progress.
     await runAndWait(page, 3);
@@ -81,6 +86,51 @@ test.describe("Intro to Python, Unit 2: Control Flow", () => {
     await expect(page.getByTestId("got-further")).toBeVisible();
     await expect(page.getByTestId("explainer")).toHaveCount(0);
     await expect(page.getByTestId("checkpoint-message")).toBeVisible();
+  });
+
+  test("a Broken spell mended by way of a lone = gets no \"mended\" line, and Help follows Python's error", async ({ page }) => {
+    await open(page, "true-or-false-yes", "broken-spell-2a", "Broken spell");
+    const starter = 'roll = 17\nneeded = "15"\npassed = roll => needed\nprint(passed)\nclock_color = "blue"\nclock_is_red = "red"\nprint(clock_is_red)\n';
+    await setCode(page, starter);
+    await runAndWait(page, 1);
+    // `=>` to a lone `=`: the code runs, but the sign is still wrong, so the slip is not mended.
+    await setCode(page, starter.replace("roll => needed", "roll = needed"));
+    await runAndWait(page, 2);
+    await expect(page.getByTestId("got-further")).toHaveCount(0);
+    await expect(page.getByTestId("checkpoint-message")).toContainText("ask the question with >=");
+    // Then `>=`: the TypeError on line 3, with no crash just before it. Help is step 2's (TypeError), not step 1's.
+    await setCode(page, starter.replace("roll => needed", "roll >= needed"));
+    await runAndWait(page, 3);
+    await page.getByTestId("help-button").click();
+    await expect(page.getByTestId("help")).toHaveAttribute("data-step", "mend-needed");
+    await expect(page.getByTestId("help-rung-1")).not.toContainText("SyntaxError");
+  });
+
+  test("a crash that is part of the task asks for the message first, and names the box the code made", async ({ page }) => {
+    await open(page, "when-spells-fizzle", "anatomy-of-a-fizzle", "Anatomy of a fizzle");
+    await runAndWait(page, 1);
+    await expect(page.getByTestId("task-line")).toHaveAttribute("data-switch-off", "true");
+    await expect(page.getByTestId("task-line")).toContainText("Python stopped on line 4.");
+    await expect(page.getByTestId("task-line")).not.toContainText("First, mend");
+    await expect(page.getByTestId("explainer-hint")).toContainText("Line 3 makes spell_cost");
+    await expect(page.getByTestId("explainer-hint")).not.toContainText("bad_line");
+    await expect(page.getByTestId("explainer-hint")).not.toContainText("quotes");
+  });
+
+  test("a project offers Where to look before the first Run, and the rest of Help after it", async ({ page }) => {
+    // Light support (projects): the full ladder waits for a Run, but the Point rung is always there (§2.2 #4, R7).
+    await page.goto(`/intro-python/${UNIT_ID}/road-encounter-table`);
+    await expect(page.getByTestId("exercise-player")).toBeVisible();
+    await pythonReady(page);
+    await expect(page.getByTestId("help-locked")).toHaveCount(0);
+    await expect(page.getByTestId("help-button")).toContainText("Where to look");
+    await page.getByTestId("help-button").click();
+    await expect(page.getByTestId("help-rung-1")).toBeVisible();
+    await expect(page.getByTestId("help-locked")).toHaveText("More help opens after you press Run once.");
+    await expect(page.getByTestId("help-button")).toHaveCount(0);
+    await runAndWait(page, 1);
+    await expect(page.getByTestId("help-locked")).toHaveCount(0);
+    await expect(page.getByTestId("help-button")).toBeVisible();
   });
 
   test("Unit 2's slips get their own words: randint without random., and no \"make it with def\" before Unit 3", async ({ page }) => {

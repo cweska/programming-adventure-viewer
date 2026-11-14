@@ -10,12 +10,12 @@ Who this is for: the class already played campaign Modules 1 and 2 and struggled
 are "you've seen this, now you'll get it" moments. Every student has their own device; pair talk is optional and
 every checkpoint is solo.
 
-Help ladder as fields (same as Unit 1): hints[0] Start me off, hints[1] Point (where to look), another_way,
-hints[2+] Teach (a tiny example with other names), assemble = More structure, solution = Show.
-Rung 0 follows the help-stack contract (2.2) as written: the line's left side or first tokens only, stopping
-before the sign (`passed = roll `, `print(clock_color `), so it never makes the step's decision. A bonus's rung 0
-is a few tokens (`close_call = `). In the debug steps (2A-05, 2A-S) rung 0 is "Read Python's last line" (or, for a
-quiet bug, the last line the program printed). The SOLO sets `explainer="lean"`: the crash explainer names the
+Help ladder as fields (FORMAT.md, the order the site shows them): hints[0] Where to look (point), the middle hints Teach me
+(a tiny example with other names), the last hint Show me how: the step's own line in backticks (``Write `x = 1`.``),
+whose start up to its first `(` or `=` becomes Start me off. another_way, assemble (More structure), then Compare.
+Start me off is the line's left side (`passed =`, `print(`), so it never makes the step's decision. In the debug
+steps (2A-05, 2A-S) hints[0] is "Read Python's last line" (or, for a quiet bug, the last line the program printed).
+The SOLO sets `explainer="lean"`: the crash explainer names the
 kind of slip and the line, not the fix (not applied back to the live Unit 1).
 Terminology (2.9): "box (variable)" in Units 1-2; `=` is read "gets", `==` is read "is the same as".
 
@@ -320,14 +320,19 @@ def _gone_text(name, kept):
     return "Make a box named `" + name + "`: start a line with `" + name + " = `."
 
 
-CHAIN = (
-    " has two `=` signs, so it puts the same value in two boxes. This box should hold a yes/no answer, "
-    "`True` or `False`: ask the question with `==`."
-)
+def chain_text(ask="=="):
+    """Two `=` signs in one line (`passed = roll = needed`). `ask` is the sign the step wants: a step that asks
+    *at least* says `>=`, never a `==` that the next run would turn down."""
+    return (" has two `=` signs, so it puts the same value in two boxes. This box should hold a yes/no answer, "
+            f"`True` or `False`: ask the question with `{ask}`.")
 
 
-def bool_box(label, name, *, known, foreign=(), rules=(), text_msg=None, kept=False):
-    """The box exists and holds True or False, or the message says why not (in this order): two `=` signs in one
+CHAIN = chain_text()
+
+
+def bool_box(label, name, *, known, foreign=(), rules=(), text_msg=None, kept=False, ask="=="):
+    """`ask` is the sign the step wants (`>=` in a skill check), named in the two-`=` message.
+    The box exists and holds True or False, or the message says why not (in this order): two `=` signs in one
     line, `==` used to fill the box, the exercise's own rules [(condition, message)], text, a number; and when the
     box is missing: `:` instead of `=`, a near-miss name (NAME), an example's name (LEFT), a question kept in no
     box (BARE), or the plain message: "Keep the box `x` from the starter" when the starter makes it (`kept=True`),
@@ -358,7 +363,7 @@ def bool_box(label, name, *, known, foreign=(), rules=(), text_msg=None, kept=Fa
         f"    _msg = 'Line ' + str(_cmp_on[0]) + {cmp_on!r}\n"
         "if not _msg and _name in _g and type(_have).__name__ != 'bool':\n"
         "    if _chain:\n"
-        f"        _msg = 'Line ' + str(_chain[0]) + {CHAIN!r}\n"
+        f"        _msg = 'Line ' + str(_chain[0]) + {chain_text(ask)!r}\n"
         f"{rule_code}"
         "    if not _msg and type(_have).__name__ == 'str':\n"
         f"        _msg = {text_msg!r}\n"
@@ -639,9 +644,9 @@ TRUE_OR_FALSE = dict(
             text="Change the `print` to show whether `dex` is *less than* `needed`.",
             dictated=True,
             hints=[
-                "Start like this: `print(dex `",
                 "Look at the sign between `dex` and `needed`. Which way should it face?",
                 "`<` means *less than*. `3 < 5` is True; `5 < 3` is False.",
+                "Change line 3 to `print(dex < needed)`.",
             ],
             checks=[
                 no_quoted_question("no quotes around the question", ["dex", "needed"], ["<", ">"]),
@@ -664,7 +669,14 @@ TRUE_OR_FALSE = dict(
                 ),
                 (
                     "prints True",
-                    _END_DEF
+                    # `dex < needed` alone on line 3 (the print replaced by the question): it shows nothing.
+                    "import ast as _ast\n"
+                    "_lone = [_n.lineno for _n in _ast.parse(_source).body if type(_n).__name__ == 'Expr' "
+                    "and type(_n.value).__name__ == 'Compare' and ({getattr(_n.value.left, 'id', '')} | "
+                    "{getattr(_c, 'id', '') for _c in _n.value.comparators}) & {'dex', 'needed'}]\n"
+                    "assert not _lone, ('Line ' + str(_lone[0]) + ' asks a question, but shows the answer nowhere. '\n"
+                    "    'Put it inside `print( )`.' if _lone else '')\n"
+                    + _END_DEF
                     + "_ends = [_end(_l) for _l in _lines()]\n"
                     "assert 'True' in _ends, ('Your line prints `False`. `dex` is less than `needed`, so the answer '\n"
                     "    'should be `True`. Change the sign so it asks *less than*.' if 'False' in _ends else "
@@ -688,10 +700,10 @@ TRUE_OR_FALSE = dict(
             text="Make `barrier_up` hold `True`, with no quotes, and print it.",
             dictated=True,
             hints=[
-                "Start like this: keep `barrier_up = ` on line 4, and change only what comes after it.",
                 "Line 4 still holds the starter's 0. `True` and `False` need no quotes: quotes would make them "
                 "text. Then a new line prints the box.",
                 "Python's yes is `True` and its no is `False`, each with a capital letter: `door_open = False`.",
+                "Write `barrier_up = True` on line 4, then `print(barrier_up)` on a new line under it.",
             ],
             checks=[
                 bool_box(
@@ -762,8 +774,8 @@ TRUE_OR_FALSE = dict(
             "`needed`."
         ),
         hints=[
-            "Start like this: `print(dex + 10 `",
             "Python does the `+` first, then the `>`.",
+            "Write `print(dex + 10 > needed)` on a new line.",
         ],
         checks=[
             flip("the steady roll follows dex", {"dex": 4}, "True", "False",
@@ -785,6 +797,9 @@ TRUE_OR_FALSE = dict(
     takeaway="A comparison is a yes/no question: `print(dex < needed)` shows `True` or `False`, with no quotes.",
     wrong_answers=[
         dict(why="starter unchanged: still asks more than", code=DEX_STARTER, fails_at=1, message_contains="less than"),
+        dict(why="the print replaced by the question alone (the class's slip: it shows nothing)",
+             code=_dex(line="dex < needed", barrier="barrier_up = 0"), fails_at=1,
+             message_contains="Line 3 asks a question, but shows the answer nowhere"),
         dict(why="the answer typed in (CP1 'True' check passes, the rerun does not)",
              code=_dex(line="print(True)"), fails_at=1, message_contains="16"),
         dict(why="the answer typed in as text", code=_dex(line='print("True")'), fails_at=1, message_contains="16"),
@@ -875,8 +890,8 @@ ASK_WITH_DOUBLE_EQUALS = dict(
     title="Asking with ==",
     martu=(
         "`=` puts a value in a box: read it as *gets*. `==` asks a question: read it as [[is the same as]].\n"
-        "So `clock_is_red = (clock_color == \"red\")` reads: `clock_is_red` gets the answer to *is `clock_color` "
-        "the same as red?*\n"
+        "So `clock_is_red = (clock_color == \"red\")` reads: `clock_is_red` gets the answer to *is* `clock_color` "
+        "*the same as red?*\n"
         "Python works out the question in brackets first. Then the answer goes in the box."
     ),
     introduces=["op:Eq", "op:NotEq"],
@@ -902,9 +917,9 @@ ASK_WITH_DOUBLE_EQUALS = dict(
             ),
             dictated=True,
             hints=[
-                "Start like this: `clock_color = ` on line 1, then the new color in quotes.",
                 "Line 1 holds the color. Change only the text inside its quotes.",
                 "Python compares text letter for letter: `\"owl\" == \"Owl\"` is False.",
+                "Write `clock_color = \"red\"` on line 1 and run. Then `clock_color = \"Red\"`, and run again.",
             ],
             checks=[
                 (
@@ -943,9 +958,9 @@ ASK_WITH_DOUBLE_EQUALS = dict(
             text="Add a line that prints whether `clock_color` is *not* `\"red\"`, using `!=`.",
             dictated=True,
             hints=[
-                "Start like this: `print(clock_color `",
                 "Look at line 2. Your new line asks the opposite question, with `!=`.",
                 "`!=` means *is not the same as*. `\"owl\" != \"cat\"` is True.",
+                "Write `print(clock_color != \"red\")` on a new line.",
             ],
             checks=[
                 no_quoted_question("no quotes around the question", ["clock_color"], ["!=", "=="]),
@@ -962,9 +977,9 @@ ASK_WITH_DOUBLE_EQUALS = dict(
             text="Make `is_lucky` hold whether `hero` is the same as `\"Lucky\"`.",
             dictated=False,
             hints=[
-                "Start like this: `is_lucky = `",
                 "This line has a *gets* and an *is the same as*. Which goes first?",
                 "Ask a question, keep the answer: `same = (a == b)`. The `=` gets; the `==` asks.",
+                "Write `is_lucky = (hero == \"Lucky\")`.",
             ],
             checks=[
                 bool_box(
@@ -1038,8 +1053,8 @@ ASK_WITH_DOUBLE_EQUALS = dict(
             "Then make `same_color` say whether they are the same, and print it."
         ),
         hints=[
-            "Start like this: `same_color = `",
             "Two boxes, one `==` between them, and the answer goes in `same_color`.",
+            "Write `same_color = (martu_color == lucky_color)`, under the two color boxes.",
         ],
         checks=[
             bool_box("same_color holds True or False", "same_color", known=CLOCK_KNOWN + ["martu_color", "lucky_color"]),
@@ -1231,12 +1246,12 @@ ENOUGH_TO_PASS = dict(
             text="Make `passed` say whether `roll` reaches `needed`. Exactly enough counts.",
             dictated=False,
             hints=[
-                "Start like this: `passed = roll `",
                 "Should a 15 pass when 15 is needed? Pick the sign that says yes.",
                 "`>` leaves out the boundary; `>=` includes it. `9 > 9` is False, but `9 >= 9` is True.",
+                "Write `passed = roll >= needed` under the `# passed:` note.",
             ],
             checks=[
-                bool_box("passed holds True or False", "passed", known=PASS_KNOWN, foreign=PASS_FOREIGN),
+                bool_box("passed holds True or False", "passed", known=PASS_KNOWN, foreign=PASS_FOREIGN, ask=">="),
                 no_is("passed compares with a sign, not is", ["roll", "needed"], msg=NUM_IS + " *At least* is `>=`."),
                 bnd("passed: one short fails, exactly enough passes", "passed", "roll", "needed", "pass", **ROLL_FIX),
             ],
@@ -1247,12 +1262,12 @@ ENOUGH_TO_PASS = dict(
             text="Make `can_cast` say whether `mana` covers `cost`. Exactly enough mana still casts.",
             dictated=False,
             hints=[
-                "Start like this: `can_cast = mana `",
                 "Mana 6, cost 6: should the spell cast? Then the sign must include the boundary.",
                 "*At least* is `>=`: `coins >= price` is True when the coins are exactly enough.",
+                "Write `can_cast = mana >= cost` under the `# can_cast:` note.",
             ],
             checks=[
-                bool_box("can_cast holds True or False", "can_cast", known=PASS_KNOWN, foreign=PASS_FOREIGN),
+                bool_box("can_cast holds True or False", "can_cast", known=PASS_KNOWN, foreign=PASS_FOREIGN, ask=">="),
                 no_is("can_cast compares with a sign, not is", ["mana", "cost"], msg=NUM_IS + " *At least* is `>=`."),
                 bnd("can_cast: exactly enough mana casts", "can_cast", "mana", "cost", "cast", **MANA_FIX),
             ],
@@ -1309,8 +1324,8 @@ ENOUGH_TO_PASS = dict(
             "Then print both `passed` and `close_call`."
         ),
         hints=[
-            "Start like this: `close_call = `",
             "Exactly the same number? That is `==`. Then two `print` lines.",
+            "Write `close_call = roll == needed`.",
         ],
         checks=[
             bool_box("close_call holds True or False", "close_call", known=PASS_KNOWN + ["close_call"]),
@@ -1350,8 +1365,10 @@ ENOUGH_TO_PASS = dict(
              message_contains="different question"),
         dict(why="== used to fill the box after a placeholder False (the = / == slip)",
              code=_pass(passed="passed = False\npassed == roll >= needed"), fails_at=1, message_contains="use one `=`"),
-        dict(why="two = signs: passed = roll = needed", code=_pass(passed="passed = roll = needed"), fails_at=1,
-             message_contains="two `=` signs"),
+        dict(why="two = signs: passed = roll = needed (the message names the step's sign, >=, not ==)",
+             code=_pass(passed="passed = roll = needed"), fails_at=1,
+             message_contains="two `=` signs, so it puts the same value in two boxes. This box should hold a yes/no "
+                              "answer, `True` or `False`: ask the question with `>=`"),
         dict(why="== instead of >=", code=_pass(passed="passed = roll == needed"), fails_at=1,
              message_contains="more than enough"),
         dict(why="=> instead of >=", code=_pass(passed="passed = roll => needed"), fails_at=0,
@@ -1483,9 +1500,9 @@ ANY_CASE_ANSWER = dict(
             text="Make `said_yes` True for any capitals: use `answer.lower()`.",
             dictated=True,
             hints=[
-                "Start like this: `said_yes = answer.lower() `",
                 "Which part changes the capitals? Put it on the left of the `==`.",
                 "`\"HI\".lower()` gives `\"hi\"`. Then `\"hi\" == \"hi\"` is True.",
+                "Write `said_yes = answer.lower() == \"yes\"`.",
             ],
             checks=LOWER_CHECKS + [
                 bool_box(
@@ -1579,8 +1596,8 @@ ANY_CASE_ANSWER = dict(
             "whether they match, whatever their capitals, and print it."
         ),
         hints=[
-            "Start like this: `same = `",
             "Both sides need `.lower()`, so both are small letters.",
+            "Write `same = first.lower() == second.lower()`.",
         ],
         checks=[
             bool_box("same holds True or False", "same", known=ANSWER_KNOWN + ["first", "second", "same"]),
@@ -1720,7 +1737,7 @@ BROKEN_SPELL_2A = dict(
                 "*At least* is written `>=`: the `>` first, then the `=`. `=>` is not a sign Python knows.",
             ],
             checks=[
-                bool_box("passed holds True or False", "passed", known=BROKEN_KNOWN, kept=True),
+                bool_box("passed holds True or False", "passed", known=BROKEN_KNOWN, kept=True, ask=">="),
                 no_is("passed compares with a sign, not is", ["roll", "needed"], msg=NUM_IS + " *At least* is `>=`."),
                 (
                     "passed uses >=",
@@ -1843,6 +1860,8 @@ BROKEN_SPELL_2A = dict(
         dict(why="quotes kept but the number changed, mended inside the question", code=_broken(
             needed='needed = "16"', passed="passed = roll >= int(needed)"), fails_at=2,
              message_contains="`needed` holds text"),
+        dict(why="=> mended to a single = (passed = roll = needed): the message asks for >=, the step's sign",
+             code=_broken(passed="passed = roll = needed"), fails_at=1, message_contains="ask the question with `>=`"),
         dict(why="two = signs in the clock line", code=_broken(clock='clock_is_red = clock_color = "red"'), fails_at=3,
              message_contains="two `=` signs"),
         dict(why="STREXACT: Red with a capital", code=_broken(clock='clock_is_red = clock_color == "Red"'), fails_at=3,
@@ -1917,7 +1936,7 @@ SOLO_2A = dict(
             ],
             checks=[
                 bool_box("can_cast holds True or False", "can_cast", known=["mana", "cost", "can_cast"],
-                         foreign=["coins", "price", "can_buy", "passed"], kept=True),
+                         foreign=["coins", "price", "can_buy", "passed"], kept=True, ask=">="),
                 no_is("can_cast compares with a sign, not is", ["mana", "cost"], msg=NUM_IS),
                 bnd("can_cast: exactly enough mana casts", "can_cast", "mana", "cost", "cast", **SOLO_FIX),
             ],

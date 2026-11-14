@@ -9,10 +9,32 @@
  * indentation, joining text and numbers, and more. Unit 2 (control flow) adds its own slips: a sign typed
  * backwards (`=>`), a `___` blank left in, a question alone on a line, unquoted options, `elif` / `else` out of
  * place, a number compared with text, one `=` inside print, `lower(answer)`, `randint` without `random.`, and
- * the student's own `assert` coming out False.
+ * the student's own `assert` coming out False. Unit 3 (recipes) adds a recipe written the way math writes it
+ * (`max_fuel_for(cells) = cells * 5`), an ingredient name in quotes (`def max_fuel_for("cells"):`), the wrong number
+ * of values handed to a recipe (read from the student's own `def` line), `random.randint` with its numbers the wrong
+ * way round, a recipe that calls itself, a store written backwards (`get_greeting = greeting`), a `return` of a name
+ * the recipe never makes (`return result`, even when it is the example's name), a box from another recipe's kitchen,
+ * one of the task's recipes made like a box (`max_fuel_for = cells * 5`, `def max_fuel_for = ...`, a box called with
+ * `( )`, `def max_fuel_for(cells) = cells * 5`, `def ("say_steady"):`), a name like one of the recipe's ingredients
+ * (`hero` for `hero_name`), a recipe with no step yet, a name copied from a hint's Teach me example (`get_note`), and,
+ * for every unit, unquoted words inside a call that takes several values (`heal(Moth Queen, 5)`: only the bare run of
+ * words is quoted). Unit 4 (lists) adds round brackets where a list needs square ones (`chalk_wall(2) = 47`,
+ * `wall(0)`), square brackets after a tool that is called (`chalk_wall.append[33]`, `max[chalk_wall]`,
+ * `range[1, 9]`), a comma between two positions (`roster[2, 0]`), one item joined to a list with `+`
+ * (`chalk_wall + 33`), `sorted` (or `max`, `min`, `sum`, `len`) written after a dot, unquoted words and a missing
+ * comma inside `[ ]`, and `.remove()` handed a value the list does not hold. Unit 5 (dictionaries) adds the sheet's
+ * own slips, from the program's sheets (the setup's too): `=` inside a sheet (never "take the quotes off"), a key with
+ * no quotes (`{name: "Lucky"}`, `lucky[name]`), text with no quotes as a value (`"name": Gearshift`, never "capital
+ * letters"), bare words in `{ }` or `[ ]` (and the variable that holds them), a missing colon after a key, a missing
+ * comma Python reports on the next line, a dot or round brackets where a sheet needs square ones, a name where a list
+ * needs a position (with the position, from the list's sheets), a KeyError's real cause (a skipped level, the keys
+ * the other way round, one level too deep, a near miss, a position, two keys in one `[ ]`, a variable's name in
+ * quotes, `==` where one `=` stores, a key read to test whether it is there, a key no line makes), a position past
+ * the end of a list of sheets (counted by its sheets), a variable's name in quotes in math, a whole sheet as a key
+ * or in a comparison, math with `None`, and `str()` shown on the line's own read.
  *
  * ExplainContext sets how much it says: `unitOrder` keeps advice to what the class has met (no "make it with
- * def" before the Functions unit), `explainer: "lean"` names the kind of slip and the line but never the fix,
+ * def" before the Functions unit, no list tools before the Lists unit), `explainer: "lean"` names the kind of slip and the line but never the fix,
  * and `debugging` leaves the "One fixed!" prefix to the player's own progress line.
  *
  * Every explanation has a stable `kind` (for tests, logging and the player), and says what happened and
@@ -82,11 +104,42 @@ export type CourseErrorKind =
   | "elif-without-if"
   | "else-not-lined-up"
   | "elif-spelling"
+  | "else-has-question"
+  | "no-question"
+  | "keyword-capital"
   | "compare-number-text"
   | "equals-in-print"
   | "method-as-function"
   | "randint-needs-random"
   | "assert-failed"
+  // recipes (Unit 3)
+  | "recipe-like-math"
+  | "quoted-ingredient"
+  | "randint-backwards"
+  | "recipe-not-made-yet"
+  | "recipe-called-too-early"
+  | "made-inside-recipe"
+  | "not-in-recipe"
+  | "store-backwards"
+  | "quoted-recipe-name"
+  // lists (Unit 4)
+  | "list-needs-square-brackets"
+  | "call-needs-round-brackets"
+  | "comma-in-brackets"
+  | "list-plus-item"
+  | "tool-after-dot"
+  | "not-on-the-list"
+  | "read-from-none"
+  | "row-not-item"
+  // dictionaries (Unit 5)
+  | "equals-in-sheet"
+  | "key-outside-sheet"
+  | "unquoted-key"
+  | "dot-on-a-sheet"
+  | "name-as-position"
+  | "whole-sheet-as-key"
+  | "whole-card-compared"
+  | "math-with-none"
   // values
   | "input-is-text"
   | "text-plus-number"
@@ -129,6 +182,13 @@ export type CourseExplanation = Explanation & {
   gotFurther?: boolean;
   /** "lean" when the fix was left out on purpose (ExplainContext.explainer). */
   explainer?: "full" | "lean";
+  /**
+   * The lean name of this slip when its kind's general name does not fit it: a dictionary read with round brackets
+   * is the list kind's slip (`list-needs-square-brackets`), but its lean name says "a dictionary".
+   */
+  slip?: string;
+  /** The line the slip is on, when Python names the line after it (a sheet's missing comma): the lean explainer says this one. */
+  slipLine?: number;
 };
 
 /** The line a debugging exercise shows when a run gets further than the one before (ExercisePlayer). */
@@ -139,6 +199,22 @@ export const ONE_FIXED_PREFIX = "One fixed! Python found the next one.";
 
 /** Unit 3 ("First Recipes") teaches `def`: before it, the explainer never says "make it with def". */
 export const FUNCTIONS_UNIT_ORDER = 3;
+
+/** Unit 2 ("Control Flow") teaches `random.randint`. */
+export const RANDOM_UNIT_ORDER = 2;
+
+/**
+ * Unit 4 ("Lists") teaches lists: square brackets for a position, `.append()`, `+` between two lists, slices, and
+ * the list tools (`sorted`, `max`, `.remove()`, `in`). Its rows name them; before it the older advice is unchanged.
+ */
+export const LISTS_UNIT_ORDER = 4;
+
+/**
+ * Unit 5 ("Dictionaries") teaches sheets: a key in quotes, a colon, then its value; square brackets to read and store
+ * by key; values inside values (`caster["abilities"]["magical_affinity"]`); a list of sheets (`roster[2]["name"]`);
+ * and `in` on a sheet's keys. Its rows name them; before it the older advice is unchanged.
+ */
+export const DICTS_UNIT_ORDER = 5;
 
 /** What the player knows about the exercise. Every field is optional; more context gives more exact help. */
 export type ExplainContext = {
@@ -160,7 +236,12 @@ export type ExplainContext = {
   solution?: string;
   /**
    * The unit's `order` on the course map. Before the Functions unit (FUNCTIONS_UNIT_ORDER) no advice says
-   * "make it with def"; in Unit 1 (before comparisons) `print(x = 1)` gets box advice, not `==`.
+   * "make it with def"; in Unit 1 (before comparisons) `print(x = 1)` gets box advice, not `==`. From Unit 2
+   * (RANDOM_UNIT_ORDER) `randint` the wrong way round is named; from Unit 3 the recipe rows speak the unit's words
+   * (recipe, ingredient, hand over); from Unit 4 (LISTS_UNIT_ORDER) the list rows name square brackets, `.append()`
+   * and the list tools; from Unit 5 (DICTS_UNIT_ORDER) the sheet rows name keys in quotes, the colon, square brackets
+   * for a key, the level a key sits on and a list of sheets (and nothing a later unit teaches: no loops, no f-strings).
+   * Without a unit, those rows stay closed and the older advice is unchanged.
    */
   unitOrder?: number;
   /**
@@ -174,7 +255,25 @@ export type ExplainContext = {
    * on screen (the player shows it under every explanation).
    */
   explainer?: "full" | "lean";
+  /**
+   * Names from Mar'tu's Teach me examples in the exercise's hints (`note = get_note()`), that the task itself never
+   * uses (foreignNames() works them out). From Unit 3 on, a name copied from one gets the worked example's row.
+   */
+  foreign?: readonly string[];
+  /**
+   * The exercise's hidden `setup` code, run before the student's (the game's `caster`, as in the campaign). From Unit 5
+   * on, its sheets count as the program's own, so a KeyError can name the level a key sits on.
+   */
+  setup?: string;
 };
+
+/**
+ * The class has met what unit `order` teaches: the context names that unit or a later one. The rows a unit adds
+ * (Unit 3's recipes, Unit 2's random) need it; without a unit (an old caller) the advice is unchanged.
+ */
+function unitAtLeast(context: ExplainContext | undefined, order: number): boolean {
+  return context?.unitOrder !== undefined && context.unitOrder >= order;
+}
 
 /** The task only shows words: Mar'tu's version prints and makes no variable (nothing about boxes yet). */
 export function isPrintOnlyTask(context: ExplainContext | undefined): boolean {
@@ -583,11 +682,60 @@ function namesBefore(code: string, line: number | null): string[] {
   return [...new Set(names)];
 }
 
-/** Names the worked example makes, that the task does not use. */
+/**
+ * Names the worked example makes, that the task does not use. From Unit 3 on, also the names from the hints' Teach me
+ * examples (`context.foreign`): a student who copies `get_note` from a hint gets the same help as one who copies
+ * the example's `result`.
+ */
 function exampleOnlyNames(context: ExplainContext | undefined): string[] {
-  if (!context?.example) return [];
-  const task = new Set(context.names ?? []);
-  return [...new Set(definedNames(context.example).map((entry) => entry.name))].filter((name) => !task.has(name));
+  const task = new Set(context?.names ?? []);
+  const made = context?.example ? definedNames(context.example).map((entry) => entry.name) : [];
+  const taught = unitAtLeast(context, FUNCTIONS_UNIT_ORDER) ? (context?.foreign ?? []) : [];
+  return [...new Set([...made, ...taught])].filter((name) => !task.has(name));
+}
+
+/** Every name a piece of code reads, makes or calls (not Python's words, not the text inside quotes). */
+function identifiersIn(code: string): string[] {
+  const names = new Set<string>();
+  for (const row of (code ?? "").split("\n")) {
+    for (const match of maskStrings(row).matchAll(/(?<![\w.])([A-Za-z_]\w*)/g)) {
+      if (!KEYWORDS.has(match[1])) names.add(match[1]);
+    }
+  }
+  return [...names];
+}
+
+/**
+ * The names Mar'tu's Teach me examples use (the code spans of the hints: `note = get_note()`, `mix(2, 9)`) that the
+ * task itself never does: not in its names, Mar'tu's version or the starter, and not one of Python's own. The player
+ * passes them as ExplainContext.foreign.
+ */
+export function foreignNames(exercise: {
+  hints: readonly string[];
+  solution?: string;
+  starter?: string;
+  names?: readonly string[];
+}): string[] {
+  const own = new Set([
+    ...identifiersIn(exercise.solution ?? ""),
+    ...identifiersIn(exercise.starter ?? ""),
+    ...(exercise.names ?? []),
+    ...COMMON_BUILTINS,
+  ]);
+  const found = new Set<string>();
+  for (const hint of exercise.hints) {
+    const plain = hint.replace(/```[\s\S]*?```/g, " ");
+    for (const span of plain.matchAll(/`([^`\n]+)`/g)) {
+      // Only a span that is code (`note = get_note()`, `cups * 10`, `line.lower()`): a lone word or a few words
+      // (`Steady`, `Sit down, lucky.`) may be words to show.
+      const mask = maskStrings(span[1]);
+      if (!/[(=*+/\-[]|\.[A-Za-z_]/.test(mask)) continue;
+      const words = [...mask.matchAll(/(?<![\w.])([A-Za-z_]\w*)\s+(?=([A-Za-z_]\w*))/g)];
+      if (words.some((pair) => !KEYWORDS.has(pair[1]) && !KEYWORDS.has(pair[2]))) continue;
+      for (const name of identifiersIn(span[1])) if (!own.has(name) && !name.startsWith("_")) found.add(name);
+    }
+  }
+  return [...found];
 }
 
 /** The names to offer instead of an example's name: the task's names, else the ones the code made. */
@@ -749,8 +897,16 @@ function quotesProblem(text: string, line: number | null, raw: string, code = ""
     }
     if (tail.replace(/[)\]}\s]/g, "").length > 0) {
       const { fixed, added } = closeQuoteLine(text, start, quote);
-      const defFix = defForVariable(fixed);
+      const defFix = unitAtLeast(context, FUNCTIONS_UNIT_ORDER) && RECIPE_HEADER.test(codePart(fixed)) ? null : defForVariable(fixed);
       if (defFix && printOnlyTask(context)) return defInPrintTask(fixed, raw, true);
+      if (defFix && unitAtLeast(context, FUNCTIONS_UNIT_ORDER)) {
+        return explain(
+          "def-for-variable",
+          "def makes recipes",
+          `\`def\` makes recipes (functions), not boxes. To make a box, write the name, an equals sign, then the value, with no \`def\`. Text needs a quote at both ends too: \`${defFix}\``,
+          raw,
+        );
+      }
       if (defFix) {
         return explain(
           "def-for-variable",
@@ -916,6 +1072,14 @@ function quoteWordRuns(expr: string, names: string[]): string | null {
  */
 function unquotedWords(text: string, names: string[]): { fixed: string; comma: boolean } | null {
   const body = codePart(text);
+  // A call that takes several values (`heal(Moth Queen, 5)`, `cheer_on("Captain Glug", Go now)`): split the
+  // brackets on their top-level commas and quote ONLY the bare run of words. Numbers, the program's own names and
+  // quoted values stay as they are. (print keeps its own rows below: a comma there is often part of the sentence.)
+  const several = body.match(/^(\s*(?:[A-Za-z_]\w*\s*=(?!=)\s*)?([A-Za-z_][\w.]*)\s*\()(.*)\)\s*$/);
+  if (several && several[2] !== "print" && splitTopLevel(several[3])?.marks.includes(",")) {
+    const fixed = quoteWordRuns(several[3].trim(), names);
+    return fixed ? { fixed: `${several[1].trim()}${fixed})`, comma: false } : null;
+  }
   const assign = body.match(/^(\s*[A-Za-z_]\w*\s*=)(?!=)\s*(.+?)\s*$/);
   const call = body.match(/^(\s*print\s*\()\s*(.*?)\s*\)\s*$/);
   if (/["']/.test(body)) {
@@ -1253,6 +1417,19 @@ function explainNumberAndText(op: string, code: string, text: string, line: numb
   );
 }
 
+/** The comparison signs Mar'tu's version uses right after `name` inside a print( ) (`print(clock_color != "red")`). */
+function solutionPrintSigns(solution: string | undefined, name: string): string[] {
+  if (!solution) return [];
+  const signs = new Set<string>();
+  const at = escapeRegExp(name);
+  for (const row of solution.split("\n")) {
+    const mask = maskStrings(codePart(row));
+    if (!/(^|[^\w.])print\s*\(/.test(mask)) continue;
+    for (const match of mask.matchAll(new RegExp(`(?<![\\w.])${at}\\s*(==|!=|>=|<=|<|>)`, "g"))) signs.add(match[1]);
+  }
+  return [...signs];
+}
+
 /** `print(clock_color = "red")`: one `=` inside print, where `==` (a question) belongs. */
 function explainEqualsInPrint(name: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation {
   const body = codePart(text);
@@ -1269,6 +1446,17 @@ function explainEqualsInPrint(name: string, text: string, line: number | null, r
     );
   }
   const fixed = at >= 0 ? `${body.slice(0, at)}==${body.slice(at + 1)}`.trim() : "";
+  // Mar'tu's version prints this box with another sign (`print(clock_color != "red")`): writing the `==` line
+  // would send the student the wrong way, so name the kind of sign instead.
+  const signs = solutionPrintSigns(context?.solution, name);
+  if (signs.length > 0 && !signs.includes("==")) {
+    return explain(
+      "equals-in-print",
+      "= makes a box",
+      `${lineWord(line)} has one \`=\` inside print( ). One \`=\` puts a value in a box, and print can't do that. To show the answer to a question, use a comparison sign, such as \`==\` (is the same as) or \`!=\` (is not the same as).`,
+      raw,
+    );
+  }
   return explain(
     "equals-in-print",
     "Use == to ask",
@@ -1308,6 +1496,60 @@ function headerWithColon(code: string, text: string, line: number | null): strin
   return `${header.trim().replace(/\s*;$/, "")}:`;
 }
 
+/** `else roll < needed:`: `else` has no question of its own (the Otherwise distractor, QC2's "else with a condition"). */
+function elseWithQuestion(text: string, line: number | null, raw: string): CourseExplanation {
+  const question = codePart(text).trim().replace(/^else\b\s*/, "").replace(/:\s*$/, "").trim();
+  return explain(
+    "else-has-question",
+    "else asks nothing",
+    `${lineWord(line)} gives \`else\` a question${question ? `, \`${question}\`` : ""}. \`else\` has no question of its own: it runs when every question above it was False. Write just \`else:\`. (A new question goes after \`elif\` instead.)`,
+    raw,
+  );
+}
+
+/**
+ * Python's own words that a student might type with a capital (`If`, `Else:`, `Import random`), each with the
+ * shape of the line that really uses it, so words typed without quotes (`If you dare, enter`) are not read as one.
+ */
+const CAPITAL_KEYWORD_SHAPES: Record<string, RegExp> = {
+  if: /^If\b.*(?::\s*$|[=!<>]=|[<>])/,
+  elif: /^Elif\b.*(?::\s*$|[=!<>]=|[<>])/,
+  while: /^While\b.*(?::\s*$|[=!<>]=|[<>])/,
+  else: /^Else\s*:?\s*$/,
+  for: /^For\s+[A-Za-z_]\w*\s+in\b/,
+  def: /^Def\s+[A-Za-z_]\w*\s*\(/,
+  import: /^Import\s+[A-Za-z_][\w.]*\s*$/,
+};
+
+/**
+ * `If hours_left < 3:`, `Else:`, `Import random`: one of Python's words with a capital letter, which Python reads
+ * as an unknown name and then can't read the line. Also `elif:` / `if:` with no question. Null otherwise.
+ */
+function explainKeywordShape(text: string, line: number | null, raw: string): CourseExplanation | null {
+  const body = codePart(text).trim();
+  const first = body.match(/^([A-Za-z]+)\b/)?.[1] ?? "";
+  const small = first.toLowerCase();
+  if (first && first !== small && CAPITAL_KEYWORD_SHAPES[small]?.test(maskStrings(body))) {
+    const fixed = `${small}${body.slice(first.length)}`;
+    return explain(
+      "keyword-capital",
+      "Small letters",
+      `${lineWord(line)} starts with \`${first}\`. Python's own words are all small letters: \`${small}\`, not \`${first}\`. Write: \`${fixed}\``,
+      raw,
+    );
+  }
+  const bare = body.match(/^(if|elif)\s*:$/)?.[1];
+  if (bare) {
+    return explain(
+      "no-question",
+      `${bare} needs a question`,
+      `${lineWord(line)} has \`${bare}:\` with no question. \`${bare}\` asks a question, so the question goes between \`${bare}\` and the colon. If this branch should run when nothing above it was True, write \`else:\` instead.`,
+      raw,
+    );
+  }
+  return null;
+}
+
 function explainMissingColon(code: string, text: string, line: number | null, raw: string): CourseExplanation {
   const elseIf = codePart(text).match(/^\s*else\s+if\b(.*)$/);
   if (elseIf) {
@@ -1319,6 +1561,8 @@ function explainMissingColon(code: string, text: string, line: number | null, ra
       raw,
     );
   }
+  // `else roll < needed:`: else never asks. Python says "expected ':'", but the colon is not what is missing.
+  if (/^\s*else\b(?!\s*:)\s*\S/.test(codePart(text))) return elseWithQuestion(text, line, raw);
   const fixed = headerWithColon(code, text, line);
   const word = codePart(text).trim().match(BLOCK_HEADER)?.[1];
   if (fixed && word) {
@@ -1354,6 +1598,495 @@ function doubleEqualsFix(text: string): string | null {
   return codePart(fixed).trim();
 }
 
+/* ---------------------------------------------------------------------------------------------- */
+/* Recipes (Unit 3): def, ingredients, the values a call hands over, randint, a recipe that calls  */
+/* itself. The words are the unit's own (curriculum §2.9): "recipe (function)", "ingredient",      */
+/* "hand over", "hand back".                                                                       */
+/* ---------------------------------------------------------------------------------------------- */
+
+/** A `def name(` line: from Unit 3 on, the student is writing a recipe there, never making a box. */
+const RECIPE_HEADER = /^\s*def\s+[A-Za-z_]\w*\s*\(/;
+
+/** The values inside a call's brackets, split on the commas outside strings and brackets (null if unbalanced). */
+function splitArguments(inside: string): string[] | null {
+  const parts: string[] = [];
+  let depth = 0;
+  let from = 0;
+  for (let index = 0; index < inside.length; index += 1) {
+    const char = inside[index];
+    if (char === '"' || char === "'") {
+      const close = inside.indexOf(char, index + 1);
+      if (close < 0) return null;
+      index = close;
+      continue;
+    }
+    if (char in CLOSER) depth += 1;
+    else if (char in OPENER) depth -= 1;
+    else if (char === "," && depth === 0) {
+      parts.push(inside.slice(from, index).trim());
+      from = index + 1;
+    }
+  }
+  if (depth !== 0) return null;
+  const last = inside.slice(from).trim();
+  return last || parts.length > 0 ? [...parts, last] : [];
+}
+
+/** The ingredients on the code's (last) `def name(...)` line, or null when the code makes no recipe by that name. */
+function recipeIngredients(code: string, name: string): string[] | null {
+  let found: string[] | null = null;
+  for (const row of (code ?? "").split("\n")) {
+    const header = codePart(row).match(new RegExp(`^\\s*def\\s+${escapeRegExp(name)}\\s*\\(([^)]*)\\)`));
+    if (!header) continue;
+    found = (splitArguments(header[1]) ?? [])
+      .map((part) => part.split(/[\s:=]/)[0]?.replace(/^\*+/, "") ?? "")
+      .filter((part) => /^[A-Za-z_]\w*$/.test(part));
+  }
+  return found;
+}
+
+type TaskRecipe = { name: string; ingredients: string[]; returns: boolean };
+
+/**
+ * `name` is one of the task's recipes (Unit 3 on): Mar'tu's version makes it with `def`, and the task names it (its
+ * "Names to use") or the student's code calls it. Null for anything else, so a box of the student's own never gets
+ * recipe advice.
+ */
+function taskRecipe(name: string, code: string, context?: ExplainContext): TaskRecipe | null {
+  if (!unitAtLeast(context, FUNCTIONS_UNIT_ORDER) || !context?.solution || KEYWORDS.has(name)) return null;
+  const ingredients = recipeIngredients(context.solution, name);
+  if (!ingredients) return null;
+  const call = new RegExp(`(^|[^\\w.])${escapeRegExp(name)}\\s*\\(`);
+  const called = (code ?? "").split("\n").some((row) => call.test(maskStrings(row)));
+  if (!(context.names ?? []).includes(name) && !called) return null;
+  const block = recipeBlocks(context.solution).find((entry) => entry.recipe === name);
+  const body = block ? context.solution.split("\n").slice(block.start, block.end) : [];
+  return { name, ingredients, returns: body.some((row) => /^\s*return\b/.test(codePart(row))) };
+}
+
+/**
+ * "`max_fuel_for` is a recipe in this task: `def max_fuel_for(cells):`, then an indented `return cells * 5`." Built
+ * from the task's ingredients and the student's own right side (`value`), when there is one.
+ */
+function recipeShape(recipe: TaskRecipe, value?: string): string {
+  const header = `\`def ${recipe.name}(${recipe.ingredients.join(", ")}):\``;
+  const right = value?.trim();
+  const steps = !recipe.returns ? "then its steps, indented under it" : right ? `then an indented \`return ${right}\`` : "then an indented `return` with the answer";
+  return `\`${recipe.name}\` is a recipe in this task: ${header}, ${steps}.`;
+}
+
+/**
+ * `max_fuel_for(cells) = cells * 5`: a recipe written the way math writes f(x) = 5x. Python says "cannot assign to
+ * function call ... Maybe you meant '=='", which sends the student the wrong way. Built from the student's own name,
+ * ingredients and right side. Null for anything else (a builtin on the left, values in the brackets).
+ */
+function explainRecipeLikeMath(message: string, text: string, line: number | null, raw: string): CourseExplanation | null {
+  const body = codePart(text);
+  // `double_cost = (price):`: a recipe made with `=`, the way a box is made (Python says only "invalid syntax").
+  const boxLike = /^invalid syntax/i.test(message)
+    ? body.match(/^\s*([A-Za-z_]\w*)\s*=\s*\(\s*((?:[A-Za-z_]\w*\s*,\s*)*[A-Za-z_]\w*)?\s*\)\s*:\s*$/)
+    : null;
+  if (boxLike && !KEYWORDS.has(boxLike[1]) && !COMMON_BUILTINS.includes(boxLike[1])) {
+    const ingredients = (boxLike[2] ?? "").split(",").map((part) => part.trim()).filter(Boolean);
+    return explain(
+      "recipe-like-math",
+      "A recipe starts with def",
+      `${lineWord(line)} makes the recipe with \`=\`, the way a box is made. In Python a recipe (function) starts with \`def\`: \`def ${boxLike[1]}(${ingredients.join(", ")}):\`, then its steps, indented.`,
+      raw,
+    );
+  }
+  if (!/cannot assign to function call/i.test(message)) return null;
+  const at = singleEquals(maskStrings(body))[0];
+  if (at === undefined) return null;
+  const call = body.slice(0, at).trim().match(/^([A-Za-z_]\w*)\s*\(\s*((?:[A-Za-z_]\w*\s*,\s*)*[A-Za-z_]\w*)?\s*\)$/);
+  if (!call || COMMON_BUILTINS.includes(call[1]) || KEYWORDS.has(call[1])) return null;
+  const ingredients = (call[2] ?? "").split(",").map((part) => part.trim()).filter(Boolean);
+  if (ingredients.some((name) => KEYWORDS.has(name))) return null;
+  const right = body.slice(at + 1).trim();
+  const back = right ? `\`return ${right}\`` : "`return` with the answer";
+  return explain(
+    "recipe-like-math",
+    "A recipe starts with def",
+    `${lineWord(line)} is math's way to write it. In Python a recipe (function) starts with \`def\`: \`def ${call[1]}(${ingredients.join(", ")}):\`, then an indented ${back}.`,
+    raw,
+  );
+}
+
+/**
+ * `def max_fuel_for("cells"):` or `def show_hit(4, 3):`: a value where an ingredient's name goes (Python says only
+ * "invalid syntax"). The def line comes back with names in its brackets: the quotes taken off a name, else Mar'tu's
+ * own ingredient in that place, else a plain `value`.
+ */
+function explainQuotedIngredient(text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  const header = codePart(text).match(/^\s*def\s+([A-Za-z_]\w*)\s*\((.*)\)\s*:?\s*$/);
+  const parts = header ? splitArguments(header[2]) : null;
+  if (!header || !parts) return null;
+  const quoted = (part: string) => /^(["'])[^"']*\1$/.test(part);
+  const number = (part: string) => /^-?\d+(?:\.\d+)?$/.test(part);
+  const isName = (part: string) => /^[A-Za-z_]\w*$/.test(part) && !KEYWORDS.has(part);
+  if (!parts.some((part) => quoted(part) || number(part))) return null;
+  if (!parts.every((part) => quoted(part) || number(part) || isName(part))) return null;
+  const own = context?.solution ? recipeIngredients(context.solution, header[1]) : null;
+  const used = new Set<string>();
+  const names = parts.map((part, index) => {
+    const inner = quoted(part) ? part.slice(1, -1).trim() : part;
+    let name = isName(inner) ? inner : (own?.[index] ?? "");
+    if (!isName(name) || used.has(name)) name = parts.length === 1 ? "value" : `value${index + 1}`;
+    used.add(name);
+    return name;
+  });
+  const fixed = `def ${header[1]}(${names.join(", ")}):`;
+  if (parts.some(quoted)) {
+    return explain(
+      "quoted-ingredient",
+      "No quotes on an ingredient",
+      `${lineWord(line)} has an ingredient in quotes. Ingredient names have no quotes: \`${fixed}\``,
+      raw,
+    );
+  }
+  return explain(
+    "quoted-ingredient",
+    "An ingredient is a name",
+    `${lineWord(line)} has a number where an ingredient's name goes. An ingredient is a name: \`${fixed}\`. The numbers go in the call.`,
+    raw,
+  );
+}
+
+/**
+ * `def max_fuel_for(cells) = cells * 5`: math's f(x) = 5x with a `def` in front. Python says "expected ':'", and a
+ * colon added at the end only gets the same error again: the colon goes right after the brackets, the steps below.
+ */
+function explainDefLikeMath(text: string, line: number | null, raw: string): CourseExplanation | null {
+  const header = codePart(text).match(/^\s*def\s+([A-Za-z_]\w*)\s*\(([^()]*)\)\s*=(?!=)\s*(.+?)\s*:?\s*$/);
+  const ingredients = header ? splitArguments(header[2]) : null;
+  if (!header || !ingredients || !ingredients.every((part) => /^[A-Za-z_]\w*$/.test(part) && !KEYWORDS.has(part))) return null;
+  return explain(
+    "recipe-like-math",
+    "Steps go below the def line",
+    `${lineWord(line)} puts \`=\` after the brackets, the way math writes it. In Python the colon goes right after the brackets, and the steps go below: \`def ${header[1]}(${ingredients.join(", ")}):\`, then an indented \`return ${header[3]}\`.`,
+    raw,
+  );
+}
+
+/**
+ * One of the task's recipes written half like a box: `def max_fuel_for = cells * 5`, or its name in quotes,
+ * `def ("say_steady"):`. def-for-variable would answer "make a box", which turns the recipe into a box. A quoted name
+ * with an indented step under it is a recipe too, whatever the task. Null for anything else.
+ */
+function explainRecipeMadeAsBox(
+  text: string,
+  code: string,
+  line: number | null,
+  raw: string,
+  context?: ExplainContext,
+): CourseExplanation | null {
+  const body = codePart(text).trim();
+  const valued = body.match(/^def\s+([A-Za-z_]\w*)\s*=(?!=)\s*(.+)$/);
+  const valuedRecipe = valued ? taskRecipe(valued[1], code, context) : null;
+  if (valued && valuedRecipe) {
+    return explain(
+      "recipe-like-math",
+      "A recipe needs ( ) and a colon",
+      `${lineWord(line)} mixes \`def\` with \`=\`. ${recipeShape(valuedRecipe, valued[2])}`,
+      raw,
+    );
+  }
+  const quoted = body.match(/^def\s*\(?\s*(["'])([A-Za-z_]\w*)\1\s*\)?\s*:?\s*$/);
+  if (!quoted || KEYWORDS.has(quoted[2])) return null;
+  const recipe = taskRecipe(quoted[2], code, context);
+  const stepBelow = line !== null && indentOf(nextCodeLine(code, line)) > indentOf(text);
+  if (!recipe && !stepBelow) return null;
+  const header = `\`def ${quoted[2]}(${recipe ? recipe.ingredients.join(", ") : ""}):\``;
+  return explain(
+    "quoted-recipe-name",
+    "No quotes on a recipe's name",
+    `${lineWord(line)} has the recipe's name in quotes. A recipe's name has no quotes: it goes right after \`def\`, then ( ) and a colon: ${header}, with its steps indented under it.`,
+    raw,
+  );
+}
+
+/**
+ * "missing 1 required positional argument" / "takes 1 positional argument but 2 were given". From Unit 3 on, when
+ * the code makes the recipe, its ingredients come from its own `def` line; `random.randint` takes two values.
+ * Python's "positional argument" words are never the explanation (its last line still shows below).
+ */
+function explainValueCount(message: string, code: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation {
+  const count = message.match(/^([\w.]+)\(\) (?:takes (\d+) positional arguments? but (\d+) (?:were|was) given|missing (\d+) required positional arguments?)/);
+  const name = count?.[1] ?? "";
+  const call = line ? `The call on line ${line}` : "This call";
+  const handedText = (handed: number) => (handed === 0 ? "nothing" : String(handed));
+  const ingredients = count && /^[A-Za-z_]\w*$/.test(name) && unitAtLeast(context, FUNCTIONS_UNIT_ORDER) ? recipeIngredients(code, name) : null;
+  if (count && ingredients) {
+    const handed = count[2] !== undefined ? Number(count[3]) : ingredients.length - Number(count[4]);
+    if (handed >= 0 && handed !== ingredients.length) {
+      if (ingredients.length === 0) {
+        return explain(
+          "wrong-number-of-values",
+          "Wrong number of values",
+          `\`${name}\` has no ingredients, but ${call.charAt(0).toLowerCase()}${call.slice(1)} hands over ${handedText(handed)}.`,
+          raw,
+        );
+      }
+      const listed = ingredients.map((ingredient) => `\`${ingredient}\``).join(", ");
+      const has = ingredients.length === 1 ? "1 ingredient" : `${ingredients.length} ingredients`;
+      return explain(
+        "wrong-number-of-values",
+        "Wrong number of values",
+        `\`${name}\` has ${has} (${listed}). ${call} hands over ${handedText(handed)}. Hand over one value per ingredient.`,
+        raw,
+      );
+    }
+  }
+  // `random.randint(die_size)`: the method's own count includes Python's hidden first value.
+  if (count && /^(Random\.)?randint$/.test(name) && unitAtLeast(context, RANDOM_UNIT_ORDER)) {
+    const handed = count[2] !== undefined ? Number(count[3]) - 1 : 2 - Number(count[4]);
+    if (handed >= 0 && handed !== 2) {
+      return explain(
+        "wrong-number-of-values",
+        "Wrong number of values",
+        `\`random.randint\` takes 2 values: the smallest number, then the biggest. ${call} hands over ${handedText(handed)}.`,
+        raw,
+      );
+    }
+  }
+  return explain(
+    "wrong-number-of-values",
+    "Wrong number of values",
+    `The function call${onLine(line)} has the wrong number of values inside its ( ).`,
+    raw,
+  );
+}
+
+/**
+ * `random.randint(die_size, 1)`: "empty range in randrange(20, 2)". The student's own two numbers, swapped. Null when
+ * the line has no `randint(` with two values, or its first value is already 1 or less (another slip emptied it).
+ */
+function explainRandintBackwards(text: string, line: number | null, raw: string): CourseExplanation | null {
+  const body = codePart(text);
+  const start = maskStrings(body).search(/(?<![\w])(?:random\s*\.\s*)?randint\s*\(/);
+  if (start < 0) return null;
+  const open = body.indexOf("(", start);
+  let depth = 0;
+  let close = -1;
+  const mask = maskStrings(body);
+  for (let index = open; index < mask.length; index += 1) {
+    if (mask[index] in CLOSER) depth += 1;
+    else if (mask[index] in OPENER && --depth === 0) {
+      close = index;
+      break;
+    }
+  }
+  const values = close > open ? splitArguments(body.slice(open + 1, close)) : null;
+  if (!values || values.length !== 2 || values.some((value) => !value)) return null;
+  if (/^-?\d+(?:\.\d+)?$/.test(values[0]) && Number(values[0]) <= 1) return null;
+  const fixed = `${body.slice(start, open).replace(/\s+/g, "")}(${values[1]}, ${values[0]})`;
+  return explain(
+    "randint-backwards",
+    "Smallest number first",
+    `${lineWord(line)} rolls with the numbers the wrong way round. Smallest number first: \`${fixed}\``,
+    raw,
+  );
+}
+
+/**
+ * RecursionError: a recipe that calls itself (`def say_steady():` with `say_steady()` indented under it). Says which
+ * line, and that the call belongs below the recipe; any other endless calling keeps the plain words.
+ */
+function explainRecursion(code: string, raw: string): CourseExplanation {
+  const lines = (code ?? "").split("\n");
+  for (const block of recipeBlocks(code)) {
+    const self = new RegExp(`(^|[^\\w.])${escapeRegExp(block.recipe)}\\s*\\(`);
+    for (let at = block.start; at < block.end; at += 1) {
+      if (!self.test(maskStrings(codePart(lines[at] ?? "")))) continue;
+      return explain(
+        "never-ending-calls",
+        "A recipe that calls itself",
+        `Line ${at + 1} calls \`${block.recipe}\` inside \`${block.recipe}\` itself, so it starts again and again and never stops. To call it, write the call below the recipe, with no spaces in front.`,
+        raw,
+      );
+    }
+  }
+  return explain(
+    "never-ending-calls",
+    "Never-ending calls",
+    "A function keeps calling itself and never stops. Make sure it has a way to finish with a return that does not call it again.",
+    raw,
+  );
+}
+
+/** The recipes in the code: each `def` line and the lines its indented body spans (1-based, inclusive). */
+function recipeBlocks(code: string): { recipe: string; start: number; end: number }[] {
+  const lines = (code ?? "").split("\n");
+  const blocks: { recipe: string; start: number; end: number }[] = [];
+  lines.forEach((row, index) => {
+    const recipe = codePart(row).match(/^\s*def\s+([A-Za-z_]\w*)\s*\(/)?.[1];
+    if (!recipe) return;
+    const indent = indentOf(row);
+    let end = index + 1;
+    for (let at = index + 1; at < lines.length; at += 1) {
+      if (!codePart(lines[at] ?? "").trim()) continue;
+      if (indentOf(lines[at] ?? "") <= indent) break;
+      end = at + 1;
+    }
+    blocks.push({ recipe, start: index + 1, end });
+  });
+  return blocks;
+}
+
+/**
+ * Unit 3's names, read where they do not exist (a NameError): a recipe called above its `def`, one of the task's
+ * recipes that no `def` makes yet, and an ingredient or a box that only lives inside a recipe (its "kitchen"), used
+ * outside it. Null for anything else.
+ */
+function explainRecipeName(
+  name: string,
+  code: string,
+  text: string,
+  line: number | null,
+  raw: string,
+  context?: ExplainContext,
+): CourseExplanation | null {
+  const blocks = recipeBlocks(code);
+  const called = new RegExp(`(^|[^\\w.])${escapeRegExp(name)}\\s*\\(`).test(maskStrings(codePart(text)));
+  const own = blocks.find((block) => block.recipe === name);
+  if (called && own && line !== null && own.start > line) {
+    return explain(
+      "recipe-called-too-early",
+      "Called too early",
+      `Line ${line} calls \`${name}\`, but its \`def\` is only on line ${own.start}. Python runs from top to bottom, so move the recipe above the line that calls it.`,
+      raw,
+    );
+  }
+  if (called && !own && (context?.names ?? []).includes(name)) {
+    return explain(
+      "recipe-not-made-yet",
+      "Recipe not made yet",
+      `\`${name}\` is one of this task's recipes, but no \`def\` line makes it yet. Write it with \`def\`${line ? ` above line ${line}, the line that calls it` : ""}.`,
+      raw,
+    );
+  }
+  const defined = definedNames(code);
+  const made = defined.filter((entry) => entry.name === name);
+  const body = codePart(text).trim();
+  const list = (names: string[]) => names.map((entry) => `\`${entry}\``).join(names.length === 2 ? " and " : ", ");
+  // `max_fuel_for = cells * 5`: one of the task's recipes made with `=`, the way a box is made, so Python reads its
+  // right side now and finds no `cells`. Making `cells` first would only turn the recipe into a box.
+  const boxed = body.match(/^([A-Za-z_]\w*)\s*=(?!=)\s*(.+)$/);
+  const asBox = boxed && !blocks.some((block) => block.recipe === boxed[1]) ? taskRecipe(boxed[1], code, context) : null;
+  if (asBox && boxed) {
+    return explain(
+      "recipe-like-math",
+      "A recipe starts with def",
+      `${lineWord(line)} makes \`${boxed[1]}\` with \`=\`, the way a box is made. ${recipeShape(asBox, boxed[2])}`,
+      raw,
+    );
+  }
+  const fromExample = exampleOnlyNames(context).includes(name);
+  // No line makes `name` at all.
+  if (made.length === 0 && line !== null) {
+    // `get_greeting = greeting`: the store written the wrong way round, a recipe's name on the left of `=`.
+    const reversed = body.match(/^([A-Za-z_]\w*)\s*=(?!=)\s*([A-Za-z_]\w*)$/);
+    if (!fromExample && reversed && reversed[2] === name && blocks.some((block) => block.recipe === reversed[1])) {
+      const needs = recipeIngredients(code, reversed[1]) ?? [];
+      return explain(
+        "store-backwards",
+        "Store it the other way",
+        `${lineWord(line)} puts \`${name}\` into \`${reversed[1]}\`, the wrong way round, so Python looks for a box \`${name}\` that no line makes. The new box goes on the left of \`=\`, the call on the right: ${needs.length === 0 ? `\`${name} = ${reversed[1]}()\`` : `\`${name} = ${reversed[1]}(...)\`, with one value per ingredient`}`,
+        raw,
+      );
+    }
+    // `return result` inside a recipe whose own box is `total` (RNM): never "put quotes around it". A name copied from
+    // the example (or a hint's Teach me example) gets this row too, so `return result` after `fuel = ...` points at
+    // `fuel`, wherever the crash shows up (the check's call, or the try line's).
+    const inside = blocks.filter((block) => line > block.start && line <= block.end).at(-1);
+    const read = new RegExp(`(^|[^\\w.])${escapeRegExp(name)}(?![\\w(])`);
+    if (inside && /^return\b/.test(body) && read.test(maskStrings(body))) {
+      const ingredients = recipeIngredients(code, inside.recipe) ?? [];
+      const boxes = [
+        ...new Set(defined.filter((entry) => entry.line > inside.start && entry.line < line).map((entry) => entry.name)),
+      ].filter((box) => !ingredients.includes(box));
+      // One or two letters off one of the recipe's own names: a spelling slip, which keeps its own row.
+      if (!fromExample && closeName(name, [...boxes, ...ingredients])) return null;
+      const lead = fromExample
+        ? `\`${name}\` comes from Mar'tu's example.`
+        : `${lineWord(line)} hands back \`${name}\`, but no line in \`${inside.recipe}\` makes a box by that name.`;
+      if (boxes.length > 0) {
+        return explain(
+          "not-in-recipe",
+          "Not a box in this recipe",
+          `${lead} ${boxes.length === 1 ? `This recipe's box is ${list(boxes)}: hand that back.` : `This recipe's boxes are ${list(boxes)}: hand back the one that holds the answer.`}`,
+          raw,
+        );
+      }
+      if (ingredients.length > 0) {
+        return explain(
+          "not-in-recipe",
+          "Not a name in this recipe",
+          `${fromExample ? `${lead} \`${inside.recipe}\` has no box by that name.` : `${lineWord(line)} hands back \`${name}\`, but \`${inside.recipe}\` has no box or ingredient by that name.`} ${ingredients.length === 1 ? `Its ingredient is ${list(ingredients)}` : `Its ingredients are ${list(ingredients)}`}: work the answer out from ${ingredients.length === 1 ? "that" : "those"}.`,
+          raw,
+        );
+      }
+    }
+  }
+  // Every line that makes `name` is inside one recipe (or is its `def` line, as an ingredient), and this line is not.
+  const home = made.length > 0 ? blocks.find((block) => made[0].line >= block.start && made[0].line <= block.end) : undefined;
+  if (!home || line === null || (line >= home.start && line <= home.end) || home.recipe === name) return null;
+  if (!made.every((entry) => entry.line >= home.start && entry.line <= home.end)) return null;
+  const ingredient = made.some((entry) => entry.line === home.start);
+  // The line sits inside ANOTHER recipe (`return total` in `max_fuel_for`, when `total` is `max_mana_for`'s box): the
+  // advice is that recipe's own names, never "out here, catch what it hands back".
+  const here = blocks.filter((block) => line > block.start && line <= block.end).at(-1);
+  if (here && here.recipe !== home.recipe) {
+    const hereIngredients = recipeIngredients(code, here.recipe) ?? [];
+    const hereBoxes = [
+      ...new Set(defined.filter((entry) => entry.line > here.start && entry.line < line).map((entry) => entry.name)),
+    ].filter((box) => !hereIngredients.includes(box));
+    const belongs = `\`${name}\` belongs to \`${home.recipe}\`${ingredient ? " (it is one of its ingredients)" : ""}, so only that recipe can use it.`;
+    const instead = /^return\b/.test(body) && hereBoxes.length > 0
+      ? `Inside \`${here.recipe}\`, hand back its own box, \`${hereBoxes.at(-1)}\`.`
+      : hereIngredients.length > 0
+        ? `Inside \`${here.recipe}\`, use its own ${hereIngredients.length === 1 ? "ingredient" : "ingredients"}, ${list(hereIngredients)}${hereBoxes.length > 0 ? `, and its own ${hereBoxes.length === 1 ? "box" : "boxes"}, ${list(hereBoxes)}` : ""}.`
+        : `Inside \`${here.recipe}\`, make what it needs there, or hand it over as an ingredient.`;
+    return explain("made-inside-recipe", "Another recipe's name", `${belongs} ${instead}`, raw);
+  }
+  if (ingredient) {
+    const lead = `\`${name}\` is an ingredient of \`${home.recipe}\`, so it only exists inside the recipe while a call runs it. Line ${line} is outside the recipe`;
+    // `warn(hero_name)`: the call itself hands the ingredient over, so the call needs a value of its own.
+    if (new RegExp(`(^|[^\\w.])${escapeRegExp(home.recipe)}\\s*\\(`).test(maskStrings(body))) {
+      return explain("made-inside-recipe", "Only inside the recipe", `${lead}. Out here, hand over a value itself in the call.`, raw);
+    }
+    // `print(hero_name + ", get inside!")` at the bottom, while `pass` still sits in `warn`: the line belongs inside.
+    const steps = (code ?? "").split("\n").slice(home.start, home.end).map((row) => codePart(row).trim()).filter(Boolean);
+    const where = steps.length === 1 && steps[0] === "pass" ? ", in place of `pass`, four spaces in" : ", four spaces in";
+    return explain("made-inside-recipe", "Only inside the recipe", `${lead}: move this line inside \`${home.recipe}\`${where}.`, raw);
+  }
+  return explain(
+    "made-inside-recipe",
+    "Only inside the recipe",
+    `\`${name}\` is made inside \`${home.recipe}\`, so it only exists inside that recipe. Line ${line} is outside it. Out here, catch what the recipe hands back in a box of your own: the call goes on the right of \`=\`.`,
+    raw,
+  );
+}
+
+/** `return` with no spaces in front, under a recipe: it fell out of the recipe (Python: "'return' outside function"). */
+function explainReturnOutside(code: string, line: number | null, raw: string): CourseExplanation {
+  const above = line ? recipeBlocks((code ?? "").split("\n").slice(0, line - 1).join("\n")).at(-1) : undefined;
+  if (above && line && above.end === line - 1) {
+    return explain(
+      "indent",
+      "Indent the return",
+      `Line ${line}'s \`return\` has no spaces in front, so it is outside the recipe \`${above.recipe}\`. Give it the same spaces as the lines above it.`,
+      raw,
+    );
+  }
+  return explain(
+    "indent",
+    "return goes in a recipe",
+    `${lineWord(line)} has \`return\` outside any recipe. \`return\` only works inside a recipe (function), indented under its \`def\` line, to hand a value back.`,
+    raw,
+  );
+}
+
 function explainSyntax(
   message: string,
   type: string,
@@ -1374,6 +2107,10 @@ function explainSyntax(
     );
   }
   if (/unterminated string literal|eol while scanning string literal/.test(lower)) {
+    // Unit 5: a sheet's line (`"name: "Gearshift",`, `"name": "Gearshift,`): the quote closes before the colon or
+    // the comma, never at the end of the line, where the line would still be broken.
+    const sheet = unitAtLeast(context, DICTS_UNIT_ORDER) ? explainSheetQuote(code, text, line, raw) : null;
+    if (sheet) return sheet;
     return quotesProblem(text, line, raw, code, context);
   }
   const curly = message.match(/invalid character '([“”‘’])'/);
@@ -1406,8 +2143,41 @@ function explainSyntax(
   const backwards = explainBackwardsSign(text, line, raw);
   if (backwards) return backwards;
 
-  const defFix = defForVariable(text);
+  // Unit 5: a sheet's own slips (`"name" = "Lucky",`, `spell_book(spell_name) = spell`, a missing colon or comma inside
+  // `{ }`, bare words as a key or a value), before the box, recipe and `==` rows that would answer them wrongly.
+  if (unitAtLeast(context, DICTS_UNIT_ORDER)) {
+    const sheet = explainSheetSyntax(message, code, text, line, raw, context);
+    if (sheet) return sheet;
+  }
+
+  // From Unit 3 on, a `def name(` line is a recipe being written: never "make a variable" advice there.
+  const recipeHeader = unitAtLeast(context, FUNCTIONS_UNIT_ORDER) && RECIPE_HEADER.test(codePart(text));
+  if (recipeHeader && /^invalid syntax/.test(lower)) {
+    const ingredient = explainQuotedIngredient(text, line, raw, context);
+    if (ingredient) return ingredient;
+  }
+  // `max_fuel_for(cells) = cells * 5`: before `compare-with-double-equals`, which would say "use ==".
+  if (unitAtLeast(context, FUNCTIONS_UNIT_ORDER)) {
+    const math = explainRecipeLikeMath(message, text, line, raw);
+    if (math) return math;
+    if (/'return' outside function/.test(lower)) return explainReturnOutside(code, line, raw);
+    // `def max_fuel_for(cells) = cells * 5`, `def max_fuel_for = cells * 5`, `def ("say_steady"):`: a recipe, written
+    // half like a box. Never "make a box" advice, and never "add a colon" again and again.
+    const recipe = explainDefLikeMath(text, line, raw) ?? explainRecipeMadeAsBox(text, code, line, raw, context);
+    if (recipe) return recipe;
+  }
+
+  const defFix = recipeHeader ? null : defForVariable(text);
   if (defFix && printOnlyTask(context)) return defInPrintTask(text, raw);
+  // Unit 3 on, in the unit's words: def makes recipes, = makes boxes.
+  if (defFix && unitAtLeast(context, FUNCTIONS_UNIT_ORDER)) {
+    return explain(
+      "def-for-variable",
+      "def makes recipes",
+      `\`def\` makes recipes (functions), not boxes. To make a box, write the name, an equals sign, then the value, with no \`def\`: \`${defFix}\``,
+      raw,
+    );
+  }
   if (defFix) {
     return explain(
       "def-for-variable",
@@ -1417,12 +2187,23 @@ function explainSyntax(
     );
   }
 
+  if (/^invalid syntax/.test(lower)) {
+    const keyword = explainKeywordShape(text, line, raw);
+    if (keyword) return keyword;
+  }
+
   const shape = explainNameShape(text, line, raw);
   if (shape) return shape;
 
   if (/^invalid syntax/.test(lower)) {
     const chain = explainChain(code, text, line, raw);
     if (chain) return chain;
+  }
+
+  // Unit 4: `chalk_wall(2) = 47`, round brackets after a list's name (before the `==` row's "use two equals signs").
+  if (unitAtLeast(context, LISTS_UNIT_ORDER)) {
+    const list = explainListAssignedWithCall(message, code, text, line, raw);
+    if (list) return list;
   }
 
   // `said_yes = answer.lower() = "yes"`, `assert passed = False`: one `=` where a question needs `==`.
@@ -1492,6 +2273,12 @@ function explainSyntax(
     );
   }
   if (/perhaps you forgot a comma/.test(lower)) {
+    // Unit 4: bare words inside [ ] (`[storm kick, 7]`, or an item of a list over several lines), before the
+    // missing-comma rows: they are words to quote, not two items.
+    if (unitAtLeast(context, LISTS_UNIT_ORDER)) {
+      const words = explainUnquotedInList(code, text, line, raw);
+      if (words) return words;
+    }
     // A list or dictionary over several lines: the comma at the end of this line is missing.
     const open = openBefore(code, line);
     const body = codePart(text);
@@ -1508,8 +2295,16 @@ function explainSyntax(
     if (option) return option;
     const unquoted = explainUnquoted(text, code, line, raw);
     if (unquoted) return unquoted;
+    // Unit 4: `chalk_wall = [48 48, 47]`, numbers side by side in a list (never "or + to join text").
+    if (unitAtLeast(context, LISTS_UNIT_ORDER)) {
+      const comma = explainListMissingComma(text, line, raw);
+      if (comma) return comma;
+    }
     const inside = text.match(/\(([^()"']*)\)/)?.[1]?.trim();
-    if (inside && /^[A-Za-z0-9][A-Za-z0-9 ,!?.']*[A-Za-z0-9!?.]$/.test(inside) && /[A-Za-z]/.test(inside) && inside.includes(" ")) {
+    // In a call that takes several values (not print), the commas split the values: never quote them together.
+    const callee = codePart(text).trim().match(/^(?:[A-Za-z_]\w*\s*=(?!=)\s*)?([A-Za-z_][\w.]*)\s*\(/)?.[1];
+    const several = callee !== undefined && callee !== "print" && (inside ?? "").includes(",");
+    if (inside && !several && /^[A-Za-z0-9][A-Za-z0-9 ,!?.']*[A-Za-z0-9!?.]$/.test(inside) && /[A-Za-z]/.test(inside) && inside.includes(" ")) {
       return explain("unquoted-words", "Missing quotes?", `If ${inside} is text, put quotes around it: "${inside}". Text needs quotes.`, raw);
     }
     return explain(
@@ -1577,6 +2372,10 @@ function explainSyntax(
     );
   }
   if (/expected '\('/.test(lower) && /^\s*def\b/.test(text)) {
+    const recipe = unitAtLeast(context, FUNCTIONS_UNIT_ORDER) ? codePart(text).match(/^\s*def\s+([A-Za-z_]\w*)\s*:?\s*$/)?.[1] : undefined;
+    if (recipe) {
+      return explain("def-needs-brackets", "def needs ( )", `A \`def\` line needs ( ) after the recipe's name, then a colon: \`def ${recipe}():\``, raw);
+    }
     return explain("def-needs-brackets", "def needs ( )", `A def line needs ( ) after the function's name, then a colon, like this: def greet():`, raw);
   }
   if (/expected ':'/.test(lower)) {
@@ -1586,9 +2385,14 @@ function explainSyntax(
     return explainStuckNumber(text, code, line, raw);
   }
   if (/expected an indented block|unexpected indent|unindent does not match/.test(lower) || type === "IndentationError") {
-    return explainIndent(message, line, raw);
+    return explainIndent(message, line, raw, unitAtLeast(context, FUNCTIONS_UNIT_ORDER) ? code : "");
   }
   if (/^invalid syntax/.test(lower)) {
+    // Unit 4: the wall's row copied as it looks (`hours = 48 48 47`), and `chalk_wall.pop[]`.
+    if (unitAtLeast(context, LISTS_UNIT_ORDER)) {
+      const list = explainNumbersSideBySide(text, line, raw) ?? explainEmptySquareCall(code, text, line, raw);
+      if (list) return list;
+    }
     // `if hours_left < 3;`: a semicolon typed for the colon.
     if (/;\s*$/.test(codePart(text)) && headerWithColon(code, text, line)) return explainMissingColon(code, text, line, raw);
     const option = explainUnquotedOption(text, line, raw);
@@ -1626,8 +2430,25 @@ function explainSyntax(
   );
 }
 
-function explainIndent(message: string, line: number | null, raw: string): CourseExplanation {
+/** `code` only from Unit 3 on (recipes): it reads a recipe with no step yet. Without it, the older rows. */
+function explainIndent(message: string, line: number | null, raw: string, code = ""): CourseExplanation {
   const after = message.match(/expected an indented block after (.+?) on line (\d+)/);
+  // A recipe with no step under its def line (its `pass` deleted, or only a note left): indenting the next line
+  // (a blank, a note, or the next `def`) would not mend it, so the rule is what to say.
+  const header = after && after[1] === "function definition" ? Number(after[2]) : null;
+  const between = header !== null && line !== null ? (code ?? "").split("\n").slice(header, line - 1) : [];
+  const recipe = header !== null ? codePart(sourceLine(code, header)).match(/^\s*def\s+([A-Za-z_]\w*)/)?.[1] : undefined;
+  if (recipe && between.length > 0 && between.every((row) => codePart(row).trim() === "")) {
+    // A note indented under the def line is the recipe's only "step" (a note above the next def is not).
+    const indent = indentOf(sourceLine(code, header ?? 0));
+    const note = between.some((row) => row.trim().startsWith("#") && indentOf(row) > indent) ? ": a note with # doesn't count" : "";
+    return explain(
+      "indent",
+      "A recipe needs a step",
+      `\`${recipe}\` has no steps yet, and a recipe needs at least one step inside${note}. Write its step under the def line, four spaces in (or put \`pass\` back while you think).`,
+      raw,
+    );
+  }
   if (after) {
     const what = after[1]
       .replace(/^'(\w+)' statement$/, "the $1")
@@ -1681,6 +2502,12 @@ function explainName(
   const forgotImport = message.match(/Did you forget to import '([^']+)'/)?.[1];
   if (forgotImport) {
     return explain("missing-import", "Missing import", `To use ${forgotImport}, add this line at the top of your code: import ${forgotImport}`, raw);
+  }
+
+  // Unit 5: a key or a text value with no quotes, in a sheet (before the capital-letter and near-name rows).
+  if (unitAtLeast(context, DICTS_UNIT_ORDER)) {
+    const sheet = explainSheetName(name, code, text, line, raw, context);
+    if (sheet) return sheet;
   }
 
   // `roll = randint(1, 6)`: randint lives inside random.
@@ -1747,6 +2574,12 @@ function explainName(
     );
   }
 
+  // Unit 3 on: a recipe called above its `def` or not made yet, or a name that only lives inside a recipe.
+  if (unitAtLeast(context, FUNCTIONS_UNIT_ORDER)) {
+    const recipe = explainRecipeName(name, code, text, line, raw, context);
+    if (recipe) return recipe;
+  }
+
   const defined = definedNames(code);
   const builtins = suggestableBuiltins(code, context);
   const known = [...defined.map((entry) => entry.name), ...builtins];
@@ -1796,6 +2629,21 @@ function explainName(
   // `print("Hello, " + traveler)` in a task whose variable is `name`: copied from the worked example.
   if (exampleOnlyNames(context).includes(name) && !defined.some((entry) => entry.name === name)) {
     const assignedHere = text.match(/^\s*([A-Za-z_]\w*)\s*=(?!=)/)?.[1];
+    // `note = get_note()`, copied from a Teach me hint: a recipe called by the example's name. Point at the task's own
+    // recipe that shares a word with it (`get_greeting`), when there is one.
+    const calledHere = new RegExp(`(^|[^\\w.])${escapeRegExp(name)}\\s*\\(`).test(maskStrings(codePart(text)));
+    const recipes = calledHere && unitAtLeast(context, FUNCTIONS_UNIT_ORDER)
+      ? (context?.names ?? []).filter((task) => task !== name && taskRecipe(task, code, context))
+      : [];
+    const theirs = similarBox(name, recipes.map((task) => ({ name: task, line: 0 })), [name]);
+    if (theirs) {
+      return explain(
+        "example-name",
+        "Name from the example",
+        `\`${name}\` comes from Mar'tu's example. This task's recipe is \`${theirs.name}\`: call that one, letter for letter.`,
+        raw,
+      );
+    }
     return explain(
       "example-name",
       "Name from the example",
@@ -1882,21 +2730,73 @@ function explainName(
       "Unknown function",
       beforeFunctions
         ? `Python doesn't know a function called ${name}. Check the spelling against the task, letter for letter: Python's own functions, like print(), are all small letters.`
-        : `Python doesn't know a function called ${name}. Check the spelling, or make it with def before you use it.`,
+        : unitAtLeast(context, FUNCTIONS_UNIT_ORDER)
+          ? `Python doesn't know a recipe (function) called ${name}. Check the spelling, or make it with def before you use it.`
+          : `Python doesn't know a function called ${name}. Check the spelling, or make it with def before you use it.`,
       raw,
     );
   }
   // A lowercase word in code that already made variables is often a name copied from somewhere else
   // (the example, a friend's screen), so offer both fixes, the task's variables first.
   const assignedHere = text.match(/^\s*([A-Za-z_]\w*)\s*=(?!=)/)?.[1];
+  // Unit 3 on, inside a recipe: a name like one of its ingredients (`hero` for `hero_name`, `damage` for
+  // `base_damage`). Quotes would print the word itself on every call, so the fix is the ingredient, letter for letter.
+  const kitchen = unitAtLeast(context, FUNCTIONS_UNIT_ORDER) && line !== null
+    ? recipeBlocks(code).filter((block) => line > block.start && line <= block.end).at(-1)
+    : undefined;
+  const ingredients = kitchen ? (recipeIngredients(code, kitchen.recipe) ?? []) : [];
+  const likeIngredient = kitchen
+    ? similarBox(name, ingredients.map((entry) => ({ name: entry, line: kitchen.start })), [name])?.name
+    : undefined;
+  if (kitchen && likeIngredient) {
+    const its = ingredients.length === 1
+      ? `Its ingredient is \`${likeIngredient}\`: use it letter for letter.`
+      : `Its ingredients are ${ingredients.map((entry) => `\`${entry}\``).join(ingredients.length === 2 ? " and " : ", ")}: use \`${likeIngredient}\`, letter for letter.`;
+    return explain("unknown-name", "Not an ingredient", `\`${name}\` is not an ingredient of \`${kitchen.recipe}\`. ${its}`, raw);
+  }
   const earlier = taskNamesInstead(code, line, context, [name, ...(assignedHere ? [assignedHere] : [])]);
   if (/^[a-z][a-z0-9_]*$/.test(name) && earlier.length > 0) {
+    // `mana - mana_cost`: a number is wanted there, so quotes (text) would only lead to the next crash.
+    const quotes = inMath(text, name) ? "" : ` If it's text, put quotes around it: "${name}"`;
+    // Only names a letter or two away are worth offering as "use this one": a list of unrelated task names
+    // (bad_line, error_type ...) sends the student after the wrong thing.
+    const nearTask = (context?.names ?? []).filter((task) => task !== name && editDistance(task.toLowerCase(), name.toLowerCase()) <= 2);
+    if (nearTask.length > 0) {
+      return explain(
+        "unknown-name",
+        "Unknown name",
+        `Python doesn't know ${name}. If it's a variable, use this task's name: ${nearTask.slice(0, 2).join(" or ")} (spelled exactly).${quotes}`,
+        raw,
+      );
+    }
+    const similar = similarBox(name, defined, [name, ...(assignedHere ? [assignedHere] : [])]);
+    // `scout.step(north)`: a lone word inside a call's brackets. A recipe's name (`step_north`) is never the box it
+    // meant: lead with the quotes, then a box of the code's own, if one is like it.
+    const recipeNames = new Set(recipeBlocks(code).map((block) => block.recipe));
+    if (similar && recipeNames.has(similar.name) && loneArgument(text, name)) {
+      const box = similarBox(name, defined.filter((entry) => !recipeNames.has(entry.name)), [name, ...(assignedHere ? [assignedHere] : [])]);
+      const fixed = quoteLoneArgument(text, name);
+      return explain(
+        "unquoted-word",
+        "Missing quotes?",
+        `Python doesn't know \`${name}\`: no line in your code makes it. If it's text, put quotes around it: \`${fixed}\`${box ? ` If you meant a box, line ${box.line} makes \`${box.name}\`.` : ""}`,
+        raw,
+      );
+    }
+    if (similar) {
+      return explain(
+        "unknown-name",
+        "Unknown name",
+        `Python doesn't know ${name}: no line in your code makes it. Line ${similar.line} makes \`${similar.name}\`, which has a similar name.${quotes}`,
+        raw,
+      );
+    }
     const shown = earlier.slice(-3).join(", ");
     const whose = context?.names?.length ? "this task's names" : "one your code made";
     return explain(
       "unknown-name",
       "Unknown name",
-      `Python doesn't know ${name}. If it's a variable, use ${whose}: ${shown} (spelled exactly). If it's text, put quotes around it: "${name}"`,
+      `Python doesn't know ${name}. If it's a variable, use ${whose}: ${shown} (spelled exactly).${quotes}`,
       raw,
     );
   }
@@ -1911,8 +2811,2081 @@ function explainName(
   return explain("unknown-name", "Unknown name", `Python doesn't know ${name} yet${onLine(line)}. Make it first (${name} = ...), or check the spelling.`, raw);
 }
 
+/** `name` is one whole value inside a call's brackets on this line: `scout.step(north)`, `heal(hero, 5)`. */
+function loneArgument(text: string, name: string): boolean {
+  const mask = maskStrings(codePart(text));
+  return new RegExp(`[(,]\\s*${escapeRegExp(name)}\\s*[,)]`).test(mask);
+}
+
+/** The line with that lone word in quotes: `scout.step("north")`. */
+function quoteLoneArgument(text: string, name: string): string {
+  const body = codePart(text).trim();
+  const mask = maskStrings(body);
+  const at = mask.search(new RegExp(`(?<=[(,]\\s*)${escapeRegExp(name)}(?=\\s*[,)])`));
+  return at < 0 ? body : `${body.slice(0, at)}"${name}"${body.slice(at + name.length)}`;
+}
+
+/** `name` is a number in math on this line (`mana - mana_cost`, `cost * 2`, `3 + bonus`): text can't go there. */
+function inMath(text: string, name: string): boolean {
+  const mask = maskStrings(codePart(text));
+  const at = escapeRegExp(name);
+  if (new RegExp(`(?:[-*/%]\\s*${at}(?![\\w.(])|(?<![\\w.])${at}\\s*[-*/%])`).test(mask)) return true;
+  return new RegExp(`(?:\\d\\s*\\+\\s*${at}(?![\\w.(])|(?<![\\w.])${at}\\s*\\+\\s*\\d)`).test(mask);
+}
+
+/**
+ * A box the code makes whose name shares a word with `name` (`spell_cost` for `mana_cost`): the same ending
+ * first, then the same start, the nearest line first. Null when no box shares a word.
+ */
+function similarBox(name: string, defined: Definition[], skip: string[]): Definition | null {
+  const parts = name.toLowerCase().split("_").filter((part) => part.length >= 3);
+  if (parts.length === 0) return null;
+  const last = parts[parts.length - 1];
+  const first = parts[0];
+  const boxes = defined.filter((entry) => !skip.includes(entry.name) && !entry.name.startsWith("_"));
+  const words = (entry: Definition) => entry.name.toLowerCase().split("_");
+  const ending = boxes.find((entry) => words(entry).length > 1 && words(entry)[words(entry).length - 1] === last);
+  if (ending) return ending;
+  return boxes.find((entry) => words(entry).includes(first) || words(entry).includes(last)) ?? null;
+}
+
+/**
+ * A name called on this line (`max_fuel_for(4)`) that the code only ever makes with `=` above it (a box, not a
+ * recipe): the last line that makes it, and that line's right side. Null when no such name is called.
+ */
+function calledBox(code: string, text: string, line: number | null): { name: string; line: number; value: string } | null {
+  const rows = (code ?? "").split("\n");
+  const recipes = new Set(recipeBlocks(code).map((block) => block.recipe));
+  for (const call of maskStrings(codePart(text)).matchAll(/(?<![\w.])([A-Za-z_]\w*)\s*\(/g)) {
+    const name = call[1];
+    if (recipes.has(name) || KEYWORDS.has(name)) continue;
+    const box = new RegExp(`^\\s*${escapeRegExp(name)}\\s*=(?!=)\\s*(.+)$`);
+    let found: { name: string; line: number; value: string } | null = null;
+    rows.forEach((row, index) => {
+      const made = codePart(row).match(box);
+      if (made && (line === null || index + 1 < line)) found = { name, line: index + 1, value: made[1].trim() };
+    });
+    if (found) return found;
+  }
+  return null;
+}
+
 function inputNames(code: string): string[] {
   return [...(code ?? "").matchAll(/^\s*([A-Za-z_]\w*)\s*=\s*input\s*\(/gm)].map((match) => match[1]);
+}
+
+/**
+ * `def hero(): "Lucky"` (the student followed Python's "expected '('"), then `print(hero + " is ready.")`: a
+ * TypeError about a 'function'. The slip is the def line, so it gets the def-for-variable advice.
+ */
+function explainRecipeUsedAsBox(message: string, code: string, text: string, raw: string): CourseExplanation | null {
+  if (!/'function'/.test(message)) return null;
+  const used = namesOnLine(text);
+  const lines = (code ?? "").split("\n");
+  for (let at = 0; at < lines.length; at += 1) {
+    const header = codePart(lines[at] ?? "").trim().match(/^def\s+([A-Za-z_]\w*)\s*\(\s*\)\s*:\s*(.*)$/);
+    if (!header || !used.includes(header[1])) continue;
+    const value = header[2].trim() || lines.slice(at + 1).map((row) => codePart(row).trim()).find(Boolean) || "";
+    const shown = value.replace(/^return\s+/, "");
+    const fix = shown && !/^(pass|print\b)/.test(shown) ? `${header[1]} = ${shown}` : `${header[1]} = "your value"`;
+    return explain(
+      "def-for-variable",
+      "def makes recipes",
+      `Line ${at + 1} uses \`def\`, so \`${header[1]}\` is a recipe, not a box, and line ${errorLine(raw) ?? "?"} can't use it as a value. \`def\` makes recipes, not boxes. A box needs only a name, \`=\` and a value, with no \`def\` and no brackets: \`${fix}\``,
+      raw,
+    );
+  }
+  return null;
+}
+
+/* ---------------------------------------------------------------------------------------------- */
+/* Lists (Unit 4): brackets, + and the list tools                                                  */
+/* ---------------------------------------------------------------------------------------------- */
+
+/** The tools a student calls (Python's own and the list and text methods): `name[...]` after one is a call slip. */
+const CALLED_TOOLS = new Set([
+  ...COMMON_BUILTINS.filter((name) => !["True", "False", "None", "random", "math"].includes(name)),
+  "append", "count", "remove", "insert", "pop", "sort", "index", "extend", "copy", "clear", "reverse",
+  "lower", "upper", "capitalize", "title", "strip", "randint",
+]);
+
+/** Unit 5: a sheet's own tools, called with round brackets (`lucky.get("glug", 0)`). */
+const SHEET_TOOLS: ReadonlySet<string> = new Set(["get", "keys", "values", "items"]);
+
+/**
+ * Where the bracket that opens at `open` in `mask` closes (strings already masked), or -1. `open` is the index of
+ * a `(` or `[`.
+ */
+function matchingBracket(mask: string, open: number): number {
+  const opener = mask[open];
+  const closer = CLOSER[opener];
+  let depth = 0;
+  for (let index = open; index < mask.length; index += 1) {
+    if (mask[index] === opener) depth += 1;
+    else if (mask[index] === closer) {
+      depth -= 1;
+      if (depth === 0) return index;
+    }
+  }
+  return -1;
+}
+
+/**
+ * The names the code makes as lists (`chalk_wall = [48, ...]`, also over several lines, `d8 = list(range(1, 9))`,
+ * `pairs = sorted(...)`, `both = a + [b]`), with a flag for a list of lists (its first item is itself a `[ ]`).
+ */
+function listsMade(code: string): Map<string, { nested: boolean }> {
+  const found = new Map<string, { nested: boolean }>();
+  const rows = (code ?? "").split("\n");
+  rows.forEach((row, index) => {
+    const made = codePart(row).match(/^\s*([A-Za-z_]\w*)\s*=(?!=)\s*(\[|list\s*\(|sorted\s*\(|[A-Za-z_]\w*\s*\+\s*\[|[A-Za-z_]\w*\s*\[[^\]]*:)/);
+    if (!made) return;
+    // A list of lists: the first thing after its `[` (on this line or the next ones) is another `[`.
+    const after = [codePart(row).slice((made.index ?? 0) + made[0].length), ...rows.slice(index + 1, index + 3)].join(" ");
+    found.set(made[1], { nested: made[2] === "[" && /^\s*\[/.test(after) });
+  });
+  return found;
+}
+
+/**
+ * `name(...)` in `text` with its round brackets made square: `chalk_wall(0)` -> `chalk_wall[0]`. Two values
+ * (`chalk_wall(0, 2)`) become a run of items, `[0:2]`, or row then item, `[2][0]`, for a list of lists (`nested`).
+ */
+function squareBracketed(text: string, name: string, nested = false): { call: string; fixed: string; line: string } | null {
+  const body = codePart(text);
+  const mask = maskStrings(body);
+  const at = mask.search(new RegExp(`(?<![\\w.])${escapeRegExp(name)}\\s*\\(`));
+  if (at < 0) return null;
+  const open = mask.indexOf("(", at);
+  const close = matchingBracket(mask, open);
+  if (close < 0) return null;
+  const inside = body.slice(open + 1, close);
+  const parts = splitTopLevel(inside);
+  const two = parts && parts.parts.length === 2 && parts.marks[0] === "," ? parts.parts : null;
+  const read = two ? (nested ? `${name}[${two[0]}][${two[1]}]` : `${name}[${two[0]}:${two[1]}]`) : `${name}[${inside}]`;
+  return {
+    call: body.slice(at, close + 1),
+    fixed: read,
+    line: `${body.slice(0, at)}${read}${body.slice(close + 1)}`.trim(),
+  };
+}
+
+/**
+ * `chalk_wall(2) = 47` ("cannot assign to function call"): round brackets after a list's name, on the left of `=`.
+ * Only for a name the code makes as a list, never a recipe or one of Python's tools (Unit 3's recipe-like-math row
+ * keeps `max_fuel_for(cells) = ...`). Before the `==` row, whose "use two equals signs" is wrong advice here.
+ */
+function explainListAssignedWithCall(message: string, code: string, text: string, line: number | null, raw: string): CourseExplanation | null {
+  if (!/cannot assign to function call/i.test(message)) return null;
+  const body = codePart(text);
+  const at = singleEquals(maskStrings(body))[0];
+  const left = at === undefined ? "" : body.slice(0, at).trim();
+  const name = left.match(/^([A-Za-z_]\w*)\s*\(/)?.[1];
+  const list = name ? listsMade(code).get(name) : undefined;
+  if (!name || !list) return null;
+  const swapped = squareBracketed(text, name, list.nested);
+  if (!swapped || swapped.call.trim() !== left) return null;
+  return explain(
+    "list-needs-square-brackets",
+    "Square brackets for a list",
+    `${lineWord(line)} puts ( ) after \`${name}\`. To change one item, use square brackets: \`${swapped.line}\``,
+    raw,
+  );
+}
+
+/**
+ * "'list' object is not callable" (`chalk_wall(0)`, `wall(-1)` inside a recipe): the list read with round brackets.
+ * The name is the one called on the line that is not a recipe or one of Python's tools.
+ */
+function explainListCalled(code: string, text: string, line: number | null, raw: string): CourseExplanation | null {
+  const recipes = new Set(recipeBlocks(code).map((block) => block.recipe));
+  const lists = listsMade(code);
+  const called = [...maskStrings(codePart(text)).matchAll(/(?<![\w.])([A-Za-z_]\w*)\s*\(/g)]
+    .map((match) => match[1])
+    .filter((name) => !recipes.has(name) && !CALLED_TOOLS.has(name) && !KEYWORDS.has(name));
+  const name = called.find((entry) => lists.has(entry)) ?? called[0];
+  const swapped = name ? squareBracketed(text, name, lists.get(name)?.nested ?? false) : null;
+  if (!name || !swapped) return null;
+  return explain(
+    "list-needs-square-brackets",
+    "Square brackets for a list",
+    `${lineWord(line)} puts ( ) after \`${name}\`, so Python tries to call it like a recipe (function). \`${name}\` is a list. Read a list with square brackets: \`${swapped.fixed}\``,
+    raw,
+  );
+}
+
+/**
+ * "... is not subscriptable" on something that is called, never read (`chalk_wall.append[33]`, `sorted[...]`,
+ * `max[chalk_wall]`, `range[1, 9]`, a recipe): square brackets where the call needs round ones. `None` (from
+ * `x = wall.sort()`) keeps the older words.
+ */
+function explainToolWithSquareBrackets(
+  message: string,
+  code: string,
+  text: string,
+  line: number | null,
+  raw: string,
+  extra: ReadonlySet<string> = new Set(),
+): CourseExplanation | null {
+  if (!/^('(builtin_function_or_method|function|method)' object|type '\w+') is not subscriptable/.test(message)) return null;
+  const recipes = new Set(recipeBlocks(code).map((block) => block.recipe));
+  const body = codePart(text);
+  const mask = maskStrings(body);
+  for (const found of mask.matchAll(/(?<![\w.])((?:[A-Za-z_]\w*\.)*([A-Za-z_]\w*))\s*\[/g)) {
+    const tool = found[2];
+    if (!CALLED_TOOLS.has(tool) && !recipes.has(tool) && !extra.has(tool)) continue;
+    const open = (found.index ?? 0) + found[0].length - 1;
+    const close = matchingBracket(mask, open);
+    if (close < 0) continue;
+    const fixed = `${found[1]}(${body.slice(open + 1, close)})`;
+    return explain(
+      "call-needs-round-brackets",
+      "Round brackets for a call",
+      `${lineWord(line)} puts square brackets after \`${tool}\`, but \`${tool}\` is a tool you call, like \`print\`. Call it with round brackets: \`${fixed}\``,
+      raw,
+    );
+  }
+  return null;
+}
+
+/**
+ * "list indices must be integers or slices, not tuple" (`roster[2, 0]`, `chalk_wall[0, 2]`): a comma inside `[ ]`
+ * asks for two positions at once. The half that fits comes first: row then item for a list of lists, a colon for a
+ * run of items otherwise.
+ */
+function explainCommaInBrackets(message: string, code: string, text: string, line: number | null, raw: string): CourseExplanation | null {
+  if (!/indices must be integers or slices, not tuple/.test(message)) return null;
+  const body = codePart(text);
+  const mask = maskStrings(body);
+  for (const found of mask.matchAll(/(?<![\w.])([A-Za-z_]\w*)\s*\[/g)) {
+    const open = (found.index ?? 0) + found[0].length - 1;
+    const close = matchingBracket(mask, open);
+    const parts = close < 0 ? null : splitTopLevel(body.slice(open + 1, close));
+    if (!parts || parts.parts.length !== 2 || parts.marks[0] !== ",") continue;
+    const [first, second] = parts.parts;
+    const name = found[1];
+    const rows = `\`${name}[${first}][${second}]\``;
+    const run = `\`${name}[${first}:${second}]\``;
+    const nested = listsMade(code).get(name)?.nested ?? false;
+    const start = "Inside [ ], a comma asks for two positions at once.";
+    return explain(
+      "comma-in-brackets",
+      "One position per [ ]",
+      nested
+        ? `${start} Row then item takes two pairs of brackets: ${rows}. A run of items takes a colon: \`[0:2]\`.`
+        : `${start} A run of items takes a colon: ${run}. In a list of lists, row then item takes two pairs of brackets, like \`[2][0]\`.`,
+      raw,
+    );
+  }
+  return null;
+}
+
+/**
+ * 'can only concatenate list (not "int") to list' (`chalk_wall = chalk_wall + 33`): `+` joins two lists. A row of a
+ * list of lists on the left (`log[0] = log[0] + 2`) is a whole pair, not its score: the inner position is missing,
+ * and `.append()` would be the wrong advice.
+ */
+function explainListPlusItem(message: string, code: string, text: string, line: number | null, raw: string): CourseExplanation | null {
+  const kind = message.match(/can only concatenate list \(not "(\w+)"\) to list/)?.[1];
+  if (!kind) return null;
+  const body = codePart(text).trim();
+  const row = explainRowPlusItem(code, body, line, raw);
+  if (row) return row;
+  const same = body.match(/^([A-Za-z_]\w*)\s*=(?!=)\s*\1\s*\+\s*(.+)$/) ?? body.match(/^([A-Za-z_]\w*)\s*\+\s*(.+)$/);
+  const item = same?.[2]?.trim();
+  const fix = same && item && !/^\[/.test(item) ? `: \`${same[1]}.append(${item})\`` : "";
+  return explain(
+    "list-plus-item",
+    "+ joins two lists",
+    `${lineWord(line)} joins a list and one ${kind === "str" ? "piece of text" : "number"} with \`+\`. \`+\` joins two lists. To add one item, use \`.append()\`${fix}`,
+    raw,
+  );
+}
+
+/**
+ * "list.append() takes exactly one argument (2 given)" (`log.append("roll and rise", 6)`): one item at a time, so a
+ * pair goes in its own square brackets. "(0 given)" (`chalk_wall.count()`): the tool needs its value.
+ */
+function explainListToolValues(message: string, text: string, line: number | null, raw: string): CourseExplanation | null {
+  const tool = message.match(/^list\.(\w+)\(\) takes exactly one argument \((\d+) given\)/);
+  if (!tool) return null;
+  const [, name, given] = tool;
+  if (given === "0") {
+    return explain(
+      "wrong-number-of-values",
+      "One value inside ( )",
+      `\`.${name}()\`${onLine(line)} needs one value inside its round brackets: the value to ${name === "count" ? "count" : "use"}.`,
+      raw,
+    );
+  }
+  const body = codePart(text);
+  const mask = maskStrings(body);
+  const at = mask.search(new RegExp(`\\.\\s*${name}\\s*\\(`));
+  const open = at < 0 ? -1 : mask.indexOf("(", at);
+  const close = open < 0 ? -1 : matchingBracket(mask, open);
+  // `log.append(["roll and rise"], 6)`: a one-item list beside the rest is rebuilt as one pair, never `[["roll and rise"], 6]`.
+  const values = close < 0 ? null : splitTopLevel(body.slice(open + 1, close));
+  const items =
+    values && values.marks.every((mark) => mark === ",")
+      ? values.parts.map((part) => {
+          const inner = /^\[[\s\S]*\]$/.test(part) && matchingBracket(maskStrings(part), 0) === part.length - 1 ? splitTopLevel(part.slice(1, -1)) : null;
+          return inner && inner.parts.length === 1 && inner.parts[0] ? inner.parts[0] : part;
+        })
+      : null;
+  const inside = items ? items.join(", ") : close < 0 ? "" : body.slice(open + 1, close).trim();
+  const fix = close < 0 ? "" : `: \`${body.slice(0, open + 1).trim()}[${inside}]${body.slice(close).trim()}\``;
+  return explain(
+    "wrong-number-of-values",
+    "One item at a time",
+    `\`.${name}()\` adds one item, and line ${line ?? "?"} hands it ${given}. To add them as one item, put them in their own square brackets${fix}`,
+    raw,
+  );
+}
+
+/** "not enough / too many values to unpack (expected 3, got 2)" (`across, down, up = cabin`): one name per item. */
+function explainUnpackCount(message: string, line: number | null, raw: string): CourseExplanation | null {
+  const counts = message.match(/(?:not enough|too many) values to unpack \(expected (\d+), got (\d+)\)/);
+  if (!counts) return null;
+  return explain(
+    "wrong-number-of-values",
+    "One name per item",
+    `${lineWord(line)} has ${counts[1]} names on the left of \`=\`, but the right side holds ${counts[2]} items. Use one name per item: ${counts[2]} names.`,
+    raw,
+  );
+}
+
+/** "argument of type 'int' is not iterable" (`has_32 = chalk_wall in 32`): the value goes first, then `in`, then the list. */
+function explainInBackwards(message: string, text: string, line: number | null, raw: string): CourseExplanation | null {
+  if (!/argument of type '(int|float|bool)' is not iterable/.test(message)) return null;
+  const swapped = codePart(text).match(/^(\s*(?:[A-Za-z_]\w*\s*=(?!=)\s*)?)([A-Za-z_]\w*)\s+in\s+(-?\d+(?:\.\d+)?)\s*$/);
+  const fix = swapped ? `: \`${`${swapped[1]}${swapped[3]} in ${swapped[2]}`.trim()}\`` : ".";
+  return explain(
+    "wrong-kind-of-value",
+    "The value goes first",
+    `\`in\` asks whether a value is in a list, so the value goes first and the list after it${onLine(line)}${fix}`,
+    raw,
+  );
+}
+
+/** What each tool that goes in front of a list hands back (`sorted(chalk_wall)`, `max(chalk_wall)`). */
+const IN_FRONT: Record<string, string> = {
+  sorted: "It hands back a sorted copy.",
+  max: "It hands back the biggest item.",
+  min: "It hands back the smallest item.",
+  sum: "It hands back every item added up.",
+  len: "It hands back how many items there are.",
+};
+
+/**
+ * "'list' object has no attribute 'sorted'. Did you mean: 'sort'?" (`chalk_wall.sorted()`), and the same for `max`,
+ * `min`, `sum` and `len`: these tools go in front of the list, not after a dot. Python's "Did you mean 'sort'" would
+ * sort the wall itself, so it is not the advice.
+ */
+function explainToolAfterDot(message: string, text: string, line: number | null, raw: string): CourseExplanation | null {
+  const tool = message.match(/^'list' object has no attribute '(sorted|max|min|sum|len)'/)?.[1];
+  if (!tool) return null;
+  const owner = maskStrings(codePart(text)).match(new RegExp(`([A-Za-z_]\\w*(?:\\[[^\\]]*\\])*)\\s*\\.\\s*${tool}\\s*\\(\\s*\\)`))?.[1];
+  const fix = owner ? `${tool}(${owner})` : `${tool}(chalk_wall)`;
+  return explain(
+    "tool-after-dot",
+    `${tool} goes in front`,
+    `${lineWord(line)} writes \`${tool}\` after a dot. \`${tool}\` goes in front: \`${fix}\`. ${IN_FRONT[tool]}`,
+    raw,
+  );
+}
+
+/** "list.remove(x): x not in list" (`chalk_wall.remove(3)` for a position, or `.remove("99")` with quotes). */
+function explainRemoveMissing(text: string, line: number | null, raw: string): CourseExplanation {
+  const body = codePart(text);
+  const mask = maskStrings(body);
+  const at = mask.search(/\.\s*remove\s*\(/);
+  const open = at < 0 ? -1 : mask.indexOf("(", at);
+  const close = open < 0 ? -1 : matchingBracket(mask, open);
+  const value = close < 0 ? "" : body.slice(open + 1, close).trim();
+  const quoted = value.match(/^(["'])(-?\d+)\1$/);
+  const there = value ? `There is no ${value} on the list` : "That value is not on the list";
+  return explain(
+    "not-on-the-list",
+    "Not on the list",
+    quoted
+      ? `\`.remove()\`${onLine(line)} looks for that exact value. ${there}: in quotes it is text, and the list holds numbers. Ask first with \`in\`.`
+      : `\`.remove()\`${onLine(line)} looks for a value, not a position. ${there}. Ask first with \`in\`.`,
+    raw,
+  );
+}
+
+/**
+ * Bare words side by side inside `[ ]` ("Perhaps you forgot a comma?"): `log = [[storm kick, 7]]`, or one item of
+ * a list over several lines (`    brass lens,`). The same row as the words inside `( )`, for a list.
+ */
+function explainUnquotedInList(code: string, text: string, line: number | null, raw: string): CourseExplanation | null {
+  const body = codePart(text);
+  const mask = maskStrings(body);
+  const pieces: string[] = [];
+  // Each [ ] on the line, and the line itself when it sits inside a list that opened above it.
+  for (let index = 0; index < mask.length; index += 1) {
+    if (mask[index] !== "[") continue;
+    const close = matchingBracket(mask, index);
+    if (close > index) pieces.push(body.slice(index + 1, close));
+  }
+  if (openBefore(code, line).at(-1) === "[") pieces.push(body.replace(/,\s*$/, ""));
+  const names = namesBefore(code, line);
+  for (const piece of pieces) {
+    for (const part of splitTopLevel(piece)?.parts ?? []) {
+      const words = part.replace(/^\[|\]$/g, "").trim().split(/\s+/).filter(Boolean);
+      if (words.length < 2 || !words.every((word) => /^[A-Za-z][A-Za-z'-]*$/.test(word))) continue;
+      if (words.some((word) => KEYWORDS.has(word) || names.includes(word))) continue;
+      const phrase = words.join(" ");
+      return explain("unquoted-words", "Missing quotes?", `If ${phrase} is text, put quotes around it: "${phrase}". Text needs quotes.`, raw);
+    }
+  }
+  return null;
+}
+
+/** `chalk_wall = [48 48, 47]` ("Perhaps you forgot a comma?"): two numbers side by side inside `[ ]`. */
+function explainListMissingComma(text: string, line: number | null, raw: string): CourseExplanation | null {
+  const body = codePart(text);
+  const mask = maskStrings(body);
+  const open = mask.indexOf("[");
+  const close = open < 0 ? -1 : matchingBracket(mask, open);
+  if (close < 0 || !/-?\d\s+-?\d/.test(mask.slice(open, close))) return null;
+  const fixed = `${body.slice(0, open)}${body.slice(open, close + 1).replace(/(\d)\s+(?=-?\d)/g, "$1, ")}${body.slice(close + 1)}`.trim();
+  return explain(
+    "missing-comma-in-list",
+    "Missing comma",
+    `Inside a list, a comma goes between each two items. ${lineWord(line)} has numbers side by side with no comma between them: \`${fixed}\``,
+    raw,
+  );
+}
+
+/** The code's lines with comments cut off and strings masked, joined again, keeping every index (for multi-line lists). */
+function maskedCode(code: string): { text: string; mask: string } {
+  const rows = (code ?? "").split("\n").map((row) => codePart(row));
+  return { text: rows.join("\n"), mask: rows.map((row) => maskStrings(row).padEnd(row.length)).join("\n") };
+}
+
+/**
+ * The position of the first number in the first row of the list of lists `name` (`log = [["cane parry", 7], ...]`
+ * gives 1), or null when the code does not write it out.
+ */
+function firstRowNumberAt(code: string, name: string): number | null {
+  const { text, mask } = maskedCode(code);
+  const made = new RegExp(`(^|\\n)[ \\t]*${escapeRegExp(name)}\\s*=(?!=)\\s*\\[`).exec(mask);
+  if (!made) return null;
+  const outer = made.index + made[0].length - 1;
+  const first = mask.slice(outer + 1).search(/\S/);
+  const open = first < 0 ? -1 : outer + 1 + first;
+  if (open < 0 || mask[open] !== "[") return null;
+  const close = matchingBracket(mask, open);
+  const parts = close < 0 ? null : splitTopLevel(text.slice(open + 1, close));
+  if (!parts || parts.marks.some((mark) => mark !== ",")) return null;
+  const at = parts.parts.findIndex((part) => /^-?\d+(\.\d+)?$/.test(part));
+  return at < 0 ? null : at;
+}
+
+/**
+ * `log[0] = log[0] + 2` in a list of lists ('can only concatenate list (not "int") to list'): `log[0]` is a whole row
+ * (a pair), so the number needs the row's inner position too: `log[0][1] = log[0][1] + 2`.
+ */
+function explainRowPlusItem(code: string, body: string, line: number | null, raw: string): CourseExplanation | null {
+  const mask = maskStrings(body);
+  const left = mask.match(/(?<![\w.\]])([A-Za-z_]\w*)\s*\[([^[\]]+)\]\s*\+/);
+  if (!left || !listsMade(code).get(left[1])?.nested) return null;
+  const name = left[1];
+  const index = body.slice((left.index ?? 0) + left[0].indexOf("[") + 1, (left.index ?? 0) + left[0].lastIndexOf("]")).trim();
+  const read = `${name}[${index}]`;
+  const inner = firstRowNumberAt(code, name);
+  const pattern = new RegExp(`(?<![\\w.])${escapeRegExp(name)}\\s*\\[\\s*${escapeRegExp(index)}\\s*\\](?!\\s*\\[)`, "g");
+  const fixed = inner === null ? null : body.replace(pattern, `${read}[${inner}]`);
+  return explain(
+    "row-not-item",
+    "A whole row",
+    `${lineWord(line)} adds to \`${read}\`, but \`${read}\` is a whole row of \`${name}\`: a list, not a number. ` +
+      (fixed
+        ? `Add the inner position of the number in it too: \`${fixed}\``
+        : "Add the inner position of the number in it too: row first, then the item in that row."),
+    raw,
+  );
+}
+
+/** The list tools that change the list itself and hand back nothing (`None`). */
+const IN_PLACE: Record<string, string> = {
+  sort: "sorts the list itself",
+  append: "adds to the list itself",
+  insert: "adds to the list itself",
+  extend: "adds to the list itself",
+  remove: "takes from the list itself",
+  reverse: "turns the list itself around",
+  clear: "empties the list itself",
+};
+
+/**
+ * "'NoneType' object is not subscriptable" (`shortest = chalk_wall.sort()[0]`, or `x = wall.sort()` then `x[0]`):
+ * a position read from `None`. In the unit's words, `None` is "nothing came back": `.sort()` sorts the list itself
+ * and hands back nothing, and `sorted(wall)` hands back a sorted copy.
+ */
+function explainNoneRead(message: string, code: string, text: string, line: number | null, raw: string): CourseExplanation | null {
+  if (!/^'NoneType' object is not subscriptable/.test(message)) return null;
+  const tools = Object.keys(IN_PLACE).join("|");
+  const body = codePart(text);
+  const mask = maskStrings(body);
+  let found: { list: string; tool: string; holder?: string; at?: number } | null = null;
+  const direct = new RegExp(`(?<![\\w.])([A-Za-z_]\\w*(?:\\[[^\\]]*\\])*)\\s*\\.\\s*(${tools})\\s*\\(`).exec(mask);
+  if (direct) {
+    const close = matchingBracket(mask, direct.index + direct[0].length - 1);
+    if (close > 0 && /^\s*\[/.test(mask.slice(close + 1))) found = { list: body.slice(direct.index, direct.index + direct[1].length), tool: direct[2] };
+  }
+  if (!found && line) {
+    // A box read with [ ] that holds None: its nearest `name = x.sort()` above this line decides.
+    const rows = (code ?? "").split("\n").slice(0, line - 1);
+    for (const read of mask.matchAll(/(?<![\w.])([A-Za-z_]\w*)\s*\[/g)) {
+      const holder = read[1];
+      for (let at = rows.length - 1; at >= 0; at -= 1) {
+        const row = codePart(rows[at] ?? "");
+        const made = new RegExp(`^\\s*${escapeRegExp(holder)}\\s*=(?!=)\\s*([A-Za-z_]\\w*(?:\\[[^\\]]*\\])*)\\s*\\.\\s*(${tools})\\s*\\(`).exec(maskStrings(row));
+        if (made) {
+          const from = made[0].indexOf(made[1], made[0].indexOf("=") + 1);
+          found = { list: row.slice(from, from + made[1].length).trim(), tool: made[2], holder, at: at + 1 };
+        }
+        if (made || new RegExp(`^\\s*${escapeRegExp(holder)}\\s*=(?!=)`).test(row)) break;
+      }
+      if (found) break;
+    }
+  }
+  const nothing = "`None`: nothing came back";
+  if (!found) {
+    return explain(
+      "read-from-none",
+      "Nothing came back",
+      `${lineWord(line)} reads a position from ${nothing}, so there is nothing to read. A tool that changes a list, like \`.sort()\`, hands back nothing, and so does a recipe with no \`return\`.`,
+      raw,
+    );
+  }
+  const what = `\`.${found.tool}()\`${found.at ? ` on line ${found.at}` : ""} ${IN_PLACE[found.tool]} and hands back nothing.`;
+  const instead = found.tool === "sort" ? ` \`sorted(${found.list})\` hands back a sorted copy.` : ` Read the list itself, \`${found.list}\`, after it has changed.`;
+  return explain(
+    "read-from-none",
+    "Nothing came back",
+    found.holder
+      ? `${lineWord(line)} reads a position from \`${found.holder}\`, and \`${found.holder}\` holds ${nothing}. ${what}${instead}`
+      : `${lineWord(line)} reads a position from ${nothing}. ${what}${instead}`,
+    raw,
+  );
+}
+
+/**
+ * "list indices must be integers or slices, not tuple" from two lists side by side with no comma between them:
+ * `[["cane parry", 7] ["shield wall", 5]]` on one line, or a row of a list over several lines with no comma at its
+ * end. Python reads the second list as a position in the first (never "a comma inside [ ]").
+ */
+function explainRowsWithoutComma(message: string, code: string, text: string, line: number | null, raw: string): CourseExplanation | null {
+  if (!/indices must be integers or slices, not tuple/.test(message)) return null;
+  const body = codePart(text);
+  const mask = maskStrings(body);
+  const side = /(^|[=,([]\s*)(\[[^[\]]*\])\s*\[/.exec(mask);
+  if (side) {
+    const at = side.index + side[1].length;
+    const row = body.slice(at, at + side[2].length).trim();
+    return explain(
+      "missing-comma-in-list",
+      "Missing comma",
+      `${lineWord(line)} has two lists side by side with no comma between them, so Python reads the second one as a position in the first. Put a comma after each one: \`${row},\``,
+      raw,
+    );
+  }
+  const row = body.trim();
+  if (!line || !/^\[[^[\]]*\]$/.test(maskStrings(row)) || openBefore(code, line).at(-1) !== "[") return null;
+  const next = (code ?? "").split("\n").slice(line).map((entry) => codePart(entry).trim()).find(Boolean) ?? "";
+  if (!next.startsWith("[")) return null;
+  return explain(
+    "missing-comma-in-list",
+    "Missing comma",
+    `${lineWord(line)} ends a list with no comma, and the next line starts another, so Python reads the second one as a position in the first. Put a comma after each one: \`${row},\``,
+    raw,
+  );
+}
+
+/** The ingredients of the recipe whose body holds `line` (1-based), or []. */
+function recipeParamsAt(code: string, line: number | null): string[] {
+  if (!line) return [];
+  const block = recipeBlocks(code).find((entry) => line > entry.start && line <= entry.end);
+  if (!block) return [];
+  const header = codePart((code ?? "").split("\n")[block.start - 1] ?? "").match(/^\s*def\s+[A-Za-z_]\w*\s*\(([^)]*)\)/);
+  return (header?.[1] ?? "").split(",").map((part) => part.split("=")[0].trim()).filter(Boolean);
+}
+
+/**
+ * How many items `name` holds, when the code makes it once with its items written out on one line
+ * (`chalk_wall = [48, 48, 47]`, `cabin = (12, 5)`) and nothing could change how many (`.append()`, `.pop()`, `+=`, a
+ * recipe that changes a list, ...). Null when that can't be read for sure.
+ */
+function readableLength(code: string, name: string): number | null {
+  const { mask } = maskedCode(code);
+  const rows = (code ?? "").split("\n").map((row) => codePart(row));
+  const who = escapeRegExp(name);
+  if (new RegExp(`\\.\\s*(append|insert|pop|remove|extend|clear)\\s*\\(`).test(mask) && /^\s*def\b/m.test(mask)) return null;
+  if (new RegExp(`(?<![\\w.])${who}\\s*(\\.\\s*(append|insert|pop|remove|extend|clear)\\s*\\(|[-+*]=)|\\bdel\\s+${who}\\b|\\bfor\\s+${who}\\b|(?<![\\w.])${who}\\s*,[^\\n=]*=(?!=)|,\\s*${who}\\s*=(?!=)`).test(mask)) {
+    return null;
+  }
+  const made = rows.map((row) => maskStrings(row)).filter((row) => new RegExp(`^\\s*${who}\\s*=(?!=)`).test(row));
+  if (made.length !== 1) return null;
+  const row = rows.find((entry) => new RegExp(`^\\s*${who}\\s*=(?!=)`).test(maskStrings(entry))) ?? "";
+  const value = row.slice(row.indexOf("=") + 1).trim();
+  const valueMask = maskStrings(value);
+  if (!/^[[(]/.test(valueMask) || matchingBracket(valueMask, 0) !== valueMask.length - 1 || /[[(]/.test(valueMask.slice(1, -1))) return null;
+  const inside = value.slice(1, -1).trim();
+  if (!inside) return valueMask.startsWith("(") ? null : 0;
+  const parts = splitTopLevel(inside);
+  if (!parts || parts.marks.some((mark) => mark !== ",")) return null;
+  const items = parts.parts.filter((part, index) => part || index < parts.parts.length - 1);
+  if (valueMask.startsWith("(") && items.length < 2) return null;
+  return items.every(Boolean) ? items.length : null;
+}
+
+/**
+ * Unit 4: "list index out of range" in the unit's words. The class's slip, `chalk_wall[len(chalk_wall)]`, gets its own
+ * row: `len()` counts the items, so it is one past the last position. Otherwise the list's own count when it can be
+ * read ("`chalk_wall` holds 7 items, so its positions are 0 to 6"), and never Unit 1's "3 items" example.
+ */
+function explainOutOfRange(message: string, code: string, text: string, line: number | null, raw: string): CourseExplanation | null {
+  if (/string/.test(message)) return null;
+  const what = /tuple/.test(message) ? "tuple" : "list";
+  const mask = maskStrings(codePart(text));
+  const counted = mask.match(/(?<![\w.])([A-Za-z_]\w*)\s*(?:\[|\.\s*pop\s*\()\s*len\s*\(\s*\1\s*\)\s*[\])]/);
+  if (counted) {
+    const name = counted[1];
+    return explain(
+      "nothing-at-position",
+      "One past the end",
+      `${lineWord(line)} uses \`len(${name})\` as a position. \`len(${name})\` counts the items, so it is one past the last position. Use \`len(${name}) - 1\`, or \`[-1]\`.`,
+      raw,
+    );
+  }
+  const reads = [...mask.matchAll(/(?<![\w.\]])([A-Za-z_]\w*)\s*\[/g)].map((match) => match[1]).filter((name) => !KEYWORDS.has(name));
+  const name = reads[0];
+  const last = "Positions start at 0, so the last position is one less than the number of items. `[-1]` is always the last one.";
+  if (name && recipeParamsAt(code, line).includes(name)) {
+    return explain(
+      "nothing-at-position",
+      "Nothing at that position",
+      `${lineWord(line)} asks for a position \`${name}\` doesn't have. Inside the recipe, \`${name}\` is whatever ${what} the call hands over, and it may be shorter. ${last}`,
+      raw,
+    );
+  }
+  if (name && new RegExp(`(?<![\\w.])${escapeRegExp(name)}\\s*\\[[^\\]]*\\]\\s*\\[`).test(mask)) {
+    return explain(
+      "nothing-at-position",
+      "Nothing at that position",
+      `${lineWord(line)} asks for a position \`${name}\` doesn't have. In a list of lists, check both numbers: the row first, then the item in that row. ${last}`,
+      raw,
+    );
+  }
+  const count = name && reads.filter((entry) => entry === name).length === 1 ? readableLength(code, name) : null;
+  if (name && count !== null) {
+    return explain(
+      "nothing-at-position",
+      "Nothing at that position",
+      count === 0
+        ? `${lineWord(line)} asks for a position in \`${name}\`, but \`${name}\` is empty, so it has no positions yet.`
+        : `${lineWord(line)} asks for a position \`${name}\` doesn't have. \`${name}\` holds ${count} item${count === 1 ? "" : "s"}, so its positions are 0 to ${count - 1}. From the end, \`[-1]\` is the last one.`,
+      raw,
+    );
+  }
+  return explain("nothing-at-position", "Nothing at that position", `${lineWord(line)} asks for a position the ${what} doesn't have. ${last}`, raw);
+}
+
+/**
+ * Unit 4: numbers side by side with nothing between them, outside any brackets (`hours = 48 48 47 46`: the wall's
+ * row copied as it looks). They need commas, inside square brackets, or one box each (never "a missing quote").
+ */
+function explainNumbersSideBySide(text: string, line: number | null, raw: string): CourseExplanation | null {
+  const body = codePart(text).trim();
+  const mask = maskStrings(body);
+  let depth = 0;
+  let outside = "";
+  for (const char of mask) {
+    if (char in CLOSER) depth += 1;
+    else if (char in OPENER) depth = Math.max(0, depth - 1);
+    outside += depth === 0 ? char : " ";
+  }
+  if (!/(^|[^\w.])-?\d+(\.\d+)?\s+-?\d/.test(outside)) return null;
+  const made = body.match(/^([A-Za-z_]\w*)\s*=(?!=)\s*(-?\d+(?:\.\d+)?(?:[ \t]+-?\d+(?:\.\d+)?)+)$/);
+  const fix = made ? `\`${made[1]} = [${made[2].trim().split(/\s+/).join(", ")}]\`` : "`[48, 48, 47]`";
+  return explain(
+    "missing-comma",
+    "Numbers side by side",
+    `${lineWord(line)} has numbers side by side with nothing between them. Numbers side by side need commas, inside square brackets: ${fix}. Or give each number a box of its own.`,
+    raw,
+  );
+}
+
+/** Unit 4: `newest = chalk_wall.pop[]`, `sorted[]`: empty square brackets after a tool that is called (a SyntaxError). */
+function explainEmptySquareCall(code: string, text: string, line: number | null, raw: string): CourseExplanation | null {
+  const recipes = new Set(recipeBlocks(code).map((block) => block.recipe));
+  const mask = maskStrings(codePart(text));
+  for (const found of mask.matchAll(/(?<![\w.])((?:[A-Za-z_]\w*\.)*([A-Za-z_]\w*))\s*\[\s*\]/g)) {
+    const tool = found[2];
+    if (!CALLED_TOOLS.has(tool) && !recipes.has(tool)) continue;
+    if (!found[1].includes(".") && !recipes.has(tool) && !COMMON_BUILTINS.includes(tool)) continue;
+    return explain(
+      "call-needs-round-brackets",
+      "Round brackets for a call",
+      `${lineWord(line)} puts square brackets after \`${tool}\`, but \`${tool}\` is a tool you call, like \`print\`. Call it with round brackets: \`${found[1]}()\``,
+      raw,
+    );
+  }
+  return null;
+}
+
+/* ---------------------------------------------------------------------------------------------- */
+/* Unit 5 ("Dictionaries"): the program's sheets, and the slips the unit's own wrong answers make   */
+/* ---------------------------------------------------------------------------------------------- */
+
+type Token = { type: "str" | "num" | "name" | "op"; value: string; line: number };
+
+/** Python's tokens, roughly: strings (with their text), numbers, names and signs. Comments are skipped. */
+function pythonTokens(source: string): Token[] {
+  const out: Token[] = [];
+  let index = 0;
+  let line = 1;
+  while (index < source.length) {
+    const char = source[index];
+    if (char === "\n") {
+      line += 1;
+      index += 1;
+      continue;
+    }
+    if (char === "#") {
+      while (index < source.length && source[index] !== "\n") index += 1;
+      continue;
+    }
+    if (/\s/.test(char)) {
+      index += 1;
+      continue;
+    }
+    const prefix = source.slice(index, index + 3).match(/^[rRbBuUfF]{1,2}(?=["'])/)?.[0] ?? "";
+    const quoteAt = index + prefix.length;
+    if (source[quoteAt] === '"' || source[quoteAt] === "'") {
+      const mark = source[quoteAt];
+      const quote = source.startsWith(mark.repeat(3), quoteAt) ? mark.repeat(3) : mark;
+      let at = quoteAt + quote.length;
+      let value = "";
+      let closed = false;
+      while (at < source.length) {
+        if (source[at] === "\\" && at + 1 < source.length) {
+          value += source[at + 1];
+          at += 2;
+          continue;
+        }
+        if (source.startsWith(quote, at)) {
+          closed = true;
+          break;
+        }
+        if (source[at] === "\n") {
+          if (quote.length === 1) break;
+          line += 1;
+        }
+        value += source[at];
+        at += 1;
+      }
+      if (!closed) return out;
+      out.push({ type: "str", value, line });
+      index = at + quote.length;
+      continue;
+    }
+    const word = source.slice(index).match(/^[A-Za-z_]\w*/)?.[0];
+    if (word) {
+      out.push({ type: "name", value: word, line });
+      index += word.length;
+      continue;
+    }
+    const number = source.slice(index).match(/^\d[\d_]*(?:\.\d+)?/)?.[0];
+    if (number) {
+      out.push({ type: "num", value: number, line });
+      index += number.length;
+      continue;
+    }
+    const sign = source.slice(index).match(/^(==|!=|<=|>=|\*\*|\/\/|[-+*/%]=|.)/)?.[0] ?? char;
+    out.push({ type: "op", value: sign, line });
+    index += sign.length;
+  }
+  return out;
+}
+
+type SheetValue = "number" | "text" | "sheet" | "list" | "name" | "other";
+
+/**
+ * One key of one sheet: `owner` is the variable the outermost sheet is kept in, `path` the keys above this one.
+ * `stored`: the line of a key stored by a line of its own (`gearshift["fuel"] = ...`), in the program as sheetsOf()
+ * reads it, so a KeyError can leave out the stores that never ran (the line that crashed, and the ones after it).
+ */
+type SheetEntry = {
+  owner: string | null;
+  path: string[];
+  key: string;
+  kind: SheetValue;
+  value: string;
+  stored?: number;
+  /** A key of a variable that holds a card the program has (`spell = spell_book["Lantern Ward"]`): where it lives. */
+  from?: { owner: string | null; path: string[] };
+};
+
+type Sheets = {
+  entries: SheetEntry[];
+  /** The variables that hold a sheet made with `{ }` (even an empty one), or a card of one (`spell = book["Glow"]`). */
+  names: Set<string>;
+  /** The lists made with `[ ]`: for each item, the variable it names, or the text of a sheet's `"name"` key. */
+  lists: Map<string, { ref?: string; name?: string }[]>;
+};
+
+function valueKind(token: Token | undefined, after: Token | undefined): { kind: SheetValue; value: string } {
+  if (!token) return { kind: "other", value: "" };
+  if (token.type === "op" && token.value === "{") return { kind: "sheet", value: "" };
+  if (token.type === "op" && token.value === "[") return { kind: "list", value: "" };
+  if (token.type === "str") return { kind: "text", value: token.value };
+  if (token.type === "num") return { kind: "number", value: token.value };
+  if (token.type === "op" && token.value === "-" && after?.type === "num") return { kind: "number", value: `-${after.value}` };
+  if (token.type === "name") return { kind: "name", value: token.value };
+  return { kind: "other", value: "" };
+}
+
+/**
+ * The program's sheets: every key written in a `{ }` (inner cards too, with the keys above them) and every key
+ * stored with `sheet["key"] = ...`, and the lists, so a slip can be named from the student's own sheets.
+ */
+function programSheets(source: string): Sheets {
+  const tokens = pythonTokens(source ?? "");
+  const entries: SheetEntry[] = [];
+  const names = new Set<string>();
+  const lists = new Map<string, { ref?: string; name?: string }[]>();
+  type Frame = { bracket: string; path: string[]; owner: string | null; key: string | null; item?: { ref?: string; name?: string } };
+  const stack: Frame[] = [];
+  for (let at = 0; at < tokens.length; at += 1) {
+    const token = tokens[at];
+    const frame = stack.at(-1);
+    if (token.type === "op" && (token.value === "{" || token.value === "[" || token.value === "(")) {
+      let owner = frame?.owner ?? null;
+      let path = frame ? (frame.bracket === "{" && frame.key !== null ? [...frame.path, frame.key] : frame.path) : [];
+      if (!frame) {
+        // `name = {`, or `book["Glow"] = {`: the sheet is kept in `name`, under those keys.
+        const before = tokens.slice(Math.max(0, at - 12), at);
+        if (before.at(-1)?.value === "=" && before.at(-1)?.type === "op") {
+          let back = before.length - 2;
+          const keys: string[] = [];
+          while (back >= 2 && before[back].value === "]" && before[back - 1].type === "str" && before[back - 2].value === "[") {
+            keys.unshift(before[back - 1].value);
+            back -= 3;
+          }
+          if (before[back]?.type === "name") {
+            owner = before[back].value;
+            path = keys;
+            if (token.value === "{" && keys.length === 0) names.add(owner);
+            if (token.value === "[" && keys.length === 0) lists.set(owner, []);
+          }
+        }
+      }
+      const next: Frame = { bracket: token.value, path, owner, key: null };
+      // A sheet written straight into a list: its `"name"` key tells which item it is.
+      if (token.value === "{" && frame?.bracket === "[" && frame.owner && lists.has(frame.owner) && stack.length === 1) {
+        next.item = {};
+        lists.get(frame.owner)?.push(next.item);
+      }
+      stack.push(next);
+      continue;
+    }
+    if (token.type === "op" && (token.value === "}" || token.value === "]" || token.value === ")")) {
+      stack.pop();
+      continue;
+    }
+    if (!frame) continue;
+    if (frame.bracket === "[" && stack.length === 1 && frame.owner && lists.has(frame.owner) && token.type === "name") {
+      const previous = tokens[at - 1];
+      if (previous?.value === "[" || previous?.value === ",") lists.get(frame.owner)?.push({ ref: token.value });
+      continue;
+    }
+    if (frame.bracket !== "{") continue;
+    if (token.type === "op" && token.value === ",") {
+      frame.key = null;
+      continue;
+    }
+    if (frame.key === null && token.type === "str" && tokens[at + 1]?.value === ":") {
+      frame.key = token.value;
+      const { kind, value } = valueKind(tokens[at + 2], tokens[at + 3]);
+      entries.push({ owner: frame.owner, path: frame.path, key: token.value, kind, value });
+      if (token.value === "name" && kind === "text" && frame.item && frame.path.length === 0) frame.item.name = value;
+    }
+  }
+  // `gearshift["fuel"] = "starlode"`, `hero["abilities"]["wisdom"] = 9`: keys stored by a line of their own.
+  for (let at = 0; at < tokens.length; at += 1) {
+    if (tokens[at].type !== "name" || (at > 0 && tokens[at - 1].line === tokens[at].line)) continue;
+    const keys: string[] = [];
+    let next = at + 1;
+    while (tokens[next]?.value === "[" && tokens[next + 1]?.type === "str" && tokens[next + 2]?.value === "]") {
+      keys.push(tokens[next + 1].value);
+      next += 3;
+    }
+    if (keys.length > 0 && tokens[next]?.value === "=" && tokens[next]?.type === "op") {
+      const { kind, value } = valueKind(tokens[next + 1], tokens[next + 2]);
+      entries.push({ owner: tokens[at].value, path: keys.slice(0, -1), key: keys[keys.length - 1], kind, value, stored: tokens[at].line });
+    }
+  }
+  // `spell = spell_book["Lantern Ward"]`, `hero = roster[1]`: a variable that holds a card the program has gets that
+  // card's keys, so a read of `spell` is checked against the Lantern Ward page (never "add the page's name").
+  for (let at = 0; at < tokens.length; at += 1) {
+    const made = tokens[at];
+    if (made.type !== "name" || (at > 0 && tokens[at - 1].line === made.line)) continue;
+    if (tokens[at + 1]?.value !== "=" || tokens[at + 1]?.type !== "op" || tokens[at + 2]?.type !== "name") continue;
+    let owner: string | null = tokens[at + 2].value;
+    let next = at + 3;
+    const items = lists.get(owner);
+    if (items && tokens[next]?.value === "[" && tokens[next + 1]?.type === "num" && tokens[next + 2]?.value === "]") {
+      owner = items[Number(tokens[next + 1].value)]?.ref ?? null;
+      next += 3;
+    } else if (items) {
+      continue;
+    }
+    const keys: string[] = [];
+    while (tokens[next]?.value === "[" && tokens[next + 1]?.type === "str" && tokens[next + 2]?.value === "]") {
+      keys.push(tokens[next + 1].value);
+      next += 3;
+    }
+    if (!owner || owner === made.value || (keys.length === 0 && !items) || tokens[next]?.line === made.line) continue;
+    const card = entries.filter(
+      (entry) => entry.owner === owner && !entry.from && entry.path.length >= keys.length && keys.every((key, index) => entry.path[index] === key),
+    );
+    if (card.length === 0) continue;
+    names.add(made.value);
+    for (const entry of card) entries.push({ ...entry, owner: made.value, path: entry.path.slice(keys.length), from: { owner, path: entry.path } });
+  }
+  return { entries, names, lists };
+}
+
+/**
+ * The setup's sheets and the student's, as one program (the game hands `caster` over before the code runs). With
+ * `ranBefore` (the line Python stopped on, in the student's code), a key stored on that line or later is left out:
+ * that store never ran (`bomb_shell["dexterity"] = bomb_shell["dexterity"] + 2` stops on its own right side).
+ */
+function sheetsOf(code: string, context?: ExplainContext, ranBefore?: number | null): Sheets {
+  const setup = context?.setup ?? "";
+  const sheets = programSheets(`${setup}\n${code ?? ""}`);
+  if (!ranBefore) return sheets;
+  const offset = setup.split("\n").length;
+  return { ...sheets, entries: sheets.entries.filter((entry) => entry.stored === undefined || entry.stored - offset < ranBefore) };
+}
+
+type Read = { text: string; at: number; key?: string; position?: number; name?: string };
+
+/** `base[...][...]` on the line: the base name, and what each pair of square brackets holds. */
+type Chain = { base: string; start: number; end: number; reads: Read[] };
+
+function readChains(text: string): Chain[] {
+  const body = codePart(text);
+  const mask = maskStrings(body);
+  const chains: Chain[] = [];
+  for (const found of mask.matchAll(/(?<![\w.\]])([A-Za-z_]\w*)\s*\[/g)) {
+    if (KEYWORDS.has(found[1])) continue;
+    const reads: Read[] = [];
+    let open = (found.index ?? 0) + found[0].length - 1;
+    let end = open;
+    while (mask[open] === "[") {
+      const close = matchingBracket(mask, open);
+      if (close < 0) break;
+      const inside = body.slice(open + 1, close).trim();
+      const quoted = inside.match(/^(["'])((?:(?!\1)[^\\]|\\.)*)\1$/);
+      const read: Read = { text: inside, at: open };
+      if (quoted) read.key = quoted[2];
+      else if (/^-?\d+$/.test(inside)) read.position = Number(inside);
+      else if (/^[A-Za-z_]\w*$/.test(inside)) read.name = inside;
+      reads.push(read);
+      end = close + 1;
+      open = end;
+      while (mask[open] === " ") open += 1;
+    }
+    if (reads.length > 0) chains.push({ base: found[1], start: found.index ?? 0, end, reads });
+  }
+  return chains;
+}
+
+/** A chain written back as code: `caster["abilities"]["magical_affinity"]`. */
+function chainCode(base: string, keys: readonly (string | number)[]): string {
+  return `${base}${keys.map((key) => (typeof key === "number" ? `[${key}]` : `["${key}"]`)).join("")}`;
+}
+
+/** The keys a chain walks before read `upTo` (positions in a list of sheets are skipped). */
+function keysBefore(chain: Chain, upTo: number): string[] {
+  return chain.reads.slice(0, upTo).flatMap((read) => (read.key !== undefined ? [read.key] : []));
+}
+
+/** The entries of the sheet `chain` reads (its base's own, when the base is a sheet the program makes). */
+function entriesFor(sheets: Sheets, base: string): SheetEntry[] {
+  const own = sheets.entries.filter((entry) => entry.owner === base);
+  if (own.length > 0) return own;
+  // A list of sheets (`roster[1]["mana"]`): the keys of the sheets it holds.
+  const items = sheets.lists.get(base);
+  if (items) {
+    const refs = new Set(items.map((item) => item.ref).filter((ref): ref is string => Boolean(ref)));
+    const held = sheets.entries.filter((entry) => entry.owner !== null && refs.has(entry.owner));
+    if (held.length > 0) return held;
+  }
+  return sheets.entries;
+}
+
+const samePath = (a: readonly string[], b: readonly string[]) => a.length === b.length && a.every((key, index) => key === b[index]);
+
+/** A key spelled nearly like `key` (capitals, a space or `_`, a letter or two): the sheet's own spelling. */
+function nearKey(key: string, keys: readonly string[]): string | null {
+  const squash = (text: string) => text.toLowerCase().replace(/[\s_-]/g, "");
+  const exact = keys.find((entry) => entry !== key && (entry.toLowerCase() === key.toLowerCase() || squash(entry) === squash(key)));
+  if (exact) return exact;
+  const limit = key.length >= 5 ? 2 : 1;
+  return keys.find((entry) => entry !== key && editDistance(entry.toLowerCase(), key.toLowerCase()) <= limit) ?? null;
+}
+
+/** Whether the last line above `line` that fills `name` fills it with a number (`fire_bolt_cost = 6`). */
+function variableHoldsNumber(code: string, name: string, line: number | null): boolean {
+  const rows = (code ?? "").split("\n").slice(0, line ? line - 1 : undefined);
+  for (const row of rows.reverse()) {
+    const made = codePart(row).match(new RegExp(`^\\s*${escapeRegExp(name)}\\s*=(?!=)\\s*(.+)$`));
+    if (made) return /^-?\d+(?:\.\d+)?$/.test(made[1].trim());
+  }
+  return false;
+}
+
+/** The variable the code fills with exactly this text (`spell_name = "Warm Hands"`), if one does. */
+function variableHolding(code: string, text: string): string | null {
+  for (const row of (code ?? "").split("\n")) {
+    const made = codePart(row).match(/^\s*([A-Za-z_]\w*)\s*=(?!=)\s*(["'])(.*)\2\s*$/);
+    if (made && made[3] === text) return made[1];
+  }
+  return null;
+}
+
+/** The sheets the code makes with `{ }`, in the setup or the student's code. */
+function sheetNames(code: string, context?: ExplainContext): Set<string> {
+  return sheetsOf(code, context).names;
+}
+
+/**
+ * The bracket each character of `body` sits in, outermost first, starting with the brackets still open from the lines
+ * above (`open`). Strings are masked, so a bracket inside text is never counted.
+ */
+function bracketsAt(body: string, open: readonly string[], position: number): { bracket: string; at: number }[] {
+  const mask = maskStrings(body);
+  const stack: { bracket: string; at: number }[] = open.map((bracket) => ({ bracket, at: -1 }));
+  for (let index = 0; index < Math.min(position, mask.length); index += 1) {
+    const char = mask[index];
+    if (char in CLOSER) stack.push({ bracket: char, at: index });
+    else if (char in OPENER && stack.length > 0 && stack[stack.length - 1].bracket === OPENER[char]) stack.pop();
+  }
+  return stack;
+}
+
+/**
+ * NameError for a word that belongs in quotes in a sheet (Unit 5): a key with no quotes (`{name: "Lucky"}`,
+ * `lucky[name]`, `lucky.get(glug, 0)`), or a value with no quotes (`"name": Gearshift,`,
+ * `gearshift["fuel"] = starlode`). Before the capital-letter and near-name rows, which would say `gearshift`. A
+ * name one letter off a variable of the code's own (a typo) keeps the spelling rows.
+ */
+function explainSheetName(name: string, code: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  const body = codePart(text);
+  const mask = maskStrings(body);
+  const defined = definedNames(code).map((entry) => entry.name);
+  if (defined.includes(name) || (context?.names ?? []).includes(name) || COMMON_BUILTINS.includes(name)) return null;
+  // A name copied from the worked example or a Teach me hint keeps the example's row.
+  if (exampleOnlyNames(context).includes(name)) return null;
+  const close = closeName(name, defined);
+  const typo = close !== null && close.toLowerCase() !== name.toLowerCase();
+  const sheets = sheetNames(code, context);
+  const open = line === null ? [] : openBefore(code, line);
+  const quote = (from: number) => `${body.slice(0, from)}"${name}"${body.slice(from + name.length)}`.trim();
+  for (const found of mask.matchAll(new RegExp(`(?<![\\w.])${escapeRegExp(name)}(?![\\w(])`, "g"))) {
+    const at = found.index ?? 0;
+    const inside = bracketsAt(body, open, at).at(-1);
+    const before = mask.slice(0, at).trimEnd();
+    const after = mask.slice(at + name.length).trimStart();
+    const keyRule = `A key is text, so it needs quotes: \`"${name}"\`. Without quotes, Python looks for a variable called \`${name}\`.`;
+    // `{name: "Lucky"}`: a key, before its colon.
+    if (inside?.bracket === "{" && after.startsWith(":") && !typo) {
+      return explain("unquoted-key", "Keys need quotes", `${keyRule} ${lineWord(line)} with quotes: \`${quote(at)}\``, raw);
+    }
+    // `lucky[name]`, `roster[1][name]`: a key inside a sheet's square brackets.
+    if (inside?.bracket === "[" && inside.at > 0 && !typo) {
+      const reader = mask.slice(0, inside.at).trimEnd();
+      const base = reader.match(/([A-Za-z_]\w*)$/)?.[1];
+      if (/\]$/.test(reader) || (base !== undefined && sheets.has(base))) {
+        // Every bare key in the line's reads gets its quotes (`gearshift[name] + str(gearshift[mana])`).
+        let fixed = body;
+        for (const chain of readChains(body).reverse()) {
+          for (const read of [...chain.reads].reverse()) {
+            if (!read.name || defined.includes(read.name) || (!sheets.has(chain.base) && read === chain.reads[0])) continue;
+            const close = matchingBracket(maskStrings(fixed), read.at);
+            if (close > read.at) fixed = `${fixed.slice(0, read.at)}["${read.name}"]${fixed.slice(close + 1)}`;
+          }
+        }
+        return explain("unquoted-key", "Keys need quotes", `${keyRule} ${lineWord(line)} with quotes: \`${fixed.trim()}\``, raw);
+      }
+    }
+    // `lucky.get(glug, 0)`: the key `.get()` looks for.
+    if (inside?.bracket === "(" && inside.at > 0 && /\.\s*get\s*$/.test(mask.slice(0, inside.at)) && !typo) {
+      return explain("unquoted-key", "Keys need quotes", `${keyRule} ${lineWord(line)} with quotes: \`${quote(at)}\``, raw);
+    }
+    // `"name": Gearshift,` inside a sheet, or `gearshift["fuel"] = starlode`: text with no quotes, as a value.
+    const value = (inside?.bracket === "{" && before.endsWith(":")) ||
+      (/^[A-Za-z_]\w*(\s*\[[^\]]+\])+\s*=$/.test(before) && sheets.has(before.match(/^[A-Za-z_]\w*/)?.[0] ?? ""));
+    if (value && !typo && (/^[A-Z]/.test(name) || close === null)) {
+      return explain(
+        "unquoted-word",
+        "Text needs quotes",
+        `\`${name}\` has no quotes, so Python looks for a variable called that. Text in a sheet needs quotes: \`${quote(at)}\``,
+        raw,
+      );
+    }
+  }
+  return null;
+}
+
+/** Bare words side by side inside `{ }` or `[ ]`: `"name": Bomb Shell`, `spell_book[Warm Hands]` (Unit 5's words). */
+function explainSheetWords(code: string, text: string, line: number | null, raw: string): CourseExplanation | null {
+  const body = codePart(text);
+  const mask = maskStrings(body);
+  const pieces: { text: string; square: boolean }[] = [];
+  for (let index = 0; index < mask.length; index += 1) {
+    if (mask[index] !== "[" && mask[index] !== "{") continue;
+    const close = matchingBracket(mask, index);
+    if (close > index) pieces.push({ text: body.slice(index + 1, close), square: mask[index] === "[" });
+  }
+  const above = openBefore(code, line).at(-1);
+  if (above === "{" || above === "[") pieces.push({ text: body.replace(/,\s*$/, ""), square: above === "[" });
+  const names = namesBefore(code, line);
+  for (const piece of pieces) {
+    for (const part of splitTopLevel(piece.text)?.parts ?? []) {
+      const colon = maskStrings(part).indexOf(":");
+      for (const side of colon < 0 ? [part] : [part.slice(0, colon), part.slice(colon + 1)]) {
+        const words = side.replace(/^[[{]|[\]}]$/g, "").trim().split(/\s+/).filter(Boolean);
+        if (words.length < 2 || !words.every((word) => /^[A-Za-z][A-Za-z'-]*$/.test(word))) continue;
+        if (words.some((word) => KEYWORDS.has(word) || names.includes(word))) continue;
+        const phrase = words.join(" ");
+        const holder = piece.square ? variableHolding(code, phrase) : null;
+        return explain(
+          "unquoted-words",
+          "Missing quotes?",
+          `If \`${phrase}\` is text, put quotes around it: \`"${phrase}"\`.${holder ? ` Or use the variable that holds it: \`${holder}\`.` : ""}`,
+          raw,
+        );
+      }
+    }
+  }
+  return null;
+}
+
+/**
+ * A quote missing on one line of a sheet written over several lines (Unit 5): the line is a key, a colon and a value,
+ * so the line is built again from its pieces, each quote where it belongs. A key keeps both quotes; text keeps both;
+ * a number or a variable has none. Only a plain `key: value,` line, inside a `{ }` that the lines above opened.
+ */
+function explainSheetQuote(code: string, text: string, line: number | null, raw: string): CourseExplanation | null {
+  if (line === null || openBefore(code, line).at(-1) !== "{") return null;
+  const body = codePart(text);
+  const lead = body.match(/^\s*/)?.[0] ?? "";
+  const plain = body.trim();
+  if (!/^["']?[A-Za-z_][\w ]*["']?\s*:/.test(plain) || /[()[\]#]/.test(plain)) return null;
+  const colon = plain.indexOf(":");
+  const keyText = plain.slice(0, colon);
+  const valueText = plain.slice(colon + 1).trim().replace(/,\s*$/, "").trim();
+  // A quote inside the words (`"Mar'tu's`) is not a missing one: only a quote at either end is moved.
+  const ends = (piece: string) => piece.trim().replace(/^["']/, "").replace(/["']$/, "");
+  if (/["']/.test(ends(keyText)) || /["']/.test(ends(valueText))) return null;
+  const key = ends(keyText).trim();
+  const bare = ends(valueText).trim();
+  if (!/^[A-Za-z_][\w ]*$/.test(key) || !bare || /:/.test(bare)) return null;
+  const defined = new Set(definedNames(code).map((entry) => entry.name));
+  const number = /^-?\d+(?:\.\d+)?$/.test(bare);
+  const variable = !number && /^[A-Za-z_]\w*$/.test(bare) && defined.has(bare);
+  const value = bare === "{" || number || variable ? bare : `"${bare}"`;
+  const fixed = `${lead}"${key}": ${value}${value === "{" ? "" : ","}`.trim();
+  // Which quote went missing: the key's (it has no pair of quotes right before the colon), or the value's. Two kinds
+  // of quote, one at each end (`'name": ...`), do not match.
+  const keyClosed = /^(["'])[^"']*\1\s*$/.test(keyText);
+  const opens = (piece: string) => /^\s*["']/.test(piece);
+  const mixed = (piece: string) => /^\s*(["'])[^"']*(?!\1)["']\s*$/.test(piece);
+  let why: string;
+  if (mixed(keyText) || (keyClosed && mixed(valueText))) {
+    return explain(
+      "quotes-dont-match",
+      "Quotes don't match",
+      `${lineWord(line)} starts some text with one kind of quote and ends it with the other. Use the same kind of quote at both ends: \`${fixed}\``,
+      raw,
+    );
+  } else if (!keyClosed) {
+    why = `The key${onLine(line)} is missing a quote. A key keeps both quotes, ${opens(keyText) ? "and the closing quote goes before the colon" : "one at the start too"}`;
+  } else if (number) {
+    why = `${lineWord(line)} has a stray quote by the number. A number has no quotes`;
+  } else if (variable) {
+    why = `${lineWord(line)} has a stray quote by \`${bare}\`, a variable. A variable's name has no quotes`;
+  } else {
+    why = `The text${onLine(line)} is missing a quote. Text keeps both quotes, ${opens(valueText) ? "and the closing quote goes before the comma" : "one at the start too"}`;
+  }
+  return explain("missing-quote", "Missing quote", `${why}: \`${fixed}\``, raw);
+}
+
+/** The strings on a line, by where they start and end (`[start, end)`), from the mask (their insides are blank). */
+function stringSpans(body: string): { start: number; end: number }[] {
+  const mask = maskStrings(body);
+  return [...mask.matchAll(/(["'])( *)\1/g)].map((found) => ({ start: found.index ?? 0, end: (found.index ?? 0) + found[0].length }));
+}
+
+/**
+ * `"magical_affinity" 10,`, `{"name": "Gearshift", "max_mana" 20}`: the line with a colon after the key that has
+ * none (a string where a key goes, inside `{ }`, with a value after it and no colon), or null.
+ */
+function colonAfterKey(body: string, open: readonly string[]): string | null {
+  const mask = maskStrings(body);
+  for (const { start, end } of stringSpans(body)) {
+    if (bracketsAt(body, open, start).at(-1)?.bracket !== "{") continue;
+    const before = mask.slice(0, start).trimEnd();
+    const keyPlace = before === "" ? open.at(-1) === "{" : /[{,]$/.test(before);
+    const after = mask.slice(end).trimStart();
+    if (!keyPlace || !after || /^[:,}]/.test(after)) continue;
+    return `${body.slice(0, end)}: ${body.slice(end).trimStart()}`.trim();
+  }
+  return null;
+}
+
+/** `{"name": "Gearshift" "max_mana": 20}`: the line with a comma between a value and the next key, or null. */
+function commaBetweenPairs(body: string, open: readonly string[]): string | null {
+  const mask = maskStrings(body);
+  // A value (text, a number, a name, or an inner card's closing bracket), spaces, then a key and its colon.
+  for (const found of mask.matchAll(/((["']) *\2|-?\d+(?:\.\d+)?|[A-Za-z_]\w*|[}\]])(\s+)(["']) *\4\s*:/g)) {
+    const at = found.index ?? 0;
+    if (bracketsAt(body, open, at).at(-1)?.bracket !== "{") continue;
+    if (!/^[}\]]/.test(found[1]) && !/:$/.test(mask.slice(0, at).trimEnd())) continue;
+    const end = at + found[1].length;
+    return `${body.slice(0, end)}, ${body.slice(end).trimStart()}`.trim();
+  }
+  return null;
+}
+
+/**
+ * `"fuel" = "starlode"` on a line of its own: the quoted word is a key of a sheet the program has, or one Mar'tu's
+ * version stores (`gearshift["fuel"] = ...`). The line with the key back inside its sheet, or null (a box's name in
+ * quotes keeps the quoted-name row).
+ */
+function keyOutsideSheet(body: string, code: string, context?: ExplainContext): { key: string; fixed: string } | null {
+  const quoted = body.trim().match(/^(["'])([^"'\\]+)\1\s*=(?!=)\s*(.+)$/);
+  if (!quoted) return null;
+  const [, , key, right] = quoted;
+  // Mar'tu's version makes a box of that name: the quoted-name row ("take the quotes off") is right.
+  if (new RegExp(`^\\s*${escapeRegExp(key)}\\s*=(?!=)`, "m").test(context?.solution ?? "")) return null;
+  const stored = [...(context?.solution ?? "").matchAll(new RegExp(`(?<![\\w.])([A-Za-z_]\\w*(?:\\s*\\[[^\\]]+\\])*)\\s*\\[\\s*(["'])${escapeRegExp(key)}\\2\\s*\\]\\s*=(?!=)`, "g"))];
+  const sheets = sheetsOf(code, context);
+  const owners = sheets.entries.filter((entry) => entry.key === key && entry.owner !== null && !entry.from);
+  const holder = stored[0]?.[1]?.replace(/\s+/g, "") ??
+    (new Set(owners.map((entry) => chainCode(entry.owner as string, entry.path))).size === 1 ? chainCode(owners[0].owner as string, owners[0].path) : null);
+  if (!holder) return null;
+  return { key, fixed: `${holder}["${key}"] = ${right.trim()}` };
+}
+
+/**
+ * The SyntaxErrors a sheet's own lines give (Unit 5), before the box, recipe and `==` rows that would answer them
+ * wrongly: `"name" = "Lucky",` inside `{ }` ("cannot assign to literal": never "take the quotes off"), a sheet called
+ * on the left of `=` (`spell_book(spell_name) = spell`: never "a recipe starts with def" or "use =="), a missing colon
+ * after a key, a missing comma that Python reports on the next line, and bare words inside the brackets.
+ */
+function explainSheetSyntax(message: string, code: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  const lower = message.toLowerCase();
+  const body = codePart(text);
+  const open = line === null ? [] : openBefore(code, line);
+  const inSheet = (position: number) => bracketsAt(body, open, position).at(-1)?.bracket === "{";
+  // `"name" = "Lucky",` (or `name = "Lucky",`, the quotes taken off as the box advice said): `=` inside a sheet. On
+  // the sheet's first key Python says "cannot assign to literal"; on a later key it says "':' expected after
+  // dictionary key", and the row is the same: a colon, never "a missing colon" with the `=` left in.
+  const eq = [...maskStrings(body).matchAll(/(?<![=!<>+\-*/%:])=(?!=)/g)].map((found) => found.index ?? 0).find(inSheet);
+  const eqFrom = (at: number) => Math.max((bracketsAt(body, open, at).at(-1)?.at ?? -1) + 1, maskStrings(body).lastIndexOf(",", at) + 1, 0);
+  const eqKey = eq === undefined ? "" : body.slice(eqFrom(eq), eq).trim();
+  const afterKey = /':' expected after dictionary key/.test(lower) && /^(["'])[^"']*\1$/.test(eqKey);
+  if (eq !== undefined && (/cannot assign to literal|maybe you meant '=='/.test(lower) || afterKey)) {
+    const from = eqFrom(eq);
+    const lead = body.slice(from, eq).match(/^\s*/)?.[0] ?? "";
+    const key = /^[A-Za-z_]\w*$/.test(eqKey) ? `"${eqKey}"` : eqKey;
+    const fixed = `${body.slice(0, from)}${lead}${key}: ${body.slice(eq + 1).trimStart()}`.trim();
+    return explain(
+      "equals-in-sheet",
+      "A colon in a sheet",
+      `${lineWord(line)} has \`=\` inside a sheet. Inside a dictionary \`{ }\`, a colon goes between a key and its value: \`${fixed}\`. The key keeps its quotes.`,
+      raw,
+    );
+  }
+  // `"fuel" = "starlode"`: a key of the sheet (or one Mar'tu's version stores), written with no sheet before it.
+  // Never "take the quotes off": the key keeps its quotes, and lives inside its sheet.
+  if (/cannot assign to literal/.test(lower) && eq === undefined) {
+    const outside = keyOutsideSheet(body, code, context);
+    if (outside) {
+      return explain(
+        "key-outside-sheet",
+        "A key lives in its sheet",
+        `${lineWord(line)} writes the key \`"${outside.key}"\` with no sheet before it, so Python reads it as text, and text can't store a value. A key lives inside its sheet: \`${outside.fixed}\`. The key keeps its quotes.`,
+        raw,
+      );
+    }
+  }
+  if (/cannot assign to function call/.test(lower)) {
+    const at = singleEquals(maskStrings(body))[0];
+    const left = at === undefined ? "" : body.slice(0, at).trim();
+    const name = left.match(/^([A-Za-z_]\w*)\s*\(/)?.[1];
+    if (name && sheetNames(code, context).has(name)) {
+      const swapped = squareBracketed(text, name, true);
+      if (swapped && swapped.call.trim() === left) {
+        // Every `gearshift("mana")` on the line, the right side too: the line shown is the whole mend.
+        let mended = swapped.line;
+        for (let guard = 0; guard < 8; guard += 1) {
+          const next = squareBracketed(mended, name, true);
+          if (!next) break;
+          mended = next.line;
+        }
+        return {
+          ...explain(
+            "list-needs-square-brackets",
+            "Square brackets for a sheet",
+            `${lineWord(line)} puts ( ) after \`${name}\`, a dictionary. Store in a dictionary with square brackets: \`${mended}\``,
+            raw,
+          ),
+          slip: "round brackets where a sheet needs square ones",
+        };
+      }
+    }
+  }
+  if (/':' expected after dictionary key/.test(lower)) {
+    const fixed = colonAfterKey(body, open);
+    return explain(
+      "missing-colon",
+      "A key needs a colon",
+      fixed
+        ? `${lineWord(line)} has a key with no colon after it. A key needs a colon before its value: \`${fixed}\``
+        : `${lineWord(line)} has a key with no colon after it. A key needs a colon before its value, like \`"name": "Lucky"\`.`,
+      raw,
+    );
+  }
+  if (/^invalid syntax/.test(lower)) {
+    const words = explainSheetWords(code, text, line, raw);
+    if (words) return words;
+    // `{"name": "Gearshift" "max_mana": 20}`: two pairs side by side on one line, with no comma between them.
+    const comma = commaBetweenPairs(body, open);
+    if (comma) {
+      return explain(
+        "missing-comma-in-list",
+        "Missing comma",
+        `${lineWord(line)} has two pairs side by side with no comma between them. Inside a dictionary { }, a comma goes between the pairs: \`${comma}\``,
+        raw,
+      );
+    }
+  }
+  // Inside a sheet over several lines, Python names the line AFTER the slip: a value with no comma after it, or a
+  // key and its value side by side with no colon (`"name" "Gearshift",`, the first key's slip).
+  if (/^invalid syntax$/.test(lower.trim()) && line !== null && open.at(-1) === "{" && /^\s*["']/.test(body)) {
+    const rows = (code ?? "").split("\n");
+    let above = line - 2;
+    while (above >= 0 && !codePart(rows[above]).trim()) above -= 1;
+    const prev = above >= 0 ? codePart(rows[above]).trim() : "";
+    const sideBySide = prev.match(/^(["'][^"']*["'])\s+(["'][^"']*["']|-?\d+(?:\.\d+)?|[A-Za-z_]\w*),?$/);
+    if (sideBySide) {
+      return {
+        ...explain(
+          "missing-colon",
+          "A key needs a colon",
+          `Line ${above + 1} has a key and its value side by side with no colon, so Python could not read on. A key needs a colon before its value: \`${sideBySide[1]}: ${sideBySide[2]},\``,
+          raw,
+        ),
+        slipLine: above + 1,
+      };
+    }
+    if (/^["'][^"']*["']\s*:\s*\S/.test(prev) && !/[,{[(]$/.test(prev)) {
+      return {
+        ...explain(
+          "missing-comma-in-list",
+          "Missing comma",
+          `Line ${above + 1} ends with no comma, so Python read on into line ${line}. Inside a dictionary { }, every item except the last needs a comma after it: \`${prev},\``,
+          raw,
+        ),
+        slipLine: above + 1,
+      };
+    }
+  }
+  return null;
+}
+
+/**
+ * "'dict' object has no attribute 'mana'" (`lucky.mana`, `gearshift.fuel = "starlode"`): a dot where a sheet needs
+ * square brackets and the key in quotes. A sheet's own tools (`.get()`) and list tools after a dot keep older rows.
+ */
+function explainSheetDot(message: string, code: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  const body = codePart(text);
+  const sheets = sheetsOf(code, context);
+  // `roster.lucky`: a list read with a dot and a name. A list takes a position.
+  const listed = message.match(/^'list' object has no attribute '([A-Za-z_]\w*)'/);
+  if (listed) {
+    const read = maskStrings(body).match(new RegExp(`(?<![\\w.])([A-Za-z_]\\w*)\\s*\\.\\s*${escapeRegExp(listed[1])}(?![\\w(])`));
+    const items = read ? sheets.lists.get(read[1]) : undefined;
+    if (!read || !items) return null;
+    const position = items.findIndex((item) => item.ref === listed[1]);
+    return explain(
+      "name-as-position",
+      "A list takes a position",
+      `\`${read[1]}\` is a list: a dot and a name can't read it. Read a list by its position, in square brackets${position >= 0 ? `: \`${listed[1]}\` is at position ${position}, \`${read[1]}[${position}]\`` : `, like \`${read[1]}[0]\``}. Positions count from 0.`,
+      raw,
+    );
+  }
+  const found = message.match(/^'dict' object has no attribute '([A-Za-z_]\w*)'/);
+  if (!found) return null;
+  const key = found[1];
+  // A key kept in a variable (`spell_book.spell_name`) goes in the brackets with no quotes.
+  const variables = new Set(definedNames(code).map((entry) => entry.name).filter((name) => !sheets.entries.some((entry) => entry.key === name)));
+  // Every key read with a dot on the line (`gearshift.name + ... + gearshift.mana`), never a call (`lucky.get(...)`).
+  const dotted = /(?<=[\w\]])\s*\.\s*([A-Za-z_]\w*)(?![\w(])/g;
+  const mask = maskStrings(body);
+  if (![...mask.matchAll(dotted)].some((entry) => entry[1] === key)) return null;
+  let fixed = "";
+  let from = 0;
+  for (const entry of mask.matchAll(dotted)) {
+    const owner = mask.slice(0, entry.index ?? 0).match(/([A-Za-z_]\w*)\s*$/)?.[1];
+    if (owner && MODULES.has(owner)) continue;
+    fixed += `${body.slice(from, entry.index ?? 0)}[${variables.has(entry[1]) ? entry[1] : `"${entry[1]}"`}]`;
+    from = (entry.index ?? 0) + entry[0].length;
+  }
+  fixed = mendLevels(`${fixed}${body.slice(from)}`.trim(), sheets);
+  const store = /no __dict__ for setting/.test(message);
+  return explain(
+    "dot-on-a-sheet",
+    "Square brackets for a key",
+    store
+      ? `${lineWord(line)} stores \`${key}\` with a dot. Store in a dictionary with square brackets${variables.has(key) ? "" : ", the key in quotes"}: \`${fixed}\``
+      : `${lineWord(line)} reads \`${key}\` with a dot. Read a dictionary with square brackets, not a dot: \`${fixed}\``,
+    raw,
+  );
+}
+
+/** The line with each read that skips a card mended (`gearshift["wisdom"]` -> `gearshift["abilities"]["wisdom"]`). */
+function mendLevels(body: string, sheets: Sheets): string {
+  let out = body;
+  for (const chain of readChains(body).reverse()) {
+    const keys = keysBefore(chain, chain.reads.length);
+    if (keys.length === 0 || chain.reads.some((read) => read.key === undefined && read.position === undefined)) continue;
+    // Only a sheet the program makes (or a card of one, or a list of sheets): never another sheet's keys for a
+    // variable the explainer cannot see, which would "mend" a right read into a wrong one.
+    if (!sheets.entries.some((entry) => entry.owner === chain.base) && !sheets.lists.has(chain.base)) continue;
+    const own = entriesFor(sheets, chain.base);
+    const last = keys[keys.length - 1];
+    if (own.some((entry) => entry.key === last && samePath(entry.path, keys.slice(0, -1)))) continue;
+    const deeper = own.find((entry) => entry.key === last && entry.path.length > keys.length - 1 && samePath(entry.path.slice(0, keys.length - 1), keys.slice(0, -1)));
+    if (!deeper) continue;
+    const positions = chain.reads.filter((read) => read.key === undefined).map((read) => read.text);
+    out = `${out.slice(0, chain.start)}${chainCode(`${chain.base}${positions.map((position) => `[${position}]`).join("")}`, [...deeper.path, last])}${out.slice(chain.end)}`;
+  }
+  return out;
+}
+
+/** "'dict' object is not callable" (`gearshift("mana")`): a sheet read with round brackets. */
+function explainSheetCalled(code: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  const recipes = new Set(recipeBlocks(code).map((block) => block.recipe));
+  const sheets = sheetNames(code, context);
+  const called = [...maskStrings(codePart(text)).matchAll(/(?<![\w.])([A-Za-z_]\w*)\s*\(/g)]
+    .map((match) => match[1])
+    .filter((name) => !recipes.has(name) && !CALLED_TOOLS.has(name) && !KEYWORDS.has(name));
+  const name = called.find((entry) => sheets.has(entry)) ?? called[0];
+  const swapped = name ? squareBracketed(text, name, true) : null;
+  if (!name || !swapped) return null;
+  return {
+    ...explain(
+      "list-needs-square-brackets",
+      "Square brackets for a sheet",
+      `${lineWord(line)} puts ( ) after \`${name}\`, so Python tries to call it like a recipe. \`${name}\` is a dictionary. Read a dictionary with square brackets, not round ones: \`${swapped.fixed}\``,
+      raw,
+    ),
+    slip: "round brackets where a sheet needs square ones",
+  };
+}
+
+/**
+ * "list indices must be integers or slices, not str" (`roster["Lucky"]`): a list takes a position, not a name. When
+ * the list's sheets say where that name is, the hint gives its position.
+ */
+function explainNameAsPosition(message: string, code: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  if (!/indices must be integers or slices, not str/.test(message)) return null;
+  const sheets = sheetsOf(code, context);
+  const chain = readChains(text).find((entry) => entry.reads[0]?.key !== undefined && !sheets.names.has(entry.base)) ??
+    readChains(text).find((entry) => entry.reads[0]?.key !== undefined);
+  if (!chain) return null;
+  const word = chain.reads[0].key as string;
+  const items = sheets.lists.get(chain.base) ?? [];
+  const nameOf = (item: { ref?: string; name?: string }) =>
+    item.name ?? sheets.entries.find((entry) => entry.owner === item.ref && entry.path.length === 0 && entry.key === "name" && entry.kind === "text")?.value;
+  const position = items.findIndex((item) => (nameOf(item) ?? item.ref ?? "").toLowerCase() === word.toLowerCase());
+  const rest = chain.reads.slice(1).map((read) => `[${read.text}]`).join("");
+  if (position >= 0) {
+    return explain(
+      "name-as-position",
+      "A list takes a position",
+      `\`${chain.base}\` is a list: it takes a position number in \`[ ]\`, not a name. ${word} is at position ${position}: \`${chain.base}[${position}]${rest}\`. Positions count from 0.`,
+      raw,
+    );
+  }
+  return explain(
+    "name-as-position",
+    "A list takes a position",
+    `\`${chain.base}\` is a list: it takes a position number in \`[ ]\`, not a name, like \`${chain.base}[0]\`. Positions count from 0.`,
+    raw,
+  );
+}
+
+/**
+ * "list indices must be integers or slices, not dict" (`roster[lucky]["name"]`): a whole sheet where the list takes a
+ * position. The sheet's own position comes from the list.
+ */
+function explainSheetAsPosition(message: string, code: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  if (!/indices must be integers or slices, not dict/.test(message)) return null;
+  const sheets = sheetsOf(code, context);
+  for (const chain of readChains(text)) {
+    const first = chain.reads[0];
+    const items = sheets.lists.get(chain.base);
+    if (!first?.name || !items || !sheets.names.has(first.name)) continue;
+    const position = items.findIndex((item) => item.ref === first.name);
+    const rest = chain.reads.slice(1).map((read) => `[${read.text}]`).join("");
+    const name = sheets.entries.find((entry) => entry.owner === first.name && entry.path.length === 0 && entry.key === "name" && entry.kind === "text")?.value;
+    return {
+      ...explain(
+        "name-as-position",
+        "A list takes a position",
+        position >= 0
+          ? `\`${first.name}\` is a whole sheet. A list takes its position: ${name ?? `\`${first.name}\``} is at position ${position}, \`${chain.base}[${position}]${rest}\`. Positions count from 0.`
+          : `\`${first.name}\` is a whole sheet. A list takes a position number in \`[ ]\`, like \`${chain.base}[0]${rest}\`. Positions count from 0.`,
+        raw,
+      ),
+      slip: "a whole sheet where a list needs a position",
+    };
+  }
+  return null;
+}
+
+/**
+ * "list indices must be integers or slices, not tuple" on a list of sheets (`roster[3, "name"]`): the position and the
+ * key in one pair of brackets. Each goes in its own, position first (never Unit 4's run of items, `[3:"name"]`).
+ */
+function explainPositionAndKey(message: string, code: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  if (!/indices must be integers or slices, not tuple/.test(message)) return null;
+  const sheets = sheetsOf(code, context);
+  const body = codePart(text);
+  const mask = maskStrings(body);
+  for (const found of mask.matchAll(/(?<![\w.])([A-Za-z_]\w*)\s*\[/g)) {
+    const name = found[1];
+    const items = sheets.lists.get(name);
+    const open = (found.index ?? 0) + found[0].length - 1;
+    const close = matchingBracket(mask, open);
+    const parts = close < 0 ? null : splitTopLevel(body.slice(open + 1, close));
+    if (!items || !parts || parts.parts.length < 2 || parts.marks.some((mark) => mark !== ",")) continue;
+    const [first, ...keys] = parts.parts;
+    if (!/^-?\d+$|^[A-Za-z_]\w*$/.test(first) || !keys.every((key) => /^(["']).*\1$/.test(key))) continue;
+    const read = `${name}[${first}]${keys.map((key) => `[${key}]`).join("")}`;
+    const fixed = `${body.slice(0, found.index ?? 0)}${read}${body.slice(close + 1)}`.trim();
+    return {
+      ...explain(
+        "comma-in-brackets",
+        "Position, then key",
+        `\`${name}\` is a list of sheets. Position first, then the key, each in its own brackets: \`${fixed}\``,
+        raw,
+      ),
+      slip: "a position and a key in one [ ]",
+    };
+  }
+  return null;
+}
+
+/** "unhashable type: 'dict'" (`spell in book`, `book[spell] = spell_name`): a whole sheet where its name goes. */
+function explainWholeSheetKey(message: string, code: string, text: string, line: number | null, raw: string): CourseExplanation | null {
+  if (!/unhashable type: 'dict'/.test(message)) return null;
+  const body = codePart(text);
+  const mask = maskStrings(body);
+  const asked = mask.match(/(?<![\w.])([A-Za-z_]\w*)\s+(not\s+in|in)\s+([A-Za-z_]\w*(?:\s*\[[^\]]*\])*)/);
+  const texts = (code ?? "").split("\n").map((row) => codePart(row).match(/^\s*([A-Za-z_]\w*)\s*=(?!=)\s*["']/)?.[1]).filter((name): name is string => Boolean(name));
+  if (asked) {
+    const [, whole, op] = asked;
+    const from = (asked.index ?? 0) + asked[0].lastIndexOf(asked[3]);
+    const book = body.slice(from, from + asked[3].length).trim();
+    const name = texts.find((entry) => entry.includes(whole) && /name/.test(entry)) ?? texts.find((entry) => /name/.test(entry));
+    return explain(
+      "whole-sheet-as-key",
+      "in asks about a key",
+      `\`${op.replace(/\s+/, " ")}\` asks about a key, like the spell's name. \`${whole}\` is a whole dictionary${name ? `: ask \`${name} ${op.replace(/\s+/, " ")} ${book}\`` : ", so ask about its name instead"}.`,
+      raw,
+    );
+  }
+  const stored = body.match(/^\s*([A-Za-z_]\w*)\s*\[\s*([A-Za-z_]\w*)\s*\]\s*=(?!=)\s*([A-Za-z_]\w*)\s*$/);
+  if (stored) {
+    const [, book, whole, other] = stored;
+    return explain(
+      "whole-sheet-as-key",
+      "A key is a name",
+      `${lineWord(line)} uses \`${whole}\`, a whole dictionary, as the key. A key is text, like a name. Swap them: \`${book}[${other}] = ${whole}\``,
+      raw,
+    );
+  }
+  const read = readChains(text).flatMap((chain) => chain.reads).find((entry) => entry.name);
+  return explain(
+    "whole-sheet-as-key",
+    "A key is a name",
+    `${lineWord(line)} uses a whole dictionary${read?.name ? `, \`${read.name}\`,` : ""} as a key. A key is text, like a name.`,
+    raw,
+  );
+}
+
+/**
+ * A sheet named whole on the crash line (`caster`, `spell`), not read with a key, and right where it was made (the
+ * setup's sheet, a sheet the code writes with `{ }`, or a card read by a line Mar'tu's version has too), with the read
+ * that fits: the one Mar'tu's version has in the same place, else a number key that shares a word with the line.
+ */
+function wholeSheetOnLine(sheets: Sheets, code: string, text: string, line: number | null, context?: ExplainContext): { name: string; read: string } | null {
+  const body = codePart(text);
+  const mask = maskStrings(body);
+  const rows = (code ?? "").split("\n");
+  const solution = (context?.solution ?? "").split("\n").map((row) => codePart(row).trim());
+  for (const found of mask.matchAll(/(?<![\w.])([A-Za-z_]\w*)(?![\w(])(?!\s*[[.(])/g)) {
+    const name = found[1];
+    if (KEYWORDS.has(name) || !sheets.names.has(name)) continue;
+    // The line that made it, in the student's code: a card read there that Mar'tu's version does not have is the
+    // slip (`skill = caster["abilities"]`), and the older row names that line.
+    let made: string | null = null;
+    for (let at = (line ?? 1) - 2; at >= 0; at -= 1) {
+      const row = codePart(rows[at]).match(new RegExp(`^\\s*${escapeRegExp(name)}\\s*=(?!=)\\s*(.+)$`));
+      if (row) {
+        made = codePart(rows[at]).trim();
+        break;
+      }
+    }
+    if (made !== null && /\[/.test(made) && !solution.includes(made)) continue;
+    const at = found.index ?? 0;
+    // Mar'tu's version of this line: the same line with a read of `name` where the student has the bare name.
+    let read: string | null = null;
+    for (const row of solution) {
+      for (const chain of readChains(row).filter((entry) => entry.base === name)) {
+        if (`${row.slice(0, chain.start)}${name}${row.slice(chain.end)}` === body.trim()) read = row.slice(chain.start, chain.end);
+      }
+      if (read) break;
+    }
+    if (!read) {
+      const numbers = entriesFor(sheets, name).filter((entry) => entry.kind === "number" && entry.owner === name);
+      const words = (value: string) => value.toLowerCase().split(/[^a-z]+/).filter((part) => part.length > 3);
+      const others = words(`${body.slice(0, at)} ${body.slice(at + name.length)}`);
+      const pick = numbers.find((entry) => words(entry.key).some((part) => others.some((word) => word.includes(part) || part.includes(word)))) ??
+        numbers.find((entry) => entry.path.length === 0) ?? numbers[0];
+      if (!pick) continue;
+      read = chainCode(name, [...pick.path, pick.key]);
+    }
+    return { name, read };
+  }
+  return null;
+}
+
+/**
+ * "'<' not supported between instances of 'dict' and 'int'" (`skill = caster["abilities"]`, then `skill < needed`):
+ * a whole card compared with a number. The inner key that fits the comparison comes from the program's own card.
+ */
+function explainWholeCardCompared(message: string, code: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  const kinds = message.match(/'(?:<|>|<=|>=)' not supported between instances of '(\w+)' and '(\w+)'/);
+  if (!kinds || !kinds.slice(1).includes("dict") || !kinds.slice(1).some((kind) => kind === "int" || kind === "float")) return null;
+  const sheets = sheetsOf(code, context);
+  const rows = (code ?? "").split("\n");
+  // A whole sheet named on this line with no key (`caster < spell["mana_cost"]`): the key goes here, not on a line
+  // above that is right as it is (the game's `caster`, or `spell = spell_book["Lantern Ward"]` from Mar'tu's version).
+  const bare = wholeSheetOnLine(sheets, code, text, line, context);
+  if (bare) {
+    return explain(
+      "whole-card-compared",
+      "A whole card",
+      `That compares a whole card with a number. \`${bare.name}\` is the whole sheet. Add the key, like \`${bare.read}\`.`,
+      raw,
+    );
+  }
+  // The card: a read on this line, or a variable this line compares that an earlier line filled with a read.
+  const cards: { chain: Chain; row: number }[] = readChains(text).map((chain) => ({ chain, row: line ?? 0 }));
+  for (const word of maskStrings(codePart(text)).match(/[A-Za-z_]\w*/g) ?? []) {
+    for (let at = (line ?? 1) - 2; at >= 0; at -= 1) {
+      const made = codePart(rows[at]).match(new RegExp(`^\\s*${escapeRegExp(word)}\\s*=(?!=)\\s*(.+)$`));
+      if (!made) continue;
+      const chain = readChains(made[1])[0];
+      if (chain) cards.push({ chain, row: at + 1 });
+      break;
+    }
+  }
+  const words = (value: string) => value.toLowerCase().split(/[^a-z]+/).filter((part) => part.length > 3);
+  const other = words(codePart(text));
+  for (const { chain, row } of cards) {
+    const keys = keysBefore(chain, chain.reads.length);
+    const inner = entriesFor(sheets, chain.base).filter((entry) => samePath(entry.path, keys)).map((entry) => entry.key);
+    if (keys.length === 0 || inner.length === 0) continue;
+    const read = chainCode(chain.base, keys);
+    // Mar'tu's version reads the card with one more key: that key, else one that shares a word with the comparison.
+    const solved = readChains(context?.solution ?? "").find((entry) => entry.base === chain.base && samePath(keysBefore(entry, keys.length), keys) && entry.reads[keys.length]?.key !== undefined);
+    const pick = solved?.reads[keys.length]?.key ??
+      inner.find((key) => words(key).some((part) => other.some((word) => word.includes(part) || part.includes(word)))) ?? inner[0];
+    const where = row !== line ? ` Line ${row} reads \`${read}\`, the whole card.` : "";
+    const found = explain(
+      "whole-card-compared",
+      "A whole card",
+      `That compares a whole card with a number.${where} Add the inner key, like \`${read}["${pick}"]\`.`,
+      raw,
+    );
+    // The card was read on a line above (`skill = caster["abilities"]`): that line is the slip, not the comparison.
+    return row !== line ? { ...found, slip: "a whole card read where one value is meant", slipLine: row } : found;
+  }
+  return explain(
+    "whole-card-compared",
+    "A whole card",
+    "That compares a whole card (a dictionary) with a number. Read one value from it first, with its key in square brackets.",
+    raw,
+  );
+}
+
+/** "unsupported operand type(s) for -: 'NoneType' and 'int'": math with `None`, often from a recipe with no `return`. */
+function explainNoneMath(message: string, code: string, raw: string): CourseExplanation | null {
+  if (!/unsupported operand type\(s\) for [^:]+: ('NoneType' and '\w+'|'\w+' and 'NoneType')/.test(message)) return null;
+  const silent = recipeBlocks(code).filter((block) => {
+    const steps = (code ?? "").split("\n").slice(block.start, block.end).map((row) => codePart(row).trim());
+    return !steps.some((step) => /^return\b/.test(step));
+  });
+  return explain(
+    "math-with-none",
+    "Math with None",
+    silent.length === 1
+      ? `Something handed back \`None\`: nothing came back. \`${silent[0].recipe}\` (its \`def\` is on line ${silent[0].start}) has no \`return\`, so it hands back \`None\`. Does your recipe have a \`return\`?`
+      : "Something handed back `None`: nothing came back. Does your recipe have a `return`?",
+    raw,
+  );
+}
+
+/**
+ * The one other card that has `key` (`spell_book["Lantern Ward"]` for `"mana_cost"`), read through the shortest way
+ * the program has to it (`spell`, when `spell = spell_book["Lantern Ward"]`), or null when no card or several do.
+ */
+function keyOnAnotherCard(chain: Chain, key: string, sheets: Sheets): { holder: string; read: string } | null {
+  const own = new Set(entriesFor(sheets, chain.base));
+  const found = sheets.entries.filter((entry) => entry.key === key && entry.owner !== null && entry.owner !== chain.base && !own.has(entry));
+  const cards = new Set(found.map((entry) => JSON.stringify(entry.from ?? { owner: entry.owner, path: entry.path })));
+  if (cards.size !== 1) return null;
+  const best = [...found].sort((a, b) => a.path.length - b.path.length)[0];
+  const holder = chainCode(best.owner as string, best.path);
+  return { holder, read: chainCode(holder, [key]) };
+}
+
+/**
+ * KeyError for a key the sheet does not have at all (no level, no near spelling), from the program's own sheet:
+ * `gearshift["fuel"] == "starlode"` on a line of its own (a question, where one `=` stores the key), a key read to
+ * test whether it is there (`if spell_book["Fire Bolt"]:`, where `in` asks), and a key no line makes (the sheet's
+ * own keys, and `.get()` when Mar'tu's version reads it gently). A sheet the explainer cannot see keeps the older words.
+ */
+function explainKeyNotThere(
+  chain: Chain,
+  index: number,
+  key: string,
+  level: readonly string[],
+  sheets: Sheets,
+  text: string,
+  line: number | null,
+  raw: string,
+  context?: ExplainContext,
+): CourseExplanation | null {
+  const known = sheets.entries.some((entry) => entry.owner === chain.base) || sheets.names.has(chain.base) || sheets.lists.has(chain.base);
+  if (!known || level.length === 0) return null;
+  const body = codePart(text);
+  const statement = body.trim();
+  const read = body.slice(chain.start, chain.end).trim();
+  const positions = chain.reads.slice(0, index).filter((entry) => entry.key === undefined).map((entry) => entry.text);
+  const holder = chainCode(`${chain.base}${positions.map((position) => `[${position}]`).join("")}`, keysBefore(chain, index));
+  // (g) `gearshift["fuel"] == "starlode"` alone on its line: `==` asks, and the asking reads a key that is not there.
+  const asked = statement.match(/^(.+?)\s*==\s*(.+)$/);
+  if (asked && asked[1].trim() === read && !/^(if|elif|while|print|return|assert)\b/.test(statement)) {
+    const value = asked[2].trim();
+    return {
+      ...explain(
+        "comparison-alone",
+        "One = stores",
+        `${lineWord(line)} asks a question with \`==\`: is \`${read}\` the same as \`${value}\`? The sheet has no key \`"${key}"\` yet, so asking stops the program. One \`=\` stores it: \`${read} = ${value}\``,
+        raw,
+      ),
+      slip: "`==` where one `=` stores a key",
+    };
+  }
+  // The key is on another card the program has, and only one (`caster["mana_cost"]`, where the cost is on the
+  // spell's page): read it there. Before (h), which would turn the cost test into a test of whether a key is there.
+  const elsewhere = keyOnAnotherCard(chain, key, sheets);
+  if (elsewhere) {
+    return {
+      ...explain(
+        "missing-key",
+        "Another sheet's key",
+        `\`${holder}\` has no key \`"${key}"\`. That key is on \`${elsewhere.holder}\`: \`${elsewhere.read}\``,
+        raw,
+      ),
+      slip: "a key read from the wrong sheet",
+    };
+  }
+  // (h) `if spell_book["Fire Bolt"]:` reads the key to test it: `in` asks whether a key is there, with no read. Only
+  // when Mar'tu's version asks about that key with `in` or `not in`: a cost or a level read in a test is a value.
+  const test = statement.match(/^(if|elif|while)\s+(.+?)\s*:?$/);
+  const asks = new RegExp(`(["'])${escapeRegExp(key)}\\1\\s+(not\\s+)?in\\b`).test(context?.solution ?? "");
+  if (test && test[2].includes(read) && asks) {
+    const quote = new RegExp(`(["'])${escapeRegExp(key)}\\1\\s+not\\s+in\\b`).test(context?.solution ?? "") ? "not in" : "in";
+    return {
+      ...explain(
+        "missing-key",
+        "Ask with in",
+        `${lineWord(line)} reads the key \`"${key}"\` to test it, and \`${holder}\` has no key spelled that, so the read stops the program. To ask whether a key is there, use \`${quote}\`: \`"${key}" ${quote} ${holder}\``,
+        raw,
+      ),
+      slip: "a key read to test whether it is there",
+    };
+  }
+  // (i) a key no line makes: the sheet's own keys, and `.get()` when Mar'tu's version reads this key gently.
+  const shown = level.length <= 5 ? level.map((entry) => `\`"${entry}"\``) : null;
+  const keys = shown ? (shown.length === 1 ? shown[0] : `${shown.slice(0, -1).join(", ")} and ${shown.at(-1)}`) : null;
+  const has = keys ? `\`${holder}\` has the key${shown && shown.length > 1 ? "s" : ""} ${keys}, and no \`"${key}"\`` : `\`${holder}\` has no key \`"${key}"\``;
+  const gentle = (context?.solution ?? "").match(new RegExp(`${escapeRegExp(holder)}\\.get\\(\\s*(["'])${escapeRegExp(key)}\\1[^)]*\\)`))?.[0];
+  return {
+    ...explain(
+      "missing-key",
+      "A key the sheet does not have",
+      gentle
+        ? `${has}, so the read stops the program. To read a key that may be missing, use \`.get()\`: \`${gentle}\``
+        : `${has}, so the read stops the program. Read a key the sheet has, or store this one first.`,
+      raw,
+    ),
+    slip: "a key the sheet does not have",
+  };
+}
+
+/**
+ * KeyError, in the unit's words (Unit 5), from the program's own sheets: a skipped level (`caster["magical_affinity"]`
+ * when it sits inside `"abilities"`), the keys the other way round, one level too deep (`caster["abilities"]["mana"]`),
+ * a near miss on capitals or a space (`"Max_Mana"`), a position on a sheet (`KeyError: 0`), and two keys in one pair
+ * of brackets (`["abilities", "wisdom"]`). Anything else keeps the older words.
+ */
+function explainKeyError(message: string, code: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  const sheets = sheetsOf(code, context, line);
+  const shown = message.trim();
+  const chains = readChains(text);
+  const quoted = shown.match(/^(['"])(.*)\1$/);
+  // (e) `bomb_shell["abilities", "wisdom"]` or `lucky["glug", 0]`: a comma inside one pair of square brackets.
+  if (/^\(.*,.*\)$/.test(shown)) {
+    for (const chain of chains) {
+      const read = chain.reads.find((entry) => splitTopLevel(entry.text)?.marks.includes(","));
+      if (!read) continue;
+      const parts = splitTopLevel(read.text)?.parts ?? [];
+      const prefix = codePart(text).slice(chain.start, read.at).trim();
+      const slip = "a comma inside [ ] where one key goes";
+      if (parts.length === 2 && !/^["']/.test(parts[1])) {
+        return {
+          ...explain("comma-in-brackets", "One key per [ ]", `Inside [ ], a comma asks for two keys at once. To give back ${parts[1]} when the key is missing, use \`.get()\`: \`${prefix}.get(${parts[0]}, ${parts[1]})\``, raw),
+          slip,
+        };
+      }
+      return {
+        ...explain("comma-in-brackets", "One key per [ ]", `Inside [ ], a comma asks for two keys at once. One key per pair of brackets: \`${prefix}${parts.map((part) => `[${part}]`).join("")}\``, raw),
+        slip,
+      };
+    }
+    return null;
+  }
+  // (d) `KeyError: 0`: a sheet read by position.
+  if (/^-?\d+$/.test(shown)) {
+    const chain = chains.find((entry) => entry.reads.some((read) => read.position === Number(shown)));
+    const index = chain ? chain.reads.findIndex((read) => read.position === Number(shown)) : -1;
+    const keys = chain ? entriesFor(sheets, chain.base).filter((entry) => samePath(entry.path, keysBefore(chain, index))).map((entry) => entry.key) : [];
+    const like = keys.includes("name") ? "name" : (keys[0] ?? "name");
+    return {
+      ...explain("missing-key", "Keys, not positions", `${lineWord(line)} reads position ${shown} of a dictionary. A dictionary has keys, not positions: use a key like \`"${like}"\`.`, raw),
+      slip: "a position where a sheet needs a key",
+    };
+  }
+  if (!quoted) return null;
+  const key = quoted[2];
+  for (const chain of chains) {
+    const index = chain.reads.findIndex((read) => read.key === key);
+    if (index < 0) continue;
+    const own = entriesFor(sheets, chain.base);
+    const walked = keysBefore(chain, index);
+    const positions = chain.reads.slice(0, index).filter((read) => read.key === undefined).map((read) => read.text);
+    const head = `${chain.base}${positions.map((position) => `[${position}]`).join("")}`;
+    const here = own.filter((entry) => entry.key === key);
+    // A read of this key that is right where the sheet keeps it is not the slip: another read on the line is.
+    if (here.some((entry) => samePath(entry.path, walked))) continue;
+    // `spell["Lantern Ward"]["mana_cost"]`, where `spell = spell_book["Lantern Ward"]`: the variable already holds that
+    // page, so the page's own key goes.
+    const page = own.find((entry) => entry.from && entry.path.length === 0)?.from?.path;
+    if (page && page.at(-1) === key && walked.length === 0 && index === 0 && chain.reads.length > 1) {
+      const body = codePart(text);
+      const rest = chain.reads.slice(1).map((read) => `[${read.text}]`).join("");
+      const fixed = `${body.slice(0, chain.start)}${chain.base}${rest}${body.slice(chain.end)}`.trim();
+      return {
+        ...explain(
+          "missing-key",
+          "One key too many",
+          `\`${chain.base}\` already holds the \`"${key}"\` page, so it has no key \`"${key}"\` of its own. Read the page's key straight from \`${chain.base}\`: \`${fixed}\``,
+          raw,
+        ),
+        slip: "a key the variable already stands for",
+      };
+    }
+    // (a) the key sits deeper, inside a card the read skipped (or the keys are the other way round).
+    const deeper = here.find((entry) => entry.path.length > walked.length && samePath(entry.path.slice(0, walked.length), walked));
+    if (deeper) {
+      const skipped = deeper.path.slice(walked.length);
+      const nextKey = chain.reads[index + 1]?.key;
+      if (nextKey !== undefined && skipped.length === 1 && nextKey === skipped[0]) {
+        return {
+          ...explain("missing-key", "Outer key first", `\`"${key}"\` is inside \`"${skipped[0]}"\`: the outer key comes first: \`${chainCode(head, [...walked, skipped[0], key])}\``, raw),
+          slip: "the keys the other way round",
+        };
+      }
+      return {
+        ...explain("missing-key", "A level skipped", `\`"${key}"\` is inside \`"${skipped.join('"]["')}"\`: read the outer key first: \`${chainCode(head, [...deeper.path, key])}\``, raw),
+        slip: "a skipped level",
+      };
+    }
+    // (b) one level too deep: the key is on a sheet above the card the read went into.
+    const higher = here.find((entry) => entry.path.length < walked.length && samePath(walked.slice(0, entry.path.length), entry.path));
+    if (higher) {
+      const into = walked[walked.length - 1];
+      return {
+        ...explain(
+          "missing-key",
+          "One level too deep",
+          `\`"${key}"\` is on the ${higher.path.length === 0 ? "big sheet" : `\`"${higher.path.at(-1)}"\` card`}, not inside \`"${into}"\`: \`${chainCode(head, [...higher.path, key])}\``,
+          raw,
+        ),
+        slip: "a read one level too deep",
+      };
+    }
+    // (c) a near miss: the sheet spells it another way.
+    const level = own.filter((entry) => samePath(entry.path, walked)).map((entry) => entry.key);
+    const near = nearKey(key, level.length > 0 ? level : own.map((entry) => entry.key));
+    if (near) {
+      return {
+        ...explain("missing-key", "Spell the key exactly", `${lineWord(line)} reads the key \`"${key}"\`. The sheet spells it \`"${near}"\`. Keys match letter for letter.`, raw),
+        slip: "a key spelled another way",
+      };
+    }
+    // (f) `spell_book["spell_name"]`: a variable's name in quotes is only those letters (the unit's quotes rule).
+    if (/^[A-Za-z_]\w*$/.test(key) && definedNames(code).some((entry) => entry.name === key)) {
+      const written = codePart(text).slice(chain.start, chain.end);
+      const read = chain.reads[index];
+      // `gearshift["fire_bolt_cost"]`, where `fire_bolt_cost = 6`: the variable holds a number, never a key, so the
+      // read goes and the variable stands on its own (`gearshift[fire_bolt_cost]` would read key 6).
+      if (index === chain.reads.length - 1 && variableHoldsNumber(code, key, line)) {
+        const body = codePart(text);
+        const fixed = `${body.slice(0, chain.start)}${key}${body.slice(chain.end)}`.trim();
+        return {
+          ...explain(
+            "missing-key",
+            "Its own variable",
+            `\`"${key}"\` in quotes is a key, and the sheet has no key spelled that. \`${key}\` is its own variable, not a key on the sheet: \`${fixed}\``,
+            raw,
+          ),
+          slip: "a variable read as a key of the sheet",
+        };
+      }
+      const fixed = written.replace(`[${read.text}]`, `[${key}]`);
+      return explain(
+        "quoted-name",
+        "Quotes mean these letters",
+        `\`"${key}"\` in quotes means those exact letters, and the sheet has no key spelled that. Without quotes, Python looks inside the box \`${key}\`: \`${fixed}\``,
+        raw,
+      );
+    }
+    const missing = explainKeyNotThere(chain, index, key, [...new Set(level)], sheets, text, line, raw, context);
+    if (missing) return missing;
+    return null;
+  }
+  // A key kept in a variable (`spell_book[spell_name]`): the variable's text, against the sheet's own keys.
+  const near = nearKey(key, sheets.entries.map((entry) => entry.key));
+  if (near) {
+    return {
+      ...explain("missing-key", "Spell the key exactly", `${lineWord(line)} looks for the key \`"${key}"\`. The sheet spells it \`"${near}"\`. Keys match letter for letter.`, raw),
+      slip: "a key spelled another way",
+    };
+  }
+  return null;
+}
+
+/**
+ * Math with a variable's name in quotes (Unit 5): `oogrish["mana"] - "ward_cost"` takes text away from a number. The
+ * quotes rule, in the unit's words: quotes mean these exact letters; without them Python looks inside the box.
+ */
+function explainQuotedBoxInMath(message: string, code: string, text: string, line: number | null, raw: string): CourseExplanation | null {
+  if (!/unsupported operand type\(s\) for [-*/%]+: '\w+' and 'str'|unsupported operand type\(s\) for [-*/%]+: 'str' and '\w+'/.test(message)) return null;
+  const body = codePart(text);
+  const defined = new Set(definedNames(code).map((entry) => entry.name));
+  for (const found of body.matchAll(/(["'])([A-Za-z_]\w*)\1/g)) {
+    const name = found[2];
+    if (!defined.has(name)) continue;
+    const before = body.slice(0, found.index ?? 0).trimEnd();
+    const after = body.slice((found.index ?? 0) + found[0].length).trimStart();
+    if (!/[-*/%+]$/.test(before) && !/^[-*/%+]/.test(after)) continue;
+    const fixed = `${body.slice(0, found.index ?? 0)}${name}${body.slice((found.index ?? 0) + found[0].length)}`.trim();
+    return explain(
+      "quoted-name",
+      "Quotes mean these letters",
+      `\`${found[0]}\` in quotes means those exact letters: text, not the number in \`${name}\`. Without quotes, Python looks inside the box: \`${fixed}\``,
+      raw,
+    );
+  }
+  return null;
+}
+
+/**
+ * IndexError on a list of sheets (Unit 5): `roster[4]["name"]` when the roster holds 4 sheets. The list's own count
+ * and its last sheet, by name, never Unit 4's "list of lists" words (the key after the position is not a second one).
+ * A list the program changes later (`.append()`, `.pop()`) keeps the count out.
+ */
+function explainSheetsOutOfRange(code: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  const sheets = sheetsOf(code, context);
+  const program = maskStrings(`${context?.setup ?? ""}\n${code ?? ""}`);
+  for (const chain of readChains(text)) {
+    const first = chain.reads[0];
+    if (first?.position === undefined) continue;
+    const items = sheets.lists.get(chain.base) ?? [];
+    const nameOf = (item: { ref?: string; name?: string }) =>
+      item.name ?? sheets.entries.find((entry) => entry.owner === item.ref && entry.path.length === 0 && entry.key === "name" && entry.kind === "text")?.value;
+    const ofSheets = items.length > 0 && items.every((item) => item.name !== undefined || (item.ref !== undefined && sheets.names.has(item.ref)));
+    if (!ofSheets && chain.reads[1]?.key === undefined) continue;
+    const changed = new RegExp(`(?<![\\w.])${escapeRegExp(chain.base)}\\s*\\.\\s*(append|insert|pop|remove|extend)\\s*\\(`).test(program);
+    if (!ofSheets || changed) {
+      return explain(
+        "nothing-at-position",
+        "Nothing at that position",
+        `${lineWord(line)} asks for a position \`${chain.base}\` doesn't have. \`${chain.base}\` is a list of sheets: positions count from 0, so the last one is one less than the number of sheets. \`[-1]\` is always the last one.`,
+        raw,
+      );
+    }
+    const last = nameOf(items[items.length - 1]);
+    return explain(
+      "nothing-at-position",
+      "Nothing at that position",
+      `${lineWord(line)} asks for position ${first.position} of \`${chain.base}\`, and \`${chain.base}\` holds ${items.length} sheet${items.length === 1 ? "" : "s"}. Positions count from 0, so its positions are ${items.length === 1 ? "only 0" : items.length === 2 ? "0 and 1" : `0 to ${items.length - 1}`}.${last ? ` The last one, ${last}, is \`${chain.base}[${items.length - 1}]\`.` : ""}`,
+      raw,
+    );
+  }
+  return null;
+}
+
+/** `str()` for a number read from a sheet: the line's own read (`str(gearshift["mana"])`), never `str(gearshift)`. */
+function sheetNumberRead(code: string, text: string, context?: ExplainContext): string | null {
+  const sheets = sheetsOf(code, context);
+  const body = codePart(text);
+  const chains = readChains(text).filter((chain) => !/str\s*\(\s*$/.test(maskStrings(body).slice(0, chain.start)));
+  const number = chains.find((chain) => {
+    const keys = keysBefore(chain, chain.reads.length);
+    const last = keys.at(-1);
+    return last !== undefined && entriesFor(sheets, chain.base).some((entry) => entry.key === last && samePath(entry.path, keys.slice(0, -1)) && entry.kind === "number");
+  });
+  const pick = number ?? chains.find((chain) => /\+\s*$/.test(maskStrings(body).slice(0, chain.start)));
+  return pick ? body.slice(pick.start, pick.end) : null;
 }
 
 function explainType(
@@ -1936,7 +4909,9 @@ function explainType(
   }
   if (joinText) {
     const number = text.match(/\+\s*([A-Za-z_]\w*)\b(?!\s*\()/)?.[1] ?? text.match(/\b([A-Za-z_]\w*)\s*\+/)?.[1];
-    const example = number ? `str(${number})` : "str(score)";
+    // Unit 5: a number read from a sheet is shown whole, `str(gearshift["mana"])`, never `str(gearshift)`.
+    const read = unitAtLeast(context, DICTS_UNIT_ORDER) ? sheetNumberRead(code, text, context) : null;
+    const example = read ? `str(${read})` : number ? `str(${number})` : "str(score)";
     return explain(
       "text-plus-number",
       "Text + number",
@@ -1953,6 +4928,32 @@ function explainType(
       `${lineWord(line)} adds a number and text. To join them as text, turn the number into text first, like ${example}.`,
       raw,
     );
+  }
+  // `def hero(): "Lucky"` then `hero + " is ready."`: Python's own hint led to a recipe, not a box.
+  const recipe = explainRecipeUsedAsBox(message, code, text, raw);
+  if (recipe) return recipe;
+  // Unit 5: a name where a list needs a position, a whole sheet as a key or in a comparison, math with `None`.
+  if (unitAtLeast(context, DICTS_UNIT_ORDER)) {
+    const sheet =
+      explainNameAsPosition(message, code, text, line, raw, context) ??
+      explainSheetAsPosition(message, code, text, line, raw, context) ??
+      explainPositionAndKey(message, code, text, line, raw, context) ??
+      explainWholeSheetKey(message, code, text, line, raw) ??
+      explainWholeCardCompared(message, code, text, line, raw, context) ??
+      explainNoneMath(message, code, raw);
+    if (sheet) return sheet;
+  }
+  // Unit 4: one item joined to a list with `+`, square brackets after a tool, a comma between two positions.
+  if (unitAtLeast(context, LISTS_UNIT_ORDER)) {
+    const list =
+      explainListPlusItem(message, code, text, line, raw) ??
+      explainNoneRead(message, code, text, line, raw) ??
+      explainRowsWithoutComma(message, code, text, line, raw) ??
+      explainToolWithSquareBrackets(message, code, text, line, raw, unitAtLeast(context, DICTS_UNIT_ORDER) ? SHEET_TOOLS : undefined) ??
+      explainCommaInBrackets(message, code, text, line, raw) ??
+      explainListToolValues(message, text, line, raw) ??
+      explainInBackwards(message, text, line, raw);
+    if (list) return list;
   }
   const dash = /unsupported operand type\(s\) for -/.test(message) ? dashFix(text) : null;
   if (dash && printOnlyTask(context)) return dashInPrintTask(text, line, raw, "dash-for-equals");
@@ -1986,6 +4987,9 @@ function explainType(
       raw,
     );
   }
+  // Unit 5: `oogrish["mana"] - "ward_cost"`: a variable's name in quotes is only those letters (the unit's quotes rule).
+  const quotedBox = unitAtLeast(context, DICTS_UNIT_ORDER) ? explainQuotedBoxInMath(message, code, text, line, raw) : null;
+  if (quotedBox) return quotedBox;
   if (
     /unsupported operand type\(s\) for [-*/%]+: 'str' and '(int|float)'|unsupported operand type\(s\) for [-/%]+: '\w+' and 'str'|can't multiply sequence by non-int/.test(
       message,
@@ -2018,6 +5022,36 @@ function explainType(
         raw,
       );
     }
+    // Unit 5: `gearshift("mana")`: a sheet read with round brackets (before the box-called-like-a-recipe row).
+    if (notCallable[1] === "dict" && unitAtLeast(context, DICTS_UNIT_ORDER)) {
+      const sheet = explainSheetCalled(code, text, line, raw, context);
+      if (sheet) return sheet;
+    }
+    // Unit 4: `chalk_wall(0)`, `wall(-1)`: a list read with round brackets.
+    if (notCallable[1] === "list" && unitAtLeast(context, LISTS_UNIT_ORDER)) {
+      const list = explainListCalled(code, text, line, raw);
+      if (list) return list;
+    }
+    // Unit 3 on: `max_fuel_for = cells * 5`, then `max_fuel_for(4)`. The name called is a box made with `=`.
+    const boxCalled = unitAtLeast(context, FUNCTIONS_UNIT_ORDER) ? calledBox(code, text, line) : null;
+    if (boxCalled) {
+      const recipe = taskRecipe(boxCalled.name, code, context);
+      const made = `line ${boxCalled.line} makes \`${boxCalled.name}\` with \`=\`, so it is a box, not a recipe (function)`;
+      if (recipe) {
+        return explain(
+          "recipe-like-math",
+          "A recipe starts with def",
+          `${lineWord(line)} calls \`${boxCalled.name}\`, but ${made}. ${recipeShape(recipe, boxCalled.value)}`,
+          raw,
+        );
+      }
+      return explain(
+        "not-a-function",
+        "A box, not a recipe",
+        `${lineWord(line)} calls \`${boxCalled.name}\` with ( ), but ${made}. Only a recipe made with \`def\` can be called.${notCallable[1] === "int" || notCallable[1] === "float" ? " To multiply by it, write * between them." : ""}`,
+        raw,
+      );
+    }
     if (notCallable[1] === "int" || notCallable[1] === "float") {
       return explain(
         "use-star-to-multiply",
@@ -2034,12 +5068,7 @@ function explainType(
     );
   }
   if (/takes \d+ positional arguments? but \d+ (were|was) given|missing \d+ required positional argument/.test(message)) {
-    return explain(
-      "wrong-number-of-values",
-      "Wrong number of values",
-      `The function call${onLine(line)} has the wrong number of values inside its ( ). Python says: ${message}.`,
-      raw,
-    );
+    return explainValueCount(message, code, line, raw, context);
   }
   return explain("wrong-kind-of-value", "Wrong kind of value", `${lineWord(line)} mixes kinds of values that don't go together: ${message}.`, raw);
 }
@@ -2059,7 +5088,7 @@ function explainParsed(parsed: Parsed, raw: string, code: string, context?: Expl
       return explainSyntax(message, type, text, line, raw, code, context);
     case "IndentationError":
     case "TabError":
-      return explainIndent(message, line, raw);
+      return explainIndent(message, line, raw, unitAtLeast(context, FUNCTIONS_UNIT_ORDER) ? code : "");
     case "NameError":
       return explainName(message, code, text, line, raw, context);
     case "TypeError":
@@ -2098,10 +5127,28 @@ function explainParsed(parsed: Parsed, raw: string, code: string, context?: Expl
           raw,
         );
       }
+      // Unit 4: `chalk_wall.remove(3)` (a position) or `.remove("99")` (text): a value the list does not hold.
+      if (/remove\(x\): x not in list/.test(message) && unitAtLeast(context, LISTS_UNIT_ORDER)) {
+        return explainRemoveMissing(text, line, raw);
+      }
+      // Unit 4 (tuples): `across, down, up = cabin`, one name per item.
+      const unpack = unitAtLeast(context, LISTS_UNIT_ORDER) ? explainUnpackCount(message, line, raw) : null;
+      if (unpack) return unpack;
+      // `random.randint(die_size, 1)`: "empty range in randrange(20, 2)" (Python 3.13).
+      if (/empty range (in|for) randrange/.test(message) && unitAtLeast(context, RANDOM_UNIT_ORDER)) {
+        const swapped = explainRandintBackwards(text, line, raw);
+        if (swapped) return swapped;
+      }
       break;
     }
     case "IndexError":
       if (/out of range/.test(message)) {
+        // Unit 5: a list of sheets (`roster[4]["name"]`): its own count and its last sheet, never "a list of lists".
+        const sheetList = unitAtLeast(context, DICTS_UNIT_ORDER) && /list/.test(message) ? explainSheetsOutOfRange(code, text, line, raw, context) : null;
+        if (sheetList) return sheetList;
+        // Unit 4: in the unit's words (`len(wall)` as a position, the list's own count), never "3 items".
+        const list = unitAtLeast(context, LISTS_UNIT_ORDER) ? explainOutOfRange(message, code, text, line, raw) : null;
+        if (list) return list;
         const what = /string/.test(message) ? "text" : "list";
         return explain(
           "nothing-at-position",
@@ -2113,10 +5160,26 @@ function explainParsed(parsed: Parsed, raw: string, code: string, context?: Expl
       break;
     case "AssertionError":
       return explainAssert(message, text, line, raw);
+    case "KeyError": {
+      // Unit 5: a skipped level, one level too deep, a near miss, a position, two keys in one [ ].
+      const key = unitAtLeast(context, DICTS_UNIT_ORDER) ? explainKeyError(message, code, text, line, raw, context) : null;
+      if (key) return key;
+      break;
+    }
     case "AttributeError": {
       const meant = message.match(/Did you mean: '([^']+)'/)?.[1];
       const attribute = message.match(/attribute '([^']+)'/)?.[1];
       if (attribute && /^_{2,}$/.test(attribute)) return blankLeft(attribute, line, raw);
+      // Unit 5: `lucky.mana`, `gearshift.fuel = "starlode"`: a dot where a sheet needs square brackets.
+      if (unitAtLeast(context, DICTS_UNIT_ORDER)) {
+        const dot = explainSheetDot(message, code, text, line, raw, context);
+        if (dot) return dot;
+      }
+      // Unit 4: `chalk_wall.sorted()` ("Did you mean 'sort'" would sort the wall itself), `chalk_wall.max()`.
+      if (unitAtLeast(context, LISTS_UNIT_ORDER)) {
+        const front = explainToolAfterDot(message, text, line, raw);
+        if (front) return front;
+      }
       if (meant && attribute) {
         return explain("attribute-spelling", "Check the spelling", `There is no ${attribute} here. Did you mean ${meant}?`, raw);
       }
@@ -2135,18 +5198,14 @@ function explainParsed(parsed: Parsed, raw: string, code: string, context?: Expl
       break;
     }
     case "RecursionError":
-      return explain(
-        "never-ending-calls",
-        "Never-ending calls",
-        "A function keeps calling itself and never stops. Make sure it has a way to finish with a return that does not call it again.",
-        raw,
-      );
+      return explainRecursion(code, raw);
     case "UnboundLocalError": {
+      // Only a recipe (Unit 3 on) can raise this, so the words are the unit's: ingredient, hand back.
       const variable = message.match(/variable '([^']+)'/)?.[1] ?? "a variable";
       return explain(
         "variable-in-function",
-        "Variable inside a function",
-        `Inside a function, ${variable} is changed before it has a value there. Pass it in as a parameter, or return the new value instead.`,
+        "A box inside a recipe",
+        `Inside a recipe (function), ${variable} is changed before it has a value there. Hand it over as an ingredient, or hand the new value back with return.`,
         raw,
       );
     }
@@ -2227,10 +5286,17 @@ function nextErrorAfterFix(result: CourseExplanation, parsed: Parsed, raw: strin
   const previousLine = errorLine(previousRaw);
   if (line === null || previousLine === null) return result;
   const later = line > previousLine;
+  // The code could not be read before and now it can: that slip is mended, wherever the next error is (an
+  // `import` missing on line 1 after a SyntaxError on line 16). On the same line, the same unquoted slip again
+  // (`companion = Bomb Shell` -> `companion = kratos`) is not a fix.
   const nowParses =
-    line === previousLine && PARSE_ERRORS.has(previous.type) && !PARSE_ERRORS.has(parsed.type) && !STILL_UNQUOTED.has(result.kind);
+    PARSE_ERRORS.has(previous.type) &&
+    !PARSE_ERRORS.has(parsed.type) &&
+    (line !== previousLine || !STILL_UNQUOTED.has(result.kind));
   const otherRunTimeSlip =
     line === previousLine && !PARSE_ERRORS.has(previous.type) && !PARSE_ERRORS.has(parsed.type) && previous.type !== parsed.type;
+  // `def hero = "Lucky"` -> `def hero(): "Lucky"`: it reads now, but the box is still a recipe (no "One fixed!").
+  if (result.kind === "def-for-variable" && /^\s*def\b/.test(shownLine(previousRaw))) return result;
   if (!later && !nowParses && !otherRunTimeSlip) return result;
   if (context?.debugging) return { ...result, gotFurther: true };
   return { ...result, gotFurther: true, hint: `${ONE_FIXED_PREFIX} ${result.hint}` };
@@ -2290,11 +5356,39 @@ const SLIP_NAMES: Record<CourseErrorKind, string> = {
   "elif-without-if": "an `elif` or `else` with no `if` above it",
   "else-not-lined-up": "an `elif` or `else` not lined up with its `if`",
   "elif-spelling": "`else if` written as two words",
+  "else-has-question": "a question after `else`",
+  "no-question": "an `if` or `elif` with no question",
+  "keyword-capital": "a capital letter in one of Python's words",
   "compare-number-text": "a number compared with text",
   "equals-in-print": "one `=` inside print",
   "method-as-function": "a text method used without a dot",
   "randint-needs-random": "`randint` used on its own",
   "assert-failed": "an assert that came out False",
+  "recipe-like-math": "a recipe written like math",
+  "quoted-ingredient": "an ingredient name in quotes",
+  "randint-backwards": "the numbers in the wrong order",
+  "recipe-not-made-yet": "a recipe that is not made yet",
+  "recipe-called-too-early": "a recipe called before its `def`",
+  "made-inside-recipe": "a name that only lives inside a recipe",
+  "not-in-recipe": "a name this recipe never makes",
+  "store-backwards": "a store the wrong way round",
+  "quoted-recipe-name": "quotes around a recipe's name",
+  "list-needs-square-brackets": "round brackets where a list needs square ones",
+  "call-needs-round-brackets": "square brackets where a call needs round ones",
+  "comma-in-brackets": "a comma inside [ ] where one position goes",
+  "list-plus-item": "one item joined to a list with `+`",
+  "tool-after-dot": "a tool written after a dot",
+  "not-on-the-list": "a value the list does not hold",
+  "read-from-none": "a position read from `None`",
+  "row-not-item": "a whole row where one of its items is meant",
+  "equals-in-sheet": "an `=` inside a sheet",
+  "key-outside-sheet": "a key with no sheet before it",
+  "unquoted-key": "a key with no quotes",
+  "dot-on-a-sheet": "a dot where a sheet needs square brackets",
+  "name-as-position": "a name where a list needs a position",
+  "whole-sheet-as-key": "a whole sheet used as a key",
+  "whole-card-compared": "a whole card compared with a number",
+  "math-with-none": "math with `None`",
   "input-is-text": "an input() answer used as a number",
   "text-plus-number": "text joined to a number",
   "number-plus-text": "a number added to text",
@@ -2304,7 +5398,7 @@ const SLIP_NAMES: Record<CourseErrorKind, string> = {
   "name-taken": "a name Python already uses",
   "use-star-to-multiply": "brackets right after a number",
   "not-a-function": "( ) after something that is not a function",
-  "wrong-number-of-values": "the wrong number of values in a call",
+  "wrong-number-of-values": "the wrong number of values handed over",
   "wrong-kind-of-value": "values of kinds that don't go together",
   "divide-by-zero": "a divide by zero",
   "out-of-answers": "more questions than answers",
@@ -2339,11 +5433,11 @@ export function slipName(kind: CourseErrorKind): string {
  */
 export function leanExplanation(full: CourseExplanation, raw = full.raw): CourseExplanation {
   if (ALWAYS_FULL.has(full.kind)) return full;
-  const name = SLIP_NAMES[full.kind];
-  const line = errorLine(raw);
-  // Titles are plain text (no code marks). A name that starts with a code word keeps its small letters.
+  const name = full.slip ?? SLIP_NAMES[full.kind];
+  const line = full.slipLine ?? errorLine(raw);
+  // Titles are plain text (no code marks). A name that starts with a code word (or a sign, `=`) keeps its small letters.
   const plain = name.replace(/`/g, "").replace(/^(a|an|the) /, "");
-  const title = /^(def|else|elif|if|print|randint|input)\b/.test(plain)
+  const title = /^(def|else|elif|if|print|randint|input)\b|^[^A-Za-z]/.test(plain)
     ? `Slip: ${name.replace(/`/g, "")}`
     : `${plain.charAt(0).toUpperCase()}${plain.slice(1)}`;
   return {
@@ -2460,11 +5554,15 @@ function findQuietSlip(code: string, options: { missingName?: string; context?: 
       };
     }
     if (/^[A-Za-z_]\w*$/.test(body) && defined.has(body) && !KEYWORDS.has(body)) {
+      // Unit 3 on: a recipe's name with no `()` is a call that never happens (printing it would show the recipe).
+      const recipe = unitAtLeast(options.context, FUNCTIONS_UNIT_ORDER) && new RegExp(`^\\s*def\\s+${escapeRegExp(body)}\\s*\\(`, "m").test(code ?? "");
       return {
         ...explain(
           "bare-name",
           "A name on its own",
-          `${where} is only the name ${body}, so Python looks inside it and does nothing else. To show what ${body} holds, write print(${body}).`,
+          recipe
+            ? `${where} is only the name \`${body}\`, with no \`()\`, so the recipe never runs. To call it, write \`${body}()\``
+            : `${where} is only the name ${body}, so Python looks inside it and does nothing else. To show what ${body} holds, write print(${body}).`,
           raw,
         ),
         kind: "bare-name",

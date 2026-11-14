@@ -15,7 +15,8 @@ It checks, for every exercise / project / challenge / test-out item:
   * the worked example prints exactly ``example_output``,
   * the bonus side quest passes with its own solution,
   * the "Assemble it" lines (``assemble=dict(lines=[...], distractors=[...])``), put in the editor on their
-    own exactly as the player does, pass every checkpoint,
+    own exactly as the player does, pass every checkpoint (and a WARNING when a line like ``row = 60`` is the
+    only number a goal-only step accepts, as in a trace ledger: More structure would hand the answer over),
   * no code a student SEES (starter, solution, example, partials, quiz code) uses a concept that has not been
     introduced yet, in course order (see CONCEPT TOKENS below),
   * every checkpoint has a hint ladder of at least two hints,
@@ -36,6 +37,7 @@ Unit file format (plain Python data, no imports needed):
         dict(kind="project", id="...", title="...", **EXERCISE_FIELDS),         # checkpoints = project tasks
         dict(kind="challenge", id="...", title="...", level="core"|"advanced", **EXERCISE_FIELDS),
         dict(kind="testout", id="...", title="...", exercises=[EXERCISE, ...]),  # pass all => unit complete
+             # optional questions_to_pass=3: the quiz "<id>-questions" must have 3 right too
         dict(kind="article", id="...", title="...", body="...", examples=[dict(code=..., output=..., stdin=[...])],
              exercises=[...optional try-it EXERCISEs...]),
         dict(kind="cheatsheet", id="...", title="...", entries=[dict(concept=..., code=..., output=..., note=...)]),
@@ -526,9 +528,40 @@ def verify_exercise(ex: dict, where: str, gate: ConceptGate, report: Report, kin
             if not all(checkpoint_status(result, len(checkpoints))):
                 index, message = first_failure(result)
                 report.error(where, f"assemble lines fail at checkpoint {index}: {message}")
+            else:
+                assemble_giveaways(ex, lines, where, report)
         for distractor in assemble.get("distractors") or []:
             if distractor in lines:
                 report.error(where, f"assemble distractor {distractor!r} is also one of the right lines")
+
+
+def assemble_giveaways(ex: dict, lines: list, where: str, report: Report) -> None:
+    """A warning, never an error: an Assemble line `row = 60` that pins the number a goal-only step (dictated=False)
+    asks the student to work out, like a trace row. Any other number there fails that step, so "More structure"
+    hands over the answer before "Show me how" does. (Assemble shows the lines as they are.)"""
+    checkpoints = ex.get("checkpoints") or []
+    goal_only = [i for i, cp in enumerate(checkpoints) if cp.get("dictated") is False]
+    if not goal_only:
+        return
+    # What the student reads before Show me how: Mar'tu, the steps, every hint but the last, the starter, the example.
+    shown = "\n".join(str(part) for part in [
+        ex.get("martu"), ex.get("starter"), ex.get("example"), ex.get("example_output"), ex.get("pick"),
+        *[cp.get("text") for cp in checkpoints], *[hint for cp in checkpoints for hint in (cp.get("hints") or [])[:-1]],
+    ] if part)
+    for at, line in enumerate(lines):
+        row = re.fullmatch(r"(\s*([A-Za-z_]\w*)\s*=\s*)(-?\d+)\s*", line)
+        # A number the task already shows (`3 torches`, a Broken spell's `def hours_left = 37`) gives nothing away:
+        # only a number the student has to work out (a trace row's 30) does.
+        if not row or re.search(rf"(?<![\w.]){re.escape(row.group(3))}(?!\w|\.\d)", shown):
+            continue
+        changed = list(lines)
+        changed[at] = f"{row.group(1)}{int(row.group(3)) + 1}"
+        result = run("\n".join(changed) + "\n", checkpoints, ex.get("setup", ""), ex.get("stdin", []),
+                     bool(ex.get("engine", False)))
+        status = checkpoint_status(result, len(checkpoints))
+        if result["ok"] and any(not status[i] for i in goal_only):
+            report.warn(where, f"assemble line {line.strip()!r} is the answer to a goal-only step (any other number "
+                               "fails it): More structure would hand it over. Leave assemble out of this exercise")
 
 
 def _norm(text: str) -> str:
@@ -578,8 +611,138 @@ def verify_question(q: dict, where: str, gate: ConceptGate, report: Report) -> N
         report.error(where, f"unknown question type {kind!r}")
 
 
+# Prose fields (FORMAT.md "Prose"): the marks the site renders are `code`, [[links]], *one star* and lists.
+PROSE_FIELDS = {"martu_intro", "goals", "summary", "intro", "martu", "text", "label", "hints", "pass_line", "why",
+                "takeaway", "q", "explain", "why_wrong", "body", "note", "pair_talk"}
+GLOSSARY_LINK = re.compile(r"\[\[[A-Za-z][^\]|]*(?:\|[^\]]*)?\]\]")
+EMPHASIS = re.compile(r"(?<![\w*])\*(?=[^\s*])([^*\n]*?[^\s*])\*(?![\w*])")
+
+
+def prose_mark_problems(text: str) -> list[str]:
+    """Marks the site would show as they are: a [[link]] inside `code`, **bold**, *stars* around a code span."""
+    plain = re.sub(r"```[\s\S]*?```", " ", text)
+    problems = [f"a [[glossary link]] inside `{span}`" for span in re.findall(r"`([^`\n]*)`", plain)
+                if GLOSSARY_LINK.search(span)]
+    # A link's shown text is plain words or one whole code span ([[len()|`len(wall)`]]); other backticks show the marks.
+    for link in re.finditer(r"\[\[([^\]|]+?)(?:\|([^\]]+?))?\]\]", plain):
+        term, label = link.group(1), link.group(2)
+        if "`" in term or (label and "`" in label and not re.fullmatch(r"`[^`\n\]]+`", label)):
+            problems.append(f"a [[glossary link]] that mixes code and words: {link.group(0)} (show plain words, or one "
+                            "code span)")
+    words = re.sub(r"`[^`\n]*`", "CODE", plain)
+    if "**" in words:
+        problems.append("** (bold is not rendered: use *one star*)")
+    problems += [f"*stars* around a code span: {m.group(0)}" for m in EMPHASIS.finditer(words) if "CODE" in m.group(1)]
+    return problems
+
+
+def prose_strings(value, where=""):
+    """(where, text) for every prose string in a unit's data (code fields are skipped)."""
+    if isinstance(value, list):
+        for i, entry in enumerate(value):
+            yield from prose_strings(entry, f"{where}[{i}]")
+    elif isinstance(value, dict):
+        for key, child in value.items():
+            at = f"{where}.{key}" if where else str(key)
+            if key in PROSE_FIELDS:
+                values = child if isinstance(child, list) else list(child.values()) if isinstance(child, dict) else [child]
+                for i, text in enumerate(values):
+                    if isinstance(text, str):
+                        yield at if len(values) == 1 else f"{at}[{i}]", text
+            else:
+                yield from prose_strings(child, at)
+
+
+def start_of_line(hints, solution=None) -> str | None:
+    """The site's Start me off (exercise-logic.ts startOfLine): the first code span of the last hint, up to and
+    including its first `(` or lone `=`, or a list's `[` (`print(chalk_wall[`, `return wall[`) when Mar'tu's
+    version uses that. None when there is nothing safe to give."""
+    last = hints[-1] if isinstance(hints, (list, tuple)) and len(hints) >= 2 and isinstance(hints[-1], str) else None
+    span = re.search(r"`([^`\n]+)`", last or "")
+    if not span:
+        return None
+    text = span.group(1).strip()
+    cut = re.match(r"^(.*?)(\(|[+\-*/]?=(?!=))", text)
+    if not cut or re.search(r"[=!<>]$", cut.group(1)):
+        return None
+    base = (cut.group(1) + cut.group(2)).strip()
+    bracket = re.match(r"^([^\[]*?[A-Za-z_]\w*\s*\[)[^\]]*$", cut.group(1)) if cut.group(2) == "(" else None
+    listed = bracket.group(1).strip() if bracket else None
+    if listed is None and base == "print(":
+        more = re.match(r"^print\(\s*[A-Za-z_]\w*\s*\[", text)
+        listed = more.group(0) if more else None
+    squash = lambda value: re.sub(r"\s+", "", value)  # noqa: E731
+    used = lambda value: not isinstance(solution, str) or squash(value) in squash(solution)  # noqa: E731
+    start = listed if listed and used(listed) else base
+    return start if start and start != "(" and len(start) < len(text) else None
+
+
+_PLACES_FROM_ORDER = {"order": None}
+
+
+def min_order_for_places(ex: dict) -> bool:
+    """The Start me off place warning is on from Unit 5 (the unit being verified sets the order)."""
+    order = _PLACES_FROM_ORDER["order"]
+    return isinstance(order, int) and order >= 5
+
+
+def ladder_warnings(ex: dict, where: str, report: Report) -> None:
+    """FORMAT.md's hint ladder: point first, the step's own line last (Start me off is cut from it)."""
+    ladders = [(f"checkpoint {i}", cp.get("hints") or [], ex.get("solution"))
+               for i, cp in enumerate(ex.get("checkpoints") or [], 1)]
+    if isinstance(ex.get("bonus"), dict):
+        ladders.append(("bonus", ex["bonus"].get("hints") or [], ex["bonus"].get("solution") or ex.get("solution")))
+    squash = lambda text: re.sub(r"\s+", "", text)  # noqa: E731
+    for label, hints, solution in ladders:
+        if hints and isinstance(hints[0], str) and hints[0].startswith("Start like this"):
+            report.warn(where, f"{label} hint 1 is a 'Start like this': the site shows hint 1 as Where to look. "
+                               "Put the step's own line in the last hint instead (FORMAT.md, checkpoint hints)")
+        start = None if ex.get("solo") else start_of_line(hints, solution)
+        if start and isinstance(solution, str) and squash(start) not in squash(solution):
+            report.warn(where, f"{label}: the last hint's first code span starts `{start}`, which Mar'tu's version "
+                               "never uses, so the site drops Start me off. Put the step's own line first in the "
+                               "last hint (FORMAT.md, checkpoint hints)")
+        # From Unit 5 on: a hint that says where the line goes in words the site cannot read ("Change line 4 to",
+        # "under comment 2", "above the `print`") leaves Start me off at the end of the code.
+        if start and label != "bonus" and min_order_for_places(ex) and isinstance(hints[-1], str):
+            last = hints[-1]
+            placed = re.search(r"\b(in place of|on the line after|under|above)\s+(?:the\s+)?`[^`\n]+`", last)
+            vague = re.search(r"\b(Change (?:line \d+|the last line) to|[Uu]nder (?:comment \d+|the (?:first|second|last) "
+                              r"comment|the comment)|above the `?print`?|below the (?:comments|sheet))", last)
+            if vague and not placed:
+                report.warn(where, f"{label}: the last hint says where the line goes ({vague.group(0)!r}) in words Start "
+                                   "me off cannot read, so it lands at the end of the code. Say it with in place of "
+                                   "`...`, under `# N.`, on the line after `...` or above `...` (FORMAT.md, hints)")
+
+
 def verify_unit(path: Path, gate: ConceptGate, report: Report) -> None:
     unit, items = load_unit(path)
+    for at, text in prose_strings({"UNIT": unit, "ITEMS": items}):
+        for problem in prose_mark_problems(text):
+            report.warn(path.stem, f"{at}: {problem}")
+        # An Another way label sits in a button and a pass line in the "Done!" line: `code` shows, a link cannot.
+        if re.search(r"\.(label|pass_line)(\[\d+\])?$", at) and GLOSSARY_LINK.search(text):
+            report.warn(path.stem, f"{at}: a [[glossary link]] in a label or pass line shows as plain words")
+    # A Quick Check form that also needs its questions: the `<id>-questions` quiz must exist and have enough.
+    for item in items:
+        need = item.get("questions_to_pass")
+        if item.get("kind") != "testout" or need is None:
+            continue
+        quiz = next((q for q in items if q.get("kind") == "quiz" and q.get("id") == f"{item.get('id')}-questions"), None)
+        if isinstance(need, bool) or not isinstance(need, int) or need < 1:
+            report.error(f"{path.stem}/{item.get('id')}", "questions_to_pass must be a whole number, 1 or more")
+        elif quiz is None:
+            report.error(f"{path.stem}/{item.get('id')}", f"questions_to_pass needs a quiz with the id {item.get('id')}-questions")
+        elif need > len(quiz.get("questions", [])):
+            report.error(f"{path.stem}/{item.get('id')}", f"questions_to_pass is {need}, but the quiz has "
+                                                          f"{len(quiz.get('questions', []))} questions")
+    # Unit 1 predates the ladder rule and is frozen; from Unit 2 on, a 'Start like this' first hint is flagged.
+    _PLACES_FROM_ORDER["order"] = unit.get("order")
+    if isinstance(unit.get("order"), int) and unit["order"] >= 2:
+        for item in items:
+            playables = [item] if item.get("kind") in ("project", "challenge") else item.get("exercises", [])
+            for ex in playables:
+                ladder_warnings(ex, f"{path.stem}/{item.get('id')}" + ("" if ex is item else f"/{ex.get('id')}"), report)
     summary = {"file": path.name, "id": unit.get("id"), "title": unit.get("title"), "items": []}
     for field in ("id", "order", "title", "martu_intro", "goals", "campaign_links"):
         if field not in unit:

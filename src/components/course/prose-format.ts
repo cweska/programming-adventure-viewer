@@ -7,7 +7,8 @@
  *   - lines starting "1. ", "2. " ... become a numbered list ("- " lines become a bullet list)
  *   - `backticks` become inline code
  *   - ```python fenced blocks``` become code blocks (kept exactly as written)
- *   - [[term]] or [[term|shown text]] link to the glossary
+ *   - [[term]] or [[term|shown text]] link to the glossary; the shown text may be one code span,
+ *     [[len()|`len(wall)`]], which shows as code (the glossary word is the code itself)
  *   - *words in stars* are emphasis
  */
 import type { GlossaryEntry } from "../../lib/course/schema";
@@ -16,7 +17,7 @@ export type InlinePart =
   | { kind: "text"; text: string }
   | { kind: "code"; text: string }
   | { kind: "em"; text: string }
-  | { kind: "term"; term: string; text: string };
+  | { kind: "term"; term: string; text: string; code?: boolean };
 
 export type ProseBlock =
   | { kind: "paragraph"; parts: InlinePart[] }
@@ -27,6 +28,8 @@ const NUMBERED = /^(\d+)\.\s+/;
 const BULLET = /^[-*]\s+/;
 const FENCE = /^```\s*([A-Za-z0-9_+-]*)\s*$/;
 const TERM = /\[\[([^\]|]+?)(?:\|([^\]]+?))?\]\]/g;
+/** A glossary link whose shown text is one code span: [[len()|`len(wall)`]], or a tool's own [[.get()|`.get()`]]. */
+const TERM_CODE = /\[\[([A-Za-z.][^\]|`]*?)\|`([^`\n\]]+)`\]\]/g;
 
 /**
  * *Words in stars* are said with weight ("`>=` means *at least*"). A star with a space after it, or one
@@ -64,8 +67,25 @@ function termParts(text: string): InlinePart[] {
   return parts;
 }
 
-/** One line of prose: `code` spans first, then glossary links in the plain text between them. */
+/**
+ * One line of prose. Glossary links shown as code ([[len()|`len(wall)`]]) come out first, whole; in the text
+ * between them, `code` spans, then glossary links in the plain text between those.
+ */
 export function inlineParts(text: string): InlinePart[] {
+  const parts: InlinePart[] = [];
+  let last = 0;
+  for (const match of text.matchAll(TERM_CODE)) {
+    const at = match.index ?? 0;
+    if (at > last) parts.push(...codeParts(text.slice(last, at)));
+    parts.push({ kind: "term", term: match[1].trim(), text: match[2], code: true });
+    last = at + match[0].length;
+  }
+  if (last < text.length) parts.push(...codeParts(last === 0 ? text : text.slice(last)));
+  return parts;
+}
+
+/** `code` spans first, then glossary links in the plain text between them. */
+function codeParts(text: string): InlinePart[] {
   const pieces = text.split("`");
   // An odd number of backticks leaves the last one unmatched: keep it as plain text.
   if (pieces.length % 2 === 0) {
