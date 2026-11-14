@@ -50,9 +50,11 @@ import {
   rungPaced,
   rungsShown,
   runOutcome,
+  soloPassLine,
   soloUnaided,
   solutionUnlocked,
   startTarget,
+  stepLine,
   stdinBoxText,
   stepNoun,
   stuckCheckpointId,
@@ -658,8 +660,13 @@ export function ExercisePlayer({
     const point = all.findIndex((rung) => rung.kind === "point");
     return lightBeforeRun && point >= 0 ? all.slice(0, point + 1) : all;
   }, [helpCheckpoint, exercise.anotherWay.length, exercise.assemble, exercise.solo, exercise.solution, lightBeforeRun]);
-  /** Start me off has nothing to give when the line is already there, or right after a crash (mend that first). */
-  const skipRung = (rung: Rung) => rung.kind === "start" && (crashed || codeHasStart(code, rung.start ?? ""));
+  /**
+   * Start me off has nothing to give when the step's line is already begun, or right after a crash (mend that first).
+   * Mar'tu's other finished lines (the starter's, an earlier step's) are not this step's line begun.
+   */
+  const startStep = { solution: exercise.solution, line: helpCheckpoint ? stepLine(helpCheckpoint.hints) : null };
+  const startInCode = (start: string) => codeHasStart(code, start, startStep);
+  const skipRung = (rung: Rung) => rung.kind === "start" && (crashed || startInCode(rung.start ?? ""));
   const climbed = helpState(rungs, helpCheckpoint ? rungsShown(saved?.hintsUsed, helpCheckpoint.id, rungs.length) : 0, showUnlocked, {
     preset,
     skip: skipRung,
@@ -1099,7 +1106,11 @@ export function ExercisePlayer({
                   {checkpoint.passLine ? (
                     <>
                       {" "}
-                      <Prose inline text={checkpoint.passLine} className="ex-pass-line" />
+                      <Prose
+                        inline
+                        text={soloPassLine(checkpoint.passLine, exercise.solo === true && mode !== "testout", soloUnaided(saved))}
+                        className="ex-pass-line"
+                      />
                     </>
                   ) : null}
                 </p>
@@ -1124,7 +1135,7 @@ export function ExercisePlayer({
         <section className="ex-learn" aria-label="Learn" data-testid="learn-pane">
           {mode === "lesson" || mode === "testout" || mode === "try-it" ? (
             <h2 className="ex-title" data-testid="exercise-title">
-              {exercise.title}
+              <Prose inline text={exercise.title} />
             </h2>
           ) : null}
           {activeCheckpoint && !done && crashed && view?.crashSwitchOff && crashAt ? (
@@ -1167,7 +1178,7 @@ export function ExercisePlayer({
               <WorkedExample example={exercise.example} />
             )
           ) : null}
-          {anotherWayOpen(support, exercise.anotherWay) ? <AnotherWay exercise={exercise} glossary={glossary} /> : null}
+          {anotherWayOpen(support, exercise.anotherWay, exercise.solo === true) ? <AnotherWay exercise={exercise} glossary={glossary} /> : null}
           {exercise.pairTalk && !pairTalkHidden && mode !== "testout" ? (
             <aside className="ex-pair-talk" data-testid="pair-talk" aria-label="Pair talk">
               <p className="ex-pair-text">
@@ -1200,6 +1211,7 @@ export function ExercisePlayer({
               starter={exercise.starter}
               glossary={glossary}
               saved={saved?.predicted}
+              orderKey={key}
               onAnswer={(choice) => updateExercise(key, (previous) => ({ ...previous, predicted: choice }))}
               onClose={focusRun}
             />
@@ -1396,7 +1408,7 @@ export function ExercisePlayer({
               crashOnly={crashOnlyHelp}
               moreAfterRun={lightBeforeRun}
               crashIsTask={view?.crashSwitchOff === true}
-              startInCode={(start) => codeHasStart(code, start)}
+              startInCode={startInCode}
               onReveal={revealRung}
               onDismissOffer={() => {
                 setOfferDismissed(true);

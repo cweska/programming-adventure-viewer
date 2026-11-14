@@ -176,12 +176,14 @@ function Inline({ parts, glossary }: { parts: InlinePart[]; glossary: readonly G
         if (part.kind === "em") return <em key={index}>{part.text}</em>;
         if (part.kind === "term") {
           const entry = findGlossaryEntry(glossary, part.term);
+          // [[len()|`len(wall)`]]: the glossary word is shown as code.
+          const shown = part.code ? <code className="inline-code">{part.text}</code> : part.text;
           return entry ? (
             <GlossaryTerm key={index} entry={entry}>
-              {part.text}
+              {shown}
             </GlossaryTerm>
           ) : (
-            <span key={index}>{part.text}</span>
+            <span key={index}>{shown}</span>
           );
         }
         return <span key={index}>{part.text}</span>;

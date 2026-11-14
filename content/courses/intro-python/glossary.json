@@ -9,6 +9,22 @@
     "example": "\"wELCOME\".capitalize()   # Welcome"
   },
   {
+    "term": ".count()",
+    "aliases": [
+      "count()"
+    ],
+    "plain": "Counts how many items in a list are the same as the value you hand it. A value that isn't there counts 0.",
+    "example": "[48, 48, 47].count(48)"
+  },
+  {
+    "term": ".insert()",
+    "aliases": [
+      "insert()"
+    ],
+    "plain": "Puts a new item into a list at a position: the position first, then the value. Every item after it moves one place along.",
+    "example": "wall.insert(2, 47)"
+  },
+  {
     "term": ".lower()",
     "aliases": [
       "lower()",
@@ -19,9 +35,35 @@
     "example": "\"YES\".lower()"
   },
   {
+    "term": ".pop()",
+    "aliases": [
+      "pop()"
+    ],
+    "plain": "Takes the last item off a list and hands it back. `.pop(0)` takes the first item instead. The list gets shorter.",
+    "example": "newest = wall.pop()"
+  },
+  {
+    "term": ".remove()",
+    "aliases": [
+      "remove()"
+    ],
+    "plain": "Takes the first item that is the same as the value you hand it out of a list. You give the value, not the position. If the value isn't there, Python stops with a ValueError.",
+    "example": "wall.remove(99)"
+  },
+  {
     "term": "and",
     "plain": "Joins two questions. `a and b` is `True` only when both are `True`.",
     "example": "mana >= cost and affinity >= required"
+  },
+  {
+    "term": "append",
+    "aliases": [
+      ".append()",
+      "append()",
+      "appends"
+    ],
+    "plain": "Adds one item to the end of a list. It changes the list itself and hands back nothing.",
+    "example": "chalk_wall.append(33)"
   },
   {
     "term": "argument",
@@ -231,6 +273,14 @@
     "example": "import random"
   },
   {
+    "term": "in",
+    "aliases": [
+      "in (a list)"
+    ],
+    "plain": "Asks whether a value is somewhere in a list. Python answers `True` or `False`.",
+    "example": "32 in wall"
+  },
+  {
     "term": "indent",
     "aliases": [
       "indented",
@@ -239,6 +289,26 @@
     ],
     "plain": "Spaces at the start of a line. Four spaces under an `if` mean: this line belongs to the `if`.",
     "example": "if mana < 6:\n    print(\"Low mana.\")"
+  },
+  {
+    "term": "index",
+    "aliases": [
+      "indexes",
+      "indices",
+      "position",
+      "positions"
+    ],
+    "plain": "An item's place in a list. Counting starts at 0, so `[0]` is the first item. `[-1]` counts from the end: the last item.",
+    "example": "chalk_wall[0]"
+  },
+  {
+    "term": "IndexError",
+    "aliases": [
+      "index error",
+      "list index out of range"
+    ],
+    "plain": "Python's message when you ask for a position the list doesn't have. A list of 7 items has positions 0 to 6, so `[7]` is out of range.",
+    "example": "IndexError: list index out of range"
   },
   {
     "term": "input",
@@ -268,6 +338,33 @@
     "example": "clock_color == \"red\""
   },
   {
+    "term": "len()",
+    "aliases": [
+      "len",
+      "length"
+    ],
+    "plain": "Counts the items in a list. The last position is always one less than `len()`, because counting starts at 0.",
+    "example": "len(chalk_wall)"
+  },
+  {
+    "term": "list",
+    "aliases": [
+      "lists"
+    ],
+    "plain": "Many values kept under one name, in order. Square brackets hold the list, and commas go between the items.",
+    "example": "chalk_wall = [48, 48, 47]"
+  },
+  {
+    "term": "list inside a list",
+    "aliases": [
+      "lists inside lists",
+      "nested list",
+      "nested lists"
+    ],
+    "plain": "A list whose items are lists, like rows on a shelf. Read the row first, then the item in it: `roster[3][1]`.",
+    "example": "roster[3][1]"
+  },
+  {
     "term": "match",
     "aliases": [
       "match statement",
@@ -285,6 +382,15 @@
     ],
     "plain": "The signs Python does math with: `+` adds, `-` subtracts, `*` multiplies (times), `/` divides.",
     "example": "print(48 - 37)"
+  },
+  {
+    "term": "max() and min()",
+    "aliases": [
+      "max()",
+      "min()"
+    ],
+    "plain": "`max()` hands back the biggest item in a list, and `min()` the smallest, wherever they are.",
+    "example": "max([41, 46, 39])"
   },
   {
     "term": "NameError",
@@ -336,6 +442,15 @@
       "printed"
     ],
     "plain": "What your program shows on the screen when it runs."
+  },
+  {
+    "term": "parallel lists",
+    "aliases": [
+      "parallel list",
+      "lists in step"
+    ],
+    "plain": "Two lists kept in step: item 0 of one goes with item 0 of the other, and so on. Change one, and you must change the other the same way.",
+    "example": "parts = [\"lens\", \"coil\"]\ncounts = [3, 7]"
   },
   {
     "term": "parameter",
@@ -405,6 +520,14 @@
     "example": "random.randint(1, 20)"
   },
   {
+    "term": "range()",
+    "aliases": [
+      "range"
+    ],
+    "plain": "Counts from a start number up to a stop number. The stop is left out: `range(1, 7)` gives 1 to 6. `list(range(1, 7))` turns the count into a list.",
+    "example": "list(range(1, 7))"
+  },
+  {
     "term": "recipe",
     "aliases": [
       "recipes",
@@ -454,6 +577,26 @@
     "example": "total_cost = lantern_cost + rope_cost"
   },
   {
+    "term": "slice",
+    "aliases": [
+      "slices",
+      "slicing"
+    ],
+    "plain": "A copy of part of a list, made with a colon: `[2:5]` takes positions 2, 3 and 4. The end is left out. The list itself does not change.",
+    "example": "chalk_wall[-3:]"
+  },
+  {
+    "term": "sorted()",
+    "aliases": [
+      "sorted",
+      ".sort()",
+      "sort()",
+      "sort"
+    ],
+    "plain": "`sorted(wall)` hands back a new list, smallest first, and leaves `wall` as it is. `wall.sort()` sorts the list itself and hands back nothing.",
+    "example": "shortest_first = sorted(chalk_wall)"
+  },
+  {
     "term": "stamp",
     "aliases": [
       "stamps",
@@ -479,6 +622,14 @@
     ],
     "plain": "Words inside quotes. Python shows them exactly as you typed them.",
     "example": "\"Shield up.\""
+  },
+  {
+    "term": "sum()",
+    "aliases": [
+      "sum"
+    ],
+    "plain": "Adds up every number in a list and hands back the total.",
+    "example": "sum([3, 9, 2])"
   },
   {
     "term": "SyntaxError",
@@ -523,6 +674,14 @@
     "example": "print(18 > 12)"
   },
   {
+    "term": "tuple",
+    "aliases": [
+      "tuples"
+    ],
+    "plain": "Like a list that can't change. Round brackets instead of square ones. You read it by position, like a list, but you can't add, remove or swap its items.",
+    "example": "hero = (\"Lucky\", 26)"
+  },
+  {
     "term": "TypeError",
     "aliases": [
       "type error",
@@ -540,6 +699,14 @@
     "example": "mana = 26"
   },
   {
+    "term": "ValueError",
+    "aliases": [
+      "value error"
+    ],
+    "plain": "The value is the right kind, but Python can't use it here. With a list, often `.remove()` of a value that is not in it.",
+    "example": "[48, 47].remove(99)\nValueError: list.remove(x): x not in list"
+  },
+  {
     "term": "variable",
     "aliases": [
       "variables",
@@ -548,5 +715,13 @@
     ],
     "plain": "A box with a label. The label is the name. Inside is a value. You make one with `name = value`.",
     "example": "companion = \"Gearshift\""
+  },
+  {
+    "term": "zip()",
+    "aliases": [
+      "zip"
+    ],
+    "plain": "Pairs up two lists, item by item: first with first, second with second. Each pair is a tuple. Wrap it in `list()` to see the pairs.",
+    "example": "list(zip(heroes, manas))"
   }
 ]

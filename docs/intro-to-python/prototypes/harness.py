@@ -623,6 +623,12 @@ def prose_mark_problems(text: str) -> list[str]:
     plain = re.sub(r"```[\s\S]*?```", " ", text)
     problems = [f"a [[glossary link]] inside `{span}`" for span in re.findall(r"`([^`\n]*)`", plain)
                 if GLOSSARY_LINK.search(span)]
+    # A link's shown text is plain words or one whole code span ([[len()|`len(wall)`]]); other backticks show the marks.
+    for link in re.finditer(r"\[\[([^\]|]+?)(?:\|([^\]]+?))?\]\]", plain):
+        term, label = link.group(1), link.group(2)
+        if "`" in term or (label and "`" in label and not re.fullmatch(r"`[^`\n\]]+`", label)):
+            problems.append(f"a [[glossary link]] that mixes code and words: {link.group(0)} (show plain words, or one "
+                            "code span)")
     words = re.sub(r"`[^`\n]*`", "CODE", plain)
     if "**" in words:
         problems.append("** (bold is not rendered: use *one star*)")
@@ -647,9 +653,10 @@ def prose_strings(value, where=""):
                 yield from prose_strings(child, at)
 
 
-def start_of_line(hints) -> str | None:
+def start_of_line(hints, solution=None) -> str | None:
     """The site's Start me off (exercise-logic.ts startOfLine): the first code span of the last hint, up to and
-    including its first `(` or lone `=`. None when there is nothing safe to give."""
+    including its first `(` or lone `=`, or a list's `[` (`print(chalk_wall[`, `return wall[`) when Mar'tu's
+    version uses that. None when there is nothing safe to give."""
     last = hints[-1] if isinstance(hints, (list, tuple)) and len(hints) >= 2 and isinstance(hints[-1], str) else None
     span = re.search(r"`([^`\n]+)`", last or "")
     if not span:
@@ -658,7 +665,15 @@ def start_of_line(hints) -> str | None:
     cut = re.match(r"^(.*?)(\(|[+\-*/]?=(?!=))", text)
     if not cut or re.search(r"[=!<>]$", cut.group(1)):
         return None
-    start = (cut.group(1) + cut.group(2)).strip()
+    base = (cut.group(1) + cut.group(2)).strip()
+    bracket = re.match(r"^([^\[]*?[A-Za-z_]\w*\s*\[)[^\]]*$", cut.group(1)) if cut.group(2) == "(" else None
+    listed = bracket.group(1).strip() if bracket else None
+    if listed is None and base == "print(":
+        more = re.match(r"^print\(\s*[A-Za-z_]\w*\s*\[", text)
+        listed = more.group(0) if more else None
+    squash = lambda value: re.sub(r"\s+", "", value)  # noqa: E731
+    used = lambda value: not isinstance(solution, str) or squash(value) in squash(solution)  # noqa: E731
+    start = listed if listed and used(listed) else base
     return start if start and start != "(" and len(start) < len(text) else None
 
 
@@ -673,7 +688,7 @@ def ladder_warnings(ex: dict, where: str, report: Report) -> None:
         if hints and isinstance(hints[0], str) and hints[0].startswith("Start like this"):
             report.warn(where, f"{label} hint 1 is a 'Start like this': the site shows hint 1 as Where to look. "
                                "Put the step's own line in the last hint instead (FORMAT.md, checkpoint hints)")
-        start = None if ex.get("solo") else start_of_line(hints)
+        start = None if ex.get("solo") else start_of_line(hints, solution)
         if start and isinstance(solution, str) and squash(start) not in squash(solution):
             report.warn(where, f"{label}: the last hint's first code span starts `{start}`, which Mar'tu's version "
                                "never uses, so the site drops Start me off. Put the step's own line first in the "

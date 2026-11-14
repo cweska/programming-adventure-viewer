@@ -90,6 +90,9 @@ describe("support levels", () => {
     expect(anotherWayOpen("full", [])).toBe(false);
     expect(anotherWayOpen("light", angles)).toBe(false);
     expect(anotherWayOpen("none", angles)).toBe(false);
+    // A SOLO item: the angles stay a Help rung (counted as Help), never a free Learn-pane button.
+    expect(anotherWayOpen("full", angles, true)).toBe(false);
+    expect(anotherWayOpen("full", angles, false)).toBe(true);
   });
 });
 

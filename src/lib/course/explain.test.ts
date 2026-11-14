@@ -1448,3 +1448,283 @@ describe("explainCourseError: the Unit 3 play-through (a reviewer who played the
     expect(lean.hint).not.toContain("def say_steady():");
   });
 });
+
+/* ---------------------------------------------------------------------------------------------- */
+/* Unit 4 ("Lists"): the teacher's site requests, from the unit's own wrong answers                */
+/* ---------------------------------------------------------------------------------------------- */
+
+/** Unit 4 as exported: the wrong answer of `key` whose `why` contains `why`, with the context the player gives it. */
+const unit4 = (() => {
+  const dir = path.join(process.cwd(), "content/courses/intro-python/units");
+  const unit = JSON.parse(readFileSync(path.join(dir, "lists.json"), "utf8")) as {
+    order: number;
+    items: (RawExercise & { kind: string; exercises?: RawExercise[] })[];
+  };
+  const side = JSON.parse(readFileSync(path.join(dir, "lists.verify.json"), "utf8")) as {
+    exercises: Record<string, { wrongAnswers?: { why: string; code: RawCode; failsAt: number; messageContains?: string }[] }>;
+  };
+  const text = (code: RawCode | undefined) => (Array.isArray(code) ? `${code.join("\n")}\n` : (code ?? ""));
+  const exercises = new Map<string, RawExercise>();
+  for (const item of unit.items) {
+    if (item.kind === "project" || item.kind === "challenge") exercises.set(item.id, item);
+    for (const exercise of item.exercises ?? []) exercises.set(`${item.id}/${exercise.id}`, exercise);
+  }
+  return (key: string, why: string) => {
+    const exercise = exercises.get(key);
+    const wrong = side.exercises[key]?.wrongAnswers?.filter((entry) => entry.why.includes(why)) ?? [];
+    expect(exercise, key).toBeTruthy();
+    expect(wrong, `${key}: one wrong answer about "${why}"`).toHaveLength(1);
+    const context: ExplainContext = {
+      unitOrder: unit.order,
+      names: exercise?.names,
+      solution: text(exercise?.solution),
+      example: exercise?.example ? text(exercise.example.code) : undefined,
+      explainer: exercise?.explainer,
+      debugging: ((exercise?.checkpoints ?? []) as { text?: string }[]).some((checkpoint) => /\bmend\b/i.test(checkpoint.text ?? "")),
+      foreign: foreignNames({
+        hints: (exercise?.checkpoints ?? []).flatMap((checkpoint) => checkpoint.hints),
+        solution: [text(exercise?.solution), text(exercise?.bonus?.solution)].join("\n"),
+        starter: text(exercise?.starter),
+        names: exercise?.names,
+      }),
+    };
+    return { code: text(wrong[0].code), context, failsAt: wrong[0].failsAt, python: wrong[0].messageContains ?? "", order: unit.order };
+  };
+})();
+
+describe("explainCourseError: Unit 4's slips (lists), from the unit's own wrong answers", () => {
+  // [exercise, the wrong answer's `why`, Python 3.13's own words, kind, what the full hint says]
+  const rows: [string, string, string, string, string][] = [
+    // (1) `chalk_wall(2) = 47`: round brackets after a list's name, on the left of `=` (never the `==` row).
+    ["many-values-one-name/fix-a-mark", "round brackets: assigning to a call", "cannot assign to function call", "list-needs-square-brackets",
+      "Line 5 puts ( ) after `chalk_wall`. To change one item, use square brackets: `chalk_wall[2] = 47`"],
+    // (2) a comma between two positions: the half that fits first.
+    ["many-values-one-name/lists-inside-lists", "a comma between the positions", "list indices must be integers or slices, not tuple",
+      "comma-in-brackets",
+      "Inside [ ], a comma asks for two positions at once. Row then item takes two pairs of brackets: `roster[2][0]`. A run of items takes a colon: `[0:2]`."],
+    ["reading-the-wall-closely/slice-the-wall", "a comma for the colon", "list indices must be integers or slices, not tuple",
+      "comma-in-brackets", "Inside [ ], a comma asks for two positions at once. A run of items takes a colon: `chalk_wall[0:2]`."],
+    // (3) one number joined to a list with `+`.
+    ["many-values-one-name/new-chalk-mark", "a number joined with +", 'can only concatenate list (not "int") to list', "list-plus-item",
+      "`+` joins two lists. To add one item, use `.append()`: `chalk_wall.append(33)`"],
+    ["qc3-a/make-append-read", "+ a number, not a list", 'can only concatenate list (not "int") to list', "list-plus-item",
+      "To add one item, use `.append()`: `marks.append(33)`"],
+    // (4) square brackets after a tool that is called: a method, a builtin, a type.
+    ["many-values-one-name/new-chalk-mark", "square brackets for append's round ones", "'builtin_function_or_method' object is not subscriptable",
+      "call-needs-round-brackets", "Call it with round brackets: `chalk_wall.append(33)`"],
+    ["reading-the-wall-closely/sorted-or-sort", "square brackets for sorted's round ones", "'builtin_function_or_method' object is not subscriptable",
+      "call-needs-round-brackets", "Call it with round brackets: `sorted(chalk_wall)`"],
+    ["more-list-tools/biggest-and-smallest", "square brackets after max", "'builtin_function_or_method' object is not subscriptable",
+      "call-needs-round-brackets", "Call it with round brackets: `max(chalk_wall)`"],
+    ["reading-the-wall-closely/range-of-marks", "square brackets for range's round ones", "type 'range' is not subscriptable",
+      "call-needs-round-brackets", "Call it with round brackets: `range(1, 9)`"],
+    ["zip/spell-colors", "square brackets for zip's round ones", "type 'zip' is not subscriptable", "call-needs-round-brackets",
+      "Call it with round brackets: `zip(heroes, colors)`"],
+    ["extra-reading-the-wall/how-many-times", "square brackets instead of round ones", "'builtin_function_or_method' object is not subscriptable",
+      "call-needs-round-brackets", "Call it with round brackets: `chalk_wall.count(48)`"],
+    ["more-list-tools/remove-and-in", "square brackets after remove", "'builtin_function_or_method' object is not subscriptable",
+      "call-needs-round-brackets", "Call it with round brackets: `chalk_wall.remove(99)`"],
+    // A position read from `None` (`.sort()` hands back nothing): the unit's "nothing came back", never "wrong kind".
+    ["extra-reading-the-wall/broken-spell-3b", "the starter: .sort() hands back None", "'NoneType' object is not subscriptable",
+      "read-from-none",
+      "Line 2 reads a position from `None`: nothing came back. `.sort()` sorts the list itself and hands back nothing. `sorted(chalk_wall)` hands back a sorted copy."],
+    ["extra-reading-the-wall/broken-spell-3b", "x = x.sort(): the wall itself becomes None", "'NoneType' object is not subscriptable",
+      "read-from-none", "and `chalk_wall` holds `None`: nothing came back. `.sort()` on line 2 sorts the list itself"],
+    // Positions past the end, in the unit's words: `len(wall)` is one past the last position (the class's slip).
+    ["many-values-one-name/how-long", "len(list) used as an index (spec)", "list index out of range", "nothing-at-position",
+      "Line 4 uses `len(chalk_wall)` as a position. `len(chalk_wall)` counts the items, so it is one past the last position. Use `len(chalk_wall) - 1`, or `[-1]`."],
+    ["many-values-one-name/broken-spell-3a", "len(list) used as the position", "list index out of range", "nothing-at-position",
+      "`len(chalk_wall)` counts the items, so it is one past the last position."],
+    ["many-values-one-name/first-is-zero", "position 7 for the newest", "list index out of range", "nothing-at-position",
+      "Line 5 asks for a position `chalk_wall` doesn't have. `chalk_wall` holds 7 items, so its positions are 0 to 6."],
+    ["many-values-one-name/how-long", "a counted position [6]: the starter's second call", "list index out of range", "nothing-at-position",
+      "Inside the recipe, `wall` is whatever list the call hands over, and it may be shorter."],
+    ["many-values-one-name/lists-inside-lists", "the inner position too big", "list index out of range", "nothing-at-position",
+      "In a list of lists, check both numbers: the row first, then the item in that row."],
+    ["tuples/cabin-on-the-map", "read by position, counting from 1", "tuple index out of range", "nothing-at-position",
+      "`cabin` holds 2 items, so its positions are 0 to 1."],
+    // Two lists side by side with no comma (Mar'tu's pick copied as rows): a comma after each, never "a comma inside [ ]".
+    ["oogrishs-training-log", "rows over several lines with no comma", "list indices must be integers or slices, not tuple",
+      "missing-comma-in-list", 'ends a list with no comma, and the next line starts another, so Python reads the second one as a position in the first. Put a comma after each one: `["cane parry", 7],`'],
+    // A whole pair + 2: the inner position, never `.append()`.
+    ["oogrishs-training-log", "the inner position forgotten", 'can only concatenate list (not "int") to list', "row-not-item",
+      "`log[0]` is a whole row of `log`: a list, not a number. Add the inner position of the number in it too: `log[0][1] = log[0][1] + 2`"],
+    // The wall's row copied as it looks: commas inside square brackets, or one box each (never "a missing quote").
+    ["many-values-one-name/how-would-you-store-it", "the row copied as shown", "invalid syntax", "missing-comma",
+      "Numbers side by side need commas, inside square brackets: `hours = [48, 48, 47, 46, 44, 41, 37]`. Or give each number a box of its own."],
+    // (5) "'list' object is not callable": read a list with square brackets (after the shadowed-name row).
+    ["many-values-one-name/first-is-zero", "round brackets: the list called like a recipe", "'list' object is not callable",
+      "list-needs-square-brackets", "`chalk_wall` is a list. Read a list with square brackets: `chalk_wall[0]`"],
+    ["many-values-one-name/how-long", "round brackets: the list called like a recipe (inside", "'list' object is not callable",
+      "list-needs-square-brackets", "`wall` is a list. Read a list with square brackets: `wall[len(wall) - 1]`"],
+    ["reading-the-wall-closely/slice-the-wall", "square brackets vs parentheses: the list called", "'list' object is not callable",
+      "list-needs-square-brackets", "Read a list with square brackets: `chalk_wall[0:2]`"],
+    ["many-values-one-name/broken-spell-3a", "commas mended, the list still called with ()", "'list' object is not callable",
+      "list-needs-square-brackets", "Read a list with square brackets: `chalk_wall[0]`"],
+    // (6) `sorted` (and `max`) after a dot: it goes in front (Python's "Did you mean 'sort'" would sort the wall).
+    ["reading-the-wall-closely/sorted-or-sort", "sorted used as a list method", "has no attribute 'sorted'. Did you mean: 'sort'?",
+      "tool-after-dot", "`sorted` goes in front: `sorted(chalk_wall)`. It hands back a sorted copy."],
+    ["more-list-tools/biggest-and-smallest", "max as a list tool (dot)", "has no attribute 'max'", "tool-after-dot",
+      "`max` goes in front: `max(chalk_wall)`. It hands back the biggest item."],
+    // (7) bare words inside [ ]: quotes, before the missing-comma rows.
+    ["oogrishs-training-log", "a drill with no quotes, on one line", "invalid syntax. Perhaps you forgot a comma?", "unquoted-words",
+      'If storm kick is text, put quotes around it: "storm kick".'],
+    ["oogrishs-training-log", "one row of a list over several lines", "invalid syntax. Perhaps you forgot a comma?", "unquoted-words",
+      'If shield wall is text, put quotes around it: "shield wall".'],
+    ["the-basement-inventory", "a part with no quotes, one item of a list over several lines", "invalid syntax. Perhaps you forgot a comma?",
+      "unquoted-words", 'If tuning fork is text, put quotes around it: "tuning fork".'],
+    // (8) `.remove()` handed a value the list does not hold.
+    ["more-list-tools/remove-and-in", "remove by position (3), not value", "list.remove(x): x not in list", "not-on-the-list",
+      "`.remove()` on line 6 looks for a value, not a position. There is no 3 on the list. Ask first with `in`."],
+    ["more-list-tools/remove-and-in", "99 in quotes", "list.remove(x): x not in list", "not-on-the-list",
+      'There is no "99" on the list: in quotes it is text, and the list holds numbers. Ask first with `in`.'],
+    // Numbers side by side in a list: a comma (never "or + to join text").
+    ["many-values-one-name/make-the-wall", "no commas (spec)", "invalid syntax. Perhaps you forgot a comma?", "missing-comma-in-list",
+      "Inside a list, a comma goes between each two items. Line 2 has numbers side by side with no comma between them: `chalk_wall = [48, 48, 47, 46, 44, 41, 37]`"],
+    // The unit's other list crashes, in the unit's words.
+    ["oogrishs-training-log", "append with two things, not one pair", "list.append() takes exactly one argument (2 given)",
+      "wrong-number-of-values", 'put them in their own square brackets: `log.append(["roll and rise", 6])`'],
+    ["extra-reading-the-wall/how-many-times", "nothing in the brackets", "list.count() takes exactly one argument (0 given)",
+      "wrong-number-of-values", "`.count()` on line 2 needs one value inside its round brackets: the value to count."],
+    ["more-list-tools/remove-and-in", "the sides swapped", "argument of type 'int' is not iterable", "wrong-kind-of-value",
+      "so the value goes first and the list after it on line 3: `has_32 = 32 in chalk_wall`"],
+    ["tuples/cabin-on-the-map", "three names for two items", "not enough values to unpack (expected 3, got 2)", "wrong-number-of-values",
+      "Line 6 has 3 names on the left of `=`, but the right side holds 2 items. Use one name per item: 2 names."],
+  ];
+
+  it.each(rows)("%s, %s: Python says %s, the explainer names %s", (key, why, python, kind, hint) => {
+    const { code, context, failsAt, python: proved } = unit4(key, why);
+    expect(failsAt, "a crash wrong answer").toBe(0);
+    const raw = tracebackOf(code);
+    expect(raw).toContain(python);
+    expect(raw, "the words the harness proved for this wrong answer").toContain(proved);
+    const full = explainCourseError(raw, code, { ...context, explainer: "full" });
+    expect(full.kind, code).toBe(kind);
+    expect(full.hint).toContain(hint);
+  });
+
+  it("leads with the half that fits: row then item for a list of lists, a colon for a run of items", () => {
+    const nested = unit4("many-values-one-name/lists-inside-lists", "a comma between the positions");
+    const rows = explainRun(nested.code, [], nested.context).hint;
+    expect(rows.indexOf("Row then item")).toBeLessThan(rows.indexOf("colon"));
+    const flat = unit4("reading-the-wall-closely/slice-the-wall", "a comma for the colon");
+    const run = explainRun(flat.code, [], flat.context).hint;
+    expect(run.indexOf("colon")).toBeLessThan(run.indexOf("row then item"));
+  });
+
+  it("names the slip, never the fix, in a lean exercise (SOLO and Quick Check), for every new kind", () => {
+    const lean: [string, string, string, string][] = [
+      ["many-values-one-name/solo-3a", "round brackets: the list called like a recipe", "list-needs-square-brackets",
+        "The slip is on line 3: round brackets where a list needs square ones."],
+      ["more-list-tools/solo-3c", "the starter (square brackets after max)", "call-needs-round-brackets",
+        "The slip is on line 2: square brackets where a call needs round ones."],
+      ["more-list-tools/solo-3c", "a dot instead of a call", "tool-after-dot", "The slip is on line 2: a tool written after a dot."],
+      ["qc3-a/make-append-read", "+ a number, not a list", "list-plus-item", "The slip is on line 4: one item joined to a list with `+`."],
+      ["qc3-b/make-append-read", "square brackets for append's round ones", "call-needs-round-brackets",
+        "The slip is on line 6: square brackets where a call needs round ones."],
+      ["qc3-a/make-append-read", "missing commas", "missing-comma-in-list", "The slip is on line 2: a missing comma in a list."],
+      ["qc3-a/mend-the-reads", "sorted with square brackets", "call-needs-round-brackets",
+        "The slip is on line 11: square brackets where a call needs round ones."],
+      ["reading-the-wall-closely/solo-3b", "seat B's bug", "read-from-none", "The slip is on line 3: a position read from `None`."],
+    ];
+    for (const [key, why, kind, hint] of lean) {
+      const { code, context } = unit4(key, why);
+      expect(context.explainer, `${key} is a lean exercise`).toBe("lean");
+      const result = explainRun(code, [], context);
+      expect(result.kind, `${key}: ${why}`).toBe(kind);
+      expect(result.explainer).toBe("lean");
+      expect(result.hint).toContain(hint);
+      expect(result.title, `${key}: ${why}`).not.toContain("`");
+      // The full version's fixed code (its last code span with a bracket) never shows in the lean one.
+      const full = explainRun(code, [], { ...context, explainer: "full" });
+      const fix = [...full.hint.matchAll(/`([^`]*[[(][^`]*)`/g)].at(-1)?.[1];
+      expect(fix, `${key}: the full hint shows the fixed code`).toBeTruthy();
+      expect(result.hint, `${key}: ${why}`).not.toContain(fix as string);
+    }
+    // The kinds with no lean wrong answer in the unit get a lean name too, and never their fix.
+    for (const [key, why, kind] of [
+      ["many-values-one-name/fix-a-mark", "round brackets: assigning to a call", "list-needs-square-brackets"],
+      ["many-values-one-name/lists-inside-lists", "a comma between the positions", "comma-in-brackets"],
+      ["more-list-tools/remove-and-in", "remove by position (3), not value", "not-on-the-list"],
+    ] as const) {
+      const { code, context } = unit4(key, why);
+      const result = explainRun(code, [], { ...context, explainer: "lean" });
+      expect(result.kind).toBe(kind);
+      expect(result.hint).toContain(`: ${slipName(kind)}.`);
+      expect(result.hint).not.toMatch(/chalk_wall\[2\] = 47|roster\[2\]\[0\]|Ask first/);
+    }
+  });
+
+  it("opens only from Unit 4 on: Units 1 to 3 keep their older advice for the same code", () => {
+    const cases: [string, string, string][] = [
+      ["many-values-one-name/fix-a-mark", "round brackets: assigning to a call", "compare-with-double-equals"],
+      ["many-values-one-name/new-chalk-mark", "a number joined with +", "wrong-kind-of-value"],
+      ["many-values-one-name/new-chalk-mark", "square brackets for append's round ones", "wrong-kind-of-value"],
+      ["many-values-one-name/lists-inside-lists", "a comma between the positions", "wrong-kind-of-value"],
+      ["many-values-one-name/first-is-zero", "round brackets: the list called like a recipe", "not-a-function"],
+      ["reading-the-wall-closely/sorted-or-sort", "sorted used as a list method", "attribute-spelling"],
+      ["oogrishs-training-log", "a drill with no quotes, on one line", "missing-comma"],
+      ["more-list-tools/remove-and-in", "remove by position (3), not value", "other"],
+      ["many-values-one-name/make-the-wall", "no commas (spec)", "missing-comma"],
+      ["extra-reading-the-wall/broken-spell-3b", "the starter: .sort() hands back None", "wrong-kind-of-value"],
+      ["oogrishs-training-log", "rows over several lines with no comma", "wrong-kind-of-value"],
+      ["oogrishs-training-log", "the inner position forgotten", "wrong-kind-of-value"],
+      ["many-values-one-name/how-would-you-store-it", "the row copied as shown", "cant-read-line"],
+    ];
+    for (const [key, why, before] of cases) {
+      const { code, context, order } = unit4(key, why);
+      expect(order).toBe(4);
+      expect(explainRun(code, [], { ...context, unitOrder: 3 }).kind, `${key}: ${why}, in Unit 3`).toBe(before);
+      expect(explainRun(code, [], { ...context, unitOrder: undefined }).kind, `${key}: ${why}, with no unit`).toBe(before);
+    }
+  });
+
+  it("keeps each new row in its place: never the == row, never over a recipe or a shadowed name", () => {
+    const unit4Context: ExplainContext = { unitOrder: 4 };
+    // A list's name with ( ) on the left of `=`: never "use two equals signs".
+    const assigned = explainRun("chalk_wall = [48, 74]\nchalk_wall(1) = 47\n", [], unit4Context);
+    expect(assigned.kind).toBe("list-needs-square-brackets");
+    expect(assigned.hint).not.toContain("==");
+    // Unit 3's recipe written like math keeps its row, and a real question keeps the == row.
+    expect(explainRun("max_fuel_for(cells) = cells * 5\n", [], unit4Context).kind).toBe("recipe-like-math");
+    expect(explainRun("roll = 5\nif roll = 5:\n    print(roll)\n", [], unit4Context).kind).toBe("compare-with-double-equals");
+    // A box that is not a list, called with ( ) on the left: not the list row.
+    expect(explainRun("mana = 20\nmana(1) = 5\n", [], unit4Context).kind).not.toBe("list-needs-square-brackets");
+    // `list` used as a name keeps the shadowed-name row.
+    expect(explainRun("list = [1, 2]\nprint(list(range(3)))\n", [], unit4Context).kind).toBe("name-taken");
+    // A recipe read with [ ] is a call too.
+    const recipe = explainRun("def newest_mark(wall):\n    return wall[-1]\n\nprint(newest_mark[[9, 8, 7]])\n", [], unit4Context);
+    expect(recipe.kind).toBe("call-needs-round-brackets");
+    expect(recipe.hint).toContain("`newest_mark([9, 8, 7])`");
+    // A number read with [ ] is not a call slip.
+    expect(explainRun("mana = 20\nprint(mana[0])\n", [], unit4Context).kind).toBe("wrong-kind-of-value");
+    // `.pop[]` (a SyntaxError): round brackets for the call, never "a missing quote".
+    const pop = explainRun("chalk_wall = [48, 47]\nnewest = chalk_wall.pop[]\n", [], unit4Context);
+    expect(pop.kind).toBe("call-needs-round-brackets");
+    expect(pop.hint).toContain("Call it with round brackets: `chalk_wall.pop()`");
+    // A one-item list beside the rest is rebuilt as one pair, never `[["roll and rise"], 6]`.
+    const pair = explainRun('log = []\nlog.append(["roll and rise"], 6)\n', [], unit4Context);
+    expect(pair.hint).toContain('`log.append(["roll and rise", 6])`');
+    // Two lists side by side on one line.
+    const side = explainRun('log = [["cane parry", 7] ["shield wall", 5]]\n', [], unit4Context);
+    expect(side.kind).toBe("missing-comma-in-list");
+    expect(side.hint).toContain('Put a comma after each one: `["cane parry", 7],`');
+    // A list whose count can't be read for sure (it grew): the plain rule, never a wrong count or Unit 1's "3 items".
+    const grown = explainRun("wall = [1, 2]\nwall.append(3)\nprint(wall[3])\n", [], unit4Context);
+    expect(grown.hint).toContain("the last position is one less than the number of items");
+    expect(grown.hint).not.toMatch(/holds \d|3 items/);
+    // Text keeps its older words.
+    expect(explainRun('name = "Lucky"\nprint(name[9])\n', [], unit4Context).hint).toContain("the text doesn't have");
+    // `None` from a list tool kept in a box, and from a recipe with no return.
+    const appended = explainRun("w = [3]\nx = w.append(4)\nprint(x[0])\n", [], unit4Context);
+    expect(appended.kind).toBe("read-from-none");
+    expect(appended.hint).toContain("`.append()` on line 2 adds to the list itself and hands back nothing.");
+    expect(explainRun("def f(w):\n    print(w)\n\nx = f([1])\nprint(x[0])\n", [], unit4Context).hint).toContain("a recipe with no `return`");
+    // A row + a number in a flat list is not a row slip (a number + a number never crashes); `chalk_wall + 33` keeps .append().
+    expect(explainRun("chalk_wall = [1, 2]\nchalk_wall = chalk_wall + 33\n", [], unit4Context).kind).toBe("list-plus-item");
+    // Text joined to a list: the same row, in the words for text.
+    expect(explainRun('names = ["Pell"]\nnames = names + "Moss"\n', [], unit4Context).hint).toContain(
+      "joins a list and one piece of text with `+`",
+    );
+  });
+});

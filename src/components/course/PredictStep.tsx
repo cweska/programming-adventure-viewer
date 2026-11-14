@@ -1,8 +1,10 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import type { GlossaryEntry, Playable } from "../../lib/course/schema";
+import { useStudentSeed } from "../../lib/course/student-seed";
 import { Prose } from "./Prose";
+import { choiceOrder, choiceSeed } from "./quiz-grading";
 
 /**
  * Two choices that are the same once spaces are taken out: the spaces are the whole question (`burst: 37` or
@@ -32,7 +34,9 @@ function ChoiceText({ text, showSpaces }: { text: string; showSpaces: boolean })
 /**
  * Predict before Run (curriculum §2.1 step 2): a one-click guess, free, and never in the way of Run.
  * `saved` is the remembered answer: a choice index, -1 for skipped, undefined for not asked yet.
- * A guess or skip from an earlier visit keeps the card closed.
+ * A guess or skip from an earlier visit keeps the card closed. The choices show in a shuffled order (choiceOrder,
+ * seeded by the student and `orderKey`, the exercise), but every index here is the AUTHORED one: `answer`, the saved
+ * guess, the ✓ and ✗ marks and `data-testid="predict-choice-<index>"`.
  */
 export function PredictStep({
   predict,
@@ -40,6 +44,7 @@ export function PredictStep({
   starter,
   glossary,
   saved,
+  orderKey,
   onAnswer,
   onClose,
 }: {
@@ -48,6 +53,8 @@ export function PredictStep({
   starter: string;
   glossary: GlossaryEntry[];
   saved: number | undefined;
+  /** Where the choices are (the exercise's progress key): with the student, it seeds the display order. */
+  orderKey: string;
   /** A choice index, or -1 for "Skip". */
   onAnswer: (choice: number) => void;
   /** The card is gone (skipped or "Got it"): put the keyboard somewhere useful. */
@@ -56,6 +63,11 @@ export function PredictStep({
   const [guess, setGuess] = useState<number | null>(null);
   const [closed, setClosed] = useState(false);
   const titleId = useId();
+  const student = useStudentSeed();
+  const order = useMemo(
+    () => choiceOrder(predict.choices.length, choiceSeed(student ?? "", `${orderKey}:predict`)),
+    [predict.choices.length, student, orderKey],
+  );
 
   if (closed || (guess === null && saved !== undefined)) return null;
 
@@ -87,8 +99,16 @@ export function PredictStep({
       ) : (
         <p className="ex-muted ex-predict-note">Read the code in the editor. Pick your guess, then press Run to see.</p>
       )}
-      <div className="ex-predict-choices" role="group" aria-labelledby={titleId}>
-        {predict.choices.map((choice, index) => {
+      {/* Hidden until the student seed is known (after hydration), so the order never jumps. */}
+      <div
+        className="ex-predict-choices"
+        role="group"
+        aria-labelledby={titleId}
+        data-ready={student !== null}
+        style={student === null ? { visibility: "hidden" } : undefined}
+      >
+        {order.map((index) => {
+          const choice = predict.choices[index] ?? "";
           const chosen = guess === index;
           const isAnswer = guess !== null && index === predict.answer;
           const mark = guess === null ? "" : isAnswer ? "✓" : chosen ? "✗" : "";

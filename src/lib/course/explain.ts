@@ -18,10 +18,14 @@
  * `( )`, `def max_fuel_for(cells) = cells * 5`, `def ("say_steady"):`), a name like one of the recipe's ingredients
  * (`hero` for `hero_name`), a recipe with no step yet, a name copied from a hint's Teach me example (`get_note`), and,
  * for every unit, unquoted words inside a call that takes several values (`heal(Moth Queen, 5)`: only the bare run of
- * words is quoted).
+ * words is quoted). Unit 4 (lists) adds round brackets where a list needs square ones (`chalk_wall(2) = 47`,
+ * `wall(0)`), square brackets after a tool that is called (`chalk_wall.append[33]`, `max[chalk_wall]`,
+ * `range[1, 9]`), a comma between two positions (`roster[2, 0]`), one item joined to a list with `+`
+ * (`chalk_wall + 33`), `sorted` (or `max`, `min`, `sum`, `len`) written after a dot, unquoted words and a missing
+ * comma inside `[ ]`, and `.remove()` handed a value the list does not hold.
  *
  * ExplainContext sets how much it says: `unitOrder` keeps advice to what the class has met (no "make it with
- * def" before the Functions unit), `explainer: "lean"` names the kind of slip and the line but never the fix,
+ * def" before the Functions unit, no list tools before the Lists unit), `explainer: "lean"` names the kind of slip and the line but never the fix,
  * and `debugging` leaves the "One fixed!" prefix to the player's own progress line.
  *
  * Every explanation has a stable `kind` (for tests, logging and the player), and says what happened and
@@ -109,6 +113,15 @@ export type CourseErrorKind =
   | "not-in-recipe"
   | "store-backwards"
   | "quoted-recipe-name"
+  // lists (Unit 4)
+  | "list-needs-square-brackets"
+  | "call-needs-round-brackets"
+  | "comma-in-brackets"
+  | "list-plus-item"
+  | "tool-after-dot"
+  | "not-on-the-list"
+  | "read-from-none"
+  | "row-not-item"
   // values
   | "input-is-text"
   | "text-plus-number"
@@ -165,6 +178,12 @@ export const FUNCTIONS_UNIT_ORDER = 3;
 /** Unit 2 ("Control Flow") teaches `random.randint`. */
 export const RANDOM_UNIT_ORDER = 2;
 
+/**
+ * Unit 4 ("Lists") teaches lists: square brackets for a position, `.append()`, `+` between two lists, slices, and
+ * the list tools (`sorted`, `max`, `.remove()`, `in`). Its rows name them; before it the older advice is unchanged.
+ */
+export const LISTS_UNIT_ORDER = 4;
+
 /** What the player knows about the exercise. Every field is optional; more context gives more exact help. */
 export type ExplainContext = {
   /** The worked example's code: a name copied from it gets "this name is from the example". */
@@ -187,7 +206,8 @@ export type ExplainContext = {
    * The unit's `order` on the course map. Before the Functions unit (FUNCTIONS_UNIT_ORDER) no advice says
    * "make it with def"; in Unit 1 (before comparisons) `print(x = 1)` gets box advice, not `==`. From Unit 2
    * (RANDOM_UNIT_ORDER) `randint` the wrong way round is named; from Unit 3 the recipe rows speak the unit's words
-   * (recipe, ingredient, hand over). Without a unit, those rows stay closed and the older advice is unchanged.
+   * (recipe, ingredient, hand over); from Unit 4 (LISTS_UNIT_ORDER) the list rows name square brackets, `.append()`
+   * and the list tools. Without a unit, those rows stay closed and the older advice is unchanged.
    */
   unitOrder?: number;
   /**
@@ -2130,6 +2150,12 @@ function explainSyntax(
     if (chain) return chain;
   }
 
+  // Unit 4: `chalk_wall(2) = 47`, round brackets after a list's name (before the `==` row's "use two equals signs").
+  if (unitAtLeast(context, LISTS_UNIT_ORDER)) {
+    const list = explainListAssignedWithCall(message, code, text, line, raw);
+    if (list) return list;
+  }
+
   // `said_yes = answer.lower() = "yes"`, `assert passed = False`: one `=` where a question needs `==`.
   if (/^invalid syntax|cannot assign to (function call|expression|comparison|attribute)/.test(lower) && !/forgot a comma/.test(lower)) {
     const asked = /maybe you meant '=='/.test(lower) || /^\s*(if|elif|while|assert)\b/.test(text) || /cannot assign/.test(lower)
@@ -2197,6 +2223,12 @@ function explainSyntax(
     );
   }
   if (/perhaps you forgot a comma/.test(lower)) {
+    // Unit 4: bare words inside [ ] (`[storm kick, 7]`, or an item of a list over several lines), before the
+    // missing-comma rows: they are words to quote, not two items.
+    if (unitAtLeast(context, LISTS_UNIT_ORDER)) {
+      const words = explainUnquotedInList(code, text, line, raw);
+      if (words) return words;
+    }
     // A list or dictionary over several lines: the comma at the end of this line is missing.
     const open = openBefore(code, line);
     const body = codePart(text);
@@ -2213,6 +2245,11 @@ function explainSyntax(
     if (option) return option;
     const unquoted = explainUnquoted(text, code, line, raw);
     if (unquoted) return unquoted;
+    // Unit 4: `chalk_wall = [48 48, 47]`, numbers side by side in a list (never "or + to join text").
+    if (unitAtLeast(context, LISTS_UNIT_ORDER)) {
+      const comma = explainListMissingComma(text, line, raw);
+      if (comma) return comma;
+    }
     const inside = text.match(/\(([^()"']*)\)/)?.[1]?.trim();
     // In a call that takes several values (not print), the commas split the values: never quote them together.
     const callee = codePart(text).trim().match(/^(?:[A-Za-z_]\w*\s*=(?!=)\s*)?([A-Za-z_][\w.]*)\s*\(/)?.[1];
@@ -2301,6 +2338,11 @@ function explainSyntax(
     return explainIndent(message, line, raw, unitAtLeast(context, FUNCTIONS_UNIT_ORDER) ? code : "");
   }
   if (/^invalid syntax/.test(lower)) {
+    // Unit 4: the wall's row copied as it looks (`hours = 48 48 47`), and `chalk_wall.pop[]`.
+    if (unitAtLeast(context, LISTS_UNIT_ORDER)) {
+      const list = explainNumbersSideBySide(text, line, raw) ?? explainEmptySquareCall(code, text, line, raw);
+      if (list) return list;
+    }
     // `if hours_left < 3;`: a semicolon typed for the colon.
     if (/;\s*$/.test(codePart(text)) && headerWithColon(code, text, line)) return explainMissingColon(code, text, line, raw);
     const option = explainUnquotedOption(text, line, raw);
@@ -2800,6 +2842,635 @@ function explainRecipeUsedAsBox(message: string, code: string, text: string, raw
   return null;
 }
 
+/* ---------------------------------------------------------------------------------------------- */
+/* Lists (Unit 4): brackets, + and the list tools                                                  */
+/* ---------------------------------------------------------------------------------------------- */
+
+/** The tools a student calls (Python's own and the list and text methods): `name[...]` after one is a call slip. */
+const CALLED_TOOLS = new Set([
+  ...COMMON_BUILTINS.filter((name) => !["True", "False", "None", "random", "math"].includes(name)),
+  "append", "count", "remove", "insert", "pop", "sort", "index", "extend", "copy", "clear", "reverse",
+  "lower", "upper", "capitalize", "title", "strip", "randint",
+]);
+
+/**
+ * Where the bracket that opens at `open` in `mask` closes (strings already masked), or -1. `open` is the index of
+ * a `(` or `[`.
+ */
+function matchingBracket(mask: string, open: number): number {
+  const opener = mask[open];
+  const closer = CLOSER[opener];
+  let depth = 0;
+  for (let index = open; index < mask.length; index += 1) {
+    if (mask[index] === opener) depth += 1;
+    else if (mask[index] === closer) {
+      depth -= 1;
+      if (depth === 0) return index;
+    }
+  }
+  return -1;
+}
+
+/**
+ * The names the code makes as lists (`chalk_wall = [48, ...]`, also over several lines, `d8 = list(range(1, 9))`,
+ * `pairs = sorted(...)`, `both = a + [b]`), with a flag for a list of lists (its first item is itself a `[ ]`).
+ */
+function listsMade(code: string): Map<string, { nested: boolean }> {
+  const found = new Map<string, { nested: boolean }>();
+  const rows = (code ?? "").split("\n");
+  rows.forEach((row, index) => {
+    const made = codePart(row).match(/^\s*([A-Za-z_]\w*)\s*=(?!=)\s*(\[|list\s*\(|sorted\s*\(|[A-Za-z_]\w*\s*\+\s*\[|[A-Za-z_]\w*\s*\[[^\]]*:)/);
+    if (!made) return;
+    // A list of lists: the first thing after its `[` (on this line or the next ones) is another `[`.
+    const after = [codePart(row).slice((made.index ?? 0) + made[0].length), ...rows.slice(index + 1, index + 3)].join(" ");
+    found.set(made[1], { nested: made[2] === "[" && /^\s*\[/.test(after) });
+  });
+  return found;
+}
+
+/**
+ * `name(...)` in `text` with its round brackets made square: `chalk_wall(0)` -> `chalk_wall[0]`. Two values
+ * (`chalk_wall(0, 2)`) become a run of items, `[0:2]`, or row then item, `[2][0]`, for a list of lists (`nested`).
+ */
+function squareBracketed(text: string, name: string, nested = false): { call: string; fixed: string; line: string } | null {
+  const body = codePart(text);
+  const mask = maskStrings(body);
+  const at = mask.search(new RegExp(`(?<![\\w.])${escapeRegExp(name)}\\s*\\(`));
+  if (at < 0) return null;
+  const open = mask.indexOf("(", at);
+  const close = matchingBracket(mask, open);
+  if (close < 0) return null;
+  const inside = body.slice(open + 1, close);
+  const parts = splitTopLevel(inside);
+  const two = parts && parts.parts.length === 2 && parts.marks[0] === "," ? parts.parts : null;
+  const read = two ? (nested ? `${name}[${two[0]}][${two[1]}]` : `${name}[${two[0]}:${two[1]}]`) : `${name}[${inside}]`;
+  return {
+    call: body.slice(at, close + 1),
+    fixed: read,
+    line: `${body.slice(0, at)}${read}${body.slice(close + 1)}`.trim(),
+  };
+}
+
+/**
+ * `chalk_wall(2) = 47` ("cannot assign to function call"): round brackets after a list's name, on the left of `=`.
+ * Only for a name the code makes as a list, never a recipe or one of Python's tools (Unit 3's recipe-like-math row
+ * keeps `max_fuel_for(cells) = ...`). Before the `==` row, whose "use two equals signs" is wrong advice here.
+ */
+function explainListAssignedWithCall(message: string, code: string, text: string, line: number | null, raw: string): CourseExplanation | null {
+  if (!/cannot assign to function call/i.test(message)) return null;
+  const body = codePart(text);
+  const at = singleEquals(maskStrings(body))[0];
+  const left = at === undefined ? "" : body.slice(0, at).trim();
+  const name = left.match(/^([A-Za-z_]\w*)\s*\(/)?.[1];
+  const list = name ? listsMade(code).get(name) : undefined;
+  if (!name || !list) return null;
+  const swapped = squareBracketed(text, name, list.nested);
+  if (!swapped || swapped.call.trim() !== left) return null;
+  return explain(
+    "list-needs-square-brackets",
+    "Square brackets for a list",
+    `${lineWord(line)} puts ( ) after \`${name}\`. To change one item, use square brackets: \`${swapped.line}\``,
+    raw,
+  );
+}
+
+/**
+ * "'list' object is not callable" (`chalk_wall(0)`, `wall(-1)` inside a recipe): the list read with round brackets.
+ * The name is the one called on the line that is not a recipe or one of Python's tools.
+ */
+function explainListCalled(code: string, text: string, line: number | null, raw: string): CourseExplanation | null {
+  const recipes = new Set(recipeBlocks(code).map((block) => block.recipe));
+  const lists = listsMade(code);
+  const called = [...maskStrings(codePart(text)).matchAll(/(?<![\w.])([A-Za-z_]\w*)\s*\(/g)]
+    .map((match) => match[1])
+    .filter((name) => !recipes.has(name) && !CALLED_TOOLS.has(name) && !KEYWORDS.has(name));
+  const name = called.find((entry) => lists.has(entry)) ?? called[0];
+  const swapped = name ? squareBracketed(text, name, lists.get(name)?.nested ?? false) : null;
+  if (!name || !swapped) return null;
+  return explain(
+    "list-needs-square-brackets",
+    "Square brackets for a list",
+    `${lineWord(line)} puts ( ) after \`${name}\`, so Python tries to call it like a recipe (function). \`${name}\` is a list. Read a list with square brackets: \`${swapped.fixed}\``,
+    raw,
+  );
+}
+
+/**
+ * "... is not subscriptable" on something that is called, never read (`chalk_wall.append[33]`, `sorted[...]`,
+ * `max[chalk_wall]`, `range[1, 9]`, a recipe): square brackets where the call needs round ones. `None` (from
+ * `x = wall.sort()`) keeps the older words.
+ */
+function explainToolWithSquareBrackets(message: string, code: string, text: string, line: number | null, raw: string): CourseExplanation | null {
+  if (!/^('(builtin_function_or_method|function|method)' object|type '\w+') is not subscriptable/.test(message)) return null;
+  const recipes = new Set(recipeBlocks(code).map((block) => block.recipe));
+  const body = codePart(text);
+  const mask = maskStrings(body);
+  for (const found of mask.matchAll(/(?<![\w.])((?:[A-Za-z_]\w*\.)*([A-Za-z_]\w*))\s*\[/g)) {
+    const tool = found[2];
+    if (!CALLED_TOOLS.has(tool) && !recipes.has(tool)) continue;
+    const open = (found.index ?? 0) + found[0].length - 1;
+    const close = matchingBracket(mask, open);
+    if (close < 0) continue;
+    const fixed = `${found[1]}(${body.slice(open + 1, close)})`;
+    return explain(
+      "call-needs-round-brackets",
+      "Round brackets for a call",
+      `${lineWord(line)} puts square brackets after \`${tool}\`, but \`${tool}\` is a tool you call, like \`print\`. Call it with round brackets: \`${fixed}\``,
+      raw,
+    );
+  }
+  return null;
+}
+
+/**
+ * "list indices must be integers or slices, not tuple" (`roster[2, 0]`, `chalk_wall[0, 2]`): a comma inside `[ ]`
+ * asks for two positions at once. The half that fits comes first: row then item for a list of lists, a colon for a
+ * run of items otherwise.
+ */
+function explainCommaInBrackets(message: string, code: string, text: string, line: number | null, raw: string): CourseExplanation | null {
+  if (!/indices must be integers or slices, not tuple/.test(message)) return null;
+  const body = codePart(text);
+  const mask = maskStrings(body);
+  for (const found of mask.matchAll(/(?<![\w.])([A-Za-z_]\w*)\s*\[/g)) {
+    const open = (found.index ?? 0) + found[0].length - 1;
+    const close = matchingBracket(mask, open);
+    const parts = close < 0 ? null : splitTopLevel(body.slice(open + 1, close));
+    if (!parts || parts.parts.length !== 2 || parts.marks[0] !== ",") continue;
+    const [first, second] = parts.parts;
+    const name = found[1];
+    const rows = `\`${name}[${first}][${second}]\``;
+    const run = `\`${name}[${first}:${second}]\``;
+    const nested = listsMade(code).get(name)?.nested ?? false;
+    const start = "Inside [ ], a comma asks for two positions at once.";
+    return explain(
+      "comma-in-brackets",
+      "One position per [ ]",
+      nested
+        ? `${start} Row then item takes two pairs of brackets: ${rows}. A run of items takes a colon: \`[0:2]\`.`
+        : `${start} A run of items takes a colon: ${run}. In a list of lists, row then item takes two pairs of brackets, like \`[2][0]\`.`,
+      raw,
+    );
+  }
+  return null;
+}
+
+/**
+ * 'can only concatenate list (not "int") to list' (`chalk_wall = chalk_wall + 33`): `+` joins two lists. A row of a
+ * list of lists on the left (`log[0] = log[0] + 2`) is a whole pair, not its score: the inner position is missing,
+ * and `.append()` would be the wrong advice.
+ */
+function explainListPlusItem(message: string, code: string, text: string, line: number | null, raw: string): CourseExplanation | null {
+  const kind = message.match(/can only concatenate list \(not "(\w+)"\) to list/)?.[1];
+  if (!kind) return null;
+  const body = codePart(text).trim();
+  const row = explainRowPlusItem(code, body, line, raw);
+  if (row) return row;
+  const same = body.match(/^([A-Za-z_]\w*)\s*=(?!=)\s*\1\s*\+\s*(.+)$/) ?? body.match(/^([A-Za-z_]\w*)\s*\+\s*(.+)$/);
+  const item = same?.[2]?.trim();
+  const fix = same && item && !/^\[/.test(item) ? `: \`${same[1]}.append(${item})\`` : "";
+  return explain(
+    "list-plus-item",
+    "+ joins two lists",
+    `${lineWord(line)} joins a list and one ${kind === "str" ? "piece of text" : "number"} with \`+\`. \`+\` joins two lists. To add one item, use \`.append()\`${fix}`,
+    raw,
+  );
+}
+
+/**
+ * "list.append() takes exactly one argument (2 given)" (`log.append("roll and rise", 6)`): one item at a time, so a
+ * pair goes in its own square brackets. "(0 given)" (`chalk_wall.count()`): the tool needs its value.
+ */
+function explainListToolValues(message: string, text: string, line: number | null, raw: string): CourseExplanation | null {
+  const tool = message.match(/^list\.(\w+)\(\) takes exactly one argument \((\d+) given\)/);
+  if (!tool) return null;
+  const [, name, given] = tool;
+  if (given === "0") {
+    return explain(
+      "wrong-number-of-values",
+      "One value inside ( )",
+      `\`.${name}()\`${onLine(line)} needs one value inside its round brackets: the value to ${name === "count" ? "count" : "use"}.`,
+      raw,
+    );
+  }
+  const body = codePart(text);
+  const mask = maskStrings(body);
+  const at = mask.search(new RegExp(`\\.\\s*${name}\\s*\\(`));
+  const open = at < 0 ? -1 : mask.indexOf("(", at);
+  const close = open < 0 ? -1 : matchingBracket(mask, open);
+  // `log.append(["roll and rise"], 6)`: a one-item list beside the rest is rebuilt as one pair, never `[["roll and rise"], 6]`.
+  const values = close < 0 ? null : splitTopLevel(body.slice(open + 1, close));
+  const items =
+    values && values.marks.every((mark) => mark === ",")
+      ? values.parts.map((part) => {
+          const inner = /^\[[\s\S]*\]$/.test(part) && matchingBracket(maskStrings(part), 0) === part.length - 1 ? splitTopLevel(part.slice(1, -1)) : null;
+          return inner && inner.parts.length === 1 && inner.parts[0] ? inner.parts[0] : part;
+        })
+      : null;
+  const inside = items ? items.join(", ") : close < 0 ? "" : body.slice(open + 1, close).trim();
+  const fix = close < 0 ? "" : `: \`${body.slice(0, open + 1).trim()}[${inside}]${body.slice(close).trim()}\``;
+  return explain(
+    "wrong-number-of-values",
+    "One item at a time",
+    `\`.${name}()\` adds one item, and line ${line ?? "?"} hands it ${given}. To add them as one item, put them in their own square brackets${fix}`,
+    raw,
+  );
+}
+
+/** "not enough / too many values to unpack (expected 3, got 2)" (`across, down, up = cabin`): one name per item. */
+function explainUnpackCount(message: string, line: number | null, raw: string): CourseExplanation | null {
+  const counts = message.match(/(?:not enough|too many) values to unpack \(expected (\d+), got (\d+)\)/);
+  if (!counts) return null;
+  return explain(
+    "wrong-number-of-values",
+    "One name per item",
+    `${lineWord(line)} has ${counts[1]} names on the left of \`=\`, but the right side holds ${counts[2]} items. Use one name per item: ${counts[2]} names.`,
+    raw,
+  );
+}
+
+/** "argument of type 'int' is not iterable" (`has_32 = chalk_wall in 32`): the value goes first, then `in`, then the list. */
+function explainInBackwards(message: string, text: string, line: number | null, raw: string): CourseExplanation | null {
+  if (!/argument of type '(int|float|bool)' is not iterable/.test(message)) return null;
+  const swapped = codePart(text).match(/^(\s*(?:[A-Za-z_]\w*\s*=(?!=)\s*)?)([A-Za-z_]\w*)\s+in\s+(-?\d+(?:\.\d+)?)\s*$/);
+  const fix = swapped ? `: \`${`${swapped[1]}${swapped[3]} in ${swapped[2]}`.trim()}\`` : ".";
+  return explain(
+    "wrong-kind-of-value",
+    "The value goes first",
+    `\`in\` asks whether a value is in a list, so the value goes first and the list after it${onLine(line)}${fix}`,
+    raw,
+  );
+}
+
+/** What each tool that goes in front of a list hands back (`sorted(chalk_wall)`, `max(chalk_wall)`). */
+const IN_FRONT: Record<string, string> = {
+  sorted: "It hands back a sorted copy.",
+  max: "It hands back the biggest item.",
+  min: "It hands back the smallest item.",
+  sum: "It hands back every item added up.",
+  len: "It hands back how many items there are.",
+};
+
+/**
+ * "'list' object has no attribute 'sorted'. Did you mean: 'sort'?" (`chalk_wall.sorted()`), and the same for `max`,
+ * `min`, `sum` and `len`: these tools go in front of the list, not after a dot. Python's "Did you mean 'sort'" would
+ * sort the wall itself, so it is not the advice.
+ */
+function explainToolAfterDot(message: string, text: string, line: number | null, raw: string): CourseExplanation | null {
+  const tool = message.match(/^'list' object has no attribute '(sorted|max|min|sum|len)'/)?.[1];
+  if (!tool) return null;
+  const owner = maskStrings(codePart(text)).match(new RegExp(`([A-Za-z_]\\w*(?:\\[[^\\]]*\\])*)\\s*\\.\\s*${tool}\\s*\\(\\s*\\)`))?.[1];
+  const fix = owner ? `${tool}(${owner})` : `${tool}(chalk_wall)`;
+  return explain(
+    "tool-after-dot",
+    `${tool} goes in front`,
+    `${lineWord(line)} writes \`${tool}\` after a dot. \`${tool}\` goes in front: \`${fix}\`. ${IN_FRONT[tool]}`,
+    raw,
+  );
+}
+
+/** "list.remove(x): x not in list" (`chalk_wall.remove(3)` for a position, or `.remove("99")` with quotes). */
+function explainRemoveMissing(text: string, line: number | null, raw: string): CourseExplanation {
+  const body = codePart(text);
+  const mask = maskStrings(body);
+  const at = mask.search(/\.\s*remove\s*\(/);
+  const open = at < 0 ? -1 : mask.indexOf("(", at);
+  const close = open < 0 ? -1 : matchingBracket(mask, open);
+  const value = close < 0 ? "" : body.slice(open + 1, close).trim();
+  const quoted = value.match(/^(["'])(-?\d+)\1$/);
+  const there = value ? `There is no ${value} on the list` : "That value is not on the list";
+  return explain(
+    "not-on-the-list",
+    "Not on the list",
+    quoted
+      ? `\`.remove()\`${onLine(line)} looks for that exact value. ${there}: in quotes it is text, and the list holds numbers. Ask first with \`in\`.`
+      : `\`.remove()\`${onLine(line)} looks for a value, not a position. ${there}. Ask first with \`in\`.`,
+    raw,
+  );
+}
+
+/**
+ * Bare words side by side inside `[ ]` ("Perhaps you forgot a comma?"): `log = [[storm kick, 7]]`, or one item of
+ * a list over several lines (`    brass lens,`). The same row as the words inside `( )`, for a list.
+ */
+function explainUnquotedInList(code: string, text: string, line: number | null, raw: string): CourseExplanation | null {
+  const body = codePart(text);
+  const mask = maskStrings(body);
+  const pieces: string[] = [];
+  // Each [ ] on the line, and the line itself when it sits inside a list that opened above it.
+  for (let index = 0; index < mask.length; index += 1) {
+    if (mask[index] !== "[") continue;
+    const close = matchingBracket(mask, index);
+    if (close > index) pieces.push(body.slice(index + 1, close));
+  }
+  if (openBefore(code, line).at(-1) === "[") pieces.push(body.replace(/,\s*$/, ""));
+  const names = namesBefore(code, line);
+  for (const piece of pieces) {
+    for (const part of splitTopLevel(piece)?.parts ?? []) {
+      const words = part.replace(/^\[|\]$/g, "").trim().split(/\s+/).filter(Boolean);
+      if (words.length < 2 || !words.every((word) => /^[A-Za-z][A-Za-z'-]*$/.test(word))) continue;
+      if (words.some((word) => KEYWORDS.has(word) || names.includes(word))) continue;
+      const phrase = words.join(" ");
+      return explain("unquoted-words", "Missing quotes?", `If ${phrase} is text, put quotes around it: "${phrase}". Text needs quotes.`, raw);
+    }
+  }
+  return null;
+}
+
+/** `chalk_wall = [48 48, 47]` ("Perhaps you forgot a comma?"): two numbers side by side inside `[ ]`. */
+function explainListMissingComma(text: string, line: number | null, raw: string): CourseExplanation | null {
+  const body = codePart(text);
+  const mask = maskStrings(body);
+  const open = mask.indexOf("[");
+  const close = open < 0 ? -1 : matchingBracket(mask, open);
+  if (close < 0 || !/-?\d\s+-?\d/.test(mask.slice(open, close))) return null;
+  const fixed = `${body.slice(0, open)}${body.slice(open, close + 1).replace(/(\d)\s+(?=-?\d)/g, "$1, ")}${body.slice(close + 1)}`.trim();
+  return explain(
+    "missing-comma-in-list",
+    "Missing comma",
+    `Inside a list, a comma goes between each two items. ${lineWord(line)} has numbers side by side with no comma between them: \`${fixed}\``,
+    raw,
+  );
+}
+
+/** The code's lines with comments cut off and strings masked, joined again, keeping every index (for multi-line lists). */
+function maskedCode(code: string): { text: string; mask: string } {
+  const rows = (code ?? "").split("\n").map((row) => codePart(row));
+  return { text: rows.join("\n"), mask: rows.map((row) => maskStrings(row).padEnd(row.length)).join("\n") };
+}
+
+/**
+ * The position of the first number in the first row of the list of lists `name` (`log = [["cane parry", 7], ...]`
+ * gives 1), or null when the code does not write it out.
+ */
+function firstRowNumberAt(code: string, name: string): number | null {
+  const { text, mask } = maskedCode(code);
+  const made = new RegExp(`(^|\\n)[ \\t]*${escapeRegExp(name)}\\s*=(?!=)\\s*\\[`).exec(mask);
+  if (!made) return null;
+  const outer = made.index + made[0].length - 1;
+  const first = mask.slice(outer + 1).search(/\S/);
+  const open = first < 0 ? -1 : outer + 1 + first;
+  if (open < 0 || mask[open] !== "[") return null;
+  const close = matchingBracket(mask, open);
+  const parts = close < 0 ? null : splitTopLevel(text.slice(open + 1, close));
+  if (!parts || parts.marks.some((mark) => mark !== ",")) return null;
+  const at = parts.parts.findIndex((part) => /^-?\d+(\.\d+)?$/.test(part));
+  return at < 0 ? null : at;
+}
+
+/**
+ * `log[0] = log[0] + 2` in a list of lists ('can only concatenate list (not "int") to list'): `log[0]` is a whole row
+ * (a pair), so the number needs the row's inner position too: `log[0][1] = log[0][1] + 2`.
+ */
+function explainRowPlusItem(code: string, body: string, line: number | null, raw: string): CourseExplanation | null {
+  const mask = maskStrings(body);
+  const left = mask.match(/(?<![\w.\]])([A-Za-z_]\w*)\s*\[([^[\]]+)\]\s*\+/);
+  if (!left || !listsMade(code).get(left[1])?.nested) return null;
+  const name = left[1];
+  const index = body.slice((left.index ?? 0) + left[0].indexOf("[") + 1, (left.index ?? 0) + left[0].lastIndexOf("]")).trim();
+  const read = `${name}[${index}]`;
+  const inner = firstRowNumberAt(code, name);
+  const pattern = new RegExp(`(?<![\\w.])${escapeRegExp(name)}\\s*\\[\\s*${escapeRegExp(index)}\\s*\\](?!\\s*\\[)`, "g");
+  const fixed = inner === null ? null : body.replace(pattern, `${read}[${inner}]`);
+  return explain(
+    "row-not-item",
+    "A whole row",
+    `${lineWord(line)} adds to \`${read}\`, but \`${read}\` is a whole row of \`${name}\`: a list, not a number. ` +
+      (fixed
+        ? `Add the inner position of the number in it too: \`${fixed}\``
+        : "Add the inner position of the number in it too: row first, then the item in that row."),
+    raw,
+  );
+}
+
+/** The list tools that change the list itself and hand back nothing (`None`). */
+const IN_PLACE: Record<string, string> = {
+  sort: "sorts the list itself",
+  append: "adds to the list itself",
+  insert: "adds to the list itself",
+  extend: "adds to the list itself",
+  remove: "takes from the list itself",
+  reverse: "turns the list itself around",
+  clear: "empties the list itself",
+};
+
+/**
+ * "'NoneType' object is not subscriptable" (`shortest = chalk_wall.sort()[0]`, or `x = wall.sort()` then `x[0]`):
+ * a position read from `None`. In the unit's words, `None` is "nothing came back": `.sort()` sorts the list itself
+ * and hands back nothing, and `sorted(wall)` hands back a sorted copy.
+ */
+function explainNoneRead(message: string, code: string, text: string, line: number | null, raw: string): CourseExplanation | null {
+  if (!/^'NoneType' object is not subscriptable/.test(message)) return null;
+  const tools = Object.keys(IN_PLACE).join("|");
+  const body = codePart(text);
+  const mask = maskStrings(body);
+  let found: { list: string; tool: string; holder?: string; at?: number } | null = null;
+  const direct = new RegExp(`(?<![\\w.])([A-Za-z_]\\w*(?:\\[[^\\]]*\\])*)\\s*\\.\\s*(${tools})\\s*\\(`).exec(mask);
+  if (direct) {
+    const close = matchingBracket(mask, direct.index + direct[0].length - 1);
+    if (close > 0 && /^\s*\[/.test(mask.slice(close + 1))) found = { list: body.slice(direct.index, direct.index + direct[1].length), tool: direct[2] };
+  }
+  if (!found && line) {
+    // A box read with [ ] that holds None: its nearest `name = x.sort()` above this line decides.
+    const rows = (code ?? "").split("\n").slice(0, line - 1);
+    for (const read of mask.matchAll(/(?<![\w.])([A-Za-z_]\w*)\s*\[/g)) {
+      const holder = read[1];
+      for (let at = rows.length - 1; at >= 0; at -= 1) {
+        const row = codePart(rows[at] ?? "");
+        const made = new RegExp(`^\\s*${escapeRegExp(holder)}\\s*=(?!=)\\s*([A-Za-z_]\\w*(?:\\[[^\\]]*\\])*)\\s*\\.\\s*(${tools})\\s*\\(`).exec(maskStrings(row));
+        if (made) {
+          const from = made[0].indexOf(made[1], made[0].indexOf("=") + 1);
+          found = { list: row.slice(from, from + made[1].length).trim(), tool: made[2], holder, at: at + 1 };
+        }
+        if (made || new RegExp(`^\\s*${escapeRegExp(holder)}\\s*=(?!=)`).test(row)) break;
+      }
+      if (found) break;
+    }
+  }
+  const nothing = "`None`: nothing came back";
+  if (!found) {
+    return explain(
+      "read-from-none",
+      "Nothing came back",
+      `${lineWord(line)} reads a position from ${nothing}, so there is nothing to read. A tool that changes a list, like \`.sort()\`, hands back nothing, and so does a recipe with no \`return\`.`,
+      raw,
+    );
+  }
+  const what = `\`.${found.tool}()\`${found.at ? ` on line ${found.at}` : ""} ${IN_PLACE[found.tool]} and hands back nothing.`;
+  const instead = found.tool === "sort" ? ` \`sorted(${found.list})\` hands back a sorted copy.` : ` Read the list itself, \`${found.list}\`, after it has changed.`;
+  return explain(
+    "read-from-none",
+    "Nothing came back",
+    found.holder
+      ? `${lineWord(line)} reads a position from \`${found.holder}\`, and \`${found.holder}\` holds ${nothing}. ${what}${instead}`
+      : `${lineWord(line)} reads a position from ${nothing}. ${what}${instead}`,
+    raw,
+  );
+}
+
+/**
+ * "list indices must be integers or slices, not tuple" from two lists side by side with no comma between them:
+ * `[["cane parry", 7] ["shield wall", 5]]` on one line, or a row of a list over several lines with no comma at its
+ * end. Python reads the second list as a position in the first (never "a comma inside [ ]").
+ */
+function explainRowsWithoutComma(message: string, code: string, text: string, line: number | null, raw: string): CourseExplanation | null {
+  if (!/indices must be integers or slices, not tuple/.test(message)) return null;
+  const body = codePart(text);
+  const mask = maskStrings(body);
+  const side = /(^|[=,([]\s*)(\[[^[\]]*\])\s*\[/.exec(mask);
+  if (side) {
+    const at = side.index + side[1].length;
+    const row = body.slice(at, at + side[2].length).trim();
+    return explain(
+      "missing-comma-in-list",
+      "Missing comma",
+      `${lineWord(line)} has two lists side by side with no comma between them, so Python reads the second one as a position in the first. Put a comma after each one: \`${row},\``,
+      raw,
+    );
+  }
+  const row = body.trim();
+  if (!line || !/^\[[^[\]]*\]$/.test(maskStrings(row)) || openBefore(code, line).at(-1) !== "[") return null;
+  const next = (code ?? "").split("\n").slice(line).map((entry) => codePart(entry).trim()).find(Boolean) ?? "";
+  if (!next.startsWith("[")) return null;
+  return explain(
+    "missing-comma-in-list",
+    "Missing comma",
+    `${lineWord(line)} ends a list with no comma, and the next line starts another, so Python reads the second one as a position in the first. Put a comma after each one: \`${row},\``,
+    raw,
+  );
+}
+
+/** The ingredients of the recipe whose body holds `line` (1-based), or []. */
+function recipeParamsAt(code: string, line: number | null): string[] {
+  if (!line) return [];
+  const block = recipeBlocks(code).find((entry) => line > entry.start && line <= entry.end);
+  if (!block) return [];
+  const header = codePart((code ?? "").split("\n")[block.start - 1] ?? "").match(/^\s*def\s+[A-Za-z_]\w*\s*\(([^)]*)\)/);
+  return (header?.[1] ?? "").split(",").map((part) => part.split("=")[0].trim()).filter(Boolean);
+}
+
+/**
+ * How many items `name` holds, when the code makes it once with its items written out on one line
+ * (`chalk_wall = [48, 48, 47]`, `cabin = (12, 5)`) and nothing could change how many (`.append()`, `.pop()`, `+=`, a
+ * recipe that changes a list, ...). Null when that can't be read for sure.
+ */
+function readableLength(code: string, name: string): number | null {
+  const { mask } = maskedCode(code);
+  const rows = (code ?? "").split("\n").map((row) => codePart(row));
+  const who = escapeRegExp(name);
+  if (new RegExp(`\\.\\s*(append|insert|pop|remove|extend|clear)\\s*\\(`).test(mask) && /^\s*def\b/m.test(mask)) return null;
+  if (new RegExp(`(?<![\\w.])${who}\\s*(\\.\\s*(append|insert|pop|remove|extend|clear)\\s*\\(|[-+*]=)|\\bdel\\s+${who}\\b|\\bfor\\s+${who}\\b|(?<![\\w.])${who}\\s*,[^\\n=]*=(?!=)|,\\s*${who}\\s*=(?!=)`).test(mask)) {
+    return null;
+  }
+  const made = rows.map((row) => maskStrings(row)).filter((row) => new RegExp(`^\\s*${who}\\s*=(?!=)`).test(row));
+  if (made.length !== 1) return null;
+  const row = rows.find((entry) => new RegExp(`^\\s*${who}\\s*=(?!=)`).test(maskStrings(entry))) ?? "";
+  const value = row.slice(row.indexOf("=") + 1).trim();
+  const valueMask = maskStrings(value);
+  if (!/^[[(]/.test(valueMask) || matchingBracket(valueMask, 0) !== valueMask.length - 1 || /[[(]/.test(valueMask.slice(1, -1))) return null;
+  const inside = value.slice(1, -1).trim();
+  if (!inside) return valueMask.startsWith("(") ? null : 0;
+  const parts = splitTopLevel(inside);
+  if (!parts || parts.marks.some((mark) => mark !== ",")) return null;
+  const items = parts.parts.filter((part, index) => part || index < parts.parts.length - 1);
+  if (valueMask.startsWith("(") && items.length < 2) return null;
+  return items.every(Boolean) ? items.length : null;
+}
+
+/**
+ * Unit 4: "list index out of range" in the unit's words. The class's slip, `chalk_wall[len(chalk_wall)]`, gets its own
+ * row: `len()` counts the items, so it is one past the last position. Otherwise the list's own count when it can be
+ * read ("`chalk_wall` holds 7 items, so its positions are 0 to 6"), and never Unit 1's "3 items" example.
+ */
+function explainOutOfRange(message: string, code: string, text: string, line: number | null, raw: string): CourseExplanation | null {
+  if (/string/.test(message)) return null;
+  const what = /tuple/.test(message) ? "tuple" : "list";
+  const mask = maskStrings(codePart(text));
+  const counted = mask.match(/(?<![\w.])([A-Za-z_]\w*)\s*(?:\[|\.\s*pop\s*\()\s*len\s*\(\s*\1\s*\)\s*[\])]/);
+  if (counted) {
+    const name = counted[1];
+    return explain(
+      "nothing-at-position",
+      "One past the end",
+      `${lineWord(line)} uses \`len(${name})\` as a position. \`len(${name})\` counts the items, so it is one past the last position. Use \`len(${name}) - 1\`, or \`[-1]\`.`,
+      raw,
+    );
+  }
+  const reads = [...mask.matchAll(/(?<![\w.\]])([A-Za-z_]\w*)\s*\[/g)].map((match) => match[1]).filter((name) => !KEYWORDS.has(name));
+  const name = reads[0];
+  const last = "Positions start at 0, so the last position is one less than the number of items. `[-1]` is always the last one.";
+  if (name && recipeParamsAt(code, line).includes(name)) {
+    return explain(
+      "nothing-at-position",
+      "Nothing at that position",
+      `${lineWord(line)} asks for a position \`${name}\` doesn't have. Inside the recipe, \`${name}\` is whatever ${what} the call hands over, and it may be shorter. ${last}`,
+      raw,
+    );
+  }
+  if (name && new RegExp(`(?<![\\w.])${escapeRegExp(name)}\\s*\\[[^\\]]*\\]\\s*\\[`).test(mask)) {
+    return explain(
+      "nothing-at-position",
+      "Nothing at that position",
+      `${lineWord(line)} asks for a position \`${name}\` doesn't have. In a list of lists, check both numbers: the row first, then the item in that row. ${last}`,
+      raw,
+    );
+  }
+  const count = name && reads.filter((entry) => entry === name).length === 1 ? readableLength(code, name) : null;
+  if (name && count !== null) {
+    return explain(
+      "nothing-at-position",
+      "Nothing at that position",
+      count === 0
+        ? `${lineWord(line)} asks for a position in \`${name}\`, but \`${name}\` is empty, so it has no positions yet.`
+        : `${lineWord(line)} asks for a position \`${name}\` doesn't have. \`${name}\` holds ${count} item${count === 1 ? "" : "s"}, so its positions are 0 to ${count - 1}. From the end, \`[-1]\` is the last one.`,
+      raw,
+    );
+  }
+  return explain("nothing-at-position", "Nothing at that position", `${lineWord(line)} asks for a position the ${what} doesn't have. ${last}`, raw);
+}
+
+/**
+ * Unit 4: numbers side by side with nothing between them, outside any brackets (`hours = 48 48 47 46`: the wall's
+ * row copied as it looks). They need commas, inside square brackets, or one box each (never "a missing quote").
+ */
+function explainNumbersSideBySide(text: string, line: number | null, raw: string): CourseExplanation | null {
+  const body = codePart(text).trim();
+  const mask = maskStrings(body);
+  let depth = 0;
+  let outside = "";
+  for (const char of mask) {
+    if (char in CLOSER) depth += 1;
+    else if (char in OPENER) depth = Math.max(0, depth - 1);
+    outside += depth === 0 ? char : " ";
+  }
+  if (!/(^|[^\w.])-?\d+(\.\d+)?\s+-?\d/.test(outside)) return null;
+  const made = body.match(/^([A-Za-z_]\w*)\s*=(?!=)\s*(-?\d+(?:\.\d+)?(?:[ \t]+-?\d+(?:\.\d+)?)+)$/);
+  const fix = made ? `\`${made[1]} = [${made[2].trim().split(/\s+/).join(", ")}]\`` : "`[48, 48, 47]`";
+  return explain(
+    "missing-comma",
+    "Numbers side by side",
+    `${lineWord(line)} has numbers side by side with nothing between them. Numbers side by side need commas, inside square brackets: ${fix}. Or give each number a box of its own.`,
+    raw,
+  );
+}
+
+/** Unit 4: `newest = chalk_wall.pop[]`, `sorted[]`: empty square brackets after a tool that is called (a SyntaxError). */
+function explainEmptySquareCall(code: string, text: string, line: number | null, raw: string): CourseExplanation | null {
+  const recipes = new Set(recipeBlocks(code).map((block) => block.recipe));
+  const mask = maskStrings(codePart(text));
+  for (const found of mask.matchAll(/(?<![\w.])((?:[A-Za-z_]\w*\.)*([A-Za-z_]\w*))\s*\[\s*\]/g)) {
+    const tool = found[2];
+    if (!CALLED_TOOLS.has(tool) && !recipes.has(tool)) continue;
+    if (!found[1].includes(".") && !recipes.has(tool) && !COMMON_BUILTINS.includes(tool)) continue;
+    return explain(
+      "call-needs-round-brackets",
+      "Round brackets for a call",
+      `${lineWord(line)} puts square brackets after \`${tool}\`, but \`${tool}\` is a tool you call, like \`print\`. Call it with round brackets: \`${found[1]}()\``,
+      raw,
+    );
+  }
+  return null;
+}
+
 function explainType(
   message: string,
   code: string,
@@ -2842,6 +3513,18 @@ function explainType(
   // `def hero(): "Lucky"` then `hero + " is ready."`: Python's own hint led to a recipe, not a box.
   const recipe = explainRecipeUsedAsBox(message, code, text, raw);
   if (recipe) return recipe;
+  // Unit 4: one item joined to a list with `+`, square brackets after a tool, a comma between two positions.
+  if (unitAtLeast(context, LISTS_UNIT_ORDER)) {
+    const list =
+      explainListPlusItem(message, code, text, line, raw) ??
+      explainNoneRead(message, code, text, line, raw) ??
+      explainRowsWithoutComma(message, code, text, line, raw) ??
+      explainToolWithSquareBrackets(message, code, text, line, raw) ??
+      explainCommaInBrackets(message, code, text, line, raw) ??
+      explainListToolValues(message, text, line, raw) ??
+      explainInBackwards(message, text, line, raw);
+    if (list) return list;
+  }
   const dash = /unsupported operand type\(s\) for -/.test(message) ? dashFix(text) : null;
   if (dash && printOnlyTask(context)) return dashInPrintTask(text, line, raw, "dash-for-equals");
   if (dash) {
@@ -2905,6 +3588,11 @@ function explainType(
         `Line ${shadowed.line} uses ${shadowed.name} as a variable name, so ${shadowed.name}() stops working. Pick a different name for your variable.`,
         raw,
       );
+    }
+    // Unit 4: `chalk_wall(0)`, `wall(-1)`: a list read with round brackets.
+    if (notCallable[1] === "list" && unitAtLeast(context, LISTS_UNIT_ORDER)) {
+      const list = explainListCalled(code, text, line, raw);
+      if (list) return list;
     }
     // Unit 3 on: `max_fuel_for = cells * 5`, then `max_fuel_for(4)`. The name called is a box made with `=`.
     const boxCalled = unitAtLeast(context, FUNCTIONS_UNIT_ORDER) ? calledBox(code, text, line) : null;
@@ -3001,6 +3689,13 @@ function explainParsed(parsed: Parsed, raw: string, code: string, context?: Expl
           raw,
         );
       }
+      // Unit 4: `chalk_wall.remove(3)` (a position) or `.remove("99")` (text): a value the list does not hold.
+      if (/remove\(x\): x not in list/.test(message) && unitAtLeast(context, LISTS_UNIT_ORDER)) {
+        return explainRemoveMissing(text, line, raw);
+      }
+      // Unit 4 (tuples): `across, down, up = cabin`, one name per item.
+      const unpack = unitAtLeast(context, LISTS_UNIT_ORDER) ? explainUnpackCount(message, line, raw) : null;
+      if (unpack) return unpack;
       // `random.randint(die_size, 1)`: "empty range in randrange(20, 2)" (Python 3.13).
       if (/empty range (in|for) randrange/.test(message) && unitAtLeast(context, RANDOM_UNIT_ORDER)) {
         const swapped = explainRandintBackwards(text, line, raw);
@@ -3010,6 +3705,9 @@ function explainParsed(parsed: Parsed, raw: string, code: string, context?: Expl
     }
     case "IndexError":
       if (/out of range/.test(message)) {
+        // Unit 4: in the unit's words (`len(wall)` as a position, the list's own count), never "3 items".
+        const list = unitAtLeast(context, LISTS_UNIT_ORDER) ? explainOutOfRange(message, code, text, line, raw) : null;
+        if (list) return list;
         const what = /string/.test(message) ? "text" : "list";
         return explain(
           "nothing-at-position",
@@ -3025,6 +3723,11 @@ function explainParsed(parsed: Parsed, raw: string, code: string, context?: Expl
       const meant = message.match(/Did you mean: '([^']+)'/)?.[1];
       const attribute = message.match(/attribute '([^']+)'/)?.[1];
       if (attribute && /^_{2,}$/.test(attribute)) return blankLeft(attribute, line, raw);
+      // Unit 4: `chalk_wall.sorted()` ("Did you mean 'sort'" would sort the wall itself), `chalk_wall.max()`.
+      if (unitAtLeast(context, LISTS_UNIT_ORDER)) {
+        const front = explainToolAfterDot(message, text, line, raw);
+        if (front) return front;
+      }
       if (meant && attribute) {
         return explain("attribute-spelling", "Check the spelling", `There is no ${attribute} here. Did you mean ${meant}?`, raw);
       }
@@ -3218,6 +3921,14 @@ const SLIP_NAMES: Record<CourseErrorKind, string> = {
   "not-in-recipe": "a name this recipe never makes",
   "store-backwards": "a store the wrong way round",
   "quoted-recipe-name": "quotes around a recipe's name",
+  "list-needs-square-brackets": "round brackets where a list needs square ones",
+  "call-needs-round-brackets": "square brackets where a call needs round ones",
+  "comma-in-brackets": "a comma inside [ ] where one position goes",
+  "list-plus-item": "one item joined to a list with `+`",
+  "tool-after-dot": "a tool written after a dot",
+  "not-on-the-list": "a value the list does not hold",
+  "read-from-none": "a position read from `None`",
+  "row-not-item": "a whole row where one of its items is meant",
   "input-is-text": "an input() answer used as a number",
   "text-plus-number": "text joined to a number",
   "number-plus-text": "a number added to text",

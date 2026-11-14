@@ -52,9 +52,12 @@ export function hintsOpen(support: Support, triedAndMissed: boolean): boolean {
   return false;
 }
 
-/** "Explain it another way" is a full-support extra. */
-export function anotherWayOpen(support: Support, angles: readonly AnotherWay[]): boolean {
-  return support === "full" && angles.length > 0;
+/**
+ * "Explain it another way" in the Learn pane is a full-support extra. Never in a SOLO item: there the angles are a
+ * Help rung (Another way), which counts as Help past Where to look, so "you did that on your own" stays true.
+ */
+export function anotherWayOpen(support: Support, angles: readonly AnotherWay[], solo = false): boolean {
+  return support === "full" && angles.length > 0 && !solo;
 }
 
 /* ------------------------------------------------------------------------------------------------ */
@@ -136,6 +139,19 @@ export function soloUnaided(saved: Pick<ExerciseProgress, "hintsUsed" | "solutio
   if (!saved) return true;
   if (saved.solutionShown) return false;
   return Object.entries(saved.hintsUsed ?? {}).every(([id, count]) => id.startsWith("__") || count <= 1);
+}
+
+/** A SOLO pass line's ruled lead (Units 1 to 4): "Mar'tu: You did that on your own. On your map: ✓ ...". */
+const ON_YOUR_OWN = /\bYou did that on your own\./;
+
+/**
+ * The pass line a SOLO step shows. When Help went past Where to look, or Mar'tu's version was opened (soloUnaided is
+ * false), "You did that on your own." would not be true: it says "with some help this time" instead, as the done
+ * bubble does. Every other pass line is shown as written.
+ */
+export function soloPassLine(passLine: string, solo: boolean, unaided: boolean): string {
+  if (!solo || unaided) return passLine;
+  return passLine.replace(ON_YOUR_OWN, "You did that with some help this time.");
 }
 
 /** The hint button's words: "Hint (1 of 3)" before opening, "Another hint (2 of 3)" after, then done. */
@@ -289,24 +305,36 @@ export const RUNG_PACE_MS = 10_000;
 
 /**
  * "Start me off" (curriculum §2.2 rung 0): the first tokens of the step's line, up to and including its
- * first `(` or `=` (`caster =`, `print(`). Taken from the first code span of the step's last hint (the
+ * first `(` or `=` (`caster =`, `print(`), or a list's `[` (`print(chalk_wall[`, `return wall[`). Taken from the first code span of the step's last hint (the
  * "show" rung of the authored point -> teach -> show ladder). Null when there is nothing safe to give:
  * no code span, a line with no `(` or `=` (it would be the whole answer), or (given `solution`) a start that
  * Mar'tu's version does not use.
  */
 export function startOfLine(hints: readonly string[] | undefined, solution?: string): string | null {
-  const last = hints && hints.length >= 2 ? hints[hints.length - 1] : undefined;
-  const span = last?.match(/`([^`\n]+)`/)?.[1]?.trim();
+  const span = stepLine(hints);
   if (!span) return null;
   // The first "(" or a lone "=" (also +=, -= ...), never ==, <=, >= or !=.
   const cut = span.match(/^(.*?)(\(|[+\-*/]?=(?!=))/);
   if (!cut || /[=!<>]$/.test(cut[1])) return null;
-  const start = `${cut[1]}${cut[2]}`.trim();
-  if (!start || start === "(" || start.length >= span.length) return null;
+  const base = `${cut[1]}${cut[2]}`.trim();
+  // Lists (Unit 4): a "(" inside a list's square brackets cuts at the bracket (`return wall[`, not `return wall[len(`),
+  // and a bare `print(` that reads a list goes on to the list's bracket (`print(chalk_wall[`): `print(` alone matches
+  // every print line, so it would step aside for a line that is not this step's. Before lists, neither can happen.
+  const bracket = cut[2] === "(" ? cut[1].match(/^([^[]*?[A-Za-z_]\w*\s*\[)[^\]]*$/)?.[1]?.trim() : undefined;
+  const list = bracket ?? (base === "print(" ? span.match(/^print\(\s*[A-Za-z_]\w*\s*\[/)?.[0] : undefined);
   // A hint may show an example with other names: only give a start that Mar'tu's version really uses.
   const squash = (text: string) => text.replace(/\s+/g, "");
-  if (solution !== undefined && !squash(solution).includes(squash(start))) return null;
+  const used = (start: string) => solution === undefined || squash(solution).includes(squash(start));
+  const start = list && used(list) ? list : base;
+  if (!start || start === "(" || start.length >= span.length) return null;
+  if (!used(start)) return null;
   return start;
+}
+
+/** The step's own line: the first code span of its last hint (Show me how), or null. */
+export function stepLine(hints: readonly string[] | undefined): string | null {
+  const last = hints && hints.length >= 2 ? hints[hints.length - 1] : undefined;
+  return last?.match(/`([^`\n]+)`/)?.[1]?.trim() || null;
 }
 
 /**
@@ -412,13 +440,22 @@ export function helpState(
 
 /**
  * The code already starts the step's line (Start me off has nothing to add): a line outside notes that begins
- * with `start`, ignoring spaces (`caster =` matches `caster="Gearshift"`).
+ * with `start`, ignoring spaces (`caster =` matches `caster="Gearshift"`). With `step` (Mar'tu's version and the
+ * step's own line), a line that is one of Mar'tu's other finished lines does not count: `print(len(chalk_wall))` from
+ * the starter, or the step before's `print(chalk_wall[0])`, is not this step's `print(chalk_wall[-1])` begun. A
+ * starter's broken line (a Broken spell's) is not in Mar'tu's version, so it still counts.
  */
-export function codeHasStart(code: string, start: string): boolean {
+export function codeHasStart(code: string, start: string, step?: { solution?: string; line?: string | null }): boolean {
   const squash = (text: string) => text.replace(/\s+/g, "");
   const wanted = squash(start);
   if (!wanted) return false;
-  return meaningfulLines(code).some((line) => squash(line).startsWith(wanted));
+  const own = step?.line ? squash(step.line) : null;
+  const others = new Set(step?.solution ? meaningfulLines(step.solution).map(squash) : []);
+  return meaningfulLines(code).some((line) => {
+    const text = squash(line);
+    if (!text.startsWith(wanted)) return false;
+    return !(others.has(text) && (own === null || !text.startsWith(own)));
+  });
 }
 
 /** The step's text names a line of the code ("Mend line 3 so ...", "Line 2 is Lucky's secret."). */

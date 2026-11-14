@@ -147,6 +147,14 @@ function proseMarkProblems(text: string): string[] {
   for (const span of plain.matchAll(/`([^`\n]*)`/g)) {
     if (/\[\[[A-Za-z][^\]|]*(?:\|[^\]]*)?\]\]/.test(span[1])) problems.push(`a [[glossary link]] inside \`${span[1]}\``);
   }
+  // A link's shown text may be plain words or one whole code span ([[len()|`len(wall)`]]); anything else with a
+  // backtick shows its [[ | ]] marks.
+  for (const link of plain.matchAll(/\[\[([^\]|]+?)(?:\|([^\]]+?))?\]\]/g)) {
+    const [whole, term, label] = link;
+    if (term.includes("`") || (label?.includes("`") && !/^`[^`\n\]]+`$/.test(label))) {
+      problems.push(`a [[glossary link]] that mixes code and words: ${whole} (show plain words, or one code span)`);
+    }
+  }
   const words = plain.replace(/`[^`\n]*`/g, "CODE");
   if (/\*\*/.test(words)) problems.push("** (bold is not rendered: use *one star*)");
   for (const emphasis of words.matchAll(/(?<![\w*])\*(?=[^\s*])([^*\n]*?[^\s*])\*(?![\w*])/g)) {

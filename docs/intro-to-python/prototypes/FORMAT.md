@@ -98,7 +98,8 @@ aliases must not repeat across entries. Every `[[link]]` in any prose must resol
 - Lines starting `1. `, `2. ` ... render as a numbered list.
 - `` `backticks` `` render as inline code. Keep them balanced (CI checks).
 - A fenced block renders as code: ` ```python\n...\n``` ` (CI checks fences are closed).
-- `[[term]]` or `[[term|shown text]]` links to the glossary.
+- `[[term]]` or `[[term|shown text]]` links to the glossary. The shown text may be one code span,
+  ``[[len()|`len(wall)`]]``: it shows as code. Plain words or one whole code span, never both (CI checks).
 - `*words in stars*` are emphasis ("`>=` means *at least*"). A star with a space after it stays a star.
 - Plain, short sentences: students are 11 to 15 and several read slowly. The harness warns above about a
   grade 9 reading level and above 230 words of Mar'tu text.
@@ -197,7 +198,7 @@ dict(
 | --- | --- | --- |
 | `id` | `id` | slug, unique within the exercise. Give real ids once students use a unit: progress is saved by id, so renaming or reordering a `step-N` checkpoint resets it. |
 | `text` | `text` | one action, at most two sentences. A leading `1. ` is stripped (the site numbers checkpoints). A debugging step says **Mend** ("Mend line 3 so it shows `Steady`."): an exercise with a "Mend" step is a debugging exercise, and when a run gets further than the one before, the site shows "Python got further: that slip is mended." on a line of its own. |
-| `hints` | `hints` | the hint ladder, 2 to 5 rungs: point, teach, show. The site's Help control shows them as "Where to look" (the first), "Teach me" (the middle ones) and "Show me how" (the last), with "Another way" and "More structure" (Assemble it) in between, then "Compare with Mar'tu's version". Write the last hint with the step's own line in backticks (``Write `mana = 20` on its own line.``): its start up to the first `(` or `=` becomes "Start me off" (`mana =`), but only if the solution uses it. Never show an example's names there. From Unit 2 on, the harness warns when the first hint starts with "Start like this", or when the last hint's start is not in the solution (Start me off is then dropped). |
+| `hints` | `hints` | the hint ladder, 2 to 5 rungs: point, teach, show. The site's Help control shows them as "Where to look" (the first), "Teach me" (the middle ones) and "Show me how" (the last), with "Another way" and "More structure" (Assemble it) in between, then "Compare with Mar'tu's version". Write the last hint with the step's own line in backticks (``Write `mana = 20` on its own line.``): its start up to the first `(` or `=` becomes "Start me off" (`mana =`), but only if the solution uses it. A list read runs on to its bracket when the solution uses that: `print(chalk_wall[`, and `return wall[` rather than `return wall[len(`. Never show an example's names there. From Unit 2 on, the harness warns when the first hint starts with "Start like this", or when the last hint's start is not in the solution (Start me off is then dropped). |
 | `checks` | `checks` | `(name, code)` pairs (or `dict(name=..., code=...)`) |
 | `pass_line` | `passLine` | optional in-world line (prose on one line: `code` shows as code; a `[[link]]` shows as plain words, and the harness warns) |
 | `dictated` | `dictated` | optional bool. `True` when the text spells out the code to type ("Write `mana = 20`"); `False` for a goal-only step that gives the goal and the names, never the code ("Print a greeting that uses `name`."). The curriculum asks for at least one `dictated=False` step in every lesson (§2.1, lint g). Left out: not marked either way. |
@@ -232,7 +233,7 @@ predict=dict(
 | --- | --- | --- |
 | `q` | `q` | prose: the question |
 | `code` | `code` | optional code to predict. Left out, it is the exercise's `starter`. It runs with the exercise's `setup` and `stdin`, and the concept gate checks it. |
-| `choices` | `choices` | 2 or more one-click choices. Write each one exactly as the console would show it. |
+| `choices` | `choices` | 2 or more one-click choices. Write each one exactly as the console would show it. The site shows them in a shuffled order (seeded by the student and the exercise, so it holds steady), but `answer`, the saved guess and the page's test ids keep the authored index. Still vary where the right one is written. |
 | `answer` | `answer` | the index of the right choice, or its exact text (the exporter turns text into the index). The harness runs `code` and fails if the right choice is not exactly what it prints. |
 | `explain` | `explain` | prose shown after the guess, right or wrong |
 
@@ -256,6 +257,8 @@ optional `id` (slug; defaults to `q-1`, `q-2`, ... by position). `notes` goes to
 | `bug` | `code` (buggy), `fix`, `expected_output` | `expectedOutput` | `fix` prints `expected_output`; `code` does not |
 
 Only `predict` questions may have `setup` or `stdin`.
+
+The site shows `mc` and `predict` choices in a shuffled order, seeded by the student, the question and the attempt (the same order all through an attempt, a new one on a retake). Grading, `answer`, `why_wrong` and the test ids keep the authored index, so write them as usual, and vary where the right choice is written.
 
 ## Concept tokens and the gate
 

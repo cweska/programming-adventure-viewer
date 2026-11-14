@@ -17,7 +17,9 @@ import { KindBadge } from "./CourseBits";
 import { itemHref, unitHref } from "./course-links";
 import { exerciseIndexFromHash, hashForExercise, type PlayerMode } from "./exercise-logic";
 import { ExercisePlayer, type ExerciseNext } from "./ExercisePlayer";
+import { plainText } from "./prose-format";
 import { Prose } from "./Prose";
+import { questionsNeeded } from "./quiz-grading";
 
 type PlayedItem = LessonItem | ProjectItem | ChallengeItem | TestoutItem;
 
@@ -36,7 +38,8 @@ function quickCheckRule(
 ): string {
   const quiz = form?.questionsToPass ? items.find((entry) => entry.kind === "quiz" && entry.id === `${form.id}-questions`) : undefined;
   const all = tasks === 1 ? "the task" : `all ${tasks} tasks`;
-  const questions = form?.questionsToPass && quiz?.questionCount ? ` and get ${form.questionsToPass} of the ${quiz.questionCount} questions right,` : "";
+  const questions =
+    form?.questionsToPass && quiz?.questionCount ? ` and get ${questionsNeeded(form.questionsToPass, quiz.questionCount)} questions right,` : "";
   return `Pass ${all}${questions} and the whole unit counts as done.`;
 }
 
@@ -155,8 +158,8 @@ function ExerciseRow({
                   className={`ex-dot${isCurrent ? " is-current" : ""}${isDone ? " is-done" : ""}`}
                   data-testid={`exercise-dot-${at + 1}`}
                   aria-current={isCurrent ? "step" : undefined}
-                  aria-label={`${noun} ${at + 1}: ${exercise.title}${isDone ? ", done" : ""}`}
-                  title={exercise.title}
+                  aria-label={`${noun} ${at + 1}: ${plainText(exercise.title)}${isDone ? ", done" : ""}`}
+                  title={plainText(exercise.title)}
                   onClick={(event) => {
                     event.preventDefault();
                     goTo(at);
@@ -244,8 +247,8 @@ function ItemFinish({
     return (
       <div className="item-footer ex-finish" id="item-finish" tabIndex={-1} data-testid="item-finish">
         <p className="ex-finish-text" data-testid="testout-questions" role="status">
-          <span aria-hidden="true">✓</span> <strong>Every task done.</strong> Last part: the questions. Get {questions.needed} of
-          the {questions.total} right, and this unit counts as done.
+          <span aria-hidden="true">✓</span> <strong>Every task done.</strong> Last part: the questions. Get{" "}
+          {questionsNeeded(questions.needed, questions.total)} right, and this unit counts as done.
         </p>
         <Link className="course-button" href={questions.href} data-testid="testout-questions-link">
           Answer the questions
@@ -264,7 +267,7 @@ function ItemFinish({
         ) : (
           <p className="ex-muted" data-testid="testout-pending">
             {questions
-              ? `Pass every task, then get ${questions.needed} of the ${questions.total} questions right, to test out.`
+              ? `Pass every task, then get ${questionsNeeded(questions.needed, questions.total)} questions right, to test out.`
               : "Pass every task to test out."}{" "}
             Stuck? That is fine. The lessons teach all of it.
           </p>
