@@ -382,6 +382,14 @@ describe("Keep it short: the first paragraph", () => {
     const text = "```\n  companion\n+---+\n```\nAfter.";
     expect(firstParagraph(text)).toEqual({ first: "```\n  companion\n+---+\n```", more: true });
   });
+
+  it("keeps the code block a first line introduces with a colon (a card, a picture)", () => {
+    const card = "Notes so far. Make the sheet from this card:\n```text\nLUCKY\nname  Lucky\n```\nCopy each key.";
+    expect(firstParagraph(card)).toEqual({ first: "Notes so far. Make the sheet from this card:\n```text\nLUCKY\nname  Lucky\n```", more: true });
+    // A colon with no code block right under it is still one line; a code block after a plain line waits.
+    expect(firstParagraph("Look:\nThen more.")).toEqual({ first: "Look:", more: true });
+    expect(firstParagraph("One.\n```\nx\n```")).toEqual({ first: "One.", more: true });
+  });
 });
 
 describe("the input box", () => {

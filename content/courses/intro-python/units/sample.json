@@ -168,6 +168,36 @@
             {
               "angle": "step by step",
               "text": "1. Type `caster = \"Gearshift\"` and press Run.\n2. Type `mana = 20` on the next line and press Run.\n3. Build the sentence: `caster`, then `\" has \"`, then `str(mana)`, then `\" mana.\"`, joined with `+`."
+            },
+            {
+              "angle": "sort",
+              "label": "Text or a box?",
+              "text": "Sort the four cards: is it *text* (in quotes) or *a box's name*? Then press *Check my sort*.",
+              "sort": {
+                "groups": [
+                  "text",
+                  "a box's name"
+                ],
+                "cards": [
+                  {
+                    "text": "\"Gearshift\"",
+                    "group": 0
+                  },
+                  {
+                    "text": "caster",
+                    "group": 1
+                  },
+                  {
+                    "text": "mana",
+                    "group": 1
+                  },
+                  {
+                    "text": "\" has \"",
+                    "group": 0
+                  }
+                ],
+                "explain": "Quotes mean these exact letters, so `\"Gearshift\"` and `\" has \"` are text. `caster` and `mana` are boxes."
+              }
             }
           ],
           "introduces": [
@@ -274,6 +304,15 @@
             "distractors": [
               "mana = \"20\"",
               "print(caster + \" has \" + mana + \" mana.\")"
+            ],
+            "steps": [
+              [
+                "caster = \"Gearshift\""
+              ],
+              [
+                "caster = \"Gearshift\"",
+                "mana = 20"
+              ]
             ]
           },
           "campaignLink": {

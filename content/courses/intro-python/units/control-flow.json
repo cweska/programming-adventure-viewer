@@ -580,6 +580,14 @@
               "print(True)",
               "barrier_up = \"True\"",
               "print(dex > needed)"
+            ],
+            "steps": [
+              [
+                "dex = 6",
+                "needed = 15",
+                "print(dex < needed)",
+                "barrier_up = 0"
+              ]
             ]
           },
           "campaignLink": {
@@ -1262,6 +1270,24 @@
               "is_lucky = hero = \"Lucky\"",
               "is_lucky = \"Lucky\"",
               "print(clock_color != \"Red\")"
+            ],
+            "steps": [
+              [
+                "clock_color = \"Red\"",
+                "clock_is_red = (clock_color == \"red\")",
+                "print(clock_is_red)",
+                "",
+                "hero = \"Bomb Shell\"",
+                ""
+              ],
+              [
+                "clock_color = \"Red\"",
+                "clock_is_red = (clock_color == \"red\")",
+                "print(clock_is_red)",
+                "print(clock_color != \"red\")",
+                "hero = \"Bomb Shell\"",
+                ""
+              ]
             ]
           },
           "campaignLink": {
@@ -1970,6 +1996,18 @@
               "passed = roll > needed",
               "can_cast = mana < cost",
               "passed = True"
+            ],
+            "steps": [
+              [
+                "roll = 15",
+                "needed = 15",
+                "# passed: does roll reach needed?",
+                "passed = roll >= needed",
+                "mana = 6",
+                "cost = 6",
+                "# can_cast: does mana cover cost?",
+                ""
+              ]
             ]
           },
           "campaignLink": {
@@ -5555,6 +5593,21 @@
               "elif choice == option 2:",
               "elif choice = \"option 3\":",
               "light_up_option()"
+            ],
+            "steps": [
+              [
+                "choice = \"option 3\"  # the option the player clicked",
+                "# 1. Replace each ___ with \"option 1\", \"option 2\", \"option 3\" or \"option 4\" (keep the quotes), in order.",
+                "# 2. Add light_up_option() under each mar_tu_says line.",
+                "if choice == \"option 1\":",
+                "    mar_tu_says(\"Then we leave at dawn.\")",
+                "elif choice == \"option 2\":",
+                "    mar_tu_says(\"The decay? The clock is speeding up.\")",
+                "elif choice == \"option 3\":",
+                "    mar_tu_says(\"It turned red once. Never again, I hope.\")",
+                "elif choice == \"option 4\":",
+                "    mar_tu_says(\"Rest, yes. One hour.\")"
+              ]
             ]
           },
           "campaignLink": {
@@ -6302,6 +6355,46 @@
             "distractors": [
               "can_cast = mana >= cost or affinity >= required",
               "in_danger = barrier_up"
+            ],
+            "steps": [
+              [
+                "# Oogrish casts Lantern Ward. It costs 9 mana and needs affinity 9.",
+                "mana = 12",
+                "cost = 9",
+                "affinity = 9",
+                "required = 9",
+                "can_cast = mana >= cost and affinity >= required",
+                "",
+                "# Lucky's skill check. He may roll twice.",
+                "needed = 15",
+                "first_roll = 11",
+                "second_roll = 17",
+                "lucky_passes = False",
+                "",
+                "barrier_up = True",
+                "",
+                "print(can_cast)",
+                "print(lucky_passes)"
+              ],
+              [
+                "# Oogrish casts Lantern Ward. It costs 9 mana and needs affinity 9.",
+                "mana = 12",
+                "cost = 9",
+                "affinity = 9",
+                "required = 9",
+                "can_cast = mana >= cost and affinity >= required",
+                "",
+                "# Lucky's skill check. He may roll twice.",
+                "needed = 15",
+                "first_roll = 11",
+                "second_roll = 17",
+                "lucky_passes = first_roll >= needed or second_roll >= needed",
+                "",
+                "barrier_up = True",
+                "",
+                "print(can_cast)",
+                "print(lucky_passes)"
+              ]
             ]
           },
           "campaignLink": {
@@ -6738,6 +6831,15 @@
             "distractors": [
               "staff_roll = random.randint(0, 6)",
               "sword_roll = random.randint(1, 7)"
+            ],
+            "steps": [
+              [
+                "import random",
+                "staff_roll = random.randint(1, 6)  # the Staff of Wisdom is a d6",
+                "sword_roll = 0  # the longsword is a d8",
+                "print(staff_roll)",
+                "print(sword_roll)"
+              ]
             ]
           },
           "campaignLink": {
@@ -7347,6 +7449,28 @@
               "roll = random.randint(1, 19)",
               "if roll > needed:",
               "    print(\"Rolled \" + roll + \": it holds.\")"
+            ],
+            "steps": [
+              [
+                "import random",
+                "action = \"pry the trap door open\"",
+                "needed = 12",
+                "roll = random.randint(1, 20)",
+                "if roll > needed:",
+                "    print(\"___\")",
+                "else:",
+                "    print(\"___\")"
+              ],
+              [
+                "import random",
+                "action = \"pry the trap door open\"",
+                "needed = 12",
+                "roll = random.randint(1, 20)",
+                "if roll >= needed:",
+                "    print(\"It opens.\")",
+                "else:",
+                "    print(\"It holds.\")"
+              ]
             ]
           },
           "campaignLink": {
@@ -9215,6 +9339,77 @@
         "distractors": [
           "elif road_roll < 6:",
           "road_roll = random.randint(1, 19)"
+        ],
+        "steps": [
+          [
+            "# A. Roll",
+            "# 1. Bring in Python's dice.",
+            "# 2. Roll road_roll with a d20.",
+            "import random",
+            "road_roll = 0",
+            "",
+            "# B. Table: give each tier its own text in encounter. Replace each ___, then add the other tiers.",
+            "# 3.  1        Lucky fires the Telegun (and lands in a hedge)",
+            "#     2 to 6   a ley-line hums under the road",
+            "#     7 to 15  a quiet road",
+            "#     16 to 19 a brass-cart peddler",
+            "#     20       a starlode vein for Gearshift",
+            "if road_roll == 1:",
+            "    encounter = \"___\"",
+            "elif road_roll <= 6:",
+            "    encounter = \"___\"",
+            "",
+            "# C. Tell it",
+            "# 4. Print \"Rolled \" + str(road_roll) + \": \" + encounter"
+          ],
+          [
+            "# A. Roll",
+            "# 1. Bring in Python's dice.",
+            "# 2. Roll road_roll with a d20.",
+            "import random",
+            "road_roll = random.randint(1, 20)",
+            "",
+            "# B. Table: give each tier its own text in encounter. Replace each ___, then add the other tiers.",
+            "# 3.  1        Lucky fires the Telegun (and lands in a hedge)",
+            "#     2 to 6   a ley-line hums under the road",
+            "#     7 to 15  a quiet road",
+            "#     16 to 19 a brass-cart peddler",
+            "#     20       a starlode vein for Gearshift",
+            "if road_roll == 1:",
+            "    encounter = \"___\"",
+            "elif road_roll <= 6:",
+            "    encounter = \"___\"",
+            "",
+            "# C. Tell it",
+            "# 4. Print \"Rolled \" + str(road_roll) + \": \" + encounter"
+          ],
+          [
+            "# A. Roll",
+            "# 1. Bring in Python's dice.",
+            "# 2. Roll road_roll with a d20.",
+            "import random",
+            "road_roll = random.randint(1, 20)",
+            "",
+            "# B. Table: give each tier its own text in encounter. Replace each ___, then add the other tiers.",
+            "# 3.  1        Lucky fires the Telegun (and lands in a hedge)",
+            "#     2 to 6   a ley-line hums under the road",
+            "#     7 to 15  a quiet road",
+            "#     16 to 19 a brass-cart peddler",
+            "#     20       a starlode vein for Gearshift",
+            "if road_roll == 1:",
+            "    encounter = \"Lucky fires the Telegun and lands in a hedge.\"",
+            "elif road_roll <= 6:",
+            "    encounter = \"A ley-line hums under the road.\"",
+            "elif road_roll <= 15:",
+            "    encounter = \"A quiet road. Too quiet, yes?\"",
+            "elif road_roll <= 19:",
+            "    encounter = \"A brass-cart peddler waves you down.\"",
+            "else:",
+            "    encounter = \"A starlode vein! Gearshift's visor glows.\"",
+            "",
+            "# C. Tell it",
+            "# 4. Print \"Rolled \" + str(road_roll) + \": \" + encounter"
+          ]
         ]
       },
       "campaignLink": {
@@ -10280,6 +10475,181 @@
           "elif distance < 50:",
           "if foot_cost < jeep_cost or foot_cost < telegun_cost:",
           "jeep_cost = 65"
+        ],
+        "steps": [
+          [
+            "import random",
+            "distance = 30",
+            "",
+            "# A. Rations on foot",
+            "# Up to 10 miles: 8 coins. Up to 50 miles: 70 coins. Longer: 150 coins.",
+            "if distance <= 10:",
+            "    foot_cost = 8",
+            "elif distance <= 50:",
+            "    foot_cost = 70",
+            "else:",
+            "    foot_cost = 150",
+            "",
+            "# B. Gearshift's jeep form",
+            "# 2 coins of starlode a mile, plus 5 coins to start.",
+            "jeep_cost = 0",
+            "",
+            "# C. Lucky's Telegun",
+            "# Roll a d20. On 15 or more, the jump is free.",
+            "# Under 15, Lucky lands in a hedge: you walk anyway, plus 10 coins of glug.",
+            "telegun_roll = 0",
+            "telegun_cost = 0",
+            "",
+            "# D. Pick the cheapest road",
+            "# If walking costs less than the jeep and less than the Telegun: walk.",
+            "# Else, if the jeep costs less than the Telegun: take the jeep.",
+            "# Else: take the Telegun.",
+            "road = \"___\"",
+            "cost = 0",
+            "",
+            "# E. Tell the party which road, and what it costs"
+          ],
+          [
+            "import random",
+            "distance = 30",
+            "",
+            "# A. Rations on foot",
+            "# Up to 10 miles: 8 coins. Up to 50 miles: 70 coins. Longer: 150 coins.",
+            "if distance <= 10:",
+            "    foot_cost = 8",
+            "elif distance <= 50:",
+            "    foot_cost = 70",
+            "else:",
+            "    foot_cost = 150",
+            "",
+            "# B. Gearshift's jeep form",
+            "# 2 coins of starlode a mile, plus 5 coins to start.",
+            "jeep_cost = 2 * distance + 5",
+            "",
+            "# C. Lucky's Telegun",
+            "# Roll a d20. On 15 or more, the jump is free.",
+            "# Under 15, Lucky lands in a hedge: you walk anyway, plus 10 coins of glug.",
+            "telegun_roll = 0",
+            "telegun_cost = 0",
+            "",
+            "# D. Pick the cheapest road",
+            "# If walking costs less than the jeep and less than the Telegun: walk.",
+            "# Else, if the jeep costs less than the Telegun: take the jeep.",
+            "# Else: take the Telegun.",
+            "road = \"___\"",
+            "cost = 0",
+            "",
+            "# E. Tell the party which road, and what it costs"
+          ],
+          [
+            "import random",
+            "distance = 30",
+            "",
+            "# A. Rations on foot",
+            "# Up to 10 miles: 8 coins. Up to 50 miles: 70 coins. Longer: 150 coins.",
+            "if distance <= 10:",
+            "    foot_cost = 8",
+            "elif distance <= 50:",
+            "    foot_cost = 70",
+            "else:",
+            "    foot_cost = 150",
+            "",
+            "# B. Gearshift's jeep form",
+            "# 2 coins of starlode a mile, plus 5 coins to start.",
+            "jeep_cost = 2 * distance + 5",
+            "",
+            "# C. Lucky's Telegun",
+            "# Roll a d20. On 15 or more, the jump is free.",
+            "# Under 15, Lucky lands in a hedge: you walk anyway, plus 10 coins of glug.",
+            "telegun_roll = random.randint(1, 20)",
+            "telegun_cost = 0",
+            "",
+            "# D. Pick the cheapest road",
+            "# If walking costs less than the jeep and less than the Telegun: walk.",
+            "# Else, if the jeep costs less than the Telegun: take the jeep.",
+            "# Else: take the Telegun.",
+            "road = \"___\"",
+            "cost = 0",
+            "",
+            "# E. Tell the party which road, and what it costs"
+          ],
+          [
+            "import random",
+            "distance = 30",
+            "",
+            "# A. Rations on foot",
+            "# Up to 10 miles: 8 coins. Up to 50 miles: 70 coins. Longer: 150 coins.",
+            "if distance <= 10:",
+            "    foot_cost = 8",
+            "elif distance <= 50:",
+            "    foot_cost = 70",
+            "else:",
+            "    foot_cost = 150",
+            "",
+            "# B. Gearshift's jeep form",
+            "# 2 coins of starlode a mile, plus 5 coins to start.",
+            "jeep_cost = 2 * distance + 5",
+            "",
+            "# C. Lucky's Telegun",
+            "# Roll a d20. On 15 or more, the jump is free.",
+            "# Under 15, Lucky lands in a hedge: you walk anyway, plus 10 coins of glug.",
+            "telegun_roll = random.randint(1, 20)",
+            "if telegun_roll >= 15:",
+            "    telegun_cost = 0",
+            "else:",
+            "    telegun_cost = foot_cost + 10",
+            "",
+            "# D. Pick the cheapest road",
+            "# If walking costs less than the jeep and less than the Telegun: walk.",
+            "# Else, if the jeep costs less than the Telegun: take the jeep.",
+            "# Else: take the Telegun.",
+            "road = \"___\"",
+            "cost = 0",
+            "",
+            "# E. Tell the party which road, and what it costs"
+          ],
+          [
+            "import random",
+            "distance = 30",
+            "",
+            "# A. Rations on foot",
+            "# Up to 10 miles: 8 coins. Up to 50 miles: 70 coins. Longer: 150 coins.",
+            "if distance <= 10:",
+            "    foot_cost = 8",
+            "elif distance <= 50:",
+            "    foot_cost = 70",
+            "else:",
+            "    foot_cost = 150",
+            "",
+            "# B. Gearshift's jeep form",
+            "# 2 coins of starlode a mile, plus 5 coins to start.",
+            "jeep_cost = 2 * distance + 5",
+            "",
+            "# C. Lucky's Telegun",
+            "# Roll a d20. On 15 or more, the jump is free.",
+            "# Under 15, Lucky lands in a hedge: you walk anyway, plus 10 coins of glug.",
+            "telegun_roll = random.randint(1, 20)",
+            "if telegun_roll >= 15:",
+            "    telegun_cost = 0",
+            "else:",
+            "    telegun_cost = foot_cost + 10",
+            "",
+            "# D. Pick the cheapest road",
+            "# If walking costs less than the jeep and less than the Telegun: walk.",
+            "# Else, if the jeep costs less than the Telegun: take the jeep.",
+            "# Else: take the Telegun.",
+            "if foot_cost < jeep_cost and foot_cost < telegun_cost:",
+            "    road = \"on foot\"",
+            "    cost = foot_cost",
+            "elif jeep_cost < telegun_cost:",
+            "    road = \"the jeep\"",
+            "    cost = jeep_cost",
+            "else:",
+            "    road = \"the Telegun\"",
+            "    cost = telegun_cost",
+            "",
+            "# E. Tell the party which road, and what it costs"
+          ]
         ]
       },
       "campaignLink": {
@@ -10754,6 +11124,34 @@
               "error_type = NameError",
               "bad_line = \"4\"",
               "missing_name = \"spell_cost\""
+            ],
+            "steps": [
+              [
+                "hero = \"Bomb Shell\"",
+                "mana = 12",
+                "spell_cost = 5",
+                "# print(\"Mana left: \" + str(mana - mana_cost))",
+                "print(hero + \" casts Shield.\")",
+                "",
+                "# Your notes. Press Run, then fill these in while Python's message is on screen.",
+                "# Then put # at the start of line 4 to switch it off, and Run again.",
+                "bad_line = 4",
+                "error_type = \"\"",
+                "missing_name = \"\""
+              ],
+              [
+                "hero = \"Bomb Shell\"",
+                "mana = 12",
+                "spell_cost = 5",
+                "# print(\"Mana left: \" + str(mana - mana_cost))",
+                "print(hero + \" casts Shield.\")",
+                "",
+                "# Your notes. Press Run, then fill these in while Python's message is on screen.",
+                "# Then put # at the start of line 4 to switch it off, and Run again.",
+                "bad_line = 4",
+                "error_type = \"NameError\"",
+                "missing_name = \"\""
+              ]
             ]
           },
           "campaignLink": {
@@ -11035,6 +11433,19 @@
               "if mana > cost:",
               "if mana == cost:",
               "if mana >= 9:"
+            ],
+            "steps": [
+              [
+                "mana = 15",
+                "mana = mana - 6    # Oogrish lit the lanterns earlier",
+                "cost = 9    # Lantern Ward",
+                "print(mana)",
+                "print(cost)",
+                "if mana > cost:",
+                "    print(\"Oogrish casts Lantern Ward.\")",
+                "else:",
+                "    print(\"Not enough mana.\")"
+              ]
             ]
           },
           "campaignLink": {
@@ -13454,6 +13865,22 @@
               "roll = random.randint(1, 19)",
               "if roll > needed:",
               "else roll < needed:"
+            ],
+            "steps": [
+              [
+                "import random",
+                "# Pick any needed, from 2 to 20.",
+                "needed = 13",
+                "roll = 0",
+                "# If roll reaches needed, print a success line. Otherwise, print a failure line."
+              ],
+              [
+                "import random",
+                "# Pick any needed, from 2 to 20.",
+                "needed = 13",
+                "roll = random.randint(1, 20)",
+                "# If roll reaches needed, print a success line. Otherwise, print a failure line."
+              ]
             ]
           },
           "takeaway": "Roll with `random.randint(1, 20)`, then `if roll >= needed:` and `else:`.",
@@ -14253,6 +14680,27 @@
               "can_cast = mana >= cost or affinity >= required",
               "elif mana <= cost:",
               "if mana < cost:"
+            ],
+            "steps": [
+              [
+                "# Oogrish casts Lantern Ward to hold the barrier.",
+                "mana = 9",
+                "cost = 9",
+                "affinity = 9",
+                "required = 9",
+                "",
+                "# 1. can_cast: does mana reach cost, and affinity reach required?",
+                "can_cast = mana >= cost and affinity >= required",
+                "print(can_cast)",
+                "",
+                "# 2. cast_spell's chain. Put these three lines in an if / elif / else:",
+                "#    If affinity is lower than required: not skilled enough.",
+                "#    Otherwise, if mana is lower than cost: not enough mana.",
+                "#    Otherwise: the barrier holds.",
+                "print(\"Oogrish isn't skilled enough.\")",
+                "print(\"Oogrish doesn't have enough mana.\")",
+                "print(\"The barrier holds.\")"
+              ]
             ]
           },
           "campaignLink": {
@@ -14798,6 +15246,22 @@
               "roll = random.randint(1, 11)",
               "if roll > needed:",
               "else roll < needed:"
+            ],
+            "steps": [
+              [
+                "import random",
+                "# Pick any needed, from 2 to 12.",
+                "needed = 8",
+                "roll = 0",
+                "# If roll reaches needed, print a success line. Otherwise, print a failure line."
+              ],
+              [
+                "import random",
+                "# Pick any needed, from 2 to 12.",
+                "needed = 8",
+                "roll = random.randint(1, 12)",
+                "# If roll reaches needed, print a success line. Otherwise, print a failure line."
+              ]
             ]
           },
           "takeaway": "Roll with `random.randint(1, 12)`, then `if roll >= needed:` and `else:`.",
@@ -15597,6 +16061,27 @@
               "can_cast = mana >= cost or affinity >= required",
               "elif mana <= cost:",
               "if mana < cost:"
+            ],
+            "steps": [
+              [
+                "# Gearshift casts Ember Wall to hold the barrier.",
+                "mana = 14",
+                "cost = 14",
+                "affinity = 10",
+                "required = 10",
+                "",
+                "# 1. can_cast: does mana reach cost, and affinity reach required?",
+                "can_cast = mana >= cost and affinity >= required",
+                "print(can_cast)",
+                "",
+                "# 2. cast_spell's chain. Put these three lines in an if / elif / else:",
+                "#    If affinity is lower than required: not skilled enough.",
+                "#    Otherwise, if mana is lower than cost: not enough mana.",
+                "#    Otherwise: the barrier holds.",
+                "print(\"Gearshift isn't skilled enough.\")",
+                "print(\"Gearshift doesn't have enough mana.\")",
+                "print(\"Barrier's holding.\")"
+              ]
             ]
           },
           "campaignLink": {

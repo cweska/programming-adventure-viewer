@@ -341,17 +341,19 @@ export function stepLine(hints: readonly string[] | undefined): string | null {
  * Where Start me off puts the step's line when the student has not clicked into the code yet, read from the step's
  * last hint (its own line, in Mar'tu's words): "Write `scout.step("west")` in place of `pass`" replaces that `pass`
  * (in the recipe the step names, `step_west`), "Write `return total` on the line after `total = affinity * 2`" and
- * "under the `# passed:` note" go on a new line under that one. Null when the hint names no line (the end of the
+ * "under the `# passed:` note" go on a new line under that one (under a note's whole block), and "above
+ * `print(caster["mana"])`" on a new line over it. Null when the hint names no line (the end of the
  * code, as before).
  */
 export function startTarget(checkpoint: Pick<Checkpoint, "hints" | "text">): InsertTarget | null {
   const hints = checkpoint.hints ?? [];
   const last = hints.length >= 2 ? hints[hints.length - 1] : undefined;
-  const place = last?.match(/\b(in place of|on the line after|under)\s+(?:the\s+)?`([^`\n]+)`/);
+  const place = last?.match(/\b(in place of|on the line after|under|above)\s+(?:the\s+)?`([^`\n]+)`/);
   if (!place) return null;
   const spans = [checkpoint.text, ...hints].flatMap((text) => [...(text ?? "").matchAll(/`([^`\n]+)`/g)].map((span) => span[1]));
   const near = [...new Set(spans.flatMap((span) => [...span.matchAll(/[A-Za-z_]\w*/g)].map((name) => name[0])))];
-  return { line: place[2].trim(), how: place[1] === "in place of" ? "replace" : "after", near };
+  const how = place[1] === "in place of" ? "replace" : place[1] === "above" ? "before" : "after";
+  return { line: place[2].trim(), how, near };
 }
 
 /**
@@ -753,7 +755,9 @@ export function pickInsertion(pick: string, lineBefore: string, options: { print
 
 /**
  * The first paragraph of course prose (one paragraph per line; a fenced code block counts as one), and
- * whether there is more after it.
+ * whether there is more after it. A first line that ends with a colon keeps the code block right under it: it
+ * introduces it ("Look at the top right of your keyboard:", "...from this card:"), so the short view never ends on
+ * a colon with what it names hidden.
  */
 export function firstParagraph(text: string): { first: string; more: boolean } {
   const lines = (text ?? "").replace(/\r\n?/g, "\n").split("\n");
@@ -761,10 +765,13 @@ export function firstParagraph(text: string): { first: string; more: boolean } {
   while (start < lines.length && lines[start].trim() === "") start += 1;
   if (start >= lines.length) return { first: "", more: false };
   let end = start + 1;
-  if (/^```/.test(lines[start].trim())) {
-    while (end < lines.length && !/^```\s*$/.test(lines[end].trim())) end += 1;
-    end = Math.min(lines.length, end + 1);
-  }
+  const fenceFrom = (at: number) => {
+    let close = at + 1;
+    while (close < lines.length && !/^```\s*$/.test(lines[close].trim())) close += 1;
+    return Math.min(lines.length, close + 1);
+  };
+  if (/^```/.test(lines[start].trim())) end = fenceFrom(start);
+  else if (/:\s*$/.test(lines[start]) && /^```/.test(lines[end]?.trim() ?? "")) end = fenceFrom(end);
   const first = lines.slice(start, end).join("\n");
   const more = lines.slice(end).some((line) => line.trim() !== "");
   return { first, more };
@@ -824,4 +831,125 @@ export function stepNoun(mode: PlayerMode): "Step" | "Task" {
 export function checkpointHeading(mode: PlayerMode, starterPasses: boolean): string {
   if (starterPasses) return "Run it and read the output";
   return mode === "project" || mode === "challenge" ? "Your tasks" : "Your steps";
+}
+
+/** One line of a step's Assemble board: Mar'tu's line kept in place, a gap for one of the pieces, or "…" (lines left out). */
+export type StepBoardLine = { kind: "fixed"; text: string } | { kind: "gap" } | { kind: "more" };
+
+/** "More structure" for the step a student is on: only the lines this step adds are pieces; the rest stays in place. */
+export type StepAssemble = {
+  /** 0-based index of the step. */
+  step: number;
+  /** The lines this step adds, in Mar'tu's order (the right answer). */
+  lines: string[];
+  /** The authored distractors that look like this step's lines (same start). */
+  distractors: string[];
+  /** The program around the gaps, as the board shows it (a few lines either side of each gap). */
+  context: StepBoardLine[];
+  /** The program with `chosen` put in the gaps, in order: what "Put it in the editor" writes. */
+  fill: (chosen: readonly string[]) => string;
+};
+
+const codeLinesOf = (code: string) => (code ?? "").replace(/\r/g, "").replace(/\n$/, "").split("\n");
+const isCodeLine = (text: string) => text.trim() !== "" && !text.trim().startsWith("#");
+
+/** The lines of `target` that are not in `base` (a longest-common-subsequence line diff), by index in `target`. */
+export function addedLineIndexes(base: readonly string[], target: readonly string[]): number[] {
+  const same = (a: string, b: string) => a.trimEnd() === b.trimEnd();
+  const rows = base.length;
+  const cols = target.length;
+  const table: number[][] = Array.from({ length: rows + 1 }, () => new Array<number>(cols + 1).fill(0));
+  for (let i = rows - 1; i >= 0; i -= 1) {
+    for (let j = cols - 1; j >= 0; j -= 1) {
+      table[i][j] = same(base[i], target[j]) ? table[i + 1][j + 1] + 1 : Math.max(table[i + 1][j], table[i][j + 1]);
+    }
+  }
+  const added: number[] = [];
+  let i = 0;
+  let j = 0;
+  while (j < cols) {
+    if (i < rows && same(base[i], target[j])) {
+      i += 1;
+      j += 1;
+    } else if (i < rows && table[i + 1][j] >= table[i][j + 1]) {
+      i += 1;
+    } else {
+      added.push(j);
+      j += 1;
+    }
+  }
+  return added;
+}
+
+/** What a line starts with, for matching a distractor to a step's lines: `roster`, `gearshift["mana"]`, `print(`. */
+function lineHead(text: string): string {
+  return text.trim().match(/^[A-Za-z_][\w.]*(?:\[[^\]]*\])?\(?|^["'][^"']*["']/)?.[0] ?? text.trim();
+}
+
+/** A whole-program board longer than this is no use on one step (the teacher's Unit 5 ruling): More structure builds the step. */
+export const LONG_ASSEMBLE = 12;
+
+/**
+ * Whether More structure builds the active step alone: always for a project or a challenge (tasks over a long program),
+ * and for any other exercise whose whole-program board is long. Short lesson boards stay whole, as before.
+ */
+export function assemblesBySteps(mode: PlayerMode, assemble: { lines: string[]; distractors: string[]; steps?: string[] } | undefined): boolean {
+  if (!assemble?.steps?.length) return false;
+  return mode === "project" || mode === "challenge" || assemble.lines.length + assemble.distractors.length > LONG_ASSEMBLE;
+}
+
+/**
+ * The Assemble board for step `step` (0-based) when the exercise carries Mar'tu's partials (`assemble.steps`): the
+ * program before the step is the starter (step 0) or partial `step`, after it partial `step + 1` (the solution for
+ * the last step). Only the code lines the step adds are pieces. Null when there are no partials or the step adds
+ * fewer than two pieces (the whole-program board is used then).
+ */
+export function stepAssemble(
+  exercise: {
+    starter: string;
+    solution: string;
+    solo?: boolean;
+    checkpoints: readonly unknown[];
+    assemble?: { lines: string[]; distractors: string[]; steps?: string[] };
+  },
+  step: number,
+): StepAssemble | null {
+  const partials = exercise.assemble?.steps;
+  // A SOLO keeps its whole-program board: one step's lines alone would hand over its fix.
+  if (exercise.solo || !partials || partials.length === 0 || step < 0 || step >= exercise.checkpoints.length) return null;
+  const before = step === 0 ? exercise.starter : partials[step - 1];
+  const after = step < partials.length ? partials[step] : step === exercise.checkpoints.length - 1 ? exercise.solution : undefined;
+  if (before === undefined || after === undefined) return null;
+  const target = codeLinesOf(after);
+  const added = addedLineIndexes(codeLinesOf(before), target).filter((index) => isCodeLine(target[index]));
+  const lines = added.map((index) => target[index]);
+  const heads = new Set(lines.map(lineHead));
+  const distractors = (exercise.assemble?.distractors ?? []).filter(
+    (line) => !target.some((own) => own.trimEnd() === line.trimEnd()) && heads.has(lineHead(line)),
+  );
+  if (lines.length + distractors.length < 2) return null;
+  const gaps = new Set(added);
+  const near = (index: number) => added.some((gap) => Math.abs(gap - index) <= 2);
+  const context: StepBoardLine[] = [];
+  target.forEach((text, index) => {
+    if (gaps.has(index)) context.push({ kind: "gap" });
+    else if (near(index)) context.push({ kind: "fixed", text });
+    else if (context.at(-1)?.kind !== "more") context.push({ kind: "more" });
+  });
+  const fill = (chosen: readonly string[]) => {
+    const out: string[] = [];
+    let next = 0;
+    target.forEach((text, index) => {
+      if (!gaps.has(index)) {
+        out.push(text);
+        return;
+      }
+      if (next < chosen.length) out.push(chosen[next]);
+      next += 1;
+      // Extra pieces go after the last gap.
+      if (index === added[added.length - 1]) while (next < chosen.length) out.push(chosen[next++]);
+    });
+    return `${out.join("\n")}\n`;
+  };
+  return { step, lines, distractors, context, fill };
 }

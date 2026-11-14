@@ -106,6 +106,20 @@ describe("where buttons put text in the editor", () => {
     expect(apply("# 2.\nroad_roll = random.randint(1, 6)\n|", "road_roll = ", "line", false, { line: "# 2.", how: "after" })).toBe(
       "# 2.\nroad_roll = |\nroad_roll = random.randint(1, 6)\n",
     );
+    // Unit 5: "above `print(caster["mana"])`": a new line over it, with its indent (inside the `else`).
+    const cast = 'else:\n    # 3. Subtract the cost first.\n    print(caster["mana"])\n|';
+    expect(apply(cast, 'caster["mana"] = ', "line", false, { line: 'print(caster["mana"])', how: "before" })).toBe(
+      'else:\n    # 3. Subtract the cost first.\n    caster["mana"] = |\n    print(caster["mana"])\n',
+    );
+    // Unit 5: "under `# 5.`" when the note goes on over `#    ...` lines: under the whole note, never inside it.
+    const ledger = "# 5. Print Bomb Shell's dexterity\n#    and Oogrish's intelligence,\n#    through roster.\n\n# 6. Fire Bolt\n|";
+    expect(apply(ledger, "print(roster[", "line", false, { line: "# 5.", how: "after" })).toBe(
+      "# 5. Print Bomb Shell's dexterity\n#    and Oogrish's intelligence,\n#    through roster.\nprint(roster[|\n\n# 6. Fire Bolt\n",
+    );
+    // A next note that starts a new task (`# 6.`) is not part of the one above.
+    expect(apply("# 4. roster = [...]\n# 5. Print\n|", "roster = ", "line", false, { line: "# 4.", how: "after" })).toBe(
+      "# 4. roster = [...]\nroster = |\n# 5. Print\n",
+    );
     // No such line: the end of the code, as before. A placed cursor keeps its own place.
     expect(apply(`${STARTER}|`, "caster = ", "line", false, { line: "pass", how: "replace" })).toBe(`${STARTER}caster = |`);
     expect(apply("def warn(x):\n    pass\n\nwarn(1)|\n", "print(", "line", true, { line: "pass", how: "replace" })).toBe(

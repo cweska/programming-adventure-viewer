@@ -54,6 +54,13 @@ describe("inline parts", () => {
     ]);
     expect(glossaryRefs("[[append|`.append()`]] adds one item.")).toEqual(["append"]);
     expect(plainText("[[append|`.append()`]] adds one item.")).toBe(".append() adds one item.");
+    // Unit 5: a glossary word that is a tool after a dot, `.get()`, shows as code too (never raw [[ | ]] marks).
+    expect(inlineParts("[[.get()|`.get()`]] asks more gently.")).toEqual([
+      { kind: "term", term: ".get()", text: ".get()", code: true },
+      { kind: "text", text: " asks more gently." },
+    ]);
+    expect(glossaryRefs("with a KeyError. [[.get()|`.get()`]] can give 0 instead.")).toEqual([".get()"]);
+    expect(plainText("[[.get()|`.get()`]] can give 0 instead.")).toBe(".get() can give 0 instead.");
   });
 
   it("keeps an unmatched backtick as text and does not link inside code", () => {

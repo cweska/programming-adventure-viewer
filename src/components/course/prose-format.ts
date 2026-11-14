@@ -28,8 +28,8 @@ const NUMBERED = /^(\d+)\.\s+/;
 const BULLET = /^[-*]\s+/;
 const FENCE = /^```\s*([A-Za-z0-9_+-]*)\s*$/;
 const TERM = /\[\[([^\]|]+?)(?:\|([^\]]+?))?\]\]/g;
-/** A glossary link whose shown text is one code span: [[len()|`len(wall)`]]. */
-const TERM_CODE = /\[\[([A-Za-z][^\]|`]*?)\|`([^`\n\]]+)`\]\]/g;
+/** A glossary link whose shown text is one code span: [[len()|`len(wall)`]], or a tool's own [[.get()|`.get()`]]. */
+const TERM_CODE = /\[\[([A-Za-z.][^\]|`]*?)\|`([^`\n\]]+)`\]\]/g;
 
 /**
  * *Words in stars* are said with weight ("`>=` means *at least*"). A star with a space after it, or one

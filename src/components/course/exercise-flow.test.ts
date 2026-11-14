@@ -12,7 +12,7 @@ import { allUnits, itemPageProps } from "../../lib/course/registry";
 import { runCourseChecks } from "../../lib/course/run-course";
 import { exerciseSchema, playablesOf, type Checkpoint, type Playable } from "../../lib/course/schema";
 import { CompareView } from "./CompareView";
-import { applyRun, assembledCode, helpRungs, helpState, isBlankOrStarter, runOutcome } from "./exercise-logic";
+import { applyRun, assembledCode, assemblesBySteps, helpRungs, helpState, isBlankOrStarter, runOutcome, stepAssemble } from "./exercise-logic";
 import { ExercisePlayer } from "./ExercisePlayer";
 import { HelpStack } from "./HelpStack";
 import { LessonPlayer } from "./LessonPlayer";
@@ -94,6 +94,26 @@ describe("the run loop on course content", () => {
         expect(isBlankOrStarter(exercise.starter, exercise.starter)).toBe(true);
         const code = assembledCode(exercise.assemble!.lines);
         expect(press(exercise, code, fresh()).grade.allPassed).toBe(true);
+      });
+    }
+
+    // More structure for one step (a project, a challenge, a long board): the step's right pieces, put in the gaps,
+    // give Mar'tu's version after that step, which passes every step up to it.
+    const mode = where.split("/").length === 2 ? "project" : "lesson";
+    if (exercise.assemble?.steps && assemblesBySteps(mode, exercise.assemble)) {
+      it(`${where}: More structure on each step builds that step, and passes the steps up to it`, () => {
+        exercise.checkpoints.forEach((checkpoint, step) => {
+          const board = stepAssemble(exercise, step);
+          if (!board) return;
+          const code = board.fill(board.lines);
+          const want = step < exercise.assemble!.steps!.length ? exercise.assemble!.steps![step] : exercise.solution;
+          expect(code.trimEnd(), `${where} step ${step + 1}`).toBe(want.trimEnd());
+          const { grade } = press(exercise, code, fresh());
+          const passed = grade.checkpoints.filter((entry) => entry.passed).map((entry) => entry.id);
+          for (const earlier of exercise.checkpoints.slice(0, step + 1)) expect(passed, `${where} step ${step + 1}`).toContain(earlier.id);
+          // The board never holds the whole program: the lines before the step stay in place.
+          expect(board.lines.length).toBeLessThan(exercise.assemble!.lines.length);
+        });
       });
     }
   }

@@ -789,6 +789,15 @@
               "print(chalk_wall[1])",
               "print(chalk_wall[7])",
               "print(48)"
+            ],
+            "steps": [
+              [
+                "chalk_wall = [48, 48, 47, 46, 44, 41, 37]",
+                "# 1. Print the oldest gap.",
+                "print(chalk_wall[0])",
+                "# 2. Newest, then the one before.",
+                ""
+              ]
             ]
           },
           "campaignLink": {
@@ -1210,6 +1219,20 @@
               "chalk_wall.append(\"33\")",
               "chalk_wall = chalk_wall.append(33)",
               "both_pages = new_marks + old_marks"
+            ],
+            "steps": [
+              [
+                "chalk_wall = [48, 48, 47, 46, 44, 41, 37]",
+                "# 1. Append your guess.",
+                "chalk_wall.append(33)",
+                "print(chalk_wall)",
+                "",
+                "old_marks = [48, 48, 47, 46]",
+                "new_marks = [44, 41, 37]",
+                "# 2. Join both pages with +.",
+                "both_pages = []",
+                "print(both_pages)"
+              ]
             ]
           },
           "campaignLink": {
@@ -1856,6 +1879,20 @@
               "print(chalk_wall[len(chalk_wall)])",
               "    return wall[len(wall)]",
               "    return len(wall) - 1"
+            ],
+            "steps": [
+              [
+                "chalk_wall = [48, 48, 47, 46, 44, 41, 37]",
+                "print(len(chalk_wall))",
+                "# 1. The newest gap, the long way:",
+                "print(chalk_wall[len(chalk_wall) - 1])",
+                "# 2. Hand back the last item of any wall.",
+                "def newest_mark(wall):",
+                "    return 0",
+                "",
+                "print(newest_mark(chalk_wall))  # This should show 37",
+                "print(newest_mark([9, 8, 7]))  # This should show 7"
+              ]
             ]
           },
           "campaignLink": {
@@ -2521,6 +2558,20 @@
               "print(roster[2])",
               "print(roster[3][0])",
               "print(roster[1][2])"
+            ],
+            "steps": [
+              [
+                "roster = [",
+                "    [\"Oogrish\", 18],",
+                "    [\"Gearshift\", 20],",
+                "    [\"Bomb Shell\", 24],",
+                "    [\"Lucky\", 26],",
+                "]",
+                "# 1. Print Bomb Shell's name.",
+                "print(roster[2][0])",
+                "# 2. Print Oogrish's mana.",
+                ""
+              ]
             ]
           },
           "campaignLink": {
@@ -3876,6 +3927,17 @@
               "first_two = chalk_wall[0:1]",
               "last_three = chalk_wall[-3:-1]",
               "last_three = [44, 41, 37]"
+            ],
+            "steps": [
+              [
+                "chalk_wall = [48, 48, 47, 46, 44, 41, 37]",
+                "# 1. The two oldest gaps:",
+                "first_two = chalk_wall[:2]",
+                "# 2. The three newest gaps:",
+                "last_three = []",
+                "print(first_two)",
+                "print(last_three)"
+              ]
             ]
           },
           "campaignLink": {
@@ -5247,6 +5309,13 @@
               "times_48 = chalk_wall.count(\"48\")",
               "times_48 = len(chalk_wall)",
               "print(chalk_wall.count(-1))"
+            ],
+            "steps": [
+              [
+                "chalk_wall = [48, 48, 47, 46, 44, 41, 37]",
+                "times_48 = chalk_wall.count(48)",
+                "print(times_48)"
+              ]
             ]
           },
           "campaignLink": {
@@ -5688,6 +5757,15 @@
               "shortest = chalk_wall.sort()",
               "newest_three = chalk_wall[-3:-1]",
               "chalk_wall.sort()"
+            ],
+            "steps": [
+              [
+                "chalk_wall = [48, 48, 47, 46, 44, 41, 37]",
+                "shortest = sorted(chalk_wall)[0]",
+                "print(\"Shortest: \" + str(shortest))",
+                "newest_three = chalk_wall[-3:-1]",
+                "print(newest_three)"
+              ]
             ]
           },
           "campaignLink": {
@@ -7325,6 +7403,168 @@
           "log.append(\"roll and rise\", 6)",
           "log[1][1] = log[1][1] + 2",
           "    return training[len(training)][1]"
+        ],
+        "steps": [
+          [
+            "# Oogrish's training log.",
+            "# Each drill is a pair:",
+            "# [drill, score]",
+            "",
+            "# 1. Make log: 3 or more pairs.",
+            "log = [",
+            "    [\"cane parry\", 7],",
+            "    [\"shield wall\", 5],",
+            "    [\"slow breaths\", 9],",
+            "]",
+            "",
+            "# 2. Append one more drill.",
+            "",
+            "# 3. Add 2 to the first drill's",
+            "#    score, by position.",
+            "",
+            "# 4. Hand back the newest score.",
+            "def last_score(training):",
+            "    return 0",
+            "",
+            "print(last_score([[\"kick\", 3], [\"jump\", 9]]))  # This should show 9",
+            "",
+            "# 5. Print the last drill and its",
+            "#    score, on one line. Get the",
+            "#    score from last_score(log).",
+            "",
+            "# 6. Print how many drills there",
+            "#    are, with len()."
+          ],
+          [
+            "# Oogrish's training log.",
+            "# Each drill is a pair:",
+            "# [drill, score]",
+            "",
+            "# 1. Make log: 3 or more pairs.",
+            "log = [",
+            "    [\"cane parry\", 7],",
+            "    [\"shield wall\", 5],",
+            "    [\"slow breaths\", 9],",
+            "]",
+            "",
+            "# 2. Append one more drill.",
+            "log.append([\"roll and rise\", 6])",
+            "",
+            "# 3. Add 2 to the first drill's",
+            "#    score, by position.",
+            "",
+            "# 4. Hand back the newest score.",
+            "def last_score(training):",
+            "    return 0",
+            "",
+            "print(last_score([[\"kick\", 3], [\"jump\", 9]]))  # This should show 9",
+            "",
+            "# 5. Print the last drill and its",
+            "#    score, on one line. Get the",
+            "#    score from last_score(log).",
+            "",
+            "# 6. Print how many drills there",
+            "#    are, with len()."
+          ],
+          [
+            "# Oogrish's training log.",
+            "# Each drill is a pair:",
+            "# [drill, score]",
+            "",
+            "# 1. Make log: 3 or more pairs.",
+            "log = [",
+            "    [\"cane parry\", 7],",
+            "    [\"shield wall\", 5],",
+            "    [\"slow breaths\", 9],",
+            "]",
+            "",
+            "# 2. Append one more drill.",
+            "log.append([\"roll and rise\", 6])",
+            "",
+            "# 3. Add 2 to the first drill's",
+            "#    score, by position.",
+            "log[0][1] = log[0][1] + 2",
+            "",
+            "# 4. Hand back the newest score.",
+            "def last_score(training):",
+            "    return 0",
+            "",
+            "print(last_score([[\"kick\", 3], [\"jump\", 9]]))  # This should show 9",
+            "",
+            "# 5. Print the last drill and its",
+            "#    score, on one line. Get the",
+            "#    score from last_score(log).",
+            "",
+            "# 6. Print how many drills there",
+            "#    are, with len()."
+          ],
+          [
+            "# Oogrish's training log.",
+            "# Each drill is a pair:",
+            "# [drill, score]",
+            "",
+            "# 1. Make log: 3 or more pairs.",
+            "log = [",
+            "    [\"cane parry\", 7],",
+            "    [\"shield wall\", 5],",
+            "    [\"slow breaths\", 9],",
+            "]",
+            "",
+            "# 2. Append one more drill.",
+            "log.append([\"roll and rise\", 6])",
+            "",
+            "# 3. Add 2 to the first drill's",
+            "#    score, by position.",
+            "log[0][1] = log[0][1] + 2",
+            "",
+            "# 4. Hand back the newest score.",
+            "def last_score(training):",
+            "    return training[-1][1]",
+            "",
+            "print(last_score([[\"kick\", 3], [\"jump\", 9]]))  # This should show 9",
+            "",
+            "# 5. Print the last drill and its",
+            "#    score, on one line. Get the",
+            "#    score from last_score(log).",
+            "",
+            "# 6. Print how many drills there",
+            "#    are, with len()."
+          ],
+          [
+            "# Oogrish's training log.",
+            "# Each drill is a pair:",
+            "# [drill, score]",
+            "",
+            "# 1. Make log: 3 or more pairs.",
+            "log = [",
+            "    [\"cane parry\", 7],",
+            "    [\"shield wall\", 5],",
+            "    [\"slow breaths\", 9],",
+            "]",
+            "",
+            "# 2. Append one more drill.",
+            "log.append([\"roll and rise\", 6])",
+            "",
+            "# 3. Add 2 to the first drill's",
+            "#    score, by position.",
+            "log[0][1] = log[0][1] + 2",
+            "",
+            "# 4. Hand back the newest score.",
+            "def last_score(training):",
+            "    return training[-1][1]",
+            "",
+            "print(last_score([[\"kick\", 3], [\"jump\", 9]]))  # This should show 9",
+            "",
+            "# 5. Print the last drill and its",
+            "#    score, on one line. Get the",
+            "#    score from last_score(log).",
+            "newest = log[-1]",
+            "score = str(last_score(log))",
+            "print(newest[0] + \": \" + score)",
+            "",
+            "# 6. Print how many drills there",
+            "#    are, with len()."
+          ]
         ]
       },
       "campaignLink": {
@@ -7951,6 +8191,18 @@
               "chalk_wall.insert(47, 2)",
               "newest = chalk_wall[-1]",
               "chalk_wall.append(47)"
+            ],
+            "steps": [
+              [
+                "# A mark is missing: 47.",
+                "chalk_wall = [48, 48, 46, 44, 41, 37]",
+                "# 1. Put 47 back at position 2.",
+                "chalk_wall.insert(2, 47)",
+                "",
+                "# 2. Pop the newest gap into newest.",
+                "",
+                "print(chalk_wall)"
+              ]
             ]
           },
           "campaignLink": {
@@ -8714,6 +8966,27 @@
               "chalk_wall.remove(3)",
               "has_32 = \"32\" in chalk_wall",
               "if 99 in chalk_wall"
+            ],
+            "steps": [
+              [
+                "# Lucky wrote a 99 on the wall.",
+                "chalk_wall = [48, 48, 47, 99, 46, 44, 41, 37]",
+                "has_32 = 32 in chalk_wall",
+                "print(has_32)",
+                "# Take the 99 off here.",
+                "",
+                "print(chalk_wall)"
+              ],
+              [
+                "# Lucky wrote a 99 on the wall.",
+                "chalk_wall = [48, 48, 47, 99, 46, 44, 41, 37]",
+                "has_32 = 32 in chalk_wall",
+                "print(has_32)",
+                "# Take the 99 off here.",
+                "chalk_wall.remove(99)",
+                "",
+                "print(chalk_wall)"
+              ]
             ]
           },
           "campaignLink": {
@@ -9483,6 +9756,20 @@
               "longest = chalk_wall[0]",
               "total_hours = len(chalk_wall)",
               "longest = max[chalk_wall]"
+            ],
+            "steps": [
+              [
+                "chalk_wall = [48, 48, 47, 46, 44, 41, 37]",
+                "longest = max(chalk_wall)",
+                "shortest = min(chalk_wall)",
+                "total_hours = 0"
+              ],
+              [
+                "chalk_wall = [48, 48, 47, 46, 44, 41, 37]",
+                "longest = max(chalk_wall)",
+                "shortest = min(chalk_wall)",
+                "total_hours = sum(chalk_wall)"
+              ]
             ]
           },
           "campaignLink": {
@@ -10941,6 +11228,28 @@
               "cabin = [12, 5]",
               "across, down = 12, 5",
               "cabin = (12 5)"
+            ],
+            "steps": [
+              [
+                "# Mar'tu's cabin on the map:",
+                "# 12 across, 5 down.",
+                "# 1. Make cabin a tuple.",
+                "cabin = (12, 5)",
+                "# 2. Unpack it: across, down.",
+                "",
+                "# 3. Print across, then down.",
+                ""
+              ],
+              [
+                "# Mar'tu's cabin on the map:",
+                "# 12 across, 5 down.",
+                "# 1. Make cabin a tuple.",
+                "cabin = (12, 5)",
+                "# 2. Unpack it: across, down.",
+                "across, down = cabin",
+                "# 3. Print across, then down.",
+                ""
+              ]
             ]
           },
           "campaignLink": {
@@ -11810,6 +12119,19 @@
               "pairs = zip(heroes, colors)",
               "pairs = [heroes, colors]",
               "print(pairs[4])"
+            ],
+            "steps": [
+              [
+                "heroes = [\"Oogrish\", \"Gearshift\",",
+                "          \"Bomb Shell\", \"Lucky\"]",
+                "colors = [\"gold\", \"fire orange\",",
+                "          \"teal\", \"silver\"]",
+                "# 1. Zip them into pairs.",
+                "pairs = list(zip(heroes, colors))",
+                "print(pairs)",
+                "# 2. Print the last pair.",
+                ""
+              ]
             ]
           },
           "campaignLink": {
@@ -14156,6 +14478,251 @@
           "parts.insert(2, \"ley needle\")",
           "top_three = counts.sort()",
           "inventory = zip(parts, counts)"
+        ],
+        "steps": [
+          [
+            "# Mar'tu's basement: the parts of",
+            "# the resonance array. Two lists,",
+            "# kept in step: counts[0] is how",
+            "# many of parts[0] there are.",
+            "",
+            "# 1. parts: 4 or more part names.",
+            "parts = [",
+            "    \"brass lens\",",
+            "    \"tuning fork\",",
+            "    \"copper coil\",",
+            "    \"glass bell\",",
+            "]",
+            "",
+            "# 2. counts: one whole number for",
+            "#    each part, in the same order.",
+            "counts = []",
+            "",
+            "# 3. A new part turned up. Put it",
+            "#    second in parts, and its count",
+            "#    second in counts.",
+            "",
+            "# 4. Lucky borrowed the last part.",
+            "#    Pop it off both lists. Keep",
+            "#    its name in borrowed.",
+            "",
+            "# 5. top_three: the 3 biggest",
+            "#    counts, from a sorted copy.",
+            "top_three = []",
+            "print(top_three)",
+            "",
+            "# 6. Print how many parts are",
+            "#    used up: a count of 0.",
+            "",
+            "# 7. Zip the lists into pairs.",
+            "inventory = []",
+            "print(inventory)"
+          ],
+          [
+            "# Mar'tu's basement: the parts of",
+            "# the resonance array. Two lists,",
+            "# kept in step: counts[0] is how",
+            "# many of parts[0] there are.",
+            "",
+            "# 1. parts: 4 or more part names.",
+            "parts = [",
+            "    \"brass lens\",",
+            "    \"tuning fork\",",
+            "    \"copper coil\",",
+            "    \"glass bell\",",
+            "]",
+            "",
+            "# 2. counts: one whole number for",
+            "#    each part, in the same order.",
+            "counts = [3, 0, 7, 5]",
+            "",
+            "# 3. A new part turned up. Put it",
+            "#    second in parts, and its count",
+            "#    second in counts.",
+            "",
+            "# 4. Lucky borrowed the last part.",
+            "#    Pop it off both lists. Keep",
+            "#    its name in borrowed.",
+            "",
+            "# 5. top_three: the 3 biggest",
+            "#    counts, from a sorted copy.",
+            "top_three = []",
+            "print(top_three)",
+            "",
+            "# 6. Print how many parts are",
+            "#    used up: a count of 0.",
+            "",
+            "# 7. Zip the lists into pairs.",
+            "inventory = []",
+            "print(inventory)"
+          ],
+          [
+            "# Mar'tu's basement: the parts of",
+            "# the resonance array. Two lists,",
+            "# kept in step: counts[0] is how",
+            "# many of parts[0] there are.",
+            "",
+            "# 1. parts: 4 or more part names.",
+            "parts = [",
+            "    \"brass lens\",",
+            "    \"tuning fork\",",
+            "    \"copper coil\",",
+            "    \"glass bell\",",
+            "]",
+            "",
+            "# 2. counts: one whole number for",
+            "#    each part, in the same order.",
+            "counts = [3, 0, 7, 5]",
+            "",
+            "# 3. A new part turned up. Put it",
+            "#    second in parts, and its count",
+            "#    second in counts.",
+            "parts.insert(1, \"ley needle\")",
+            "counts.insert(1, 2)",
+            "",
+            "# 4. Lucky borrowed the last part.",
+            "#    Pop it off both lists. Keep",
+            "#    its name in borrowed.",
+            "",
+            "# 5. top_three: the 3 biggest",
+            "#    counts, from a sorted copy.",
+            "top_three = []",
+            "print(top_three)",
+            "",
+            "# 6. Print how many parts are",
+            "#    used up: a count of 0.",
+            "",
+            "# 7. Zip the lists into pairs.",
+            "inventory = []",
+            "print(inventory)"
+          ],
+          [
+            "# Mar'tu's basement: the parts of",
+            "# the resonance array. Two lists,",
+            "# kept in step: counts[0] is how",
+            "# many of parts[0] there are.",
+            "",
+            "# 1. parts: 4 or more part names.",
+            "parts = [",
+            "    \"brass lens\",",
+            "    \"tuning fork\",",
+            "    \"copper coil\",",
+            "    \"glass bell\",",
+            "]",
+            "",
+            "# 2. counts: one whole number for",
+            "#    each part, in the same order.",
+            "counts = [3, 0, 7, 5]",
+            "",
+            "# 3. A new part turned up. Put it",
+            "#    second in parts, and its count",
+            "#    second in counts.",
+            "parts.insert(1, \"ley needle\")",
+            "counts.insert(1, 2)",
+            "",
+            "# 4. Lucky borrowed the last part.",
+            "#    Pop it off both lists. Keep",
+            "#    its name in borrowed.",
+            "borrowed = parts.pop()",
+            "counts.pop()",
+            "",
+            "# 5. top_three: the 3 biggest",
+            "#    counts, from a sorted copy.",
+            "top_three = []",
+            "print(top_three)",
+            "",
+            "# 6. Print how many parts are",
+            "#    used up: a count of 0.",
+            "",
+            "# 7. Zip the lists into pairs.",
+            "inventory = []",
+            "print(inventory)"
+          ],
+          [
+            "# Mar'tu's basement: the parts of",
+            "# the resonance array. Two lists,",
+            "# kept in step: counts[0] is how",
+            "# many of parts[0] there are.",
+            "",
+            "# 1. parts: 4 or more part names.",
+            "parts = [",
+            "    \"brass lens\",",
+            "    \"tuning fork\",",
+            "    \"copper coil\",",
+            "    \"glass bell\",",
+            "]",
+            "",
+            "# 2. counts: one whole number for",
+            "#    each part, in the same order.",
+            "counts = [3, 0, 7, 5]",
+            "",
+            "# 3. A new part turned up. Put it",
+            "#    second in parts, and its count",
+            "#    second in counts.",
+            "parts.insert(1, \"ley needle\")",
+            "counts.insert(1, 2)",
+            "",
+            "# 4. Lucky borrowed the last part.",
+            "#    Pop it off both lists. Keep",
+            "#    its name in borrowed.",
+            "borrowed = parts.pop()",
+            "counts.pop()",
+            "",
+            "# 5. top_three: the 3 biggest",
+            "#    counts, from a sorted copy.",
+            "top_three = sorted(counts)[-3:]",
+            "print(top_three)",
+            "",
+            "# 6. Print how many parts are",
+            "#    used up: a count of 0.",
+            "",
+            "# 7. Zip the lists into pairs.",
+            "inventory = []",
+            "print(inventory)"
+          ],
+          [
+            "# Mar'tu's basement: the parts of",
+            "# the resonance array. Two lists,",
+            "# kept in step: counts[0] is how",
+            "# many of parts[0] there are.",
+            "",
+            "# 1. parts: 4 or more part names.",
+            "parts = [",
+            "    \"brass lens\",",
+            "    \"tuning fork\",",
+            "    \"copper coil\",",
+            "    \"glass bell\",",
+            "]",
+            "",
+            "# 2. counts: one whole number for",
+            "#    each part, in the same order.",
+            "counts = [3, 0, 7, 5]",
+            "",
+            "# 3. A new part turned up. Put it",
+            "#    second in parts, and its count",
+            "#    second in counts.",
+            "parts.insert(1, \"ley needle\")",
+            "counts.insert(1, 2)",
+            "",
+            "# 4. Lucky borrowed the last part.",
+            "#    Pop it off both lists. Keep",
+            "#    its name in borrowed.",
+            "borrowed = parts.pop()",
+            "counts.pop()",
+            "",
+            "# 5. top_three: the 3 biggest",
+            "#    counts, from a sorted copy.",
+            "top_three = sorted(counts)[-3:]",
+            "print(top_three)",
+            "",
+            "# 6. Print how many parts are",
+            "#    used up: a count of 0.",
+            "print(counts.count(0))",
+            "",
+            "# 7. Zip the lists into pairs.",
+            "inventory = []",
+            "print(inventory)"
+          ]
         ]
       },
       "campaignLink": {
@@ -16724,6 +17291,41 @@
               "marks + [33]",
               "marks[2] = 43",
               "print(33)"
+            ],
+            "steps": [
+              [
+                "# 1. Make marks: 46, 44 and 41.",
+                "marks = [46, 44, 41]",
+                "# 2. Append your guess.",
+                "",
+                "# 3. Fix the 44 by position.",
+                "",
+                "# 4. Print its last item,",
+                "#    read from the list.",
+                ""
+              ],
+              [
+                "# 1. Make marks: 46, 44 and 41.",
+                "marks = [46, 44, 41]",
+                "# 2. Append your guess.",
+                "marks.append(33)",
+                "# 3. Fix the 44 by position.",
+                "",
+                "# 4. Print its last item,",
+                "#    read from the list.",
+                ""
+              ],
+              [
+                "# 1. Make marks: 46, 44 and 41.",
+                "marks = [46, 44, 41]",
+                "# 2. Append your guess.",
+                "marks.append(33)",
+                "# 3. Fix the 44 by position.",
+                "marks[1] = 43",
+                "# 4. Print its last item,",
+                "#    read from the list.",
+                ""
+              ]
             ]
           },
           "takeaway": "`.append()` adds to the list itself; `marks[1] = 43` changes one item by position; `marks[-1]` reads the last item of a list of any length.",
@@ -18079,6 +18681,22 @@
               "print(roster[3][1])",
               "ordered = manas.sort()",
               "ordered = manas"
+            ],
+            "steps": [
+              [
+                "roster = [",
+                "    [\"Oogrish\", 18],",
+                "    [\"Gearshift\", 20],",
+                "    [\"Bomb Shell\", 24],",
+                "    [\"Lucky\", 26],",
+                "]",
+                "# Print Bomb Shell's mana.",
+                "print(roster[2][1])",
+                "manas = [26, 18, 24, 20]",
+                "# A sorted copy. manas stays put.",
+                "ordered = manas.sort()",
+                "print(ordered)"
+              ]
             ]
           },
           "takeaway": "`roster[2][1]`: row first, from 0, then the item. `sorted()` hands back a copy; `.sort()` hands back `None`.",
@@ -19666,6 +20284,47 @@
               "ore_used + [9]",
               "ore_used[2] = 6",
               "print(9)"
+            ],
+            "steps": [
+              [
+                "# Bomb Shell's Velocite ore:",
+                "# chunks used each day.",
+                "# 1. Make ore_used: 4, 5 and 7.",
+                "ore_used = [4, 5, 7]",
+                "# 2. Append your guess.",
+                "",
+                "# 3. Fix the 5 by position.",
+                "",
+                "# 4. Print its last item,",
+                "#    read from the list.",
+                ""
+              ],
+              [
+                "# Bomb Shell's Velocite ore:",
+                "# chunks used each day.",
+                "# 1. Make ore_used: 4, 5 and 7.",
+                "ore_used = [4, 5, 7]",
+                "# 2. Append your guess.",
+                "ore_used.append(9)",
+                "# 3. Fix the 5 by position.",
+                "",
+                "# 4. Print its last item,",
+                "#    read from the list.",
+                ""
+              ],
+              [
+                "# Bomb Shell's Velocite ore:",
+                "# chunks used each day.",
+                "# 1. Make ore_used: 4, 5 and 7.",
+                "ore_used = [4, 5, 7]",
+                "# 2. Append your guess.",
+                "ore_used.append(9)",
+                "# 3. Fix the 5 by position.",
+                "ore_used[1] = 6",
+                "# 4. Print its last item,",
+                "#    read from the list.",
+                ""
+              ]
             ]
           },
           "takeaway": "`.append()` adds to the list itself; `ore_used[1] = 6` changes one item by position; `ore_used[-1]` reads the last item of a list of any length.",
@@ -21025,6 +21684,22 @@
               "print(drills[2][1])",
               "ordered = scores.sort()",
               "ordered = scores"
+            ],
+            "steps": [
+              [
+                "drills = [",
+                "    [\"cane parry\", 7],",
+                "    [\"shield wall\", 5],",
+                "    [\"slow breaths\", 9],",
+                "    [\"roll and rise\", 6],",
+                "]",
+                "# Print the shield wall score.",
+                "print(drills[1][1])",
+                "scores = [6, 9, 5, 7]",
+                "# A sorted copy. scores stays put.",
+                "ordered = scores.sort()",
+                "print(ordered)"
+              ]
             ]
           },
           "takeaway": "`drills[1][1]`: row first, from 0, then the item. `sorted()` hands back a copy; `.sort()` hands back `None`.",

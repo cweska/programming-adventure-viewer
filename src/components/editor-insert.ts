@@ -18,10 +18,11 @@ export type InsertWhere = "cursor" | "code" | "line" | "note";
 
 /**
  * Where the step's line goes when there is no cursor yet: `replace` the line that reads `line` (`pass`, keeping its
- * indent), or go on a new line `after` it. `near`: names that pick which one when several lines match (the recipe
- * the step names: the `pass` under `def step_west():`).
+ * indent), go on a new line `after` it (after a `#` note's whole block, when the note goes on over several lines), or
+ * on a new line `before` it, with its indent ("above `print(caster["mana"])`"). `near`: names that pick which one when
+ * several lines match (the recipe the step names: the `pass` under `def step_west():`).
  */
-export type InsertTarget = { line: string; how: "replace" | "after"; near?: readonly string[] };
+export type InsertTarget = { line: string; how: "replace" | "after" | "before"; near?: readonly string[] };
 
 export type InsertPlan = { from: number; to: number; insert: string; anchor: number };
 
@@ -154,6 +155,20 @@ export function planInsert(
       const indent = indentOf(at.text);
       const insert = value(indent);
       return { from: at.from + indent.length, to: at.to, insert, anchor: at.from + indent.length + insert.length };
+    }
+    if (at && how === "before") {
+      const indent = indentOf(at.text);
+      const body = value(indent);
+      const insert = `${indent}${body}\n`;
+      return { from: at.from, to: at.from, insert, anchor: at.from + indent.length + body.length };
+    }
+    // `under `# 5.`` when the note goes on (`#    and Oogrish's intelligence,`): the line goes under the whole note.
+    if (at && how === "after" && target?.line.trim().startsWith("#")) {
+      while (at.to < end) {
+        const next = lineAt(doc, at.to + 1);
+        if (!/^\s*#\s{2,}\S/.test(next.text) || indentOf(next.text) !== indentOf(at.text)) break;
+        at = next;
+      }
     }
     if (at) {
       const indent = indentAfter(at.text);

@@ -6,6 +6,7 @@ import {
   anotherWayOpen,
   applyRun,
   assembledCode,
+  assemblesBySteps,
   checkpointHeading,
   crashAim,
   crashLineSwitchedOff,
@@ -22,6 +23,7 @@ import {
   runOutcome,
   solutionUnlocked,
   startTarget,
+  stepAssemble,
   stdinBoxText,
   stepNoun,
   stripComment,
@@ -29,6 +31,7 @@ import {
   titleFromId,
   usesInput,
 } from "./exercise-logic";
+import { cardSortMarks } from "./card-sort";
 
 const empty = (): ExerciseProgress => ({ passed: [], done: false, hintsUsed: {}, failedRuns: 0 });
 
@@ -376,8 +379,68 @@ describe("where Start me off goes before a click (startTarget)", () => {
       line: "# passed:",
       how: "after",
     });
+    // Unit 5: "above `X`" puts the line over X; the first place the hint names wins.
+    expect(
+      startTarget({ text: "x", hints: ["Look.", 'Write `caster["mana"] = caster["mana"] - spell["mana_cost"]` in the `else`, above `print(caster["mana"])`.'] }),
+    ).toMatchObject({ line: 'print(caster["mana"])', how: "before" });
+    expect(startTarget({ text: "x", hints: ["Look.", "Write `print(lucky[3])` in place of `print(lucky[2])`."] })).toMatchObject({
+      line: "print(lucky[2])",
+      how: "replace",
+    });
     // A hint that names no line (or a single hint): no place, so the end of the code, as before.
     expect(startTarget({ text: "x", hints: ["Look.", "Write `say_steady()` on a new line at the bottom."] })).toBeNull();
     expect(startTarget({ text: "x", hints: ["Write `x = 1` in place of `x = 0`."] })).toBeNull();
+  });
+});
+
+describe("More structure for one step (stepAssemble)", () => {
+  const exercise = {
+    starter: "# 1. Make the list\n\n# 2. Print the last\n",
+    solution: "# 1. Make the list\nwall = [1, 2]\n\n# 2. Print the last\nprint(wall[-1])\n",
+    checkpoints: [{ id: "make" }, { id: "print" }],
+    assemble: {
+      lines: ["wall = [1, 2]", "print(wall[-1])"],
+      distractors: ["wall = (1, 2)", "print(wall[2])", "wall.append(3)"],
+      steps: ["# 1. Make the list\nwall = [1, 2]\n\n# 2. Print the last\n"],
+    },
+  };
+
+  it("shuffles only the lines the step adds, with the distractors that start the same way", () => {
+    const first = stepAssemble(exercise, 0);
+    expect(first?.lines).toEqual(["wall = [1, 2]"]);
+    expect(first?.distractors).toEqual(["wall = (1, 2)"]);
+    const second = stepAssemble(exercise, 1);
+    expect(second?.lines).toEqual(["print(wall[-1])"]);
+    expect(second?.distractors).toEqual(["print(wall[2])"]);
+  });
+
+  it("keeps the rest of the program in place: the right pieces in the gaps give Mar'tu's version after the step", () => {
+    const second = stepAssemble(exercise, 1)!;
+    expect(second.fill(second.lines)).toBe(exercise.solution);
+    expect(second.context.some((line) => line.kind === "gap")).toBe(true);
+    // The lines around the gap stay in place, read-only; lines further off fold into "…".
+    expect(second.context.map((line) => (line.kind === "fixed" ? line.text : line.kind))).toEqual(["more", "", "# 2. Print the last", "gap"]);
+    // Too few pieces leave the gap out; extra pieces go after the last gap.
+    expect(second.fill([])).toBe("# 1. Make the list\nwall = [1, 2]\n\n# 2. Print the last\n");
+    expect(second.fill(["print(wall[-1])", "print(wall)"])).toBe(`${exercise.solution}print(wall)\n`);
+  });
+
+  it("is only for projects, challenges and long boards, never for a SOLO or an exercise with no partials", () => {
+    expect(assemblesBySteps("project", exercise.assemble)).toBe(true);
+    expect(assemblesBySteps("challenge", exercise.assemble)).toBe(true);
+    expect(assemblesBySteps("lesson", exercise.assemble)).toBe(false);
+    expect(assemblesBySteps("lesson", { ...exercise.assemble, lines: Array.from({ length: 13 }, (_, i) => `x${i} = ${i}`) })).toBe(true);
+    expect(assemblesBySteps("project", { lines: exercise.assemble.lines, distractors: [] })).toBe(false);
+    expect(stepAssemble({ ...exercise, solo: true }, 1)).toBeNull();
+    expect(stepAssemble({ ...exercise, assemble: { ...exercise.assemble, steps: undefined } }, 1)).toBeNull();
+  });
+});
+
+describe("the card sort (cardSortMarks)", () => {
+  const sort = { groups: ["these exact letters", "look inside the box"], cards: [{ text: "mana = 26", group: 1 }, { text: '"mana"', group: 0 }], explain: "x" };
+  it("marks each card right only when it is in its own group", () => {
+    expect(cardSortMarks(sort, [1, 0])).toEqual([true, true]);
+    expect(cardSortMarks(sort, [0, 0])).toEqual([false, true]);
+    expect(cardSortMarks(sort, [null, null])).toEqual([false, false]);
   });
 });

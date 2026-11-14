@@ -581,6 +581,11 @@
               "print(\"It is not a compass)",
               "print(\"Shield up.\"",
               "print(''Shield up'')"
+            ],
+            "steps": [
+              [
+                "print(\"It is not a compass\")"
+              ]
             ]
           },
           "campaignLink": {
@@ -770,6 +775,11 @@
               "print(Fireball)",
               "print(Get inside)",
               "print(\"Get\" \"inside\")"
+            ],
+            "steps": [
+              [
+                "print(\"Fireball\")"
+              ]
             ]
           },
           "campaignLink": {
@@ -929,6 +939,13 @@
             "distractors": [
               "print(Get inside, yes?)",
               "Print()"
+            ],
+            "steps": [
+              [
+                "print(\"Mar'tu checks the clock.\")",
+                "print(\"The hand is near the arc.\")",
+                "print(\"Get inside, yes?\")"
+              ]
             ]
           },
           "takeaway": "Python runs lines from top to bottom. `print()` shows a blank line.",
@@ -1086,6 +1103,13 @@
             "distractors": [
               "print(\"I am keeping the glug.\")",
               "print(\"# I am keeping the glug.\")"
+            ],
+            "steps": [
+              [
+                "print(\"Steady, now. Rest while you can.\")",
+                "# print(\"I am keeping the glug.\")",
+                "print(\"I will take first watch.\")"
+              ]
             ]
           },
           "campaignLink": {
@@ -1276,6 +1300,15 @@
               "print(\"Shield up.)",
               "Print(\"Barrier's holding.\")",
               "print(Steady)"
+            ],
+            "steps": [
+              [
+                "print(\"Shield up.\")"
+              ],
+              [
+                "print(\"Shield up.\")",
+                "print(\"Barrier's holding.\")"
+              ]
             ]
           },
           "campaignLink": {
@@ -1785,6 +1818,13 @@
               "\"a very tired adventurer\"",
               "character - \"a very tired adventurer\"",
               "print(\"character\")"
+            ],
+            "steps": [
+              [
+                "# Your box goes here:",
+                "character = \"a very tired adventurer\"",
+                "# Print it here:"
+              ]
             ]
           },
           "campaignLink": {
@@ -2056,6 +2096,13 @@
               "armor_bonus = \"3\"",
               "3",
               "weapon = a brass rune-axe"
+            ],
+            "steps": [
+              [
+                "# Lucky's armor bonus (a number):",
+                "armor_bonus = 3",
+                "# Any weapon name (text):"
+              ]
             ]
           },
           "campaignLink": {
@@ -3036,6 +3083,13 @@
             "distractors": [
               "\"a grumpy moth\"",
               "print(\"familiar\")"
+            ],
+            "steps": [
+              [
+                "# 1. Make a box named familiar that holds any creature, in quotes.",
+                "familiar = \"a grumpy moth\"",
+                "# 2. Print familiar."
+              ]
             ]
           },
           "takeaway": "On your own: `name = value`, then `print(name)`.",
@@ -3434,6 +3488,15 @@
             "distractors": [
               "coins = \"7\"",
               "print(\"satchel\")"
+            ],
+            "steps": [
+              [
+                "# 1. A box named satchel (text):",
+                "satchel = \"three candles and a map\"",
+                "# 2. A box named coins (a number):",
+                "coins = 7",
+                "# 3. Print both boxes:"
+              ]
             ]
           },
           "takeaway": "Text in quotes, numbers alone, names never in quotes.",
@@ -4052,6 +4115,16 @@
               "lantern_count = 4",
               "rope_count = 2",
               "lantern_price = 12"
+            ],
+            "steps": [
+              [
+                "# Mar'tu needs 3 lanterns that cost 4 coins each.",
+                "# Rope costs 2 coins a coil, and Mar'tu needs 5 coils.",
+                "lantern_count = 3  # how many?",
+                "lantern_price = 4  # how much is one?",
+                "rope_count = 0  # how many?",
+                "rope_price = 0  # how much is one?"
+              ]
             ]
           },
           "takeaway": "Ask every number: how many? or how much is one? Then put it in the box that means that.",
@@ -4717,6 +4790,38 @@
               "total_cost = 22",
               "lantern_cost = 12",
               "total_cost = lantern_count + rope_count"
+            ],
+            "steps": [
+              [
+                "lantern_count = 3",
+                "lantern_price = 4",
+                "rope_count = 5",
+                "rope_price = 2",
+                "lantern_cost = lantern_count * lantern_price",
+                "rope_cost = 0",
+                "total_cost = 0",
+                "print(total_cost)"
+              ],
+              [
+                "lantern_count = 3",
+                "lantern_price = 4",
+                "rope_count = 5",
+                "rope_price = 2",
+                "lantern_cost = lantern_count * lantern_price",
+                "rope_cost = rope_count * rope_price",
+                "total_cost = 0",
+                "print(total_cost)"
+              ],
+              [
+                "lantern_count = 3",
+                "lantern_price = 4",
+                "rope_count = 5",
+                "rope_price = 2",
+                "lantern_cost = lantern_count * lantern_price",
+                "rope_cost = rope_count * rope_price",
+                "total_cost = lantern_cost + rope_cost",
+                "print(total_cost)"
+              ]
             ]
           },
           "campaignLink": {
@@ -5476,6 +5581,14 @@
               "print(name + \" has \" + mana + \" mana.\")",
               "print(\"Lucky has 26 mana.\")",
               "print(name + \"has\" + str(mana) + \"mana.\")"
+            ],
+            "steps": [
+              [
+                "name = \"Lucky\"",
+                "mana = 26",
+                "# Print: Lucky has 26 mana.  Build it from the boxes.",
+                "print(name + \" has \")"
+              ]
             ]
           },
           "campaignLink": {
@@ -6052,6 +6165,22 @@
               "max_mana = 18",
               "print(\"Oogrish: 18/18 mana\")",
               "print(hero_name + \": \" + mana + \"/\" + max_mana + \" mana\")"
+            ],
+            "steps": [
+              [
+                "hero_name = \"Oogrish\"",
+                "magical_affinity = 9",
+                "max_mana = magical_affinity * 2  # twice the affinity",
+                "mana = 0  # starts full",
+                "# Print: Oogrish: 18/18 mana"
+              ],
+              [
+                "hero_name = \"Oogrish\"",
+                "magical_affinity = 9",
+                "max_mana = magical_affinity * 2  # twice the affinity",
+                "mana = max_mana  # starts full",
+                "# Print: Oogrish: 18/18 mana"
+              ]
             ]
           },
           "takeaway": "Build a line from boxes: `hero_name + \": \" + str(mana) + \"/\" + str(max_mana) + \" mana\"`.",
@@ -6603,6 +6732,24 @@
             "distractors": [
               "bar = full * mana + empty * max_mana - mana",
               "bar = full * 20"
+            ],
+            "steps": [
+              [
+                "full = \"█\"",
+                "empty = \"░\"",
+                "mana = 3",
+                "max_mana = 5",
+                "bar = full * mana + empty * 0",
+                "print(\"[\" + bar + \"]\")"
+              ],
+              [
+                "full = \"█\"",
+                "empty = \"░\"",
+                "mana = 3",
+                "max_mana = 5",
+                "bar = full * mana + empty * (max_mana - mana)",
+                "print(\"[\" + bar + \"]\")"
+              ]
             ]
           },
           "campaignLink": {
@@ -7604,6 +7751,15 @@
             "distractors": [
               "candle_count = 2",
               "candle_cost = 8"
+            ],
+            "steps": [
+              [
+                "# Mar'tu needs 4 candles that cost 2 coins each.",
+                "candle_count = 4",
+                "candle_price = 2",
+                "candle_cost = 0",
+                "print(candle_cost)"
+              ]
             ]
           },
           "takeaway": "On your own: boxes from the story, then let the code combine them.",
@@ -7730,6 +7886,16 @@
             "distractors": [
               "hours_waited =+ 6",
               "mana =- 3"
+            ],
+            "steps": [
+              [
+                "hours_waited = 30",
+                "hours_waited += 6",
+                "mana = 20",
+                "mana = mana - 3",
+                "print(hours_waited)",
+                "print(mana)"
+              ]
             ]
           },
           "takeaway": "`x += 6` is `x = x + 6`. `x -= 3` is `x = x - 3`. Both forms are always fine.",
@@ -8106,6 +8272,18 @@
             "distractors": [
               "supply_total = 27",
               "chalk_count = 5"
+            ],
+            "steps": [
+              [
+                "# Chalk costs 5 coins a stick, and Oogrish wants 3.",
+                "# Oil costs 3 coins a flask, and he needs 4.",
+                "chalk_count = 3",
+                "chalk_price = 5",
+                "oil_count = 4",
+                "oil_price = 3",
+                "supply_total = 0",
+                "print(supply_total)"
+              ]
             ]
           },
           "takeaway": "Price first or count first, ask the question. Then combine: count `*` price `+` count `*` price.",
@@ -9711,6 +9889,119 @@
           "mana_needed = 64",
           "print(\"Mana for the barrier: 64\")",
           "print(\"Mana for the barrier: \" + mana_needed)"
+        ],
+        "steps": [
+          [
+            "# A. What we know",
+            "hours_until_burst = 37",
+            "mana_per_hour = 0",
+            "oil_per_hour = 0",
+            "oil_price = 0",
+            "",
+            "# B. Let the code combine it",
+            "mana_needed = 0",
+            "oil_needed = 0",
+            "oil_cost = 0",
+            "",
+            "# C. Write the ledger",
+            "watch_keeper = \"\"  # any hero, in quotes"
+          ],
+          [
+            "# A. What we know",
+            "hours_until_burst = 37",
+            "mana_per_hour = 2",
+            "oil_per_hour = 1",
+            "oil_price = 3",
+            "",
+            "# B. Let the code combine it",
+            "mana_needed = 0",
+            "oil_needed = 0",
+            "oil_cost = 0",
+            "",
+            "# C. Write the ledger",
+            "watch_keeper = \"\"  # any hero, in quotes"
+          ],
+          [
+            "# A. What we know",
+            "hours_until_burst = 37",
+            "mana_per_hour = 2",
+            "oil_per_hour = 1",
+            "oil_price = 3",
+            "",
+            "# B. Let the code combine it",
+            "mana_needed = hours_until_burst * mana_per_hour",
+            "oil_needed = 0",
+            "oil_cost = 0",
+            "",
+            "# C. Write the ledger",
+            "watch_keeper = \"\"  # any hero, in quotes"
+          ],
+          [
+            "# A. What we know",
+            "hours_until_burst = 37",
+            "mana_per_hour = 2",
+            "oil_per_hour = 1",
+            "oil_price = 3",
+            "",
+            "# B. Let the code combine it",
+            "mana_needed = hours_until_burst * mana_per_hour",
+            "oil_needed = hours_until_burst * oil_per_hour",
+            "oil_cost = oil_needed * oil_price",
+            "",
+            "# C. Write the ledger",
+            "watch_keeper = \"\"  # any hero, in quotes"
+          ],
+          [
+            "# A. What we know",
+            "hours_until_burst = 37",
+            "mana_per_hour = 2",
+            "oil_per_hour = 1",
+            "oil_price = 3",
+            "",
+            "# B. Let the code combine it",
+            "mana_needed = hours_until_burst * mana_per_hour",
+            "oil_needed = hours_until_burst * oil_per_hour",
+            "oil_cost = oil_needed * oil_price",
+            "",
+            "# C. Write the ledger",
+            "print(\"Mana for the barrier: \" + str(mana_needed))",
+            "watch_keeper = \"\"  # any hero, in quotes"
+          ],
+          [
+            "# A. What we know",
+            "hours_until_burst = 37",
+            "mana_per_hour = 2",
+            "oil_per_hour = 1",
+            "oil_price = 3",
+            "",
+            "# B. Let the code combine it",
+            "mana_needed = hours_until_burst * mana_per_hour",
+            "oil_needed = hours_until_burst * oil_per_hour",
+            "oil_cost = oil_needed * oil_price",
+            "",
+            "# C. Write the ledger",
+            "print(\"Mana for the barrier: \" + str(mana_needed))",
+            "print(\"Lantern oil: \" + str(oil_needed) + \" flasks for \" + str(oil_cost) + \" coins\")",
+            "watch_keeper = \"\"  # any hero, in quotes"
+          ],
+          [
+            "# A. What we know",
+            "hours_until_burst = 37",
+            "mana_per_hour = 2",
+            "oil_per_hour = 1",
+            "oil_price = 3",
+            "",
+            "# B. Let the code combine it",
+            "mana_needed = hours_until_burst * mana_per_hour",
+            "oil_needed = hours_until_burst * oil_per_hour",
+            "oil_cost = oil_needed * oil_price",
+            "",
+            "# C. Write the ledger",
+            "print(\"Mana for the barrier: \" + str(mana_needed))",
+            "print(\"Lantern oil: \" + str(oil_needed) + \" flasks for \" + str(oil_cost) + \" coins\")",
+            "watch_keeper = \"Captain Glug\"  # any hero, in quotes",
+            "print(\"First watch: \" + watch_keeper)"
+          ]
         ]
       },
       "campaignLink": {
@@ -10269,6 +10560,136 @@
           "print(\"█   █\")",
           "print(\"=========\")",
           "print(\"ink\" * 5)"
+        ],
+        "steps": [
+          [
+            "# The ward sign, painted down the barrier post.",
+            "ink = \"█\"",
+            "",
+            "# A. Top border",
+            "",
+            "# B. The letters, five rows each",
+            "# T",
+            "print(ink * 5)",
+            "print(\"  \" + ink)",
+            "print(\"  \" + ink)",
+            "print(\"  \" + ink)",
+            "print(\"  \" + ink)",
+            "print()",
+            "# O",
+            "print(ink * 5)",
+            "print(ink + \"   \" + ink)",
+            "print(ink + \"   \" + ink)",
+            "print(ink + \"   \" + ink)",
+            "print(ink * 5)",
+            "print()",
+            "# R",
+            "",
+            "",
+            "# C. Bottom border",
+            "",
+            "# D. One more letter, in triple quotes"
+          ],
+          [
+            "# The ward sign, painted down the barrier post.",
+            "ink = \"█\"",
+            "",
+            "# A. Top border",
+            "",
+            "# B. The letters, five rows each",
+            "# T",
+            "print(ink * 5)",
+            "print(\"  \" + ink)",
+            "print(\"  \" + ink)",
+            "print(\"  \" + ink)",
+            "print(\"  \" + ink)",
+            "print()",
+            "# O",
+            "print(ink * 5)",
+            "print(ink + \"   \" + ink)",
+            "print(ink + \"   \" + ink)",
+            "print(ink + \"   \" + ink)",
+            "print(ink * 5)",
+            "print()",
+            "# R",
+            "print(ink * 4)",
+            "print(ink + \"   \" + ink)",
+            "print(ink * 4)",
+            "print(ink + \"  \" + ink)",
+            "print(ink + \"   \" + ink)",
+            "",
+            "# C. Bottom border",
+            "",
+            "# D. One more letter, in triple quotes"
+          ],
+          [
+            "# The ward sign, painted down the barrier post.",
+            "ink = \"█\"",
+            "",
+            "# A. Top border",
+            "print(\"=\" * 9)",
+            "",
+            "# B. The letters, five rows each",
+            "# T",
+            "print(ink * 5)",
+            "print(\"  \" + ink)",
+            "print(\"  \" + ink)",
+            "print(\"  \" + ink)",
+            "print(\"  \" + ink)",
+            "print()",
+            "# O",
+            "print(ink * 5)",
+            "print(ink + \"   \" + ink)",
+            "print(ink + \"   \" + ink)",
+            "print(ink + \"   \" + ink)",
+            "print(ink * 5)",
+            "print()",
+            "# R",
+            "print(ink * 4)",
+            "print(ink + \"   \" + ink)",
+            "print(ink * 4)",
+            "print(ink + \"  \" + ink)",
+            "print(ink + \"   \" + ink)",
+            "",
+            "# C. Bottom border",
+            "print(\"=\" * 9)",
+            "",
+            "# D. One more letter, in triple quotes"
+          ],
+          [
+            "# The ward sign, painted down the barrier post.",
+            "ink = \"▓\"",
+            "",
+            "# A. Top border",
+            "print(\"=\" * 9)",
+            "",
+            "# B. The letters, five rows each",
+            "# T",
+            "print(ink * 5)",
+            "print(\"  \" + ink)",
+            "print(\"  \" + ink)",
+            "print(\"  \" + ink)",
+            "print(\"  \" + ink)",
+            "print()",
+            "# O",
+            "print(ink * 5)",
+            "print(ink + \"   \" + ink)",
+            "print(ink + \"   \" + ink)",
+            "print(ink + \"   \" + ink)",
+            "print(ink * 5)",
+            "print()",
+            "# R",
+            "print(ink * 4)",
+            "print(ink + \"   \" + ink)",
+            "print(ink * 4)",
+            "print(ink + \"  \" + ink)",
+            "print(ink + \"   \" + ink)",
+            "",
+            "# C. Bottom border",
+            "print(\"=\" * 9)",
+            "",
+            "# D. One more letter, in triple quotes"
+          ]
         ]
       },
       "campaignLink": {
@@ -10559,6 +10980,16 @@
               "hand = start + hours % 12",
               "turns = (start + hours) / 12",
               "hand = 3"
+            ],
+            "steps": [
+              [
+                "start = 10",
+                "hours = 5",
+                "hand = (start + hours) % 12",
+                "turns = 0",
+                "print(hand)",
+                "print(turns)"
+              ]
             ]
           },
           "takeaway": "`%` gives the remainder, `//` the whole part: `(start + hours) % 12` wraps a count onto the clock.",
@@ -10890,6 +11321,17 @@
               "sips = input(\"How many sips? \")",
               "print(\"Welcome, traveler.\")",
               "print(6)"
+            ],
+            "steps": [
+              [
+                "traveler = input(\"Who goes there? \")",
+                "print(\"Welcome, \" + traveler + \".\")"
+              ],
+              [
+                "traveler = input(\"Who goes there? \")",
+                "print(\"Welcome, \" + traveler + \".\")",
+                "sips = int(input(\"How many sips? \"))"
+              ]
             ]
           },
           "campaignLink": {
@@ -11066,6 +11508,11 @@
             "distractors": [
               "guide = \"Captain Glug\"",
               "print(\"party_leader\")"
+            ],
+            "steps": [
+              [
+                "party_leader = \"Captain Glug\""
+              ]
             ]
           },
           "takeaway": "Use the task's exact name: `party_leader = \"...\"`, then `print(party_leader)`.",
@@ -11229,6 +11676,18 @@
             "distractors": [
               "total_cost = 29",
               "total_cost = bandage_count + torch_count"
+            ],
+            "steps": [
+              [
+                "# Bandages cost 2 coins each, and Oogrish needs 7.",
+                "# Torches: Oogrish needs 3, at 5 coins each.",
+                "bandage_count = 7    # how many?",
+                "bandage_price = 2    # how much is one?",
+                "torch_count = 3    # how many?",
+                "torch_price = 5    # how much is one?",
+                "total_cost = 0",
+                "print(total_cost)"
+              ]
             ]
           },
           "takeaway": "How many × how much is one, for each thing, then add: and let the code do it.",
@@ -11486,6 +11945,23 @@
               "max_mana = 20",
               "print(\"Gearshift: 14/20 mana\")",
               "print(scout_name + \": \" + mana + \"/\" + max_mana + \" mana\")"
+            ],
+            "steps": [
+              [
+                "scout_name = \"Gearshift\"",
+                "magical_affinity = 10",
+                "max_mana = magical_affinity * 2",
+                "mana = max_mana",
+                "spell_cost = 6"
+              ],
+              [
+                "scout_name = \"Gearshift\"",
+                "magical_affinity = 10",
+                "max_mana = magical_affinity * 2",
+                "mana = max_mana",
+                "spell_cost = 6",
+                "mana = mana - spell_cost"
+              ]
             ]
           },
           "takeaway": "Compute from boxes, change a box with `mana = mana - cost`, and glue numbers with `str()`.",
@@ -12034,6 +12510,11 @@
             "distractors": [
               "steed = \"a glowing newt\"",
               "print(\"familiar\")"
+            ],
+            "steps": [
+              [
+                "familiar = \"a glowing newt\""
+              ]
             ]
           },
           "takeaway": "Use the task's exact name: `familiar = \"...\"`, then `print(familiar)`.",
@@ -12197,6 +12678,18 @@
             "distractors": [
               "supply_cost = 24",
               "supply_cost = candle_count + oil_count"
+            ],
+            "steps": [
+              [
+                "# Candles cost 3 coins each, and Mar'tu needs 4.",
+                "# Oil: Mar'tu needs 2 flasks, at 6 coins a flask.",
+                "candle_count = 4    # how many?",
+                "candle_price = 3    # how much is one?",
+                "oil_count = 2    # how many?",
+                "oil_price = 6    # how much is one?",
+                "supply_cost = 0",
+                "print(supply_cost)"
+              ]
             ]
           },
           "takeaway": "How many × how much is one, for each thing, then add: and let the code do it.",
@@ -12454,6 +12947,23 @@
               "max_mana = 24",
               "print(\"Bomb Shell: 19/24 mana\")",
               "print(caster_name + \": \" + mana + \"/\" + max_mana + \" mana\")"
+            ],
+            "steps": [
+              [
+                "caster_name = \"Bomb Shell\"",
+                "magical_affinity = 12",
+                "max_mana = magical_affinity * 2",
+                "mana = max_mana",
+                "shield_cost = 5"
+              ],
+              [
+                "caster_name = \"Bomb Shell\"",
+                "magical_affinity = 12",
+                "max_mana = magical_affinity * 2",
+                "mana = max_mana",
+                "shield_cost = 5",
+                "mana = mana - shield_cost"
+              ]
             ]
           },
           "takeaway": "Compute from boxes, change a box with `mana = mana - cost`, and glue numbers with `str()`.",

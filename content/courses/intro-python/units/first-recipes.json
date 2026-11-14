@@ -1766,6 +1766,18 @@
             "distractors": [
               "say_steady",
               "def (\"say_steady\")"
+            ],
+            "steps": [
+              [
+                "# A box holds a value.",
+                "steadying_words = \"Steady, now.\"",
+                "",
+                "# A recipe holds steps.",
+                "def say_steady():",
+                "    print(\"Steady, now.\")",
+                "",
+                "say_steady()"
+              ]
             ]
           },
           "campaignLink": {
@@ -4973,6 +4985,77 @@
             "distractors": [
               "    scout.step(north)",
               "    scout.step(\"North\")"
+            ],
+            "steps": [
+              [
+                "# 1. Replace pass with a command that moves the scout north, like scout.step(\"north\").",
+                "def step_north():",
+                "    scout.step(\"north\")",
+                "",
+                "# 2. Replace pass with a command that moves the scout south.",
+                "def step_south():",
+                "    pass",
+                "",
+                "# 3. Replace pass with a command that moves the scout east.",
+                "def step_east():",
+                "    pass",
+                "",
+                "# 4. Replace pass with a command that moves the scout west.",
+                "def step_west():",
+                "    pass",
+                "",
+                "# Mar'tu's map calls your recipes, like the arrow keys did:",
+                "step_north()",
+                "step_south()",
+                "step_east()",
+                "step_west()"
+              ],
+              [
+                "# 1. Replace pass with a command that moves the scout north, like scout.step(\"north\").",
+                "def step_north():",
+                "    scout.step(\"north\")",
+                "",
+                "# 2. Replace pass with a command that moves the scout south.",
+                "def step_south():",
+                "    scout.step(\"south\")",
+                "",
+                "# 3. Replace pass with a command that moves the scout east.",
+                "def step_east():",
+                "    pass",
+                "",
+                "# 4. Replace pass with a command that moves the scout west.",
+                "def step_west():",
+                "    pass",
+                "",
+                "# Mar'tu's map calls your recipes, like the arrow keys did:",
+                "step_north()",
+                "step_south()",
+                "step_east()",
+                "step_west()"
+              ],
+              [
+                "# 1. Replace pass with a command that moves the scout north, like scout.step(\"north\").",
+                "def step_north():",
+                "    scout.step(\"north\")",
+                "",
+                "# 2. Replace pass with a command that moves the scout south.",
+                "def step_south():",
+                "    scout.step(\"south\")",
+                "",
+                "# 3. Replace pass with a command that moves the scout east.",
+                "def step_east():",
+                "    scout.step(\"east\")",
+                "",
+                "# 4. Replace pass with a command that moves the scout west.",
+                "def step_west():",
+                "    pass",
+                "",
+                "# Mar'tu's map calls your recipes, like the arrow keys did:",
+                "step_north()",
+                "step_south()",
+                "step_east()",
+                "step_west()"
+              ]
             ]
           },
           "campaignLink": {
@@ -6448,6 +6531,15 @@
             "distractors": [
               "    print(\"Lucky, get inside!\")",
               "    print(\"hero_name, get inside!\")"
+            ],
+            "steps": [
+              [
+                "def warn(hero_name):",
+                "    print(hero_name + \", get inside!\")",
+                "",
+                "warn(\"Lucky\")",
+                "warn(\"Bomb Shell\")"
+              ]
             ]
           },
           "campaignLink": {
@@ -8304,6 +8396,15 @@
               "    print(4 + 3)",
               "    print(damage + bonus)",
               "    print(7)"
+            ],
+            "steps": [
+              [
+                "def show_hit(base_damage, bonus):",
+                "    print(base_damage + bonus)",
+                "",
+                "show_hit(4, 3)",
+                "show_hit(8, 2)"
+              ]
             ]
           },
           "takeaway": "Use the ingredient names inside a recipe, never one call's numbers.",
@@ -9848,6 +9949,21 @@
               "    print(total)",
               "lucky_max = 26",
               "    return result"
+            ],
+            "steps": [
+              [
+                "def max_mana_for(affinity):",
+                "    total = affinity * 2",
+                "    return total"
+              ],
+              [
+                "def max_mana_for(affinity):",
+                "    total = affinity * 2",
+                "    return total",
+                "",
+                "lucky_max = max_mana_for(13)",
+                "print(lucky_max)"
+              ]
             ]
           },
           "campaignLink": {
@@ -11351,6 +11467,19 @@
             "distractors": [
               "    return result",
               "    print(total)"
+            ],
+            "steps": [
+              [
+                "def armor_total(base, bonus):",
+                "    total = base + bonus",
+                "    return total",
+                "",
+                "def shield_total(base, bonus):",
+                "    total = base + bonus",
+                "",
+                "print(\"Lucky: \" + str(armor_total(10, 3)))",
+                "print(\"Shield: \" + str(shield_total(2, 1)))"
+              ]
             ]
           },
           "takeaway": "Hand back the box the recipe made. A recipe with no `return` hands back `None`.",
@@ -12838,6 +12967,44 @@
             "distractors": [
               "    show_on_ley_board(get_greeting)",
               "    get_greeting = greeting"
+            ],
+            "steps": [
+              [
+                "# 1. Change the words inside the quotes to a greeting Mar'tu gives Lucky.",
+                "def get_greeting():",
+                "    line = \"WELCOME BACK, LUCKY. WIPE YOUR BOOTS.\"",
+                "    line = line.lower()",
+                "    line = line.capitalize()",
+                "    return line",
+                "",
+                "",
+                "# 2. Finish present_greeting(): store the result of get_greeting() in a variable.",
+                "# 3. Pass that variable to show_on_ley_board().",
+                "def present_greeting():",
+                "    pass",
+                "",
+                "",
+                "# The Ley board calls your recipe, like the game did:",
+                "present_greeting()"
+              ],
+              [
+                "# 1. Change the words inside the quotes to a greeting Mar'tu gives Lucky.",
+                "def get_greeting():",
+                "    line = \"WELCOME BACK, LUCKY. WIPE YOUR BOOTS.\"",
+                "    line = line.lower()",
+                "    line = line.capitalize()",
+                "    return line",
+                "",
+                "",
+                "# 2. Finish present_greeting(): store the result of get_greeting() in a variable.",
+                "# 3. Pass that variable to show_on_ley_board().",
+                "def present_greeting():",
+                "    greeting = get_greeting()",
+                "",
+                "",
+                "# The Ley board calls your recipe, like the game did:",
+                "present_greeting()"
+              ]
             ]
           },
           "campaignLink": {
@@ -14379,6 +14546,19 @@
             "distractors": [
               "    return roll > needed",
               "    return True"
+            ],
+            "steps": [
+              [
+                "def strength_check(roll):",
+                "    # Bomb Shell pries the trap door.",
+                "    # 1. Set needed to how hard this is, a number from 2 to 20.",
+                "    needed = 12",
+                "    # 2. Replace return False with: return roll >= needed",
+                "    return False",
+                "",
+                "# Mar'tu rolls a 15 to try it:",
+                "print(strength_check(15))"
+              ]
             ]
           },
           "campaignLink": {
@@ -18164,6 +18344,19 @@
               "    print(\"Lucky: Fine. I'm in.\")",
               "    print(\"hero_name: words\")",
               "    print(hero + \": \" + words)"
+            ],
+            "steps": [
+              [
+                "def cheer_on(hero_name, words):",
+                "    # print the hero, then \": \", then the words",
+                "    print(hero_name + \": \" + words)",
+                "",
+                "",
+                "# should show: Lucky: Fine. I'm in.",
+                "cheer_on(\"Lucky\", \"Fine. I'm in.\")",
+                "# should show: Oogrish: Steady, now.",
+                "cheer_on(\"Oogrish\", \"Steady, now.\")"
+              ]
             ]
           },
           "takeaway": "Inside the recipe, use the ingredient names. Each call fills them fresh, in order.",
@@ -19332,6 +19525,18 @@
               "sips_left = glug_left",
               "    print(sips_now - sips_drunk)",
               "    return 9 - 4"
+            ],
+            "steps": [
+              [
+                "def glug_left(sips_now, sips_drunk):",
+                "    # hand back the sips left",
+                "    return sips_now - sips_drunk",
+                "",
+                "",
+                "# Lucky has 9 sips. He drinks 4.",
+                "# Store the sips left in sips_left.",
+                "# Then print sips_left."
+              ]
             ]
           },
           "campaignLink": {
@@ -20076,6 +20281,34 @@
           "    return 3 * 4",
           "total_cost = 36",
           "    print(count * price)"
+        ],
+        "steps": [
+          [
+            "# Lucky's supply run, worked out",
+            "# by hand, line by line:",
+            "def item_cost(count, price):",
+            "    return count * price",
+            "",
+            "",
+            "lantern_cost = 3 * 4",
+            "rope_cost = 2 * 7",
+            "ration_cost = 5 * 2",
+            "total_cost = 36",
+            "print(total_cost)"
+          ],
+          [
+            "# Lucky's supply run, worked out",
+            "# by hand, line by line:",
+            "def item_cost(count, price):",
+            "    return count * price",
+            "",
+            "",
+            "lantern_cost = item_cost(3, 4)",
+            "rope_cost = item_cost(2, 7)",
+            "ration_cost = item_cost(5, 2)",
+            "total_cost = 36",
+            "print(total_cost)"
+          ]
         ]
       },
       "takeaway": "Work it out once, in a recipe. Every line that calls it follows when something changes.",
@@ -21500,6 +21733,37 @@
               "    scout.step(west)",
               "    show_on_ley_board(get_warning)",
               "    scout.step(\"north\")"
+            ],
+            "steps": [
+              [
+                "# 1. Replace pass so the scout",
+                "#    steps west. The scout moves",
+                "#    like this: scout.step(\"north\")",
+                "def step_west():",
+                "    scout.step(\"west\")",
+                "",
+                "",
+                "# Already finished. Leave it be.",
+                "def get_warning():",
+                "    line = \"GET INSIDE, NOW!\"",
+                "    line = line.lower()",
+                "    line = line.capitalize()",
+                "    return line",
+                "",
+                "",
+                "# 2. Finish present_warning():",
+                "#    store the result of",
+                "#    get_warning() in a variable.",
+                "#    Then pass that variable to",
+                "#    show_on_ley_board().",
+                "def present_warning():",
+                "    pass",
+                "",
+                "",
+                "# Mar'tu's test calls. Leave them.",
+                "step_west()",
+                "present_warning()"
+              ]
             ]
           },
           "campaignLink": {
@@ -22067,6 +22331,22 @@
               "    return roll > needed",
               "    return True",
               "    print(roll >= needed)"
+            ],
+            "steps": [
+              [
+                "def latch_check(roll):",
+                "    # Bomb Shell picks the latch.",
+                "    # 1. Set needed to how hard this",
+                "    #    is: a number from 2 to 20.",
+                "    needed = 12",
+                "    # 2. Hand back whether roll",
+                "    #    reaches needed.",
+                "    return False",
+                "",
+                "",
+                "print(latch_check(1))",
+                "print(latch_check(20))"
+              ]
             ]
           },
           "campaignLink": {
@@ -23987,6 +24267,37 @@
               "    scout.step(east)",
               "    show_on_ley_board(get_farewell)",
               "    scout.step(\"south\")"
+            ],
+            "steps": [
+              [
+                "# 1. Replace pass so the scout",
+                "#    steps east. The scout moves",
+                "#    like this: scout.step(\"south\")",
+                "def step_east():",
+                "    scout.step(\"east\")",
+                "",
+                "",
+                "# Already finished. Leave it be.",
+                "def get_farewell():",
+                "    line = \"SAFE TRAVELS, FRIENDS.\"",
+                "    line = line.lower()",
+                "    line = line.capitalize()",
+                "    return line",
+                "",
+                "",
+                "# 2. Finish present_farewell():",
+                "#    store the result of",
+                "#    get_farewell() in a variable.",
+                "#    Then pass that variable to",
+                "#    show_on_ley_board().",
+                "def present_farewell():",
+                "    pass",
+                "",
+                "",
+                "# Mar'tu's test calls. Leave them.",
+                "step_east()",
+                "present_farewell()"
+              ]
             ]
           },
           "campaignLink": {
@@ -24554,6 +24865,22 @@
               "    return roll > needed",
               "    return True",
               "    print(roll >= needed)"
+            ],
+            "steps": [
+              [
+                "def dodge_check(roll):",
+                "    # Lucky dodges a falling beam.",
+                "    # 1. Set needed to how hard this",
+                "    #    is: a number from 2 to 20.",
+                "    needed = 14",
+                "    # 2. Hand back whether roll",
+                "    #    reaches needed.",
+                "    return False",
+                "",
+                "",
+                "print(dodge_check(1))",
+                "print(dodge_check(20))"
+              ]
             ]
           },
           "campaignLink": {

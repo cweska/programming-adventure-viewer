@@ -677,6 +677,15 @@ def start_of_line(hints, solution=None) -> str | None:
     return start if start and start != "(" and len(start) < len(text) else None
 
 
+_PLACES_FROM_ORDER = {"order": None}
+
+
+def min_order_for_places(ex: dict) -> bool:
+    """The Start me off place warning is on from Unit 5 (the unit being verified sets the order)."""
+    order = _PLACES_FROM_ORDER["order"]
+    return isinstance(order, int) and order >= 5
+
+
 def ladder_warnings(ex: dict, where: str, report: Report) -> None:
     """FORMAT.md's hint ladder: point first, the step's own line last (Start me off is cut from it)."""
     ladders = [(f"checkpoint {i}", cp.get("hints") or [], ex.get("solution"))
@@ -693,6 +702,17 @@ def ladder_warnings(ex: dict, where: str, report: Report) -> None:
             report.warn(where, f"{label}: the last hint's first code span starts `{start}`, which Mar'tu's version "
                                "never uses, so the site drops Start me off. Put the step's own line first in the "
                                "last hint (FORMAT.md, checkpoint hints)")
+        # From Unit 5 on: a hint that says where the line goes in words the site cannot read ("Change line 4 to",
+        # "under comment 2", "above the `print`") leaves Start me off at the end of the code.
+        if start and label != "bonus" and min_order_for_places(ex) and isinstance(hints[-1], str):
+            last = hints[-1]
+            placed = re.search(r"\b(in place of|on the line after|under|above)\s+(?:the\s+)?`[^`\n]+`", last)
+            vague = re.search(r"\b(Change (?:line \d+|the last line) to|[Uu]nder (?:comment \d+|the (?:first|second|last) "
+                              r"comment|the comment)|above the `?print`?|below the (?:comments|sheet))", last)
+            if vague and not placed:
+                report.warn(where, f"{label}: the last hint says where the line goes ({vague.group(0)!r}) in words Start "
+                                   "me off cannot read, so it lands at the end of the code. Say it with in place of "
+                                   "`...`, under `# N.`, on the line after `...` or above `...` (FORMAT.md, hints)")
 
 
 def verify_unit(path: Path, gate: ConceptGate, report: Report) -> None:
@@ -717,6 +737,7 @@ def verify_unit(path: Path, gate: ConceptGate, report: Report) -> None:
             report.error(f"{path.stem}/{item.get('id')}", f"questions_to_pass is {need}, but the quiz has "
                                                           f"{len(quiz.get('questions', []))} questions")
     # Unit 1 predates the ladder rule and is frozen; from Unit 2 on, a 'Start like this' first hint is flagged.
+    _PLACES_FROM_ORDER["order"] = unit.get("order")
     if isinstance(unit.get("order"), int) and unit["order"] >= 2:
         for item in items:
             playables = [item] if item.get("kind") in ("project", "challenge") else item.get("exercises", [])

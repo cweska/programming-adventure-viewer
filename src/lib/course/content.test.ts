@@ -5,6 +5,7 @@ import path from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import courseJson from "../../../content/courses/intro-python/course.json";
 import glossaryJson from "../../../content/courses/intro-python/glossary.json";
+import { proseBlocks, type InlinePart } from "../../components/course/prose-format";
 import { courseMetaSchema, glossaryEntrySchema, playablesOf, unitSchema, type Item, type Unit } from "./schema";
 import { rawUnits } from "./units.generated";
 
@@ -481,6 +482,23 @@ describe("exported course content", () => {
     expect(problems).toEqual([]);
   });
 
+  it("renders every [[glossary]] link: no [[ or ]] marks left in the words a student sees", () => {
+    // `[[.get()|`.get()`]]` once showed its marks: the shown text is what prose-format.ts makes of the line.
+    const problems: string[] = [];
+    const shown = (parts: InlinePart[]) => parts.filter((part) => part.kind === "text" || part.kind === "em").map((part) => part.text).join("");
+    for (const name of unitFiles) {
+      for (const { where, text } of proseStrings(readJson(path.join(UNITS_DIR, name)))) {
+        for (const block of proseBlocks(text)) {
+          const lines = block.kind === "paragraph" ? [block.parts] : block.kind === "list" ? block.items : [];
+          for (const parts of lines) {
+            if (/\[\[|\]\]/.test(shown(parts))) problems.push(`${name} ${where}: ${shown(parts).slice(0, 120)}`);
+          }
+        }
+      }
+    }
+    expect(problems).toEqual([]);
+  });
+
   it("keeps the pictures and tables in prose narrow enough for a phone (36 characters a line)", () => {
     // A fenced block in prose scrolls sideways on a 390px screen past about 36 characters, hiding the labels
     // that explain the picture. Put each label on its own line under the code, or make a table a numbered list.
@@ -533,6 +551,38 @@ describe("exported course content", () => {
     }
   });
 
+  it("never shortens Mar'tu to Mar's in a check message ('Mar' + chr(39) + 's check' prints \"Mar's check\")", () => {
+    for (const unit of parsedUnits()) {
+      for (const item of unit.items) {
+        for (const { exercise } of playablesOf(item)) {
+          const checks = [...exercise.checkpoints.flatMap((checkpoint) => checkpoint.checks), ...(exercise.bonus?.checks ?? [])];
+          for (const check of checks) {
+            expect(check.code, `${unit.id}/${item.id}/${exercise.id}: ${check.name}`).not.toMatch(/Mar['"]\s*\+\s*chr\(39\)\s*\+\s*['"]s\b/);
+            expect(check.code, `${unit.id}/${item.id}/${exercise.id}: ${check.name}`).not.toMatch(/Mar's (check|version)/);
+          }
+        }
+      }
+    }
+  });
+
+  it("gates every Quick Check form from Unit 2 on to its questions: all but one, or both of two", () => {
+    for (const unit of parsedUnits().filter((entry) => entry.published && entry.order >= 2)) {
+      for (const form of unit.items.filter((item) => item.kind === "testout")) {
+        if (form.kind !== "testout") continue;
+        const quiz = unit.items.find((item) => item.id === `${form.id}-questions`);
+        expect(form.questionsToPass, `${unit.id}/${form.id} sets questions_to_pass`).toBeGreaterThan(0);
+        const total = quiz?.kind === "quiz" ? quiz.questions.length : 0;
+        // QC2 and Recipes I: 3 of 4; Lists: both of 2; Dictionaries: 2 of 3 (all but one, at least two).
+        expect(form.questionsToPass, `${unit.id}/${form.id}`).toBe(Math.max(2, total - 1));
+        // Every Quick Check exercise is lean, with no hints shown.
+        for (const exercise of form.exercises) {
+          expect(exercise.explainer, `${unit.id}/${form.id}/${exercise.id}`).toBe("lean");
+          expect(exercise.support, `${unit.id}/${form.id}/${exercise.id}`).toBe("none");
+        }
+      }
+    }
+  });
+
   it("parses course.json, opening with Mar'tu's line", () => {
     const course = courseMetaSchema.parse(courseJson);
     expect(course.title).toBe("Intro to Python");
@@ -578,6 +628,10 @@ describe("sample unit coverage", () => {
     expect(full.anotherWay.length).toBeGreaterThan(0);
     expect(full.bonus).toBeDefined();
     expect(full.assemble).toBeDefined();
+    // More structure by step: Mar'tu's partials go to the site with Assemble it.
+    expect(full.assemble?.steps?.length).toBe(full.checkpoints.length - 1);
+    // A one-click card sort on an Another way angle.
+    expect(full.anotherWay.some((angle) => angle.sort && angle.sort.cards.length >= 2)).toBe(true);
     expect(full.campaignLink).toBeDefined();
     expect(full.tracer).toBe(true);
   });

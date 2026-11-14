@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import type { AnotherWay, Checkpoint, GlossaryEntry } from "../../lib/course/schema";
+import { CardSort } from "./CardSort";
 import { angleLabel, helpOfferLine, type HelpOffer, type HelpState, type Rung } from "./exercise-logic";
 import { Prose } from "./Prose";
 import { ReadAloud } from "./ReadAloud";
@@ -36,6 +37,7 @@ export function HelpStack({
   runNumber,
   crashed = false,
   crashLine = null,
+  slipLine = null,
   crashOnly = false,
   moreAfterRun = false,
   crashIsTask = false,
@@ -60,6 +62,8 @@ export function HelpStack({
   /** The last run crashed, at this line of the student's code (null when Python did not name one). */
   crashed?: boolean;
   crashLine?: number | null;
+  /** The line the slip is on, when the explainer knows it is not the one Python stopped on (a sheet's missing comma). */
+  slipLine?: number | null;
   /**
    * The crash is on a line no step names, while the steps name other lines (a broken spell): this step's
    * rungs would talk about a different line, so they wait until the code runs. Only the crash note shows.
@@ -133,6 +137,9 @@ export function HelpStack({
             ) : null}
           </p>
           <Prose text={shown.text} glossary={glossary} />
+          {shown.sort ? (
+            <CardSort key={`help-${angle % anotherWay.length}`} sort={shown.sort} glossary={glossary} idPrefix={`help-${angle % anotherWay.length}`} />
+          ) : null}
           <ReadAloud text={shown.text} testId="read-aloud-help-another" />
           {anotherWay.length > 1 ? (
             <button
@@ -208,8 +215,9 @@ export function HelpStack({
     </p>
   ) : crashed ? (
     <p className="ex-help-crash" data-testid="help-crash">
-      <strong>{`Mend ${crashLine ? `line ${crashLine}` : "the error"} first.`}</strong> Python stopped there, so it could
-      not check your steps yet. Read the message under your code.
+      <strong>{`Mend ${slipLine ? `line ${slipLine}` : crashLine ? `line ${crashLine}` : "the error"} first.`}</strong>{" "}
+      {slipLine && crashLine ? `Python stopped on line ${crashLine}` : "Python stopped there"}, so it could not check your steps
+      yet. Read the message under your code.
     </p>
   ) : null;
 

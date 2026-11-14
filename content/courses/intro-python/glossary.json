@@ -17,6 +17,14 @@
     "example": "[48, 48, 47].count(48)"
   },
   {
+    "term": ".get()",
+    "aliases": [
+      "get()"
+    ],
+    "plain": "Reads a key gently. `hero.get(\"glug\", 0)` gives the value, or 0 when the key is missing, with no KeyError.",
+    "example": "hero.get(\"glug\", 0)"
+  },
+  {
     "term": ".insert()",
     "aliases": [
       "insert()"
@@ -95,6 +103,14 @@
     ],
     "plain": "`>=` means *at least*: exactly the number still counts. `<=` means *at most*. `>` and `<` leave the number itself out.",
     "example": "roll >= needed"
+  },
+  {
+    "term": "AttributeError",
+    "aliases": [
+      "attribute error"
+    ],
+    "plain": "Python's message when a dot asks for something that is not there. Read a dictionary with square brackets, not a dot: `lucky[\"mana\"]`, not `lucky.mana`.",
+    "example": "AttributeError: 'dict' object has no attribute 'mana'"
   },
   {
     "term": "block",
@@ -209,6 +225,16 @@
     ],
     "plain": "Made already. A name is defined once a line like `name = value` has run. \"Not defined\" means Python looked for something saved with that name and found nothing.",
     "example": "NameError: name 'hero' is not defined"
+  },
+  {
+    "term": "dictionary",
+    "aliases": [
+      "dictionaries",
+      "dict",
+      "dicts"
+    ],
+    "plain": "Values kept under keys, in curly brackets. Each key, then a colon, then its value. Commas go between.",
+    "example": "{\"name\": \"Lucky\", \"mana\": 26}"
   },
   {
     "term": "elif",
@@ -338,6 +364,24 @@
     "example": "clock_color == \"red\""
   },
   {
+    "term": "key",
+    "aliases": [
+      "keys",
+      "tag"
+    ],
+    "plain": "The tag on one value in a dictionary. A key is text, so it has quotes: `\"mana\"`. Read its value with the key in square brackets.",
+    "example": "lucky[\"mana\"]"
+  },
+  {
+    "term": "KeyError",
+    "aliases": [
+      "key error",
+      "key errors"
+    ],
+    "plain": "Python's message when a dictionary has no key spelled exactly like that. Check the spelling, the capitals and the spaces.",
+    "example": "KeyError: 'Max_Mana'"
+  },
+  {
     "term": "len()",
     "aliases": [
       "len",
@@ -363,6 +407,15 @@
     ],
     "plain": "A list whose items are lists, like rows on a shelf. Read the row first, then the item in it: `roster[3][1]`.",
     "example": "roster[3][1]"
+  },
+  {
+    "term": "list of dictionaries",
+    "aliases": [
+      "lists of dictionaries",
+      "list of sheets"
+    ],
+    "plain": "A list whose items are dictionaries. Pick a sheet by its position first, then read it by key.",
+    "example": "roster[2][\"name\"]"
   },
   {
     "term": "match",
@@ -402,6 +455,17 @@
     "example": "print(mama)\nNameError: name 'mama' is not defined"
   },
   {
+    "term": "nested dictionary",
+    "aliases": [
+      "nested dictionaries",
+      "dictionary inside a dictionary",
+      "inner dictionary",
+      "inner card"
+    ],
+    "plain": "A dictionary kept as a value inside another dictionary. Read it with two keys in a row: the outer key first, then the inner key.",
+    "example": "bomb_shell[\"abilities\"][\"wisdom\"]"
+  },
+  {
     "term": "None",
     "aliases": [
       "NoneType"
@@ -413,6 +477,14 @@
     "term": "not",
     "plain": "Flips a yes-or-no answer. `not True` is `False`, and `not False` is `True`.",
     "example": "not barrier_up"
+  },
+  {
+    "term": "not in",
+    "aliases": [
+      "in (a dictionary)"
+    ],
+    "plain": "`in` asks whether a key is in a dictionary, and gives `True` or `False`. `not in` asks whether it is missing. Both look at the keys only, never the values.",
+    "example": "\"Glow\" not in spell_book"
   },
   {
     "term": "number",

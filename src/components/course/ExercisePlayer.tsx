@@ -19,6 +19,7 @@ import { publicPath } from "../../lib/site";
 import type { StageEvent } from "../../lib/stage/bridge";
 import type { InsertTarget, InsertText, InsertWhere } from "../editor-insert";
 import { PythonEditor, type PythonEditorHandle } from "../PythonEditor";
+import { CardSort } from "./CardSort";
 import { CompareView } from "./CompareView";
 import {
   angleLabel,
@@ -26,6 +27,7 @@ import {
   anotherWayOpen,
   applyRun,
   assembledCode,
+  assemblesBySteps,
   checkpointHeading,
   codeHasStart,
   countsAsAttempt,
@@ -54,6 +56,7 @@ import {
   soloUnaided,
   solutionUnlocked,
   startTarget,
+  stepAssemble,
   stepLine,
   stdinBoxText,
   stepNoun,
@@ -320,6 +323,7 @@ function AnotherWay({ exercise, glossary }: { exercise: Playable; glossary: Glos
             ) : null}
           </p>
           <Prose text={shown.text} glossary={glossary} />
+          {shown.sort ? <CardSort key={`learn-${index}`} sort={shown.sort} glossary={glossary} idPrefix={`learn-${index}`} /> : null}
           <ReadAloud text={shown.text} testId="read-aloud-another-way" />
         </div>
       ) : null}
@@ -490,6 +494,8 @@ export function ExercisePlayer({
   const [solutionNote, setSolutionNote] = useState(false);
   const [assembling, setAssembling] = useState(false);
   const [assembled, setAssembled] = useState<string[]>([]);
+  /** The step whose lines the open Assemble board builds (null: the whole program). */
+  const [assembleStep, setAssembleStep] = useState<number | null>(null);
   const [stdinText, setStdinText] = useState(stdinBoxText(exercise.stdin));
   const [fullExplanation, setFullExplanation] = useState(false);
   const [pairTalkHidden, setPairTalkHidden] = useState(false);
@@ -614,6 +620,11 @@ export function ExercisePlayer({
   /* The last run crashed: Python stopped before it could check any step (so "step 1" may already be right). */
   const crashed = view?.grade?.crashed === true;
   const crashAt = crashed && view?.explanation ? crashLine(view.explanation.raw) : null;
+  /*
+   * The line the slip is on, when the explainer knows it is not the one Python stopped on (Unit 5: a sheet's missing
+   * comma Python reports on the next line, a whole card read on the line above the comparison).
+   */
+  const slipAt = crashed && view?.explanation?.slipLine && view.explanation.slipLine !== crashAt ? view.explanation.slipLine : null;
   /* Steps that passed before, failing on the latest run that Python finished (a crash checks nothing). */
   const slippedSteps =
     view?.grade && !view.grade.crashed && !view.revealPass
@@ -689,10 +700,13 @@ export function ExercisePlayer({
     msSinceProgress: time.session - progressAtSessionMs.current,
     idleMs: time.session - activityAt.current,
   });
-  const pieces = useMemo(
-    () => (exercise.assemble ? seededShuffle([...exercise.assemble.lines, ...exercise.assemble.distractors], key) : []),
-    [exercise.assemble, key],
-  );
+  // More structure on step k of an exercise with Mar'tu's partials (a project's 50 lines): only step k's lines are
+  // pieces, and the rest of the program stays in place around the gaps.
+  const stepBoard = useMemo(() => (assembleStep === null ? null : stepAssemble(exercise, assembleStep)), [exercise, assembleStep]);
+  const pieces = useMemo(() => {
+    if (stepBoard) return seededShuffle([...stepBoard.lines, ...stepBoard.distractors], `${key}:step-${stepBoard.step}`);
+    return exercise.assemble ? seededShuffle([...exercise.assemble.lines, ...exercise.assemble.distractors], key) : [];
+  }, [exercise.assemble, key, stepBoard]);
   const names = exercise.names ?? [];
   /** The task only prints (Lesson 1A): a pick on a line of its own goes in as `print("...")`. */
   const printOnly = isPrintOnlyTask({ names, solution: exercise.solution });
@@ -806,6 +820,8 @@ export function ExercisePlayer({
         debugging,
         explainer: exercise.explainer,
         foreign: taughtNames,
+        // The game's hidden sheets (`caster`) count as the program's own, so a KeyError can name the level a key is on.
+        setup: exercise.setup,
       };
       const grade = gradeCheckpoints(exercise.checkpoints, result, source, context);
       // The side quest's checks come after the main ones: grade them from their own slice, by position.
@@ -1005,6 +1021,8 @@ export function ExercisePlayer({
   function openAssemble() {
     setAssembled([]);
     setCompare(null);
+    const step = helpCheckpoint ? exercise.checkpoints.indexOf(helpCheckpoint) : -1;
+    setAssembleStep(step >= 0 && assemblesBySteps(mode, exercise.assemble) && stepAssemble(exercise, step) ? step : null);
     setAssembling(true);
   }
 
@@ -1017,7 +1035,7 @@ export function ExercisePlayer({
   }
 
   function insertAssembled() {
-    replaceCode(assembledCode(assembled));
+    replaceCode(stepBoard ? stepBoard.fill(assembled) : assembledCode(assembled));
     setAssembling(false);
     setAssembled([]);
     focusRun();
@@ -1147,8 +1165,8 @@ export function ExercisePlayer({
           ) : activeCheckpoint && !done && crashed ? (
             // A crash checks nothing, so "step 1" may already be right: the line Python stopped at comes first.
             <p className="ex-task-line" data-testid="task-line" data-crash="true">
-              <span className="ex-task-label">{`First, mend ${crashAt ? `line ${crashAt}` : "the error"}.`}</span>{" "}
-              {`Python stopped there, so it could not check your ${noun.toLowerCase()}s yet. ${
+              <span className="ex-task-label">{`First, mend ${slipAt ? `line ${slipAt}` : crashAt ? `line ${crashAt}` : "the error"}.`}</span>{" "}
+              {`${slipAt && crashAt ? `Python stopped on line ${crashAt}` : "Python stopped there"}, so it could not check your ${noun.toLowerCase()}s yet. ${
                 // A lean explainer names the slip, not the fix: the line promises only what the message gives.
                 exercise.explainer === "lean" ? "The message under your code names the slip." : "The message under your code says how."
               }`}
@@ -1297,10 +1315,35 @@ export function ExercisePlayer({
               <h3 className="ex-section-title" ref={assembleHeading} tabIndex={-1} data-testid="assemble-heading">
                 Assemble it
               </h3>
-              <p className="ex-muted">Build the program from pieces. Then press &ldquo;Put it in the editor&rdquo; and Run it.</p>
+              {stepBoard ? (
+                <>
+                  <p className="ex-muted" data-testid="assemble-step-note">
+                    Build {noun.toLowerCase()} {stepBoard.step + 1} from pieces. The rest of Mar&rsquo;tu&rsquo;s program stays where it is. Then press &ldquo;Put it in the editor&rdquo; and Run it.
+                  </p>
+                  <pre className="ex-assemble-context" data-testid="assemble-context" aria-label="The program around your lines">
+                    {stepBoard.context.map((entry, index) =>
+                      entry.kind === "gap" ? (
+                        <span key={index} className="ex-assemble-gap" data-testid="assemble-gap">
+                          {"▸ your line goes here\n"}
+                        </span>
+                      ) : entry.kind === "more" ? (
+                        <span key={index} className="ex-assemble-more">
+                          {"…\n"}
+                        </span>
+                      ) : (
+                        <span key={index}>{`${entry.text}\n`}</span>
+                      ),
+                    )}
+                  </pre>
+                </>
+              ) : (
+                <p className="ex-muted">Build the program from pieces. Then press &ldquo;Put it in the editor&rdquo; and Run it.</p>
+              )}
               {isBlankOrStarter(code, exercise.starter) ? null : (
                 <p className="ex-muted" data-testid="assemble-replaces">
-                  Putting it in the editor replaces the code there now.
+                  {stepBoard
+                    ? "Putting it in the editor replaces the code there now with Mar\u2019tu\u2019s program and your pieces."
+                    : "Putting it in the editor replaces the code there now."}
                 </p>
               )}
               <ParsonsBoard blocks={pieces} value={assembled} onChange={setAssembled} idPrefix="assemble" />
@@ -1405,6 +1448,7 @@ export function ExercisePlayer({
               runNumber={runNumber}
               crashed={crashed}
               crashLine={crashAt}
+              slipLine={slipAt}
               crashOnly={crashOnlyHelp}
               moreAfterRun={lightBeforeRun}
               crashIsTask={view?.crashSwitchOff === true}

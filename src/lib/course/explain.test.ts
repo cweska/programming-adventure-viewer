@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -1726,5 +1727,522 @@ describe("explainCourseError: Unit 4's slips (lists), from the unit's own wrong 
     expect(explainRun('names = ["Pell"]\nnames = names + "Moss"\n', [], unit4Context).hint).toContain(
       "joins a list and one piece of text with `+`",
     );
+  });
+});
+
+/* ---------------------------------------------------------------------------------------------- */
+/* Unit 5 ("Dictionaries"): the teacher's site requests, from the unit's own wrong answers          */
+/* ---------------------------------------------------------------------------------------------- */
+
+/** A unit as exported: the wrong answer of `key` whose `why` contains `why`, with the context the player gives it. */
+function unitWrongAnswers(unitId: string) {
+  const dir = path.join(process.cwd(), "content/courses/intro-python/units");
+  const unit = JSON.parse(readFileSync(path.join(dir, `${unitId}.json`), "utf8")) as {
+    order: number;
+    items: (RawExercise & { kind: string; exercises?: (RawExercise & { setup?: RawCode; stdin?: string[] })[] })[];
+  };
+  const side = JSON.parse(readFileSync(path.join(dir, `${unitId}.verify.json`), "utf8")) as {
+    exercises: Record<string, { wrongAnswers?: { why: string; code: RawCode; failsAt: number; messageContains?: string }[] }>;
+  };
+  const text = (code: RawCode | undefined) => (Array.isArray(code) ? `${code.join("\n")}\n` : (code ?? ""));
+  const exercises = new Map<string, RawExercise & { setup?: RawCode; stdin?: string[] }>();
+  for (const item of unit.items) {
+    if (item.kind === "project" || item.kind === "challenge") exercises.set(item.id, item);
+    for (const exercise of item.exercises ?? []) exercises.set(`${item.id}/${exercise.id}`, exercise);
+  }
+  const contextOf = (exercise: RawExercise & { setup?: RawCode }): ExplainContext => ({
+    unitOrder: unit.order,
+    names: exercise.names,
+    solution: text(exercise.solution),
+    example: exercise.example ? text(exercise.example.code) : undefined,
+    explainer: exercise.explainer,
+    setup: exercise.setup ? text(exercise.setup) : undefined,
+    debugging: ((exercise.checkpoints ?? []) as { text?: string }[]).some((checkpoint) => /\bmend\b/i.test(checkpoint.text ?? "")),
+    foreign: foreignNames({
+      hints: (exercise.checkpoints ?? []).flatMap((checkpoint) => checkpoint.hints),
+      solution: [text(exercise.solution), text(exercise.bonus?.solution)].join("\n"),
+      starter: text(exercise.starter),
+      names: exercise.names,
+    }),
+  });
+  const find = (key: string, why: string) => {
+    const exercise = exercises.get(key);
+    const near = side.exercises[key]?.wrongAnswers?.filter((entry) => entry.why.includes(why)) ?? [];
+    // A `why` written out whole picks that one, even when a longer one starts the same way.
+    const wrong = near.filter((entry) => entry.why === why).length === 1 ? near.filter((entry) => entry.why === why) : near;
+    expect(exercise, key).toBeTruthy();
+    expect(wrong, `${key}: one wrong answer about "${why}"`).toHaveLength(1);
+    return {
+      code: text(wrong[0].code),
+      context: contextOf(exercise!),
+      setup: exercise?.setup ? text(exercise.setup) : "",
+      stdin: exercise?.stdin,
+      failsAt: wrong[0].failsAt,
+      python: wrong[0].messageContains ?? "",
+      order: unit.order,
+    };
+  };
+  /** Every crash wrong answer of the unit, with its exercise's context. */
+  const crashes = () =>
+    [...exercises.entries()].flatMap(([key, exercise]) =>
+      (side.exercises[key]?.wrongAnswers ?? [])
+        .filter((wrong) => wrong.failsAt === 0)
+        .map((wrong) => ({ key, why: wrong.why, code: text(wrong.code), context: contextOf(exercise), setup: text(exercise.setup), stdin: exercise.stdin })),
+    );
+  return { find, crashes, order: unit.order };
+}
+
+const unit5 = unitWrongAnswers("dictionaries");
+
+/** Run a wrong answer the way the player does (the exercise's hidden setup first) and return Python's traceback. */
+function crashOf(found: { code: string; setup: string; stdin?: string[] }): string {
+  const result = runCourseChecks(found.code, [], { setup: found.setup, stdin: found.stdin });
+  expect(result.ok, `expected ${JSON.stringify(found.code.slice(0, 80))} to crash`).toBe(false);
+  return result.traceback;
+}
+
+describe("explainCourseError: Unit 5's slips (dictionaries), from the unit's own wrong answers", () => {
+  // [exercise, the wrong answer's `why`, Python 3.13's own words, kind, what the full hint says]
+  const rows: [string, string, string, string, string][] = [
+    // (0) `=` inside a sheet: a colon, and the key keeps its quotes (never "take the quotes off").
+    ["stat-sheets/make-a-sheet", "= for : inside the sheet (the box habit)", "cannot assign to literal", "equals-in-sheet",
+      'Line 2 has `=` inside a sheet. Inside a dictionary `{ }`, a colon goes between a key and its value: `"name": "Gearshift",`. The key keeps its quotes.'],
+    ["stat-sheets/broken-spell-4a", "the starter: = for : inside the sheet first", "cannot assign to literal", "equals-in-sheet",
+      '`"name": "Lucky",`. The key keeps its quotes.'],
+    ["stat-sheets/broken-spell-4a", "the colon slip 'mended' by taking the key's quotes off", "Maybe you meant '==' or ':='", "equals-in-sheet",
+      'a colon goes between a key and its value: `"name": "Lucky",`'],
+    ["sheets-inside-sheets/spell-book-of-spells", "= in place of : inside the dictionary", "cannot assign to literal", "equals-in-sheet",
+      '`"mana_cost": cost,`'],
+    // (1) a text value with no quotes: never "capital letters" or a near name.
+    ["stat-sheets/make-a-sheet", "the name with no quotes (A-05/A-08 unquoted text)", "name 'Gearshift' is not defined", "unquoted-word",
+      '`Gearshift` has no quotes, so Python looks for a variable called that. Text in a sheet needs quotes: `"name": "Gearshift",`'],
+    ["martus-ledger-of-heroes", "the name as a value with no quotes", "name 'Gearshift' is not defined", "unquoted-word",
+      'Text in a sheet needs quotes: `"name": "Gearshift",`'],
+    ["qc4-a/make-the-sheet", "the name with no quotes (A-05/A-08 unquoted text)", "name 'Lucky' is not defined", "unquoted-word",
+      '`Lucky` has no quotes, so Python looks for a variable called that. Text in a sheet needs quotes: `"name": "Lucky",`'],
+    ["stat-sheets/write-by-key", "the fuel with no quotes", "name 'starlode' is not defined", "unquoted-word",
+      'Text in a sheet needs quotes: `gearshift["fuel"] = "starlode"`'],
+    // (2) a key with no quotes: the key rule first.
+    ["stat-sheets/make-a-sheet", "a key with no quotes (G1 R6", "name 'name' is not defined", "unquoted-key",
+      'A key is text, so it needs quotes: `"name"`. Without quotes, Python looks for a variable called `name`.'],
+    ["stat-sheets/read-by-key", "the key with no quotes (a box name)", "name 'name' is not defined", "unquoted-key",
+      '`print(gearshift["name"] + ": " + str(gearshift["mana"]) + " mana")`'],
+    ["stat-sheets/broken-spell-4a", "colon mended; the key with no quotes", "name 'name' is not defined", "unquoted-key",
+      'Line 5 with quotes: `print(lucky["name"])`'],
+    ["keys-and-get/lucky-canteen", "the key with no quotes", "name 'glug' is not defined", "unquoted-key",
+      '`print(lucky.get("glug", 0))`'],
+    ["sheets-inside-sheets/spell-book-of-spells", "a key without quotes (a box name", "name 'mana_cost' is not defined", "unquoted-key",
+      'A key is text, so it needs quotes: `"mana_cost"`.'],
+    // (3) bare words side by side inside { } or [ ]: quotes, and the variable that holds them.
+    ["stat-sheets/key-from-a-box", "the spell's name with no quotes and a space", "Perhaps you forgot a comma", "unquoted-words",
+      'If `Warm Hands` is text, put quotes around it: `"Warm Hands"`. Or use the variable that holds it: `spell_name`.'],
+    ["qc4-b/make-the-sheet", "the two-word name with no quotes", "Perhaps you forgot a comma", "unquoted-words",
+      'If `Bomb Shell` is text, put quotes around it: `"Bomb Shell"`.'],
+    // (4) a missing colon after a key, and the slips Python reports on the next line.
+    ["martus-ledger-of-heroes", "a missing colon (on a later line", "':' expected after dictionary key", "missing-colon",
+      'A key needs a colon before its value: `"strength": 17,`'],
+    ["stat-sheets/make-a-sheet", "a missing colon", "invalid syntax", "missing-colon",
+      'Line 2 has a key and its value side by side with no colon, so Python could not read on. A key needs a colon before its value: `"name": "Gearshift",`'],
+    ["stat-sheets/make-a-sheet", "a missing comma after a text value", "invalid syntax", "missing-comma-in-list",
+      'Line 2 ends with no comma, so Python read on into line 3.'],
+    // (5) a dot where a sheet needs square brackets (every dot on the line, a skipped card mended, a variable key bare).
+    ["stat-sheets/read-by-key", "dot access", "'dict' object has no attribute 'name'", "dot-on-a-sheet",
+      'Read a dictionary with square brackets, not a dot: `print(gearshift["name"] + ": " + str(gearshift["mana"]) + " mana")`'],
+    ["stat-sheets/write-by-key", "the fuel key with a dot", "no __dict__ for setting new attributes", "dot-on-a-sheet",
+      'Store in a dictionary with square brackets, the key in quotes: `gearshift["fuel"] = "starlode"`'],
+    ["stat-sheets/key-from-a-box", "dot access with the variable", "has no attribute 'spell_name'", "dot-on-a-sheet",
+      "`print(spell_book[spell_name])`"],
+    ["sheets-inside-sheets/abilities-inside", "dot access (bomb_shell.abilities)", "has no attribute 'abilities'", "dot-on-a-sheet",
+      '`print(bomb_shell["abilities"]["wisdom"])`'],
+    ["qc4-a/read-inside", "dot access", "has no attribute 'wisdom'", "dot-on-a-sheet", '`print(gearshift["abilities"]["wisdom"])`'],
+    ["sheets-inside-sheets/broken-spell-4b", "dot access on the list", "'list' object has no attribute 'lucky'", "name-as-position",
+      "`lucky` is at position 1, `roster[1]`"],
+    // (6) a sheet read with round brackets: the list kind, in a sheet's words.
+    ["stat-sheets/read-by-key", "round brackets", "'dict' object is not callable", "list-needs-square-brackets",
+      'Read a dictionary with square brackets, not round ones: `gearshift["name"]`'],
+    ["sheets-inside-sheets/abilities-inside", "round brackets (bomb_shell(\"abilities\"))", "'dict' object is not callable",
+      "list-needs-square-brackets", '`bomb_shell["abilities"]`'],
+    // (7) a sheet called on the left of `=`: never "a recipe starts with def" or "use ==".
+    ["sheets-inside-sheets/spell-book-of-spells", "CP2 round brackets", "cannot assign to function call", "list-needs-square-brackets",
+      "Store in a dictionary with square brackets: `spell_book[spell_name] = spell`"],
+    // (8) a name where a list needs a position: the position, from the list's sheets.
+    ["sheets-inside-sheets/the-roster", "a name as the position: roster[\"Lucky\"]", "not str", "name-as-position",
+      '`roster` is a list: it takes a position number in `[ ]`, not a name. Lucky is at position 3: `roster[3]["name"]`. Positions count from 0.'],
+    ["martus-ledger-of-heroes", "roster[\"Bomb Shell\"]", "not str", "name-as-position", "Bomb Shell is at position 2"],
+    ["stat-sheets/which-number-is-which", "a key used on a list", "not str", "name-as-position",
+      "`lucky` is a list: it takes a position number in `[ ]`, not a name, like `lucky[0]`. Positions count from 0."],
+    // (9) KeyError, from the program's own sheets (the game's hidden `caster` too).
+    ["sheets-inside-sheets/abilities-inside", "a skipped level: bomb_shell[\"wisdom\"]", "KeyError: 'wisdom'", "missing-key",
+      '`"wisdom"` is inside `"abilities"`: read the outer key first: `bomb_shell["abilities"]["wisdom"]`'],
+    ["sheets-inside-sheets/can-they-cast", "a skipped level: caster[\"magical_affinity\"]", "KeyError: 'magical_affinity'", "missing-key",
+      '`caster["abilities"]["magical_affinity"]`'],
+    ["barrier-from-blank", "a skipped level", "KeyError: 'magical_affinity'", "missing-key", '`caster["abilities"]["magical_affinity"]`'],
+    ["sheets-inside-sheets/the-roster", "CP2 a skipped level", "KeyError: 'intelligence'", "missing-key",
+      '`roster[0]["abilities"]["intelligence"]`'],
+    ["qc4-a/read-inside", "the keys the other way round", "KeyError: 'wisdom'", "missing-key",
+      'the outer key comes first: `gearshift["abilities"]["wisdom"]`'],
+    ["qc4-a/read-inside", "CP2 the right side skips the card", "KeyError: 'wisdom'", "missing-key", '`gearshift["abilities"]["wisdom"]`'],
+    ["qc4-a/mend-the-read", "CP2 the mana read inside the card", "KeyError: 'mana'", "missing-key",
+      '`"mana"` is on the big sheet, not inside `"abilities"`: `caster["mana"]`'],
+    ["stat-sheets/key-errors", "starter: capitals in the key", "KeyError: 'Max_Mana'", "missing-key",
+      'The sheet spells it `"max_mana"`. Keys match letter for letter.'],
+    ["stat-sheets/key-errors", "line 7 still has a space for _", "KeyError: 'max mana'", "missing-key", 'The sheet spells it `"max_mana"`.'],
+    ["sheets-inside-sheets/broken-spell-4b", "a small letter in the key", "KeyError: 'glow'", "missing-key", 'The sheet spells it `"Glow"`.'],
+    ["stat-sheets/read-by-key", "a position, as in a list", "KeyError: 0", "missing-key",
+      'A dictionary has keys, not positions: use a key like `"name"`.'],
+    ["sheets-inside-sheets/the-roster", "a dict read by position: roster[3][0]", "KeyError: 0", "missing-key", 'use a key like `"name"`'],
+    ["sheets-inside-sheets/abilities-inside", "both keys in one bracket", "KeyError: ('abilities', 'wisdom')", "comma-in-brackets",
+      'Inside [ ], a comma asks for two keys at once. One key per pair of brackets: `bomb_shell["abilities"]["wisdom"]`'],
+    ["keys-and-get/lucky-canteen", "the default typed into the read", "KeyError: ('glug', 0)", "comma-in-brackets",
+      'use `.get()`: `lucky.get("glug", 0)`'],
+    ["stat-sheets/key-from-a-box", "the variable's name in quotes (spec)", "KeyError: 'spell_name'", "quoted-name",
+      'Without quotes, Python looks inside the box `spell_name`: `spell_book[spell_name]`'],
+    // A key the sheet does not have at all: `==` that only asks, a read used as a test, a key no line makes.
+    ["stat-sheets/write-by-key", "== for = (reads a key that is not there yet)", "KeyError: 'fuel'", "comparison-alone",
+      'Line 11 asks a question with `==`: is `gearshift["fuel"]` the same as `"starlode"`? The sheet has no key `"fuel"` yet, so asking stops the program. One `=` stores it: `gearshift["fuel"] = "starlode"`'],
+    ["stat-sheets/is-it-in", "reading the missing key to test it", "KeyError: 'Fire Bolt'", "missing-key",
+      'Line 9 reads the key `"Fire Bolt"` to test it, and `spell_book` has no key spelled that, so the read stops the program. To ask whether a key is there, use `not in`: `"Fire Bolt" not in spell_book`'],
+    ["keys-and-get/lucky-canteen", "starter unchanged", "KeyError: 'glug'", "missing-key",
+      '`lucky` has the keys `"name"` and `"mana"`, and no `"glug"`, so the read stops the program. To read a key that may be missing, use `.get()`: `lucky.get("glug", 0)`'],
+    // A store on the line that stopped never ran: its key is not on the sheet yet, so the skipped level is named.
+    ["sheets-inside-sheets/change-inside", "a skipped level on the right side", "KeyError: 'dexterity'", "missing-key",
+      '`"dexterity"` is inside `"abilities"`: read the outer key first: `bomb_shell["abilities"]["dexterity"]`'],
+    // A list of sheets counts its sheets (never Unit 4's "list of lists").
+    ["sheets-inside-sheets/the-roster", "counting from 1: roster[4]", "list index out of range", "nothing-at-position",
+      "Line 44 asks for position 4 of `roster`, and `roster` holds 4 sheets. Positions count from 0, so its positions are 0 to 3. The last one, Lucky, is `roster[3]`."],
+    ["sheets-inside-sheets/broken-spell-4b", "counting from 1: roster[2]", "list index out of range", "nothing-at-position",
+      "`roster` holds 2 sheets. Positions count from 0, so its positions are 0 and 1. The last one, Lucky, is `roster[1]`."],
+    // A variable's name in quotes, in math: the quotes rule, never "use int()".
+    ["extra-sheets-and-books/write-by-key-again", "the variable in quotes (text)", "for -: 'int' and 'str'", "quoted-name",
+      '`"ward_cost"` in quotes means those exact letters: text, not the number in `ward_cost`. Without quotes, Python looks inside the box: `oogrish["mana"] = oogrish["mana"] - ward_cost`'],
+    // (10) text + number: the line's own number read.
+    ["stat-sheets/read-by-key", "no str(): a number glued to text", "can only concatenate str", "text-plus-number",
+      'like str(gearshift["mana"]).'],
+    // (11) a whole sheet where its name goes.
+    ["sheets-inside-sheets/spell-book-of-spells", "CP3 the guard asks about the spell itself", "unhashable type: 'dict'",
+      "whole-sheet-as-key", "`not in` asks about a key, like the spell's name. `spell` is a whole dictionary: ask `spell_name not in spell_book`."],
+    ["extra-sheets-and-books/store-by-name-again", "CP2 a value tested with in (the spell itself", "unhashable type: 'dict'", "whole-sheet-as-key",
+      "ask `spell_name in book`"],
+    ["sheets-inside-sheets/spell-book-of-spells", "CP2 key and value swapped", "unhashable type: 'dict'", "whole-sheet-as-key",
+      "Swap them: `spell_book[spell_name] = spell`"],
+    // (12) a whole card compared with a number.
+    ["qc4-a/mend-the-read", "only the outer key: a whole card compared with <", "'<' not supported between instances of 'dict' and 'int'",
+      "whole-card-compared",
+      'That compares a whole card with a number. Line 12 reads `caster["abilities"]`, the whole card. Add the inner key, like `caster["abilities"]["magical_affinity"]`.'],
+    // (13) math with `None`: a recipe with no `return`.
+    ["martus-ledger-of-heroes", "the recipe with no return", "'NoneType' and 'int'", "math-with-none",
+      "Something handed back `None`: nothing came back. `max_mana_for` (its `def` is on line 51) has no `return`, so it hands back `None`. Does your recipe have a `return`?"],
+    // (14) the Unit 5 play-through: `=` on a later key is still `=` (3.13 says "':' expected" there), never a colon
+    // added in front of the `=`.
+    ["stat-sheets/make-a-sheet", "= for : on a later line of the sheet", "':' expected after dictionary key", "equals-in-sheet",
+      'Line 3 has `=` inside a sheet. Inside a dictionary `{ }`, a colon goes between a key and its value: `"magical_affinity": 10,`. The key keeps its quotes.'],
+    ["sheets-inside-sheets/spell-book-of-spells", "= in place of : on the second key", "':' expected after dictionary key", "equals-in-sheet",
+      'Line 14 has `=` inside a sheet. Inside a dictionary `{ }`, a colon goes between a key and its value: `"required_affinity": needed,`.'],
+    ["qc4-a/make-the-sheet", "= for : on a later key", "':' expected after dictionary key", "equals-in-sheet", '`"max_mana": 26,`. The key keeps its quotes.'],
+    // (15) an unclosed quote on a sheet's line: closed before the colon or the comma, never at the end of the line.
+    ["stat-sheets/make-a-sheet", "the key's closing quote left off", "unterminated string literal", "missing-quote",
+      'The key on line 2 is missing a quote. A key keeps both quotes, and the closing quote goes before the colon: `"name": "Gearshift",`'],
+    ["stat-sheets/make-a-sheet", "the value's closing quote left off", "unterminated string literal", "missing-quote",
+      'The text on line 2 is missing a quote. Text keeps both quotes, and the closing quote goes before the comma: `"name": "Gearshift",`'],
+    // (16) a key written with no sheet before it: the key keeps its quotes and goes inside its sheet.
+    ["stat-sheets/write-by-key", "the key kept, the sheet left off: \"fuel\"", "cannot assign to literal", "key-outside-sheet",
+      'Line 11 writes the key `"fuel"` with no sheet before it, so Python reads it as text, and text can\'t store a value. A key lives inside its sheet: `gearshift["fuel"] = "starlode"`. The key keeps its quotes.'],
+    ["stat-sheets/write-by-key", "the mana key kept, the sheet left off on the left", "cannot assign to literal", "key-outside-sheet",
+      'A key lives inside its sheet: `gearshift["mana"] = gearshift["mana"] - fire_bolt_cost`.'],
+    // (17) a variable that holds a number, read as a key: the variable on its own.
+    ["stat-sheets/write-by-key", "the cost read from the sheet", "KeyError: 'fire_bolt_cost'", "missing-key",
+      '`fire_bolt_cost` is its own variable, not a key on the sheet: `gearshift["mana"] = gearshift["mana"] - fire_bolt_cost`'],
+    // (18) round brackets on both sides of a store: both mended.
+    ["stat-sheets/write-by-key", "round brackets on both sides of the store", "cannot assign to function call", "list-needs-square-brackets",
+      'Store in a dictionary with square brackets: `gearshift["mana"] = gearshift["mana"] - fire_bolt_cost`'],
+    // (19) a list of sheets: a position and a key in one [ ], and a whole sheet as the position.
+    ["sheets-inside-sheets/the-roster", "a position and a key in one [ ]", "not tuple", "comma-in-brackets",
+      '`roster` is a list of sheets. Position first, then the key, each in its own brackets: `print(roster[3]["name"])`'],
+    ["sheets-inside-sheets/the-roster", "the sheet's variable as the position", "not dict", "name-as-position",
+      '`lucky` is a whole sheet. A list takes its position: Lucky is at position 3, `roster[3]["name"]`. Positions count from 0.'],
+    // (20) can-they-cast: `spell` holds the Lantern Ward page, so its reads are right as they are.
+    ["sheets-inside-sheets/can-they-cast", "dot access in the mana test", "has no attribute 'mana'", "dot-on-a-sheet",
+      'Read a dictionary with square brackets, not a dot: `elif caster["mana"] < spell["mana_cost"]:`'],
+    ["sheets-inside-sheets/can-they-cast", "dot access on the spell", "has no attribute 'mana_cost'", "dot-on-a-sheet",
+      'Read a dictionary with square brackets, not a dot: `elif caster["mana"] < spell["mana_cost"]:`'],
+    ["sheets-inside-sheets/can-they-cast", "the cost read from the caster's sheet", "KeyError: 'mana_cost'", "missing-key",
+      '`caster` has no key `"mana_cost"`. That key is on `spell`: `spell["mana_cost"]`'],
+    ["sheets-inside-sheets/can-they-cast", "the whole caster compared", "'dict' and 'int'", "whole-card-compared",
+      'That compares a whole card with a number. `caster` is the whole sheet. Add the key, like `caster["mana"]`.'],
+  ];
+
+  it.each(rows)("%s, %s: Python says %s, the explainer names %s", (key, why, python, kind, hint) => {
+    const found = unit5.find(key, why);
+    expect(found.failsAt, "a crash wrong answer").toBe(0);
+    const raw = crashOf(found);
+    expect(raw).toContain(python);
+    expect(raw, "the words the harness proved for this wrong answer").toContain(found.python);
+    const full = explainCourseError(raw, found.code, { ...found.context, explainer: "full" });
+    expect(full.kind, found.code).toBe(kind);
+    expect(full.hint).toContain(hint);
+  });
+
+  it("names the slip, never the fix, in a lean exercise (SOLO and Quick Check), for every new kind", () => {
+    const lean: [string, string, string, string][] = [
+      ["stat-sheets/solo-4a", "the starter: capital M", "missing-key", "The slip is on line 9: a key spelled another way."],
+      ["stat-sheets/solo-4a", "seat B's slip, dot access", "dot-on-a-sheet", "The slip is on line 9: a dot where a sheet needs square brackets."],
+      ["sheets-inside-sheets/solo-4b", "the starter (a skipped level", "missing-key", "The slip is on line 8: a skipped level."],
+      ["sheets-inside-sheets/solo-4b", "both keys, inner first", "missing-key", "The slip is on line 8: the keys the other way round."],
+      ["qc4-a/make-the-sheet", "= for : inside the sheet", "equals-in-sheet", "The slip is on line 4: an `=` inside a sheet."],
+      ["qc4-a/make-the-sheet", "a key with no quotes (box names", "unquoted-key", "The slip is on line 4: a key with no quotes."],
+      ["qc4-a/make-the-sheet", "a missing comma after a text value", "missing-comma-in-list", "The slip is on line 4: a missing comma in a list."],
+      ["qc4-a/make-the-sheet", "a missing colon on a later key", "missing-colon", "The slip is on line 6: a missing colon."],
+      ["qc4-a/make-the-sheet", "= for : on a later key", "equals-in-sheet", "The slip is on line 6: an `=` inside a sheet."],
+      ["qc4-b/make-the-sheet", "= for : on a later key", "equals-in-sheet", "The slip is on line 6: an `=` inside a sheet."],
+      ["qc4-a/read-inside", "round brackets", "list-needs-square-brackets", "The slip is on line 12: round brackets where a sheet needs square ones."],
+      ["qc4-a/read-inside", "a dict read by position", "missing-key", "The slip is on line 12: a position where a sheet needs a key."],
+      ["qc4-a/read-inside", "the inner key with a capital", "missing-key", "The slip is on line 12: a key spelled another way."],
+      ["qc4-a/store-the-spell", "CP2 the guard asks about the spell itself", "whole-sheet-as-key", "The slip is on line 23: a whole sheet used as a key."],
+      ["qc4-a/store-the-spell", "CP2 round brackets to store", "list-needs-square-brackets", "round brackets where a sheet needs square ones."],
+      ["qc4-a/mend-the-read", "only the outer key", "whole-card-compared", "The slip is on line 12: a whole card read where one value is meant."],
+      ["qc4-a/mend-the-read", "CP2 the mana read inside the card", "missing-key", "The slip is on line 15: a read one level too deep."],
+      ["qc4-a/spend-through-the-roster", "a name as the position: roster[\"Gearshift\"]", "name-as-position",
+        "The slip is on line 27: a name where a list needs a position."],
+    ];
+    for (const [key, why, kind, hint] of lean) {
+      const found = unit5.find(key, why);
+      expect(found.context.explainer, `${key} is a lean exercise`).toBe("lean");
+      const raw = crashOf(found);
+      const result = explainCourseError(raw, found.code, found.context);
+      expect(result.kind, `${key}: ${why}`).toBe(kind);
+      expect(result.explainer).toBe("lean");
+      expect(result.hint).toContain(hint);
+      expect(result.title, `${key}: ${why}`).not.toContain("`");
+      // The full version's fixed code (its last code span with a bracket, a quote or a colon) never shows in the lean one.
+      const full = explainCourseError(raw, found.code, { ...found.context, explainer: "full" });
+      const fix = [...full.hint.matchAll(/`([^`]*[[("':][^`]*)`/g)].at(-1)?.[1];
+      expect(fix, `${key}: the full hint shows the fixed code`).toBeTruthy();
+      expect(result.hint, `${key}: ${why}`).not.toContain(fix as string);
+    }
+    // Every new kind has a lean name of its own.
+    const added = ["equals-in-sheet", "key-outside-sheet", "unquoted-key", "dot-on-a-sheet", "name-as-position", "whole-sheet-as-key", "whole-card-compared", "math-with-none"] as const;
+    const names = added.map((kind) => slipName(kind));
+    expect(new Set(names).size, "each new kind has its own lean name").toBe(added.length);
+    for (const name of names) expect(name).toMatch(/^(a|an|math) /);
+    // The kinds this unit extends keep their earlier lean names (Units 1-4 say exactly what they said).
+    expect(slipName("list-needs-square-brackets")).toBe("round brackets where a list needs square ones");
+    expect(slipName("comma-in-brackets")).toBe("a comma inside [ ] where one position goes");
+    expect(slipName("missing-key")).toBe("a missing key");
+    expect(slipName("unquoted-words")).toBe("words with no quotes");
+  });
+
+  it("opens only from Unit 5 on: Units 1 to 4 keep their older advice for the same code", () => {
+    // [exercise, why, the kind the explainer gave before Unit 5 (and still gives below it)]
+    const cases: [string, string, string][] = [
+      ["stat-sheets/make-a-sheet", "= for : inside the sheet (the box habit)", "quoted-name"],
+      ["stat-sheets/make-a-sheet", "the name with no quotes (A-05/A-08 unquoted text)", "capital-letters"],
+      ["stat-sheets/make-a-sheet", "a key with no quotes (G1 R6", "unknown-name"],
+      ["stat-sheets/make-a-sheet", "a missing comma after a text value", "cant-read-line"],
+      ["stat-sheets/make-a-sheet", "a missing colon", "cant-read-line"],
+      ["martus-ledger-of-heroes", "a missing colon (on a later line", "cant-read-line"],
+      ["stat-sheets/read-by-key", "dot access", "other"],
+      ["stat-sheets/read-by-key", "round brackets", "not-a-function"],
+      ["stat-sheets/read-by-key", "a position, as in a list", "missing-key"],
+      ["sheets-inside-sheets/spell-book-of-spells", "CP2 round brackets", "recipe-like-math"],
+      ["sheets-inside-sheets/spell-book-of-spells", "CP3 the guard asks about the spell itself", "wrong-kind-of-value"],
+      ["sheets-inside-sheets/the-roster", "a name as the position: roster[\"Lucky\"]", "wrong-kind-of-value"],
+      ["qc4-a/mend-the-read", "only the outer key: a whole card compared with <", "wrong-kind-of-value"],
+      ["martus-ledger-of-heroes", "the recipe with no return", "wrong-kind-of-value"],
+      ["sheets-inside-sheets/broken-spell-4b", "dot access on the list", "other"],
+      ["stat-sheets/write-by-key", "== for = (reads a key that is not there yet)", "missing-key"],
+      ["stat-sheets/is-it-in", "reading the missing key to test it", "missing-key"],
+      ["keys-and-get/lucky-canteen", "starter unchanged", "missing-key"],
+      ["sheets-inside-sheets/change-inside", "a skipped level on the right side", "missing-key"],
+      ["extra-sheets-and-books/write-by-key-again", "the variable in quotes (text)", "math-with-text"],
+    ];
+    for (const [key, why, before] of cases) {
+      const found = unit5.find(key, why);
+      expect(found.order).toBe(5);
+      const raw = crashOf(found);
+      for (const unitOrder of [4, 3]) {
+        expect(explainCourseError(raw, found.code, { ...found.context, unitOrder, explainer: "full" }).kind, `${key}: ${why}, unit ${unitOrder}`).toBe(before);
+      }
+    }
+    // The KeyError rows wait for Unit 5 too: below it, the older words.
+    const skipped = unit5.find("sheets-inside-sheets/abilities-inside", "a skipped level: bomb_shell[\"wisdom\"]");
+    const below = explainCourseError(crashOf(skipped), skipped.code, { ...skipped.context, unitOrder: 4 });
+    expect(below.hint).toBe('The dictionary has no key "wisdom". Use a key that is already there.');
+    // A list of sheets counts its sheets only from Unit 5: Unit 4 keeps its list-of-lists words.
+    const counted = unit5.find("sheets-inside-sheets/the-roster", "counting from 1: roster[4]");
+    expect(explainCourseError(crashOf(counted), counted.code, { ...counted.context, unitOrder: 4 }).hint).toContain("In a list of lists");
+    // `str()` on a sheet's read only from Unit 5: Unit 4 keeps `str(name)`.
+    const glued = unit5.find("stat-sheets/read-by-key", "no str(): a number glued to text");
+    expect(explainCourseError(crashOf(glued), glued.code, { ...glued.context, unitOrder: 4 }).hint).toContain("like str(gearshift).");
+  });
+
+  it("keeps every Unit 1-4 explanation exactly as it was before Unit 5 (kind, title and hint)", () => {
+    const before = JSON.parse(readFileSync(path.join(process.cwd(), "src/lib/course/explain.before-unit5.json"), "utf8")) as Record<string, string>;
+    const now: Record<string, string> = {};
+    for (const unitId of ["hello-world", "control-flow", "first-recipes", "lists"]) {
+      for (const wrong of unitWrongAnswers(unitId).crashes()) {
+        // The game's random is seeded, so a wrong answer that rolls a die crashes on the same line every time.
+        const result = runCourseChecks(wrong.code, [], { setup: `import random as _seeded\n_seeded.seed(5)\n${wrong.setup}`, stdin: wrong.stdin });
+        if (result.ok) continue;
+        const got = explainCourseError(result.traceback, wrong.code, wrong.context);
+        const hash = createHash("sha256").update(`${got.title}\n${got.hint}`).digest("hex").slice(0, 16);
+        now[`${unitId}:${wrong.key}:${wrong.why}`] = `${got.kind} ${hash}`;
+      }
+    }
+    const { _about: about, ...expected } = before;
+    expect(about).toContain("before Unit 5");
+    expect(Object.keys(now).length).toBe(Object.keys(expected).length);
+    expect(now).toEqual(expected);
+  }, 120_000);
+
+  it("keeps each new row in its place: a typo, an example's name and a real list keep their own rows", () => {
+    const unit5Context: ExplainContext = { unitOrder: 5 };
+    // A value one letter off a variable of the code's own is a typo, not text with no quotes.
+    expect(explainRun('hero = {"mana": 20}\ncost = 6\nhero["mana"] = hero["mana"] - cots\n', [], unit5Context).kind).toBe("unknown-name");
+    // A name copied from the example keeps the example's row.
+    const example = unit5.find("sheets-inside-sheets/spell-book-of-spells", "CP2 the Example's names copied");
+    expect(explainCourseError(crashOf(example), example.code, example.context).kind).toBe("example-name");
+    // A list's own round brackets keep Unit 4's words; a sheet's say "dictionary".
+    expect(explainRun("wall = [1, 2]\nprint(wall(0))\n", [], unit5Context).hint).toContain("`wall` is a list.");
+    expect(explainRun('hero = {"mana": 2}\nprint(hero("mana"))\n', [], unit5Context).hint).toContain("`hero` is a dictionary.");
+    // `{name: ...}` on one line, and `=` inside a one-line sheet.
+    expect(explainRun('lucky = {name: "Lucky", "mana": 26}\n', [], unit5Context).hint).toContain('`lucky = {"name": "Lucky", "mana": 26}`');
+    expect(explainRun('lucky = {"name" = "Lucky", "mana": 26}\n', [], unit5Context).hint).toContain('`lucky = {"name": "Lucky", "mana": 26}`');
+    // `.get` called with square brackets: round ones.
+    expect(explainRun('hero = {"name": "Pell"}\nprint(hero.get["name"])\n', [], unit5Context).hint).toContain('`hero.get("name")`');
+    // Math with `None` names the recipe only when one recipe has no `return`.
+    expect(explainRun("x = None\nprint(x + 1)\n", [], unit5Context).hint).toBe("Something handed back `None`: nothing came back. Does your recipe have a `return`?");
+    // A list of sheets written straight in: the position comes from each sheet's "name".
+    expect(explainRun('roster = [{"name": "Pell"}, {"name": "Moss"}]\nprint(roster["Moss"])\n', [], unit5Context).hint).toContain("Moss is at position 1: `roster[1]`");
+    // Without the game's setup the explainer cannot see `caster`: the older words, never a wrong level.
+    const cast = unit5.find("sheets-inside-sheets/can-they-cast", "a skipped level");
+    expect(explainCourseError(crashOf(cast), cast.code, { ...cast.context, setup: undefined }).hint).toBe(
+      'The dictionary has no key "magical_affinity". Use a key that is already there.',
+    );
+  });
+
+  it("gives the KeyError rows for a key the sheet does not have a lean name of their own", () => {
+    const lean: [string, string, string][] = [
+      ["stat-sheets/write-by-key", "== for = (reads a key that is not there yet)", "The slip is on line 11: `==` where one `=` stores a key."],
+      ["stat-sheets/is-it-in", "reading the missing key to test it", "The slip is on line 9: a key read to test whether it is there."],
+      ["keys-and-get/lucky-canteen", "starter unchanged", "The slip is on line 2: a key the sheet does not have."],
+      ["extra-sheets-and-books/write-by-key-again", "the variable in quotes (text)", "The slip is on line 9: quotes around a box's name."],
+    ];
+    for (const [key, why, hint] of lean) {
+      const found = unit5.find(key, why);
+      const result = explainCourseError(crashOf(found), found.code, { ...found.context, explainer: "lean" });
+      expect(result.explainer).toBe("lean");
+      expect(result.hint, `${key}: ${why}`).toContain(hint);
+      expect(result.hint).not.toContain(".get(");
+      expect(result.hint).not.toContain(" not in ");
+    }
+  });
+
+  it("shows a fixed line that runs: the student who copies it gets no new crash (the Unit 5 play-through)", () => {
+    // [exercise, why]: each full hint ends with the whole line mended. Put it in place of the line Python named
+    // (or the slip's own line), keep its indent, and the program runs.
+    const cases: [string, string][] = [
+      ["stat-sheets/make-a-sheet", "= for : on a later line of the sheet"],
+      ["stat-sheets/make-a-sheet", "= for : inside the sheet (the box habit)"],
+      ["sheets-inside-sheets/spell-book-of-spells", "= in place of : on the second key"],
+      ["stat-sheets/make-a-sheet", "the key's closing quote left off"],
+      ["stat-sheets/make-a-sheet", "the value's closing quote left off"],
+      ["stat-sheets/write-by-key", "the key kept, the sheet left off: \"fuel\""],
+      ["stat-sheets/write-by-key", "the mana key kept, the sheet left off on the left"],
+      ["stat-sheets/write-by-key", "the cost read from the sheet"],
+      ["stat-sheets/write-by-key", "round brackets on both sides of the store"],
+      ["sheets-inside-sheets/the-roster", "a position and a key in one [ ]"],
+      ["sheets-inside-sheets/can-they-cast", "dot access in the mana test"],
+      ["sheets-inside-sheets/can-they-cast", "dot access on the spell"],
+      ["qc4-a/make-the-sheet", "= for : on a later key"],
+    ];
+    for (const [key, why] of cases) {
+      const found = unit5.find(key, why);
+      const raw = crashOf(found);
+      const full = explainCourseError(raw, found.code, { ...found.context, explainer: "full" });
+      const fixed = [...full.hint.matchAll(/`([^`]+)`/g)].at(-1)?.[1] ?? "";
+      const at = (full.slipLine ?? Number(raw.match(/line (\d+)/g)?.at(-1)?.slice(5))) - 1;
+      const rows = found.code.split("\n");
+      rows[at] = `${rows[at].match(/^\s*/)?.[0] ?? ""}${fixed}`;
+      const mended = runCourseChecks(rows.join("\n"), [], { setup: found.setup });
+      expect(mended.ok, `${key}: ${why}: the fixed line \`${fixed}\` still crashes: ${mended.traceback}`).toBe(true);
+    }
+  });
+
+  it("keeps can-they-cast's `spell` reads as they are: `spell` holds the Lantern Ward page (never another level)", () => {
+    const base = unit5.find("sheets-inside-sheets/can-they-cast", "dot access in the mana test");
+    const solution = base.context.solution ?? "";
+    const slips: [string, string, string][] = [
+      ['if caster["abilities"]["magical_affinity"]', 'if caster.abilities["magical_affinity"]', '`if caster["abilities"]["magical_affinity"] < spell["required_affinity"]:`'],
+      ['if caster["abilities"]["magical_affinity"]', 'if caster["abilities"].magical_affinity', '`if caster["abilities"]["magical_affinity"] < spell["required_affinity"]:`'],
+      ['if caster["abilities"]["magical_affinity"]', "if caster.magical_affinity", '`if caster["abilities"]["magical_affinity"] < spell["required_affinity"]:`'],
+      ['caster["mana"] = caster["mana"] - spell["mana_cost"]', 'caster["mana"] = caster["mana"] - spell.mana_cost', '`caster["mana"] = caster["mana"] - spell["mana_cost"]`'],
+    ];
+    for (const [from, to, hint] of slips) {
+      const code = solution.replace(from, to);
+      expect(code).not.toBe(solution);
+      const got = explainCourseError(crashOf({ code, setup: base.setup }), code, base.context);
+      expect(got.kind, to).toBe("dot-on-a-sheet");
+      expect(got.hint, to).toContain(hint);
+      expect(got.hint).not.toContain('spell["Lantern Ward"]');
+    }
+    // The line the old explainer gave, copied: `spell` already holds that page, so its own key goes.
+    const copied = solution.replace('elif caster["mana"] < spell["mana_cost"]:', 'elif caster["mana"] < spell["Lantern Ward"]["mana_cost"]:');
+    const page = explainCourseError(crashOf({ code: copied, setup: base.setup }), copied, base.context);
+    expect(page.hint).toContain('`spell` already holds the `"Lantern Ward"` page');
+    expect(page.hint).toContain('`elif caster["mana"] < spell["mana_cost"]:`');
+    // The whole spell compared: the key goes on this line, never on line 4 (`spell = ...` is Mar'tu's own line).
+    const whole = solution.replace('elif caster["mana"] < spell["mana_cost"]:', 'elif caster["mana"] < spell:');
+    const card = explainCourseError(crashOf({ code: whole, setup: base.setup }), whole, base.context);
+    expect(card.hint).toBe('That compares a whole card with a number. `spell` is the whole sheet. Add the key, like `spell["mana_cost"]`.');
+    expect(card.slipLine).toBeUndefined();
+    // A required affinity read from the caster's card: it is on the spell's page.
+    const need = solution.replace('< spell["required_affinity"]', '< caster["abilities"]["required_affinity"]');
+    expect(explainCourseError(crashOf({ code: need, setup: base.setup }), need, base.context).hint).toBe(
+      '`caster["abilities"]` has no key `"required_affinity"`. That key is on `spell`: `spell["required_affinity"]`',
+    );
+  });
+
+  it("asks with `in` only when Mar'tu's version does, and keeps a box's quoted name to the box row", () => {
+    const unit5Context: ExplainContext = { unitOrder: 5 };
+    // A key read in a test, with no `in` in Mar'tu's version: the key the sheet does not have, never "use in".
+    const cost = explainRun('hero = {"mana": 5}\nif hero["cost"] > 2:\n    print("x")\n', [], { ...unit5Context, solution: 'hero = {"mana": 5}\nif hero["mana"] > 2:\n    print("x")\n' });
+    expect(cost.hint).not.toContain(" in hero");
+    expect(cost.hint).toContain('`hero` has the key `"mana"`, and no `"cost"`');
+    // `"fuel" = 6` where Mar'tu's version makes a box `fuel`: the quotes come off (the box row).
+    const box = explainRun('hero = {"fuel": 1}\n"fuel" = 6\n', [], { ...unit5Context, solution: 'hero = {"fuel": 1}\nfuel = 6\n' });
+    expect(box.kind).toBe("quoted-name");
+    // ... and with no box in Mar'tu's version, the key goes back in its sheet.
+    expect(explainRun('hero = {"fuel": 1}\n"fuel" = 6\n', [], unit5Context).hint).toContain('`hero["fuel"] = 6`');
+  });
+
+  it("names a one-line sheet's slips: a missing comma between pairs, `=` on a later pair, mixed quotes", () => {
+    const unit5Context: ExplainContext = { unitOrder: 5 };
+    const comma = explainRun('gearshift = {"name": "Gearshift" "max_mana": 20}\n', [], unit5Context);
+    expect(comma.kind).toBe("missing-comma-in-list");
+    expect(comma.hint).toContain('a comma goes between the pairs: `gearshift = {"name": "Gearshift", "max_mana": 20}`');
+    const number = explainRun('gearshift = {"max_mana": 20 "name": "Gearshift"}\n', [], unit5Context);
+    expect(number.hint).toContain('`gearshift = {"max_mana": 20, "name": "Gearshift"}`');
+    const equals = explainRun('gearshift = {"name": "Gearshift", "max_mana" = 20}\n', [], unit5Context);
+    expect(equals.kind).toBe("equals-in-sheet");
+    expect(equals.hint).toContain('`gearshift = {"name": "Gearshift", "max_mana": 20}`');
+    // A real missing colon on a one-line sheet gets the student's own line, never a made-up key.
+    const colon = explainRun('gearshift = {"name": "Gearshift", "max_mana" 20}\n', [], unit5Context);
+    expect(colon.kind).toBe("missing-colon");
+    expect(colon.hint).toContain('`gearshift = {"name": "Gearshift", "max_mana": 20}`');
+    // Over several lines: quotes of two kinds on one key, and a stray quote by a number.
+    const mixed = explainRun("hero = {\n    'name\": \"Pell\",\n}\n", [], unit5Context);
+    expect(mixed.kind).toBe("quotes-dont-match");
+    expect(mixed.hint).toContain('`"name": "Pell",`');
+    expect(explainRun('hero = {\n    "mana": "20,\n}\n', [], unit5Context).hint).toContain('A number has no quotes: `"mana": 20,`');
+    // Below Unit 5, the older words for the same code.
+    expect(explainRun('gearshift = {"name": "Gearshift" "max_mana": 20}\n', [], { unitOrder: 4 }).kind).toBe("cant-read-line");
+  });
+
+  it("says the slip's own line in a lean explainer when Python names the line after it", () => {
+    const found = unit5.find("qc4-b/make-the-sheet", "a missing comma after a text value");
+    const raw = crashOf(found);
+    expect(raw).toContain('line 5');
+    const lean = explainCourseError(raw, found.code, found.context);
+    expect(lean.hint).toContain("The slip is on line 4: a missing comma in a list.");
   });
 });
