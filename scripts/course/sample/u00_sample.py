@@ -232,6 +232,17 @@ BARRIER_REPORT = dict(
                 "3. Build the sentence: `caster`, then `\" has \"`, then `str(mana)`, then `\" mana.\"`, joined with `+`."
             ),
         ),
+        # A one-click card sort (another_way `sort`): one click a card, then Check my sort shows the answers.
+        dict(
+            angle="sort",
+            label="Text or a box?",
+            text="Sort the four cards: is it *text* (in quotes) or *a box's name*? Then press *Check my sort*.",
+            sort=dict(
+                groups=["text", "a box's name"],
+                cards=[('"Gearshift"', 0), ("caster", 1), ("mana", 1), ('" has "', 0)],
+                explain="Quotes mean these exact letters, so `\"Gearshift\"` and `\" has \"` are text. `caster` and `mana` are boxes.",
+            ),
+        ),
     ],
     introduces=["call:str"],
     starter=(

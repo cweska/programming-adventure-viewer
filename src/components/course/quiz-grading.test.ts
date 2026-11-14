@@ -1,6 +1,13 @@
+import { readdirSync, readFileSync } from "node:fs";
+import path from "node:path";
+import { createElement } from "react";
+import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { questionSchema, type Question } from "../../lib/course/schema";
+import { PredictStep } from "./PredictStep";
 import {
+  choiceOrder,
+  choiceSeed,
   emptyResponse,
   fillCorrect,
   gradeWithoutPython,
@@ -106,6 +113,77 @@ describe("seeded shuffle", () => {
     }
     expect(seededShuffle(["x", "x"], "s")).toEqual(["x", "x"]);
     expect(seededShuffle([], "s")).toEqual([]);
+  });
+});
+
+describe("choice order (course-wide: the display order is shuffled, the authored index is kept)", () => {
+  it("is a steady shuffle of the authored indices: the same within an attempt, new on a retake", () => {
+    for (let seed = 0; seed < 50; seed += 1) {
+      const order = choiceOrder(4, choiceSeed(`student-${seed}`, "lists/lists-quiz/last-and-length", 0));
+      expect([...order].sort()).toEqual([0, 1, 2, 3]);
+      expect(order).toEqual(choiceOrder(4, choiceSeed(`student-${seed}`, "lists/lists-quiz/last-and-length", 0)));
+    }
+    const retakes = new Set([0, 1, 2, 3, 4, 5].map((attempt) => choiceOrder(4, choiceSeed("pell", "u/q/q-1", attempt)).join("")));
+    expect(retakes.size).toBeGreaterThan(1);
+    const students = new Set(["a", "b", "c", "d", "e", "f"].map((student) => choiceOrder(4, choiceSeed(student, "u/q/q-1")).join("")));
+    expect(students.size).toBeGreaterThan(1);
+    expect(choiceOrder(0, "s")).toEqual([]);
+    expect(choiceOrder(1, "s")).toEqual([0]);
+  });
+
+  it("does not always show the right answer first, in any unit (Units 1 to 3 authored it first most of the time)", () => {
+    const dir = path.join(process.cwd(), "content/courses/intro-python/units");
+    type Raw = { kind: string; id: string; questions?: { id?: string; type: string; choices?: string[]; answer: unknown }[];
+      exercises?: { id: string; predict?: { choices: string[]; answer: number } }[] };
+    const STUDENTS = Array.from({ length: 16 }, (_, at) => `student-${at}`);
+    let questions = 0;
+    let firstAuthored = 0;
+    let firstShown = 0;
+    for (const file of readdirSync(dir).filter((name) => name.endsWith(".json") && !name.endsWith(".verify.json"))) {
+      const unit = JSON.parse(readFileSync(path.join(dir, file), "utf8")) as { id: string; items: Raw[] };
+      for (const item of unit.items) {
+        const asked = [
+          ...(item.questions ?? []).flatMap((question, at) => {
+            const choices = question.choices ?? [];
+            const answer = question.type === "mc" ? (question.answer as number) : choices.indexOf(String(question.answer));
+            return choices.length >= 2 && answer >= 0 ? [{ where: `${unit.id}/${item.id}/${question.id ?? `q-${at + 1}`}`, count: choices.length, answer }] : [];
+          }),
+          ...(item.exercises ?? []).flatMap((exercise) =>
+            exercise.predict ? [{ where: `${unit.id}/${item.id}/${exercise.id}:predict`, count: exercise.predict.choices.length, answer: exercise.predict.answer }] : [],
+          ),
+        ];
+        for (const { where, count, answer } of asked) {
+          questions += 1;
+          if (answer === 0) firstAuthored += 1;
+          const orders = STUDENTS.map((student) => choiceOrder(count, choiceSeed(student, where)));
+          // For every question, some student sees the right answer somewhere other than first.
+          expect(orders.some((order) => order[0] !== answer), where).toBe(true);
+          firstShown += orders.filter((order) => order[0] === answer).length;
+        }
+      }
+    }
+    expect(questions).toBeGreaterThan(50);
+    // Authored, the right answer comes first in a large share of the choice questions; shown, about 1 in 3 or fewer.
+    expect(firstAuthored / questions).toBeGreaterThan(0.3);
+    expect(firstShown / (questions * STUDENTS.length)).toBeLessThan(0.45);
+  });
+
+  it("keeps the authored index on every predict choice: the test ids, the saved guess and the right answer", () => {
+    const html = renderToString(
+      createElement(PredictStep, {
+        predict: { q: "What prints?", choices: ["37", "36", "48"], answer: 0, explain: "The last gap." },
+        editorCode: "",
+        starter: "print(37)\n",
+        glossary: [],
+        saved: undefined,
+        orderKey: "lists/many-values-one-name/first-is-zero",
+        onAnswer: () => undefined,
+        onClose: () => undefined,
+      }),
+    );
+    // On the server (no student seed yet) the choices wait, hidden, so the order never jumps after loading.
+    expect(html).toContain('data-ready="false"');
+    for (const index of [0, 1, 2]) expect(html).toContain(`data-testid="predict-choice-${index}"`);
   });
 });
 

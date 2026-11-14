@@ -35,6 +35,34 @@ describe("inline parts", () => {
     ]);
   });
 
+  it("shows a glossary link whose text is one code span as code, never as raw [[ | ]] marks", () => {
+    // Unit 4's Mar'tu text: the tool is a glossary word at the moment it is taught.
+    expect(inlineParts("[[len()|`len(wall)`]] counts the items. The last is `len(wall) - 1`.")).toEqual([
+      { kind: "term", term: "len()", text: "len(wall)", code: true },
+      { kind: "text", text: " counts the items. The last is " },
+      { kind: "code", text: "len(wall) - 1" },
+      { kind: "text", text: "." },
+    ]);
+    expect(inlineParts("Two ways. [[sorted()|`sorted(wall)`]] and [[string|text]] and `x`.")).toEqual([
+      { kind: "text", text: "Two ways. " },
+      { kind: "term", term: "sorted()", text: "sorted(wall)", code: true },
+      { kind: "text", text: " and " },
+      { kind: "term", term: "string", text: "text" },
+      { kind: "text", text: " and " },
+      { kind: "code", text: "x" },
+      { kind: "text", text: "." },
+    ]);
+    expect(glossaryRefs("[[append|`.append()`]] adds one item.")).toEqual(["append"]);
+    expect(plainText("[[append|`.append()`]] adds one item.")).toBe(".append() adds one item.");
+    // Unit 5: a glossary word that is a tool after a dot, `.get()`, shows as code too (never raw [[ | ]] marks).
+    expect(inlineParts("[[.get()|`.get()`]] asks more gently.")).toEqual([
+      { kind: "term", term: ".get()", text: ".get()", code: true },
+      { kind: "text", text: " asks more gently." },
+    ]);
+    expect(glossaryRefs("with a KeyError. [[.get()|`.get()`]] can give 0 instead.")).toEqual([".get()"]);
+    expect(plainText("[[.get()|`.get()`]] can give 0 instead.")).toBe(".get() can give 0 instead.");
+  });
+
   it("keeps an unmatched backtick as text and does not link inside code", () => {
     expect(inlineParts("a ` b")).toEqual([{ kind: "text", text: "a ` b" }]);
     expect(inlineParts("`grid = [[0]]`")).toEqual([{ kind: "code", text: "grid = [[0]]" }]);

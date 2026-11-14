@@ -17,9 +17,8 @@ Teacher ruling on the Unit 2 reviews, as applied here:
     tried X, only inside the check.)", in about 35 words or fewer. One order rule: "first, the test that lets the
     fewest numbers through". A box still holding the starter's placeholder is named as such ("still holds the
     starter's `0`"); a missing starter box gets "Keep the box X from the starter".
-  * Rung 0 (hints[0]) gives the line's left side or first tokens only and stops before the sign or the and/or. In
-    debug steps it is "Read Python's last line" (for a quiet bug: what the program printed). A bonus's rung 0 is a
-    few tokens. SOLO pass lines: "You did that on your own. On your map: ✓ ...".
+  * Start me off (from the last hint) gives the line's left side only, before the sign or the and/or. In debug
+    steps hints[0] is "Read Python's last line" (for a quiet bug: what the program printed). SOLO pass lines: "You did that on your own. On your map: ✓ ...".
   * Time: 2C-07's quiet bug is tested with `roll = 12` for one Run (then the dice go back), and 2C-01's notes are
     filled in while Python's message is still on screen, before line 4 is switched off.
 
@@ -28,9 +27,9 @@ its error messages. So every campaign link here is "you've seen this, now you'll
 expected: Mar'tu never implies they should already know this. Every student has their own device; pair talk is
 optional, every checkpoint is solo.
 
-Help ladder (curriculum 2.2) as fields, the same as Unit 1 and u02a/u02b: hints[0] Start me off, hints[1] Point
-(where to look), another_way, hints[2+] Teach (a tiny example with other names), assemble (More structure),
-solution (Show).
+Help ladder as fields (FORMAT.md, the order the site shows them): hints[0] Where to look (point), the middle hints Teach me
+(a tiny example with other names), the last hint Show me how: the step's own line in backticks (``Write `x = 1`.``),
+whose start up to its first `(` or `=` becomes Start me off. another_way, assemble (More structure), then Compare.
 
 Check codes (curriculum 2.5). The rerun helpers are u02b's, copied (each part file is self-contained), with one
 change: bnd_check() takes the die size, so Quick Check 2 form B can roll a d12. Added here:
@@ -171,6 +170,16 @@ def _case(values=None, rolls=None):
     return (dict(values or {}), list(rolls or []))
 
 
+def _leaned(code, pairs):
+    """Quick Check 2 (a test-out, no hints): the same check with messages that name the slip and the evidence, never
+    the fix (the teacher's lean ruling, as for the explainer). Each pair must match, so a reworded lesson message
+    cannot silently leave a fix in the Quick Check."""
+    for old, new in pairs:
+        assert old in code, f"lean rewrite does not match: {old[:70]!r}"
+        code = code.replace(old, new)
+    return code
+
+
 def lines_check(label, cases, setup=""):
     """CMB on printed lines. cases = [(values, rolls, must_print, must_not_print, tail), ...]. `tail` is the fix,
     so it comes first in the message."""
@@ -188,7 +197,7 @@ def lines_check(label, cases, setup=""):
     return (label, code)
 
 
-def box_check(label, target, cases, setup="", show=None, foreign=(), placeholder=None, base=None):
+def box_check(label, target, cases, setup="", show=None, foreign=(), placeholder=None, base=None, lean=False):
     """CMB on a box. cases = [(values, rolls, expected, tail), ...]: after the rerun, `target` holds expected.
     `tail` is the fix, so it comes first. `show` = the value names the message mentions (all of them when None):
     the rerun may set more, so a student's own numbers never change the expected answer. `foreign` = the hint
@@ -229,6 +238,8 @@ def box_check(label, target, cases, setup="", show=None, foreign=(), placeholder
         "                + _show(_want) + '.')\n"
         "    assert type(_got).__name__ == type(_want).__name__ and _got == _want, _mend(_tail, _how, _shown, _rolls, _again)\n"
     )
+    if lean:
+        code = _leaned(code, [("'Take the quotes off: `' + _target + '` holds the text '", "'`' + _target + '` holds the text '")])
     return (label, code)
 
 
@@ -279,8 +290,18 @@ _E = _try(_N)
 if _H == _L:
     assert _E == _H, ('Use `>=`, so a higher roll passes too. Only a roll of exactly ' + str(_N) + ' gave the success '
                       'line. ' + _ev_many([_lo, _N, _hi]))
-    assert False, ('Ask whether `' + _R + '` reaches `' + _N_name + '`, and give the two lines different words. Both '
-                   'rolls printed the same thing. ' + _ev_many([_lo, _hi]))
+    # The same words in both branches, or an `if` that never asks with the boxes (`if True:`, `if 14 >= 12:`, a
+    # lone print): say only what is really wrong.
+    _same = False
+    for _n in _ast.walk(_ast.parse(_source)):
+        if type(_n).__name__ == 'If' and _n.orelse:
+            _w = [sorted(_c.value for _x in _b for _c in _ast.walk(_x) if type(_c).__name__ == 'Constant'
+                         and type(_c.value).__name__ == 'str') for _b in (_n.body, _n.orelse)]
+            _same = _same or bool(_w[0] and _w[0] == _w[1])
+    assert not _same, ('Give the success line and the failure line different words: both say the same thing. '
+                       + _ev_many([_lo, _hi]))
+    assert False, ('Ask whether `' + _R + '` reaches `' + _N_name + '` after `if`, using the boxes, so the answer can '
+                   'change. Both rolls printed the same line. ' + _ev_many([_lo, _hi]))
 # Exactly one of the two lines prints. A failure line with no indent (no `else:`) prints after every roll.
 assert [_l for _l in _L if _l not in _H], ('Put the failure line under `else:`, indented, so only one line prints. It '
                                            'printed the failure line as well as the success line. ' + _ev(_hi))
@@ -310,14 +331,52 @@ if _M + 1 <= (_F if _via_rolls else _M + 1):
 '''
 
 
-def bnd_check(label, roll, needed, via_rolls=False, setup="", faces=20):
+_BND_LEAN = [
+    ("""('Roll the die into `' + _R + '` with `random.randint(1, ' + str(_F) + ")`, so Mar'tu's check "
+                        'can roll for you.')""", """("Mar'tu's check found no die rolled into `" + _R + '`, so it can not roll for you.')"""),
+    ("""('Print a success line when `' + _R + '` reaches `' + _N_name + '`. Your program printed nothing. '""",
+     """('A roll that reaches `' + _N_name + '` printed nothing. '"""),
+    ("""'Add `else:` with a failure line under it. Your program printed nothing. '""", """'A low roll printed nothing. '"""),
+    ("""('Use `>=`, so a higher roll passes too. Only a roll of exactly ' + str(_N) + ' gave the success '
+                      'line. '""", """('Only a roll of exactly ' + str(_N) + ' gave the success line: a higher roll did not. '"""),
+    ("""('Give the success line and the failure line different words: both say the same thing. '""",
+     """('The success line and the failure line say the same thing. '"""),
+    ("""('Ask whether `' + _R + '` reaches `' + _N_name + '` after `if`, using the boxes, so the answer can '
+                   'change. Both rolls printed the same line. '""", """('Both rolls printed the same line, so the answer never changes. '"""),
+    ("""('Put the failure line under `else:`, indented, so only one line prints. It '
+                                           'printed the failure line as well as the success line. '""",
+     """('A high roll printed the failure line as well as the success line. '"""),
+    ("""('Indent the success line under the `if`, and the failure line under '
+                                           '`else:`. It printed the success line as well as the failure line. '""",
+     """('A low roll printed the success line as well as the failure line. '"""),
+    ("""(('Use `>=`, so exactly enough passes: a roll of ' + str(_N) + ' or more gives the success line. It '
+                   'gave the failure line. ' if _E == _L else
+                   'Print the success line here, the same as for a high roll. ')""",
+     """(('A roll of exactly ' + str(_N) + ' gave the failure line. ' if _E == _L else
+                   'A roll of exactly ' + str(_N) + ' did not give the success line. ')"""),
+    ("""(('Give a roll below `' + _N_name + '` the failure line. It gave the success line. ' if _B == _H else
+                   'Print the failure line here, the same as for a low roll. ')""",
+     """(('A roll below `' + _N_name + '` gave the success line. ' if _B == _H else
+                   'A roll below `' + _N_name + '` did not give the failure line. ')"""),
+    ("""'Print the success line here, the same as for a high roll. ' + _ev(_N + 1)""",
+     """'A roll above `' + _N_name + '` did not give the success line. ' + _ev(_N + 1)"""),
+    ("""('Ask with the box `' + _N_name + '`, not a number you typed. With `' + _N_name + ' = '""", """('With `' + _N_name + ' = '"""),
+    ('\'failed \' + _a_roll(_M)) + ". (Mar\'tu\'s check tried `"',
+     '\'failed \' + _a_roll(_M)) + \': the `if` does not follow the box `\' + _N_name + "`. (Mar\'tu\'s check tried `"'),
+    ("""('Use `>=`, so a roll that reaches `' + _N_name + '` or goes past it passes. '""",
+     """('A roll that goes past `' + _N_name + '` should pass too. '"""),
+]
+
+
+def bnd_check(label, roll, needed, via_rolls=False, setup="", faces=20, lean=False):
     """BND: exactly enough passes, one below fails, and the test follows the box `needed` (not a typed number).
-    With via_rolls, Mar'tu's check scripts a d`faces` (u02b's check, with the die size as a parameter)."""
+    With via_rolls, Mar'tu's check scripts a d`faces` (u02b's check, with the die size as a parameter). `lean`:
+    Quick Check 2's messages, the slip and the evidence without the fix."""
     code = _rerun_code(setup) + (
         _BND.replace("__ROLL__", repr(roll)).replace("__NEEDED__", repr(needed))
         .replace("__VIA_ROLLS__", repr(bool(via_rolls))).replace("__FACES__", repr(int(faces)))
     )
-    return (label, code)
+    return (label, _leaned(code, _BND_LEAN) if lean else code)
 
 
 _RND = r'''
@@ -348,7 +407,19 @@ assert _a <= 1, _die + _call + ' never gives 1.'
 '''
 
 
-def rnd_check(label, target, faces, rolls, placeholder=None):
+_RND_LEAN = [
+    ("""'Keep the box `' + _target + '` from the starter, and roll it: ' + _fix + '.'""", """'Keep the box `' + _target + '` from the starter.'"""),
+    ("""('To ask a question in an `if`, use a sign like `>=` or `==`. `:=` puts a new value in `'""", """('`:=` puts a new value in `'"""),
+    ('\'Roll it: \' + _fix + \'. `\' + _target + "` still holds the starter\'s `"', '\'`\' + _target + "` still holds the starter\'s `"'),
+    ("""'Roll it: ' + _fix + '. `' + _target + '` holds a number you typed.'""",
+     """'`' + _target + '` holds a number you typed, so it is the same every Run.'"""),
+    ("""'Roll it: ' + _fix + '. `' + _target + '` does not hold the roll yet.'""", """'`' + _target + '` does not hold the roll yet.'"""),
+    ("""('Use ' + _fix + ': a d' + str(_faces) + ' has faces 1 to ' + str(_faces) + ', and `randint` includes both '
+        'ends. ')""", """('A d' + str(_faces) + ' has faces 1 to ' + str(_faces) + ', but ')"""),
+]
+
+
+def rnd_check(label, target, faces, rolls, placeholder=None, lean=False):
     """RND: `target` holds the value of a scripted randint call, and that call was randint(1, faces).
     `rolls` are distinct values, so each box can be traced back to its own call. `placeholder`: the number the
     starter puts in the box (`telegun_roll = 0`), named as the starter's while that line is still there."""
@@ -356,7 +427,7 @@ def rnd_check(label, target, faces, rolls, placeholder=None):
         _RND.replace("__TARGET__", repr(target)).replace("__FACES__", repr(faces)).replace("__ROLLS__", repr(list(rolls)))
         .replace("__PLACEHOLDER__", repr(placeholder))
     )
-    return (label, code)
+    return (label, _leaned(code, _RND_LEAN) if lean else code)
 
 
 _NAME_TEMPLATE = '''import ast as _ast
@@ -408,7 +479,7 @@ def name_check(name, foreign=(), skip=(), kept=False):
     return (f"there is a box named {name}", code)
 
 
-def strexact_check(wanted, label="the quoted text is exact"):
+def strexact_check(wanted, label="the quoted text is exact", lean=False):
     """STREXACT: quoted text in a comparison differs from one of `wanted` only by capitals or spaces. Only text in
     a comparison counts, so a starter line like `choice = "Option 2"` (the capitals Mar'tu's check copes with) is
     left alone; so is a near miss compared next to the exact text (`== "option 2" or == "Option 2"`: that one is
@@ -424,7 +495,7 @@ def strexact_check(wanted, label="the quoted text is exact"):
         "_texts = [_c.value for _c in _asked if type(_c.value).__name__ == 'str']\n"
         "_bad = [(_t, _w) for _t in _texts for _w in _wanted "
         "if _t != _w and _squash(_t) == _squash(_w) and _w not in _texts]\n"
-        "assert not _bad, ('Copy the option exactly: `\"' + (_bad[0][0] if _bad else '') + '\"` and `\"' + "
+        "assert not _bad, (" + ("" if lean else "'Copy the option exactly: ' + ") + "'`\"' + (_bad[0][0] if _bad else '') + '\"` and `\"' + "
         "(_bad[0][1] if _bad else '') + '\"` are different text to Python. Every letter, space and capital counts.')\n",
     )
 
@@ -706,7 +777,8 @@ def _sets(_n):
 _made = [_n for _n in _ast.walk(_tree) if _sets(_n)]
 _two = [_n for _n in _made if len(_n.targets) > 1]
 _also = [_t.id for _n in _two for _t in _n.targets if type(_t).__name__ == 'Name' and _t.id != _target]
-assert not _two, (_fix + ' Your `' + _target + '` line has two `=` signs, so it puts a value in `'
+_pre = _fix + ' ' if _fix else ''
+assert not _two, (_pre + 'Your `' + _target + '` line has two `=` signs, so it puts a value in `'
                   + (_also[0] if _also else _target) + '` too. `=` puts a value in a box.')
 def _names(_n):
     return {_x.id for _x in _ast.walk(_n) if type(_x).__name__ == 'Name'}
@@ -721,8 +793,8 @@ _quoted = [_n for _n in _made if type(_n.value).__name__ == 'Constant' and type(
 _asked = bool(_used & set(_boxes))
 _still = [_n for _n in _made if _placeholder is not None and type(_n.value).__name__ == 'Constant'
           and repr(_n.value.value) == repr(_placeholder)]
-assert not _still or _asked, _fix + ' `' + _target + "` still holds the starter's `" + repr(_placeholder) + '`.'
-assert not _made or _quoted or _asked, (_fix + ' `' + _target + '` is made from values you typed, so it can never '
+assert not _still or _asked, _pre + '`' + _target + "` still holds the starter's `" + repr(_placeholder) + '`.'
+assert not _made or _quoted or _asked, (_pre + '`' + _target + '` is made from values you typed, so it can never '
                                         'change when the boxes change.')
 '''
 
@@ -746,10 +818,16 @@ assert not _asks, ('Use one `=` to put the answer in `' + _target + '`: `=` puts
 '''
 
 
-def gets_check(target):
+def gets_check(target, lean=False):
     """`can_cast == mana >= cost ...` on its own line: a question asked and thrown away (the `==` for `=` slip).
     It runs, so only a check can catch it."""
-    return (f"{target} gets the answer with =", _GETS.replace("__TARGET__", repr(target)))
+    code = _GETS.replace("__TARGET__", repr(target))
+    if lean:
+        code = _leaned(code, [("""('Use one `=` to put the answer in `' + _target + '`: `=` puts, `==` only asks. Line '
+                   + str(_asks[0] if _asks else 0) + ' asks a question and forgets the answer.')""",
+                               """('Line ' + str(_asks[0] if _asks else 0) + ' asks a question with `==` and forgets the '
+                   'answer: `==` only asks.')""")])
+    return (f"{target} gets the answer with =", code)
 
 
 _BARRIER = r'''
@@ -772,16 +850,24 @@ for _vals, _key, _fix in __CASES__:
 '''
 
 
-def barrier_check(label, lines, cases, base):
+def barrier_check(label, lines, cases, base, lean=False):
     """QC2 C3: cast_spell's chain. `lines` = {'S': not skilled, 'M': not enough mana, 'C': cast}, all three fixed
     starter lines. cases = [(values, key, fix), ...]: after the rerun, exactly one of the three lines prints, and
     it is lines[key]. `fix` comes first in the message. `base` = the starter's values: the evidence names only the
     values a rerun changed."""
-    return (label, _rerun_code() + _BARRIER.replace("__LINES__", repr(dict(lines))).replace("__BASE__", repr(dict(base)))
+    code = (_rerun_code() + _BARRIER.replace("__LINES__", repr(dict(lines))).replace("__BASE__", repr(dict(base)))
             .replace("__CASES__", repr([(dict(v), k, f) for v, k, f in cases])))
+    if lean:
+        code = _leaned(code, [
+            ("""_mend('Keep the three lines from the starter as they are, one under each branch.', 'None of them '
+                       'printed.'""", """_mend('None of the three lines from the starter printed.', ''"""),
+            ("""_mend('Use one chain, `if`, `elif`, `else`, so only one line prints.',""",
+             """_mend('Only one of the three lines should print.',"""),
+        ])
+    return (label, code)
 
 
-def lower_brackets_check(box):
+def lower_brackets_check(box, lean=False):
     """`.lower` with no `()` (it never runs, so `choice.lower == ...` is quietly False)."""
     return (
         "lower has its brackets",
@@ -790,7 +876,7 @@ def lower_brackets_check(box):
         "_called = [id(_n.func) for _n in _ast.walk(_tree) if type(_n).__name__ == 'Call']\n"
         "_raw = [_n.lineno for _n in _ast.walk(_tree) if type(_n).__name__ == 'Attribute' and _n.attr == 'lower' "
         "and id(_n) not in _called]\n"
-        f"assert not _raw, 'Add `()`: `{box}.lower()`. Line ' + str(_raw[0] if _raw else 0) + ' has `.lower` with no "
+        f"assert not _raw, '{'' if lean else f'Add `()`: `{box}.lower()`. '}Line ' + str(_raw[0] if _raw else 0) + ' has `.lower` with no "
         "`()`, so it never runs.'\n",
     )
 
@@ -813,12 +899,19 @@ for _vals, _want, _never in __CASES__:
 '''
 
 
-def lower_kept_check(label, box, cases):
+def lower_kept_check(label, box, cases, lean=False):
     """QC2 C2's quiet slip: any capitals get their reply. cases = [(values, must_print, must_not_print), ...]. A
     `.lower()` copy made and forgotten on its own line (`choice.lower()`: the box itself never changes) gets its
     own message."""
-    return (label, _rerun_code() + _LOWER_KEPT.replace("__BOX__", repr(box))
+    code = (_rerun_code() + _LOWER_KEPT.replace("__BOX__", repr(box))
             .replace("__CASES__", repr([(dict(v), list(w), list(n)) for v, w, n in cases])))
+    if lean:
+        code = _leaned(code, [
+            ("""_mend('Keep the copy: `' + _box + ' = ' + _box + '.lower()`. Line ' + str(_lone[0]) + ' makes a '
+                          'copy, then forgets it.'""", """_mend('Line ' + str(_lone[0]) + ' makes a lower-case copy, then forgets it.'"""),
+            ("""_mend('Use `.lower()`, so any capitals get their reply.'""", """_mend('A choice typed with capitals does not get its reply.'"""),
+        ])
+    return (label, code)
 
 
 # ---------------------------------------------------------------------------------------------
@@ -1029,12 +1122,13 @@ PROJECT_2P2 = dict(
             text="A. Replace `foot_cost = 0` with an `if`/`elif`/`else` that sets `foot_cost` from `distance`, using the three tiers.",
             dictated=False,
             hints=[
-                "Start like this: `if distance `",
                 "Look at the comment under `# A`. Three tiers means `if`, then `elif`, then `else`. Exactly 10 miles "
                 "is still *up to 10*.",
                 "A tier chain with other numbers:\n```python\nif weight <= 2:\n    fee = 1\nelif weight <= 9:\n"
                 "    fee = 4\nelse:\n    fee = 12\n```\nThe first true branch wins. So: first, the test that lets the "
                 "fewest numbers through.",
+                "Write `if distance <= 10:` and `foot_cost = 8` under it, indented. Then `elif distance <= "
+                "50:` with 70, and `else:` with 150.",
             ],
             checks=[
                 box_check("foot_cost follows the tiers", "foot_cost", foreign=["fee", "weight"], placeholder=0, cases=[
@@ -1054,9 +1148,9 @@ PROJECT_2P2 = dict(
             text="B. Make `jeep_cost` from `distance`: 2 coins a mile, plus 5 to start.",
             dictated=False,
             hints=[
-                "Start like this: `jeep_cost = `",
                 "Look at the comment under `# B`. The cost changes with the miles, so build it from `distance`.",
                 "Per mile, plus a start fee, with other names: `fare = 3 * stops + 2`. Python does `*` before `+`.",
+                "Write `jeep_cost = 2 * distance + 5`.",
             ],
             checks=[
                 box_check("jeep_cost follows the distance", "jeep_cost", foreign=["fare", "stops"], placeholder=0, cases=[
@@ -1077,9 +1171,9 @@ PROJECT_2P2 = dict(
             text="C. Roll a d20 into `telegun_roll`.",
             dictated=True,
             hints=[
-                "Start like this: `telegun_roll = random.randint(`",
                 "Look under `# C`. `import random` is already at the top of the program.",
                 "`random.randint(1, 6)` rolls a d6: lowest face first, then the highest. Both ends are included.",
+                "Write `telegun_roll = random.randint(1, 20)`.",
             ],
             checks=[rnd_check("telegun_roll is a d20", "telegun_roll", 20, [7], placeholder=0)],
         ),
@@ -1088,10 +1182,11 @@ PROJECT_2P2 = dict(
             text="C. Set `telegun_cost`: 0 on a roll of 15 or more, or `foot_cost` plus 10 on a lower roll.",
             dictated=False,
             hints=[
-                "Start like this: `if telegun_roll `",
                 "Two outcomes, so `if` and `else`. Exactly 15 still jumps. On a miss you walk anyway, so start from "
                 "`foot_cost`.",
                 "With other names: `if dice >= 4:` / `    toll = 0` / `else:` / `    toll = fare + 2`.",
+                "Write `if telegun_roll >= 15:` with `telegun_cost = 0` under it. Then `else:` with "
+                "`telegun_cost = foot_cost + 10`.",
             ],
             checks=[
                 box_check("telegun_cost follows the roll", "telegun_cost", foreign=["toll", "dice"], placeholder=0, cases=[
@@ -1111,13 +1206,14 @@ PROJECT_2P2 = dict(
             text="D. Write an `if`/`elif`/`else` that puts the cheapest road in `road` and its cost in `cost`.",
             dictated=False,
             hints=[
-                "Start like this: `if foot_cost `",
                 "Follow the three comments under `# D`. Each branch sets two boxes: `road` gets the road's name, in "
                 "quotes, and `cost` gets that road's cost box.",
                 "`and` is True only when both questions are True. With other names: `if a < b and a < c:` means *a "
                 "is the smallest*.",
                 "Each branch sets both boxes, indented under it: for the jeep, `road = \"the jeep\"` and then "
                 "`cost = jeep_cost`. The `else:` has no question: it takes the Telegun.",
+                "Start with `if foot_cost < jeep_cost and foot_cost < telegun_cost:`, then `elif jeep_cost < "
+                "telegun_cost:`, then `else:`. Each branch sets `road` and `cost`.",
             ],
             checks=[road_check("the cheapest road wins", ROAD_CASES)],
             pass_line="Mar'tu: The code chooses. Nobody argues with the code. Except Lucky.",
@@ -1127,9 +1223,9 @@ PROJECT_2P2 = dict(
             text="E. Print one line that shows the road and its cost.",
             dictated=False,
             hints=[
-                "Start like this: `print(\"Take \" + `",
                 "Glue the text in `road` and the number in `cost` into one line. A number needs `str()` first.",
                 "With other names: `print(\"Buy \" + item + \" for \" + str(price) + \" coins.\")`.",
+                "Write `print(\"Take \" + road + \": \" + str(cost) + \" coins.\")`.",
             ],
             checks=[road_print_check("the line shows the road and its cost", [(30, 3), (5, 15), (80, 14), (72, 2)])],
             pass_line="Mar'tu: Good. Pack the brass cart. We leave when the Clock allows.",
@@ -1191,8 +1287,8 @@ PROJECT_2P2 = dict(
             "`Pack extra glug.` Ask about `cost`, so it works for every road."
         ),
         hints=[
-            "Start like this: `if cost `",
             "150 or more counts, so `>=`. A cost of 149 should stay quiet.",
+            "At the end, write `if cost >= 150:` and `print(\"Pack extra glug.\")` under it, indented.",
         ],
         checks=[glug_check("extra glug on 150 coins or more", [(80, 14, True), (72, 2, False), (30, 3, False),
                                                                 (80, 15, False)])],
@@ -1494,10 +1590,10 @@ ANATOMY_OF_A_FIZZLE = dict(
             text="Make `bad_line` hold the line number that Python's message names.",
             dictated=False,
             hints=[
-                "Start like this: `bad_line = `, then the number from the message.",
                 "Look for the word `line` in Python's message, still on screen. The number after it is where Python "
                 "stopped. Message gone? Take the `#` off line 4 and Run.",
                 "In `File \"main.py\", line 9`, the line number is 9. A line number is a number, so no quotes.",
+                "Write `bad_line = 4`: Python's message says `line 4`.",
             ],
             checks=BAD_LINE_CHECKS,
         ),
@@ -1506,9 +1602,9 @@ ANATOMY_OF_A_FIZZLE = dict(
             text="Make `error_type` hold the error's name, as text.",
             dictated=False,
             hints=[
-                "Start like this: `error_type = \"`, then the first word of Python's last line.",
                 "Read the last line first. The error's name comes before the `:`.",
                 "In `ZeroDivisionError: division by zero`, the error's name is `ZeroDivisionError`. Text goes in quotes.",
+                "Write `error_type = \"NameError\"`: the first word of the last line, in quotes.",
             ],
             checks=ERROR_TYPE_CHECKS,
         ),
@@ -1517,9 +1613,9 @@ ANATOMY_OF_A_FIZZLE = dict(
             text="Make `missing_name` hold the name Python could not find, as text.",
             dictated=False,
             hints=[
-                "Start like this: `missing_name = \"`, then the name from the last line.",
                 "The last line says `name '...' is not defined`. The name is between the little `'` marks.",
                 "In `name 'shield' is not defined`, the missing name is `shield`. Copy it letter for letter.",
+                "Write `missing_name = \"mana_cost\"`: the name between the little `'` marks, in quotes.",
             ],
             checks=MISSING_NAME_CHECKS,
             pass_line="Mar'tu: Line, name of the error, the name it could not find. You read the whole note. Good.",
@@ -1576,8 +1672,8 @@ ANATOMY_OF_A_FIZZLE = dict(
             "`Line 4: NameError (mana_cost)`."
         ),
         hints=[
-            "Start like this: `print(\"Line \" + `",
             "Glue the parts with `+`. `bad_line` is a number, so it needs `str()`. Add `\" (\"` and `\")\"` around the name.",
+            "Write `print(\"Line \" + str(bad_line) + \": \" + error_type + \" (\" + missing_name + \")\")`.",
         ],
         checks=[
             lines_check("the log line is built from the boxes", [
@@ -1827,6 +1923,7 @@ EQUALS_IS_NOT_DEF = dict(
                 "Read Python's last line: `expected '('`. After `def`, Python expects a recipe, not a box.",
                 "Look at line 1. One word is extra. A box is a name, `=`, and a value.",
                 "A box with other names: `snack = \"glug\"`. No `def`, and no brackets around the name.",
+                "Change line 1 to `hero = \"Lucky\"`, with no `def`.",
             ],
             checks=[
                 name_check("hero", foreign=["snack"]),
@@ -2003,6 +2100,7 @@ DEBUG_ROUTINE = dict(
                 "It can only glue text to text. Go to line 10, then check line 3: what kind of value does `roll` "
                 "hold?",
                 "`\"Gold: \" + str(gold)` turns the number into text first, so the glue works.",
+                "Change line 10 to `print(\"Rolled: \" + str(roll))`.",
             ],
             checks=[("the line shows the roll", _rerun_code() + _SHOWS_ROLL_LINE)],
         ),
@@ -2540,6 +2638,7 @@ TYPE_FIZZLES = dict(
                 "Read Python's last line. What can it only glue?",
                 "Look at line 2, the line Python names. Python can only glue text to text, and `mana` holds a number.",
                 "`\"Gold: \" + str(gold)` turns the number into text first.",
+                "Change line 2 to `print(\"Mana: \" + str(mana))`.",
             ],
             checks=[
                 lines_check("the mana line follows mana", [
@@ -2668,10 +2767,11 @@ SEAL_THE_CHECK = dict(
             text="Under each `# seal:` comment, write an `assert` that says what `passed` must be for that roll.",
             dictated=False,
             hints=[
-                "Start like this: under the first `# seal:`, type `assert passed `",
                 "A roll of 14 against 15 fails, so `passed` must be `False` there. What must it be for exactly 15? "
                 "And for 16?",
                 "A seal with other names: `assert door_open == True` stops the program if the door is shut.",
+                "Under the first `# seal:`, write `assert passed == False`. Under the other two, `assert "
+                "passed == True`.",
             ],
             checks=[seal_check("the seals catch a broken check", "passed", 15)],
             pass_line="Mar'tu: Sealed. If anyone swaps that `>=` for `>`, your seals will shout. Good.",
@@ -2827,30 +2927,28 @@ def _qc_roll(form, faces, needed, win, lose):
                 text=f"Set `needed` to any number from 2 to {faces}.",
                 dictated=False,
                 hints=[
-                    "Start like this: `needed = `",
                     "Look at line 3. `needed` is how high the roll must be. Numbers have no quotes.",
                     "A box gets a number like this: `target = 7`.",
+                    f"Write `needed = {needed}`, or any number from 2 to {faces}.",
                 ],
                 checks=[
                     name_check("needed", foreign=["target", "score"], skip=["roll"], kept=True),
                     check(
                         "needed is a fair number",
                         "_v = needed",
-                        "assert type(_v).__name__ != 'str', " + say(
-                            "Take the quotes off: numbers don't need quotes. `needed` holds text."),
-                        "assert type(_v).__name__ == 'int', " + say("Give `needed` a whole number."),
+                        "assert type(_v).__name__ != 'str', " + say("`needed` holds text, because of the quotes."),
+                        "assert type(_v).__name__ == 'int', " + say("`needed` does not hold a whole number."),
                         "import ast as _ast",
                         "_zero = [_n for _n in _ast.parse(_source).body if type(_n).__name__ == 'Assign' "
                         "and [getattr(_t, 'id', '') for _t in _n.targets] == ['needed'] "
                         "and type(_n.value).__name__ == 'Constant' and _n.value.value == 0]",
                         "assert not (_v == 0 and _zero), " + say(
-                            f"Pick a number from 2 to {faces} for `needed`. It still holds the starter's `0`."),
-                        f"assert 2 <= _v <= {faces}, " + say(
-                            f"Pick a number from 2 to {faces} for `needed`: a d{faces} roll is 1 to {faces}. `needed` "
-                            "holds ") + " + str(_v) + '.'",
+                            f"`needed` still holds the starter's `0`, and the task asks for a number from 2 to {faces}."),
+                        f"assert 2 <= _v <= {faces}, " + say("`needed` holds ") + " + str(_v) + " + say(
+                            f", but the task asks for a number from 2 to {faces}: a d{faces} roll is 1 to {faces}."),
                         "assert not _assigned_from_expression('needed'), " + say(
-                            f"Type one number for `needed`, like `needed = {needed}`. Mar'tu's check changes that "
-                            "line to try other rolls against it."),
+                            "`needed` is worked out, not one typed number, so Mar'tu's check can not change it to "
+                            "try other rolls."),
                     ),
                 ],
             ),
@@ -2859,22 +2957,22 @@ def _qc_roll(form, faces, needed, win, lose):
                 text=f"Roll a d{faces} into `roll`.",
                 dictated=True,
                 hints=[
-                    "Start like this: `roll = random.randint(`",
                     f"A d{faces} has faces 1 to {faces}, and `randint` includes both ends.",
                     "`random.randint(1, 4)` rolls a d4: lowest face first, then the highest.",
+                    f"Write `roll = random.randint(1, {faces})`.",
                 ],
-                checks=[rnd_check(f"roll is a d{faces}", "roll", faces, [5], placeholder=0)],
+                checks=[rnd_check(f"roll is a d{faces}", "roll", faces, [5], placeholder=0, lean=True)],
             ),
             dict(
                 id="succeed-or-fail",
                 text="Print a success line when `roll` reaches `needed`, and a failure line otherwise.",
                 dictated=False,
                 hints=[
-                    "Start like this: `if roll `",
                     "Exactly enough passes, so which sign? Then `else:` for the failure line.",
                     "With other names: `if score >= target:` / `    print(\"Yes.\")` / `else:` / `    print(\"No.\")`.",
+                    "Write `if roll >= needed:`, a success line under it, then `else:` and a failure line.",
                 ],
-                checks=[bnd_check("exactly enough passes", "roll", "needed", via_rolls=True, faces=faces)],
+                checks=[bnd_check("exactly enough passes", "roll", "needed", via_rolls=True, faces=faces, lean=True)],
             ),
         ],
         solution=program(),
@@ -2902,7 +3000,7 @@ def _qc_roll(form, faces, needed, win, lose):
             dict(why="the roll left as the starter's 0", code=program(roll="0"), fails_at=2,
                  message_contains="still holds the starter's `0`"),
             dict(why="the needed number typed into the if", code=program(test=f"roll >= {needed}"), fails_at=3,
-                 message_contains="not a number you typed"),
+                 message_contains="does not follow the box `needed`"),
             dict(why="needed left at 0", code=program(need=0), fails_at=1, message_contains=f"from 2 to {faces}"),
             dict(why="needed in quotes (the compare crashes)", code=program(need=f'"{needed}"'), fails_at=0,
                  message_contains="not supported between"),
@@ -2915,7 +3013,8 @@ def _qc_roll(form, faces, needed, win, lose):
             dict(why="else with a condition", code=program().replace("else:", "else roll < needed:"), fails_at=0,
                  message_contains="expected ':'"),
             dict(why="no else (a low roll prints nothing)",
-                 code=program(branches=f"if roll >= needed:\n    print(\"{win}\")\n"), fails_at=3, message_contains="else"),
+                 code=program(branches=f"if roll >= needed:\n    print(\"{win}\")\n"), fails_at=3,
+                 message_contains="A low roll printed nothing"),
             dict(why="the print not indented under the if",
                  code=program(branches=f"if roll >= needed:\nprint(\"{win}\")\nelse:\n    print(\"{lose}\")\n"),
                  fails_at=0, message_contains="indented block"),
@@ -2923,14 +3022,21 @@ def _qc_roll(form, faces, needed, win, lose):
                  code=program(branches=f"if roll >= needed:\n    print(\"{win}\")\nelse:\n    print(\"{win}\")\n"),
                  fails_at=3, message_contains="same thing"),
             dict(why="needed at the top face with == (no roll can go past it)", code=program(test="roll == needed", need=faces),
-                 fails_at=3, message_contains="goes past it"),
+                 fails_at=3, message_contains="goes past `needed` should pass"),
             dict(why="walrus after Python's hint (:= puts needed into roll)", code=program(test="roll := needed"),
                  fails_at=2, message_contains=":="),
             dict(why="the hint example's box name (target) instead of needed",
                  code=program().replace("needed", "target").replace("# Pick any target", "# Pick any needed"),
                  fails_at=1, message_contains="example"),
             dict(why="a random needed (the check can't try rolls against it)",
-                 code=program(need=f"random.randint(2, {faces})"), fails_at=1, message_contains="Type one number"),
+                 code=program(need=f"random.randint(2, {faces})"), fails_at=1, message_contains="not one typed number"),
+            dict(why="lean: the d(faces-1) message names the slip, never the fixed call",
+                 code=program(roll=f"random.randint(1, {faces - 1})"), fails_at=2,
+                 message_contains=f"A d{faces} has faces 1 to {faces}, but `random.randint(1, {faces - 1})` never gives"),
+            dict(why="lean: > for >= names the evidence, not the sign", code=program(test="roll > needed"), fails_at=3,
+                 message_contains=f"A roll of exactly {needed} gave the failure line"),
+            dict(why="lean: if True names the evidence", code=program(test="True"), fails_at=3,
+                 message_contains="Both rolls printed the same line, so the answer never changes"),
         ],
         notes=_qc_meta("randint,boundary,if-else", "2", "score,target", form) + "\n"
         f"QC2 C1, form {form} (a d{faces}). Any needed from 2 to {faces} passes (lint e): BND reads it from the "
@@ -2986,20 +3092,18 @@ def _qc_mend(form, first, second, first_line, second_line):
                     "`=` puts a value in a box. `==` asks: is the same as? `if mana == 0:` asks whether mana is 0.",
                 ],
                 checks=[
-                    lower_brackets_check("choice"),
+                    lower_brackets_check("choice", lean=True),
                     check(
                         "the if asks with ==",
                         "import ast as _ast",
                         "_walrus = [_n for _n in _ast.walk(_ast.parse(_source)) if type(_n).__name__ == 'NamedExpr']",
                         "assert not _walrus, " + say(
-                            f"To ask *is it the same as?*, use `==`: `if choice == \"{first}\":`. `:=` puts a value "
-                            "in a box, the same as `=`."),
+                            "`:=` puts a value in a box, the same as `=`. It does not ask *is it the same as?*"),
                     ),
                     lines_check(f"{first} gets its reply", [
                         ({"choice": first}, None, [first_line], [second_line, hm],
-                         "Ask with `==` on line 3, and keep one chain: `if`, then `elif`, then `else`."),
-                        ({"choice": second}, None, [], [first_line],
-                         f"Give only `\"{first}\"` this reply: ask with `==`, `if choice == \"{first}\":`."),
+                         f"The choice `\"{first}\"` should get its own reply, and only that one."),
+                        ({"choice": second}, None, [], [first_line], f"Only `\"{first}\"` should get this reply."),
                     ]),
                 ],
             ),
@@ -3013,10 +3117,11 @@ def _qc_mend(form, first, second, first_line, second_line):
                     QUOTES_RULE + " The option is text, so it needs quotes.",
                 ],
                 checks=[
-                    strexact_check([first, second]),
+                    strexact_check([first, second], lean=True),
                     lines_check("each choice gets its reply", [
-                        ({"choice": second}, None, [second_line], [first_line, hm], f"Put the option in quotes: `\"{second}\"`."),
-                        ({"choice": "option 9"}, None, [hm], [first_line, second_line], "Let any other choice reach the `else`."),
+                        ({"choice": second}, None, [second_line], [first_line, hm],
+                         f"The choice `\"{second}\"` should get its own reply."),
+                        ({"choice": "option 9"}, None, [hm], [first_line, second_line], "Any other choice should reach the `else`."),
                     ]),
                 ],
             ),
@@ -3031,7 +3136,7 @@ def _qc_mend(form, first, second, first_line, second_line):
                     "box: `shout = shout.lower()`.",
                 ],
                 checks=[
-                    lower_kept_check("any capitals get their reply", "choice", [
+                    lower_kept_check("any capitals get their reply", "choice", lean=True, cases=[
                         ({"choice": big}, [second_line], [first_line, hm]),
                         ({"choice": first.upper()}, [first_line], [second_line, hm]),
                         ({"choice": "oPTION " + num_second}, [second_line], [first_line, hm]),
@@ -3073,11 +3178,11 @@ def _qc_mend(form, first, second, first_line, second_line):
             dict(why="walrus after Python's hint (`Maybe you meant '==' or ':='`)",
                  code=program(ask=f"if choice := \"{first}\":"), fails_at=1, message_contains=":="),
             dict(why="the question dropped from the if (`if choice:` is always true)",
-                 code=program(ask="if choice:"), fails_at=1, message_contains=f"only `\"{first}\"`"),
+                 code=program(ask="if choice:"), fails_at=1, message_contains=f"Only `\"{first}\"` should get this reply"),
             dict(why=".lower with no () (the copy never happens)", code=program(lower="choice = choice.lower"),
                  fails_at=1, message_contains="`()`"),
             dict(why="the starter's value lowered by hand, line 2 deleted (a typed fix: capitals still fail)",
-                 code=program(lower="", value=second), fails_at=3, message_contains="any capitals"),
+                 code=program(lower="", value=second), fails_at=3, message_contains="typed with capitals does not get"),
             dict(why="the starter's value lowered by hand, the forgotten copy left",
                  code=program(lower="choice.lower()", value=second), fails_at=3, message_contains="then forgets it"),
             dict(why="lower(choice) (the dot left out)", code=program(lower="choice = lower(choice)"), fails_at=0,
@@ -3087,7 +3192,9 @@ def _qc_mend(form, first, second, first_line, second_line):
                  message_contains="every letter"),
             dict(why="capitals typed out one by one with or",
                  code=program(lower="", other=f"elif choice == \"{second}\" or choice == \"{big}\":"), fails_at=3,
-                 message_contains="any capitals"),
+                 message_contains="typed with capitals does not get"),
+            dict(why="lean: the forgotten copy is named, not the fixed line", code=loud_mended, fails_at=3,
+                 message_contains="makes a lower-case copy, then forgets it"),
         ],
         notes=_qc_meta("read-traceback,elif-chain,quote-text,compare", "", "mana,shout", form) + "\n"
         f"QC2 C2, form {form}. Two loud slips, both SyntaxErrors (verified in 3.13: `=` in an if -> \"invalid "
@@ -3144,7 +3251,8 @@ def _qc_barrier(form, hero, spell, mana, affinity, lines, pass_line):
     big_m, big_a = mana + 11, affinity + 4   # the moved spell: proves the questions ask with the boxes
     starter = program()
     solution = program(can, chain)
-    typed = "Ask with the boxes, not numbers you typed."
+    # Lean (a test-out, no hints): each message says what should have happened, and the evidence, never the fix.
+    typed = "With other values in the boxes, the answer did not follow them."
     return dict(
         id="hold-the-barrier",
         title="Hold the barrier",
@@ -3165,22 +3273,18 @@ def _qc_barrier(form, hero, spell, mana, affinity, lines, pass_line):
                      "enough counts.",
                 dictated=False,
                 hints=[
-                    "Start like this: `can_cast = mana `",
                     "Two questions, and both must be `True`. Which word joins them? Which sign says *at least*?",
                     "`and` is True only when both sides are True: `print(3 >= 3 and 5 >= 9)` prints `False`.",
+                    "Write `can_cast = mana >= cost and affinity >= required`.",
                 ],
                 checks=[
-                    gets_check("can_cast"),
-                    from_boxes_check("can_cast", ["mana", "cost", "affinity", "required"],
-                                     "Work `can_cast` out from the boxes `mana`, `cost`, `affinity` and `required`.",
-                                     placeholder=False),
-                    box_check("can_cast needs both", "can_cast", placeholder=False, base=vals(), cases=[
-                        (vals(), None, True, "Use `>=` in both questions: exactly enough mana and affinity still cast."),
-                        (vals(m=mana - 1), None, False,
-                         "Join the two questions with `and`: both must be enough, and `mana` is one short."),
-                        (vals(a=affinity - 1), None, False,
-                         "Join the two questions with `and`: both must be enough, and `affinity` is one short."),
-                        (vals(m=big_m, a=big_a), None, True, "Use `>=`, which means *at least*: more than enough casts too."),
+                    gets_check("can_cast", lean=True),
+                    from_boxes_check("can_cast", ["mana", "cost", "affinity", "required"], "", placeholder=False),
+                    box_check("can_cast needs both", "can_cast", placeholder=False, base=vals(), lean=True, cases=[
+                        (vals(), None, True, "Exactly enough mana and affinity should cast here."),
+                        (vals(m=mana - 1), None, False, "`mana` is one short here, so the spell should not cast."),
+                        (vals(a=affinity - 1), None, False, "`affinity` is one short here, so the spell should not cast."),
+                        (vals(m=big_m, a=big_a), None, True, "More than enough mana and affinity should cast too."),
                         (vals(m=big_m - 1, c=big_m), None, False, typed),
                         (vals(a=big_a - 1, r=big_a), None, False, typed),
                         (vals(big_m, big_m, big_a, big_a), None, True, typed),
@@ -3193,33 +3297,29 @@ def _qc_barrier(form, hero, spell, mana, affinity, lines, pass_line):
                      "enough still casts.",
                 dictated=False,
                 hints=[
-                    "Start like this: `if affinity `",
                     "Follow the comments under `# 2.`: `if`, then `elif`, then `else`, each line indented under its "
                     "branch. *Lower than* is `<`.",
                     "Exactly enough must cast, so the not-enough questions leave the boundary out: `9 < 9` is `False`.",
                     "Both short? Python takes the first true branch, so the affinity question goes first, the way "
                     "`cast_spell` did.",
+                    "Write `if affinity < required:`, then `elif mana < cost:`, then `else:`, each with its "
+                    "line under it.",
                 ],
                 checks=[
                     barrier_check("each spell gets one line, in cast_spell's order",
                                   {"S": s_line, "M": m_line, "C": c_line}, [
-                        (vals(m=big_m, a=big_a), "C",
-                         "Let a caster with plenty of both reach the last line, under `else`."),
-                        (vals(m=big_m, a=affinity - 5), "S",
-                         "Ask first whether `affinity` is lower than `required`, with the not-skilled line under it."),
-                        (vals(m=mana - 6, a=big_a), "M",
-                         "Then ask whether `mana` is lower than `cost`, with the not-enough-mana line under it."),
+                        (vals(m=big_m, a=big_a), "C", "A caster with plenty of both should reach the barrier line."),
+                        (vals(m=big_m, a=affinity - 5), "S", "Low affinity should get the not-skilled line."),
+                        (vals(m=mana - 6, a=big_a), "M", "Low mana should get the not-enough-mana line."),
                         (vals(m=mana - 6, a=affinity - 5), "S",
-                         "Ask about affinity first, as cast_spell did: both are short here."),
-                        (vals(), "C", "Use `<`, not `<=`: exactly enough mana and affinity still cast."),
-                        (vals(a=affinity - 1), "S",
-                         "Ask first whether `affinity` is lower than `required`, with the not-skilled line under it."),
-                        (vals(m=mana - 1), "M",
-                         "Then ask whether `mana` is lower than `cost`, with the not-enough-mana line under it."),
+                         "Both are short here, and cast_spell answered with the not-skilled line."),
+                        (vals(), "C", "Exactly enough mana and affinity should still cast."),
+                        (vals(a=affinity - 1), "S", "Low affinity should get the not-skilled line."),
+                        (vals(m=mana - 1), "M", "Low mana should get the not-enough-mana line."),
                         (vals(big_m, big_m, big_a - 1, big_a), "S", typed),
                         (vals(big_m - 1, big_m, big_a, big_a), "M", typed),
                         (vals(big_m, big_m, big_a, big_a), "C", typed),
-                    ], base=vals()),
+                    ], base=vals(), lean=True),
                 ],
                 pass_line=pass_line,
             ),
@@ -3258,16 +3358,16 @@ def _qc_barrier(form, hero, spell, mana, affinity, lines, pass_line):
             dict(why="the starter (can_cast still the starter's False)", code=starter, fails_at=1,
                  message_contains="still holds the starter's `False`"),
             dict(why="or instead of and", code=program(can.replace(" and ", " or "), chain), fails_at=1,
-                 message_contains="`and`"),
+                 message_contains="is one short here, so the spell should not cast"),
             dict(why="> instead of >= (exactly enough fails)", code=program(can.replace(">=", ">"), chain), fails_at=1,
-                 message_contains="`>=`"),
+                 message_contains="Exactly enough mana and affinity should cast here"),
             dict(why="== instead of >= (more than enough fails)", code=program(can.replace(">=", "=="), chain),
-                 fails_at=1, message_contains="at least"),
+                 fails_at=1, message_contains="More than enough mana and affinity should cast too"),
             dict(why="True typed (worked out by hand)", code=program("can_cast = True", chain), fails_at=1,
                  message_contains="values you typed"),
             dict(why="the starter's numbers typed into the question",
                  code=program(f"can_cast = mana >= {mana} and affinity >= {affinity}", chain), fails_at=1,
-                 message_contains="not numbers you typed"),
+                 message_contains="the answer did not follow them"),
             dict(why="only the mana asked", code=program("can_cast = mana >= cost", chain), fails_at=1,
                  message_contains="`affinity` is one short"),
             dict(why="== for = (the answer asked, then forgotten)",
@@ -3276,23 +3376,24 @@ def _qc_barrier(form, hero, spell, mana, affinity, lines, pass_line):
             dict(why="=> instead of >=", code=program("can_cast = mana => cost and affinity => required", chain),
                  fails_at=0, message_contains="invalid syntax"),
             dict(why="can_cast done, the chain not built yet", code=program(can), fails_at=2,
-                 message_contains="one chain"),
+                 message_contains="Only one of the three lines should print"),
             dict(why="<= in the chain (exactly enough fizzles)", code=program(can, chain.replace(" < ", " <= ")),
-                 fails_at=2, message_contains="`<`, not `<=`"),
+                 fails_at=2, message_contains="Exactly enough mana and affinity should still cast"),
             dict(why="mana asked first (both short says not enough mana)",
                  code=program(can, "if mana < cost:\n" f"    print(\"{m_line}\")\n" "elif affinity < required:\n"
                               f"    print(\"{s_line}\")\n" "else:\n" f"    print(\"{c_line}\")\n"),
-                 fails_at=2, message_contains="affinity first"),
+                 fails_at=2, message_contains="cast_spell answered with the not-skilled line"),
             dict(why="two separate ifs (the else joins the second)",
-                 code=program(can, chain.replace("elif mana", "if mana")), fails_at=2, message_contains="one chain"),
+                 code=program(can, chain.replace("elif mana", "if mana")), fails_at=2,
+                 message_contains="Only one of the three lines should print"),
             dict(why="the starter's numbers typed into the chain",
                  code=program(can, chain.replace("affinity < required", f"affinity < {affinity}")
                               .replace("mana < cost", f"mana < {mana}")),
-                 fails_at=2, message_contains="not numbers you typed"),
+                 fails_at=2, message_contains="the answer did not follow them"),
             dict(why="the signs turned around (> for <)", code=program(can, chain.replace(" < ", " > ")), fails_at=2,
-                 message_contains="under `else`"),
+                 message_contains="plenty of both should reach the barrier line"),
             dict(why="a line reworded", code=program(can, chain.replace(c_line, c_line.rstrip(".!") + " now.")),
-                 fails_at=2, message_contains="as they are"),
+                 fails_at=2, message_contains="None of the three lines from the starter printed"),
             dict(why="an elif with no if above it", code=program(can, chain.replace("if affinity", "elif affinity", 1)),
                  fails_at=0, message_contains="invalid syntax"),
             dict(why="elif after else",
@@ -3331,9 +3432,10 @@ QC2_A = dict(
     optional=True,
     minutes=15,
     summary=(
-        "Three short tasks, no hints. Pass all three to test out of Unit 2. "
-        "Stuck on one? The lessons teach all of it, and tasks you pass here stay ticked."
+        "Three short tasks and four questions, no hints. Pass all three tasks and get 3 of the 4 questions right "
+        "to test out of Unit 2. Stuck on one? The lessons teach all of it, and tasks you pass here stay ticked."
     ),
+    questions_to_pass=3,
     exercises=[
         _qc_roll("A", 20, 13, "Bomb Shell climbs the old wall.", "That wall hates me."),
         _qc_mend("A", "option 1", "option 2", "Mar'tu: Then we take the jeep.", "Mar'tu: Then we walk."),
@@ -3344,9 +3446,11 @@ QC2_A = dict(
     ],
     notes=(
         "Quick Check 2, form A (code tasks). Questions live in qc2-a-questions. Pass = every code task plus 3 of "
-        "the 4 questions; a retake draws form B. The site gates on the code tasks only (question scoring joins when "
-        "QC scoring ships), so the code tasks alone must cover the unit (teacher ruling on the Unit 2 reviews: C3 "
-        "added, and a quiet `.lower()` slip in C2). Coverage (lint d): compare, boundary -> Q1 (fails on > "
+        "the 4 questions; a retake draws form B. The site gates on both (questions_to_pass=3: the Unit 2 play-through "
+        "found the unit tested out with no question answered, and the questions are the only place `not` and the "
+        "first-true-wins predict appear). The code tasks still cover the unit on their own (teacher ruling on the "
+        "Unit 2 reviews: C3 added, and a quiet `.lower()` slip in C2). Check messages are lean, like the explainer: "
+        "the slip and the evidence, never the fix (u02c `_leaned`), so a task can't be passed by following them. Coverage (lint d): compare, boundary -> Q1 (fails on > "
         "thinking), C1 (BND: WA `>`) and C3 (WA `<=`, `>`); elif-chain -> Q2 (first true wins), C2 (WA elif as a "
         "second if) and C3 (WA mana first, two separate ifs); randint -> Q3 (0-8, 1-7) and C1 (WA d19, a die from "
         "0); and-or-not -> Q4 (and read as or) and C3 (WA `or`, only the mana asked); if-else -> C1 (WA no else, "
@@ -3364,9 +3468,10 @@ QC2_B = dict(
     optional=True,
     minutes=15,
     summary=(
-        "Three short tasks, no hints. Pass all three to test out of Unit 2. "
-        "Stuck on one? The lessons teach all of it, and tasks you pass here stay ticked."
+        "Three short tasks and four questions, no hints. Pass all three tasks and get 3 of the 4 questions right "
+        "to test out of Unit 2. Stuck on one? The lessons teach all of it, and tasks you pass here stay ticked."
     ),
+    questions_to_pass=3,
     exercises=[
         _qc_roll("B", 12, 8, "Gearshift lifts the fallen cart.", "Gearshift: Recalculating."),
         _qc_mend("B", "option 3", "option 4", "Mar'tu: Then we rest here.", "Mar'tu: Then we follow the river."),
@@ -3379,7 +3484,7 @@ QC2_B = dict(
         "Quick Check 2, form B: a d12 (needed 2 to 12), option 3 / option 4 (the quiet slip on `\"Option 4\"`), "
         "Gearshift's Ember Wall in C3 (mana 14 = cost, affinity 10 = required), and hours_left tiers in its "
         "questions. Same coverage as form A. Questions live in qc2-b-questions. Pass = every code task plus 3 of "
-        "the 4 questions. The site gates on the code tasks only. 15 minutes (was 10)."
+        "the 4 questions, and the site gates on both (questions_to_pass=3). Lean check messages. 15 minutes (was 10)."
     ),
 )
 
@@ -3395,7 +3500,7 @@ def _qc_questions(form, boundary, chain, faces, logic):
         title=f"Quick Check 2 · Form {form} questions",
         optional=True,
         minutes=4,
-        summary="Four questions that go with Quick Check 2. Three of four right is a pass.",
+        summary="Four questions that go with Quick Check 2. To pass the Quick Check, get 3 of the 4 right.",
         questions=[
             dict(type="predict", id="at-the-boundary", q="What will this print?", code=b_code, answer=b_answer,
                  choices=b_choices, explain=b_explain, notes=b_notes),
@@ -3420,8 +3525,8 @@ def _qc_questions(form, boundary, chain, faces, logic):
         ],
         notes=(
             f"Quick Check 2, form {form} questions (scored with qc2-{form.lower()}: every code task plus 3 of the 4 "
-            "questions). The site currently gates on the code tasks only; question scoring joins when QC scoring "
-            "ships. No hints; read-aloud and glossary stay on."
+            "questions, questions_to_pass=3 on the form). The best score counts, so a retake can lift it. No hints; "
+            "read-aloud and glossary stay on."
         ),
     )
 

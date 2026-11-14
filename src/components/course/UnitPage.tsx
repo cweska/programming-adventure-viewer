@@ -17,6 +17,7 @@ import { unitStatusText } from "./CourseMap";
 import { CourseSettings } from "./CourseSettings";
 import { MarTu } from "./MarTu";
 import { Prose } from "./Prose";
+import { questionsNeeded } from "./quiz-grading";
 
 export type UnitPageProps = {
   unit: ProgressUnit & { martuIntro: string; goals: string[] };
@@ -33,13 +34,23 @@ function QuickCheckMore({ unitId, forms }: { unitId: string; forms: QuickCheckFo
   if (!first || (!first.questions && others.length === 0)) return null;
   return (
     <p className="quick-check-more" data-testid="quick-check-more">
-      {first.questions ? (
+      {first.questions && first.form.questionsToPass ? (
+        // The questions count (questionsToPass): say so, with the number.
         <>
-          After the tasks, answer{" "}
+          To pass, finish the tasks, then get{" "}
+          {questionsNeeded(first.form.questionsToPass, first.questions.questionCount ?? first.form.questionsToPass)}{" "}
+          <Link href={itemHref(unitId, first.questions.id)} data-testid={`quick-check-link-${first.questions.id}`}>
+            Quick Check questions
+          </Link>{" "}
+          right.{" "}
+        </>
+      ) : first.questions ? (
+        <>
+          After the tasks, try{" "}
           <Link href={itemHref(unitId, first.questions.id)} data-testid={`quick-check-link-${first.questions.id}`}>
             the Quick Check questions
-          </Link>
-          .{" "}
+          </Link>{" "}
+          too, for practice: they don&apos;t change your pass.{" "}
         </>
       ) : null}
       {others.map(({ form, questions }) => (

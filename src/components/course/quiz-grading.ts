@@ -186,9 +186,10 @@ function mulberry32(seed: number): () => number {
 
 /**
  * Shuffle a copy of `items` with a seed. When the shuffle would leave the items in their original order
- * (and they can move), the copy is rotated by one so a puzzle never starts solved.
+ * (and they can move), the copy is rotated by one so a puzzle never starts solved. `mayKeepOrder` drops that
+ * rotation (a list of choices is no puzzle: every order, the authored one too, is equally likely).
  */
-export function seededShuffle<T>(items: readonly T[], seed: string): T[] {
+export function seededShuffle<T>(items: readonly T[], seed: string, options: { mayKeepOrder?: boolean } = {}): T[] {
   const copy = items.slice();
   const random = mulberry32(hashSeed(seed));
   for (let index = copy.length - 1; index > 0; index -= 1) {
@@ -197,8 +198,39 @@ export function seededShuffle<T>(items: readonly T[], seed: string): T[] {
   }
   const unchanged = copy.every((item, index) => item === items[index]);
   const canMove = new Set(items).size > 1;
-  if (unchanged && canMove) copy.push(copy.shift() as T);
+  if (unchanged && canMove && !options.mayKeepOrder) copy.push(copy.shift() as T);
   return copy;
+}
+
+/**
+ * The order to SHOW `count` choices in (course-wide, the teacher's ruling on the Unit 4 reviews: the right answer
+ * was usually authored first). A seeded shuffle of the AUTHORED indices: grading, `answer`, why_wrong, the ✓ and ✗
+ * marks and every `data-testid` keep the authored index; only the display order (and so the screen-reader order)
+ * follows this. `seed` names the student, the unit, item and question, and the attempt (choiceSeed), so the order
+ * holds steady within an attempt and changes on a retake.
+ */
+export function choiceOrder(count: number, seed: string): number[] {
+  return seededShuffle(
+    Array.from({ length: Math.max(0, count) }, (_, index) => index),
+    seed,
+    { mayKeepOrder: true },
+  );
+}
+
+/**
+ * How many of a Quick Check form's questions must be right, in words: "3 of the 4", or, when it is every one of them,
+ * "both" (2) and "all 3". `of` is "of the" in a sentence about the questions ("get 3 of the 4 right"), "of these" in
+ * one about the questions on screen.
+ */
+export function questionsNeeded(needed: number, total: number, of = "of the"): string {
+  if (needed >= total && total === 2) return "both";
+  if (needed >= total && total > 2) return `all ${total}`;
+  return `${needed} ${of} ${total}`;
+}
+
+/** The seed for choiceOrder: this student (studentSeed), then where the choices are, then the attempt. */
+export function choiceSeed(student: string, where: string, attempt = 0): string {
+  return `${student}:${where}:${attempt}`;
 }
 
 /** The blocks a parsons question offers: its lines and distractors, shuffled for this attempt. */

@@ -10,6 +10,10 @@ export const TRAY_SYMBOLS: { text: string; name: string }[] = [
   { text: ")", name: "close bracket" },
   { text: ":", name: "colon" },
   { text: "=", name: "equals" },
+  // Unit 2's questions: >=, <=, == and != (every Unit 2 step types one of them).
+  { text: "<", name: "less than" },
+  { text: ">", name: "greater than" },
+  { text: "!", name: "exclamation mark" },
   { text: "+", name: "plus" },
   { text: "[", name: "open square bracket" },
   { text: "]", name: "close square bracket" },

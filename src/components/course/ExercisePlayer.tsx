@@ -5,6 +5,7 @@ import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent as Reac
 import type { ExerciseProgress, GradeResult } from "../../lib/course/contracts";
 import {
   explainCourseError,
+  foreignNames,
   GOT_FURTHER_LINE,
   isPrintOnlyTask,
   type CourseExplanation,
@@ -16,8 +17,9 @@ import type { Bonus, Checkpoint, GlossaryEntry, Playable } from "../../lib/cours
 import { runCourse, whenPythonReady } from "../../lib/languages/python/run";
 import { publicPath } from "../../lib/site";
 import type { StageEvent } from "../../lib/stage/bridge";
-import type { InsertText, InsertWhere } from "../editor-insert";
+import type { InsertTarget, InsertText, InsertWhere } from "../editor-insert";
 import { PythonEditor, type PythonEditorHandle } from "../PythonEditor";
+import { CardSort } from "./CardSort";
 import { CompareView } from "./CompareView";
 import {
   angleLabel,
@@ -25,9 +27,12 @@ import {
   anotherWayOpen,
   applyRun,
   assembledCode,
+  assemblesBySteps,
   checkpointHeading,
   codeHasStart,
   countsAsAttempt,
+  crashAim,
+  crashLineSwitchedOff,
   crashTarget,
   effectiveSupport,
   firstParagraph,
@@ -47,13 +52,18 @@ import {
   rungPaced,
   rungsShown,
   runOutcome,
+  soloPassLine,
   soloUnaided,
   solutionUnlocked,
+  startTarget,
+  stepAssemble,
+  stepLine,
   stdinBoxText,
   stepNoun,
   stuckCheckpointId,
   titleFromId,
   usesInput,
+  type CrashAim,
   type FailStreak,
   type PlayerMode,
   type Rung,
@@ -140,6 +150,13 @@ type RunView = {
   newlyPassed: string[];
   /** This run passed with Mar'tu's version, copied in with "Copy into my editor". */
   revealPass?: boolean;
+  /**
+   * A debugging exercise's crash: the step Help aims at (crashAim), or null for "only say which line to mend".
+   * Undefined outside debugging exercises and for runs that did not crash.
+   */
+  crashStep?: number | null;
+  /** The crash is part of the task: Mar'tu's version switches that line off with `#` (crashLineSwitchedOff). */
+  crashSwitchOff?: boolean;
 };
 
 /** The last line of Python's message ("SyntaxError: unterminated string literal ..."), or "" when there is none. */
@@ -284,7 +301,7 @@ function AnotherWay({ exercise, glossary }: { exercise: Playable; glossary: Glos
       <div className="ex-another-buttons">
         {showNext ? (
           <button type="button" className="ex-quiet" data-testid="another-way" onClick={() => setIndex(nextIndex)}>
-            {index < 0 ? "Explain it another way" : "Another way"}: {angleLabel(angles[nextIndex])}
+            {index < 0 ? "Explain it another way" : "Another way"}: <Prose inline text={angleLabel(angles[nextIndex])} />
           </button>
         ) : null}
         {shown ? (
@@ -297,7 +314,7 @@ function AnotherWay({ exercise, glossary }: { exercise: Playable; glossary: Glos
       {shown ? (
         <div className="ex-another-text" data-testid="another-way-text">
           <p className="ex-another-title">
-            {angleLabel(shown)}
+            <Prose inline text={angleLabel(shown)} />
             {angles.length > 1 ? (
               <span className="ex-muted">
                 {" "}
@@ -306,6 +323,7 @@ function AnotherWay({ exercise, glossary }: { exercise: Playable; glossary: Glos
             ) : null}
           </p>
           <Prose text={shown.text} glossary={glossary} />
+          {shown.sort ? <CardSort key={`learn-${index}`} sort={shown.sort} glossary={glossary} idPrefix={`learn-${index}`} /> : null}
           <ReadAloud text={shown.text} testId="read-aloud-another-way" />
         </div>
       ) : null}
@@ -421,6 +439,18 @@ export function ExercisePlayer({
   const short = preset === "short";
   const noun = stepNoun(mode);
   const bonus = mode === "testout" ? undefined : exercise.bonus;
+  // The names of Mar'tu's Teach me examples in this exercise's hints: copied into the code, they get example advice.
+  const taughtNames = useMemo(
+    () =>
+      foreignNames({
+        hints: exercise.checkpoints.flatMap((checkpoint) => checkpoint.hints),
+        // The side quest's own names (`get_farewell`) are the task's too.
+        solution: [exercise.solution, exercise.bonus?.solution ?? ""].join("\n"),
+        starter: exercise.starter,
+        names: exercise.names,
+      }),
+    [exercise],
+  );
   const inputId = useId();
 
   const [code, setCode] = useState(exercise.starter);
@@ -449,6 +479,9 @@ export function ExercisePlayer({
   /** The miss streak when the student took up a "misses" offer by opening a rung (it then waits for 3 more). */
   const [streakTakenUp, setStreakTakenUp] = useState<FailStreak>({ checkpointId: null, count: 0 });
   const lastRungAt = useRef<number | null>(null);
+  /** A debugging exercise's crashes this visit and the step Help aimed at for each (crashAim), and the last one. */
+  const crashAims = useRef<CrashAim[]>([]);
+  const lastAim = useRef<CrashAim | null>(null);
   /** Steps whose Start me off Help stepped over (the line was there already), this visit. */
   const steppedOverStart = useRef<Set<string>>(new Set());
   const ranSinceRung = useRef(false);
@@ -461,6 +494,8 @@ export function ExercisePlayer({
   const [solutionNote, setSolutionNote] = useState(false);
   const [assembling, setAssembling] = useState(false);
   const [assembled, setAssembled] = useState<string[]>([]);
+  /** The step whose lines the open Assemble board builds (null: the whole program). */
+  const [assembleStep, setAssembleStep] = useState<number | null>(null);
   const [stdinText, setStdinText] = useState(stdinBoxText(exercise.stdin));
   const [fullExplanation, setFullExplanation] = useState(false);
   const [pairTalkHidden, setPairTalkHidden] = useState(false);
@@ -585,6 +620,11 @@ export function ExercisePlayer({
   /* The last run crashed: Python stopped before it could check any step (so "step 1" may already be right). */
   const crashed = view?.grade?.crashed === true;
   const crashAt = crashed && view?.explanation ? crashLine(view.explanation.raw) : null;
+  /*
+   * The line the slip is on, when the explainer knows it is not the one Python stopped on (Unit 5: a sheet's missing
+   * comma Python reports on the next line, a whole card read on the line above the comparison).
+   */
+  const slipAt = crashed && view?.explanation?.slipLine && view.explanation.slipLine !== crashAt ? view.explanation.slipLine : null;
   /* Steps that passed before, failing on the latest run that Python finished (a crash checks nothing). */
   const slippedSteps =
     view?.grade && !view.grade.crashed && !view.revealPass
@@ -594,12 +634,21 @@ export function ExercisePlayer({
   const slippedSinceDone = done && view?.grade != null && !view.grade.allPassed && !view.revealPass;
   // While a crash stands, Help aims at the line Python stopped on, never at step 1 under "Mend line 3 first.":
   // a step that names that line ("Mend line 3 ...") gets the Help. When the steps name other lines and none
-  // names this one, their Help would talk about a different line, so it waits until the code runs.
+  // names this one, their Help would talk about a different line, so it waits until the code runs. In a
+  // debugging exercise, a crash that got further than the last one aims past the slip just mended (crashAim).
+  const aimStep = crashed && view?.crashStep !== undefined ? view.crashStep : undefined;
   const crashStep = crashTarget(exercise.checkpoints, crashAt);
-  const crashOnlyHelp = crashed && crashAt !== null && crashStep < 0 && exercise.checkpoints.some((checkpoint) => namesALine(checkpoint.text));
-  const helpIndex = crashStep >= 0 ? crashStep : firstOpen;
+  const crashOnlyHelp =
+    aimStep !== undefined
+      ? aimStep === null
+      : crashed && crashAt !== null && crashStep < 0 && exercise.checkpoints.some((checkpoint) => namesALine(checkpoint.text));
+  const helpIndex = aimStep !== undefined && aimStep !== null ? aimStep : crashStep >= 0 ? crashStep : firstOpen;
   const helpCheckpoint = activeCheckpoint && helpIndex >= 0 ? exercise.checkpoints[helpIndex] : null;
-  const helpAvailable = support !== "none" && hintsOpen(support, triedAndMissed) && !done && activeCheckpoint !== null;
+  // Light support (projects, challenges): the full ladder waits for the first Run that does not finish, but the
+  // Point rung (and Start me off) is always there (curriculum §2.2 #4, R7): a student who stalls without running
+  // still gets "Where to look", and the 90-second nudge.
+  const lightBeforeRun = support === "light" && !hintsOpen(support, triedAndMissed);
+  const helpAvailable = support !== "none" && (hintsOpen(support, triedAndMissed) || lightBeforeRun) && !done && activeCheckpoint !== null;
   const showUnlocked =
     support !== "none" &&
     solutionUnlocked({
@@ -609,20 +658,26 @@ export function ExercisePlayer({
       solutionAfterMinutes: settings.solutionAfterMinutes,
       solutionAfterFailedRuns: settings.solutionAfterFailedRuns,
     });
-  const rungs = useMemo(
-    () =>
-      helpCheckpoint
-        ? helpRungs(helpCheckpoint, {
-            anotherWayCount: exercise.anotherWay.length,
-            hasAssemble: Boolean(exercise.assemble),
-            solo: exercise.solo === true,
-            solution: exercise.solution,
-          })
-        : [],
-    [helpCheckpoint, exercise.anotherWay.length, exercise.assemble, exercise.solo, exercise.solution],
-  );
-  /** Start me off has nothing to give when the line is already there, or right after a crash (mend that first). */
-  const skipRung = (rung: Rung) => rung.kind === "start" && (crashed || codeHasStart(code, rung.start ?? ""));
+  const rungs = useMemo(() => {
+    if (!helpCheckpoint) return [];
+    const all = helpRungs(helpCheckpoint, {
+      anotherWayCount: exercise.anotherWay.length,
+      hasAssemble: Boolean(exercise.assemble),
+      solo: exercise.solo === true,
+      solution: exercise.solution,
+    });
+    // Before the first Run under light support: the ladder up to Where to look (a prefix, so the saved count
+    // still lines up once the rest opens).
+    const point = all.findIndex((rung) => rung.kind === "point");
+    return lightBeforeRun && point >= 0 ? all.slice(0, point + 1) : all;
+  }, [helpCheckpoint, exercise.anotherWay.length, exercise.assemble, exercise.solo, exercise.solution, lightBeforeRun]);
+  /**
+   * Start me off has nothing to give when the step's line is already begun, or right after a crash (mend that first).
+   * Mar'tu's other finished lines (the starter's, an earlier step's) are not this step's line begun.
+   */
+  const startStep = { solution: exercise.solution, line: helpCheckpoint ? stepLine(helpCheckpoint.hints) : null };
+  const startInCode = (start: string) => codeHasStart(code, start, startStep);
+  const skipRung = (rung: Rung) => rung.kind === "start" && (crashed || startInCode(rung.start ?? ""));
   const climbed = helpState(rungs, helpCheckpoint ? rungsShown(saved?.hintsUsed, helpCheckpoint.id, rungs.length) : 0, showUnlocked, {
     preset,
     skip: skipRung,
@@ -645,10 +700,13 @@ export function ExercisePlayer({
     msSinceProgress: time.session - progressAtSessionMs.current,
     idleMs: time.session - activityAt.current,
   });
-  const pieces = useMemo(
-    () => (exercise.assemble ? seededShuffle([...exercise.assemble.lines, ...exercise.assemble.distractors], key) : []),
-    [exercise.assemble, key],
-  );
+  // More structure on step k of an exercise with Mar'tu's partials (a project's 50 lines): only step k's lines are
+  // pieces, and the rest of the program stays in place around the gaps.
+  const stepBoard = useMemo(() => (assembleStep === null ? null : stepAssemble(exercise, assembleStep)), [exercise, assembleStep]);
+  const pieces = useMemo(() => {
+    if (stepBoard) return seededShuffle([...stepBoard.lines, ...stepBoard.distractors], `${key}:step-${stepBoard.step}`);
+    return exercise.assemble ? seededShuffle([...exercise.assemble.lines, ...exercise.assemble.distractors], key) : [];
+  }, [exercise.assemble, key, stepBoard]);
   const names = exercise.names ?? [];
   /** The task only prints (Lesson 1A): a pick on a line of its own goes in as `print("...")`. */
   const printOnly = isPrintOnlyTask({ names, solution: exercise.solution });
@@ -692,8 +750,8 @@ export function ExercisePlayer({
    * Inserting names, Mar'tu's pick and Start me off. Names and picks go at the cursor, but never inside a `#`
    * note; Start me off always starts a line of its own (editor-insert.ts).
    */
-  function insertInCode(text: InsertText, spoken: string, where: InsertWhere) {
-    if (editorRef.current?.insert(text, where)) setInsertNote(`${spoken} is in your code.`);
+  function insertInCode(text: InsertText, spoken: string, where: InsertWhere, target?: InsertTarget) {
+    if (editorRef.current?.insert(text, where, target)) setInsertNote(`${spoken} is in your code.`);
     else setInsertNote(`Type ${spoken} in your code.`);
   }
 
@@ -761,6 +819,9 @@ export function ExercisePlayer({
         unitOrder,
         debugging,
         explainer: exercise.explainer,
+        foreign: taughtNames,
+        // The game's hidden sheets (`caster`) count as the program's own, so a KeyError can name the level a key is on.
+        setup: exercise.setup,
       };
       const grade = gradeCheckpoints(exercise.checkpoints, result, source, context);
       // The side quest's checks come after the main ones: grade them from their own slice, by position.
@@ -798,6 +859,26 @@ export function ExercisePlayer({
       if (!grade.allPassed) setMissedThisVisit(true);
       const crashText = result.traceback || result.stderr || "";
       const explanation = grade.crashed ? explainCourseError(crashText, source, context) : null;
+      // A debugging exercise's crash: which step Help aims at, past the slips already mended this visit.
+      let aim: CrashAim | null = null;
+      if (debugging && grade.crashed && explanation && explanation.kind !== "timeout") {
+        const line = crashLine(explanation.raw);
+        const signature = `${line ?? "?"}:${pythonLastLine(explanation.raw)}`;
+        const passedIds = [...before, ...outcome.passedNow];
+        const step = crashAim({
+          checkpoints: exercise.checkpoints,
+          crashLine: line,
+          signature,
+          seen: crashAims.current,
+          previous: lastAim.current,
+          gotFurther: explanation.gotFurther === true,
+          firstOpen: Math.max(0, exercise.checkpoints.findIndex((checkpoint) => !passedIds.includes(checkpoint.id))),
+          error: pythonLastLine(explanation.raw),
+        });
+        aim = { signature, step };
+        if (!crashAims.current.some((seen) => seen.signature === signature)) crashAims.current.push(aim);
+      }
+      lastAim.current = aim;
       if (grade.allPassed) {
         setCompare(null);
         setAssembling(false);
@@ -810,12 +891,16 @@ export function ExercisePlayer({
             : null;
         // Past the last crash: the error moved on (or is a new slip), or the code runs now and a step is next.
         const lastCrash = previous?.grade?.crashed === true ? previous.explanation : null;
+        // The code runs now, but the step that crash was about still fails (`=>` mended to a lone `=`, which
+        // runs): the slip is not mended, so no "that slip is mended" line.
+        const crashStepStillFails =
+          typeof previous?.crashStep === "number" && grade.firstFailing !== null && grade.firstFailing <= previous.crashStep;
         const gotFurther =
           debugging &&
           lastCrash !== null &&
           lastCrash.kind !== "timeout" &&
           !revealPass &&
-          (explanation?.gotFurther === true || (!grade.crashed && !grade.allPassed));
+          (explanation?.gotFurther === true || (!grade.crashed && !grade.allPassed && !crashStepStillFails));
         return {
           stdout: result.ok ? result.stdout + (result.stderr ?? "") : result.stdout,
           grade,
@@ -838,6 +923,10 @@ export function ExercisePlayer({
             failing.message === previousFailing.message,
           newlyPassed: outcome.newlyPassed,
           revealPass,
+          ...(aim ? { crashStep: aim.step } : {}),
+          ...(grade.crashed && explanation && crashLineSwitchedOff(source, crashLine(explanation.raw), exercise.solution)
+            ? { crashSwitchOff: true }
+            : {}),
         };
       });
       if (outcome.allPassed) {
@@ -932,6 +1021,8 @@ export function ExercisePlayer({
   function openAssemble() {
     setAssembled([]);
     setCompare(null);
+    const step = helpCheckpoint ? exercise.checkpoints.indexOf(helpCheckpoint) : -1;
+    setAssembleStep(step >= 0 && assemblesBySteps(mode, exercise.assemble) && stepAssemble(exercise, step) ? step : null);
     setAssembling(true);
   }
 
@@ -944,7 +1035,7 @@ export function ExercisePlayer({
   }
 
   function insertAssembled() {
-    replaceCode(assembledCode(assembled));
+    replaceCode(stepBoard ? stepBoard.fill(assembled) : assembledCode(assembled));
     setAssembling(false);
     setAssembled([]);
     focusRun();
@@ -1030,7 +1121,16 @@ export function ExercisePlayer({
               {justPassed ? (
                 <p className="ex-checkpoint-done" data-testid={`checkpoint-pass-${n}`}>
                   <span aria-hidden="true">✓</span> <strong>Done!</strong>
-                  {checkpoint.passLine ? <span className="ex-pass-line"> {checkpoint.passLine}</span> : null}
+                  {checkpoint.passLine ? (
+                    <>
+                      {" "}
+                      <Prose
+                        inline
+                        text={soloPassLine(checkpoint.passLine, exercise.solo === true && mode !== "testout", soloUnaided(saved))}
+                        className="ex-pass-line"
+                      />
+                    </>
+                  ) : null}
                 </p>
               ) : null}
             </li>
@@ -1053,14 +1153,20 @@ export function ExercisePlayer({
         <section className="ex-learn" aria-label="Learn" data-testid="learn-pane">
           {mode === "lesson" || mode === "testout" || mode === "try-it" ? (
             <h2 className="ex-title" data-testid="exercise-title">
-              {exercise.title}
+              <Prose inline text={exercise.title} />
             </h2>
           ) : null}
-          {activeCheckpoint && !done && crashed ? (
+          {activeCheckpoint && !done && crashed && view?.crashSwitchOff && crashAt ? (
+            // The crash is part of the task (Anatomy of a fizzle): read the message first, then switch the line off.
+            <p className="ex-task-line" data-testid="task-line" data-crash="true" data-switch-off="true">
+              <span className="ex-task-label">{`Python stopped on line ${crashAt}.`}</span>{" "}
+              {`Read its message under your code first: your ${noun.toLowerCase()}s come from it. Then put # at the start of line ${crashAt} and Run again.`}
+            </p>
+          ) : activeCheckpoint && !done && crashed ? (
             // A crash checks nothing, so "step 1" may already be right: the line Python stopped at comes first.
             <p className="ex-task-line" data-testid="task-line" data-crash="true">
-              <span className="ex-task-label">{`First, mend ${crashAt ? `line ${crashAt}` : "the error"}.`}</span>{" "}
-              {`Python stopped there, so it could not check your ${noun.toLowerCase()}s yet. ${
+              <span className="ex-task-label">{`First, mend ${slipAt ? `line ${slipAt}` : crashAt ? `line ${crashAt}` : "the error"}.`}</span>{" "}
+              {`${slipAt && crashAt ? `Python stopped on line ${crashAt}` : "Python stopped there"}, so it could not check your ${noun.toLowerCase()}s yet. ${
                 // A lean explainer names the slip, not the fix: the line promises only what the message gives.
                 exercise.explainer === "lean" ? "The message under your code names the slip." : "The message under your code says how."
               }`}
@@ -1090,7 +1196,7 @@ export function ExercisePlayer({
               <WorkedExample example={exercise.example} />
             )
           ) : null}
-          {anotherWayOpen(support, exercise.anotherWay) ? <AnotherWay exercise={exercise} glossary={glossary} /> : null}
+          {anotherWayOpen(support, exercise.anotherWay, exercise.solo === true) ? <AnotherWay exercise={exercise} glossary={glossary} /> : null}
           {exercise.pairTalk && !pairTalkHidden && mode !== "testout" ? (
             <aside className="ex-pair-talk" data-testid="pair-talk" aria-label="Pair talk">
               <p className="ex-pair-text">
@@ -1123,6 +1229,7 @@ export function ExercisePlayer({
               starter={exercise.starter}
               glossary={glossary}
               saved={saved?.predicted}
+              orderKey={key}
               onAnswer={(choice) => updateExercise(key, (previous) => ({ ...previous, predicted: choice }))}
               onClose={focusRun}
             />
@@ -1208,10 +1315,35 @@ export function ExercisePlayer({
               <h3 className="ex-section-title" ref={assembleHeading} tabIndex={-1} data-testid="assemble-heading">
                 Assemble it
               </h3>
-              <p className="ex-muted">Build the program from pieces. Then press &ldquo;Put it in the editor&rdquo; and Run it.</p>
+              {stepBoard ? (
+                <>
+                  <p className="ex-muted" data-testid="assemble-step-note">
+                    Build {noun.toLowerCase()} {stepBoard.step + 1} from pieces. The rest of Mar&rsquo;tu&rsquo;s program stays where it is. Then press &ldquo;Put it in the editor&rdquo; and Run it.
+                  </p>
+                  <pre className="ex-assemble-context" data-testid="assemble-context" aria-label="The program around your lines">
+                    {stepBoard.context.map((entry, index) =>
+                      entry.kind === "gap" ? (
+                        <span key={index} className="ex-assemble-gap" data-testid="assemble-gap">
+                          {"▸ your line goes here\n"}
+                        </span>
+                      ) : entry.kind === "more" ? (
+                        <span key={index} className="ex-assemble-more">
+                          {"…\n"}
+                        </span>
+                      ) : (
+                        <span key={index}>{`${entry.text}\n`}</span>
+                      ),
+                    )}
+                  </pre>
+                </>
+              ) : (
+                <p className="ex-muted">Build the program from pieces. Then press &ldquo;Put it in the editor&rdquo; and Run it.</p>
+              )}
               {isBlankOrStarter(code, exercise.starter) ? null : (
                 <p className="ex-muted" data-testid="assemble-replaces">
-                  Putting it in the editor replaces the code there now.
+                  {stepBoard
+                    ? "Putting it in the editor replaces the code there now with Mar\u2019tu\u2019s program and your pieces."
+                    : "Putting it in the editor replaces the code there now."}
                 </p>
               )}
               <ParsonsBoard blocks={pieces} value={assembled} onChange={setAssembled} idPrefix="assemble" />
@@ -1316,8 +1448,11 @@ export function ExercisePlayer({
               runNumber={runNumber}
               crashed={crashed}
               crashLine={crashAt}
+              slipLine={slipAt}
               crashOnly={crashOnlyHelp}
-              startInCode={(start) => codeHasStart(code, start)}
+              moreAfterRun={lightBeforeRun}
+              crashIsTask={view?.crashSwitchOff === true}
+              startInCode={startInCode}
               onReveal={revealRung}
               onDismissOffer={() => {
                 setOfferDismissed(true);
@@ -1325,7 +1460,9 @@ export function ExercisePlayer({
               }}
               onOpenAssemble={openAssemble}
               onOpenCompare={openCompare}
-              onInsertStart={(start) => insertInCode(/[=,]$/.test(start) ? `${start} ` : start, start, "line")}
+              onInsertStart={(start) =>
+                insertInCode(/[=,]$/.test(start) ? `${start} ` : start, start, "line", helpCheckpoint ? startTarget(helpCheckpoint) ?? undefined : undefined)
+              }
             />
           ) : support === "light" && !done && activeCheckpoint ? (
             <HelpLocked />

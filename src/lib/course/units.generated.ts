@@ -2,11 +2,17 @@
 // Run `npm run course:export` to regenerate (CI fails if this file is stale).
 import unit_hello_world from "../../../content/courses/intro-python/units/hello-world.json";
 import unit_control_flow from "../../../content/courses/intro-python/units/control-flow.json";
+import unit_first_recipes from "../../../content/courses/intro-python/units/first-recipes.json";
+import unit_lists from "../../../content/courses/intro-python/units/lists.json";
+import unit_dictionaries from "../../../content/courses/intro-python/units/dictionaries.json";
 import unit_sample from "../../../content/courses/intro-python/units/sample.json";
 
 /** Every content/courses/intro-python/units/*.json in course order (unpublished ones too). Parse with unitSchema. */
 export const rawUnits: unknown[] = [
   unit_hello_world,
   unit_control_flow,
+  unit_first_recipes,
+  unit_lists,
+  unit_dictionaries,
   unit_sample,
 ];

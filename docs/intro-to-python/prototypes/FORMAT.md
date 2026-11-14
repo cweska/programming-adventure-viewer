@@ -98,7 +98,12 @@ aliases must not repeat across entries. Every `[[link]]` in any prose must resol
 - Lines starting `1. `, `2. ` ... render as a numbered list.
 - `` `backticks` `` render as inline code. Keep them balanced (CI checks).
 - A fenced block renders as code: ` ```python\n...\n``` ` (CI checks fences are closed).
-- `[[term]]` or `[[term|shown text]]` links to the glossary.
+- `[[term]]` or `[[term|shown text]]` links to the glossary. The shown text may be one code span,
+  ``[[len()|`len(wall)`]]`` or ``[[.get()|`.get()`]]``: it shows as code. Plain words or one whole code span,
+  never both (CI checks that no `[[` or `]]` is left in the words a student sees).
+- "Keep it short" shows only the first paragraph of an exercise's `martu` (a fenced block counts as one). A
+  first line that ends with a colon keeps the fenced block right under it ("...from this card:"), so put data
+  the task needs (a card, a table) there, or in the step text.
 - `*words in stars*` are emphasis ("`>=` means *at least*"). A star with a space after it stays a star.
 - Plain, short sentences: students are 11 to 15 and several read slowly. The harness warns above about a
   grade 9 reading level and above 230 words of Mar'tu text.
@@ -142,7 +147,7 @@ Kinds:
 | `challenge` | every EXERCISE field directly on the item, plus `level="core"` or `"advanced"` (default core) and `variant_of="<challenge item id>"` for an advanced variant. `support` defaults to `"light"`. |
 | `article` | `body` (prose), `examples=[dict(code=..., output=..., stdin=[...])]` (runnable, output is verified; no `setup`), optional `exercises=[EXERCISE, ...]` (try-its) |
 | `cheatsheet` | `entries=[dict(concept=..., code=..., output=..., note=...)]`. If `output` is given the harness runs the code and checks it, so leave `output` out for code that calls `input()`. No `setup`/`stdin`. |
-| `testout` | `exercises=[EXERCISE, ...]`: the unit's Quick Check. Passing all of them tests out of the unit. Give each exercise `support="none"` (no hints shown; still write 2 hints, the schema needs them). |
+| `testout` | `exercises=[EXERCISE, ...]`: the unit's Quick Check. Passing all of them tests out of the unit. Give each exercise `support="none"` (no hints shown; still write 2 hints, the schema needs them). Optional `questions_to_pass=3` (JSON `questionsToPass`): the form passes only when its questions quiz, the `quiz` item with the id `<testout id>-questions`, also has that many right (best score); the unit page says so. The exporter and the harness check that the quiz exists and has enough questions. A test-out's check messages should be lean (the slip and the evidence, never the fix), like its explainer. |
 
 ## EXERCISE
 
@@ -154,20 +159,20 @@ Kinds:
 | `example` | code | `example.code` | Mar'tu's worked example |
 | `example_output` | str | `example.output` | exactly what `example` prints (verified). Required with `example`. |
 | — | — | `example.stdin` | copied from the exercise `stdin` when the example calls `input(`, because the harness runs the example with the exercise's answers |
-| `another_way` | list | `anotherWay` | `dict(angle="analogy", label="Think of jars", text="...")`: alternate explanations the student can open. `label` optional. |
+| `another_way` | list | `anotherWay` | `dict(angle="analogy", label="Think of jars", text="...")`: alternate explanations the student can open. `label` optional: one line of prose, shown on a button (`code` shows as code; a `[[link]]` shows as plain words, and the harness warns). An angle may carry a one-click card sort, `sort=dict(groups=["these exact letters", "look inside the box"], cards=[("mana = 26", 1), ('hero["mana"]', 0)], explain="prose")`: 2 or 3 groups, every group gets a card, each card is `(text, group index)`; *Check my sort* marks each card and then shows `explain` (Unit 5's quotes sort). Free and never saved. |
 | `introduces` | list of tokens | `introduces` | concepts this exercise teaches (opens the concept gate for this and later code) |
 | `preview` | list of tokens | `preview` | concepts shown here *before* they are taught, on purpose (say why in `notes`) |
 | `engine` | bool | `engine` | `True` loads the campaign objects (`party`, `print_prompt`, `print_options`, `user`, `_prompts`, ...). Off for ordinary exercises, so `print(user)` is a real NameError. |
-| `setup` | code | `setup` | hidden code run before the student's code. Names it defines can be used by the student. |
+| `setup` | code | `setup` | hidden code run before the student's code. Names it defines can be used by the student. It can read `_source` (the student's code) and `raise SystemExit` to stop the program before it runs (it then prints nothing and the checks still run), as Unit 3's ledgers do when a program is pasted in to be traced. |
 | `stdin` | list of str | `stdin` | the answers `input()` gets, in order. The console echoes `prompt + answer` on one line. Asking for more raises `EOFError`. |
 | `starter` | code | `starter` | what the editor starts with (may be `""`) |
 | `checkpoints` | list | `checkpoints` | 1 to 12, see below |
 | `solution` | code | `solution` | must pass every checkpoint |
 | `starter_passes` | bool | `starterPasses` | `True` for "run this and read it" exercises: the starter already passes. Otherwise the starter must fail a checkpoint. |
 | `tracer` | bool | `tracer` | offer the step-through tracer |
-| `support` | `"full"` / `"light"` / `"none"` | `support` | full: hints, another way, solution after gating. light: hints after the first failed run. none: test-outs. |
+| `support` | `"full"` / `"light"` / `"none"` | `support` | full: hints, another way, solution after gating. light: Where to look (and Start me off) from the start, the rest of the ladder after the first failed run. none: test-outs. |
 | `bonus` | dict | `bonus` | a side quest, see below |
-| `assemble` | dict | `assemble` | "Assemble it": the solution as shuffled lines, `dict(lines=[...in order...], distractors=[...])` (a string is split into lines). Students reach it through Help, under "More structure". |
+| `assemble` | dict | `assemble` | "Assemble it": the solution as shuffled lines, `dict(lines=[...in order...], distractors=[...])` (a string is split into lines). Students reach it through Help, under "More structure", before "Show me how". The exercise's `partials` go to the site with it (`assemble.steps`), so in a project or a challenge (or any exercise whose whole board has more than 12 pieces) More structure builds only the active step: the lines that partial *k* adds over partial *k-1* are the pieces (with the distractors that start the same way), and the rest of the program stays in place around the gaps. A SOLO keeps its whole board. Leave it out of an exercise whose answer is a number to work out (a trace ledger's `row = 60`): its pieces would be the answers. The harness warns when a line is the only number a goal-only step accepts. |
 | `campaign_link` | dict | `campaignLink` | Lucky's "What's in it for me?" box: `dict(module="leylines-awaken", part="program-dialogue-prompt", snippet="code", why="prose")`. `snippet` optional. |
 | `takeaway` | str | `takeaway` | one line for the cheatsheet / skill map |
 | `predict` | dict | `predict` | Predict before Run, see [below](#predict-before-run). Free: a thinking prompt, never a test, and it never blocks Run. Hidden in Quick Checks. |
@@ -176,7 +181,7 @@ Kinds:
 | `pair_talk` | prose | `pairTalk` | an optional "Pair talk" prompt, e.g. "Tell your partner why `mana` needs `str()`." The site adds the "Pair talk:" label. Every student still does every step on their own device (no shared-device steps). |
 | `solo` | bool | `solo` | `True` for the lesson's SOLO item (one per lesson, about 2 minutes, done alone). Recorded, never blocking. Default `False`. |
 | `explainer` | `"full"` / `"lean"` | `explainer` | How much the crash explainer says. `"full"` (default): what happened and what to try, with the line written right when it can. `"lean"`: the **kind** of slip and the **line**, never the fix ("The slip is on line 3: a sign typed backwards."); Python's own last line stays on screen. From Unit 2 on, by the teacher's ruling, every SOLO item and every Quick Check exercise is `"lean"` (Unit 1 stays `"full"`). |
-| `partials` | list of code | sidecar only | staged solutions: partial *k* passes checkpoints 1..k and fails k+1 |
+| `partials` | list of code | sidecar (and `assemble.steps`) | staged solutions: partial *k* passes checkpoints 1..k and fails k+1. With an `assemble`, they also go to the site as `assemble.steps` (More structure for one step). |
 | `wrong_answers` | list | sidecar only | `dict(why="...", code="...", fails_at=2, message_contains="quotes")`: a known wrong answer must fail at checkpoint `fails_at` (0 = it crashes before the checks) with a message containing `message_contains` |
 | `notes` | str | sidecar only | designer notes |
 
@@ -197,9 +202,9 @@ dict(
 | --- | --- | --- |
 | `id` | `id` | slug, unique within the exercise. Give real ids once students use a unit: progress is saved by id, so renaming or reordering a `step-N` checkpoint resets it. |
 | `text` | `text` | one action, at most two sentences. A leading `1. ` is stripped (the site numbers checkpoints). A debugging step says **Mend** ("Mend line 3 so it shows `Steady`."): an exercise with a "Mend" step is a debugging exercise, and when a run gets further than the one before, the site shows "Python got further: that slip is mended." on a line of its own. |
-| `hints` | `hints` | the hint ladder, 2 to 5 rungs: point, teach, show. The site's Help control shows them as "Where to look" (the first), "Teach me" (the middle ones) and "Show me how" (the last), with "Another way" and "More structure" (Assemble it) in between, then "Compare with Mar'tu's version". Write the last hint with the step's own line in backticks (``Write `mana = 20` on its own line.``): its start up to the first `(` or `=` becomes "Start me off" (`mana =`), but only if the solution uses it. Never show an example's names there. |
+| `hints` | `hints` | the hint ladder, 2 to 5 rungs: point, teach, show. The site's Help control shows them as "Where to look" (the first), "Teach me" (the middle ones) and "Show me how" (the last), with "Another way" and "More structure" (Assemble it) in between, then "Compare with Mar'tu's version". Write the last hint with the step's own line in backticks (``Write `mana = 20` on its own line.``): its start up to the first `(` or `=` becomes "Start me off" (`mana =`), but only if the solution uses it. A list read runs on to its bracket when the solution uses that: `print(chalk_wall[`, and `return wall[` rather than `return wall[len(`. Never show an example's names there. Say where the line goes in the same hint, after the line, so Start me off lands there before the student has clicked into the code: "in place of `print(lucky[2])`" (replaces that line), "on the line after `total = affinity * 2`", "under `# 2.`" (under the whole note, when it goes on over `#    ...` lines), or "above `print(caster[\"mana\"])`" (a new line over it, with its indent). With none of these, Start me off goes at the end of the code. From Unit 2 on, the harness warns when the first hint starts with "Start like this", or when the last hint's start is not in the solution (Start me off is then dropped). |
 | `checks` | `checks` | `(name, code)` pairs (or `dict(name=..., code=...)`) |
-| `pass_line` | `passLine` | optional in-world line |
+| `pass_line` | `passLine` | optional in-world line (prose on one line: `code` shows as code; a `[[link]]` shows as plain words, and the harness warns) |
 | `dictated` | `dictated` | optional bool. `True` when the text spells out the code to type ("Write `mana = 20`"); `False` for a goal-only step that gives the goal and the names, never the code ("Print a greeting that uses `name`."). The curriculum asks for at least one `dictated=False` step in every lesson (§2.1, lint g). Left out: not marked either way. |
 
 **Checks** run after the student's code, in the same namespace, only if the code ran without an error.
@@ -232,7 +237,7 @@ predict=dict(
 | --- | --- | --- |
 | `q` | `q` | prose: the question |
 | `code` | `code` | optional code to predict. Left out, it is the exercise's `starter`. It runs with the exercise's `setup` and `stdin`, and the concept gate checks it. |
-| `choices` | `choices` | 2 or more one-click choices. Write each one exactly as the console would show it. |
+| `choices` | `choices` | 2 or more one-click choices. Write each one exactly as the console would show it. The site shows them in a shuffled order (seeded by the student and the exercise, so it holds steady), but `answer`, the saved guess and the page's test ids keep the authored index. Still vary where the right one is written. |
 | `answer` | `answer` | the index of the right choice, or its exact text (the exporter turns text into the index). The harness runs `code` and fails if the right choice is not exactly what it prints. |
 | `explain` | `explain` | prose shown after the guess, right or wrong |
 
@@ -256,6 +261,8 @@ optional `id` (slug; defaults to `q-1`, `q-2`, ... by position). `notes` goes to
 | `bug` | `code` (buggy), `fix`, `expected_output` | `expectedOutput` | `fix` prints `expected_output`; `code` does not |
 
 Only `predict` questions may have `setup` or `stdin`.
+
+The site shows `mc` and `predict` choices in a shuffled order, seeded by the student, the question and the attempt (the same order all through an attempt, a new one on a retake). Grading, `answer`, `why_wrong` and the test ids keep the authored index, so write them as usual, and vary where the right choice is written.
 
 ## Concept tokens and the gate
 

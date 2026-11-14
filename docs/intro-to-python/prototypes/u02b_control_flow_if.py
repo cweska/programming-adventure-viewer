@@ -11,8 +11,9 @@ four `if`/`elif` dialogue options on `"option 1"`, the trap-door skill checks wi
 `return roll >= required_roll`, and `cast_spell`'s `<`, not `<=`. So every campaign link here is "you've seen
 this, now you'll get it". Every student has their own device; pair talk is optional, every checkpoint is solo.
 
-Help ladder (curriculum 2.2) as fields, the same as Unit 1: hints[0] Start me off, hints[1] Point (where to look),
-another_way, hints[2+] Teach (a tiny example with other names), assemble (More structure), solution (Show).
+Help ladder as fields (FORMAT.md, the order the site shows them): hints[0] Where to look (point), the middle hints Teach me
+(a tiny example with other names), the last hint Show me how: the step's own line in backticks (``Write `x = 1`.``),
+whose start up to its first `(` or `=` becomes Start me off. another_way, assemble (More structure), then Compare.
 
 Check codes (curriculum 2.5) built by the helpers below. The harness has no _rerun() helper yet, so every rerun
 is done inside the check itself: the student's code is parsed, each named top-level `name = value` line gets the
@@ -45,8 +46,8 @@ Teacher ruling on the Unit 2 reviews (cross-cutting): every rerun message starts
 happened, and ends with the evidence in brackets, "(Mar'tu's check tried X, only inside the check.)", in about 35
 words or fewer. One order rule everywhere: "first, the test that lets the fewest numbers through". A box that
 still holds the starter's placeholder is named as such ("still holds the starter's `0`"), and a missing starter
-box gets "Keep the box X from the starter". Rung 0 (hints[0]) gives only the line's left side or first tokens and
-stops before the sign or the and/or; in debug steps it is "Read Python's last line"; bonus rung 0 is a few tokens.
+box gets "Keep the box X from the starter". Start me off (from the last hint) gives only the line's left side; in
+debug steps hints[0] is "Read Python's last line".
 
 Verify:
     PROTOTYPE_DIR=<staging dir> python3 docs/intro-to-python/prototypes/harness.py u02b
@@ -241,8 +242,18 @@ _E = _try(_N)
 if _H == _L:
     assert _E == _H, ('Use `>=`, so a higher roll passes too. Only a roll of exactly ' + str(_N) + ' gave the success '
                       'line. ' + _ev_many([_lo, _N, _hi]))
-    assert False, ('Ask whether `' + _R + '` reaches `' + _N_name + '`, and give the two lines different words. Both '
-                   'rolls printed the same thing. ' + _ev_many([_lo, _hi]))
+    # The same words in both branches, or an `if` that never asks with the boxes (`if True:`, `if 14 >= 12:`, a
+    # lone print): say only what is really wrong.
+    _same = False
+    for _n in _ast.walk(_ast.parse(_source)):
+        if type(_n).__name__ == 'If' and _n.orelse:
+            _w = [sorted(_c.value for _x in _b for _c in _ast.walk(_x) if type(_c).__name__ == 'Constant'
+                         and type(_c.value).__name__ == 'str') for _b in (_n.body, _n.orelse)]
+            _same = _same or bool(_w[0] and _w[0] == _w[1])
+    assert not _same, ('Give the success line and the failure line different words: both say the same thing. '
+                       + _ev_many([_lo, _hi]))
+    assert False, ('Ask whether `' + _R + '` reaches `' + _N_name + '` after `if`, using the boxes, so the answer can '
+                   'change. Both rolls printed the same line. ' + _ev_many([_lo, _hi]))
 # Exactly one of the two lines prints. A failure line with no indent (no `else:`) prints after every roll.
 assert [_l for _l in _L if _l not in _H], ('Put the failure line under `else:`, indented, so only one line prints. It '
                                            'printed the failure line as well as the success line. ' + _ev(_hi))
@@ -727,10 +738,10 @@ FIRST_IF = dict(
             text="Add a second indented line under the `if` that prints `Shield up.`",
             dictated=True,
             hints=[
-                "Start like this: on a new line under line 3, type four spaces, then `print(`",
                 "Look at line 3. It starts with four spaces, so it belongs to the `if`. Your new line needs the same.",
                 "Every indented line belongs to the `if`:\n```python\nif rain > 0:\n    print(\"Take the umbrella.\")\n"
                 "    print(\"Wear boots.\")\n```\nBoth lines run when it rains. Neither runs when it doesn't.",
+                "Write `print(\"Shield up.\")` on a new line under line 3, with four spaces in front.",
             ],
             checks=[
                 ("prints Shield up.", _rerun_code() + _FIRST_IF_SHIELD),
@@ -789,8 +800,8 @@ FIRST_IF = dict(
             "left.` Glue `hours_left` in with `str()`."
         ),
         hints=[
-            "Start like this: `print(\"Get inside! \" + `",
             "A number needs `str()` before it can be glued to text.",
+            "Write `print(\"Get inside! \" + str(hours_left) + \" hours left.\")`, indented under the `if`.",
         ],
         checks=[
             (
@@ -1083,12 +1094,13 @@ OTHERWISE = dict(
             ),
             dictated=False,
             hints=[
-                "Start like this: `if strength_roll `",
                 "What question decides which line runs? Fill the `___` after `if` with it. Then replace each `___` "
                 "in the quotes with your own words.",
                 "`else:` has no question. It runs when the `if` didn't:\n```python\nif coins >= price:\n"
                 "    print(\"Sold.\")\nelse:\n    print(\"Not enough coins.\")\n```",
                 "Exactly enough passes: a 12 opens a latch that needs 12. That is `>=`, not `>`.",
+                "Put `strength_roll >= strength_needed` in place of the `___` after `if`, so the line reads "
+                "`if strength_roll >= strength_needed:`. Then put your own words in each `print`.",
             ],
             checks=[blanks_check("your own words"), bnd_check("exactly enough passes", "strength_roll", "strength_needed")],
             pass_line="Bomb Shell: The latch pops open.",
@@ -1134,8 +1146,9 @@ OTHERWISE = dict(
             "Glue it in with `str(strength_roll)`."
         ),
         hints=[
-            "Start like this: `print(\"Rolled \" + `",
             "Both the `if` line and the `else` line need the roll.",
+            "Write `print(\"Rolled \" + str(strength_roll) + \". The latch pops open.\")`, and the same for "
+            "the failure line.",
         ],
         checks=[
             (
@@ -1177,7 +1190,7 @@ OTHERWISE = dict(
         dict(why="the needed number typed in the if", code=_latch(test="strength_roll >= 12"),
              fails_at=1, message_contains="not a number you typed"),
         dict(why="the comparison worked out by hand (typed True)", code=_latch(test="True"),
-             fails_at=1, message_contains="printed the same thing"),
+             fails_at=1, message_contains="using the boxes, so the answer can change"),
         dict(why="== instead of >= (only exactly 12 passes)", code=_latch(test="strength_roll == strength_needed"),
              fails_at=1, message_contains="exactly"),
         dict(why="the ___ placeholders left in the quotes", code=_latch(win='"___"', lose='"___"'),
@@ -1196,7 +1209,12 @@ OTHERWISE = dict(
                    "    print(\"That latch hates me.\")\nprint(\"The latch pops open.\")\n"),
              fails_at=1, message_contains="as well as the failure line"),
         dict(why="the comparison typed with the starter's numbers (14 >= 12 is always True)",
-             code=_latch(test="14 >= 12"), fails_at=1, message_contains="printed the same thing"),
+             code=_latch(test="14 >= 12"), fails_at=1, message_contains="using the boxes, so the answer can change"),
+        dict(why="if True with two different lines: only the question is wrong, the words are fine",
+             code=_latch(test="True"), fails_at=1, message_contains="Both rolls printed the same line"),
+        dict(why="the same words in both branches (the question is right, the lines are not)",
+             code=_latch(win='"The latch moves."', lose='"The latch moves."'), fails_at=1,
+             message_contains="different words: both say the same thing"),
         dict(why="the failure line uses a box that does not exist (the real roll never reaches it; the check's low roll does)",
              code=_latch(lose='"That latch hates " + bomb_shell'), fails_at=1, message_contains="Mend this slip"),
         dict(why="the starter's box strength_needed deleted and 12 typed in the if (missing starter box)",
@@ -1244,7 +1262,7 @@ CLOCK_COLORS = dict(
     id="clock-colors",
     title="Clock colors",
     martu=(
-        "[[elif]] means else, if. Python checks the branches from the top and takes the **first** true one. "
+        "[[elif]] means else, if. Python checks the branches from the top and takes the *first* true one. "
         "Then it skips the rest.\n"
         "My Ley Clock glows red when 2 hours or fewer are left, bright blue up to 12 hours, and calm blue after "
         "that. Someone wrote this chain in the wrong order. Which hours get the wrong color?"
@@ -1269,11 +1287,12 @@ CLOCK_COLORS = dict(
             text="Put the branches in an order where 2 hours gives `\"red\"`.",
             dictated=True,
             hints=[
-                "Start like this: `if hours_left `",
                 "Which branch does hour 2 reach first? Every hour that is 2 or less is also 12 or less.",
                 "First true wins, so the order rule is: " + ORDER_RULE + ".\n```python\nif age <= 5:\n"
                 "    ticket = \"free\"\nelif age <= 15:\n    ticket = \"child\"\nelse:\n    ticket = \"adult\"\n```\n"
                 "`age <= 5` lets 6 ages through (0 to 5), `age <= 15` lets 16 through, so `<= 5` goes first.",
+                "Start the chain with `if hours_left <= 2:` and the `\"red\"` line, then `elif hours_left <= "
+                "12:` and `\"bright blue\"`, then `else:` and `\"calm blue\"`.",
             ],
             checks=[
                 strexact_check(["red", "bright blue", "calm blue"]),
@@ -1331,8 +1350,8 @@ CLOCK_COLORS = dict(
         title="What's in it for me?",
         text="Lucky wants a proper reading. Print `Clock: red (2h)`, built from `clock_color` and `hours_left`.",
         hints=[
-            "Start like this: `print(\"Clock: \" + `",
             "`clock_color` is already text. `hours_left` is a number, so it needs `str()`.",
+            "Write `print(\"Clock: \" + clock_color + \" (\" + str(hours_left) + \"h)\")`.",
         ],
         checks=[
             lines_check("the reading follows the hours", [
@@ -1522,11 +1541,12 @@ FOUR_ANSWERS = dict(
             ),
             dictated=True,
             hints=[
-                "Start like this: `if choice == `",
                 "Which part must keep its quotes? The option is text, so it is `\"option 1\"`, quotes and all.",
                 QUOTES_RULE + " `choice == \"option 2\"` asks: is the text in `choice` the same as these exact letters?",
                 "The first two branches (`...` is Mar'tu's line, already in the starter):\n```python\n"
                 "if choice == \"option 1\":\n    mar_tu_says(...)\nelif choice == \"option 2\":\n```",
+                "Fill the first one: `if choice == \"option 1\":`. Then `\"option 2\"`, `\"option 3\"` and "
+                "`\"option 4\"` in the `elif` lines, in order.",
             ],
             checks=[strexact_check(OPTIONS), dialogue_check()],
             pass_line="Mar'tu: Four answers, four branches. Yes. That is the chain.",
@@ -1536,10 +1556,10 @@ FOUR_ANSWERS = dict(
             text="Add `light_up_option()` under each `mar_tu_says` line, so the clicked option lights up.",
             dictated=True,
             hints=[
-                "Start like this: under the first `mar_tu_says` line, type four spaces, then `light_up_`",
                 "Four branches, so four `light_up_option()` lines, each indented under its own `mar_tu_says` line.",
                 "Indented lines belong to their branch. A line with no indent runs for every choice, even one that "
                 "matched nothing.",
+                "Under each `mar_tu_says` line, write `light_up_option()` with the same four spaces in front.",
             ],
             checks=[options_lit_check()],
             pass_line="Lucky: Ooh, shiny. Fine. But I'm keeping track.",
@@ -1587,8 +1607,8 @@ FOUR_ANSWERS = dict(
             "Lucky clicks things that aren't there. Add an `else:` at the end that makes Mar'tu say `Hm.` for any "
             "other choice. No option to light: nothing was clicked."
         ),
-        hints=["Start like this: `else:` at the end of the chain.",
-               "`else:` has no question and no option. It is always last."],
+        hints=["`else:` has no question and no option. It is always last.",
+               "At the end of the chain, write `else:`, then `mar_tu_says(\"Hm.\")` under it, indented."],
         checks=[
             (
                 "any other choice gets Hm.",
@@ -1728,10 +1748,10 @@ AND_OR_NOT = dict(
             text="Make `can_cast` say whether `mana >= cost and affinity >= required`.",
             dictated=True,
             hints=[
-                "Start like this: `can_cast = mana `",
                 "Two questions: enough mana? enough affinity? Oogrish needs both.",
                 "`and` is True only when both sides are True:\n```python\nhas_key = True\ndoor_unlocked = False\n"
                 "print(has_key and door_unlocked)\n```\nThat prints False: one side is False.",
+                "Write `can_cast = mana >= cost and affinity >= required`.",
             ],
             checks=[
                 from_boxes_check("can_cast", ["mana", "cost", "affinity", "required"],
@@ -1752,12 +1772,12 @@ AND_OR_NOT = dict(
             text="Lucky may roll twice. Make `lucky_passes` say whether at least one of his rolls reaches `needed`.",
             dictated=False,
             hints=[
-                "Start like this: `lucky_passes = first_roll `",
                 "Lucky needs just one good roll. Ask about `first_roll` and about `second_roll`. Which word means one "
                 "is enough?",
                 "`or` is True when at least one side is True:\n```python\nprint(False or True)\n```\nThat prints True.",
                 "Each side is a whole question, like `can_cast` had: `first_roll >= needed` on one side, the same for "
                 "`second_roll` on the other.",
+                "Write `lucky_passes = first_roll >= needed or second_roll >= needed`.",
             ],
             checks=[
                 from_boxes_check("lucky_passes", ["first_roll", "second_roll", "needed"],
@@ -1777,9 +1797,9 @@ AND_OR_NOT = dict(
             text="Make `in_danger` say whether the barrier is down. Use `not`.",
             dictated=False,
             hints=[
-                "Start like this: `in_danger = `",
                 "Which box says whether the barrier is up? You want the opposite of it.",
                 "`not` flips a True or False:\n```python\nlamp_on = True\nprint(not lamp_on)\n```\nThat prints False.",
+                "Write `in_danger = not barrier_up`.",
             ],
             checks=[
                 name_check("in_danger", foreign=["lamp_on", "has_key", "door_unlocked"],
@@ -1848,8 +1868,9 @@ AND_OR_NOT = dict(
             "`dumb_luck = True`. Then change `lucky_passes` so the second roll counts only when `dumb_luck` is True."
         ),
         hints=[
-            "Start like this: `lucky_passes = first_roll `",
             "The first roll always counts. The second needs two things at once: `dumb_luck` and a high roll.",
+            "Write `dumb_luck = True`, then `lucky_passes = first_roll >= needed or (dumb_luck and second_roll "
+            ">= needed)`.",
         ],
         checks=[
             name_check("dumb_luck", skip=["mana", "cost", "affinity", "required", "can_cast", "needed", "first_roll",
@@ -1953,7 +1974,8 @@ ROLL_A_DIE = dict(
     title="Roll a die",
     martu=(
         "The world is not fair, so we roll. [[import]] `random` lends you Python's dice.\n"
-        "`random.[[randint]](1, 6)` gives a whole number from 1 to 6, **both ends included**. So 1 can come up, "
+        "`random.randint(1, 6)` ([[randint]]) gives a whole number from 1 to 6, *both ends included*. So 1 can "
+        "come up, "
         "and 6 can come up. 0 and 7 never do.\n"
         "Run the starter a few times. Then fix the two dice."
     ),
@@ -1979,9 +2001,9 @@ ROLL_A_DIE = dict(
             text="Make `staff_roll` a d6 roll: `random.randint(1, 6)`.",
             dictated=True,
             hints=[
-                "Start like this: `staff_roll = random.randint(`",
                 "Line 2 rolls `random.randint(1, 1)`. A die with one face always lands on 1. Which number is the top face?",
                 "`random.randint(1, 4)` gives 1, 2, 3 or 4. The first number is the lowest face, the second is the highest.",
+                "Change line 2 to `staff_roll = random.randint(1, 6)`.",
             ],
             checks=[rnd_check("staff_roll is a d6", "staff_roll", 6, [5, 3])],
         ),
@@ -1990,9 +2012,9 @@ ROLL_A_DIE = dict(
             text="Make `sword_roll` a d8 roll.",
             dictated=False,
             hints=[
-                "Start like this: `sword_roll = random.randint(`",
                 "How many faces does a d8 have? The lowest face is 1.",
                 "A d10 would be `random.randint(1, 10)`: lowest face, then highest face.",
+                "Write `sword_roll = random.randint(1, 8)` on line 3.",
             ],
             checks=[rnd_check("sword_roll is a d8", "sword_roll", 8, [5, 3], placeholder=0)],
             pass_line="Lucky: An 8 is still worse than my Telegun. Usually.",
@@ -2041,8 +2063,8 @@ ROLL_A_DIE = dict(
         by="lucky",
         title="What's in it for me?",
         text="Lucky swings both. Print the total of the two rolls, built from the boxes.",
-        hints=["Start like this: `print(staff_roll `",
-               "Both boxes hold numbers, so `+` adds them."],
+        hints=["Both boxes hold numbers, so `+` adds them.",
+               "Write `print(staff_roll + sword_roll)` on a new line at the end."],
         checks=[
             (
                 "prints the total",
@@ -2155,9 +2177,9 @@ ROLL_AND_DECIDE = dict(
             text="Roll a d20 into `roll`.",
             dictated=True,
             hints=[
-                "Start like this: `roll = random.randint(`",
                 "Look at line 4. A d20 has faces 1 to 20, and `randint` includes both ends.",
                 "`random.randint(1, 4)` rolls a d4. Lowest face first, then the highest.",
+                "Write `roll = random.randint(1, 20)` in place of `roll = ___`.",
             ],
             checks=[rnd_check("roll is a d20", "roll", 20, [7])],
         ),
@@ -2166,9 +2188,10 @@ ROLL_AND_DECIDE = dict(
             text="Print a success line when `roll` reaches `needed`, and a failure line otherwise.",
             dictated=False,
             hints=[
-                "Start like this: `if roll `",
                 "Line 5 asks the question. Exactly enough passes, so which sign?",
                 "A skill check in one line: `passed = roll >= needed`. In an `if`, the same question goes after `if`.",
+                "Write `if roll >= needed:` in place of `if ___:`. Then a success line and a failure line, "
+                "each with your own words.",
             ],
             checks=[blanks_check("your own words"), bnd_check("exactly enough passes", "roll", "needed", via_rolls=True)],
             pass_line="Bomb Shell: That latch hates me. Less now.",
@@ -2178,9 +2201,9 @@ ROLL_AND_DECIDE = dict(
             text="Put the roll in the line you print.",
             dictated=False,
             hints=[
-                "Start like this: `print(\"Rolled \" + `",
                 "`roll` holds a number. What does a number need before it can be glued to text?",
                 "`\"Mana: \" + str(mana)` glues text and a number. Do the same in both lines.",
+                "Glue the roll into both lines, like this: `print(\"Rolled \" + str(roll) + \": it opens.\")`.",
             ],
             checks=[("the line shows the roll", _rerun_code() + _SHOWS_ROLL)],
         ),
@@ -2228,8 +2251,9 @@ ROLL_AND_DECIDE = dict(
             "more. Then use another `if` (indented inside the `else`) to say whether the new roll passed."
         ),
         hints=[
-            "Start like this: inside the `else`, under the failure line, `roll = `",
             "Then `    if roll >= needed:` with its own success line under it, indented once more, and an `else`.",
+            "Under the failure line, write `roll = random.randint(1, 20)` with four spaces in front. Then `if "
+            "roll >= needed:` with four spaces, and its own lines under it, indented once more.",
         ],
         checks=[
             (
@@ -2678,10 +2702,11 @@ MATCH_TRY = dict(
             text="Add a `case \"option 5\":` above `case _:`, with any line for Mar'tu to say.",
             dictated=True,
             hints=[
-                "Start like this: above `case _:`, type four spaces, then `case `",
                 "Copy the shape of `case \"option 4\":` and the line under it. Change the option and the words.",
                 "Each `case` is indented under `match`, and its line is indented once more:\n```python\nmatch pet:\n"
                 "    case \"owl\":\n        print(\"Hoot.\")\n```",
+                "Above `case _:`, write `case \"option 5\":` with four spaces in front, and one line under it "
+                "for Mar'tu, with eight.",
             ],
             checks=[
                 strexact_check(["option 5"]),
@@ -3032,9 +3057,9 @@ PROJECT_2P1 = dict(
             text="A. Bring in Python's dice: `import random`.",
             dictated=True,
             hints=[
-                "Start like this: under `# 1.`, type `import `",
                 "Python's dice live on a shelf. Which word brings them in?",
                 "`import random` goes once, at the top, before any roll.",
+                "Under `# 1.`, write `import random`.",
             ],
             checks=[
                 (
@@ -3049,9 +3074,9 @@ PROJECT_2P1 = dict(
             text="A. Roll `road_roll` with a d20.",
             dictated=False,
             hints=[
-                "Start like this: `road_roll = random.randint(`",
                 "A d20 has faces 1 to 20. `randint` includes both ends.",
                 "A d12 would be `random.randint(1, 12)`: the lowest face, then the highest.",
+                "Write `road_roll = random.randint(1, 20)` under `# 2.`.",
             ],
             checks=[rnd_check("road_roll is a d20", "road_roll", 20, [13], placeholder=0)],
         ),
@@ -3060,13 +3085,14 @@ PROJECT_2P1 = dict(
             text="B. Finish the table: give every tier its own text in `encounter`, with `elif` and `else`.",
             dictated=False,
             hints=[
-                "Start like this: under the two branches, `elif road_roll `",
                 "Replace each `___` with your own words. Five tiers, so five branches: `if`, three `elif`s, and an "
                 "`else` for the 20. Order rule: " + ORDER_RULE + ".",
                 "The 7 to 15 tier is `elif road_roll <= 15:`. The 1 to 6 were already caught above it, so it only "
                 "gets 7 to 15.",
                 "The chain:\n```python\nif road_roll == 1:\n    encounter = \"...\"\nelif road_roll <= 6:\n"
                 "    encounter = \"...\"\nelif road_roll <= 15:\n```\nand so on, with `else:` last.",
+                "Under the two branches, write `elif road_roll <= 15:` and its `encounter = ` line, then the "
+                "same for 19, then `else:` for the 20.",
             ],
             checks=[blanks_check("your own words for that tier", verb="holds"),
                     ("each tier gets its own encounter", _rerun_code() + _TIERS)],
@@ -3077,9 +3103,9 @@ PROJECT_2P1 = dict(
             text="C. Print `Rolled `, the roll, a colon, and the encounter, all on one line.",
             dictated=False,
             hints=[
-                "Start like this: `print(\"Rolled \" + `",
                 "Three pieces of text glued with `+`. Which piece is a number and needs `str()`?",
                 "`\"Mana: \" + str(mana)` glues text and a number. Add `+ \": \" + encounter` the same way.",
+                "Write `print(\"Rolled \" + str(road_roll) + \": \" + encounter)` under `# 4.`.",
             ],
             checks=[("the line tells the roll and the encounter", _rerun_code() + _TELL)],
             pass_line="Oogrish: Steady, now. On to the Institute.",
@@ -3132,8 +3158,10 @@ PROJECT_2P1 = dict(
             "only when `perception_roll` reaches 12 and it is `not night_time`."
         ),
         hints=[
-            "Start like this: right after the roll, `if road_roll `",
-            "`spotted = perception_roll >= 12 and not night_time`",
+            "Dumb Luck goes right after the first roll: an `if` asks whether `road_roll` is 1, with a new roll "
+            "under it, indented. The perception check is one line with `and` and `not`.",
+            "Write `if road_roll == 1:` with `road_roll = random.randint(1, 20)` under it, indented. Then, at "
+            "the end, `spotted = perception_roll >= 12 and not night_time`.",
         ],
         checks=[
             ("Dumb Luck rerolls a 1 once", _rerun_code() + _DUMB_LUCK),

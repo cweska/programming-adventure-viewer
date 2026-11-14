@@ -106,7 +106,12 @@
     "op:In",
     "call:max",
     "call:min",
-    "call:sum",
+    "call:sum"
+   ]
+  },
+  {
+   "prefix": "u04c",
+   "introduces": [
     "node:Tuple",
     "call:zip"
    ]

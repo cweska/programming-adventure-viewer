@@ -120,9 +120,9 @@
               "id": "less-than",
               "text": "Change the `print` to show whether `dex` is *less than* `needed`.",
               "hints": [
-                "Start like this: `print(dex `",
                 "Look at the sign between `dex` and `needed`. Which way should it face?",
-                "`<` means *less than*. `3 < 5` is True; `5 < 3` is False."
+                "`<` means *less than*. `3 < 5` is True; `5 < 3` is False.",
+                "Change line 3 to `print(dex < needed)`."
               ],
               "checks": [
                 {
@@ -154,6 +154,10 @@
                 {
                   "name": "prints True",
                   "code": [
+                    "import ast as _ast",
+                    "_lone = [_n.lineno for _n in _ast.parse(_source).body if type(_n).__name__ == 'Expr' and type(_n.value).__name__ == 'Compare' and ({getattr(_n.value.left, 'id', '')} | {getattr(_c, 'id', '') for _c in _n.value.comparators}) & {'dex', 'needed'}]",
+                    "assert not _lone, ('Line ' + str(_lone[0]) + ' asks a question, but shows the answer nowhere. '",
+                    "    'Put it inside `print( )`.' if _lone else '')",
                     "_end = lambda _s: ((_s.split() or [''])[-1]).rstrip('.,!?;:)')",
                     "_ends = [_end(_l) for _l in _lines()]",
                     "assert 'True' in _ends, ('Your line prints `False`. `dex` is less than `needed`, so the answer '",
@@ -336,9 +340,9 @@
               "id": "barrier-up",
               "text": "Make `barrier_up` hold `True`, with no quotes, and print it.",
               "hints": [
-                "Start like this: keep `barrier_up = ` on line 4, and change only what comes after it.",
                 "Line 4 still holds the starter's 0. `True` and `False` need no quotes: quotes would make them text. Then a new line prints the box.",
-                "Python's yes is `True` and its no is `False`, each with a capital letter: `door_open = False`."
+                "Python's yes is `True` and its no is `False`, each with a capital letter: `door_open = False`.",
+                "Write `barrier_up = True` on line 4, then `print(barrier_up)` on a new line under it."
               ],
               "checks": [
                 {
@@ -446,8 +450,8 @@
             "title": "Steady hands",
             "text": "Gearshift steadies Bomb Shell's hands: +10 DEX. On a new line, print whether `dex + 10` is more than `needed`.",
             "hints": [
-              "Start like this: `print(dex + 10 `",
-              "Python does the `+` first, then the `>`."
+              "Python does the `+` first, then the `>`.",
+              "Write `print(dex + 10 > needed)` on a new line."
             ],
             "checks": [
               {
@@ -576,6 +580,14 @@
               "print(True)",
               "barrier_up = \"True\"",
               "print(dex > needed)"
+            ],
+            "steps": [
+              [
+                "dex = 6",
+                "needed = 15",
+                "print(dex < needed)",
+                "barrier_up = 0"
+              ]
             ]
           },
           "campaignLink": {
@@ -612,7 +624,7 @@
         {
           "id": "ask-with-double-equals",
           "title": "Asking with ==",
-          "martu": "`=` puts a value in a box: read it as *gets*. `==` asks a question: read it as [[is the same as]].\nSo `clock_is_red = (clock_color == \"red\")` reads: `clock_is_red` gets the answer to *is `clock_color` the same as red?*\nPython works out the question in brackets first. Then the answer goes in the box.",
+          "martu": "`=` puts a value in a box: read it as *gets*. `==` asks a question: read it as [[is the same as]].\nSo `clock_is_red = (clock_color == \"red\")` reads: `clock_is_red` gets the answer to *is* `clock_color` *the same as red?*\nPython works out the question in brackets first. Then the answer goes in the box.",
           "example": {
             "code": [
               "door = \"open\"",
@@ -657,9 +669,9 @@
               "id": "try-red",
               "text": "Change `clock_color` to `\"red\"` and run. Then change it to `\"Red\"`, with a capital R, and run again.",
               "hints": [
-                "Start like this: `clock_color = ` on line 1, then the new color in quotes.",
                 "Line 1 holds the color. Change only the text inside its quotes.",
-                "Python compares text letter for letter: `\"owl\" == \"Owl\"` is False."
+                "Python compares text letter for letter: `\"owl\" == \"Owl\"` is False.",
+                "Write `clock_color = \"red\"` on line 1 and run. Then `clock_color = \"Red\"`, and run again."
               ],
               "checks": [
                 {
@@ -698,9 +710,9 @@
               "id": "not-red",
               "text": "Add a line that prints whether `clock_color` is *not* `\"red\"`, using `!=`.",
               "hints": [
-                "Start like this: `print(clock_color `",
                 "Look at line 2. Your new line asks the opposite question, with `!=`.",
-                "`!=` means *is not the same as*. `\"owl\" != \"cat\"` is True."
+                "`!=` means *is not the same as*. `\"owl\" != \"cat\"` is True.",
+                "Write `print(clock_color != \"red\")` on a new line."
               ],
               "checks": [
                 {
@@ -799,9 +811,9 @@
               "id": "is-lucky",
               "text": "Make `is_lucky` hold whether `hero` is the same as `\"Lucky\"`.",
               "hints": [
-                "Start like this: `is_lucky = `",
                 "This line has a *gets* and an *is the same as*. Which goes first?",
-                "Ask a question, keep the answer: `same = (a == b)`. The `=` gets; the `==` asks."
+                "Ask a question, keep the answer: `same = (a == b)`. The `=` gets; the `==` asks.",
+                "Write `is_lucky = (hero == \"Lucky\")`."
               ],
               "checks": [
                 {
@@ -1033,8 +1045,8 @@
             "title": "What's in it for me?",
             "text": "Mar'tu's spells glow violet. Lucky's glow silver. Make `martu_color` and `lucky_color` hold those colors. Then make `same_color` say whether they are the same, and print it.",
             "hints": [
-              "Start like this: `same_color = `",
-              "Two boxes, one `==` between them, and the answer goes in `same_color`."
+              "Two boxes, one `==` between them, and the answer goes in `same_color`.",
+              "Write `same_color = (martu_color == lucky_color)`, under the two color boxes."
             ],
             "checks": [
               {
@@ -1258,6 +1270,24 @@
               "is_lucky = hero = \"Lucky\"",
               "is_lucky = \"Lucky\"",
               "print(clock_color != \"Red\")"
+            ],
+            "steps": [
+              [
+                "clock_color = \"Red\"",
+                "clock_is_red = (clock_color == \"red\")",
+                "print(clock_is_red)",
+                "",
+                "hero = \"Bomb Shell\"",
+                ""
+              ],
+              [
+                "clock_color = \"Red\"",
+                "clock_is_red = (clock_color == \"red\")",
+                "print(clock_is_red)",
+                "print(clock_color != \"red\")",
+                "hero = \"Bomb Shell\"",
+                ""
+              ]
             ]
           },
           "campaignLink": {
@@ -1343,9 +1373,9 @@
               "id": "passed",
               "text": "Make `passed` say whether `roll` reaches `needed`. Exactly enough counts.",
               "hints": [
-                "Start like this: `passed = roll `",
                 "Should a 15 pass when 15 is needed? Pick the sign that says yes.",
-                "`>` leaves out the boundary; `>=` includes it. `9 > 9` is False, but `9 >= 9` is True."
+                "`>` leaves out the boundary; `>=` includes it. `9 > 9` is False, but `9 >= 9` is True.",
+                "Write `passed = roll >= needed` under the `# passed:` note."
               ],
               "checks": [
                 {
@@ -1384,7 +1414,7 @@
                     "    _msg = 'Line ' + str(_cmp_on[0]) + ' asks whether `passed` is the same as something, with `==`. That does not change the box. To put a value in, use one `=`.'",
                     "if not _msg and _name in _g and type(_have).__name__ != 'bool':",
                     "    if _chain:",
-                    "        _msg = 'Line ' + str(_chain[0]) + ' has two `=` signs, so it puts the same value in two boxes. This box should hold a yes/no answer, `True` or `False`: ask the question with `==`.'",
+                    "        _msg = 'Line ' + str(_chain[0]) + ' has two `=` signs, so it puts the same value in two boxes. This box should hold a yes/no answer, `True` or `False`: ask the question with `>=`.'",
                     "    if not _msg and type(_have).__name__ == 'str':",
                     "        _msg = '`passed` holds text, because of the quotes. It should hold a yes/no answer, `True` or `False`.'",
                     "    if not _msg and type(_have).__name__ in ('int', 'float'):",
@@ -1497,9 +1527,9 @@
               "id": "can-cast",
               "text": "Make `can_cast` say whether `mana` covers `cost`. Exactly enough mana still casts.",
               "hints": [
-                "Start like this: `can_cast = mana `",
                 "Mana 6, cost 6: should the spell cast? Then the sign must include the boundary.",
-                "*At least* is `>=`: `coins >= price` is True when the coins are exactly enough."
+                "*At least* is `>=`: `coins >= price` is True when the coins are exactly enough.",
+                "Write `can_cast = mana >= cost` under the `# can_cast:` note."
               ],
               "checks": [
                 {
@@ -1538,7 +1568,7 @@
                     "    _msg = 'Line ' + str(_cmp_on[0]) + ' asks whether `can_cast` is the same as something, with `==`. That does not change the box. To put a value in, use one `=`.'",
                     "if not _msg and _name in _g and type(_have).__name__ != 'bool':",
                     "    if _chain:",
-                    "        _msg = 'Line ' + str(_chain[0]) + ' has two `=` signs, so it puts the same value in two boxes. This box should hold a yes/no answer, `True` or `False`: ask the question with `==`.'",
+                    "        _msg = 'Line ' + str(_chain[0]) + ' has two `=` signs, so it puts the same value in two boxes. This box should hold a yes/no answer, `True` or `False`: ask the question with `>=`.'",
                     "    if not _msg and type(_have).__name__ == 'str':",
                     "        _msg = '`can_cast` holds text, because of the quotes. It should hold a yes/no answer, `True` or `False`.'",
                     "    if not _msg and type(_have).__name__ in ('int', 'float'):",
@@ -1663,8 +1693,8 @@
             "title": "What's in it for me?",
             "text": "Lucky likes a close call. Make `close_call` True only when the roll is exactly `needed`. Then print both `passed` and `close_call`.",
             "hints": [
-              "Start like this: `close_call = `",
-              "Exactly the same number? That is `==`. Then two `print` lines."
+              "Exactly the same number? That is `==`. Then two `print` lines.",
+              "Write `close_call = roll == needed`."
             ],
             "checks": [
               {
@@ -1966,6 +1996,18 @@
               "passed = roll > needed",
               "can_cast = mana < cost",
               "passed = True"
+            ],
+            "steps": [
+              [
+                "roll = 15",
+                "needed = 15",
+                "# passed: does roll reach needed?",
+                "passed = roll >= needed",
+                "mana = 6",
+                "cost = 6",
+                "# can_cast: does mana cover cost?",
+                ""
+              ]
             ]
           },
           "campaignLink": {
@@ -2054,9 +2096,9 @@
               "id": "any-capitals",
               "text": "Make `said_yes` True for any capitals: use `answer.lower()`.",
               "hints": [
-                "Start like this: `said_yes = answer.lower() `",
                 "Which part changes the capitals? Put it on the left of the `==`.",
-                "`\"HI\".lower()` gives `\"hi\"`. Then `\"hi\" == \"hi\"` is True."
+                "`\"HI\".lower()` gives `\"hi\"`. Then `\"hi\" == \"hi\"` is True.",
+                "Write `said_yes = answer.lower() == \"yes\"`."
               ],
               "checks": [
                 {
@@ -2492,8 +2534,8 @@
             "title": "What's in it for me?",
             "text": "Lucky asks for glug two ways. Make `first = \"Glug\"` and `second = \"GLUG\"`. Then make `same` say whether they match, whatever their capitals, and print it.",
             "hints": [
-              "Start like this: `same = `",
-              "Both sides need `.lower()`, so both are small letters."
+              "Both sides need `.lower()`, so both are small letters.",
+              "Write `same = first.lower() == second.lower()`."
             ],
             "checks": [
               {
@@ -2872,7 +2914,7 @@
                     "    _msg = 'Line ' + str(_cmp_on[0]) + ' asks whether `passed` is the same as something, with `==`. That does not change the box. To put a value in, use one `=`.'",
                     "if not _msg and _name in _g and type(_have).__name__ != 'bool':",
                     "    if _chain:",
-                    "        _msg = 'Line ' + str(_chain[0]) + ' has two `=` signs, so it puts the same value in two boxes. This box should hold a yes/no answer, `True` or `False`: ask the question with `==`.'",
+                    "        _msg = 'Line ' + str(_chain[0]) + ' has two `=` signs, so it puts the same value in two boxes. This box should hold a yes/no answer, `True` or `False`: ask the question with `>=`.'",
                     "    if not _msg and type(_have).__name__ == 'str':",
                     "        _msg = '`passed` holds text, because of the quotes. It should hold a yes/no answer, `True` or `False`.'",
                     "    if not _msg and type(_have).__name__ in ('int', 'float'):",
@@ -3339,7 +3381,7 @@
                     "    _msg = 'Line ' + str(_cmp_on[0]) + ' asks whether `can_cast` is the same as something, with `==`. That does not change the box. To put a value in, use one `=`.'",
                     "if not _msg and _name in _g and type(_have).__name__ != 'bool':",
                     "    if _chain:",
-                    "        _msg = 'Line ' + str(_chain[0]) + ' has two `=` signs, so it puts the same value in two boxes. This box should hold a yes/no answer, `True` or `False`: ask the question with `==`.'",
+                    "        _msg = 'Line ' + str(_chain[0]) + ' has two `=` signs, so it puts the same value in two boxes. This box should hold a yes/no answer, `True` or `False`: ask the question with `>=`.'",
                     "    if not _msg and type(_have).__name__ == 'str':",
                     "        _msg = '`can_cast` holds text, because of the quotes. It should hold a yes/no answer, `True` or `False`.'",
                     "    if not _msg and type(_have).__name__ in ('int', 'float'):",
@@ -3573,9 +3615,9 @@
               "id": "second-indented-line",
               "text": "Add a second indented line under the `if` that prints `Shield up.`",
               "hints": [
-                "Start like this: on a new line under line 3, type four spaces, then `print(`",
                 "Look at line 3. It starts with four spaces, so it belongs to the `if`. Your new line needs the same.",
-                "Every indented line belongs to the `if`:\n```python\nif rain > 0:\n    print(\"Take the umbrella.\")\n    print(\"Wear boots.\")\n```\nBoth lines run when it rains. Neither runs when it doesn't."
+                "Every indented line belongs to the `if`:\n```python\nif rain > 0:\n    print(\"Take the umbrella.\")\n    print(\"Wear boots.\")\n```\nBoth lines run when it rains. Neither runs when it doesn't.",
+                "Write `print(\"Shield up.\")` on a new line under line 3, with four spaces in front."
               ],
               "checks": [
                 {
@@ -3787,8 +3829,8 @@
             "title": "What's in it for me?",
             "text": "Lucky wants numbers. Change the warning so it shows the hours left too, like `Get inside! 2 hours left.` Glue `hours_left` in with `str()`.",
             "hints": [
-              "Start like this: `print(\"Get inside! \" + `",
-              "A number needs `str()` before it can be glued to text."
+              "A number needs `str()` before it can be glued to text.",
+              "Write `print(\"Get inside! \" + str(hours_left) + \" hours left.\")`, indented under the `if`."
             ],
             "checks": [
               {
@@ -4432,10 +4474,10 @@
               "id": "latch-check",
               "text": "Bomb Shell pries the latch. Print a success line when `strength_roll` reaches `strength_needed`, and a failure line otherwise.",
               "hints": [
-                "Start like this: `if strength_roll `",
                 "What question decides which line runs? Fill the `___` after `if` with it. Then replace each `___` in the quotes with your own words.",
                 "`else:` has no question. It runs when the `if` didn't:\n```python\nif coins >= price:\n    print(\"Sold.\")\nelse:\n    print(\"Not enough coins.\")\n```",
-                "Exactly enough passes: a 12 opens a latch that needs 12. That is `>=`, not `>`."
+                "Exactly enough passes: a 12 opens a latch that needs 12. That is `>=`, not `>`.",
+                "Put `strength_roll >= strength_needed` in place of the `___` after `if`, so the line reads `if strength_roll >= strength_needed:`. Then put your own words in each `print`."
               ],
               "checks": [
                 {
@@ -4569,8 +4611,18 @@
                     "if _H == _L:",
                     "    assert _E == _H, ('Use `>=`, so a higher roll passes too. Only a roll of exactly ' + str(_N) + ' gave the success '",
                     "                      'line. ' + _ev_many([_lo, _N, _hi]))",
-                    "    assert False, ('Ask whether `' + _R + '` reaches `' + _N_name + '`, and give the two lines different words. Both '",
-                    "                   'rolls printed the same thing. ' + _ev_many([_lo, _hi]))",
+                    "    # The same words in both branches, or an `if` that never asks with the boxes (`if True:`, `if 14 >= 12:`, a",
+                    "    # lone print): say only what is really wrong.",
+                    "    _same = False",
+                    "    for _n in _ast.walk(_ast.parse(_source)):",
+                    "        if type(_n).__name__ == 'If' and _n.orelse:",
+                    "            _w = [sorted(_c.value for _x in _b for _c in _ast.walk(_x) if type(_c).__name__ == 'Constant'",
+                    "                         and type(_c.value).__name__ == 'str') for _b in (_n.body, _n.orelse)]",
+                    "            _same = _same or bool(_w[0] and _w[0] == _w[1])",
+                    "    assert not _same, ('Give the success line and the failure line different words: both say the same thing. '",
+                    "                       + _ev_many([_lo, _hi]))",
+                    "    assert False, ('Ask whether `' + _R + '` reaches `' + _N_name + '` after `if`, using the boxes, so the answer can '",
+                    "                   'change. Both rolls printed the same line. ' + _ev_many([_lo, _hi]))",
                     "# Exactly one of the two lines prints. A failure line with no indent (no `else:`) prints after every roll.",
                     "assert [_l for _l in _L if _l not in _H], ('Put the failure line under `else:`, indented, so only one line prints. It '",
                     "                                           'printed the failure line as well as the success line. ' + _ev(_hi))",
@@ -4612,8 +4664,8 @@
             "title": "What's in it for me?",
             "text": "Lucky wants to see the dice. Show the roll in both lines, like `Rolled 14. The latch pops open.` Glue it in with `str(strength_roll)`.",
             "hints": [
-              "Start like this: `print(\"Rolled \" + `",
-              "Both the `if` line and the `else` line need the roll."
+              "Both the `if` line and the `else` line need the roll.",
+              "Write `print(\"Rolled \" + str(strength_roll) + \". The latch pops open.\")`, and the same for the failure line."
             ],
             "checks": [
               {
@@ -4745,7 +4797,7 @@
         {
           "id": "clock-colors",
           "title": "Clock colors",
-          "martu": "[[elif]] means else, if. Python checks the branches from the top and takes the **first** true one. Then it skips the rest.\nMy Ley Clock glows red when 2 hours or fewer are left, bright blue up to 12 hours, and calm blue after that. Someone wrote this chain in the wrong order. Which hours get the wrong color?",
+          "martu": "[[elif]] means else, if. Python checks the branches from the top and takes the *first* true one. Then it skips the rest.\nMy Ley Clock glows red when 2 hours or fewer are left, bright blue up to 12 hours, and calm blue after that. Someone wrote this chain in the wrong order. Which hours get the wrong color?",
           "anotherWay": [
             {
               "angle": "everyday",
@@ -4782,9 +4834,9 @@
               "id": "reorder-the-chain",
               "text": "Put the branches in an order where 2 hours gives `\"red\"`.",
               "hints": [
-                "Start like this: `if hours_left `",
                 "Which branch does hour 2 reach first? Every hour that is 2 or less is also 12 or less.",
-                "First true wins, so the order rule is: first, the test that lets the fewest numbers through.\n```python\nif age <= 5:\n    ticket = \"free\"\nelif age <= 15:\n    ticket = \"child\"\nelse:\n    ticket = \"adult\"\n```\n`age <= 5` lets 6 ages through (0 to 5), `age <= 15` lets 16 through, so `<= 5` goes first."
+                "First true wins, so the order rule is: first, the test that lets the fewest numbers through.\n```python\nif age <= 5:\n    ticket = \"free\"\nelif age <= 15:\n    ticket = \"child\"\nelse:\n    ticket = \"adult\"\n```\n`age <= 5` lets 6 ages through (0 to 5), `age <= 15` lets 16 through, so `<= 5` goes first.",
+                "Start the chain with `if hours_left <= 2:` and the `\"red\"` line, then `elif hours_left <= 12:` and `\"bright blue\"`, then `else:` and `\"calm blue\"`."
               ],
               "checks": [
                 {
@@ -4959,8 +5011,8 @@
             "title": "What's in it for me?",
             "text": "Lucky wants a proper reading. Print `Clock: red (2h)`, built from `clock_color` and `hours_left`.",
             "hints": [
-              "Start like this: `print(\"Clock: \" + `",
-              "`clock_color` is already text. `hours_left` is a number, so it needs `str()`."
+              "`clock_color` is already text. `hours_left` is a number, so it needs `str()`.",
+              "Write `print(\"Clock: \" + clock_color + \" (\" + str(hours_left) + \"h)\")`."
             ],
             "checks": [
               {
@@ -5156,10 +5208,10 @@
               "id": "fill-the-options",
               "text": "Replace each `___` with `\"option 1\"`, `\"option 2\"`, `\"option 3\"` or `\"option 4\"` (keep the quotes), in order.",
               "hints": [
-                "Start like this: `if choice == `",
                 "Which part must keep its quotes? The option is text, so it is `\"option 1\"`, quotes and all.",
                 "Quotes mean these exact letters. No quotes means look inside the box with this label. `choice == \"option 2\"` asks: is the text in `choice` the same as these exact letters?",
-                "The first two branches (`...` is Mar'tu's line, already in the starter):\n```python\nif choice == \"option 1\":\n    mar_tu_says(...)\nelif choice == \"option 2\":\n```"
+                "The first two branches (`...` is Mar'tu's line, already in the starter):\n```python\nif choice == \"option 1\":\n    mar_tu_says(...)\nelif choice == \"option 2\":\n```",
+                "Fill the first one: `if choice == \"option 1\":`. Then `\"option 2\"`, `\"option 3\"` and `\"option 4\"` in the `elif` lines, in order."
               ],
               "checks": [
                 {
@@ -5287,9 +5339,9 @@
               "id": "light-each-option",
               "text": "Add `light_up_option()` under each `mar_tu_says` line, so the clicked option lights up.",
               "hints": [
-                "Start like this: under the first `mar_tu_says` line, type four spaces, then `light_up_`",
                 "Four branches, so four `light_up_option()` lines, each indented under its own `mar_tu_says` line.",
-                "Indented lines belong to their branch. A line with no indent runs for every choice, even one that matched nothing."
+                "Indented lines belong to their branch. A line with no indent runs for every choice, even one that matched nothing.",
+                "Under each `mar_tu_says` line, write `light_up_option()` with the same four spaces in front."
               ],
               "checks": [
                 {
@@ -5412,8 +5464,8 @@
             "title": "What's in it for me?",
             "text": "Lucky clicks things that aren't there. Add an `else:` at the end that makes Mar'tu say `Hm.` for any other choice. No option to light: nothing was clicked.",
             "hints": [
-              "Start like this: `else:` at the end of the chain.",
-              "`else:` has no question and no option. It is always last."
+              "`else:` has no question and no option. It is always last.",
+              "At the end of the chain, write `else:`, then `mar_tu_says(\"Hm.\")` under it, indented."
             ],
             "checks": [
               {
@@ -5541,6 +5593,21 @@
               "elif choice == option 2:",
               "elif choice = \"option 3\":",
               "light_up_option()"
+            ],
+            "steps": [
+              [
+                "choice = \"option 3\"  # the option the player clicked",
+                "# 1. Replace each ___ with \"option 1\", \"option 2\", \"option 3\" or \"option 4\" (keep the quotes), in order.",
+                "# 2. Add light_up_option() under each mar_tu_says line.",
+                "if choice == \"option 1\":",
+                "    mar_tu_says(\"Then we leave at dawn.\")",
+                "elif choice == \"option 2\":",
+                "    mar_tu_says(\"The decay? The clock is speeding up.\")",
+                "elif choice == \"option 3\":",
+                "    mar_tu_says(\"It turned red once. Never again, I hope.\")",
+                "elif choice == \"option 4\":",
+                "    mar_tu_says(\"Rest, yes. One hour.\")"
+              ]
             ]
           },
           "campaignLink": {
@@ -5613,9 +5680,9 @@
               "id": "both-needed",
               "text": "Make `can_cast` say whether `mana >= cost and affinity >= required`.",
               "hints": [
-                "Start like this: `can_cast = mana `",
                 "Two questions: enough mana? enough affinity? Oogrish needs both.",
-                "`and` is True only when both sides are True:\n```python\nhas_key = True\ndoor_unlocked = False\nprint(has_key and door_unlocked)\n```\nThat prints False: one side is False."
+                "`and` is True only when both sides are True:\n```python\nhas_key = True\ndoor_unlocked = False\nprint(has_key and door_unlocked)\n```\nThat prints False: one side is False.",
+                "Write `can_cast = mana >= cost and affinity >= required`."
               ],
               "checks": [
                 {
@@ -5752,10 +5819,10 @@
               "id": "either-roll",
               "text": "Lucky may roll twice. Make `lucky_passes` say whether at least one of his rolls reaches `needed`.",
               "hints": [
-                "Start like this: `lucky_passes = first_roll `",
                 "Lucky needs just one good roll. Ask about `first_roll` and about `second_roll`. Which word means one is enough?",
                 "`or` is True when at least one side is True:\n```python\nprint(False or True)\n```\nThat prints True.",
-                "Each side is a whole question, like `can_cast` had: `first_roll >= needed` on one side, the same for `second_roll` on the other."
+                "Each side is a whole question, like `can_cast` had: `first_roll >= needed` on one side, the same for `second_roll` on the other.",
+                "Write `lucky_passes = first_roll >= needed or second_roll >= needed`."
               ],
               "checks": [
                 {
@@ -5891,9 +5958,9 @@
               "id": "not-up",
               "text": "Make `in_danger` say whether the barrier is down. Use `not`.",
               "hints": [
-                "Start like this: `in_danger = `",
                 "Which box says whether the barrier is up? You want the opposite of it.",
-                "`not` flips a True or False:\n```python\nlamp_on = True\nprint(not lamp_on)\n```\nThat prints False."
+                "`not` flips a True or False:\n```python\nlamp_on = True\nprint(not lamp_on)\n```\nThat prints False.",
+                "Write `in_danger = not barrier_up`."
               ],
               "checks": [
                 {
@@ -6103,8 +6170,8 @@
             "title": "What's in it for me?",
             "text": "Lucky's second roll is his Dumb Luck: it only counts if he hasn't used it today. Make a box `dumb_luck = True`. Then change `lucky_passes` so the second roll counts only when `dumb_luck` is True.",
             "hints": [
-              "Start like this: `lucky_passes = first_roll `",
-              "The first roll always counts. The second needs two things at once: `dumb_luck` and a high roll."
+              "The first roll always counts. The second needs two things at once: `dumb_luck` and a high roll.",
+              "Write `dumb_luck = True`, then `lucky_passes = first_roll >= needed or (dumb_luck and second_roll >= needed)`."
             ],
             "checks": [
               {
@@ -6288,6 +6355,46 @@
             "distractors": [
               "can_cast = mana >= cost or affinity >= required",
               "in_danger = barrier_up"
+            ],
+            "steps": [
+              [
+                "# Oogrish casts Lantern Ward. It costs 9 mana and needs affinity 9.",
+                "mana = 12",
+                "cost = 9",
+                "affinity = 9",
+                "required = 9",
+                "can_cast = mana >= cost and affinity >= required",
+                "",
+                "# Lucky's skill check. He may roll twice.",
+                "needed = 15",
+                "first_roll = 11",
+                "second_roll = 17",
+                "lucky_passes = False",
+                "",
+                "barrier_up = True",
+                "",
+                "print(can_cast)",
+                "print(lucky_passes)"
+              ],
+              [
+                "# Oogrish casts Lantern Ward. It costs 9 mana and needs affinity 9.",
+                "mana = 12",
+                "cost = 9",
+                "affinity = 9",
+                "required = 9",
+                "can_cast = mana >= cost and affinity >= required",
+                "",
+                "# Lucky's skill check. He may roll twice.",
+                "needed = 15",
+                "first_roll = 11",
+                "second_roll = 17",
+                "lucky_passes = first_roll >= needed or second_roll >= needed",
+                "",
+                "barrier_up = True",
+                "",
+                "print(can_cast)",
+                "print(lucky_passes)"
+              ]
             ]
           },
           "campaignLink": {
@@ -6324,7 +6431,7 @@
         {
           "id": "roll-a-die",
           "title": "Roll a die",
-          "martu": "The world is not fair, so we roll. [[import]] `random` lends you Python's dice.\n`random.[[randint]](1, 6)` gives a whole number from 1 to 6, **both ends included**. So 1 can come up, and 6 can come up. 0 and 7 never do.\nRun the starter a few times. Then fix the two dice.",
+          "martu": "The world is not fair, so we roll. [[import]] `random` lends you Python's dice.\n`random.randint(1, 6)` ([[randint]]) gives a whole number from 1 to 6, *both ends included*. So 1 can come up, and 6 can come up. 0 and 7 never do.\nRun the starter a few times. Then fix the two dice.",
           "example": {
             "code": [
               "import random",
@@ -6372,9 +6479,9 @@
               "id": "staff-d6",
               "text": "Make `staff_roll` a d6 roll: `random.randint(1, 6)`.",
               "hints": [
-                "Start like this: `staff_roll = random.randint(`",
                 "Line 2 rolls `random.randint(1, 1)`. A die with one face always lands on 1. Which number is the top face?",
-                "`random.randint(1, 4)` gives 1, 2, 3 or 4. The first number is the lowest face, the second is the highest."
+                "`random.randint(1, 4)` gives 1, 2, 3 or 4. The first number is the lowest face, the second is the highest.",
+                "Change line 2 to `staff_roll = random.randint(1, 6)`."
               ],
               "checks": [
                 {
@@ -6488,9 +6595,9 @@
               "id": "sword-d8",
               "text": "Make `sword_roll` a d8 roll.",
               "hints": [
-                "Start like this: `sword_roll = random.randint(`",
                 "How many faces does a d8 have? The lowest face is 1.",
-                "A d10 would be `random.randint(1, 10)`: lowest face, then highest face."
+                "A d10 would be `random.randint(1, 10)`: lowest face, then highest face.",
+                "Write `sword_roll = random.randint(1, 8)` on line 3."
               ],
               "checks": [
                 {
@@ -6614,8 +6721,8 @@
             "title": "What's in it for me?",
             "text": "Lucky swings both. Print the total of the two rolls, built from the boxes.",
             "hints": [
-              "Start like this: `print(staff_roll `",
-              "Both boxes hold numbers, so `+` adds them."
+              "Both boxes hold numbers, so `+` adds them.",
+              "Write `print(staff_roll + sword_roll)` on a new line at the end."
             ],
             "checks": [
               {
@@ -6724,6 +6831,15 @@
             "distractors": [
               "staff_roll = random.randint(0, 6)",
               "sword_roll = random.randint(1, 7)"
+            ],
+            "steps": [
+              [
+                "import random",
+                "staff_roll = random.randint(1, 6)  # the Staff of Wisdom is a d6",
+                "sword_roll = 0  # the longsword is a d8",
+                "print(staff_roll)",
+                "print(sword_roll)"
+              ]
             ]
           },
           "campaignLink": {
@@ -6792,9 +6908,9 @@
               "id": "roll-a-d20",
               "text": "Roll a d20 into `roll`.",
               "hints": [
-                "Start like this: `roll = random.randint(`",
                 "Look at line 4. A d20 has faces 1 to 20, and `randint` includes both ends.",
-                "`random.randint(1, 4)` rolls a d4. Lowest face first, then the highest."
+                "`random.randint(1, 4)` rolls a d4. Lowest face first, then the highest.",
+                "Write `roll = random.randint(1, 20)` in place of `roll = ___`."
               ],
               "checks": [
                 {
@@ -6908,9 +7024,9 @@
               "id": "success-or-failure",
               "text": "Print a success line when `roll` reaches `needed`, and a failure line otherwise.",
               "hints": [
-                "Start like this: `if roll `",
                 "Line 5 asks the question. Exactly enough passes, so which sign?",
-                "A skill check in one line: `passed = roll >= needed`. In an `if`, the same question goes after `if`."
+                "A skill check in one line: `passed = roll >= needed`. In an `if`, the same question goes after `if`.",
+                "Write `if roll >= needed:` in place of `if ___:`. Then a success line and a failure line, each with your own words."
               ],
               "checks": [
                 {
@@ -7044,8 +7160,18 @@
                     "if _H == _L:",
                     "    assert _E == _H, ('Use `>=`, so a higher roll passes too. Only a roll of exactly ' + str(_N) + ' gave the success '",
                     "                      'line. ' + _ev_many([_lo, _N, _hi]))",
-                    "    assert False, ('Ask whether `' + _R + '` reaches `' + _N_name + '`, and give the two lines different words. Both '",
-                    "                   'rolls printed the same thing. ' + _ev_many([_lo, _hi]))",
+                    "    # The same words in both branches, or an `if` that never asks with the boxes (`if True:`, `if 14 >= 12:`, a",
+                    "    # lone print): say only what is really wrong.",
+                    "    _same = False",
+                    "    for _n in _ast.walk(_ast.parse(_source)):",
+                    "        if type(_n).__name__ == 'If' and _n.orelse:",
+                    "            _w = [sorted(_c.value for _x in _b for _c in _ast.walk(_x) if type(_c).__name__ == 'Constant'",
+                    "                         and type(_c.value).__name__ == 'str') for _b in (_n.body, _n.orelse)]",
+                    "            _same = _same or bool(_w[0] and _w[0] == _w[1])",
+                    "    assert not _same, ('Give the success line and the failure line different words: both say the same thing. '",
+                    "                       + _ev_many([_lo, _hi]))",
+                    "    assert False, ('Ask whether `' + _R + '` reaches `' + _N_name + '` after `if`, using the boxes, so the answer can '",
+                    "                   'change. Both rolls printed the same line. ' + _ev_many([_lo, _hi]))",
                     "# Exactly one of the two lines prints. A failure line with no indent (no `else:`) prints after every roll.",
                     "assert [_l for _l in _L if _l not in _H], ('Put the failure line under `else:`, indented, so only one line prints. It '",
                     "                                           'printed the failure line as well as the success line. ' + _ev(_hi))",
@@ -7077,9 +7203,9 @@
               "id": "show-the-roll",
               "text": "Put the roll in the line you print.",
               "hints": [
-                "Start like this: `print(\"Rolled \" + `",
                 "`roll` holds a number. What does a number need before it can be glued to text?",
-                "`\"Mana: \" + str(mana)` glues text and a number. Do the same in both lines."
+                "`\"Mana: \" + str(mana)` glues text and a number. Do the same in both lines.",
+                "Glue the roll into both lines, like this: `print(\"Rolled \" + str(roll) + \": it opens.\")`."
               ],
               "checks": [
                 {
@@ -7196,8 +7322,8 @@
             "title": "Dumb Luck",
             "text": "Once a day, Lucky gets a second chance. Inside the `else`, after the failure line, roll `roll` once more. Then use another `if` (indented inside the `else`) to say whether the new roll passed.",
             "hints": [
-              "Start like this: inside the `else`, under the failure line, `roll = `",
-              "Then `    if roll >= needed:` with its own success line under it, indented once more, and an `else`."
+              "Then `    if roll >= needed:` with its own success line under it, indented once more, and an `else`.",
+              "Under the failure line, write `roll = random.randint(1, 20)` with four spaces in front. Then `if roll >= needed:` with four spaces, and its own lines under it, indented once more."
             ],
             "checks": [
               {
@@ -7323,6 +7449,28 @@
               "roll = random.randint(1, 19)",
               "if roll > needed:",
               "    print(\"Rolled \" + roll + \": it holds.\")"
+            ],
+            "steps": [
+              [
+                "import random",
+                "action = \"pry the trap door open\"",
+                "needed = 12",
+                "roll = random.randint(1, 20)",
+                "if roll > needed:",
+                "    print(\"___\")",
+                "else:",
+                "    print(\"___\")"
+              ],
+              [
+                "import random",
+                "action = \"pry the trap door open\"",
+                "needed = 12",
+                "roll = random.randint(1, 20)",
+                "if roll >= needed:",
+                "    print(\"It opens.\")",
+                "else:",
+                "    print(\"It holds.\")"
+              ]
             ]
           },
           "campaignLink": {
@@ -8091,9 +8239,9 @@
               "id": "add-option-5",
               "text": "Add a `case \"option 5\":` above `case _:`, with any line for Mar'tu to say.",
               "hints": [
-                "Start like this: above `case _:`, type four spaces, then `case `",
                 "Copy the shape of `case \"option 4\":` and the line under it. Change the option and the words.",
-                "Each `case` is indented under `match`, and its line is indented once more:\n```python\nmatch pet:\n    case \"owl\":\n        print(\"Hoot.\")\n```"
+                "Each `case` is indented under `match`, and its line is indented once more:\n```python\nmatch pet:\n    case \"owl\":\n        print(\"Hoot.\")\n```",
+                "Above `case _:`, write `case \"option 5\":` with four spaces in front, and one line under it for Mar'tu, with eight."
               ],
               "checks": [
                 {
@@ -8499,9 +8647,9 @@
           "id": "bring-in-the-dice",
           "text": "A. Bring in Python's dice: `import random`.",
           "hints": [
-            "Start like this: under `# 1.`, type `import `",
             "Python's dice live on a shelf. Which word brings them in?",
-            "`import random` goes once, at the top, before any roll."
+            "`import random` goes once, at the top, before any roll.",
+            "Under `# 1.`, write `import random`."
           ],
           "checks": [
             {
@@ -8515,9 +8663,9 @@
           "id": "roll-the-road",
           "text": "A. Roll `road_roll` with a d20.",
           "hints": [
-            "Start like this: `road_roll = random.randint(`",
             "A d20 has faces 1 to 20. `randint` includes both ends.",
-            "A d12 would be `random.randint(1, 12)`: the lowest face, then the highest."
+            "A d12 would be `random.randint(1, 12)`: the lowest face, then the highest.",
+            "Write `road_roll = random.randint(1, 20)` under `# 2.`."
           ],
           "checks": [
             {
@@ -8631,10 +8779,10 @@
           "id": "encounter-table",
           "text": "B. Finish the table: give every tier its own text in `encounter`, with `elif` and `else`.",
           "hints": [
-            "Start like this: under the two branches, `elif road_roll `",
             "Replace each `___` with your own words. Five tiers, so five branches: `if`, three `elif`s, and an `else` for the 20. Order rule: first, the test that lets the fewest numbers through.",
             "The 7 to 15 tier is `elif road_roll <= 15:`. The 1 to 6 were already caught above it, so it only gets 7 to 15.",
-            "The chain:\n```python\nif road_roll == 1:\n    encounter = \"...\"\nelif road_roll <= 6:\n    encounter = \"...\"\nelif road_roll <= 15:\n```\nand so on, with `else:` last."
+            "The chain:\n```python\nif road_roll == 1:\n    encounter = \"...\"\nelif road_roll <= 6:\n    encounter = \"...\"\nelif road_roll <= 15:\n```\nand so on, with `else:` last.",
+            "Under the two branches, write `elif road_roll <= 15:` and its `encounter = ` line, then the same for 19, then `else:` for the 20."
           ],
           "checks": [
             {
@@ -8763,9 +8911,9 @@
           "id": "tell-it",
           "text": "C. Print `Rolled `, the roll, a colon, and the encounter, all on one line.",
           "hints": [
-            "Start like this: `print(\"Rolled \" + `",
             "Three pieces of text glued with `+`. Which piece is a number and needs `str()`?",
-            "`\"Mana: \" + str(mana)` glues text and a number. Add `+ \": \" + encounter` the same way."
+            "`\"Mana: \" + str(mana)` glues text and a number. Add `+ \": \" + encounter` the same way.",
+            "Write `print(\"Rolled \" + str(road_roll) + \": \" + encounter)` under `# 4.`."
           ],
           "checks": [
             {
@@ -8903,8 +9051,8 @@
         "title": "Lucky's side quest",
         "text": "Two things Lucky wants.\n1. Dumb Luck: right after the first roll, if `road_roll` is 1, roll it once more. Only once.\n2. A perception check: make `night_time = True` and `perception_roll = 14`. Then make `spotted` True only when `perception_roll` reaches 12 and it is `not night_time`.",
         "hints": [
-          "Start like this: right after the roll, `if road_roll `",
-          "`spotted = perception_roll >= 12 and not night_time`"
+          "Dumb Luck goes right after the first roll: an `if` asks whether `road_roll` is 1, with a new roll under it, indented. The perception check is one line with `and` and `not`.",
+          "Write `if road_roll == 1:` with `road_roll = random.randint(1, 20)` under it, indented. Then, at the end, `spotted = perception_roll >= 12 and not night_time`."
         ],
         "checks": [
           {
@@ -9191,6 +9339,77 @@
         "distractors": [
           "elif road_roll < 6:",
           "road_roll = random.randint(1, 19)"
+        ],
+        "steps": [
+          [
+            "# A. Roll",
+            "# 1. Bring in Python's dice.",
+            "# 2. Roll road_roll with a d20.",
+            "import random",
+            "road_roll = 0",
+            "",
+            "# B. Table: give each tier its own text in encounter. Replace each ___, then add the other tiers.",
+            "# 3.  1        Lucky fires the Telegun (and lands in a hedge)",
+            "#     2 to 6   a ley-line hums under the road",
+            "#     7 to 15  a quiet road",
+            "#     16 to 19 a brass-cart peddler",
+            "#     20       a starlode vein for Gearshift",
+            "if road_roll == 1:",
+            "    encounter = \"___\"",
+            "elif road_roll <= 6:",
+            "    encounter = \"___\"",
+            "",
+            "# C. Tell it",
+            "# 4. Print \"Rolled \" + str(road_roll) + \": \" + encounter"
+          ],
+          [
+            "# A. Roll",
+            "# 1. Bring in Python's dice.",
+            "# 2. Roll road_roll with a d20.",
+            "import random",
+            "road_roll = random.randint(1, 20)",
+            "",
+            "# B. Table: give each tier its own text in encounter. Replace each ___, then add the other tiers.",
+            "# 3.  1        Lucky fires the Telegun (and lands in a hedge)",
+            "#     2 to 6   a ley-line hums under the road",
+            "#     7 to 15  a quiet road",
+            "#     16 to 19 a brass-cart peddler",
+            "#     20       a starlode vein for Gearshift",
+            "if road_roll == 1:",
+            "    encounter = \"___\"",
+            "elif road_roll <= 6:",
+            "    encounter = \"___\"",
+            "",
+            "# C. Tell it",
+            "# 4. Print \"Rolled \" + str(road_roll) + \": \" + encounter"
+          ],
+          [
+            "# A. Roll",
+            "# 1. Bring in Python's dice.",
+            "# 2. Roll road_roll with a d20.",
+            "import random",
+            "road_roll = random.randint(1, 20)",
+            "",
+            "# B. Table: give each tier its own text in encounter. Replace each ___, then add the other tiers.",
+            "# 3.  1        Lucky fires the Telegun (and lands in a hedge)",
+            "#     2 to 6   a ley-line hums under the road",
+            "#     7 to 15  a quiet road",
+            "#     16 to 19 a brass-cart peddler",
+            "#     20       a starlode vein for Gearshift",
+            "if road_roll == 1:",
+            "    encounter = \"Lucky fires the Telegun and lands in a hedge.\"",
+            "elif road_roll <= 6:",
+            "    encounter = \"A ley-line hums under the road.\"",
+            "elif road_roll <= 15:",
+            "    encounter = \"A quiet road. Too quiet, yes?\"",
+            "elif road_roll <= 19:",
+            "    encounter = \"A brass-cart peddler waves you down.\"",
+            "else:",
+            "    encounter = \"A starlode vein! Gearshift's visor glows.\"",
+            "",
+            "# C. Tell it",
+            "# 4. Print \"Rolled \" + str(road_roll) + \": \" + encounter"
+          ]
         ]
       },
       "campaignLink": {
@@ -9268,9 +9487,9 @@
           "id": "rations-on-foot",
           "text": "A. Replace `foot_cost = 0` with an `if`/`elif`/`else` that sets `foot_cost` from `distance`, using the three tiers.",
           "hints": [
-            "Start like this: `if distance `",
             "Look at the comment under `# A`. Three tiers means `if`, then `elif`, then `else`. Exactly 10 miles is still *up to 10*.",
-            "A tier chain with other numbers:\n```python\nif weight <= 2:\n    fee = 1\nelif weight <= 9:\n    fee = 4\nelse:\n    fee = 12\n```\nThe first true branch wins. So: first, the test that lets the fewest numbers through."
+            "A tier chain with other numbers:\n```python\nif weight <= 2:\n    fee = 1\nelif weight <= 9:\n    fee = 4\nelse:\n    fee = 12\n```\nThe first true branch wins. So: first, the test that lets the fewest numbers through.",
+            "Write `if distance <= 10:` and `foot_cost = 8` under it, indented. Then `elif distance <= 50:` with 70, and `else:` with 150."
           ],
           "checks": [
             {
@@ -9397,9 +9616,9 @@
           "id": "jeep-cost",
           "text": "B. Make `jeep_cost` from `distance`: 2 coins a mile, plus 5 to start.",
           "hints": [
-            "Start like this: `jeep_cost = `",
             "Look at the comment under `# B`. The cost changes with the miles, so build it from `distance`.",
-            "Per mile, plus a start fee, with other names: `fare = 3 * stops + 2`. Python does `*` before `+`."
+            "Per mile, plus a start fee, with other names: `fare = 3 * stops + 2`. Python does `*` before `+`.",
+            "Write `jeep_cost = 2 * distance + 5`."
           ],
           "checks": [
             {
@@ -9526,9 +9745,9 @@
           "id": "telegun-roll",
           "text": "C. Roll a d20 into `telegun_roll`.",
           "hints": [
-            "Start like this: `telegun_roll = random.randint(`",
             "Look under `# C`. `import random` is already at the top of the program.",
-            "`random.randint(1, 6)` rolls a d6: lowest face first, then the highest. Both ends are included."
+            "`random.randint(1, 6)` rolls a d6: lowest face first, then the highest. Both ends are included.",
+            "Write `telegun_roll = random.randint(1, 20)`."
           ],
           "checks": [
             {
@@ -9650,9 +9869,9 @@
           "id": "telegun-cost",
           "text": "C. Set `telegun_cost`: 0 on a roll of 15 or more, or `foot_cost` plus 10 on a lower roll.",
           "hints": [
-            "Start like this: `if telegun_roll `",
             "Two outcomes, so `if` and `else`. Exactly 15 still jumps. On a miss you walk anyway, so start from `foot_cost`.",
-            "With other names: `if dice >= 4:` / `    toll = 0` / `else:` / `    toll = fare + 2`."
+            "With other names: `if dice >= 4:` / `    toll = 0` / `else:` / `    toll = fare + 2`.",
+            "Write `if telegun_roll >= 15:` with `telegun_cost = 0` under it. Then `else:` with `telegun_cost = foot_cost + 10`."
           ],
           "checks": [
             {
@@ -9779,10 +9998,10 @@
           "id": "pick-the-cheapest",
           "text": "D. Write an `if`/`elif`/`else` that puts the cheapest road in `road` and its cost in `cost`.",
           "hints": [
-            "Start like this: `if foot_cost `",
             "Follow the three comments under `# D`. Each branch sets two boxes: `road` gets the road's name, in quotes, and `cost` gets that road's cost box.",
             "`and` is True only when both questions are True. With other names: `if a < b and a < c:` means *a is the smallest*.",
-            "Each branch sets both boxes, indented under it: for the jeep, `road = \"the jeep\"` and then `cost = jeep_cost`. The `else:` has no question: it takes the Telegun."
+            "Each branch sets both boxes, indented under it: for the jeep, `road = \"the jeep\"` and then `cost = jeep_cost`. The `else:` has no question: it takes the Telegun.",
+            "Start with `if foot_cost < jeep_cost and foot_cost < telegun_cost:`, then `elif jeep_cost < telegun_cost:`, then `else:`. Each branch sets `road` and `cost`."
           ],
           "checks": [
             {
@@ -9913,9 +10132,9 @@
           "id": "tell-the-party",
           "text": "E. Print one line that shows the road and its cost.",
           "hints": [
-            "Start like this: `print(\"Take \" + `",
             "Glue the text in `road` and the number in `cost` into one line. A number needs `str()` first.",
-            "With other names: `print(\"Buy \" + item + \" for \" + str(price) + \" coins.\")`."
+            "With other names: `print(\"Buy \" + item + \" for \" + str(price) + \" coins.\")`.",
+            "Write `print(\"Take \" + road + \": \" + str(cost) + \" coins.\")`."
           ],
           "checks": [
             {
@@ -10075,8 +10294,8 @@
         "title": "Pack extra glug",
         "text": "Long trips make Lucky thirsty. After part E, if the trip costs 150 coins or more, also print `Pack extra glug.` Ask about `cost`, so it works for every road.",
         "hints": [
-          "Start like this: `if cost `",
-          "150 or more counts, so `>=`. A cost of 149 should stay quiet."
+          "150 or more counts, so `>=`. A cost of 149 should stay quiet.",
+          "At the end, write `if cost >= 150:` and `print(\"Pack extra glug.\")` under it, indented."
         ],
         "checks": [
           {
@@ -10256,6 +10475,181 @@
           "elif distance < 50:",
           "if foot_cost < jeep_cost or foot_cost < telegun_cost:",
           "jeep_cost = 65"
+        ],
+        "steps": [
+          [
+            "import random",
+            "distance = 30",
+            "",
+            "# A. Rations on foot",
+            "# Up to 10 miles: 8 coins. Up to 50 miles: 70 coins. Longer: 150 coins.",
+            "if distance <= 10:",
+            "    foot_cost = 8",
+            "elif distance <= 50:",
+            "    foot_cost = 70",
+            "else:",
+            "    foot_cost = 150",
+            "",
+            "# B. Gearshift's jeep form",
+            "# 2 coins of starlode a mile, plus 5 coins to start.",
+            "jeep_cost = 0",
+            "",
+            "# C. Lucky's Telegun",
+            "# Roll a d20. On 15 or more, the jump is free.",
+            "# Under 15, Lucky lands in a hedge: you walk anyway, plus 10 coins of glug.",
+            "telegun_roll = 0",
+            "telegun_cost = 0",
+            "",
+            "# D. Pick the cheapest road",
+            "# If walking costs less than the jeep and less than the Telegun: walk.",
+            "# Else, if the jeep costs less than the Telegun: take the jeep.",
+            "# Else: take the Telegun.",
+            "road = \"___\"",
+            "cost = 0",
+            "",
+            "# E. Tell the party which road, and what it costs"
+          ],
+          [
+            "import random",
+            "distance = 30",
+            "",
+            "# A. Rations on foot",
+            "# Up to 10 miles: 8 coins. Up to 50 miles: 70 coins. Longer: 150 coins.",
+            "if distance <= 10:",
+            "    foot_cost = 8",
+            "elif distance <= 50:",
+            "    foot_cost = 70",
+            "else:",
+            "    foot_cost = 150",
+            "",
+            "# B. Gearshift's jeep form",
+            "# 2 coins of starlode a mile, plus 5 coins to start.",
+            "jeep_cost = 2 * distance + 5",
+            "",
+            "# C. Lucky's Telegun",
+            "# Roll a d20. On 15 or more, the jump is free.",
+            "# Under 15, Lucky lands in a hedge: you walk anyway, plus 10 coins of glug.",
+            "telegun_roll = 0",
+            "telegun_cost = 0",
+            "",
+            "# D. Pick the cheapest road",
+            "# If walking costs less than the jeep and less than the Telegun: walk.",
+            "# Else, if the jeep costs less than the Telegun: take the jeep.",
+            "# Else: take the Telegun.",
+            "road = \"___\"",
+            "cost = 0",
+            "",
+            "# E. Tell the party which road, and what it costs"
+          ],
+          [
+            "import random",
+            "distance = 30",
+            "",
+            "# A. Rations on foot",
+            "# Up to 10 miles: 8 coins. Up to 50 miles: 70 coins. Longer: 150 coins.",
+            "if distance <= 10:",
+            "    foot_cost = 8",
+            "elif distance <= 50:",
+            "    foot_cost = 70",
+            "else:",
+            "    foot_cost = 150",
+            "",
+            "# B. Gearshift's jeep form",
+            "# 2 coins of starlode a mile, plus 5 coins to start.",
+            "jeep_cost = 2 * distance + 5",
+            "",
+            "# C. Lucky's Telegun",
+            "# Roll a d20. On 15 or more, the jump is free.",
+            "# Under 15, Lucky lands in a hedge: you walk anyway, plus 10 coins of glug.",
+            "telegun_roll = random.randint(1, 20)",
+            "telegun_cost = 0",
+            "",
+            "# D. Pick the cheapest road",
+            "# If walking costs less than the jeep and less than the Telegun: walk.",
+            "# Else, if the jeep costs less than the Telegun: take the jeep.",
+            "# Else: take the Telegun.",
+            "road = \"___\"",
+            "cost = 0",
+            "",
+            "# E. Tell the party which road, and what it costs"
+          ],
+          [
+            "import random",
+            "distance = 30",
+            "",
+            "# A. Rations on foot",
+            "# Up to 10 miles: 8 coins. Up to 50 miles: 70 coins. Longer: 150 coins.",
+            "if distance <= 10:",
+            "    foot_cost = 8",
+            "elif distance <= 50:",
+            "    foot_cost = 70",
+            "else:",
+            "    foot_cost = 150",
+            "",
+            "# B. Gearshift's jeep form",
+            "# 2 coins of starlode a mile, plus 5 coins to start.",
+            "jeep_cost = 2 * distance + 5",
+            "",
+            "# C. Lucky's Telegun",
+            "# Roll a d20. On 15 or more, the jump is free.",
+            "# Under 15, Lucky lands in a hedge: you walk anyway, plus 10 coins of glug.",
+            "telegun_roll = random.randint(1, 20)",
+            "if telegun_roll >= 15:",
+            "    telegun_cost = 0",
+            "else:",
+            "    telegun_cost = foot_cost + 10",
+            "",
+            "# D. Pick the cheapest road",
+            "# If walking costs less than the jeep and less than the Telegun: walk.",
+            "# Else, if the jeep costs less than the Telegun: take the jeep.",
+            "# Else: take the Telegun.",
+            "road = \"___\"",
+            "cost = 0",
+            "",
+            "# E. Tell the party which road, and what it costs"
+          ],
+          [
+            "import random",
+            "distance = 30",
+            "",
+            "# A. Rations on foot",
+            "# Up to 10 miles: 8 coins. Up to 50 miles: 70 coins. Longer: 150 coins.",
+            "if distance <= 10:",
+            "    foot_cost = 8",
+            "elif distance <= 50:",
+            "    foot_cost = 70",
+            "else:",
+            "    foot_cost = 150",
+            "",
+            "# B. Gearshift's jeep form",
+            "# 2 coins of starlode a mile, plus 5 coins to start.",
+            "jeep_cost = 2 * distance + 5",
+            "",
+            "# C. Lucky's Telegun",
+            "# Roll a d20. On 15 or more, the jump is free.",
+            "# Under 15, Lucky lands in a hedge: you walk anyway, plus 10 coins of glug.",
+            "telegun_roll = random.randint(1, 20)",
+            "if telegun_roll >= 15:",
+            "    telegun_cost = 0",
+            "else:",
+            "    telegun_cost = foot_cost + 10",
+            "",
+            "# D. Pick the cheapest road",
+            "# If walking costs less than the jeep and less than the Telegun: walk.",
+            "# Else, if the jeep costs less than the Telegun: take the jeep.",
+            "# Else: take the Telegun.",
+            "if foot_cost < jeep_cost and foot_cost < telegun_cost:",
+            "    road = \"on foot\"",
+            "    cost = foot_cost",
+            "elif jeep_cost < telegun_cost:",
+            "    road = \"the jeep\"",
+            "    cost = jeep_cost",
+            "else:",
+            "    road = \"the Telegun\"",
+            "    cost = telegun_cost",
+            "",
+            "# E. Tell the party which road, and what it costs"
+          ]
         ]
       },
       "campaignLink": {
@@ -10378,9 +10772,9 @@
               "id": "record-the-line",
               "text": "Make `bad_line` hold the line number that Python's message names.",
               "hints": [
-                "Start like this: `bad_line = `, then the number from the message.",
                 "Look for the word `line` in Python's message, still on screen. The number after it is where Python stopped. Message gone? Take the `#` off line 4 and Run.",
-                "In `File \"main.py\", line 9`, the line number is 9. A line number is a number, so no quotes."
+                "In `File \"main.py\", line 9`, the line number is 9. A line number is a number, so no quotes.",
+                "Write `bad_line = 4`: Python's message says `line 4`."
               ],
               "checks": [
                 {
@@ -10444,9 +10838,9 @@
               "id": "record-the-type",
               "text": "Make `error_type` hold the error's name, as text.",
               "hints": [
-                "Start like this: `error_type = \"`, then the first word of Python's last line.",
                 "Read the last line first. The error's name comes before the `:`.",
-                "In `ZeroDivisionError: division by zero`, the error's name is `ZeroDivisionError`. Text goes in quotes."
+                "In `ZeroDivisionError: division by zero`, the error's name is `ZeroDivisionError`. Text goes in quotes.",
+                "Write `error_type = \"NameError\"`: the first word of the last line, in quotes."
               ],
               "checks": [
                 {
@@ -10515,9 +10909,9 @@
               "id": "record-the-name",
               "text": "Make `missing_name` hold the name Python could not find, as text.",
               "hints": [
-                "Start like this: `missing_name = \"`, then the name from the last line.",
                 "The last line says `name '...' is not defined`. The name is between the little `'` marks.",
-                "In `name 'shield' is not defined`, the missing name is `shield`. Copy it letter for letter."
+                "In `name 'shield' is not defined`, the missing name is `shield`. Copy it letter for letter.",
+                "Write `missing_name = \"mana_cost\"`: the name between the little `'` marks, in quotes."
               ],
               "checks": [
                 {
@@ -10601,8 +10995,8 @@
             "title": "Log it",
             "text": "Bomb Shell keeps a fizzle log. Under your notes, print one line built from your three boxes, like `Line 4: NameError (mana_cost)`.",
             "hints": [
-              "Start like this: `print(\"Line \" + `",
-              "Glue the parts with `+`. `bad_line` is a number, so it needs `str()`. Add `\" (\"` and `\")\"` around the name."
+              "Glue the parts with `+`. `bad_line` is a number, so it needs `str()`. Add `\" (\"` and `\")\"` around the name.",
+              "Write `print(\"Line \" + str(bad_line) + \": \" + error_type + \" (\" + missing_name + \")\")`."
             ],
             "checks": [
               {
@@ -10730,6 +11124,34 @@
               "error_type = NameError",
               "bad_line = \"4\"",
               "missing_name = \"spell_cost\""
+            ],
+            "steps": [
+              [
+                "hero = \"Bomb Shell\"",
+                "mana = 12",
+                "spell_cost = 5",
+                "# print(\"Mana left: \" + str(mana - mana_cost))",
+                "print(hero + \" casts Shield.\")",
+                "",
+                "# Your notes. Press Run, then fill these in while Python's message is on screen.",
+                "# Then put # at the start of line 4 to switch it off, and Run again.",
+                "bad_line = 4",
+                "error_type = \"\"",
+                "missing_name = \"\""
+              ],
+              [
+                "hero = \"Bomb Shell\"",
+                "mana = 12",
+                "spell_cost = 5",
+                "# print(\"Mana left: \" + str(mana - mana_cost))",
+                "print(hero + \" casts Shield.\")",
+                "",
+                "# Your notes. Press Run, then fill these in while Python's message is on screen.",
+                "# Then put # at the start of line 4 to switch it off, and Run again.",
+                "bad_line = 4",
+                "error_type = \"NameError\"",
+                "missing_name = \"\""
+              ]
             ]
           },
           "campaignLink": {
@@ -11011,6 +11433,19 @@
               "if mana > cost:",
               "if mana == cost:",
               "if mana >= 9:"
+            ],
+            "steps": [
+              [
+                "mana = 15",
+                "mana = mana - 6    # Oogrish lit the lanterns earlier",
+                "cost = 9    # Lantern Ward",
+                "print(mana)",
+                "print(cost)",
+                "if mana > cost:",
+                "    print(\"Oogrish casts Lantern Ward.\")",
+                "else:",
+                "    print(\"Not enough mana.\")"
+              ]
             ]
           },
           "campaignLink": {
@@ -11074,7 +11509,8 @@
               "hints": [
                 "Read Python's last line: `expected '('`. After `def`, Python expects a recipe, not a box.",
                 "Look at line 1. One word is extra. A box is a name, `=`, and a value.",
-                "A box with other names: `snack = \"glug\"`. No `def`, and no brackets around the name."
+                "A box with other names: `snack = \"glug\"`. No `def`, and no brackets around the name.",
+                "Change line 1 to `hero = \"Lucky\"`, with no `def`."
               ],
               "checks": [
                 {
@@ -11326,7 +11762,8 @@
               "hints": [
                 "Read Python's last line, from the new Run. Which line does it name?",
                 "It can only glue text to text. Go to line 10, then check line 3: what kind of value does `roll` hold?",
-                "`\"Gold: \" + str(gold)` turns the number into text first, so the glue works."
+                "`\"Gold: \" + str(gold)` turns the number into text first, so the glue works.",
+                "Change line 10 to `print(\"Rolled: \" + str(roll))`."
               ],
               "checks": [
                 {
@@ -11570,8 +12007,18 @@
                     "if _H == _L:",
                     "    assert _E == _H, ('Use `>=`, so a higher roll passes too. Only a roll of exactly ' + str(_N) + ' gave the success '",
                     "                      'line. ' + _ev_many([_lo, _N, _hi]))",
-                    "    assert False, ('Ask whether `' + _R + '` reaches `' + _N_name + '`, and give the two lines different words. Both '",
-                    "                   'rolls printed the same thing. ' + _ev_many([_lo, _hi]))",
+                    "    # The same words in both branches, or an `if` that never asks with the boxes (`if True:`, `if 14 >= 12:`, a",
+                    "    # lone print): say only what is really wrong.",
+                    "    _same = False",
+                    "    for _n in _ast.walk(_ast.parse(_source)):",
+                    "        if type(_n).__name__ == 'If' and _n.orelse:",
+                    "            _w = [sorted(_c.value for _x in _b for _c in _ast.walk(_x) if type(_c).__name__ == 'Constant'",
+                    "                         and type(_c.value).__name__ == 'str') for _b in (_n.body, _n.orelse)]",
+                    "            _same = _same or bool(_w[0] and _w[0] == _w[1])",
+                    "    assert not _same, ('Give the success line and the failure line different words: both say the same thing. '",
+                    "                       + _ev_many([_lo, _hi]))",
+                    "    assert False, ('Ask whether `' + _R + '` reaches `' + _N_name + '` after `if`, using the boxes, so the answer can '",
+                    "                   'change. Both rolls printed the same line. ' + _ev_many([_lo, _hi]))",
                     "# Exactly one of the two lines prints. A failure line with no indent (no `else:`) prints after every roll.",
                     "assert [_l for _l in _L if _l not in _H], ('Put the failure line under `else:`, indented, so only one line prints. It '",
                     "                                           'printed the failure line as well as the success line. ' + _ev(_hi))",
@@ -12558,7 +13005,8 @@
               "hints": [
                 "Read Python's last line. What can it only glue?",
                 "Look at line 2, the line Python names. Python can only glue text to text, and `mana` holds a number.",
-                "`\"Gold: \" + str(gold)` turns the number into text first."
+                "`\"Gold: \" + str(gold)` turns the number into text first.",
+                "Change line 2 to `print(\"Mana: \" + str(mana))`."
               ],
               "checks": [
                 {
@@ -12871,9 +13319,9 @@
               "id": "three-seals",
               "text": "Under each `# seal:` comment, write an `assert` that says what `passed` must be for that roll.",
               "hints": [
-                "Start like this: under the first `# seal:`, type `assert passed `",
                 "A roll of 14 against 15 fails, so `passed` must be `False` there. What must it be for exactly 15? And for 16?",
-                "A seal with other names: `assert door_open == True` stops the program if the door is shut."
+                "A seal with other names: `assert door_open == True` stops the program if the door is shut.",
+                "Under the first `# seal:`, write `assert passed == False`. Under the other two, `assert passed == True`."
               ],
               "checks": [
                 {
@@ -12996,7 +13444,7 @@
       "title": "Quick Check 2 · Form A",
       "optional": true,
       "minutes": 15,
-      "summary": "Three short tasks, no hints. Pass all three to test out of Unit 2. Stuck on one? The lessons teach all of it, and tasks you pass here stay ticked.",
+      "summary": "Three short tasks and four questions, no hints. Pass all three tasks and get 3 of the 4 questions right to test out of Unit 2. Stuck on one? The lessons teach all of it, and tasks you pass here stay ticked.",
       "exercises": [
         {
           "id": "roll-your-own",
@@ -13024,9 +13472,9 @@
               "id": "pick-needed",
               "text": "Set `needed` to any number from 2 to 20.",
               "hints": [
-                "Start like this: `needed = `",
                 "Look at line 3. `needed` is how high the roll must be. Numbers have no quotes.",
-                "A box gets a number like this: `target = 7`."
+                "A box gets a number like this: `target = 7`.",
+                "Write `needed = 13`, or any number from 2 to 20."
               ],
               "checks": [
                 {
@@ -13077,13 +13525,13 @@
                   "name": "needed is a fair number",
                   "code": [
                     "_v = needed",
-                    "assert type(_v).__name__ != 'str', \"Take the quotes off: numbers don't need quotes. `needed` holds text.\"",
-                    "assert type(_v).__name__ == 'int', 'Give `needed` a whole number.'",
+                    "assert type(_v).__name__ != 'str', '`needed` holds text, because of the quotes.'",
+                    "assert type(_v).__name__ == 'int', '`needed` does not hold a whole number.'",
                     "import ast as _ast",
                     "_zero = [_n for _n in _ast.parse(_source).body if type(_n).__name__ == 'Assign' and [getattr(_t, 'id', '') for _t in _n.targets] == ['needed'] and type(_n.value).__name__ == 'Constant' and _n.value.value == 0]",
-                    "assert not (_v == 0 and _zero), \"Pick a number from 2 to 20 for `needed`. It still holds the starter's `0`.\"",
-                    "assert 2 <= _v <= 20, 'Pick a number from 2 to 20 for `needed`: a d20 roll is 1 to 20. `needed` holds ' + str(_v) + '.'",
-                    "assert not _assigned_from_expression('needed'), \"Type one number for `needed`, like `needed = 13`. Mar'tu's check changes that line to try other rolls against it.\""
+                    "assert not (_v == 0 and _zero), \"`needed` still holds the starter's `0`, and the task asks for a number from 2 to 20.\"",
+                    "assert 2 <= _v <= 20, '`needed` holds ' + str(_v) + ', but the task asks for a number from 2 to 20: a d20 roll is 1 to 20.'",
+                    "assert not _assigned_from_expression('needed'), \"`needed` is worked out, not one typed number, so Mar'tu's check can not change it to try other rolls.\""
                   ]
                 }
               ],
@@ -13093,9 +13541,9 @@
               "id": "roll-a-d20",
               "text": "Roll a d20 into `roll`.",
               "hints": [
-                "Start like this: `roll = random.randint(`",
                 "A d20 has faces 1 to 20, and `randint` includes both ends.",
-                "`random.randint(1, 4)` rolls a d4: lowest face first, then the highest."
+                "`random.randint(1, 4)` rolls a d4: lowest face first, then the highest.",
+                "Write `roll = random.randint(1, 20)`."
               ],
               "checks": [
                 {
@@ -13188,22 +13636,21 @@
                     "_ns, _rows, _calls, _err, _miss = _rerun({}, [5])",
                     "assert not _err, _stop({}, [5], _err)",
                     "_fix = '`' + _target + ' = random.randint(1, ' + str(_faces) + ')`'",
-                    "assert _target in _ns, 'Keep the box `' + _target + '` from the starter, and roll it: ' + _fix + '.'",
+                    "assert _target in _ns, 'Keep the box `' + _target + '` from the starter.'",
                     "_got = _ns[_target]",
                     "# Python's own message for `=` in an `if` suggests `:=`, which quietly puts a new value in the box.",
                     "_walrus = [_n for _n in _ast.walk(_ast.parse(_source)) if type(_n).__name__ == 'NamedExpr'",
                     "           and type(_n.target).__name__ == 'Name' and _n.target.id == _target]",
-                    "assert not _walrus, ('To ask a question in an `if`, use a sign like `>=` or `==`. `:=` puts a new value in `'",
+                    "assert not _walrus, ('`:=` puts a new value in `'",
                     "                     + _target + '`, the same as `=`, so it no longer holds the roll.')",
                     "_from = [_c for _c in _calls if _c[2] == _got]",
                     "assert not (_placeholder is not None and not _from and _starters(_target, _placeholder)), (",
-                    "    'Roll it: ' + _fix + '. `' + _target + \"` still holds the starter's `\" + str(_placeholder) + '`.')",
-                    "assert _assigned_from_expression(_target) and _calls, 'Roll it: ' + _fix + '. `' + _target + '` holds a number you typed.'",
-                    "assert _from, 'Roll it: ' + _fix + '. `' + _target + '` does not hold the roll yet.'",
+                    "    '`' + _target + \"` still holds the starter's `\" + str(_placeholder) + '`.')",
+                    "assert _assigned_from_expression(_target) and _calls, '`' + _target + '` holds a number you typed, so it is the same every Run.'",
+                    "assert _from, '`' + _target + '` does not hold the roll yet.'",
                     "_a, _b = _from[0][0], _from[0][1]",
                     "_call = '`random.randint(' + str(_a) + ', ' + str(_b) + ')`'",
-                    "_die = ('Use ' + _fix + ': a d' + str(_faces) + ' has faces 1 to ' + str(_faces) + ', and `randint` includes both '",
-                    "        'ends. ')",
+                    "_die = ('A d' + str(_faces) + ' has faces 1 to ' + str(_faces) + ', but ')",
                     "assert _a >= 1, _die + _call + ' can give ' + str(_a) + '.'",
                     "assert _b <= _faces, _die + _call + ' can give ' + str(_b) + '.'",
                     "assert _b >= _faces, _die + _call + ' never gives ' + str(_faces) + '.'",
@@ -13217,9 +13664,9 @@
               "id": "succeed-or-fail",
               "text": "Print a success line when `roll` reaches `needed`, and a failure line otherwise.",
               "hints": [
-                "Start like this: `if roll `",
                 "Exactly enough passes, so which sign? Then `else:` for the failure line.",
-                "With other names: `if score >= target:` / `    print(\"Yes.\")` / `else:` / `    print(\"No.\")`."
+                "With other names: `if score >= target:` / `    print(\"Yes.\")` / `else:` / `    print(\"No.\")`.",
+                "Write `if roll >= needed:`, a success line under it, then `else:` and a failure line."
               ],
               "checks": [
                 {
@@ -13342,45 +13789,49 @@
                     "    assert not _miss, _keep(_miss[0])",
                     "    assert not _err, _stop(_vals, _rolls, _err)",
                     "    if _via_rolls:",
-                    "        assert _calls, ('Roll the die into `' + _R + '` with `random.randint(1, ' + str(_F) + \")`, so Mar'tu's check \"",
-                    "                        'can roll for you.')",
+                    "        assert _calls, (\"Mar'tu's check found no die rolled into `\" + _R + '`, so it can not roll for you.')",
                     "    return _mask(_rows, [_r, _n])",
                     "_H = _try(_hi)",
                     "_L = _try(_lo)",
-                    "assert _H, ('Print a success line when `' + _R + '` reaches `' + _N_name + '`. Your program printed nothing. '",
+                    "assert _H, ('A roll that reaches `' + _N_name + '` printed nothing. '",
                     "            + _ev(_hi))",
-                    "assert _L, 'Add `else:` with a failure line under it. Your program printed nothing. ' + _ev(_lo)",
+                    "assert _L, 'A low roll printed nothing. ' + _ev(_lo)",
                     "_E = _try(_N)",
                     "if _H == _L:",
-                    "    assert _E == _H, ('Use `>=`, so a higher roll passes too. Only a roll of exactly ' + str(_N) + ' gave the success '",
-                    "                      'line. ' + _ev_many([_lo, _N, _hi]))",
-                    "    assert False, ('Ask whether `' + _R + '` reaches `' + _N_name + '`, and give the two lines different words. Both '",
-                    "                   'rolls printed the same thing. ' + _ev_many([_lo, _hi]))",
+                    "    assert _E == _H, ('Only a roll of exactly ' + str(_N) + ' gave the success line: a higher roll did not. ' + _ev_many([_lo, _N, _hi]))",
+                    "    # The same words in both branches, or an `if` that never asks with the boxes (`if True:`, `if 14 >= 12:`, a",
+                    "    # lone print): say only what is really wrong.",
+                    "    _same = False",
+                    "    for _n in _ast.walk(_ast.parse(_source)):",
+                    "        if type(_n).__name__ == 'If' and _n.orelse:",
+                    "            _w = [sorted(_c.value for _x in _b for _c in _ast.walk(_x) if type(_c).__name__ == 'Constant'",
+                    "                         and type(_c.value).__name__ == 'str') for _b in (_n.body, _n.orelse)]",
+                    "            _same = _same or bool(_w[0] and _w[0] == _w[1])",
+                    "    assert not _same, ('The success line and the failure line say the same thing. '",
+                    "                       + _ev_many([_lo, _hi]))",
+                    "    assert False, ('Both rolls printed the same line, so the answer never changes. ' + _ev_many([_lo, _hi]))",
                     "# Exactly one of the two lines prints. A failure line with no indent (no `else:`) prints after every roll.",
-                    "assert [_l for _l in _L if _l not in _H], ('Put the failure line under `else:`, indented, so only one line prints. It '",
-                    "                                           'printed the failure line as well as the success line. ' + _ev(_hi))",
-                    "assert [_l for _l in _H if _l not in _L], ('Indent the success line under the `if`, and the failure line under '",
-                    "                                           '`else:`. It printed the success line as well as the failure line. ' + _ev(_lo))",
-                    "assert _E == _H, (('Use `>=`, so exactly enough passes: a roll of ' + str(_N) + ' or more gives the success line. It '",
-                    "                   'gave the failure line. ' if _E == _L else",
-                    "                   'Print the success line here, the same as for a high roll. ') + _ev(_N))",
+                    "assert [_l for _l in _L if _l not in _H], ('A high roll printed the failure line as well as the success line. ' + _ev(_hi))",
+                    "assert [_l for _l in _H if _l not in _L], ('A low roll printed the success line as well as the failure line. ' + _ev(_lo))",
+                    "assert _E == _H, (('A roll of exactly ' + str(_N) + ' gave the failure line. ' if _E == _L else",
+                    "                   'A roll of exactly ' + str(_N) + ' did not give the success line. ') + _ev(_N))",
                     "_B = _try(_N - 1)",
-                    "assert _B == _L, (('Give a roll below `' + _N_name + '` the failure line. It gave the success line. ' if _B == _H else",
-                    "                   'Print the failure line here, the same as for a low roll. ') + _ev(_N - 1))",
+                    "assert _B == _L, (('A roll below `' + _N_name + '` gave the success line. ' if _B == _H else",
+                    "                   'A roll below `' + _N_name + '` did not give the failure line. ') + _ev(_N - 1))",
                     "if _N + 1 <= _hi:",
                     "    _A = _try(_N + 1)",
-                    "    assert _A == _H, 'Print the success line here, the same as for a high roll. ' + _ev(_N + 1)",
+                    "    assert _A == _H, 'A roll above `' + _N_name + '` did not give the success line. ' + _ev(_N + 1)",
                     "_M = _N + 3 if (not _via_rolls or _N + 3 <= _F) else _N - 3",
                     "_B2 = _try(_M - 1, _M)",
                     "_E2 = _try(_M, _M)",
-                    "assert _B2 == _L and _E2 == _H, ('Ask with the box `' + _N_name + '`, not a number you typed. With `' + _N_name + ' = '",
+                    "assert _B2 == _L and _E2 == _H, ('With `' + _N_name + ' = '",
                     "                                 + str(_M) + '`, your program ' + ('passed ' + _a_roll(_M - 1) if _B2 != _L else",
-                    "                                 'failed ' + _a_roll(_M)) + \". (Mar'tu's check tried `\" + _N_name + ' = ' + str(_M)",
+                    "                                 'failed ' + _a_roll(_M)) + ': the `if` does not follow the box `' + _N_name + \"`. (Mar'tu's check tried `\" + _N_name + ' = ' + str(_M)",
                     "                                 + '`, only inside the check.)')",
                     "# With `needed` at the top face no roll can go past it, so `==` would hide: one more try, above the new needed.",
                     "if _M + 1 <= (_F if _via_rolls else _M + 1):",
                     "    _A2 = _try(_M + 1, _M)",
-                    "    assert _A2 == _H, ('Use `>=`, so a roll that reaches `' + _N_name + '` or goes past it passes. '",
+                    "    assert _A2 == _H, ('A roll that goes past `' + _N_name + '` should pass too. '",
                     "                       + _a_roll(_M + 1)[0].upper() + _a_roll(_M + 1)[1:] + ' did not pass. ' + _ev(_M + 1, _M))"
                   ]
                 }
@@ -13414,6 +13865,22 @@
               "roll = random.randint(1, 19)",
               "if roll > needed:",
               "else roll < needed:"
+            ],
+            "steps": [
+              [
+                "import random",
+                "# Pick any needed, from 2 to 20.",
+                "needed = 13",
+                "roll = 0",
+                "# If roll reaches needed, print a success line. Otherwise, print a failure line."
+              ],
+              [
+                "import random",
+                "# Pick any needed, from 2 to 20.",
+                "needed = 13",
+                "roll = random.randint(1, 20)",
+                "# If roll reaches needed, print a success line. Otherwise, print a failure line."
+              ]
             ]
           },
           "takeaway": "Roll with `random.randint(1, 20)`, then `if roll >= needed:` and `else:`.",
@@ -13464,7 +13931,7 @@
                     "_tree = _ast.parse(_source)",
                     "_called = [id(_n.func) for _n in _ast.walk(_tree) if type(_n).__name__ == 'Call']",
                     "_raw = [_n.lineno for _n in _ast.walk(_tree) if type(_n).__name__ == 'Attribute' and _n.attr == 'lower' and id(_n) not in _called]",
-                    "assert not _raw, 'Add `()`: `choice.lower()`. Line ' + str(_raw[0] if _raw else 0) + ' has `.lower` with no `()`, so it never runs.'"
+                    "assert not _raw, 'Line ' + str(_raw[0] if _raw else 0) + ' has `.lower` with no `()`, so it never runs.'"
                   ]
                 },
                 {
@@ -13472,7 +13939,7 @@
                   "code": [
                     "import ast as _ast",
                     "_walrus = [_n for _n in _ast.walk(_ast.parse(_source)) if type(_n).__name__ == 'NamedExpr']",
-                    "assert not _walrus, 'To ask *is it the same as?*, use `==`: `if choice == \"option 1\":`. `:=` puts a value in a box, the same as `=`.'"
+                    "assert not _walrus, '`:=` puts a value in a box, the same as `=`. It does not ask *is it the same as?*'"
                   ]
                 },
                 {
@@ -13560,7 +14027,7 @@
                     "        _random.randint = _real",
                     "    _rows = [_l.strip() for _l in _buf.getvalue().splitlines() if _l.strip()]",
                     "    return _ns, _rows, _calls, _err, sorted(_k for _k in _vals if _k not in _seen)",
-                    "for _vals, _rolls, _want, _never, _tail in [({'choice': 'option 1'}, [], [\"Mar'tu: Then we take the jeep.\"], [\"Mar'tu: Then we walk.\", \"Mar'tu: Hm.\"], 'Ask with `==` on line 3, and keep one chain: `if`, then `elif`, then `else`.'), ({'choice': 'option 2'}, [], [], [\"Mar'tu: Then we take the jeep.\"], 'Give only `\"option 1\"` this reply: ask with `==`, `if choice == \"option 1\":`.')]:",
+                    "for _vals, _rolls, _want, _never, _tail in [({'choice': 'option 1'}, [], [\"Mar'tu: Then we take the jeep.\"], [\"Mar'tu: Then we walk.\", \"Mar'tu: Hm.\"], 'The choice `\"option 1\"` should get its own reply, and only that one.'), ({'choice': 'option 2'}, [], [], [\"Mar'tu: Then we take the jeep.\"], 'Only `\"option 1\"` should get this reply.')]:",
                     "    _ns, _rows, _calls, _err, _miss = _rerun(_vals, _rolls)",
                     "    assert not _miss, _keep(_miss[0])",
                     "    assert not _err, _stop(_vals, _rolls, _err)",
@@ -13592,7 +14059,7 @@
                     "_asked = [_c for _q in _ast.walk(_ast.parse(_source)) if type(_q).__name__ == 'Compare' for _c in [_q.left] + list(_q.comparators) if type(_c).__name__ == 'Constant']",
                     "_texts = [_c.value for _c in _asked if type(_c.value).__name__ == 'str']",
                     "_bad = [(_t, _w) for _t in _texts for _w in _wanted if _t != _w and _squash(_t) == _squash(_w) and _w not in _texts]",
-                    "assert not _bad, ('Copy the option exactly: `\"' + (_bad[0][0] if _bad else '') + '\"` and `\"' + (_bad[0][1] if _bad else '') + '\"` are different text to Python. Every letter, space and capital counts.')"
+                    "assert not _bad, ('`\"' + (_bad[0][0] if _bad else '') + '\"` and `\"' + (_bad[0][1] if _bad else '') + '\"` are different text to Python. Every letter, space and capital counts.')"
                   ]
                 },
                 {
@@ -13680,7 +14147,7 @@
                     "        _random.randint = _real",
                     "    _rows = [_l.strip() for _l in _buf.getvalue().splitlines() if _l.strip()]",
                     "    return _ns, _rows, _calls, _err, sorted(_k for _k in _vals if _k not in _seen)",
-                    "for _vals, _rolls, _want, _never, _tail in [({'choice': 'option 2'}, [], [\"Mar'tu: Then we walk.\"], [\"Mar'tu: Then we take the jeep.\", \"Mar'tu: Hm.\"], 'Put the option in quotes: `\"option 2\"`.'), ({'choice': 'option 9'}, [], [\"Mar'tu: Hm.\"], [\"Mar'tu: Then we take the jeep.\", \"Mar'tu: Then we walk.\"], 'Let any other choice reach the `else`.')]:",
+                    "for _vals, _rolls, _want, _never, _tail in [({'choice': 'option 2'}, [], [\"Mar'tu: Then we walk.\"], [\"Mar'tu: Then we take the jeep.\", \"Mar'tu: Hm.\"], 'The choice `\"option 2\"` should get its own reply.'), ({'choice': 'option 9'}, [], [\"Mar'tu: Hm.\"], [\"Mar'tu: Then we take the jeep.\", \"Mar'tu: Then we walk.\"], 'Any other choice should reach the `else`.')]:",
                     "    _ns, _rows, _calls, _err, _miss = _rerun(_vals, _rolls)",
                     "    assert not _miss, _keep(_miss[0])",
                     "    assert not _err, _stop(_vals, _rolls, _err)",
@@ -13799,9 +14266,8 @@
                     "    _ok = all(_w in _rows for _w in _want) and not any(_w in _rows for _w in _never)",
                     "    _what = ('`' + _want[0] + '` did not print.' if _want and _want[0] not in _rows else 'Another reply printed too.')",
                     "    if _lone:",
-                    "        assert _ok, _mend('Keep the copy: `' + _box + ' = ' + _box + '.lower()`. Line ' + str(_lone[0]) + ' makes a '",
-                    "                          'copy, then forgets it.', _what, _vals, [])",
-                    "    assert _ok, _mend('Use `.lower()`, so any capitals get their reply.', _what, _vals, [])"
+                    "        assert _ok, _mend('Line ' + str(_lone[0]) + ' makes a lower-case copy, then forgets it.', _what, _vals, [])",
+                    "    assert _ok, _mend('A choice typed with capitals does not get its reply.', _what, _vals, [])"
                   ]
                 }
               ],
@@ -13886,9 +14352,9 @@
               "id": "can-cast",
               "text": "Make `can_cast` say whether `mana` reaches `cost` and `affinity` reaches `required`. Exactly enough counts.",
               "hints": [
-                "Start like this: `can_cast = mana `",
                 "Two questions, and both must be `True`. Which word joins them? Which sign says *at least*?",
-                "`and` is True only when both sides are True: `print(3 >= 3 and 5 >= 9)` prints `False`."
+                "`and` is True only when both sides are True: `print(3 >= 3 and 5 >= 9)` prints `False`.",
+                "Write `can_cast = mana >= cost and affinity >= required`."
               ],
               "checks": [
                 {
@@ -13899,22 +14365,23 @@
                     "_asks = [_n.lineno for _n in _ast.parse(_source).body if type(_n).__name__ == 'Expr'",
                     "         and any(type(_q).__name__ == 'Compare' and type(_q.left).__name__ == 'Name' and _q.left.id == _target",
                     "                 and type(_q.ops[0]).__name__ == 'Eq' for _q in _ast.walk(_n.value))]",
-                    "assert not _asks, ('Use one `=` to put the answer in `' + _target + '`: `=` puts, `==` only asks. Line '",
-                    "                   + str(_asks[0] if _asks else 0) + ' asks a question and forgets the answer.')"
+                    "assert not _asks, ('Line ' + str(_asks[0] if _asks else 0) + ' asks a question with `==` and forgets the '",
+                    "                   'answer: `==` only asks.')"
                   ]
                 },
                 {
                   "name": "can_cast is asked, not typed",
                   "code": [
                     "import ast as _ast",
-                    "_target, _boxes, _fix, _placeholder = 'can_cast', ['mana', 'cost', 'affinity', 'required'], 'Work `can_cast` out from the boxes `mana`, `cost`, `affinity` and `required`.', False",
+                    "_target, _boxes, _fix, _placeholder = 'can_cast', ['mana', 'cost', 'affinity', 'required'], '', False",
                     "_tree = _ast.parse(_source)",
                     "def _sets(_n):",
                     "    return type(_n).__name__ == 'Assign' and any(type(_t).__name__ == 'Name' and _t.id == _target for _t in _n.targets)",
                     "_made = [_n for _n in _ast.walk(_tree) if _sets(_n)]",
                     "_two = [_n for _n in _made if len(_n.targets) > 1]",
                     "_also = [_t.id for _n in _two for _t in _n.targets if type(_t).__name__ == 'Name' and _t.id != _target]",
-                    "assert not _two, (_fix + ' Your `' + _target + '` line has two `=` signs, so it puts a value in `'",
+                    "_pre = _fix + ' ' if _fix else ''",
+                    "assert not _two, (_pre + 'Your `' + _target + '` line has two `=` signs, so it puts a value in `'",
                     "                  + (_also[0] if _also else _target) + '` too. `=` puts a value in a box.')",
                     "def _names(_n):",
                     "    return {_x.id for _x in _ast.walk(_n) if type(_x).__name__ == 'Name'}",
@@ -13929,8 +14396,8 @@
                     "_asked = bool(_used & set(_boxes))",
                     "_still = [_n for _n in _made if _placeholder is not None and type(_n.value).__name__ == 'Constant'",
                     "          and repr(_n.value.value) == repr(_placeholder)]",
-                    "assert not _still or _asked, _fix + ' `' + _target + \"` still holds the starter's `\" + repr(_placeholder) + '`.'",
-                    "assert not _made or _quoted or _asked, (_fix + ' `' + _target + '` is made from values you typed, so it can never '",
+                    "assert not _still or _asked, _pre + '`' + _target + \"` still holds the starter's `\" + repr(_placeholder) + '`.'",
+                    "assert not _made or _quoted or _asked, (_pre + '`' + _target + '` is made from values you typed, so it can never '",
                     "                                        'change when the boxes change.')"
                   ]
                 },
@@ -14027,7 +14494,7 @@
                     "_left = [_t.id for _n in _ast.walk(_ast.parse(_source)) if type(_n).__name__ in ('Assign', 'AugAssign')",
                     "         for _t in (_n.targets if type(_n).__name__ == 'Assign' else [_n.target])",
                     "         if type(_t).__name__ == 'Name' and _t.id in _foreign]",
-                    "for _vals, _rolls, _want, _tail in [({'mana': 9, 'cost': 9, 'affinity': 9, 'required': 9}, [], True, 'Use `>=` in both questions: exactly enough mana and affinity still cast.'), ({'mana': 8, 'cost': 9, 'affinity': 9, 'required': 9}, [], False, 'Join the two questions with `and`: both must be enough, and `mana` is one short.'), ({'mana': 9, 'cost': 9, 'affinity': 8, 'required': 9}, [], False, 'Join the two questions with `and`: both must be enough, and `affinity` is one short.'), ({'mana': 20, 'cost': 9, 'affinity': 13, 'required': 9}, [], True, 'Use `>=`, which means *at least*: more than enough casts too.'), ({'mana': 19, 'cost': 20, 'affinity': 9, 'required': 9}, [], False, 'Ask with the boxes, not numbers you typed.'), ({'mana': 9, 'cost': 9, 'affinity': 12, 'required': 13}, [], False, 'Ask with the boxes, not numbers you typed.'), ({'mana': 20, 'cost': 20, 'affinity': 13, 'required': 13}, [], True, 'Ask with the boxes, not numbers you typed.')]:",
+                    "for _vals, _rolls, _want, _tail in [({'mana': 9, 'cost': 9, 'affinity': 9, 'required': 9}, [], True, 'Exactly enough mana and affinity should cast here.'), ({'mana': 8, 'cost': 9, 'affinity': 9, 'required': 9}, [], False, '`mana` is one short here, so the spell should not cast.'), ({'mana': 9, 'cost': 9, 'affinity': 8, 'required': 9}, [], False, '`affinity` is one short here, so the spell should not cast.'), ({'mana': 20, 'cost': 9, 'affinity': 13, 'required': 9}, [], True, 'More than enough mana and affinity should cast too.'), ({'mana': 19, 'cost': 20, 'affinity': 9, 'required': 9}, [], False, 'With other values in the boxes, the answer did not follow them.'), ({'mana': 9, 'cost': 9, 'affinity': 12, 'required': 13}, [], False, 'With other values in the boxes, the answer did not follow them.'), ({'mana': 20, 'cost': 20, 'affinity': 13, 'required': 13}, [], True, 'With other values in the boxes, the answer did not follow them.')]:",
                     "    _ns, _rows, _calls, _err, _miss = _rerun(_vals, _rolls)",
                     "    assert not _miss, _keep(_miss[0])",
                     "    _shown = {_k: _v for _k, _v in _vals.items() if _k in _show_only} if _show_only else _changed(_vals, _base)",
@@ -14040,7 +14507,7 @@
                     "    _got = _ns[_target]",
                     "    _was = globals().get(_target)",
                     "    if type(_got).__name__ == 'str' and type(_want).__name__ == 'bool':",
-                    "        assert False, ('Take the quotes off: `' + _target + '` holds the text ' + _show(_got) + '. '",
+                    "        assert False, ('`' + _target + '` holds the text ' + _show(_got) + '. '",
                     "                       '`True` and `False` have no quotes: they are Python' + chr(39) + 's yes and no.')",
                     "    if _placeholder is not None and repr(_got) == repr(_placeholder) and _starters(_target, _placeholder):",
                     "        _how = '`' + _target + '` still holds the starter' + chr(39) + 's `' + repr(_placeholder) + '`.'",
@@ -14057,10 +14524,10 @@
               "id": "cast-spell-chain",
               "text": "Put the three print lines in an `if` / `elif` / `else`, in the order the comments give. Exactly enough still casts.",
               "hints": [
-                "Start like this: `if affinity `",
                 "Follow the comments under `# 2.`: `if`, then `elif`, then `else`, each line indented under its branch. *Lower than* is `<`.",
                 "Exactly enough must cast, so the not-enough questions leave the boundary out: `9 < 9` is `False`.",
-                "Both short? Python takes the first true branch, so the affinity question goes first, the way `cast_spell` did."
+                "Both short? Python takes the first true branch, so the affinity question goes first, the way `cast_spell` did.",
+                "Write `if affinity < required:`, then `elif mana < cost:`, then `else:`, each with its line under it."
               ],
               "checks": [
                 {
@@ -14153,15 +14620,14 @@
                     "_base = {'mana': 9, 'cost': 9, 'affinity': 9, 'required': 9}",
                     "_again = 'ran your code again with the starter' + chr(39) + 's numbers'",
                     "_order = ['S', 'M', 'C']",
-                    "for _vals, _key, _fix in [({'mana': 20, 'cost': 9, 'affinity': 13, 'required': 9}, 'C', 'Let a caster with plenty of both reach the last line, under `else`.'), ({'mana': 20, 'cost': 9, 'affinity': 4, 'required': 9}, 'S', 'Ask first whether `affinity` is lower than `required`, with the not-skilled line under it.'), ({'mana': 3, 'cost': 9, 'affinity': 13, 'required': 9}, 'M', 'Then ask whether `mana` is lower than `cost`, with the not-enough-mana line under it.'), ({'mana': 3, 'cost': 9, 'affinity': 4, 'required': 9}, 'S', 'Ask about affinity first, as cast_spell did: both are short here.'), ({'mana': 9, 'cost': 9, 'affinity': 9, 'required': 9}, 'C', 'Use `<`, not `<=`: exactly enough mana and affinity still cast.'), ({'mana': 9, 'cost': 9, 'affinity': 8, 'required': 9}, 'S', 'Ask first whether `affinity` is lower than `required`, with the not-skilled line under it.'), ({'mana': 8, 'cost': 9, 'affinity': 9, 'required': 9}, 'M', 'Then ask whether `mana` is lower than `cost`, with the not-enough-mana line under it.'), ({'mana': 20, 'cost': 20, 'affinity': 12, 'required': 13}, 'S', 'Ask with the boxes, not numbers you typed.'), ({'mana': 19, 'cost': 20, 'affinity': 13, 'required': 13}, 'M', 'Ask with the boxes, not numbers you typed.'), ({'mana': 20, 'cost': 20, 'affinity': 13, 'required': 13}, 'C', 'Ask with the boxes, not numbers you typed.')]:",
+                    "for _vals, _key, _fix in [({'mana': 20, 'cost': 9, 'affinity': 13, 'required': 9}, 'C', 'A caster with plenty of both should reach the barrier line.'), ({'mana': 20, 'cost': 9, 'affinity': 4, 'required': 9}, 'S', 'Low affinity should get the not-skilled line.'), ({'mana': 3, 'cost': 9, 'affinity': 13, 'required': 9}, 'M', 'Low mana should get the not-enough-mana line.'), ({'mana': 3, 'cost': 9, 'affinity': 4, 'required': 9}, 'S', 'Both are short here, and cast_spell answered with the not-skilled line.'), ({'mana': 9, 'cost': 9, 'affinity': 9, 'required': 9}, 'C', 'Exactly enough mana and affinity should still cast.'), ({'mana': 9, 'cost': 9, 'affinity': 8, 'required': 9}, 'S', 'Low affinity should get the not-skilled line.'), ({'mana': 8, 'cost': 9, 'affinity': 9, 'required': 9}, 'M', 'Low mana should get the not-enough-mana line.'), ({'mana': 20, 'cost': 20, 'affinity': 12, 'required': 13}, 'S', 'With other values in the boxes, the answer did not follow them.'), ({'mana': 19, 'cost': 20, 'affinity': 13, 'required': 13}, 'M', 'With other values in the boxes, the answer did not follow them.'), ({'mana': 20, 'cost': 20, 'affinity': 13, 'required': 13}, 'C', 'With other values in the boxes, the answer did not follow them.')]:",
                     "    _ns, _rows, _calls, _err, _miss = _rerun(_vals, [])",
                     "    _shown = _changed(_vals, _base)",
                     "    assert not _miss, _keep(_miss[0])",
                     "    assert not _err, _stop(_shown, [], _err)",
                     "    _got = [_three[_k] for _k in _order if _three[_k] in _rows]",
-                    "    assert _got, _mend('Keep the three lines from the starter as they are, one under each branch.', 'None of them '",
-                    "                       'printed.', _shown, [], _again)",
-                    "    assert len(_got) == 1, _mend('Use one chain, `if`, `elif`, `else`, so only one line prints.',",
+                    "    assert _got, _mend('None of the three lines from the starter printed.', '', _shown, [], _again)",
+                    "    assert len(_got) == 1, _mend('Only one of the three lines should print.',",
                     "                                 'It printed all three.' if len(_got) == 3 else 'It printed two of them.', _shown, [],",
                     "                                 _again)",
                     "    assert _got[0] == _three[_key], _mend(_fix, _printed(_got[0]), _shown, [], _again)"
@@ -14214,6 +14680,27 @@
               "can_cast = mana >= cost or affinity >= required",
               "elif mana <= cost:",
               "if mana < cost:"
+            ],
+            "steps": [
+              [
+                "# Oogrish casts Lantern Ward to hold the barrier.",
+                "mana = 9",
+                "cost = 9",
+                "affinity = 9",
+                "required = 9",
+                "",
+                "# 1. can_cast: does mana reach cost, and affinity reach required?",
+                "can_cast = mana >= cost and affinity >= required",
+                "print(can_cast)",
+                "",
+                "# 2. cast_spell's chain. Put these three lines in an if / elif / else:",
+                "#    If affinity is lower than required: not skilled enough.",
+                "#    Otherwise, if mana is lower than cost: not enough mana.",
+                "#    Otherwise: the barrier holds.",
+                "print(\"Oogrish isn't skilled enough.\")",
+                "print(\"Oogrish doesn't have enough mana.\")",
+                "print(\"The barrier holds.\")"
+              ]
             ]
           },
           "campaignLink": {
@@ -14239,7 +14726,8 @@
           ],
           "explainer": "lean"
         }
-      ]
+      ],
+      "questionsToPass": 3
     },
     {
       "kind": "quiz",
@@ -14247,7 +14735,7 @@
       "title": "Quick Check 2 · Form A questions",
       "optional": true,
       "minutes": 4,
-      "summary": "Four questions that go with Quick Check 2. Three of four right is a pass.",
+      "summary": "Four questions that go with Quick Check 2. To pass the Quick Check, get 3 of the 4 right.",
       "questions": [
         {
           "type": "predict",
@@ -14337,7 +14825,7 @@
       "title": "Quick Check 2 · Form B",
       "optional": true,
       "minutes": 15,
-      "summary": "Three short tasks, no hints. Pass all three to test out of Unit 2. Stuck on one? The lessons teach all of it, and tasks you pass here stay ticked.",
+      "summary": "Three short tasks and four questions, no hints. Pass all three tasks and get 3 of the 4 questions right to test out of Unit 2. Stuck on one? The lessons teach all of it, and tasks you pass here stay ticked.",
       "exercises": [
         {
           "id": "roll-your-own",
@@ -14365,9 +14853,9 @@
               "id": "pick-needed",
               "text": "Set `needed` to any number from 2 to 12.",
               "hints": [
-                "Start like this: `needed = `",
                 "Look at line 3. `needed` is how high the roll must be. Numbers have no quotes.",
-                "A box gets a number like this: `target = 7`."
+                "A box gets a number like this: `target = 7`.",
+                "Write `needed = 8`, or any number from 2 to 12."
               ],
               "checks": [
                 {
@@ -14418,13 +14906,13 @@
                   "name": "needed is a fair number",
                   "code": [
                     "_v = needed",
-                    "assert type(_v).__name__ != 'str', \"Take the quotes off: numbers don't need quotes. `needed` holds text.\"",
-                    "assert type(_v).__name__ == 'int', 'Give `needed` a whole number.'",
+                    "assert type(_v).__name__ != 'str', '`needed` holds text, because of the quotes.'",
+                    "assert type(_v).__name__ == 'int', '`needed` does not hold a whole number.'",
                     "import ast as _ast",
                     "_zero = [_n for _n in _ast.parse(_source).body if type(_n).__name__ == 'Assign' and [getattr(_t, 'id', '') for _t in _n.targets] == ['needed'] and type(_n.value).__name__ == 'Constant' and _n.value.value == 0]",
-                    "assert not (_v == 0 and _zero), \"Pick a number from 2 to 12 for `needed`. It still holds the starter's `0`.\"",
-                    "assert 2 <= _v <= 12, 'Pick a number from 2 to 12 for `needed`: a d12 roll is 1 to 12. `needed` holds ' + str(_v) + '.'",
-                    "assert not _assigned_from_expression('needed'), \"Type one number for `needed`, like `needed = 8`. Mar'tu's check changes that line to try other rolls against it.\""
+                    "assert not (_v == 0 and _zero), \"`needed` still holds the starter's `0`, and the task asks for a number from 2 to 12.\"",
+                    "assert 2 <= _v <= 12, '`needed` holds ' + str(_v) + ', but the task asks for a number from 2 to 12: a d12 roll is 1 to 12.'",
+                    "assert not _assigned_from_expression('needed'), \"`needed` is worked out, not one typed number, so Mar'tu's check can not change it to try other rolls.\""
                   ]
                 }
               ],
@@ -14434,9 +14922,9 @@
               "id": "roll-a-d12",
               "text": "Roll a d12 into `roll`.",
               "hints": [
-                "Start like this: `roll = random.randint(`",
                 "A d12 has faces 1 to 12, and `randint` includes both ends.",
-                "`random.randint(1, 4)` rolls a d4: lowest face first, then the highest."
+                "`random.randint(1, 4)` rolls a d4: lowest face first, then the highest.",
+                "Write `roll = random.randint(1, 12)`."
               ],
               "checks": [
                 {
@@ -14529,22 +15017,21 @@
                     "_ns, _rows, _calls, _err, _miss = _rerun({}, [5])",
                     "assert not _err, _stop({}, [5], _err)",
                     "_fix = '`' + _target + ' = random.randint(1, ' + str(_faces) + ')`'",
-                    "assert _target in _ns, 'Keep the box `' + _target + '` from the starter, and roll it: ' + _fix + '.'",
+                    "assert _target in _ns, 'Keep the box `' + _target + '` from the starter.'",
                     "_got = _ns[_target]",
                     "# Python's own message for `=` in an `if` suggests `:=`, which quietly puts a new value in the box.",
                     "_walrus = [_n for _n in _ast.walk(_ast.parse(_source)) if type(_n).__name__ == 'NamedExpr'",
                     "           and type(_n.target).__name__ == 'Name' and _n.target.id == _target]",
-                    "assert not _walrus, ('To ask a question in an `if`, use a sign like `>=` or `==`. `:=` puts a new value in `'",
+                    "assert not _walrus, ('`:=` puts a new value in `'",
                     "                     + _target + '`, the same as `=`, so it no longer holds the roll.')",
                     "_from = [_c for _c in _calls if _c[2] == _got]",
                     "assert not (_placeholder is not None and not _from and _starters(_target, _placeholder)), (",
-                    "    'Roll it: ' + _fix + '. `' + _target + \"` still holds the starter's `\" + str(_placeholder) + '`.')",
-                    "assert _assigned_from_expression(_target) and _calls, 'Roll it: ' + _fix + '. `' + _target + '` holds a number you typed.'",
-                    "assert _from, 'Roll it: ' + _fix + '. `' + _target + '` does not hold the roll yet.'",
+                    "    '`' + _target + \"` still holds the starter's `\" + str(_placeholder) + '`.')",
+                    "assert _assigned_from_expression(_target) and _calls, '`' + _target + '` holds a number you typed, so it is the same every Run.'",
+                    "assert _from, '`' + _target + '` does not hold the roll yet.'",
                     "_a, _b = _from[0][0], _from[0][1]",
                     "_call = '`random.randint(' + str(_a) + ', ' + str(_b) + ')`'",
-                    "_die = ('Use ' + _fix + ': a d' + str(_faces) + ' has faces 1 to ' + str(_faces) + ', and `randint` includes both '",
-                    "        'ends. ')",
+                    "_die = ('A d' + str(_faces) + ' has faces 1 to ' + str(_faces) + ', but ')",
                     "assert _a >= 1, _die + _call + ' can give ' + str(_a) + '.'",
                     "assert _b <= _faces, _die + _call + ' can give ' + str(_b) + '.'",
                     "assert _b >= _faces, _die + _call + ' never gives ' + str(_faces) + '.'",
@@ -14558,9 +15045,9 @@
               "id": "succeed-or-fail",
               "text": "Print a success line when `roll` reaches `needed`, and a failure line otherwise.",
               "hints": [
-                "Start like this: `if roll `",
                 "Exactly enough passes, so which sign? Then `else:` for the failure line.",
-                "With other names: `if score >= target:` / `    print(\"Yes.\")` / `else:` / `    print(\"No.\")`."
+                "With other names: `if score >= target:` / `    print(\"Yes.\")` / `else:` / `    print(\"No.\")`.",
+                "Write `if roll >= needed:`, a success line under it, then `else:` and a failure line."
               ],
               "checks": [
                 {
@@ -14683,45 +15170,49 @@
                     "    assert not _miss, _keep(_miss[0])",
                     "    assert not _err, _stop(_vals, _rolls, _err)",
                     "    if _via_rolls:",
-                    "        assert _calls, ('Roll the die into `' + _R + '` with `random.randint(1, ' + str(_F) + \")`, so Mar'tu's check \"",
-                    "                        'can roll for you.')",
+                    "        assert _calls, (\"Mar'tu's check found no die rolled into `\" + _R + '`, so it can not roll for you.')",
                     "    return _mask(_rows, [_r, _n])",
                     "_H = _try(_hi)",
                     "_L = _try(_lo)",
-                    "assert _H, ('Print a success line when `' + _R + '` reaches `' + _N_name + '`. Your program printed nothing. '",
+                    "assert _H, ('A roll that reaches `' + _N_name + '` printed nothing. '",
                     "            + _ev(_hi))",
-                    "assert _L, 'Add `else:` with a failure line under it. Your program printed nothing. ' + _ev(_lo)",
+                    "assert _L, 'A low roll printed nothing. ' + _ev(_lo)",
                     "_E = _try(_N)",
                     "if _H == _L:",
-                    "    assert _E == _H, ('Use `>=`, so a higher roll passes too. Only a roll of exactly ' + str(_N) + ' gave the success '",
-                    "                      'line. ' + _ev_many([_lo, _N, _hi]))",
-                    "    assert False, ('Ask whether `' + _R + '` reaches `' + _N_name + '`, and give the two lines different words. Both '",
-                    "                   'rolls printed the same thing. ' + _ev_many([_lo, _hi]))",
+                    "    assert _E == _H, ('Only a roll of exactly ' + str(_N) + ' gave the success line: a higher roll did not. ' + _ev_many([_lo, _N, _hi]))",
+                    "    # The same words in both branches, or an `if` that never asks with the boxes (`if True:`, `if 14 >= 12:`, a",
+                    "    # lone print): say only what is really wrong.",
+                    "    _same = False",
+                    "    for _n in _ast.walk(_ast.parse(_source)):",
+                    "        if type(_n).__name__ == 'If' and _n.orelse:",
+                    "            _w = [sorted(_c.value for _x in _b for _c in _ast.walk(_x) if type(_c).__name__ == 'Constant'",
+                    "                         and type(_c.value).__name__ == 'str') for _b in (_n.body, _n.orelse)]",
+                    "            _same = _same or bool(_w[0] and _w[0] == _w[1])",
+                    "    assert not _same, ('The success line and the failure line say the same thing. '",
+                    "                       + _ev_many([_lo, _hi]))",
+                    "    assert False, ('Both rolls printed the same line, so the answer never changes. ' + _ev_many([_lo, _hi]))",
                     "# Exactly one of the two lines prints. A failure line with no indent (no `else:`) prints after every roll.",
-                    "assert [_l for _l in _L if _l not in _H], ('Put the failure line under `else:`, indented, so only one line prints. It '",
-                    "                                           'printed the failure line as well as the success line. ' + _ev(_hi))",
-                    "assert [_l for _l in _H if _l not in _L], ('Indent the success line under the `if`, and the failure line under '",
-                    "                                           '`else:`. It printed the success line as well as the failure line. ' + _ev(_lo))",
-                    "assert _E == _H, (('Use `>=`, so exactly enough passes: a roll of ' + str(_N) + ' or more gives the success line. It '",
-                    "                   'gave the failure line. ' if _E == _L else",
-                    "                   'Print the success line here, the same as for a high roll. ') + _ev(_N))",
+                    "assert [_l for _l in _L if _l not in _H], ('A high roll printed the failure line as well as the success line. ' + _ev(_hi))",
+                    "assert [_l for _l in _H if _l not in _L], ('A low roll printed the success line as well as the failure line. ' + _ev(_lo))",
+                    "assert _E == _H, (('A roll of exactly ' + str(_N) + ' gave the failure line. ' if _E == _L else",
+                    "                   'A roll of exactly ' + str(_N) + ' did not give the success line. ') + _ev(_N))",
                     "_B = _try(_N - 1)",
-                    "assert _B == _L, (('Give a roll below `' + _N_name + '` the failure line. It gave the success line. ' if _B == _H else",
-                    "                   'Print the failure line here, the same as for a low roll. ') + _ev(_N - 1))",
+                    "assert _B == _L, (('A roll below `' + _N_name + '` gave the success line. ' if _B == _H else",
+                    "                   'A roll below `' + _N_name + '` did not give the failure line. ') + _ev(_N - 1))",
                     "if _N + 1 <= _hi:",
                     "    _A = _try(_N + 1)",
-                    "    assert _A == _H, 'Print the success line here, the same as for a high roll. ' + _ev(_N + 1)",
+                    "    assert _A == _H, 'A roll above `' + _N_name + '` did not give the success line. ' + _ev(_N + 1)",
                     "_M = _N + 3 if (not _via_rolls or _N + 3 <= _F) else _N - 3",
                     "_B2 = _try(_M - 1, _M)",
                     "_E2 = _try(_M, _M)",
-                    "assert _B2 == _L and _E2 == _H, ('Ask with the box `' + _N_name + '`, not a number you typed. With `' + _N_name + ' = '",
+                    "assert _B2 == _L and _E2 == _H, ('With `' + _N_name + ' = '",
                     "                                 + str(_M) + '`, your program ' + ('passed ' + _a_roll(_M - 1) if _B2 != _L else",
-                    "                                 'failed ' + _a_roll(_M)) + \". (Mar'tu's check tried `\" + _N_name + ' = ' + str(_M)",
+                    "                                 'failed ' + _a_roll(_M)) + ': the `if` does not follow the box `' + _N_name + \"`. (Mar'tu's check tried `\" + _N_name + ' = ' + str(_M)",
                     "                                 + '`, only inside the check.)')",
                     "# With `needed` at the top face no roll can go past it, so `==` would hide: one more try, above the new needed.",
                     "if _M + 1 <= (_F if _via_rolls else _M + 1):",
                     "    _A2 = _try(_M + 1, _M)",
-                    "    assert _A2 == _H, ('Use `>=`, so a roll that reaches `' + _N_name + '` or goes past it passes. '",
+                    "    assert _A2 == _H, ('A roll that goes past `' + _N_name + '` should pass too. '",
                     "                       + _a_roll(_M + 1)[0].upper() + _a_roll(_M + 1)[1:] + ' did not pass. ' + _ev(_M + 1, _M))"
                   ]
                 }
@@ -14755,6 +15246,22 @@
               "roll = random.randint(1, 11)",
               "if roll > needed:",
               "else roll < needed:"
+            ],
+            "steps": [
+              [
+                "import random",
+                "# Pick any needed, from 2 to 12.",
+                "needed = 8",
+                "roll = 0",
+                "# If roll reaches needed, print a success line. Otherwise, print a failure line."
+              ],
+              [
+                "import random",
+                "# Pick any needed, from 2 to 12.",
+                "needed = 8",
+                "roll = random.randint(1, 12)",
+                "# If roll reaches needed, print a success line. Otherwise, print a failure line."
+              ]
             ]
           },
           "takeaway": "Roll with `random.randint(1, 12)`, then `if roll >= needed:` and `else:`.",
@@ -14805,7 +15312,7 @@
                     "_tree = _ast.parse(_source)",
                     "_called = [id(_n.func) for _n in _ast.walk(_tree) if type(_n).__name__ == 'Call']",
                     "_raw = [_n.lineno for _n in _ast.walk(_tree) if type(_n).__name__ == 'Attribute' and _n.attr == 'lower' and id(_n) not in _called]",
-                    "assert not _raw, 'Add `()`: `choice.lower()`. Line ' + str(_raw[0] if _raw else 0) + ' has `.lower` with no `()`, so it never runs.'"
+                    "assert not _raw, 'Line ' + str(_raw[0] if _raw else 0) + ' has `.lower` with no `()`, so it never runs.'"
                   ]
                 },
                 {
@@ -14813,7 +15320,7 @@
                   "code": [
                     "import ast as _ast",
                     "_walrus = [_n for _n in _ast.walk(_ast.parse(_source)) if type(_n).__name__ == 'NamedExpr']",
-                    "assert not _walrus, 'To ask *is it the same as?*, use `==`: `if choice == \"option 3\":`. `:=` puts a value in a box, the same as `=`.'"
+                    "assert not _walrus, '`:=` puts a value in a box, the same as `=`. It does not ask *is it the same as?*'"
                   ]
                 },
                 {
@@ -14901,7 +15408,7 @@
                     "        _random.randint = _real",
                     "    _rows = [_l.strip() for _l in _buf.getvalue().splitlines() if _l.strip()]",
                     "    return _ns, _rows, _calls, _err, sorted(_k for _k in _vals if _k not in _seen)",
-                    "for _vals, _rolls, _want, _never, _tail in [({'choice': 'option 3'}, [], [\"Mar'tu: Then we rest here.\"], [\"Mar'tu: Then we follow the river.\", \"Mar'tu: Hm.\"], 'Ask with `==` on line 3, and keep one chain: `if`, then `elif`, then `else`.'), ({'choice': 'option 4'}, [], [], [\"Mar'tu: Then we rest here.\"], 'Give only `\"option 3\"` this reply: ask with `==`, `if choice == \"option 3\":`.')]:",
+                    "for _vals, _rolls, _want, _never, _tail in [({'choice': 'option 3'}, [], [\"Mar'tu: Then we rest here.\"], [\"Mar'tu: Then we follow the river.\", \"Mar'tu: Hm.\"], 'The choice `\"option 3\"` should get its own reply, and only that one.'), ({'choice': 'option 4'}, [], [], [\"Mar'tu: Then we rest here.\"], 'Only `\"option 3\"` should get this reply.')]:",
                     "    _ns, _rows, _calls, _err, _miss = _rerun(_vals, _rolls)",
                     "    assert not _miss, _keep(_miss[0])",
                     "    assert not _err, _stop(_vals, _rolls, _err)",
@@ -14933,7 +15440,7 @@
                     "_asked = [_c for _q in _ast.walk(_ast.parse(_source)) if type(_q).__name__ == 'Compare' for _c in [_q.left] + list(_q.comparators) if type(_c).__name__ == 'Constant']",
                     "_texts = [_c.value for _c in _asked if type(_c.value).__name__ == 'str']",
                     "_bad = [(_t, _w) for _t in _texts for _w in _wanted if _t != _w and _squash(_t) == _squash(_w) and _w not in _texts]",
-                    "assert not _bad, ('Copy the option exactly: `\"' + (_bad[0][0] if _bad else '') + '\"` and `\"' + (_bad[0][1] if _bad else '') + '\"` are different text to Python. Every letter, space and capital counts.')"
+                    "assert not _bad, ('`\"' + (_bad[0][0] if _bad else '') + '\"` and `\"' + (_bad[0][1] if _bad else '') + '\"` are different text to Python. Every letter, space and capital counts.')"
                   ]
                 },
                 {
@@ -15021,7 +15528,7 @@
                     "        _random.randint = _real",
                     "    _rows = [_l.strip() for _l in _buf.getvalue().splitlines() if _l.strip()]",
                     "    return _ns, _rows, _calls, _err, sorted(_k for _k in _vals if _k not in _seen)",
-                    "for _vals, _rolls, _want, _never, _tail in [({'choice': 'option 4'}, [], [\"Mar'tu: Then we follow the river.\"], [\"Mar'tu: Then we rest here.\", \"Mar'tu: Hm.\"], 'Put the option in quotes: `\"option 4\"`.'), ({'choice': 'option 9'}, [], [\"Mar'tu: Hm.\"], [\"Mar'tu: Then we rest here.\", \"Mar'tu: Then we follow the river.\"], 'Let any other choice reach the `else`.')]:",
+                    "for _vals, _rolls, _want, _never, _tail in [({'choice': 'option 4'}, [], [\"Mar'tu: Then we follow the river.\"], [\"Mar'tu: Then we rest here.\", \"Mar'tu: Hm.\"], 'The choice `\"option 4\"` should get its own reply.'), ({'choice': 'option 9'}, [], [\"Mar'tu: Hm.\"], [\"Mar'tu: Then we rest here.\", \"Mar'tu: Then we follow the river.\"], 'Any other choice should reach the `else`.')]:",
                     "    _ns, _rows, _calls, _err, _miss = _rerun(_vals, _rolls)",
                     "    assert not _miss, _keep(_miss[0])",
                     "    assert not _err, _stop(_vals, _rolls, _err)",
@@ -15140,9 +15647,8 @@
                     "    _ok = all(_w in _rows for _w in _want) and not any(_w in _rows for _w in _never)",
                     "    _what = ('`' + _want[0] + '` did not print.' if _want and _want[0] not in _rows else 'Another reply printed too.')",
                     "    if _lone:",
-                    "        assert _ok, _mend('Keep the copy: `' + _box + ' = ' + _box + '.lower()`. Line ' + str(_lone[0]) + ' makes a '",
-                    "                          'copy, then forgets it.', _what, _vals, [])",
-                    "    assert _ok, _mend('Use `.lower()`, so any capitals get their reply.', _what, _vals, [])"
+                    "        assert _ok, _mend('Line ' + str(_lone[0]) + ' makes a lower-case copy, then forgets it.', _what, _vals, [])",
+                    "    assert _ok, _mend('A choice typed with capitals does not get its reply.', _what, _vals, [])"
                   ]
                 }
               ],
@@ -15227,9 +15733,9 @@
               "id": "can-cast",
               "text": "Make `can_cast` say whether `mana` reaches `cost` and `affinity` reaches `required`. Exactly enough counts.",
               "hints": [
-                "Start like this: `can_cast = mana `",
                 "Two questions, and both must be `True`. Which word joins them? Which sign says *at least*?",
-                "`and` is True only when both sides are True: `print(3 >= 3 and 5 >= 9)` prints `False`."
+                "`and` is True only when both sides are True: `print(3 >= 3 and 5 >= 9)` prints `False`.",
+                "Write `can_cast = mana >= cost and affinity >= required`."
               ],
               "checks": [
                 {
@@ -15240,22 +15746,23 @@
                     "_asks = [_n.lineno for _n in _ast.parse(_source).body if type(_n).__name__ == 'Expr'",
                     "         and any(type(_q).__name__ == 'Compare' and type(_q.left).__name__ == 'Name' and _q.left.id == _target",
                     "                 and type(_q.ops[0]).__name__ == 'Eq' for _q in _ast.walk(_n.value))]",
-                    "assert not _asks, ('Use one `=` to put the answer in `' + _target + '`: `=` puts, `==` only asks. Line '",
-                    "                   + str(_asks[0] if _asks else 0) + ' asks a question and forgets the answer.')"
+                    "assert not _asks, ('Line ' + str(_asks[0] if _asks else 0) + ' asks a question with `==` and forgets the '",
+                    "                   'answer: `==` only asks.')"
                   ]
                 },
                 {
                   "name": "can_cast is asked, not typed",
                   "code": [
                     "import ast as _ast",
-                    "_target, _boxes, _fix, _placeholder = 'can_cast', ['mana', 'cost', 'affinity', 'required'], 'Work `can_cast` out from the boxes `mana`, `cost`, `affinity` and `required`.', False",
+                    "_target, _boxes, _fix, _placeholder = 'can_cast', ['mana', 'cost', 'affinity', 'required'], '', False",
                     "_tree = _ast.parse(_source)",
                     "def _sets(_n):",
                     "    return type(_n).__name__ == 'Assign' and any(type(_t).__name__ == 'Name' and _t.id == _target for _t in _n.targets)",
                     "_made = [_n for _n in _ast.walk(_tree) if _sets(_n)]",
                     "_two = [_n for _n in _made if len(_n.targets) > 1]",
                     "_also = [_t.id for _n in _two for _t in _n.targets if type(_t).__name__ == 'Name' and _t.id != _target]",
-                    "assert not _two, (_fix + ' Your `' + _target + '` line has two `=` signs, so it puts a value in `'",
+                    "_pre = _fix + ' ' if _fix else ''",
+                    "assert not _two, (_pre + 'Your `' + _target + '` line has two `=` signs, so it puts a value in `'",
                     "                  + (_also[0] if _also else _target) + '` too. `=` puts a value in a box.')",
                     "def _names(_n):",
                     "    return {_x.id for _x in _ast.walk(_n) if type(_x).__name__ == 'Name'}",
@@ -15270,8 +15777,8 @@
                     "_asked = bool(_used & set(_boxes))",
                     "_still = [_n for _n in _made if _placeholder is not None and type(_n.value).__name__ == 'Constant'",
                     "          and repr(_n.value.value) == repr(_placeholder)]",
-                    "assert not _still or _asked, _fix + ' `' + _target + \"` still holds the starter's `\" + repr(_placeholder) + '`.'",
-                    "assert not _made or _quoted or _asked, (_fix + ' `' + _target + '` is made from values you typed, so it can never '",
+                    "assert not _still or _asked, _pre + '`' + _target + \"` still holds the starter's `\" + repr(_placeholder) + '`.'",
+                    "assert not _made or _quoted or _asked, (_pre + '`' + _target + '` is made from values you typed, so it can never '",
                     "                                        'change when the boxes change.')"
                   ]
                 },
@@ -15368,7 +15875,7 @@
                     "_left = [_t.id for _n in _ast.walk(_ast.parse(_source)) if type(_n).__name__ in ('Assign', 'AugAssign')",
                     "         for _t in (_n.targets if type(_n).__name__ == 'Assign' else [_n.target])",
                     "         if type(_t).__name__ == 'Name' and _t.id in _foreign]",
-                    "for _vals, _rolls, _want, _tail in [({'mana': 14, 'cost': 14, 'affinity': 10, 'required': 10}, [], True, 'Use `>=` in both questions: exactly enough mana and affinity still cast.'), ({'mana': 13, 'cost': 14, 'affinity': 10, 'required': 10}, [], False, 'Join the two questions with `and`: both must be enough, and `mana` is one short.'), ({'mana': 14, 'cost': 14, 'affinity': 9, 'required': 10}, [], False, 'Join the two questions with `and`: both must be enough, and `affinity` is one short.'), ({'mana': 25, 'cost': 14, 'affinity': 14, 'required': 10}, [], True, 'Use `>=`, which means *at least*: more than enough casts too.'), ({'mana': 24, 'cost': 25, 'affinity': 10, 'required': 10}, [], False, 'Ask with the boxes, not numbers you typed.'), ({'mana': 14, 'cost': 14, 'affinity': 13, 'required': 14}, [], False, 'Ask with the boxes, not numbers you typed.'), ({'mana': 25, 'cost': 25, 'affinity': 14, 'required': 14}, [], True, 'Ask with the boxes, not numbers you typed.')]:",
+                    "for _vals, _rolls, _want, _tail in [({'mana': 14, 'cost': 14, 'affinity': 10, 'required': 10}, [], True, 'Exactly enough mana and affinity should cast here.'), ({'mana': 13, 'cost': 14, 'affinity': 10, 'required': 10}, [], False, '`mana` is one short here, so the spell should not cast.'), ({'mana': 14, 'cost': 14, 'affinity': 9, 'required': 10}, [], False, '`affinity` is one short here, so the spell should not cast.'), ({'mana': 25, 'cost': 14, 'affinity': 14, 'required': 10}, [], True, 'More than enough mana and affinity should cast too.'), ({'mana': 24, 'cost': 25, 'affinity': 10, 'required': 10}, [], False, 'With other values in the boxes, the answer did not follow them.'), ({'mana': 14, 'cost': 14, 'affinity': 13, 'required': 14}, [], False, 'With other values in the boxes, the answer did not follow them.'), ({'mana': 25, 'cost': 25, 'affinity': 14, 'required': 14}, [], True, 'With other values in the boxes, the answer did not follow them.')]:",
                     "    _ns, _rows, _calls, _err, _miss = _rerun(_vals, _rolls)",
                     "    assert not _miss, _keep(_miss[0])",
                     "    _shown = {_k: _v for _k, _v in _vals.items() if _k in _show_only} if _show_only else _changed(_vals, _base)",
@@ -15381,7 +15888,7 @@
                     "    _got = _ns[_target]",
                     "    _was = globals().get(_target)",
                     "    if type(_got).__name__ == 'str' and type(_want).__name__ == 'bool':",
-                    "        assert False, ('Take the quotes off: `' + _target + '` holds the text ' + _show(_got) + '. '",
+                    "        assert False, ('`' + _target + '` holds the text ' + _show(_got) + '. '",
                     "                       '`True` and `False` have no quotes: they are Python' + chr(39) + 's yes and no.')",
                     "    if _placeholder is not None and repr(_got) == repr(_placeholder) and _starters(_target, _placeholder):",
                     "        _how = '`' + _target + '` still holds the starter' + chr(39) + 's `' + repr(_placeholder) + '`.'",
@@ -15398,10 +15905,10 @@
               "id": "cast-spell-chain",
               "text": "Put the three print lines in an `if` / `elif` / `else`, in the order the comments give. Exactly enough still casts.",
               "hints": [
-                "Start like this: `if affinity `",
                 "Follow the comments under `# 2.`: `if`, then `elif`, then `else`, each line indented under its branch. *Lower than* is `<`.",
                 "Exactly enough must cast, so the not-enough questions leave the boundary out: `9 < 9` is `False`.",
-                "Both short? Python takes the first true branch, so the affinity question goes first, the way `cast_spell` did."
+                "Both short? Python takes the first true branch, so the affinity question goes first, the way `cast_spell` did.",
+                "Write `if affinity < required:`, then `elif mana < cost:`, then `else:`, each with its line under it."
               ],
               "checks": [
                 {
@@ -15494,15 +16001,14 @@
                     "_base = {'mana': 14, 'cost': 14, 'affinity': 10, 'required': 10}",
                     "_again = 'ran your code again with the starter' + chr(39) + 's numbers'",
                     "_order = ['S', 'M', 'C']",
-                    "for _vals, _key, _fix in [({'mana': 25, 'cost': 14, 'affinity': 14, 'required': 10}, 'C', 'Let a caster with plenty of both reach the last line, under `else`.'), ({'mana': 25, 'cost': 14, 'affinity': 5, 'required': 10}, 'S', 'Ask first whether `affinity` is lower than `required`, with the not-skilled line under it.'), ({'mana': 8, 'cost': 14, 'affinity': 14, 'required': 10}, 'M', 'Then ask whether `mana` is lower than `cost`, with the not-enough-mana line under it.'), ({'mana': 8, 'cost': 14, 'affinity': 5, 'required': 10}, 'S', 'Ask about affinity first, as cast_spell did: both are short here.'), ({'mana': 14, 'cost': 14, 'affinity': 10, 'required': 10}, 'C', 'Use `<`, not `<=`: exactly enough mana and affinity still cast.'), ({'mana': 14, 'cost': 14, 'affinity': 9, 'required': 10}, 'S', 'Ask first whether `affinity` is lower than `required`, with the not-skilled line under it.'), ({'mana': 13, 'cost': 14, 'affinity': 10, 'required': 10}, 'M', 'Then ask whether `mana` is lower than `cost`, with the not-enough-mana line under it.'), ({'mana': 25, 'cost': 25, 'affinity': 13, 'required': 14}, 'S', 'Ask with the boxes, not numbers you typed.'), ({'mana': 24, 'cost': 25, 'affinity': 14, 'required': 14}, 'M', 'Ask with the boxes, not numbers you typed.'), ({'mana': 25, 'cost': 25, 'affinity': 14, 'required': 14}, 'C', 'Ask with the boxes, not numbers you typed.')]:",
+                    "for _vals, _key, _fix in [({'mana': 25, 'cost': 14, 'affinity': 14, 'required': 10}, 'C', 'A caster with plenty of both should reach the barrier line.'), ({'mana': 25, 'cost': 14, 'affinity': 5, 'required': 10}, 'S', 'Low affinity should get the not-skilled line.'), ({'mana': 8, 'cost': 14, 'affinity': 14, 'required': 10}, 'M', 'Low mana should get the not-enough-mana line.'), ({'mana': 8, 'cost': 14, 'affinity': 5, 'required': 10}, 'S', 'Both are short here, and cast_spell answered with the not-skilled line.'), ({'mana': 14, 'cost': 14, 'affinity': 10, 'required': 10}, 'C', 'Exactly enough mana and affinity should still cast.'), ({'mana': 14, 'cost': 14, 'affinity': 9, 'required': 10}, 'S', 'Low affinity should get the not-skilled line.'), ({'mana': 13, 'cost': 14, 'affinity': 10, 'required': 10}, 'M', 'Low mana should get the not-enough-mana line.'), ({'mana': 25, 'cost': 25, 'affinity': 13, 'required': 14}, 'S', 'With other values in the boxes, the answer did not follow them.'), ({'mana': 24, 'cost': 25, 'affinity': 14, 'required': 14}, 'M', 'With other values in the boxes, the answer did not follow them.'), ({'mana': 25, 'cost': 25, 'affinity': 14, 'required': 14}, 'C', 'With other values in the boxes, the answer did not follow them.')]:",
                     "    _ns, _rows, _calls, _err, _miss = _rerun(_vals, [])",
                     "    _shown = _changed(_vals, _base)",
                     "    assert not _miss, _keep(_miss[0])",
                     "    assert not _err, _stop(_shown, [], _err)",
                     "    _got = [_three[_k] for _k in _order if _three[_k] in _rows]",
-                    "    assert _got, _mend('Keep the three lines from the starter as they are, one under each branch.', 'None of them '",
-                    "                       'printed.', _shown, [], _again)",
-                    "    assert len(_got) == 1, _mend('Use one chain, `if`, `elif`, `else`, so only one line prints.',",
+                    "    assert _got, _mend('None of the three lines from the starter printed.', '', _shown, [], _again)",
+                    "    assert len(_got) == 1, _mend('Only one of the three lines should print.',",
                     "                                 'It printed all three.' if len(_got) == 3 else 'It printed two of them.', _shown, [],",
                     "                                 _again)",
                     "    assert _got[0] == _three[_key], _mend(_fix, _printed(_got[0]), _shown, [], _again)"
@@ -15555,6 +16061,27 @@
               "can_cast = mana >= cost or affinity >= required",
               "elif mana <= cost:",
               "if mana < cost:"
+            ],
+            "steps": [
+              [
+                "# Gearshift casts Ember Wall to hold the barrier.",
+                "mana = 14",
+                "cost = 14",
+                "affinity = 10",
+                "required = 10",
+                "",
+                "# 1. can_cast: does mana reach cost, and affinity reach required?",
+                "can_cast = mana >= cost and affinity >= required",
+                "print(can_cast)",
+                "",
+                "# 2. cast_spell's chain. Put these three lines in an if / elif / else:",
+                "#    If affinity is lower than required: not skilled enough.",
+                "#    Otherwise, if mana is lower than cost: not enough mana.",
+                "#    Otherwise: the barrier holds.",
+                "print(\"Gearshift isn't skilled enough.\")",
+                "print(\"Gearshift doesn't have enough mana.\")",
+                "print(\"Barrier's holding.\")"
+              ]
             ]
           },
           "campaignLink": {
@@ -15580,7 +16107,8 @@
           ],
           "explainer": "lean"
         }
-      ]
+      ],
+      "questionsToPass": 3
     },
     {
       "kind": "quiz",
@@ -15588,7 +16116,7 @@
       "title": "Quick Check 2 · Form B questions",
       "optional": true,
       "minutes": 4,
-      "summary": "Four questions that go with Quick Check 2. Three of four right is a pass.",
+      "summary": "Four questions that go with Quick Check 2. To pass the Quick Check, get 3 of the 4 right.",
       "questions": [
         {
           "type": "predict",

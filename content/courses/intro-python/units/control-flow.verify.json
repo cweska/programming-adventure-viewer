@@ -38,16 +38,16 @@
       "notes": "meta: path=optional; intro node:Assert (optional-only token: no core item uses it). Examples show seals that hold (a failing example would not run); the AssertionError is shown as text in the body."
     },
     "qc2-a": {
-      "notes": "Quick Check 2, form A (code tasks). Questions live in qc2-a-questions. Pass = every code task plus 3 of the 4 questions; a retake draws form B. The site gates on the code tasks only (question scoring joins when QC scoring ships), so the code tasks alone must cover the unit (teacher ruling on the Unit 2 reviews: C3 added, and a quiet `.lower()` slip in C2). Coverage (lint d): compare, boundary -> Q1 (fails on > thinking), C1 (BND: WA `>`) and C3 (WA `<=`, `>`); elif-chain -> Q2 (first true wins), C2 (WA elif as a second if) and C3 (WA mana first, two separate ifs); randint -> Q3 (0-8, 1-7) and C1 (WA d19, a die from 0); and-or-not -> Q4 (and read as or) and C3 (WA `or`, only the mana asked); if-else -> C1 (WA no else, else with a condition, missing colon); read-traceback, quote-text -> C2 (each slip left crashes); compare (`.lower()`) -> C2 CP3 (WA the copy forgotten, `.lower` with no `()`, the value typed in small letters). support='none' everywhere: no hints, tracer or compare; glossary, read-aloud, DF and the lean explainer stay on. 15 minutes (was 10)."
+      "notes": "Quick Check 2, form A (code tasks). Questions live in qc2-a-questions. Pass = every code task plus 3 of the 4 questions; a retake draws form B. The site gates on both (questions_to_pass=3: the Unit 2 play-through found the unit tested out with no question answered, and the questions are the only place `not` and the first-true-wins predict appear). The code tasks still cover the unit on their own (teacher ruling on the Unit 2 reviews: C3 added, and a quiet `.lower()` slip in C2). Check messages are lean, like the explainer: the slip and the evidence, never the fix (u02c `_leaned`), so a task can't be passed by following them. Coverage (lint d): compare, boundary -> Q1 (fails on > thinking), C1 (BND: WA `>`) and C3 (WA `<=`, `>`); elif-chain -> Q2 (first true wins), C2 (WA elif as a second if) and C3 (WA mana first, two separate ifs); randint -> Q3 (0-8, 1-7) and C1 (WA d19, a die from 0); and-or-not -> Q4 (and read as or) and C3 (WA `or`, only the mana asked); if-else -> C1 (WA no else, else with a condition, missing colon); read-traceback, quote-text -> C2 (each slip left crashes); compare (`.lower()`) -> C2 CP3 (WA the copy forgotten, `.lower` with no `()`, the value typed in small letters). support='none' everywhere: no hints, tracer or compare; glossary, read-aloud, DF and the lean explainer stay on. 15 minutes (was 10)."
     },
     "qc2-a-questions": {
-      "notes": "Quick Check 2, form A questions (scored with qc2-a: every code task plus 3 of the 4 questions). The site currently gates on the code tasks only; question scoring joins when QC scoring ships. No hints; read-aloud and glossary stay on."
+      "notes": "Quick Check 2, form A questions (scored with qc2-a: every code task plus 3 of the 4 questions, questions_to_pass=3 on the form). The best score counts, so a retake can lift it. No hints; read-aloud and glossary stay on."
     },
     "qc2-b": {
-      "notes": "Quick Check 2, form B: a d12 (needed 2 to 12), option 3 / option 4 (the quiet slip on `\"Option 4\"`), Gearshift's Ember Wall in C3 (mana 14 = cost, affinity 10 = required), and hours_left tiers in its questions. Same coverage as form A. Questions live in qc2-b-questions. Pass = every code task plus 3 of the 4 questions. The site gates on the code tasks only. 15 minutes (was 10)."
+      "notes": "Quick Check 2, form B: a d12 (needed 2 to 12), option 3 / option 4 (the quiet slip on `\"Option 4\"`), Gearshift's Ember Wall in C3 (mana 14 = cost, affinity 10 = required), and hours_left tiers in its questions. Same coverage as form A. Questions live in qc2-b-questions. Pass = every code task plus 3 of the 4 questions, and the site gates on both (questions_to_pass=3). Lean check messages. 15 minutes (was 10)."
     },
     "qc2-b-questions": {
-      "notes": "Quick Check 2, form B questions (scored with qc2-b: every code task plus 3 of the 4 questions). The site currently gates on the code tasks only; question scoring joins when QC scoring ships. No hints; read-aloud and glossary stay on."
+      "notes": "Quick Check 2, form B questions (scored with qc2-b: every code task plus 3 of the 4 questions, questions_to_pass=3 on the form). The best score counts, so a retake can lift it. No hints; read-aloud and glossary stay on."
     },
     "chalk-notes": {
       "notes": "Cheatsheet 2 (spec items in order, then the error rows and the extras). Entries with `output` are run and checked by the harness; the dice entry has none (lint 9: never a random value in an output)."
@@ -74,6 +74,17 @@
           ],
           "failsAt": 1,
           "messageContains": "less than"
+        },
+        {
+          "why": "the print replaced by the question alone (the class's slip: it shows nothing)",
+          "code": [
+            "dex = 6",
+            "needed = 15",
+            "dex < needed",
+            "barrier_up = 0"
+          ],
+          "failsAt": 1,
+          "messageContains": "Line 3 asks a question, but shows the answer nowhere"
         },
         {
           "why": "the answer typed in (CP1 'True' check passes, the rerun does not)",
@@ -851,7 +862,7 @@
           "messageContains": "use one `=`"
         },
         {
-          "why": "two = signs: passed = roll = needed",
+          "why": "two = signs: passed = roll = needed (the message names the step's sign, >=, not ==)",
           "code": [
             "roll = 15",
             "needed = 15",
@@ -863,7 +874,7 @@
             "can_cast = mana >= cost"
           ],
           "failsAt": 1,
-          "messageContains": "two `=` signs"
+          "messageContains": "two `=` signs, so it puts the same value in two boxes. This box should hold a yes/no answer, `True` or `False`: ask the question with `>=`"
         },
         {
           "why": "== instead of >=",
@@ -1460,6 +1471,20 @@
           ],
           "failsAt": 2,
           "messageContains": "`needed` holds text"
+        },
+        {
+          "why": "=> mended to a single = (passed = roll = needed): the message asks for >=, the step's sign",
+          "code": [
+            "roll = 17",
+            "needed = 15",
+            "passed = roll = needed",
+            "print(passed)",
+            "clock_color = \"blue\"",
+            "clock_is_red = clock_color == \"red\"",
+            "print(clock_is_red)"
+          ],
+          "failsAt": 1,
+          "messageContains": "ask the question with `>=`"
         },
         {
           "why": "two = signs in the clock line",
@@ -2095,7 +2120,7 @@
             "    print(\"That latch hates me.\")  # failure line"
           ],
           "failsAt": 1,
-          "messageContains": "printed the same thing"
+          "messageContains": "using the boxes, so the answer can change"
         },
         {
           "why": "== instead of >= (only exactly 12 passes)",
@@ -2182,7 +2207,33 @@
             "    print(\"That latch hates me.\")  # failure line"
           ],
           "failsAt": 1,
-          "messageContains": "printed the same thing"
+          "messageContains": "using the boxes, so the answer can change"
+        },
+        {
+          "why": "if True with two different lines: only the question is wrong, the words are fine",
+          "code": [
+            "strength_roll = 14",
+            "strength_needed = 12",
+            "if True:",
+            "    print(\"The latch pops open.\")  # success line",
+            "else:",
+            "    print(\"That latch hates me.\")  # failure line"
+          ],
+          "failsAt": 1,
+          "messageContains": "Both rolls printed the same line"
+        },
+        {
+          "why": "the same words in both branches (the question is right, the lines are not)",
+          "code": [
+            "strength_roll = 14",
+            "strength_needed = 12",
+            "if strength_roll >= strength_needed:",
+            "    print(\"The latch moves.\")  # success line",
+            "else:",
+            "    print(\"The latch moves.\")  # failure line"
+          ],
+          "failsAt": 1,
+          "messageContains": "different words: both say the same thing"
         },
         {
           "why": "the failure line uses a box that does not exist (the real roll never reaches it; the check's low roll does)",
@@ -7518,7 +7569,7 @@
             "    print(\"That wall hates me.\")"
           ],
           "failsAt": 3,
-          "messageContains": "not a number you typed"
+          "messageContains": "does not follow the box `needed`"
         },
         {
           "why": "needed left at 0",
@@ -7628,7 +7679,7 @@
             "    print(\"Bomb Shell climbs the old wall.\")"
           ],
           "failsAt": 3,
-          "messageContains": "else"
+          "messageContains": "A low roll printed nothing"
         },
         {
           "why": "the print not indented under the if",
@@ -7676,7 +7727,7 @@
             "    print(\"That wall hates me.\")"
           ],
           "failsAt": 3,
-          "messageContains": "goes past it"
+          "messageContains": "goes past `needed` should pass"
         },
         {
           "why": "walrus after Python's hint (:= puts needed into roll)",
@@ -7724,7 +7775,55 @@
             "    print(\"That wall hates me.\")"
           ],
           "failsAt": 1,
-          "messageContains": "Type one number"
+          "messageContains": "not one typed number"
+        },
+        {
+          "why": "lean: the d(faces-1) message names the slip, never the fixed call",
+          "code": [
+            "import random",
+            "# Pick any needed, from 2 to 20.",
+            "needed = 13",
+            "roll = random.randint(1, 19)",
+            "# If roll reaches needed, print a success line. Otherwise, print a failure line.",
+            "if roll >= needed:",
+            "    print(\"Bomb Shell climbs the old wall.\")",
+            "else:",
+            "    print(\"That wall hates me.\")"
+          ],
+          "failsAt": 2,
+          "messageContains": "A d20 has faces 1 to 20, but `random.randint(1, 19)` never gives"
+        },
+        {
+          "why": "lean: > for >= names the evidence, not the sign",
+          "code": [
+            "import random",
+            "# Pick any needed, from 2 to 20.",
+            "needed = 13",
+            "roll = random.randint(1, 20)",
+            "# If roll reaches needed, print a success line. Otherwise, print a failure line.",
+            "if roll > needed:",
+            "    print(\"Bomb Shell climbs the old wall.\")",
+            "else:",
+            "    print(\"That wall hates me.\")"
+          ],
+          "failsAt": 3,
+          "messageContains": "A roll of exactly 13 gave the failure line"
+        },
+        {
+          "why": "lean: if True names the evidence",
+          "code": [
+            "import random",
+            "# Pick any needed, from 2 to 20.",
+            "needed = 13",
+            "roll = random.randint(1, 20)",
+            "# If roll reaches needed, print a success line. Otherwise, print a failure line.",
+            "if True:",
+            "    print(\"Bomb Shell climbs the old wall.\")",
+            "else:",
+            "    print(\"That wall hates me.\")"
+          ],
+          "failsAt": 3,
+          "messageContains": "Both rolls printed the same line, so the answer never changes"
         }
       ],
       "notes": "meta: starter_level=S3; path=QC2; form=A; skills=randint,boundary,if-else; solo=true; dictates=2; foreign_names=score,target\nQC2 C1, form A (a d20). Any needed from 2 to 20 passes (lint e): BND reads it from the student's code and scripts the die (needed - 1, needed, needed + 1, 1 and the top face, then needed + 3 or - 3 to prove the `if` asks with the box). RND catches the top-excluded belief and a die from 0. The starter's placeholders (`needed = 0`, `roll = 0`) are named as the starter's. explainer='lean'."
@@ -7879,7 +7978,7 @@
             "    print(\"Mar'tu: Hm.\")"
           ],
           "failsAt": 1,
-          "messageContains": "only `\"option 1\"`"
+          "messageContains": "Only `\"option 1\"` should get this reply"
         },
         {
           "why": ".lower with no () (the copy never happens)",
@@ -7908,7 +8007,7 @@
             "    print(\"Mar'tu: Hm.\")"
           ],
           "failsAt": 3,
-          "messageContains": "any capitals"
+          "messageContains": "typed with capitals does not get"
         },
         {
           "why": "the starter's value lowered by hand, the forgotten copy left",
@@ -7967,7 +8066,22 @@
             "    print(\"Mar'tu: Hm.\")"
           ],
           "failsAt": 3,
-          "messageContains": "any capitals"
+          "messageContains": "typed with capitals does not get"
+        },
+        {
+          "why": "lean: the forgotten copy is named, not the fixed line",
+          "code": [
+            "choice = \"Option 2\"",
+            "choice.lower()",
+            "if choice == \"option 1\":",
+            "    print(\"Mar'tu: Then we take the jeep.\")",
+            "elif choice == \"option 2\":",
+            "    print(\"Mar'tu: Then we walk.\")",
+            "else:",
+            "    print(\"Mar'tu: Hm.\")"
+          ],
+          "failsAt": 3,
+          "messageContains": "makes a lower-case copy, then forgets it"
         }
       ],
       "notes": "meta: starter_level=S3; path=QC2; form=A; skills=read-traceback,elif-chain,quote-text,compare; solo=true; dictates=; foreign_names=mana,shout\nQC2 C2, form A. Two loud slips, both SyntaxErrors (verified in 3.13: `=` in an if -> \"invalid syntax. Maybe you meant '==' or ':='\" on line 3; two bare words after `==` -> \"invalid syntax\" on line 5), so nothing runs until both are mended: either left fails at 0, and CP1 and CP2 turn green together (no partial 1). Then the quiet slip (teacher ruling: QC2 must ask for `.lower()`): line 2 `choice.lower()` makes a copy and forgets it, so the starter's `\"Option 2\"` gets `Mar'tu: Hm.` with no error. CP3 reruns with `\"Option 2\"`, `\"OPTION 1\"` and `\"oPTION 2\"`, so typing the value in small letters, or an `or` for each capital, fails. CP1 and CP2 rerun with small letters, so they stay green while the quiet slip is open. STREXACT looks only at text in a comparison (the starter's capital value is fine). `.lower` with no `()` is caught in CP1 (it breaks every reply). The WA 'both loud slips mended' stands in for partial 2. explainer='lean'."
@@ -8044,7 +8158,7 @@
             "    print(\"The barrier holds.\")"
           ],
           "failsAt": 1,
-          "messageContains": "`and`"
+          "messageContains": "is one short here, so the spell should not cast"
         },
         {
           "why": "> instead of >= (exactly enough fails)",
@@ -8071,7 +8185,7 @@
             "    print(\"The barrier holds.\")"
           ],
           "failsAt": 1,
-          "messageContains": "`>=`"
+          "messageContains": "Exactly enough mana and affinity should cast here"
         },
         {
           "why": "== instead of >= (more than enough fails)",
@@ -8098,7 +8212,7 @@
             "    print(\"The barrier holds.\")"
           ],
           "failsAt": 1,
-          "messageContains": "at least"
+          "messageContains": "More than enough mana and affinity should cast too"
         },
         {
           "why": "True typed (worked out by hand)",
@@ -8152,7 +8266,7 @@
             "    print(\"The barrier holds.\")"
           ],
           "failsAt": 1,
-          "messageContains": "not numbers you typed"
+          "messageContains": "the answer did not follow them"
         },
         {
           "why": "only the mana asked",
@@ -8258,7 +8372,7 @@
             "print(\"The barrier holds.\")"
           ],
           "failsAt": 2,
-          "messageContains": "one chain"
+          "messageContains": "Only one of the three lines should print"
         },
         {
           "why": "<= in the chain (exactly enough fizzles)",
@@ -8285,7 +8399,7 @@
             "    print(\"The barrier holds.\")"
           ],
           "failsAt": 2,
-          "messageContains": "`<`, not `<=`"
+          "messageContains": "Exactly enough mana and affinity should still cast"
         },
         {
           "why": "mana asked first (both short says not enough mana)",
@@ -8312,7 +8426,7 @@
             "    print(\"The barrier holds.\")"
           ],
           "failsAt": 2,
-          "messageContains": "affinity first"
+          "messageContains": "cast_spell answered with the not-skilled line"
         },
         {
           "why": "two separate ifs (the else joins the second)",
@@ -8339,7 +8453,7 @@
             "    print(\"The barrier holds.\")"
           ],
           "failsAt": 2,
-          "messageContains": "one chain"
+          "messageContains": "Only one of the three lines should print"
         },
         {
           "why": "the starter's numbers typed into the chain",
@@ -8366,7 +8480,7 @@
             "    print(\"The barrier holds.\")"
           ],
           "failsAt": 2,
-          "messageContains": "not numbers you typed"
+          "messageContains": "the answer did not follow them"
         },
         {
           "why": "the signs turned around (> for <)",
@@ -8393,7 +8507,7 @@
             "    print(\"The barrier holds.\")"
           ],
           "failsAt": 2,
-          "messageContains": "under `else`"
+          "messageContains": "plenty of both should reach the barrier line"
         },
         {
           "why": "a line reworded",
@@ -8420,7 +8534,7 @@
             "    print(\"The barrier holds now.\")"
           ],
           "failsAt": 2,
-          "messageContains": "as they are"
+          "messageContains": "None of the three lines from the starter printed"
         },
         {
           "why": "an elif with no if above it",
@@ -8711,7 +8825,7 @@
             "    print(\"Gearshift: Recalculating.\")"
           ],
           "failsAt": 3,
-          "messageContains": "not a number you typed"
+          "messageContains": "does not follow the box `needed`"
         },
         {
           "why": "needed left at 0",
@@ -8821,7 +8935,7 @@
             "    print(\"Gearshift lifts the fallen cart.\")"
           ],
           "failsAt": 3,
-          "messageContains": "else"
+          "messageContains": "A low roll printed nothing"
         },
         {
           "why": "the print not indented under the if",
@@ -8869,7 +8983,7 @@
             "    print(\"Gearshift: Recalculating.\")"
           ],
           "failsAt": 3,
-          "messageContains": "goes past it"
+          "messageContains": "goes past `needed` should pass"
         },
         {
           "why": "walrus after Python's hint (:= puts needed into roll)",
@@ -8917,7 +9031,55 @@
             "    print(\"Gearshift: Recalculating.\")"
           ],
           "failsAt": 1,
-          "messageContains": "Type one number"
+          "messageContains": "not one typed number"
+        },
+        {
+          "why": "lean: the d(faces-1) message names the slip, never the fixed call",
+          "code": [
+            "import random",
+            "# Pick any needed, from 2 to 12.",
+            "needed = 8",
+            "roll = random.randint(1, 11)",
+            "# If roll reaches needed, print a success line. Otherwise, print a failure line.",
+            "if roll >= needed:",
+            "    print(\"Gearshift lifts the fallen cart.\")",
+            "else:",
+            "    print(\"Gearshift: Recalculating.\")"
+          ],
+          "failsAt": 2,
+          "messageContains": "A d12 has faces 1 to 12, but `random.randint(1, 11)` never gives"
+        },
+        {
+          "why": "lean: > for >= names the evidence, not the sign",
+          "code": [
+            "import random",
+            "# Pick any needed, from 2 to 12.",
+            "needed = 8",
+            "roll = random.randint(1, 12)",
+            "# If roll reaches needed, print a success line. Otherwise, print a failure line.",
+            "if roll > needed:",
+            "    print(\"Gearshift lifts the fallen cart.\")",
+            "else:",
+            "    print(\"Gearshift: Recalculating.\")"
+          ],
+          "failsAt": 3,
+          "messageContains": "A roll of exactly 8 gave the failure line"
+        },
+        {
+          "why": "lean: if True names the evidence",
+          "code": [
+            "import random",
+            "# Pick any needed, from 2 to 12.",
+            "needed = 8",
+            "roll = random.randint(1, 12)",
+            "# If roll reaches needed, print a success line. Otherwise, print a failure line.",
+            "if True:",
+            "    print(\"Gearshift lifts the fallen cart.\")",
+            "else:",
+            "    print(\"Gearshift: Recalculating.\")"
+          ],
+          "failsAt": 3,
+          "messageContains": "Both rolls printed the same line, so the answer never changes"
         }
       ],
       "notes": "meta: starter_level=S3; path=QC2; form=B; skills=randint,boundary,if-else; solo=true; dictates=2; foreign_names=score,target\nQC2 C1, form B (a d12). Any needed from 2 to 12 passes (lint e): BND reads it from the student's code and scripts the die (needed - 1, needed, needed + 1, 1 and the top face, then needed + 3 or - 3 to prove the `if` asks with the box). RND catches the top-excluded belief and a die from 0. The starter's placeholders (`needed = 0`, `roll = 0`) are named as the starter's. explainer='lean'."
@@ -9072,7 +9234,7 @@
             "    print(\"Mar'tu: Hm.\")"
           ],
           "failsAt": 1,
-          "messageContains": "only `\"option 3\"`"
+          "messageContains": "Only `\"option 3\"` should get this reply"
         },
         {
           "why": ".lower with no () (the copy never happens)",
@@ -9101,7 +9263,7 @@
             "    print(\"Mar'tu: Hm.\")"
           ],
           "failsAt": 3,
-          "messageContains": "any capitals"
+          "messageContains": "typed with capitals does not get"
         },
         {
           "why": "the starter's value lowered by hand, the forgotten copy left",
@@ -9160,7 +9322,22 @@
             "    print(\"Mar'tu: Hm.\")"
           ],
           "failsAt": 3,
-          "messageContains": "any capitals"
+          "messageContains": "typed with capitals does not get"
+        },
+        {
+          "why": "lean: the forgotten copy is named, not the fixed line",
+          "code": [
+            "choice = \"Option 4\"",
+            "choice.lower()",
+            "if choice == \"option 3\":",
+            "    print(\"Mar'tu: Then we rest here.\")",
+            "elif choice == \"option 4\":",
+            "    print(\"Mar'tu: Then we follow the river.\")",
+            "else:",
+            "    print(\"Mar'tu: Hm.\")"
+          ],
+          "failsAt": 3,
+          "messageContains": "makes a lower-case copy, then forgets it"
         }
       ],
       "notes": "meta: starter_level=S3; path=QC2; form=B; skills=read-traceback,elif-chain,quote-text,compare; solo=true; dictates=; foreign_names=mana,shout\nQC2 C2, form B. Two loud slips, both SyntaxErrors (verified in 3.13: `=` in an if -> \"invalid syntax. Maybe you meant '==' or ':='\" on line 3; two bare words after `==` -> \"invalid syntax\" on line 5), so nothing runs until both are mended: either left fails at 0, and CP1 and CP2 turn green together (no partial 1). Then the quiet slip (teacher ruling: QC2 must ask for `.lower()`): line 2 `choice.lower()` makes a copy and forgets it, so the starter's `\"Option 4\"` gets `Mar'tu: Hm.` with no error. CP3 reruns with `\"Option 4\"`, `\"OPTION 3\"` and `\"oPTION 4\"`, so typing the value in small letters, or an `or` for each capital, fails. CP1 and CP2 rerun with small letters, so they stay green while the quiet slip is open. STREXACT looks only at text in a comparison (the starter's capital value is fine). `.lower` with no `()` is caught in CP1 (it breaks every reply). The WA 'both loud slips mended' stands in for partial 2. explainer='lean'."
@@ -9237,7 +9414,7 @@
             "    print(\"Barrier's holding.\")"
           ],
           "failsAt": 1,
-          "messageContains": "`and`"
+          "messageContains": "is one short here, so the spell should not cast"
         },
         {
           "why": "> instead of >= (exactly enough fails)",
@@ -9264,7 +9441,7 @@
             "    print(\"Barrier's holding.\")"
           ],
           "failsAt": 1,
-          "messageContains": "`>=`"
+          "messageContains": "Exactly enough mana and affinity should cast here"
         },
         {
           "why": "== instead of >= (more than enough fails)",
@@ -9291,7 +9468,7 @@
             "    print(\"Barrier's holding.\")"
           ],
           "failsAt": 1,
-          "messageContains": "at least"
+          "messageContains": "More than enough mana and affinity should cast too"
         },
         {
           "why": "True typed (worked out by hand)",
@@ -9345,7 +9522,7 @@
             "    print(\"Barrier's holding.\")"
           ],
           "failsAt": 1,
-          "messageContains": "not numbers you typed"
+          "messageContains": "the answer did not follow them"
         },
         {
           "why": "only the mana asked",
@@ -9451,7 +9628,7 @@
             "print(\"Barrier's holding.\")"
           ],
           "failsAt": 2,
-          "messageContains": "one chain"
+          "messageContains": "Only one of the three lines should print"
         },
         {
           "why": "<= in the chain (exactly enough fizzles)",
@@ -9478,7 +9655,7 @@
             "    print(\"Barrier's holding.\")"
           ],
           "failsAt": 2,
-          "messageContains": "`<`, not `<=`"
+          "messageContains": "Exactly enough mana and affinity should still cast"
         },
         {
           "why": "mana asked first (both short says not enough mana)",
@@ -9505,7 +9682,7 @@
             "    print(\"Barrier's holding.\")"
           ],
           "failsAt": 2,
-          "messageContains": "affinity first"
+          "messageContains": "cast_spell answered with the not-skilled line"
         },
         {
           "why": "two separate ifs (the else joins the second)",
@@ -9532,7 +9709,7 @@
             "    print(\"Barrier's holding.\")"
           ],
           "failsAt": 2,
-          "messageContains": "one chain"
+          "messageContains": "Only one of the three lines should print"
         },
         {
           "why": "the starter's numbers typed into the chain",
@@ -9559,7 +9736,7 @@
             "    print(\"Barrier's holding.\")"
           ],
           "failsAt": 2,
-          "messageContains": "not numbers you typed"
+          "messageContains": "the answer did not follow them"
         },
         {
           "why": "the signs turned around (> for <)",
@@ -9586,7 +9763,7 @@
             "    print(\"Barrier's holding.\")"
           ],
           "failsAt": 2,
-          "messageContains": "under `else`"
+          "messageContains": "plenty of both should reach the barrier line"
         },
         {
           "why": "a line reworded",
@@ -9613,7 +9790,7 @@
             "    print(\"Barrier's holding now.\")"
           ],
           "failsAt": 2,
-          "messageContains": "as they are"
+          "messageContains": "None of the three lines from the starter printed"
         },
         {
           "why": "an elif with no if above it",

@@ -152,8 +152,9 @@ describe("lookups and links", () => {
       title: "Unit hello",
       items: [
         { id: "first", kind: "lesson", title: "Lesson first", optional: false },
-        { id: "quiz", kind: "quiz", title: "Quiz", optional: false },
-        { id: "quick-check", kind: "testout", title: "Quick Check", optional: true },
+        // A quiz's size and a Quick Check's tasks: what a Quick Check pass needs (progress.ts quickCheckPassed).
+        { id: "quiz", kind: "quiz", title: "Quiz", optional: false, questionCount: 1 },
+        { id: "quick-check", kind: "testout", title: "Quick Check", optional: true, exercises: [{ id: "ex-1" }] },
       ],
     });
     expect(JSON.stringify(summary)).not.toContain("assert");

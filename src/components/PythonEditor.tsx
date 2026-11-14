@@ -4,7 +4,7 @@ import { python } from "@codemirror/lang-python";
 import { EditorView } from "@codemirror/view";
 import CodeMirror, { type ReactCodeMirrorRef } from "@uiw/react-codemirror";
 import { useId, useImperativeHandle, useMemo, useRef, type Ref } from "react";
-import { planInsert, type InsertText, type InsertWhere } from "./editor-insert";
+import { planInsert, type InsertTarget, type InsertText, type InsertWhere } from "./editor-insert";
 import { plainDarkTheme, pythonHighlighting } from "./editor-theme";
 
 /** What a page can do with the editor besides typing (course chips, symbol tray, Mar'tu's pick). */
@@ -13,9 +13,10 @@ export type PythonEditorHandle = {
    * Put text in the code and give the editor the keyboard back. `where` (editor-insert.ts) says how: at the
    * cursor (the default), never inside a `#` note, on a line of its own, or as a note above the line. Before the
    * student has ever clicked into the editor, the text goes on a new line at the end instead of the top (a note
-   * goes at the top). `text` may be a function of what is before it on its line. False when not mounted.
+   * goes at the top), unless a `target` says where the step's line goes. `text` may be a function of what is before
+   * it on its line. False when not mounted.
    */
-  insert: (text: InsertText, where?: InsertWhere) => boolean;
+  insert: (text: InsertText, where?: InsertWhere, target?: InsertTarget) => boolean;
   /** The text on the cursor's line before the cursor, and whether the student has placed the cursor. */
   cursorContext: () => { lineBefore: string; placed: boolean } | null;
   focus: () => void;
@@ -83,11 +84,11 @@ export function PythonEditor({
   useImperativeHandle(
     handleRef,
     () => ({
-      insert(text: InsertText, where: InsertWhere = "cursor") {
+      insert(text: InsertText, where: InsertWhere = "cursor", target?: InsertTarget) {
         const view = cmRef.current?.view;
         if (!view) return false;
         const { from, to } = view.state.selection.main;
-        const plan = planInsert(view.state.doc.toString(), { from, to }, placed.current, text, where);
+        const plan = planInsert(view.state.doc.toString(), { from, to }, placed.current, text, where, target);
         view.dispatch({
           changes: { from: plan.from, to: plan.to, insert: plan.insert },
           selection: { anchor: plan.anchor },
