@@ -1,9 +1,12 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   closeName,
   definedNames,
   explainCourseError,
   explainQuietSlip,
+  foreignNames,
   GOT_FURTHER_LINE,
   leanExplanation,
   slipName,
@@ -1046,5 +1049,402 @@ describe("explainCourseError: Unit 2 play-through findings", () => {
     expect(result.hint).not.toContain("One fixed");
     expect(result.gotFurther).toBeUndefined();
     expect(result.hint).not.toContain("unsupported operand");
+  });
+});
+
+/* ---------------------------------------------------------------------------------------------- */
+/* Unit 3 ("First Recipes"): the teacher's site requests, from the unit's own wrong answers        */
+/* ---------------------------------------------------------------------------------------------- */
+
+type RawCode = string | string[];
+type RawExercise = {
+  id: string;
+  names?: string[];
+  solution?: RawCode;
+  starter?: RawCode;
+  example?: { code: RawCode };
+  explainer?: "full" | "lean";
+  checkpoints?: { hints: string[] }[];
+  bonus?: { solution?: RawCode };
+};
+
+/** Unit 3 as exported: every exercise (with its context) and the wrong answers the harness proved for it. */
+const unit3 = (() => {
+  const dir = path.join(process.cwd(), "content/courses/intro-python/units");
+  const unit = JSON.parse(readFileSync(path.join(dir, "first-recipes.json"), "utf8")) as {
+    order: number;
+    items: (RawExercise & { kind: string; exercises?: RawExercise[] })[];
+  };
+  const side = JSON.parse(readFileSync(path.join(dir, "first-recipes.verify.json"), "utf8")) as {
+    exercises: Record<string, { wrongAnswers?: { why: string; code: RawCode; failsAt: number; messageContains?: string }[] }>;
+  };
+  const text = (code: RawCode | undefined) => (Array.isArray(code) ? `${code.join("\n")}\n` : (code ?? ""));
+  const exercises = new Map<string, RawExercise>();
+  for (const item of unit.items) {
+    if (item.kind === "project" || item.kind === "challenge") exercises.set(item.id, item);
+    for (const exercise of item.exercises ?? []) exercises.set(`${item.id}/${exercise.id}`, exercise);
+  }
+  /** The wrong answer of `key` whose `why` contains `why`, with the context the player would give it. */
+  return (key: string, why: string) => {
+    const exercise = exercises.get(key);
+    const wrong = side.exercises[key]?.wrongAnswers?.filter((entry) => entry.why.includes(why)) ?? [];
+    expect(exercise, key).toBeTruthy();
+    expect(wrong, `${key}: one wrong answer about "${why}"`).toHaveLength(1);
+    const context: ExplainContext = {
+      unitOrder: unit.order,
+      names: exercise?.names,
+      solution: text(exercise?.solution),
+      example: exercise?.example ? text(exercise.example.code) : undefined,
+      explainer: exercise?.explainer,
+      // As the player works them out: the names of Mar'tu's Teach me examples in the hints.
+      foreign: foreignNames({
+        hints: (exercise?.checkpoints ?? []).flatMap((checkpoint) => checkpoint.hints),
+        solution: [text(exercise?.solution), text(exercise?.bonus?.solution)].join("\n"),
+        starter: text(exercise?.starter),
+        names: exercise?.names,
+      }),
+    };
+    return { code: text(wrong[0].code), context, failsAt: wrong[0].failsAt, python: wrong[0].messageContains ?? "" };
+  };
+})();
+
+describe("explainCourseError: Unit 3's slips (recipes), from the unit's own wrong answers", () => {
+  // [exercise, the wrong answer's `why`, Python 3.13's own words (proved by the harness), kind, what the hint says]
+  const rows: [string, string, string, string, string][] = [
+    // recipe-like-math (SFZ-2): f(x) = 5x, before compare-with-double-equals.
+    ["recipes-with-names/send-it-back", "written like maths", "cannot assign to function call", "recipe-like-math",
+      "Line 8 is math's way to write it. In Python a recipe (function) starts with `def`: `def max_fuel_for(cells):`, then an indented `return cells * 5`."],
+    ["extra-recipe-twins/double-cost", "(a call on the left)", "cannot assign to function call", "recipe-like-math",
+      "`def double_cost(price):`, then an indented `return price * 2`."],
+    ["extra-recipe-twins/double-cost", "(=, then a colon)", "invalid syntax", "recipe-like-math",
+      "Line 1 makes the recipe with `=`, the way a box is made. In Python a recipe (function) starts with `def`: `def double_cost(price):`"],
+    // quoted-ingredient (SFZ-5), before def-for-variable.
+    ["recipes-with-names/send-it-back", "ingredient name in quotes", "invalid syntax", "quoted-ingredient",
+      "Line 8 has an ingredient in quotes. Ingredient names have no quotes: `def max_fuel_for(cells):`"],
+    // wrong-number-of-values (SFZ-6): the ingredients read from the student's own def line.
+    ["recipes-with-names/ingredients", "hands over nothing", "missing 1 required positional argument", "wrong-number-of-values",
+      "`warn` has 1 ingredient (`hero_name`). The call on line 6 hands over nothing. Hand over one value per ingredient."],
+    ["recipes-with-names/ingredients", "hands over two values", "takes 1 positional argument", "wrong-number-of-values",
+      "`warn` has 1 ingredient (`hero_name`). The call on line 6 hands over 2. Hand over one value per ingredient."],
+    ["recipes-with-names/use-the-ingredients", "third call hands over one number", "missing 1 required positional argument",
+      "wrong-number-of-values", "`show_hit` has 2 ingredients (`base_damage`, `bonus`). The call on line 6 hands over 1. Hand over one value per ingredient."],
+    ["recipes-with-names/send-it-back", "no value handed over", "missing 1 required positional argument", "wrong-number-of-values",
+      "`max_mana_for` has 1 ingredient (`affinity`). The call on line 5 hands over nothing."],
+    ["extra-recipe-twins/cheer-on", "wrong number of arguments (one value)", "missing 1 required positional argument",
+      "wrong-number-of-values", "`cheer_on` has 2 ingredients (`hero_name`, `words`). The call on line 10 hands over 1."],
+    ["supply-run", "wrong number of arguments (one value)", "missing 1 required positional argument: 'price'", "wrong-number-of-values",
+      "`item_cost` has 2 ingredients (`count`, `price`). The call on line 7 hands over 1."],
+    // randint-backwards (SFZ-11): the student's own two values, swapped.
+    ["recipes-with-names/roll-recipe", "randint(die_size, 1)", "empty range in randrange(20, 2)", "randint-backwards",
+      "Line 5 rolls with the numbers the wrong way round. Smallest number first: `random.randint(1, die_size)`"],
+    // Split on commas (RSWM-2): only the bare run of words is quoted; numbers and quoted values stay.
+    ["extra-recipe-twins/cheer-on", "split-on-commas", "invalid syntax. Perhaps you forgot a comma?", "unquoted-words",
+      'like this: cheer_on("Captain Glug", "Go now")'],
+    ["recipes-with-names/ingredients", "two-word hero and no quotes", "invalid syntax. Perhaps you forgot a comma?", "unquoted-words",
+      'like this: warn_hours("Captain Glug", 2)'],
+    // The unit's names, where they do not exist: a recipe not made yet, called too early, or a name from its kitchen.
+    ["recipes-with-names/send-it-back", "try line uncommented", "name 'max_fuel_for' is not defined", "recipe-not-made-yet",
+      "`max_fuel_for` is one of this task's recipes, but no `def` line makes it yet. Write it with `def` above line 8, the line that calls it."],
+    ["recipes-with-names/box-or-recipe", "called before it is defined", "name 'say_steady' is not defined", "recipe-called-too-early",
+      "Line 1 calls `say_steady`, but its `def` is only on line 6."],
+    ["recipes-with-names/ingredients", "used outside the recipe", "name 'hero_name' is not defined", "made-inside-recipe",
+      "`hero_name` is an ingredient of `warn`, so it only exists inside the recipe while a call runs it. Line 6 is outside the recipe."],
+    // A name the recipe never makes, on its `return` line (RNM): the recipe's own box, never "put quotes around it".
+    ["recipes-with-names/return-the-right-box", "the starter: `return result`", "name 'result' is not defined", "not-in-recipe",
+      "Line 3 hands back `result`, but no line in `armor_total` makes a box by that name. This recipe's box is `total`: hand that back."],
+    ["recipes-with-names/broken-spell-6a", "still returns the Example's name", "name 'result' is not defined", "not-in-recipe",
+      "This recipe's box is `total`: hand that back."],
+    ["extra-recipe-twins/double-cost", "approximate ingredient name", "name 'cost' is not defined", "not-in-recipe",
+      "Line 3 hands back `cost`, but `double_cost` has no box or ingredient by that name. Its ingredient is `price`: work the answer out from that."],
+    // The store written the wrong way round: the new box on the left, the call on the right.
+    ["recipes-with-names/store-then-pass", "store reversed", "name 'greeting' is not defined", "store-backwards",
+      "Line 12 puts `greeting` into `get_greeting`, the wrong way round, so Python looks for a box `greeting` that no line makes. The new box goes on the left of `=`, the call on the right: `greeting = get_greeting()`"],
+    ["recipes-with-names/send-it-back", "return not indented", "'return' outside function", "indent",
+      "Line 3's `return` has no spaces in front, so it is outside the recipe `max_mana_for`."],
+    ["recipes-with-names/broken-spell-6a", "def still makes the box", "expected '('", "def-for-variable",
+      "`def` makes recipes (functions), not boxes. To make a box, write the name, an equals sign, then the value, with no `def`: `hours_left = 37`"],
+    // The Unit 3 play-through: `return result` after `fuel = ...` with the try line on (the crash path) ends the
+    // ping-pong too, and a box from another recipe's kitchen gets this recipe's own box.
+    ["recipes-with-names/send-it-back", "with the try line on (the crash path", "name 'result' is not defined", "not-in-recipe",
+      "`result` comes from Mar'tu's example. This recipe's box is `fuel`: hand that back."],
+    ["recipes-with-names/send-it-back", "kitchen, with the try line on", "name 'total' is not defined", "made-inside-recipe",
+      "`total` belongs to `max_mana_for`, so only that recipe can use it. Inside `max_fuel_for`, hand back its own box, `fuel`."],
+    // def and = mixed up inside a recipe task: every form answers with the recipe's def line, never "make a box".
+    ["recipes-with-names/send-it-back", "worked out from its ingredient (`max_fuel_for", "name 'cells' is not defined", "recipe-like-math",
+      "Line 8 makes `max_fuel_for` with `=`, the way a box is made. `max_fuel_for` is a recipe in this task: `def max_fuel_for(cells):`, then an indented `return cells * 5`."],
+    ["recipes-with-names/send-it-back", "worked out from its ingredient, with the try line on", "name 'cells' is not defined", "recipe-like-math",
+      "`max_fuel_for` is a recipe in this task: `def max_fuel_for(cells):`, then an indented `return cells * 5`."],
+    ["recipes-with-names/send-it-back", "is made, with the try line on (the box called)", "'int' object is not callable", "recipe-like-math",
+      "Line 11 calls `max_fuel_for`, but line 9 makes `max_fuel_for` with `=`, so it is a box, not a recipe (function). `max_fuel_for` is a recipe in this task: `def max_fuel_for(cells):`, then an indented `return cells * 5`."],
+    ["recipes-with-names/send-it-back", "def mixed with =", "expected '('", "recipe-like-math",
+      "Line 8 mixes `def` with `=`. `max_fuel_for` is a recipe in this task: `def max_fuel_for(cells):`, then an indented `return cells * 5`."],
+    ["recipes-with-names/send-it-back", "with def in front (`def max_fuel_for(cells) = cells * 5`)", "expected ':'", "recipe-like-math",
+      "Line 8 puts `=` after the brackets, the way math writes it. In Python the colon goes right after the brackets, and the steps go below: `def max_fuel_for(cells):`, then an indented `return cells * 5`."],
+    ["recipes-with-names/send-it-back", "and a colon at the end", "expected ':'", "recipe-like-math",
+      "In Python the colon goes right after the brackets, and the steps go below: `def max_fuel_for(cells):`"],
+    ["recipes-with-names/box-or-recipe", "the recipe's name in quotes after def", "invalid syntax", "quoted-recipe-name",
+      "Line 5 has the recipe's name in quotes. A recipe's name has no quotes: it goes right after `def`, then ( ) and a colon: `def say_steady():`, with its steps indented under it."],
+    ["recipes-with-names/box-or-recipe", "= used to make the recipe, then called", "'str' object is not callable", "recipe-like-math",
+      "Line 3 calls `say_steady`, but line 2 makes `say_steady` with `=`, so it is a box, not a recipe (function). `say_steady` is a recipe in this task: `def say_steady():`, then its steps, indented under it."],
+    // A recipe with no step (its `pass` deleted, or only a note): the rule, never "indent the next line".
+    ["recipes-with-names/replace-pass", "pass deleted and nothing written yet", "expected an indented block after function definition on line 2", "indent",
+      "`step_north` has no steps yet, and a recipe needs at least one step inside. Write its step under the def line, four spaces in (or put `pass` back while you think)."],
+    ["recipes-with-names/replace-pass", "only a note left in the recipe", "expected an indented block after function definition on line 2", "indent",
+      "`step_north` has no steps yet, and a recipe needs at least one step inside: a note with # doesn't count."],
+    // An ingredient-like name inside the recipe: the ingredient, letter for letter, never quotes.
+    ["recipes-with-names/ingredients", "an approximate parameter name", "name 'hero' is not defined", "unknown-name",
+      "`hero` is not an ingredient of `warn`. Its ingredient is `hero_name`: use it letter for letter."],
+    ["recipes-with-names/use-the-ingredients", "an approximate parameter name", "name 'damage' is not defined", "unknown-name",
+      "`damage` is not an ingredient of `show_hit`. Its ingredients are `base_damage` and `bonus`: use `base_damage`, letter for letter."],
+    // Start me off at the bottom (before a click): the line goes inside the recipe, in place of `pass`.
+    ["recipes-with-names/ingredients", "Start me off pressed before a click", "name 'hero_name' is not defined", "made-inside-recipe",
+      "Line 7 is outside the recipe: move this line inside `warn`, in place of `pass`, four spaces in."],
+    // A name from a Teach me hint, called: the task's own recipe.
+    ["recipes-with-names/store-then-pass", "the Teach me hint's names copied", "name 'get_note' is not defined", "example-name",
+      "`get_note` comes from Mar'tu's example. This task's recipe is `get_greeting`: call that one, letter for letter."],
+  ];
+
+  it.each(rows)("%s, %s: Python says %s, the explainer names %s", (key, why, python, kind, hint) => {
+    const { code, context, failsAt, python: proved } = unit3(key, why);
+    expect(failsAt, "a crash wrong answer").toBe(0);
+    const raw = tracebackOf(code);
+    expect(raw).toContain(python);
+    expect(python, "the words the harness proved for this wrong answer").toContain(proved);
+    const full = explainCourseError(raw, code, { ...context, explainer: "full" });
+    expect(full.kind, code).toBe(kind);
+    expect(full.hint).toContain(hint);
+    // Python's "positional argument" words are never the explanation (its last line still shows below it).
+    expect(full.hint).not.toContain("positional argument");
+  });
+
+  it("names the slip, never the fix, in a lean exercise (SOLO and Quick Check), for every new kind", () => {
+    const lean: [string, string, string, string][] = [
+      ["qc-r1-a/write-a-recipe", "= used to make a recipe (a call on the left)", "recipe-like-math", "The slip is on line 1: a recipe written like math."],
+      ["recipes-with-names/send-it-back", "ingredient name in quotes", "quoted-ingredient", "The slip is on line 8: an ingredient name in quotes."],
+      ["recipes-with-names/solo-6a", "third call hands over one value", "wrong-number-of-values", "The slip is on line 6: the wrong number of values handed over."],
+      ["qc-r1-a/roll-a-die", "one value handed to randint", "wrong-number-of-values", "The slip is on line 7: the wrong number of values handed over."],
+      ["qc-r1-b/roll-a-die", "biggest number first", "randint-backwards", "The slip is on line 7: the numbers in the wrong order."],
+      ["recipes-with-names/solo-6a", "two words with no quotes", "unquoted-words", "The slip is on line 6: words with no quotes."],
+      ["qc-r1-a/write-a-recipe", "the starter (no recipe yet", "recipe-not-made-yet", "The slip is on line 5: a recipe that is not made yet."],
+      ["qc-r1-b/write-a-recipe", "called before it is defined", "recipe-called-too-early", "The slip is on line 5: a recipe called before its `def`."],
+      ["recipes-with-names/solo-6a", "a name the recipe never makes", "not-in-recipe", "The slip is on line 9: a name this recipe never makes."],
+      ["recipes-with-names/solo-6a", "an ingredient printed outside its recipe", "made-inside-recipe", "The slip is on line 7: a name that only lives inside a recipe."],
+    ];
+    for (const [key, why, kind, hint] of lean) {
+      const { code, context } = unit3(key, why);
+      const leanContext = { ...context, explainer: "lean" as const };
+      const result = explainRun(code, [], leanContext);
+      expect(result.kind, `${key}: ${why}`).toBe(kind);
+      expect(result.explainer).toBe("lean");
+      expect(result.hint).toContain(hint);
+      expect(result.title, `${key}: ${why}`).not.toContain("`");
+      // The full version's fixed line never shows in the lean one.
+      const full = explainRun(code, [], { ...context, explainer: "full" });
+      const fix = full.hint.match(/`([^`]*(?:def |randint\(|\("|\(\w+, )[^`]*)`/)?.[1];
+      if (fix) expect(result.hint, `${key}: ${why}`).not.toContain(fix);
+      expect(slipName(kind as never)).toBeTruthy();
+    }
+    // The SOLO's unquoted two-word hero, in full: only the words get quotes, the number stays.
+    const { code, context } = unit3("recipes-with-names/solo-6a", "two words with no quotes");
+    expect(explainRun(code, [], { ...context, explainer: "full" }).hint).toContain('like this: heal("Moth Queen", 5)');
+  });
+
+  it("puts each new row before the old one that gave wrong advice", () => {
+    const unit3Context: ExplainContext = { unitOrder: 3 };
+    // recipe-like-math over compare-with-double-equals ("use two equals signs" was wrong advice).
+    const math = "max_fuel_for(cells) = cells * 5\n";
+    expect(explainRun(math, [], unit3Context).kind).toBe("recipe-like-math");
+    expect(explainRun(math, [], unit3Context).hint).not.toContain("==");
+    // A real question keeps its own advice, and before Unit 3 (no def yet) nothing changes.
+    expect(explainRun("roll = 5\nif roll = 5:\n    print(roll)\n", [], unit3Context).kind).toBe("compare-with-double-equals");
+    expect(explainRun(math, [], { unitOrder: 2 }).kind).toBe("compare-with-double-equals");
+    expect(explainRun('print("hi") = 5\n', [], unit3Context).kind).not.toBe("recipe-like-math");
+    expect(explainRun("show_hit(4, 3) = 7\n", [], unit3Context).kind).not.toBe("recipe-like-math");
+
+    // quoted-ingredient over def-for-variable (which turned the recipe into a box: `max_fuel_for = "cells"`).
+    const quoted = 'def max_fuel_for("cells"):\n    return cells * 5\n';
+    const ingredient = explainRun(quoted, [], unit3Context);
+    expect(ingredient.kind).toBe("quoted-ingredient");
+    expect(ingredient.hint).not.toContain('max_fuel_for = "cells"');
+    expect(explainRun('def heal("Moth Queen", 5):\n    pass\n', [], { unitOrder: 3, solution: "def heal(hero_name, amount):\n    pass\n" }).hint).toContain(
+      "`def heal(hero_name, amount):`",
+    );
+    expect(explainRun("def show_hit(4, 3):\n    pass\n", [], unit3Context).hint).toContain(
+      "a number where an ingredient's name goes. An ingredient is a name: `def show_hit(value1, value2):`",
+    );
+    // A box made with def is still that slip, in the unit's words; before Unit 3 the old words stay.
+    expect(explainRun('def hero = "Lucky"\n', [], unit3Context).kind).toBe("def-for-variable");
+    expect(explainRun(quoted, [], { unitOrder: 2 }).kind).toBe("def-for-variable");
+    expect(explainRun(quoted).kind).toBe("def-for-variable");
+
+    // Split on commas over missing-comma and over quoting the whole bracket ("Moth Queen, 5" made two values one).
+    for (const context of [undefined, { unitOrder: 1 }, unit3Context]) {
+      const heal = explainRun("def heal(hero_name, amount):\n    pass\nheal(Moth Queen, 5)\n", [], context);
+      expect(heal.kind).toBe("unquoted-words");
+      expect(heal.hint).toContain('like this: heal("Moth Queen", 5)');
+      expect(heal.hint).not.toContain('"Moth Queen, 5"');
+      const cheer = explainRun('def cheer_on(a, b):\n    pass\ncheer_on("Captain Glug", Go now)\n', [], context);
+      expect(cheer.kind).not.toBe("missing-comma");
+      expect(cheer.hint).toContain('cheer_on("Captain Glug", "Go now")');
+    }
+    // A name the program made stays outside the quotes: no guess when it sits in the run of words.
+    const named = explainRun('hero = "Pip"\ndef heal(a, b):\n    pass\nheal(hero Lucky, 5)\n', [], unit3Context);
+    expect(named.hint).not.toContain('"hero Lucky');
+    // not-in-recipe and store-backwards: before the generic unknown-name row ("put quotes around it"), never over a
+    // spelling slip of the recipe's own box, a name copied from the example, or a recipe that takes values.
+    const rightBox = "def armor_total(base, bonus):\n    total = base + bonus\n    return result\n\nprint(armor_total(1, 2))\n";
+    expect(explainRun(rightBox, [], unit3Context).kind).toBe("not-in-recipe");
+    expect(explainRun(rightBox, [], unit3Context).hint).not.toContain("quotes");
+    expect(explainRun(rightBox, [], { unitOrder: 2 }).kind).toBe("unknown-name");
+    expect(explainRun(rightBox.replace("result", "totl"), [], unit3Context).kind).toBe("spelling");
+    // A name copied from the example, on a `return` line in a recipe, gets this recipe's own box too (the U3 review:
+    // the example-name row listed the task's names, with the recipe's box nowhere first).
+    const copied = explainRun(rightBox, [], { ...unit3Context, example: "def f(a):\n    result = a\n    return result\n" });
+    expect(copied.kind).toBe("not-in-recipe");
+    expect(copied.hint).toBe("`result` comes from Mar'tu's example. This recipe's box is `total`: hand that back.");
+    const twoBoxes = "def gold_for(gems):\n    coins = gems * 2\n    bonus = coins + 1\n    return answer\n\nprint(gold_for(1))\n";
+    expect(explainRun(twoBoxes, [], unit3Context).hint).toContain(
+      "This recipe's boxes are `coins` and `bonus`: hand back the one that holds the answer.",
+    );
+    const backwards = "def get_line(size):\n    return str(size)\n\ndef show():\n    get_line = line\n    print(line)\n\nshow()\n";
+    expect(explainRun(backwards, [], unit3Context).kind).toBe("store-backwards");
+    expect(explainRun(backwards, [], unit3Context).hint).toContain("`line = get_line(...)`, with one value per ingredient");
+    // print keeps its own rows: a comma there is usually part of the sentence.
+    expect(explainRun("print(Hello, my friend)\n").hint).not.toContain('print("Hello", "my friend")');
+  });
+
+  it("keeps each row to the units that taught it", () => {
+    const roll = "import random\ndef roll_die(die_size):\n    return random.randint(die_size, 1)\nprint(roll_die(20))\n";
+    expect(explainRun(roll, [], { unitOrder: 2 }).kind).toBe("randint-backwards");
+    expect(explainRun(roll, [], { unitOrder: 1 }).kind).toBe("other");
+    // The first value already 1: another slip emptied the range, so nothing is swapped.
+    expect(explainRun("import random\nsize = 0\nprint(random.randint(1, size))\n", [], { unitOrder: 3 }).kind).toBe("other");
+    // A recipe with no ingredients, and randint with one value.
+    expect(explainRun('def warn():\n    print("Get inside!")\nwarn("Pip")\n', [], { unitOrder: 3 }).hint).toBe(
+      "`warn` has no ingredients, but the call on line 3 hands over 1.",
+    );
+    expect(explainRun("import random\nprint(random.randint(6))\n", [], { unitOrder: 2 }).hint).toBe(
+      "`random.randint` takes 2 values: the smallest number, then the biggest. The call on line 2 hands over 1.",
+    );
+    // Before Unit 3 (or with no unit) a call's count gets the plain words, never Python's.
+    const count = explainRun("def f(a):\n    return a\nf()\n", [], { unitOrder: 2 });
+    expect(count.hint).toBe("The function call on line 3 has the wrong number of values inside its ( ).");
+    expect(explainRun("def f(a):\n    return a\nf()\n").hint).not.toContain("positional");
+    // The recipe rows need Unit 3: a Unit 2 name keeps its Unit 2 words.
+    expect(explainRun("print(max_fuel_for(4))\n", [], { unitOrder: 2, names: ["max_fuel_for"] }).kind).not.toBe("recipe-not-made-yet");
+  });
+
+  it("speaks the unit's words from Unit 3 on: recipes, not functions; boxes, not variables", () => {
+    const unit3Context: ExplainContext = { unitOrder: 3 };
+    expect(explainRun('shout("hi")\n', [], unit3Context).hint).toBe(
+      "Python doesn't know a recipe (function) called shout. Check the spelling, or make it with def before you use it.",
+    );
+    expect(explainRun('def say_ready:\n    print("Ready.")\n', [], unit3Context).hint).toBe(
+      "A `def` line needs ( ) after the recipe's name, then a colon: `def say_ready():`",
+    );
+    expect(explainRun('def say_ready:\n    print("Ready.")\n', [], { unitOrder: 2 }).hint).toContain("after the function's name");
+    expect(explainRun('def steadying_words = "Steady, now.\n', [], unit3Context).hint).toContain(
+      "`def` makes recipes (functions), not boxes.",
+    );
+    const inside = explainRun("def max_mana_for(affinity):\n    total = affinity * 2\n    return total\n\nmax_mana_for(13)\nprint(total)\n", [], unit3Context);
+    expect(inside.kind).toBe("made-inside-recipe");
+    expect(inside.hint).toContain("`total` is made inside `max_mana_for`, so it only exists inside that recipe. Line 6 is outside it.");
+    // A box the code also makes outside the recipe is not this slip.
+    expect(explainRun("total = 1\ndef f():\n    total = 2\nprint(totl)\n", [], unit3Context).kind).not.toBe("made-inside-recipe");
+  });
+
+  it("names a recipe that calls itself, with the line that does it", () => {
+    const result = explainRun('def say_steady():\n    print("Steady, now.")\n    say_steady()\n\nsay_steady()\n', [], { unitOrder: 3 });
+    expect(result.kind).toBe("never-ending-calls");
+    expect(result.hint).toBe(
+      "Line 3 calls `say_steady` inside `say_steady` itself, so it starts again and again and never stops. To call it, write the call below the recipe, with no spaces in front.",
+    );
+  });
+});
+
+describe("explainCourseError: the Unit 3 play-through (a reviewer who played the unit)", () => {
+  const unit3Context: ExplainContext = { unitOrder: 3 };
+
+  it("keeps the new recipe rows to Unit 3 and to the task's own recipes", () => {
+    // A box of the student's own, called: a box, not a recipe (and multiply, for a number); before Unit 3, as before.
+    const called = explainRun("mana = 5\nprint(mana(2))\n", [], unit3Context);
+    expect(called.kind).toBe("not-a-function");
+    expect(called.hint).toBe(
+      "Line 2 calls `mana` with ( ), but line 1 makes `mana` with `=`, so it is a box, not a recipe (function). Only a recipe made with `def` can be called. To multiply by it, write * between them.",
+    );
+    expect(explainRun("mana = 5\nprint(mana(2))\n", [], { unitOrder: 2 }).kind).toBe("use-star-to-multiply");
+    expect(explainRun("print(2(3 + 4))\n", [], unit3Context).kind).toBe("use-star-to-multiply");
+    // f(x) = 5x with a def in front: before Unit 3 the old colon row stays.
+    expect(explainRun("def fuel(cells) = cells * 5\n", [], { unitOrder: 2 }).kind).toBe("def-for-variable");
+    expect(explainRun("def fuel(cells) = cells * 5\n", [], unit3Context).kind).toBe("recipe-like-math");
+    // `def name = value` for a box of the student's own (not one of the task's recipes) is still def-for-variable.
+    const solution = "def max_fuel_for(cells):\n    return cells * 5\n";
+    expect(explainRun("def hero = 5\n", [], { ...unit3Context, solution, names: ["max_fuel_for"] }).kind).toBe("def-for-variable");
+    expect(explainRun("def max_fuel_for = 5\n", [], { ...unit3Context, solution, names: ["max_fuel_for"] }).kind).toBe("recipe-like-math");
+    expect(explainRun("def max_fuel_for = 5\n", [], { unitOrder: 2, solution, names: ["max_fuel_for"] }).kind).toBe("def-for-variable");
+    // A box made with = whose right side crashes, when it is NOT a recipe of the task: the old rows.
+    expect(explainRun("fuel = cells * 5\n", [], { ...unit3Context, solution, names: ["max_fuel_for", "cells"] }).kind).toBe("not-made-yet");
+    // A quoted name after def with no step under it, in no recipe task, is still the def-for-variable slip.
+    expect(explainRun('def ("character")\n', [], unit3Context).kind).toBe("def-for-variable");
+    expect(explainRun('def ("say_steady"):\n    print("Steady.")\n', [], unit3Context).kind).toBe("quoted-recipe-name");
+  });
+
+  it("asks for a step in an empty recipe, and keeps the indent row when the step is there but not indented", () => {
+    expect(explainRun("def warn(hero_name):\n\nwarn(\"Pip\")\n", [], unit3Context).hint).toBe(
+      "`warn` has no steps yet, and a recipe needs at least one step inside. Write its step under the def line, four spaces in (or put `pass` back while you think).",
+    );
+    expect(explainRun('def warn(hero_name):\nprint(hero_name)\n', [], unit3Context).hint).toBe(
+      "The line after line 1 belongs inside the def, so it needs 4 spaces at the start.",
+    );
+    // An `if` with nothing under it keeps its own words, and before Unit 3 (def is a slip there) nothing changes.
+    expect(explainRun("roll = 3\nif roll > 2:\n\nprint(roll)\n", [], unit3Context).hint).toContain("belongs inside the if");
+    expect(explainRun("def hero():\n\nprint(1)\n", [], { unitOrder: 1 }).hint).toBe(
+      "The line after line 1 belongs inside the def, so it needs 4 spaces at the start.",
+    );
+  });
+
+  it("never offers a recipe's name as the box a lone word in brackets meant, and keeps quotes out of an ingredient slip", () => {
+    // Replace pass's `scout.step(north)` (the scout lives in the exercise's hidden setup, so a stand-in here).
+    const steps = "def say(text):\n    print(text)\n\ndef step_north():\n    say(north)\n\nstep_north()\n";
+    const lone = explainRun(steps, [], unit3Context);
+    expect(lone.kind).toBe("unquoted-word");
+    expect(lone.hint).toBe("Python doesn't know `north`: no line in your code makes it. If it's text, put quotes around it: `say(\"north\")`");
+    expect(lone.hint).not.toContain("step_north`, which");
+    // A box of the code's own that is like it is still named, after the quotes.
+    const withBox = explainRun('north_gate = 2\ndef step_north():\n    pass\n\nprint(north)\n', [], unit3Context);
+    expect(withBox.hint).toBe(
+      "Python doesn't know `north`: no line in your code makes it. If it's text, put quotes around it: `print(\"north\")` If you meant a box, line 1 makes `north_gate`.",
+    );
+    // Outside any recipe a name like a box keeps the old row (Units 1-2 too).
+    expect(explainRun('hero_name = "Pip"\nprint(hero + "!")\n', [], unit3Context).kind).toBe("unknown-name");
+    expect(explainRun('hero_name = "Pip"\nprint(hero + "!")\n', [], unit3Context).hint).toContain("Line 1 makes `hero_name`, which has a similar name.");
+  });
+
+  it("works out the names of Mar'tu's Teach me examples, only from code in the hints, and uses them from Unit 3 on", () => {
+    const foreign = foreignNames({
+      hints: [
+        "Which recipe hands back the line?",
+        "`note = get_note()` catches what `get_note` hands back. `.lower()` would turn `\"SIT DOWN.\"` into `Sit down.`",
+        "Write `greeting = get_greeting()` in place of `pass`.",
+      ],
+      solution: "def get_greeting():\n    return 'Hi'\n\ndef present():\n    greeting = get_greeting()\n",
+      starter: "def present():\n    pass\n",
+      names: ["get_greeting"],
+    });
+    expect(foreign).toEqual(["note", "get_note"]);
+    const code = "def get_greeting():\n    return 'Hi'\n\ndef present():\n    note = get_note()\n\npresent()\n";
+    const context: ExplainContext = { unitOrder: 3, names: ["get_greeting", "present"], solution: "def get_greeting():\n    return 'Hi'\n", foreign };
+    expect(explainRun(code, [], context).hint).toBe(
+      "`get_note` comes from Mar'tu's example. This task's recipe is `get_greeting`: call that one, letter for letter.",
+    );
+    expect(explainRun(code, [], { ...context, unitOrder: 2 }).kind).toBe("unknown-function");
+  });
+
+  it("names the new quoted-recipe-name slip in a lean exercise, never the def line", () => {
+    const code = '# A recipe holds steps.\ndef ("say_steady"):\n    print("Steady, now.")\n\nsay_steady()\n';
+    const lean = explainRun(code, [], { ...unit3Context, explainer: "lean" });
+    expect(lean.kind).toBe("quoted-recipe-name");
+    expect(lean.hint).toContain("The slip is on line 2: quotes around a recipe's name.");
+    expect(lean.hint).not.toContain("def say_steady():");
   });
 });

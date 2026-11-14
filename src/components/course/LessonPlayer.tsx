@@ -25,6 +25,21 @@ function isPlayed(item: Item): item is PlayedItem {
   return item.kind === "lesson" || item.kind === "project" || item.kind === "challenge" || item.kind === "testout";
 }
 
+/**
+ * A Quick Check form's rule, counted: "Pass all 5 tasks and get 3 of the 4 questions right, and the whole unit counts
+ * as done." The questions part only when the form needs them (questionsToPass).
+ */
+function quickCheckRule(
+  tasks: number,
+  form: ItemPageProps["unit"]["items"][number] | undefined,
+  items: ItemPageProps["unit"]["items"],
+): string {
+  const quiz = form?.questionsToPass ? items.find((entry) => entry.kind === "quiz" && entry.id === `${form.id}-questions`) : undefined;
+  const all = tasks === 1 ? "the task" : `all ${tasks} tasks`;
+  const questions = form?.questionsToPass && quiz?.questionCount ? ` and get ${form.questionsToPass} of the ${quiz.questionCount} questions right,` : "";
+  return `Pass ${all}${questions} and the whole unit counts as done.`;
+}
+
 /* ---------------------------------------------------------------------------------------------- */
 /* Lessons and Quick Checks: a row of exercises                                                    */
 /* ---------------------------------------------------------------------------------------------- */
@@ -357,7 +372,9 @@ export function LessonPlayer(props: ItemPageProps) {
             Already know this? Show Mar&apos;tu. No pressure: if something&apos;s new,{" "}
             <Link href={unitHref(unit.id)}>the lessons are right here</Link>.
           </p>
-          <p className="ex-muted">No hints in a Quick Check. Pass every task and the whole unit counts as done.</p>
+          <p className="ex-muted" data-testid="testout-rule">
+            No hints in a Quick Check. {quickCheckRule(item.exercises.length, unit.items.find((entry) => entry.id === item.id), unit.items)}
+          </p>
         </div>
       ) : null}
 

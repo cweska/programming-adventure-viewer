@@ -264,6 +264,20 @@ describe("grading: the slips a check alone would hide", () => {
     );
   });
 
+  it("calls a recipe's bare name a call that never happens (Unit 3), and stays lean in a lean exercise", () => {
+    const called = [checkpoint("call", [["called", "assert 'Steady, now.' in _lines(), 'Call the recipe.'"]])];
+    const code = 'def say_steady():\n    print("Steady, now.")\n\nsay_steady\n';
+    const gradeIt = (context: Parameters<typeof gradeCheckpoints>[3]) =>
+      gradeCheckpoints(called, runCourseChecks(code, flattenChecks(called)), code, context).checkpoints[0]?.message;
+    // Unit 3: printing the recipe would show the recipe itself, so the advice is to call it.
+    expect(gradeIt({ unitOrder: 3 })).toBe("Line 4 is only the name `say_steady`, with no `()`, so the recipe never runs. To call it, write `say_steady()`");
+    expect(gradeIt({ unitOrder: 2 })).toContain("write print(say_steady)");
+    // A lean exercise (SOLO, Quick Check) names the slip and its line, never the fix, like its explainer.
+    const lean = gradeIt({ unitOrder: 3, explainer: "lean" });
+    expect(lean).toBe("The slip is on line 4: a name on its own. Mend it yourself, then Run again.");
+    expect(lean).not.toContain("say_steady()");
+  });
+
   it("passes the context on to the crash explanation", () => {
     const example = 'traveler = input("Name? ")\nprint("Hello, " + traveler)\n';
     const code = 'character = "Zelda"\nprint(traveler)\n';

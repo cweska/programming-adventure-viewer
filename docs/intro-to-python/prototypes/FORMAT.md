@@ -154,11 +154,11 @@ Kinds:
 | `example` | code | `example.code` | Mar'tu's worked example |
 | `example_output` | str | `example.output` | exactly what `example` prints (verified). Required with `example`. |
 | — | — | `example.stdin` | copied from the exercise `stdin` when the example calls `input(`, because the harness runs the example with the exercise's answers |
-| `another_way` | list | `anotherWay` | `dict(angle="analogy", label="Think of jars", text="...")`: alternate explanations the student can open. `label` optional. |
+| `another_way` | list | `anotherWay` | `dict(angle="analogy", label="Think of jars", text="...")`: alternate explanations the student can open. `label` optional: one line of prose, shown on a button (`code` shows as code; a `[[link]]` shows as plain words, and the harness warns). |
 | `introduces` | list of tokens | `introduces` | concepts this exercise teaches (opens the concept gate for this and later code) |
 | `preview` | list of tokens | `preview` | concepts shown here *before* they are taught, on purpose (say why in `notes`) |
 | `engine` | bool | `engine` | `True` loads the campaign objects (`party`, `print_prompt`, `print_options`, `user`, `_prompts`, ...). Off for ordinary exercises, so `print(user)` is a real NameError. |
-| `setup` | code | `setup` | hidden code run before the student's code. Names it defines can be used by the student. |
+| `setup` | code | `setup` | hidden code run before the student's code. Names it defines can be used by the student. It can read `_source` (the student's code) and `raise SystemExit` to stop the program before it runs (it then prints nothing and the checks still run), as Unit 3's ledgers do when a program is pasted in to be traced. |
 | `stdin` | list of str | `stdin` | the answers `input()` gets, in order. The console echoes `prompt + answer` on one line. Asking for more raises `EOFError`. |
 | `starter` | code | `starter` | what the editor starts with (may be `""`) |
 | `checkpoints` | list | `checkpoints` | 1 to 12, see below |
@@ -167,7 +167,7 @@ Kinds:
 | `tracer` | bool | `tracer` | offer the step-through tracer |
 | `support` | `"full"` / `"light"` / `"none"` | `support` | full: hints, another way, solution after gating. light: Where to look (and Start me off) from the start, the rest of the ladder after the first failed run. none: test-outs. |
 | `bonus` | dict | `bonus` | a side quest, see below |
-| `assemble` | dict | `assemble` | "Assemble it": the solution as shuffled lines, `dict(lines=[...in order...], distractors=[...])` (a string is split into lines). Students reach it through Help, under "More structure". |
+| `assemble` | dict | `assemble` | "Assemble it": the solution as shuffled lines, `dict(lines=[...in order...], distractors=[...])` (a string is split into lines). Students reach it through Help, under "More structure", before "Show me how". Leave it out of an exercise whose answer is a number to work out (a trace ledger's `row = 60`): its pieces would be the answers. The harness warns when a line is the only number a goal-only step accepts. |
 | `campaign_link` | dict | `campaignLink` | Lucky's "What's in it for me?" box: `dict(module="leylines-awaken", part="program-dialogue-prompt", snippet="code", why="prose")`. `snippet` optional. |
 | `takeaway` | str | `takeaway` | one line for the cheatsheet / skill map |
 | `predict` | dict | `predict` | Predict before Run, see [below](#predict-before-run). Free: a thinking prompt, never a test, and it never blocks Run. Hidden in Quick Checks. |
@@ -199,7 +199,7 @@ dict(
 | `text` | `text` | one action, at most two sentences. A leading `1. ` is stripped (the site numbers checkpoints). A debugging step says **Mend** ("Mend line 3 so it shows `Steady`."): an exercise with a "Mend" step is a debugging exercise, and when a run gets further than the one before, the site shows "Python got further: that slip is mended." on a line of its own. |
 | `hints` | `hints` | the hint ladder, 2 to 5 rungs: point, teach, show. The site's Help control shows them as "Where to look" (the first), "Teach me" (the middle ones) and "Show me how" (the last), with "Another way" and "More structure" (Assemble it) in between, then "Compare with Mar'tu's version". Write the last hint with the step's own line in backticks (``Write `mana = 20` on its own line.``): its start up to the first `(` or `=` becomes "Start me off" (`mana =`), but only if the solution uses it. Never show an example's names there. From Unit 2 on, the harness warns when the first hint starts with "Start like this", or when the last hint's start is not in the solution (Start me off is then dropped). |
 | `checks` | `checks` | `(name, code)` pairs (or `dict(name=..., code=...)`) |
-| `pass_line` | `passLine` | optional in-world line |
+| `pass_line` | `passLine` | optional in-world line (prose on one line: `code` shows as code; a `[[link]]` shows as plain words, and the harness warns) |
 | `dictated` | `dictated` | optional bool. `True` when the text spells out the code to type ("Write `mana = 20`"); `False` for a goal-only step that gives the goal and the names, never the code ("Print a greeting that uses `name`."). The curriculum asks for at least one `dictated=False` step in every lesson (§2.1, lint g). Left out: not marked either way. |
 
 **Checks** run after the student's code, in the same namespace, only if the code ran without an error.

@@ -9,7 +9,16 @@
  * indentation, joining text and numbers, and more. Unit 2 (control flow) adds its own slips: a sign typed
  * backwards (`=>`), a `___` blank left in, a question alone on a line, unquoted options, `elif` / `else` out of
  * place, a number compared with text, one `=` inside print, `lower(answer)`, `randint` without `random.`, and
- * the student's own `assert` coming out False.
+ * the student's own `assert` coming out False. Unit 3 (recipes) adds a recipe written the way math writes it
+ * (`max_fuel_for(cells) = cells * 5`), an ingredient name in quotes (`def max_fuel_for("cells"):`), the wrong number
+ * of values handed to a recipe (read from the student's own `def` line), `random.randint` with its numbers the wrong
+ * way round, a recipe that calls itself, a store written backwards (`get_greeting = greeting`), a `return` of a name
+ * the recipe never makes (`return result`, even when it is the example's name), a box from another recipe's kitchen,
+ * one of the task's recipes made like a box (`max_fuel_for = cells * 5`, `def max_fuel_for = ...`, a box called with
+ * `( )`, `def max_fuel_for(cells) = cells * 5`, `def ("say_steady"):`), a name like one of the recipe's ingredients
+ * (`hero` for `hero_name`), a recipe with no step yet, a name copied from a hint's Teach me example (`get_note`), and,
+ * for every unit, unquoted words inside a call that takes several values (`heal(Moth Queen, 5)`: only the bare run of
+ * words is quoted).
  *
  * ExplainContext sets how much it says: `unitOrder` keeps advice to what the class has met (no "make it with
  * def" before the Functions unit), `explainer: "lean"` names the kind of slip and the line but never the fix,
@@ -90,6 +99,16 @@ export type CourseErrorKind =
   | "method-as-function"
   | "randint-needs-random"
   | "assert-failed"
+  // recipes (Unit 3)
+  | "recipe-like-math"
+  | "quoted-ingredient"
+  | "randint-backwards"
+  | "recipe-not-made-yet"
+  | "recipe-called-too-early"
+  | "made-inside-recipe"
+  | "not-in-recipe"
+  | "store-backwards"
+  | "quoted-recipe-name"
   // values
   | "input-is-text"
   | "text-plus-number"
@@ -143,6 +162,9 @@ export const ONE_FIXED_PREFIX = "One fixed! Python found the next one.";
 /** Unit 3 ("First Recipes") teaches `def`: before it, the explainer never says "make it with def". */
 export const FUNCTIONS_UNIT_ORDER = 3;
 
+/** Unit 2 ("Control Flow") teaches `random.randint`. */
+export const RANDOM_UNIT_ORDER = 2;
+
 /** What the player knows about the exercise. Every field is optional; more context gives more exact help. */
 export type ExplainContext = {
   /** The worked example's code: a name copied from it gets "this name is from the example". */
@@ -163,7 +185,9 @@ export type ExplainContext = {
   solution?: string;
   /**
    * The unit's `order` on the course map. Before the Functions unit (FUNCTIONS_UNIT_ORDER) no advice says
-   * "make it with def"; in Unit 1 (before comparisons) `print(x = 1)` gets box advice, not `==`.
+   * "make it with def"; in Unit 1 (before comparisons) `print(x = 1)` gets box advice, not `==`. From Unit 2
+   * (RANDOM_UNIT_ORDER) `randint` the wrong way round is named; from Unit 3 the recipe rows speak the unit's words
+   * (recipe, ingredient, hand over). Without a unit, those rows stay closed and the older advice is unchanged.
    */
   unitOrder?: number;
   /**
@@ -177,7 +201,20 @@ export type ExplainContext = {
    * on screen (the player shows it under every explanation).
    */
   explainer?: "full" | "lean";
+  /**
+   * Names from Mar'tu's Teach me examples in the exercise's hints (`note = get_note()`), that the task itself never
+   * uses (foreignNames() works them out). From Unit 3 on, a name copied from one gets the worked example's row.
+   */
+  foreign?: readonly string[];
 };
+
+/**
+ * The class has met what unit `order` teaches: the context names that unit or a later one. The rows a unit adds
+ * (Unit 3's recipes, Unit 2's random) need it; without a unit (an old caller) the advice is unchanged.
+ */
+function unitAtLeast(context: ExplainContext | undefined, order: number): boolean {
+  return context?.unitOrder !== undefined && context.unitOrder >= order;
+}
 
 /** The task only shows words: Mar'tu's version prints and makes no variable (nothing about boxes yet). */
 export function isPrintOnlyTask(context: ExplainContext | undefined): boolean {
@@ -586,11 +623,60 @@ function namesBefore(code: string, line: number | null): string[] {
   return [...new Set(names)];
 }
 
-/** Names the worked example makes, that the task does not use. */
+/**
+ * Names the worked example makes, that the task does not use. From Unit 3 on, also the names from the hints' Teach me
+ * examples (`context.foreign`): a student who copies `get_note` from a hint gets the same help as one who copies
+ * the example's `result`.
+ */
 function exampleOnlyNames(context: ExplainContext | undefined): string[] {
-  if (!context?.example) return [];
-  const task = new Set(context.names ?? []);
-  return [...new Set(definedNames(context.example).map((entry) => entry.name))].filter((name) => !task.has(name));
+  const task = new Set(context?.names ?? []);
+  const made = context?.example ? definedNames(context.example).map((entry) => entry.name) : [];
+  const taught = unitAtLeast(context, FUNCTIONS_UNIT_ORDER) ? (context?.foreign ?? []) : [];
+  return [...new Set([...made, ...taught])].filter((name) => !task.has(name));
+}
+
+/** Every name a piece of code reads, makes or calls (not Python's words, not the text inside quotes). */
+function identifiersIn(code: string): string[] {
+  const names = new Set<string>();
+  for (const row of (code ?? "").split("\n")) {
+    for (const match of maskStrings(row).matchAll(/(?<![\w.])([A-Za-z_]\w*)/g)) {
+      if (!KEYWORDS.has(match[1])) names.add(match[1]);
+    }
+  }
+  return [...names];
+}
+
+/**
+ * The names Mar'tu's Teach me examples use (the code spans of the hints: `note = get_note()`, `mix(2, 9)`) that the
+ * task itself never does: not in its names, Mar'tu's version or the starter, and not one of Python's own. The player
+ * passes them as ExplainContext.foreign.
+ */
+export function foreignNames(exercise: {
+  hints: readonly string[];
+  solution?: string;
+  starter?: string;
+  names?: readonly string[];
+}): string[] {
+  const own = new Set([
+    ...identifiersIn(exercise.solution ?? ""),
+    ...identifiersIn(exercise.starter ?? ""),
+    ...(exercise.names ?? []),
+    ...COMMON_BUILTINS,
+  ]);
+  const found = new Set<string>();
+  for (const hint of exercise.hints) {
+    const plain = hint.replace(/```[\s\S]*?```/g, " ");
+    for (const span of plain.matchAll(/`([^`\n]+)`/g)) {
+      // Only a span that is code (`note = get_note()`, `cups * 10`, `line.lower()`): a lone word or a few words
+      // (`Steady`, `Sit down, lucky.`) may be words to show.
+      const mask = maskStrings(span[1]);
+      if (!/[(=*+/\-[]|\.[A-Za-z_]/.test(mask)) continue;
+      const words = [...mask.matchAll(/(?<![\w.])([A-Za-z_]\w*)\s+(?=([A-Za-z_]\w*))/g)];
+      if (words.some((pair) => !KEYWORDS.has(pair[1]) && !KEYWORDS.has(pair[2]))) continue;
+      for (const name of identifiersIn(span[1])) if (!own.has(name) && !name.startsWith("_")) found.add(name);
+    }
+  }
+  return [...found];
 }
 
 /** The names to offer instead of an example's name: the task's names, else the ones the code made. */
@@ -752,8 +838,16 @@ function quotesProblem(text: string, line: number | null, raw: string, code = ""
     }
     if (tail.replace(/[)\]}\s]/g, "").length > 0) {
       const { fixed, added } = closeQuoteLine(text, start, quote);
-      const defFix = defForVariable(fixed);
+      const defFix = unitAtLeast(context, FUNCTIONS_UNIT_ORDER) && RECIPE_HEADER.test(codePart(fixed)) ? null : defForVariable(fixed);
       if (defFix && printOnlyTask(context)) return defInPrintTask(fixed, raw, true);
+      if (defFix && unitAtLeast(context, FUNCTIONS_UNIT_ORDER)) {
+        return explain(
+          "def-for-variable",
+          "def makes recipes",
+          `\`def\` makes recipes (functions), not boxes. To make a box, write the name, an equals sign, then the value, with no \`def\`. Text needs a quote at both ends too: \`${defFix}\``,
+          raw,
+        );
+      }
       if (defFix) {
         return explain(
           "def-for-variable",
@@ -919,6 +1013,14 @@ function quoteWordRuns(expr: string, names: string[]): string | null {
  */
 function unquotedWords(text: string, names: string[]): { fixed: string; comma: boolean } | null {
   const body = codePart(text);
+  // A call that takes several values (`heal(Moth Queen, 5)`, `cheer_on("Captain Glug", Go now)`): split the
+  // brackets on their top-level commas and quote ONLY the bare run of words. Numbers, the program's own names and
+  // quoted values stay as they are. (print keeps its own rows below: a comma there is often part of the sentence.)
+  const several = body.match(/^(\s*(?:[A-Za-z_]\w*\s*=(?!=)\s*)?([A-Za-z_][\w.]*)\s*\()(.*)\)\s*$/);
+  if (several && several[2] !== "print" && splitTopLevel(several[3])?.marks.includes(",")) {
+    const fixed = quoteWordRuns(several[3].trim(), names);
+    return fixed ? { fixed: `${several[1].trim()}${fixed})`, comma: false } : null;
+  }
   const assign = body.match(/^(\s*[A-Za-z_]\w*\s*=)(?!=)\s*(.+?)\s*$/);
   const call = body.match(/^(\s*print\s*\()\s*(.*?)\s*\)\s*$/);
   if (/["']/.test(body)) {
@@ -1437,6 +1539,495 @@ function doubleEqualsFix(text: string): string | null {
   return codePart(fixed).trim();
 }
 
+/* ---------------------------------------------------------------------------------------------- */
+/* Recipes (Unit 3): def, ingredients, the values a call hands over, randint, a recipe that calls  */
+/* itself. The words are the unit's own (curriculum §2.9): "recipe (function)", "ingredient",      */
+/* "hand over", "hand back".                                                                       */
+/* ---------------------------------------------------------------------------------------------- */
+
+/** A `def name(` line: from Unit 3 on, the student is writing a recipe there, never making a box. */
+const RECIPE_HEADER = /^\s*def\s+[A-Za-z_]\w*\s*\(/;
+
+/** The values inside a call's brackets, split on the commas outside strings and brackets (null if unbalanced). */
+function splitArguments(inside: string): string[] | null {
+  const parts: string[] = [];
+  let depth = 0;
+  let from = 0;
+  for (let index = 0; index < inside.length; index += 1) {
+    const char = inside[index];
+    if (char === '"' || char === "'") {
+      const close = inside.indexOf(char, index + 1);
+      if (close < 0) return null;
+      index = close;
+      continue;
+    }
+    if (char in CLOSER) depth += 1;
+    else if (char in OPENER) depth -= 1;
+    else if (char === "," && depth === 0) {
+      parts.push(inside.slice(from, index).trim());
+      from = index + 1;
+    }
+  }
+  if (depth !== 0) return null;
+  const last = inside.slice(from).trim();
+  return last || parts.length > 0 ? [...parts, last] : [];
+}
+
+/** The ingredients on the code's (last) `def name(...)` line, or null when the code makes no recipe by that name. */
+function recipeIngredients(code: string, name: string): string[] | null {
+  let found: string[] | null = null;
+  for (const row of (code ?? "").split("\n")) {
+    const header = codePart(row).match(new RegExp(`^\\s*def\\s+${escapeRegExp(name)}\\s*\\(([^)]*)\\)`));
+    if (!header) continue;
+    found = (splitArguments(header[1]) ?? [])
+      .map((part) => part.split(/[\s:=]/)[0]?.replace(/^\*+/, "") ?? "")
+      .filter((part) => /^[A-Za-z_]\w*$/.test(part));
+  }
+  return found;
+}
+
+type TaskRecipe = { name: string; ingredients: string[]; returns: boolean };
+
+/**
+ * `name` is one of the task's recipes (Unit 3 on): Mar'tu's version makes it with `def`, and the task names it (its
+ * "Names to use") or the student's code calls it. Null for anything else, so a box of the student's own never gets
+ * recipe advice.
+ */
+function taskRecipe(name: string, code: string, context?: ExplainContext): TaskRecipe | null {
+  if (!unitAtLeast(context, FUNCTIONS_UNIT_ORDER) || !context?.solution || KEYWORDS.has(name)) return null;
+  const ingredients = recipeIngredients(context.solution, name);
+  if (!ingredients) return null;
+  const call = new RegExp(`(^|[^\\w.])${escapeRegExp(name)}\\s*\\(`);
+  const called = (code ?? "").split("\n").some((row) => call.test(maskStrings(row)));
+  if (!(context.names ?? []).includes(name) && !called) return null;
+  const block = recipeBlocks(context.solution).find((entry) => entry.recipe === name);
+  const body = block ? context.solution.split("\n").slice(block.start, block.end) : [];
+  return { name, ingredients, returns: body.some((row) => /^\s*return\b/.test(codePart(row))) };
+}
+
+/**
+ * "`max_fuel_for` is a recipe in this task: `def max_fuel_for(cells):`, then an indented `return cells * 5`." Built
+ * from the task's ingredients and the student's own right side (`value`), when there is one.
+ */
+function recipeShape(recipe: TaskRecipe, value?: string): string {
+  const header = `\`def ${recipe.name}(${recipe.ingredients.join(", ")}):\``;
+  const right = value?.trim();
+  const steps = !recipe.returns ? "then its steps, indented under it" : right ? `then an indented \`return ${right}\`` : "then an indented `return` with the answer";
+  return `\`${recipe.name}\` is a recipe in this task: ${header}, ${steps}.`;
+}
+
+/**
+ * `max_fuel_for(cells) = cells * 5`: a recipe written the way math writes f(x) = 5x. Python says "cannot assign to
+ * function call ... Maybe you meant '=='", which sends the student the wrong way. Built from the student's own name,
+ * ingredients and right side. Null for anything else (a builtin on the left, values in the brackets).
+ */
+function explainRecipeLikeMath(message: string, text: string, line: number | null, raw: string): CourseExplanation | null {
+  const body = codePart(text);
+  // `double_cost = (price):`: a recipe made with `=`, the way a box is made (Python says only "invalid syntax").
+  const boxLike = /^invalid syntax/i.test(message)
+    ? body.match(/^\s*([A-Za-z_]\w*)\s*=\s*\(\s*((?:[A-Za-z_]\w*\s*,\s*)*[A-Za-z_]\w*)?\s*\)\s*:\s*$/)
+    : null;
+  if (boxLike && !KEYWORDS.has(boxLike[1]) && !COMMON_BUILTINS.includes(boxLike[1])) {
+    const ingredients = (boxLike[2] ?? "").split(",").map((part) => part.trim()).filter(Boolean);
+    return explain(
+      "recipe-like-math",
+      "A recipe starts with def",
+      `${lineWord(line)} makes the recipe with \`=\`, the way a box is made. In Python a recipe (function) starts with \`def\`: \`def ${boxLike[1]}(${ingredients.join(", ")}):\`, then its steps, indented.`,
+      raw,
+    );
+  }
+  if (!/cannot assign to function call/i.test(message)) return null;
+  const at = singleEquals(maskStrings(body))[0];
+  if (at === undefined) return null;
+  const call = body.slice(0, at).trim().match(/^([A-Za-z_]\w*)\s*\(\s*((?:[A-Za-z_]\w*\s*,\s*)*[A-Za-z_]\w*)?\s*\)$/);
+  if (!call || COMMON_BUILTINS.includes(call[1]) || KEYWORDS.has(call[1])) return null;
+  const ingredients = (call[2] ?? "").split(",").map((part) => part.trim()).filter(Boolean);
+  if (ingredients.some((name) => KEYWORDS.has(name))) return null;
+  const right = body.slice(at + 1).trim();
+  const back = right ? `\`return ${right}\`` : "`return` with the answer";
+  return explain(
+    "recipe-like-math",
+    "A recipe starts with def",
+    `${lineWord(line)} is math's way to write it. In Python a recipe (function) starts with \`def\`: \`def ${call[1]}(${ingredients.join(", ")}):\`, then an indented ${back}.`,
+    raw,
+  );
+}
+
+/**
+ * `def max_fuel_for("cells"):` or `def show_hit(4, 3):`: a value where an ingredient's name goes (Python says only
+ * "invalid syntax"). The def line comes back with names in its brackets: the quotes taken off a name, else Mar'tu's
+ * own ingredient in that place, else a plain `value`.
+ */
+function explainQuotedIngredient(text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  const header = codePart(text).match(/^\s*def\s+([A-Za-z_]\w*)\s*\((.*)\)\s*:?\s*$/);
+  const parts = header ? splitArguments(header[2]) : null;
+  if (!header || !parts) return null;
+  const quoted = (part: string) => /^(["'])[^"']*\1$/.test(part);
+  const number = (part: string) => /^-?\d+(?:\.\d+)?$/.test(part);
+  const isName = (part: string) => /^[A-Za-z_]\w*$/.test(part) && !KEYWORDS.has(part);
+  if (!parts.some((part) => quoted(part) || number(part))) return null;
+  if (!parts.every((part) => quoted(part) || number(part) || isName(part))) return null;
+  const own = context?.solution ? recipeIngredients(context.solution, header[1]) : null;
+  const used = new Set<string>();
+  const names = parts.map((part, index) => {
+    const inner = quoted(part) ? part.slice(1, -1).trim() : part;
+    let name = isName(inner) ? inner : (own?.[index] ?? "");
+    if (!isName(name) || used.has(name)) name = parts.length === 1 ? "value" : `value${index + 1}`;
+    used.add(name);
+    return name;
+  });
+  const fixed = `def ${header[1]}(${names.join(", ")}):`;
+  if (parts.some(quoted)) {
+    return explain(
+      "quoted-ingredient",
+      "No quotes on an ingredient",
+      `${lineWord(line)} has an ingredient in quotes. Ingredient names have no quotes: \`${fixed}\``,
+      raw,
+    );
+  }
+  return explain(
+    "quoted-ingredient",
+    "An ingredient is a name",
+    `${lineWord(line)} has a number where an ingredient's name goes. An ingredient is a name: \`${fixed}\`. The numbers go in the call.`,
+    raw,
+  );
+}
+
+/**
+ * `def max_fuel_for(cells) = cells * 5`: math's f(x) = 5x with a `def` in front. Python says "expected ':'", and a
+ * colon added at the end only gets the same error again: the colon goes right after the brackets, the steps below.
+ */
+function explainDefLikeMath(text: string, line: number | null, raw: string): CourseExplanation | null {
+  const header = codePart(text).match(/^\s*def\s+([A-Za-z_]\w*)\s*\(([^()]*)\)\s*=(?!=)\s*(.+?)\s*:?\s*$/);
+  const ingredients = header ? splitArguments(header[2]) : null;
+  if (!header || !ingredients || !ingredients.every((part) => /^[A-Za-z_]\w*$/.test(part) && !KEYWORDS.has(part))) return null;
+  return explain(
+    "recipe-like-math",
+    "Steps go below the def line",
+    `${lineWord(line)} puts \`=\` after the brackets, the way math writes it. In Python the colon goes right after the brackets, and the steps go below: \`def ${header[1]}(${ingredients.join(", ")}):\`, then an indented \`return ${header[3]}\`.`,
+    raw,
+  );
+}
+
+/**
+ * One of the task's recipes written half like a box: `def max_fuel_for = cells * 5`, or its name in quotes,
+ * `def ("say_steady"):`. def-for-variable would answer "make a box", which turns the recipe into a box. A quoted name
+ * with an indented step under it is a recipe too, whatever the task. Null for anything else.
+ */
+function explainRecipeMadeAsBox(
+  text: string,
+  code: string,
+  line: number | null,
+  raw: string,
+  context?: ExplainContext,
+): CourseExplanation | null {
+  const body = codePart(text).trim();
+  const valued = body.match(/^def\s+([A-Za-z_]\w*)\s*=(?!=)\s*(.+)$/);
+  const valuedRecipe = valued ? taskRecipe(valued[1], code, context) : null;
+  if (valued && valuedRecipe) {
+    return explain(
+      "recipe-like-math",
+      "A recipe needs ( ) and a colon",
+      `${lineWord(line)} mixes \`def\` with \`=\`. ${recipeShape(valuedRecipe, valued[2])}`,
+      raw,
+    );
+  }
+  const quoted = body.match(/^def\s*\(?\s*(["'])([A-Za-z_]\w*)\1\s*\)?\s*:?\s*$/);
+  if (!quoted || KEYWORDS.has(quoted[2])) return null;
+  const recipe = taskRecipe(quoted[2], code, context);
+  const stepBelow = line !== null && indentOf(nextCodeLine(code, line)) > indentOf(text);
+  if (!recipe && !stepBelow) return null;
+  const header = `\`def ${quoted[2]}(${recipe ? recipe.ingredients.join(", ") : ""}):\``;
+  return explain(
+    "quoted-recipe-name",
+    "No quotes on a recipe's name",
+    `${lineWord(line)} has the recipe's name in quotes. A recipe's name has no quotes: it goes right after \`def\`, then ( ) and a colon: ${header}, with its steps indented under it.`,
+    raw,
+  );
+}
+
+/**
+ * "missing 1 required positional argument" / "takes 1 positional argument but 2 were given". From Unit 3 on, when
+ * the code makes the recipe, its ingredients come from its own `def` line; `random.randint` takes two values.
+ * Python's "positional argument" words are never the explanation (its last line still shows below).
+ */
+function explainValueCount(message: string, code: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation {
+  const count = message.match(/^([\w.]+)\(\) (?:takes (\d+) positional arguments? but (\d+) (?:were|was) given|missing (\d+) required positional arguments?)/);
+  const name = count?.[1] ?? "";
+  const call = line ? `The call on line ${line}` : "This call";
+  const handedText = (handed: number) => (handed === 0 ? "nothing" : String(handed));
+  const ingredients = count && /^[A-Za-z_]\w*$/.test(name) && unitAtLeast(context, FUNCTIONS_UNIT_ORDER) ? recipeIngredients(code, name) : null;
+  if (count && ingredients) {
+    const handed = count[2] !== undefined ? Number(count[3]) : ingredients.length - Number(count[4]);
+    if (handed >= 0 && handed !== ingredients.length) {
+      if (ingredients.length === 0) {
+        return explain(
+          "wrong-number-of-values",
+          "Wrong number of values",
+          `\`${name}\` has no ingredients, but ${call.charAt(0).toLowerCase()}${call.slice(1)} hands over ${handedText(handed)}.`,
+          raw,
+        );
+      }
+      const listed = ingredients.map((ingredient) => `\`${ingredient}\``).join(", ");
+      const has = ingredients.length === 1 ? "1 ingredient" : `${ingredients.length} ingredients`;
+      return explain(
+        "wrong-number-of-values",
+        "Wrong number of values",
+        `\`${name}\` has ${has} (${listed}). ${call} hands over ${handedText(handed)}. Hand over one value per ingredient.`,
+        raw,
+      );
+    }
+  }
+  // `random.randint(die_size)`: the method's own count includes Python's hidden first value.
+  if (count && /^(Random\.)?randint$/.test(name) && unitAtLeast(context, RANDOM_UNIT_ORDER)) {
+    const handed = count[2] !== undefined ? Number(count[3]) - 1 : 2 - Number(count[4]);
+    if (handed >= 0 && handed !== 2) {
+      return explain(
+        "wrong-number-of-values",
+        "Wrong number of values",
+        `\`random.randint\` takes 2 values: the smallest number, then the biggest. ${call} hands over ${handedText(handed)}.`,
+        raw,
+      );
+    }
+  }
+  return explain(
+    "wrong-number-of-values",
+    "Wrong number of values",
+    `The function call${onLine(line)} has the wrong number of values inside its ( ).`,
+    raw,
+  );
+}
+
+/**
+ * `random.randint(die_size, 1)`: "empty range in randrange(20, 2)". The student's own two numbers, swapped. Null when
+ * the line has no `randint(` with two values, or its first value is already 1 or less (another slip emptied it).
+ */
+function explainRandintBackwards(text: string, line: number | null, raw: string): CourseExplanation | null {
+  const body = codePart(text);
+  const start = maskStrings(body).search(/(?<![\w])(?:random\s*\.\s*)?randint\s*\(/);
+  if (start < 0) return null;
+  const open = body.indexOf("(", start);
+  let depth = 0;
+  let close = -1;
+  const mask = maskStrings(body);
+  for (let index = open; index < mask.length; index += 1) {
+    if (mask[index] in CLOSER) depth += 1;
+    else if (mask[index] in OPENER && --depth === 0) {
+      close = index;
+      break;
+    }
+  }
+  const values = close > open ? splitArguments(body.slice(open + 1, close)) : null;
+  if (!values || values.length !== 2 || values.some((value) => !value)) return null;
+  if (/^-?\d+(?:\.\d+)?$/.test(values[0]) && Number(values[0]) <= 1) return null;
+  const fixed = `${body.slice(start, open).replace(/\s+/g, "")}(${values[1]}, ${values[0]})`;
+  return explain(
+    "randint-backwards",
+    "Smallest number first",
+    `${lineWord(line)} rolls with the numbers the wrong way round. Smallest number first: \`${fixed}\``,
+    raw,
+  );
+}
+
+/**
+ * RecursionError: a recipe that calls itself (`def say_steady():` with `say_steady()` indented under it). Says which
+ * line, and that the call belongs below the recipe; any other endless calling keeps the plain words.
+ */
+function explainRecursion(code: string, raw: string): CourseExplanation {
+  const lines = (code ?? "").split("\n");
+  for (const block of recipeBlocks(code)) {
+    const self = new RegExp(`(^|[^\\w.])${escapeRegExp(block.recipe)}\\s*\\(`);
+    for (let at = block.start; at < block.end; at += 1) {
+      if (!self.test(maskStrings(codePart(lines[at] ?? "")))) continue;
+      return explain(
+        "never-ending-calls",
+        "A recipe that calls itself",
+        `Line ${at + 1} calls \`${block.recipe}\` inside \`${block.recipe}\` itself, so it starts again and again and never stops. To call it, write the call below the recipe, with no spaces in front.`,
+        raw,
+      );
+    }
+  }
+  return explain(
+    "never-ending-calls",
+    "Never-ending calls",
+    "A function keeps calling itself and never stops. Make sure it has a way to finish with a return that does not call it again.",
+    raw,
+  );
+}
+
+/** The recipes in the code: each `def` line and the lines its indented body spans (1-based, inclusive). */
+function recipeBlocks(code: string): { recipe: string; start: number; end: number }[] {
+  const lines = (code ?? "").split("\n");
+  const blocks: { recipe: string; start: number; end: number }[] = [];
+  lines.forEach((row, index) => {
+    const recipe = codePart(row).match(/^\s*def\s+([A-Za-z_]\w*)\s*\(/)?.[1];
+    if (!recipe) return;
+    const indent = indentOf(row);
+    let end = index + 1;
+    for (let at = index + 1; at < lines.length; at += 1) {
+      if (!codePart(lines[at] ?? "").trim()) continue;
+      if (indentOf(lines[at] ?? "") <= indent) break;
+      end = at + 1;
+    }
+    blocks.push({ recipe, start: index + 1, end });
+  });
+  return blocks;
+}
+
+/**
+ * Unit 3's names, read where they do not exist (a NameError): a recipe called above its `def`, one of the task's
+ * recipes that no `def` makes yet, and an ingredient or a box that only lives inside a recipe (its "kitchen"), used
+ * outside it. Null for anything else.
+ */
+function explainRecipeName(
+  name: string,
+  code: string,
+  text: string,
+  line: number | null,
+  raw: string,
+  context?: ExplainContext,
+): CourseExplanation | null {
+  const blocks = recipeBlocks(code);
+  const called = new RegExp(`(^|[^\\w.])${escapeRegExp(name)}\\s*\\(`).test(maskStrings(codePart(text)));
+  const own = blocks.find((block) => block.recipe === name);
+  if (called && own && line !== null && own.start > line) {
+    return explain(
+      "recipe-called-too-early",
+      "Called too early",
+      `Line ${line} calls \`${name}\`, but its \`def\` is only on line ${own.start}. Python runs from top to bottom, so move the recipe above the line that calls it.`,
+      raw,
+    );
+  }
+  if (called && !own && (context?.names ?? []).includes(name)) {
+    return explain(
+      "recipe-not-made-yet",
+      "Recipe not made yet",
+      `\`${name}\` is one of this task's recipes, but no \`def\` line makes it yet. Write it with \`def\`${line ? ` above line ${line}, the line that calls it` : ""}.`,
+      raw,
+    );
+  }
+  const defined = definedNames(code);
+  const made = defined.filter((entry) => entry.name === name);
+  const body = codePart(text).trim();
+  const list = (names: string[]) => names.map((entry) => `\`${entry}\``).join(names.length === 2 ? " and " : ", ");
+  // `max_fuel_for = cells * 5`: one of the task's recipes made with `=`, the way a box is made, so Python reads its
+  // right side now and finds no `cells`. Making `cells` first would only turn the recipe into a box.
+  const boxed = body.match(/^([A-Za-z_]\w*)\s*=(?!=)\s*(.+)$/);
+  const asBox = boxed && !blocks.some((block) => block.recipe === boxed[1]) ? taskRecipe(boxed[1], code, context) : null;
+  if (asBox && boxed) {
+    return explain(
+      "recipe-like-math",
+      "A recipe starts with def",
+      `${lineWord(line)} makes \`${boxed[1]}\` with \`=\`, the way a box is made. ${recipeShape(asBox, boxed[2])}`,
+      raw,
+    );
+  }
+  const fromExample = exampleOnlyNames(context).includes(name);
+  // No line makes `name` at all.
+  if (made.length === 0 && line !== null) {
+    // `get_greeting = greeting`: the store written the wrong way round, a recipe's name on the left of `=`.
+    const reversed = body.match(/^([A-Za-z_]\w*)\s*=(?!=)\s*([A-Za-z_]\w*)$/);
+    if (!fromExample && reversed && reversed[2] === name && blocks.some((block) => block.recipe === reversed[1])) {
+      const needs = recipeIngredients(code, reversed[1]) ?? [];
+      return explain(
+        "store-backwards",
+        "Store it the other way",
+        `${lineWord(line)} puts \`${name}\` into \`${reversed[1]}\`, the wrong way round, so Python looks for a box \`${name}\` that no line makes. The new box goes on the left of \`=\`, the call on the right: ${needs.length === 0 ? `\`${name} = ${reversed[1]}()\`` : `\`${name} = ${reversed[1]}(...)\`, with one value per ingredient`}`,
+        raw,
+      );
+    }
+    // `return result` inside a recipe whose own box is `total` (RNM): never "put quotes around it". A name copied from
+    // the example (or a hint's Teach me example) gets this row too, so `return result` after `fuel = ...` points at
+    // `fuel`, wherever the crash shows up (the check's call, or the try line's).
+    const inside = blocks.filter((block) => line > block.start && line <= block.end).at(-1);
+    const read = new RegExp(`(^|[^\\w.])${escapeRegExp(name)}(?![\\w(])`);
+    if (inside && /^return\b/.test(body) && read.test(maskStrings(body))) {
+      const ingredients = recipeIngredients(code, inside.recipe) ?? [];
+      const boxes = [
+        ...new Set(defined.filter((entry) => entry.line > inside.start && entry.line < line).map((entry) => entry.name)),
+      ].filter((box) => !ingredients.includes(box));
+      // One or two letters off one of the recipe's own names: a spelling slip, which keeps its own row.
+      if (!fromExample && closeName(name, [...boxes, ...ingredients])) return null;
+      const lead = fromExample
+        ? `\`${name}\` comes from Mar'tu's example.`
+        : `${lineWord(line)} hands back \`${name}\`, but no line in \`${inside.recipe}\` makes a box by that name.`;
+      if (boxes.length > 0) {
+        return explain(
+          "not-in-recipe",
+          "Not a box in this recipe",
+          `${lead} ${boxes.length === 1 ? `This recipe's box is ${list(boxes)}: hand that back.` : `This recipe's boxes are ${list(boxes)}: hand back the one that holds the answer.`}`,
+          raw,
+        );
+      }
+      if (ingredients.length > 0) {
+        return explain(
+          "not-in-recipe",
+          "Not a name in this recipe",
+          `${fromExample ? `${lead} \`${inside.recipe}\` has no box by that name.` : `${lineWord(line)} hands back \`${name}\`, but \`${inside.recipe}\` has no box or ingredient by that name.`} ${ingredients.length === 1 ? `Its ingredient is ${list(ingredients)}` : `Its ingredients are ${list(ingredients)}`}: work the answer out from ${ingredients.length === 1 ? "that" : "those"}.`,
+          raw,
+        );
+      }
+    }
+  }
+  // Every line that makes `name` is inside one recipe (or is its `def` line, as an ingredient), and this line is not.
+  const home = made.length > 0 ? blocks.find((block) => made[0].line >= block.start && made[0].line <= block.end) : undefined;
+  if (!home || line === null || (line >= home.start && line <= home.end) || home.recipe === name) return null;
+  if (!made.every((entry) => entry.line >= home.start && entry.line <= home.end)) return null;
+  const ingredient = made.some((entry) => entry.line === home.start);
+  // The line sits inside ANOTHER recipe (`return total` in `max_fuel_for`, when `total` is `max_mana_for`'s box): the
+  // advice is that recipe's own names, never "out here, catch what it hands back".
+  const here = blocks.filter((block) => line > block.start && line <= block.end).at(-1);
+  if (here && here.recipe !== home.recipe) {
+    const hereIngredients = recipeIngredients(code, here.recipe) ?? [];
+    const hereBoxes = [
+      ...new Set(defined.filter((entry) => entry.line > here.start && entry.line < line).map((entry) => entry.name)),
+    ].filter((box) => !hereIngredients.includes(box));
+    const belongs = `\`${name}\` belongs to \`${home.recipe}\`${ingredient ? " (it is one of its ingredients)" : ""}, so only that recipe can use it.`;
+    const instead = /^return\b/.test(body) && hereBoxes.length > 0
+      ? `Inside \`${here.recipe}\`, hand back its own box, \`${hereBoxes.at(-1)}\`.`
+      : hereIngredients.length > 0
+        ? `Inside \`${here.recipe}\`, use its own ${hereIngredients.length === 1 ? "ingredient" : "ingredients"}, ${list(hereIngredients)}${hereBoxes.length > 0 ? `, and its own ${hereBoxes.length === 1 ? "box" : "boxes"}, ${list(hereBoxes)}` : ""}.`
+        : `Inside \`${here.recipe}\`, make what it needs there, or hand it over as an ingredient.`;
+    return explain("made-inside-recipe", "Another recipe's name", `${belongs} ${instead}`, raw);
+  }
+  if (ingredient) {
+    const lead = `\`${name}\` is an ingredient of \`${home.recipe}\`, so it only exists inside the recipe while a call runs it. Line ${line} is outside the recipe`;
+    // `warn(hero_name)`: the call itself hands the ingredient over, so the call needs a value of its own.
+    if (new RegExp(`(^|[^\\w.])${escapeRegExp(home.recipe)}\\s*\\(`).test(maskStrings(body))) {
+      return explain("made-inside-recipe", "Only inside the recipe", `${lead}. Out here, hand over a value itself in the call.`, raw);
+    }
+    // `print(hero_name + ", get inside!")` at the bottom, while `pass` still sits in `warn`: the line belongs inside.
+    const steps = (code ?? "").split("\n").slice(home.start, home.end).map((row) => codePart(row).trim()).filter(Boolean);
+    const where = steps.length === 1 && steps[0] === "pass" ? ", in place of `pass`, four spaces in" : ", four spaces in";
+    return explain("made-inside-recipe", "Only inside the recipe", `${lead}: move this line inside \`${home.recipe}\`${where}.`, raw);
+  }
+  return explain(
+    "made-inside-recipe",
+    "Only inside the recipe",
+    `\`${name}\` is made inside \`${home.recipe}\`, so it only exists inside that recipe. Line ${line} is outside it. Out here, catch what the recipe hands back in a box of your own: the call goes on the right of \`=\`.`,
+    raw,
+  );
+}
+
+/** `return` with no spaces in front, under a recipe: it fell out of the recipe (Python: "'return' outside function"). */
+function explainReturnOutside(code: string, line: number | null, raw: string): CourseExplanation {
+  const above = line ? recipeBlocks((code ?? "").split("\n").slice(0, line - 1).join("\n")).at(-1) : undefined;
+  if (above && line && above.end === line - 1) {
+    return explain(
+      "indent",
+      "Indent the return",
+      `Line ${line}'s \`return\` has no spaces in front, so it is outside the recipe \`${above.recipe}\`. Give it the same spaces as the lines above it.`,
+      raw,
+    );
+  }
+  return explain(
+    "indent",
+    "return goes in a recipe",
+    `${lineWord(line)} has \`return\` outside any recipe. \`return\` only works inside a recipe (function), indented under its \`def\` line, to hand a value back.`,
+    raw,
+  );
+}
+
 function explainSyntax(
   message: string,
   type: string,
@@ -1489,8 +2080,34 @@ function explainSyntax(
   const backwards = explainBackwardsSign(text, line, raw);
   if (backwards) return backwards;
 
-  const defFix = defForVariable(text);
+  // From Unit 3 on, a `def name(` line is a recipe being written: never "make a variable" advice there.
+  const recipeHeader = unitAtLeast(context, FUNCTIONS_UNIT_ORDER) && RECIPE_HEADER.test(codePart(text));
+  if (recipeHeader && /^invalid syntax/.test(lower)) {
+    const ingredient = explainQuotedIngredient(text, line, raw, context);
+    if (ingredient) return ingredient;
+  }
+  // `max_fuel_for(cells) = cells * 5`: before `compare-with-double-equals`, which would say "use ==".
+  if (unitAtLeast(context, FUNCTIONS_UNIT_ORDER)) {
+    const math = explainRecipeLikeMath(message, text, line, raw);
+    if (math) return math;
+    if (/'return' outside function/.test(lower)) return explainReturnOutside(code, line, raw);
+    // `def max_fuel_for(cells) = cells * 5`, `def max_fuel_for = cells * 5`, `def ("say_steady"):`: a recipe, written
+    // half like a box. Never "make a box" advice, and never "add a colon" again and again.
+    const recipe = explainDefLikeMath(text, line, raw) ?? explainRecipeMadeAsBox(text, code, line, raw, context);
+    if (recipe) return recipe;
+  }
+
+  const defFix = recipeHeader ? null : defForVariable(text);
   if (defFix && printOnlyTask(context)) return defInPrintTask(text, raw);
+  // Unit 3 on, in the unit's words: def makes recipes, = makes boxes.
+  if (defFix && unitAtLeast(context, FUNCTIONS_UNIT_ORDER)) {
+    return explain(
+      "def-for-variable",
+      "def makes recipes",
+      `\`def\` makes recipes (functions), not boxes. To make a box, write the name, an equals sign, then the value, with no \`def\`: \`${defFix}\``,
+      raw,
+    );
+  }
   if (defFix) {
     return explain(
       "def-for-variable",
@@ -1597,7 +2214,10 @@ function explainSyntax(
     const unquoted = explainUnquoted(text, code, line, raw);
     if (unquoted) return unquoted;
     const inside = text.match(/\(([^()"']*)\)/)?.[1]?.trim();
-    if (inside && /^[A-Za-z0-9][A-Za-z0-9 ,!?.']*[A-Za-z0-9!?.]$/.test(inside) && /[A-Za-z]/.test(inside) && inside.includes(" ")) {
+    // In a call that takes several values (not print), the commas split the values: never quote them together.
+    const callee = codePart(text).trim().match(/^(?:[A-Za-z_]\w*\s*=(?!=)\s*)?([A-Za-z_][\w.]*)\s*\(/)?.[1];
+    const several = callee !== undefined && callee !== "print" && (inside ?? "").includes(",");
+    if (inside && !several && /^[A-Za-z0-9][A-Za-z0-9 ,!?.']*[A-Za-z0-9!?.]$/.test(inside) && /[A-Za-z]/.test(inside) && inside.includes(" ")) {
       return explain("unquoted-words", "Missing quotes?", `If ${inside} is text, put quotes around it: "${inside}". Text needs quotes.`, raw);
     }
     return explain(
@@ -1665,6 +2285,10 @@ function explainSyntax(
     );
   }
   if (/expected '\('/.test(lower) && /^\s*def\b/.test(text)) {
+    const recipe = unitAtLeast(context, FUNCTIONS_UNIT_ORDER) ? codePart(text).match(/^\s*def\s+([A-Za-z_]\w*)\s*:?\s*$/)?.[1] : undefined;
+    if (recipe) {
+      return explain("def-needs-brackets", "def needs ( )", `A \`def\` line needs ( ) after the recipe's name, then a colon: \`def ${recipe}():\``, raw);
+    }
     return explain("def-needs-brackets", "def needs ( )", `A def line needs ( ) after the function's name, then a colon, like this: def greet():`, raw);
   }
   if (/expected ':'/.test(lower)) {
@@ -1674,7 +2298,7 @@ function explainSyntax(
     return explainStuckNumber(text, code, line, raw);
   }
   if (/expected an indented block|unexpected indent|unindent does not match/.test(lower) || type === "IndentationError") {
-    return explainIndent(message, line, raw);
+    return explainIndent(message, line, raw, unitAtLeast(context, FUNCTIONS_UNIT_ORDER) ? code : "");
   }
   if (/^invalid syntax/.test(lower)) {
     // `if hours_left < 3;`: a semicolon typed for the colon.
@@ -1714,8 +2338,25 @@ function explainSyntax(
   );
 }
 
-function explainIndent(message: string, line: number | null, raw: string): CourseExplanation {
+/** `code` only from Unit 3 on (recipes): it reads a recipe with no step yet. Without it, the older rows. */
+function explainIndent(message: string, line: number | null, raw: string, code = ""): CourseExplanation {
   const after = message.match(/expected an indented block after (.+?) on line (\d+)/);
+  // A recipe with no step under its def line (its `pass` deleted, or only a note left): indenting the next line
+  // (a blank, a note, or the next `def`) would not mend it, so the rule is what to say.
+  const header = after && after[1] === "function definition" ? Number(after[2]) : null;
+  const between = header !== null && line !== null ? (code ?? "").split("\n").slice(header, line - 1) : [];
+  const recipe = header !== null ? codePart(sourceLine(code, header)).match(/^\s*def\s+([A-Za-z_]\w*)/)?.[1] : undefined;
+  if (recipe && between.length > 0 && between.every((row) => codePart(row).trim() === "")) {
+    // A note indented under the def line is the recipe's only "step" (a note above the next def is not).
+    const indent = indentOf(sourceLine(code, header ?? 0));
+    const note = between.some((row) => row.trim().startsWith("#") && indentOf(row) > indent) ? ": a note with # doesn't count" : "";
+    return explain(
+      "indent",
+      "A recipe needs a step",
+      `\`${recipe}\` has no steps yet, and a recipe needs at least one step inside${note}. Write its step under the def line, four spaces in (or put \`pass\` back while you think).`,
+      raw,
+    );
+  }
   if (after) {
     const what = after[1]
       .replace(/^'(\w+)' statement$/, "the $1")
@@ -1835,6 +2476,12 @@ function explainName(
     );
   }
 
+  // Unit 3 on: a recipe called above its `def` or not made yet, or a name that only lives inside a recipe.
+  if (unitAtLeast(context, FUNCTIONS_UNIT_ORDER)) {
+    const recipe = explainRecipeName(name, code, text, line, raw, context);
+    if (recipe) return recipe;
+  }
+
   const defined = definedNames(code);
   const builtins = suggestableBuiltins(code, context);
   const known = [...defined.map((entry) => entry.name), ...builtins];
@@ -1884,6 +2531,21 @@ function explainName(
   // `print("Hello, " + traveler)` in a task whose variable is `name`: copied from the worked example.
   if (exampleOnlyNames(context).includes(name) && !defined.some((entry) => entry.name === name)) {
     const assignedHere = text.match(/^\s*([A-Za-z_]\w*)\s*=(?!=)/)?.[1];
+    // `note = get_note()`, copied from a Teach me hint: a recipe called by the example's name. Point at the task's own
+    // recipe that shares a word with it (`get_greeting`), when there is one.
+    const calledHere = new RegExp(`(^|[^\\w.])${escapeRegExp(name)}\\s*\\(`).test(maskStrings(codePart(text)));
+    const recipes = calledHere && unitAtLeast(context, FUNCTIONS_UNIT_ORDER)
+      ? (context?.names ?? []).filter((task) => task !== name && taskRecipe(task, code, context))
+      : [];
+    const theirs = similarBox(name, recipes.map((task) => ({ name: task, line: 0 })), [name]);
+    if (theirs) {
+      return explain(
+        "example-name",
+        "Name from the example",
+        `\`${name}\` comes from Mar'tu's example. This task's recipe is \`${theirs.name}\`: call that one, letter for letter.`,
+        raw,
+      );
+    }
     return explain(
       "example-name",
       "Name from the example",
@@ -1970,13 +2632,30 @@ function explainName(
       "Unknown function",
       beforeFunctions
         ? `Python doesn't know a function called ${name}. Check the spelling against the task, letter for letter: Python's own functions, like print(), are all small letters.`
-        : `Python doesn't know a function called ${name}. Check the spelling, or make it with def before you use it.`,
+        : unitAtLeast(context, FUNCTIONS_UNIT_ORDER)
+          ? `Python doesn't know a recipe (function) called ${name}. Check the spelling, or make it with def before you use it.`
+          : `Python doesn't know a function called ${name}. Check the spelling, or make it with def before you use it.`,
       raw,
     );
   }
   // A lowercase word in code that already made variables is often a name copied from somewhere else
   // (the example, a friend's screen), so offer both fixes, the task's variables first.
   const assignedHere = text.match(/^\s*([A-Za-z_]\w*)\s*=(?!=)/)?.[1];
+  // Unit 3 on, inside a recipe: a name like one of its ingredients (`hero` for `hero_name`, `damage` for
+  // `base_damage`). Quotes would print the word itself on every call, so the fix is the ingredient, letter for letter.
+  const kitchen = unitAtLeast(context, FUNCTIONS_UNIT_ORDER) && line !== null
+    ? recipeBlocks(code).filter((block) => line > block.start && line <= block.end).at(-1)
+    : undefined;
+  const ingredients = kitchen ? (recipeIngredients(code, kitchen.recipe) ?? []) : [];
+  const likeIngredient = kitchen
+    ? similarBox(name, ingredients.map((entry) => ({ name: entry, line: kitchen.start })), [name])?.name
+    : undefined;
+  if (kitchen && likeIngredient) {
+    const its = ingredients.length === 1
+      ? `Its ingredient is \`${likeIngredient}\`: use it letter for letter.`
+      : `Its ingredients are ${ingredients.map((entry) => `\`${entry}\``).join(ingredients.length === 2 ? " and " : ", ")}: use \`${likeIngredient}\`, letter for letter.`;
+    return explain("unknown-name", "Not an ingredient", `\`${name}\` is not an ingredient of \`${kitchen.recipe}\`. ${its}`, raw);
+  }
   const earlier = taskNamesInstead(code, line, context, [name, ...(assignedHere ? [assignedHere] : [])]);
   if (/^[a-z][a-z0-9_]*$/.test(name) && earlier.length > 0) {
     // `mana - mana_cost`: a number is wanted there, so quotes (text) would only lead to the next crash.
@@ -1993,6 +2672,19 @@ function explainName(
       );
     }
     const similar = similarBox(name, defined, [name, ...(assignedHere ? [assignedHere] : [])]);
+    // `scout.step(north)`: a lone word inside a call's brackets. A recipe's name (`step_north`) is never the box it
+    // meant: lead with the quotes, then a box of the code's own, if one is like it.
+    const recipeNames = new Set(recipeBlocks(code).map((block) => block.recipe));
+    if (similar && recipeNames.has(similar.name) && loneArgument(text, name)) {
+      const box = similarBox(name, defined.filter((entry) => !recipeNames.has(entry.name)), [name, ...(assignedHere ? [assignedHere] : [])]);
+      const fixed = quoteLoneArgument(text, name);
+      return explain(
+        "unquoted-word",
+        "Missing quotes?",
+        `Python doesn't know \`${name}\`: no line in your code makes it. If it's text, put quotes around it: \`${fixed}\`${box ? ` If you meant a box, line ${box.line} makes \`${box.name}\`.` : ""}`,
+        raw,
+      );
+    }
     if (similar) {
       return explain(
         "unknown-name",
@@ -2021,6 +2713,20 @@ function explainName(
   return explain("unknown-name", "Unknown name", `Python doesn't know ${name} yet${onLine(line)}. Make it first (${name} = ...), or check the spelling.`, raw);
 }
 
+/** `name` is one whole value inside a call's brackets on this line: `scout.step(north)`, `heal(hero, 5)`. */
+function loneArgument(text: string, name: string): boolean {
+  const mask = maskStrings(codePart(text));
+  return new RegExp(`[(,]\\s*${escapeRegExp(name)}\\s*[,)]`).test(mask);
+}
+
+/** The line with that lone word in quotes: `scout.step("north")`. */
+function quoteLoneArgument(text: string, name: string): string {
+  const body = codePart(text).trim();
+  const mask = maskStrings(body);
+  const at = mask.search(new RegExp(`(?<=[(,]\\s*)${escapeRegExp(name)}(?=\\s*[,)])`));
+  return at < 0 ? body : `${body.slice(0, at)}"${name}"${body.slice(at + name.length)}`;
+}
+
 /** `name` is a number in math on this line (`mana - mana_cost`, `cost * 2`, `3 + bonus`): text can't go there. */
 function inMath(text: string, name: string): boolean {
   const mask = maskStrings(codePart(text));
@@ -2043,6 +2749,27 @@ function similarBox(name: string, defined: Definition[], skip: string[]): Defini
   const ending = boxes.find((entry) => words(entry).length > 1 && words(entry)[words(entry).length - 1] === last);
   if (ending) return ending;
   return boxes.find((entry) => words(entry).includes(first) || words(entry).includes(last)) ?? null;
+}
+
+/**
+ * A name called on this line (`max_fuel_for(4)`) that the code only ever makes with `=` above it (a box, not a
+ * recipe): the last line that makes it, and that line's right side. Null when no such name is called.
+ */
+function calledBox(code: string, text: string, line: number | null): { name: string; line: number; value: string } | null {
+  const rows = (code ?? "").split("\n");
+  const recipes = new Set(recipeBlocks(code).map((block) => block.recipe));
+  for (const call of maskStrings(codePart(text)).matchAll(/(?<![\w.])([A-Za-z_]\w*)\s*\(/g)) {
+    const name = call[1];
+    if (recipes.has(name) || KEYWORDS.has(name)) continue;
+    const box = new RegExp(`^\\s*${escapeRegExp(name)}\\s*=(?!=)\\s*(.+)$`);
+    let found: { name: string; line: number; value: string } | null = null;
+    rows.forEach((row, index) => {
+      const made = codePart(row).match(box);
+      if (made && (line === null || index + 1 < line)) found = { name, line: index + 1, value: made[1].trim() };
+    });
+    if (found) return found;
+  }
+  return null;
 }
 
 function inputNames(code: string): string[] {
@@ -2179,6 +2906,26 @@ function explainType(
         raw,
       );
     }
+    // Unit 3 on: `max_fuel_for = cells * 5`, then `max_fuel_for(4)`. The name called is a box made with `=`.
+    const boxCalled = unitAtLeast(context, FUNCTIONS_UNIT_ORDER) ? calledBox(code, text, line) : null;
+    if (boxCalled) {
+      const recipe = taskRecipe(boxCalled.name, code, context);
+      const made = `line ${boxCalled.line} makes \`${boxCalled.name}\` with \`=\`, so it is a box, not a recipe (function)`;
+      if (recipe) {
+        return explain(
+          "recipe-like-math",
+          "A recipe starts with def",
+          `${lineWord(line)} calls \`${boxCalled.name}\`, but ${made}. ${recipeShape(recipe, boxCalled.value)}`,
+          raw,
+        );
+      }
+      return explain(
+        "not-a-function",
+        "A box, not a recipe",
+        `${lineWord(line)} calls \`${boxCalled.name}\` with ( ), but ${made}. Only a recipe made with \`def\` can be called.${notCallable[1] === "int" || notCallable[1] === "float" ? " To multiply by it, write * between them." : ""}`,
+        raw,
+      );
+    }
     if (notCallable[1] === "int" || notCallable[1] === "float") {
       return explain(
         "use-star-to-multiply",
@@ -2195,12 +2942,7 @@ function explainType(
     );
   }
   if (/takes \d+ positional arguments? but \d+ (were|was) given|missing \d+ required positional argument/.test(message)) {
-    return explain(
-      "wrong-number-of-values",
-      "Wrong number of values",
-      `The function call${onLine(line)} has the wrong number of values inside its ( ). Python says: ${message}.`,
-      raw,
-    );
+    return explainValueCount(message, code, line, raw, context);
   }
   return explain("wrong-kind-of-value", "Wrong kind of value", `${lineWord(line)} mixes kinds of values that don't go together: ${message}.`, raw);
 }
@@ -2220,7 +2962,7 @@ function explainParsed(parsed: Parsed, raw: string, code: string, context?: Expl
       return explainSyntax(message, type, text, line, raw, code, context);
     case "IndentationError":
     case "TabError":
-      return explainIndent(message, line, raw);
+      return explainIndent(message, line, raw, unitAtLeast(context, FUNCTIONS_UNIT_ORDER) ? code : "");
     case "NameError":
       return explainName(message, code, text, line, raw, context);
     case "TypeError":
@@ -2259,6 +3001,11 @@ function explainParsed(parsed: Parsed, raw: string, code: string, context?: Expl
           raw,
         );
       }
+      // `random.randint(die_size, 1)`: "empty range in randrange(20, 2)" (Python 3.13).
+      if (/empty range (in|for) randrange/.test(message) && unitAtLeast(context, RANDOM_UNIT_ORDER)) {
+        const swapped = explainRandintBackwards(text, line, raw);
+        if (swapped) return swapped;
+      }
       break;
     }
     case "IndexError":
@@ -2296,18 +3043,14 @@ function explainParsed(parsed: Parsed, raw: string, code: string, context?: Expl
       break;
     }
     case "RecursionError":
-      return explain(
-        "never-ending-calls",
-        "Never-ending calls",
-        "A function keeps calling itself and never stops. Make sure it has a way to finish with a return that does not call it again.",
-        raw,
-      );
+      return explainRecursion(code, raw);
     case "UnboundLocalError": {
+      // Only a recipe (Unit 3 on) can raise this, so the words are the unit's: ingredient, hand back.
       const variable = message.match(/variable '([^']+)'/)?.[1] ?? "a variable";
       return explain(
         "variable-in-function",
-        "Variable inside a function",
-        `Inside a function, ${variable} is changed before it has a value there. Pass it in as a parameter, or return the new value instead.`,
+        "A box inside a recipe",
+        `Inside a recipe (function), ${variable} is changed before it has a value there. Hand it over as an ingredient, or hand the new value back with return.`,
         raw,
       );
     }
@@ -2466,6 +3209,15 @@ const SLIP_NAMES: Record<CourseErrorKind, string> = {
   "method-as-function": "a text method used without a dot",
   "randint-needs-random": "`randint` used on its own",
   "assert-failed": "an assert that came out False",
+  "recipe-like-math": "a recipe written like math",
+  "quoted-ingredient": "an ingredient name in quotes",
+  "randint-backwards": "the numbers in the wrong order",
+  "recipe-not-made-yet": "a recipe that is not made yet",
+  "recipe-called-too-early": "a recipe called before its `def`",
+  "made-inside-recipe": "a name that only lives inside a recipe",
+  "not-in-recipe": "a name this recipe never makes",
+  "store-backwards": "a store the wrong way round",
+  "quoted-recipe-name": "quotes around a recipe's name",
   "input-is-text": "an input() answer used as a number",
   "text-plus-number": "text joined to a number",
   "number-plus-text": "a number added to text",
@@ -2475,7 +3227,7 @@ const SLIP_NAMES: Record<CourseErrorKind, string> = {
   "name-taken": "a name Python already uses",
   "use-star-to-multiply": "brackets right after a number",
   "not-a-function": "( ) after something that is not a function",
-  "wrong-number-of-values": "the wrong number of values in a call",
+  "wrong-number-of-values": "the wrong number of values handed over",
   "wrong-kind-of-value": "values of kinds that don't go together",
   "divide-by-zero": "a divide by zero",
   "out-of-answers": "more questions than answers",
@@ -2631,11 +3383,15 @@ function findQuietSlip(code: string, options: { missingName?: string; context?: 
       };
     }
     if (/^[A-Za-z_]\w*$/.test(body) && defined.has(body) && !KEYWORDS.has(body)) {
+      // Unit 3 on: a recipe's name with no `()` is a call that never happens (printing it would show the recipe).
+      const recipe = unitAtLeast(options.context, FUNCTIONS_UNIT_ORDER) && new RegExp(`^\\s*def\\s+${escapeRegExp(body)}\\s*\\(`, "m").test(code ?? "");
       return {
         ...explain(
           "bare-name",
           "A name on its own",
-          `${where} is only the name ${body}, so Python looks inside it and does nothing else. To show what ${body} holds, write print(${body}).`,
+          recipe
+            ? `${where} is only the name \`${body}\`, with no \`()\`, so the recipe never runs. To call it, write \`${body}()\``
+            : `${where} is only the name ${body}, so Python looks inside it and does nothing else. To show what ${body} holds, write print(${body}).`,
           raw,
         ),
         kind: "bare-name",

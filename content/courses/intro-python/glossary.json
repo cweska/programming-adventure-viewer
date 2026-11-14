@@ -1,5 +1,14 @@
 [
   {
+    "term": ".capitalize()",
+    "aliases": [
+      "capitalize()",
+      "capitalize"
+    ],
+    "plain": "Makes a copy of the text with the first letter big and every other letter small.",
+    "example": "\"wELCOME\".capitalize()   # Welcome"
+  },
+  {
     "term": ".lower()",
     "aliases": [
       "lower()",
@@ -13,6 +22,15 @@
     "term": "and",
     "plain": "Joins two questions. `a and b` is `True` only when both are `True`.",
     "example": "mana >= cost and affinity >= required"
+  },
+  {
+    "term": "argument",
+    "aliases": [
+      "arguments",
+      "what you hand over"
+    ],
+    "plain": "The value you hand over when you call a recipe. In `warn(\"Lucky\")`, the argument is `\"Lucky\"`.",
+    "example": "warn(\"Lucky\")"
   },
   {
     "term": "assert",
@@ -73,6 +91,17 @@
     "example": "print(mana)\nprint(cost)"
   },
   {
+    "term": "call",
+    "aliases": [
+      "calls",
+      "calling",
+      "called",
+      "call it"
+    ],
+    "plain": "Running a recipe: its name, then brackets. `say_steady()` runs the steps once. No brackets, no run.",
+    "example": "say_steady()"
+  },
+  {
     "term": "checkpoint",
     "aliases": [
       "checkpoints"
@@ -121,6 +150,14 @@
     ],
     "plain": "A number with a point in it, like `24.0` or `42.5`. Dividing with `/` always gives one.",
     "example": "print(48 / 2)"
+  },
+  {
+    "term": "def",
+    "aliases": [
+      "def line"
+    ],
+    "plain": "The word that makes a recipe: `def`, the recipe's name, brackets, and a colon. The steps go under it, indented. `def` never makes a box.",
+    "example": "def barrier_report():"
   },
   {
     "term": "defined",
@@ -259,6 +296,14 @@
     "example": "print(mama)\nNameError: name 'mama' is not defined"
   },
   {
+    "term": "None",
+    "aliases": [
+      "NoneType"
+    ],
+    "plain": "Python's word for nothing. A recipe with no `return` line hands back `None`.",
+    "example": "print(lucky_max)   # None"
+  },
+  {
     "term": "not",
     "plain": "Flips a yes-or-no answer. `not True` is `False`, and `not False` is `True`.",
     "example": "not barrier_up"
@@ -291,6 +336,21 @@
       "printed"
     ],
     "plain": "What your program shows on the screen when it runs."
+  },
+  {
+    "term": "parameter",
+    "aliases": [
+      "parameters",
+      "ingredient",
+      "ingredients"
+    ],
+    "plain": "An ingredient's name on the recipe card, in the brackets on the `def` line. It is a box that gets filled each time the recipe is called.",
+    "example": "def warn(hero_name):"
+  },
+  {
+    "term": "pass",
+    "plain": "A line that does nothing. A recipe needs at least one line inside it, so `pass` holds the spot, like a blank recipe card, until you write a real step.",
+    "example": "def step_north():\n    pass"
   },
   {
     "term": "placeholder",
@@ -345,6 +405,16 @@
     "example": "random.randint(1, 20)"
   },
   {
+    "term": "recipe",
+    "aliases": [
+      "recipes",
+      "function",
+      "functions"
+    ],
+    "plain": "A named set of steps, made with `def`. Making a recipe does not run it. Calling its name with `()` runs the steps. Python calls a recipe a function.",
+    "example": "def say_steady():\n    print(\"Steady, now.\")\n\nsay_steady()"
+  },
+  {
     "term": "remainder",
     "aliases": [
       "remainders",
@@ -352,6 +422,18 @@
     ],
     "plain": "What is left over after dividing. `50 % 12` is 2: four 12s make 48, and 2 is left.",
     "example": "print(50 % 12)"
+  },
+  {
+    "term": "return",
+    "aliases": [
+      "returns",
+      "hands back",
+      "hand back",
+      "handed back",
+      "return value"
+    ],
+    "plain": "Hands a value back to the line that called the recipe, and ends the recipe. Catch it in a box, or it is gone: `lucky_max = max_mana_for(13)`.",
+    "example": "def max_mana_for(affinity):\n    total = affinity * 2\n    return total"
   },
   {
     "term": "run",

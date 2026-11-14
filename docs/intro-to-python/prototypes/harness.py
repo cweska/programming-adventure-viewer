@@ -15,7 +15,8 @@ It checks, for every exercise / project / challenge / test-out item:
   * the worked example prints exactly ``example_output``,
   * the bonus side quest passes with its own solution,
   * the "Assemble it" lines (``assemble=dict(lines=[...], distractors=[...])``), put in the editor on their
-    own exactly as the player does, pass every checkpoint,
+    own exactly as the player does, pass every checkpoint (and a WARNING when a line like ``row = 60`` is the
+    only number a goal-only step accepts, as in a trace ledger: More structure would hand the answer over),
   * no code a student SEES (starter, solution, example, partials, quiz code) uses a concept that has not been
     introduced yet, in course order (see CONCEPT TOKENS below),
   * every checkpoint has a hint ladder of at least two hints,
@@ -527,9 +528,40 @@ def verify_exercise(ex: dict, where: str, gate: ConceptGate, report: Report, kin
             if not all(checkpoint_status(result, len(checkpoints))):
                 index, message = first_failure(result)
                 report.error(where, f"assemble lines fail at checkpoint {index}: {message}")
+            else:
+                assemble_giveaways(ex, lines, where, report)
         for distractor in assemble.get("distractors") or []:
             if distractor in lines:
                 report.error(where, f"assemble distractor {distractor!r} is also one of the right lines")
+
+
+def assemble_giveaways(ex: dict, lines: list, where: str, report: Report) -> None:
+    """A warning, never an error: an Assemble line `row = 60` that pins the number a goal-only step (dictated=False)
+    asks the student to work out, like a trace row. Any other number there fails that step, so "More structure"
+    hands over the answer before "Show me how" does. (Assemble shows the lines as they are.)"""
+    checkpoints = ex.get("checkpoints") or []
+    goal_only = [i for i, cp in enumerate(checkpoints) if cp.get("dictated") is False]
+    if not goal_only:
+        return
+    # What the student reads before Show me how: Mar'tu, the steps, every hint but the last, the starter, the example.
+    shown = "\n".join(str(part) for part in [
+        ex.get("martu"), ex.get("starter"), ex.get("example"), ex.get("example_output"), ex.get("pick"),
+        *[cp.get("text") for cp in checkpoints], *[hint for cp in checkpoints for hint in (cp.get("hints") or [])[:-1]],
+    ] if part)
+    for at, line in enumerate(lines):
+        row = re.fullmatch(r"(\s*([A-Za-z_]\w*)\s*=\s*)(-?\d+)\s*", line)
+        # A number the task already shows (`3 torches`, a Broken spell's `def hours_left = 37`) gives nothing away:
+        # only a number the student has to work out (a trace row's 30) does.
+        if not row or re.search(rf"(?<![\w.]){re.escape(row.group(3))}(?!\w|\.\d)", shown):
+            continue
+        changed = list(lines)
+        changed[at] = f"{row.group(1)}{int(row.group(3)) + 1}"
+        result = run("\n".join(changed) + "\n", checkpoints, ex.get("setup", ""), ex.get("stdin", []),
+                     bool(ex.get("engine", False)))
+        status = checkpoint_status(result, len(checkpoints))
+        if result["ok"] and any(not status[i] for i in goal_only):
+            report.warn(where, f"assemble line {line.strip()!r} is the answer to a goal-only step (any other number "
+                               "fails it): More structure would hand it over. Leave assemble out of this exercise")
 
 
 def _norm(text: str) -> str:
@@ -653,6 +685,9 @@ def verify_unit(path: Path, gate: ConceptGate, report: Report) -> None:
     for at, text in prose_strings({"UNIT": unit, "ITEMS": items}):
         for problem in prose_mark_problems(text):
             report.warn(path.stem, f"{at}: {problem}")
+        # An Another way label sits in a button and a pass line in the "Done!" line: `code` shows, a link cannot.
+        if re.search(r"\.(label|pass_line)(\[\d+\])?$", at) and GLOSSARY_LINK.search(text):
+            report.warn(path.stem, f"{at}: a [[glossary link]] in a label or pass line shows as plain words")
     # A Quick Check form that also needs its questions: the `<id>-questions` quiz must exist and have enough.
     for item in items:
         need = item.get("questions_to_pass")

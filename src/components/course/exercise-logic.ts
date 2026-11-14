@@ -4,6 +4,7 @@
  */
 import type { ExerciseProgress, GradeResult } from "../../lib/course/contracts";
 import type { AnotherWay, Checkpoint } from "../../lib/course/schema";
+import type { InsertTarget } from "../editor-insert";
 
 export type Support = "full" | "light" | "none";
 export type PlayerMode = "lesson" | "project" | "challenge" | "testout" | "try-it";
@@ -306,6 +307,23 @@ export function startOfLine(hints: readonly string[] | undefined, solution?: str
   const squash = (text: string) => text.replace(/\s+/g, "");
   if (solution !== undefined && !squash(solution).includes(squash(start))) return null;
   return start;
+}
+
+/**
+ * Where Start me off puts the step's line when the student has not clicked into the code yet, read from the step's
+ * last hint (its own line, in Mar'tu's words): "Write `scout.step("west")` in place of `pass`" replaces that `pass`
+ * (in the recipe the step names, `step_west`), "Write `return total` on the line after `total = affinity * 2`" and
+ * "under the `# passed:` note" go on a new line under that one. Null when the hint names no line (the end of the
+ * code, as before).
+ */
+export function startTarget(checkpoint: Pick<Checkpoint, "hints" | "text">): InsertTarget | null {
+  const hints = checkpoint.hints ?? [];
+  const last = hints.length >= 2 ? hints[hints.length - 1] : undefined;
+  const place = last?.match(/\b(in place of|on the line after|under)\s+(?:the\s+)?`([^`\n]+)`/);
+  if (!place) return null;
+  const spans = [checkpoint.text, ...hints].flatMap((text) => [...(text ?? "").matchAll(/`([^`\n]+)`/g)].map((span) => span[1]));
+  const near = [...new Set(spans.flatMap((span) => [...span.matchAll(/[A-Za-z_]\w*/g)].map((name) => name[0])))];
+  return { line: place[2].trim(), how: place[1] === "in place of" ? "replace" : "after", near };
 }
 
 /**

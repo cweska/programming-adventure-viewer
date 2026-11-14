@@ -124,7 +124,7 @@ export function HelpStack({
       return (
         <div className="ex-help-another">
           <p className="ex-help-angle">
-            {angleLabel(shown)}
+            <Prose inline text={angleLabel(shown)} />
             {anotherWay.length > 1 ? (
               <span className="ex-muted">
                 {" "}
@@ -141,7 +141,7 @@ export function HelpStack({
               data-testid="help-another-next"
               onClick={() => setAngle((value) => value + 1)}
             >
-              Try another angle: {angleLabel(anotherWay[(angle + 1) % anotherWay.length])}
+              Try another angle: <Prose inline text={angleLabel(anotherWay[(angle + 1) % anotherWay.length])} />
             </button>
           ) : null}
         </div>

@@ -5,6 +5,7 @@ import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent as Reac
 import type { ExerciseProgress, GradeResult } from "../../lib/course/contracts";
 import {
   explainCourseError,
+  foreignNames,
   GOT_FURTHER_LINE,
   isPrintOnlyTask,
   type CourseExplanation,
@@ -16,7 +17,7 @@ import type { Bonus, Checkpoint, GlossaryEntry, Playable } from "../../lib/cours
 import { runCourse, whenPythonReady } from "../../lib/languages/python/run";
 import { publicPath } from "../../lib/site";
 import type { StageEvent } from "../../lib/stage/bridge";
-import type { InsertText, InsertWhere } from "../editor-insert";
+import type { InsertTarget, InsertText, InsertWhere } from "../editor-insert";
 import { PythonEditor, type PythonEditorHandle } from "../PythonEditor";
 import { CompareView } from "./CompareView";
 import {
@@ -51,6 +52,7 @@ import {
   runOutcome,
   soloUnaided,
   solutionUnlocked,
+  startTarget,
   stdinBoxText,
   stepNoun,
   stuckCheckpointId,
@@ -294,7 +296,7 @@ function AnotherWay({ exercise, glossary }: { exercise: Playable; glossary: Glos
       <div className="ex-another-buttons">
         {showNext ? (
           <button type="button" className="ex-quiet" data-testid="another-way" onClick={() => setIndex(nextIndex)}>
-            {index < 0 ? "Explain it another way" : "Another way"}: {angleLabel(angles[nextIndex])}
+            {index < 0 ? "Explain it another way" : "Another way"}: <Prose inline text={angleLabel(angles[nextIndex])} />
           </button>
         ) : null}
         {shown ? (
@@ -307,7 +309,7 @@ function AnotherWay({ exercise, glossary }: { exercise: Playable; glossary: Glos
       {shown ? (
         <div className="ex-another-text" data-testid="another-way-text">
           <p className="ex-another-title">
-            {angleLabel(shown)}
+            <Prose inline text={angleLabel(shown)} />
             {angles.length > 1 ? (
               <span className="ex-muted">
                 {" "}
@@ -431,6 +433,18 @@ export function ExercisePlayer({
   const short = preset === "short";
   const noun = stepNoun(mode);
   const bonus = mode === "testout" ? undefined : exercise.bonus;
+  // The names of Mar'tu's Teach me examples in this exercise's hints: copied into the code, they get example advice.
+  const taughtNames = useMemo(
+    () =>
+      foreignNames({
+        hints: exercise.checkpoints.flatMap((checkpoint) => checkpoint.hints),
+        // The side quest's own names (`get_farewell`) are the task's too.
+        solution: [exercise.solution, exercise.bonus?.solution ?? ""].join("\n"),
+        starter: exercise.starter,
+        names: exercise.names,
+      }),
+    [exercise],
+  );
   const inputId = useId();
 
   const [code, setCode] = useState(exercise.starter);
@@ -715,8 +729,8 @@ export function ExercisePlayer({
    * Inserting names, Mar'tu's pick and Start me off. Names and picks go at the cursor, but never inside a `#`
    * note; Start me off always starts a line of its own (editor-insert.ts).
    */
-  function insertInCode(text: InsertText, spoken: string, where: InsertWhere) {
-    if (editorRef.current?.insert(text, where)) setInsertNote(`${spoken} is in your code.`);
+  function insertInCode(text: InsertText, spoken: string, where: InsertWhere, target?: InsertTarget) {
+    if (editorRef.current?.insert(text, where, target)) setInsertNote(`${spoken} is in your code.`);
     else setInsertNote(`Type ${spoken} in your code.`);
   }
 
@@ -784,6 +798,7 @@ export function ExercisePlayer({
         unitOrder,
         debugging,
         explainer: exercise.explainer,
+        foreign: taughtNames,
       };
       const grade = gradeCheckpoints(exercise.checkpoints, result, source, context);
       // The side quest's checks come after the main ones: grade them from their own slice, by position.
@@ -1081,7 +1096,12 @@ export function ExercisePlayer({
               {justPassed ? (
                 <p className="ex-checkpoint-done" data-testid={`checkpoint-pass-${n}`}>
                   <span aria-hidden="true">✓</span> <strong>Done!</strong>
-                  {checkpoint.passLine ? <span className="ex-pass-line"> {checkpoint.passLine}</span> : null}
+                  {checkpoint.passLine ? (
+                    <>
+                      {" "}
+                      <Prose inline text={checkpoint.passLine} className="ex-pass-line" />
+                    </>
+                  ) : null}
                 </p>
               ) : null}
             </li>
@@ -1384,7 +1404,9 @@ export function ExercisePlayer({
               }}
               onOpenAssemble={openAssemble}
               onOpenCompare={openCompare}
-              onInsertStart={(start) => insertInCode(/[=,]$/.test(start) ? `${start} ` : start, start, "line")}
+              onInsertStart={(start) =>
+                insertInCode(/[=,]$/.test(start) ? `${start} ` : start, start, "line", helpCheckpoint ? startTarget(helpCheckpoint) ?? undefined : undefined)
+              }
             />
           ) : support === "light" && !done && activeCheckpoint ? (
             <HelpLocked />

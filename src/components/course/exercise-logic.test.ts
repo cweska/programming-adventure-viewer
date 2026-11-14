@@ -21,6 +21,7 @@ import {
   rungsShown,
   runOutcome,
   solutionUnlocked,
+  startTarget,
   stdinBoxText,
   stepNoun,
   stripComment,
@@ -354,5 +355,26 @@ describe("crashLineSwitchedOff: a crash that is part of the task", () => {
     expect(crashLineSwitchedOff("\n\n", 2, solution)).toBe(false);
     expect(crashLineSwitchedOff('print("Mana left: " + str(mana - mana_cost))\n', 1, undefined)).toBe(false);
     expect(crashLineSwitchedOff('print("Mana left: " + str(mana - mana_cost))\n', null, solution)).toBe(false);
+  });
+});
+
+describe("where Start me off goes before a click (startTarget)", () => {
+  it("reads the place from the step's last hint, and the recipe from the step's own names", () => {
+    expect(
+      startTarget({
+        text: "Now `step_west`, on your own.",
+        hints: ["Look under `def step_west():`.", 'Write `scout.step("west")` in place of `pass`, four spaces in.'],
+      }),
+    ).toEqual({ line: "pass", how: "replace", near: ["step_west", "def", "scout", "step", "west", "pass"] });
+    expect(
+      startTarget({ text: "Hand back `total`.", hints: ["Look.", "Write `return total` on the line after `total = affinity * 2`, four spaces in."] }),
+    ).toMatchObject({ line: "total = affinity * 2", how: "after" });
+    expect(startTarget({ text: "x", hints: ["Look.", "Write `passed = roll >= needed` under the `# passed:` note."] })).toMatchObject({
+      line: "# passed:",
+      how: "after",
+    });
+    // A hint that names no line (or a single hint): no place, so the end of the code, as before.
+    expect(startTarget({ text: "x", hints: ["Look.", "Write `say_steady()` on a new line at the bottom."] })).toBeNull();
+    expect(startTarget({ text: "x", hints: ["Write `x = 1` in place of `x = 0`."] })).toBeNull();
   });
 });
