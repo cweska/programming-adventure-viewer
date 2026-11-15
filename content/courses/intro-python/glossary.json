@@ -33,6 +33,22 @@
     "example": "wall.insert(2, 47)"
   },
   {
+    "term": ".items()",
+    "aliases": [
+      "items()"
+    ],
+    "plain": "Hands back each key of a dictionary together with its value, as a pair. A loop can give the pair two names.",
+    "example": "for name, cost in book.items():"
+  },
+  {
+    "term": ".keys()",
+    "aliases": [
+      "keys()"
+    ],
+    "plain": "Hands back a dictionary's keys. A plain loop over a dictionary walks its keys too.",
+    "example": "list(book.keys())"
+  },
+  {
     "term": ".lower()",
     "aliases": [
       "lower()",
@@ -57,6 +73,14 @@
     ],
     "plain": "Takes the first item that is the same as the value you hand it out of a list. You give the value, not the position. If the value isn't there, Python stops with a ValueError.",
     "example": "wall.remove(99)"
+  },
+  {
+    "term": ".values()",
+    "aliases": [
+      "values()"
+    ],
+    "plain": "Hands back a dictionary's values, without their keys.",
+    "example": "sum(book.values())"
   },
   {
     "term": "and",
@@ -137,6 +161,14 @@
     "example": "elif choice == \"option 2\":"
   },
   {
+    "term": "break",
+    "aliases": [
+      "break statement"
+    ],
+    "plain": "Leaves a loop at once. Python goes on with the first line after the loop.",
+    "example": "if gap < 45:\n    print(gap)\n    break"
+  },
+  {
     "term": "bug",
     "aliases": [
       "bugs",
@@ -199,6 +231,14 @@
       "the console"
     ],
     "plain": "The space under the editor. Your printed lines and Python's messages show up there."
+  },
+  {
+    "term": "continue",
+    "aliases": [
+      "continue statement"
+    ],
+    "plain": "Skips the rest of this pass of a loop and goes straight on to the next item. `break` leaves the whole loop; `continue` only skips one pass.",
+    "example": "if mana == 0:\n    continue"
   },
   {
     "term": "decimal",
@@ -270,6 +310,16 @@
     "example": "print(50 // 12)"
   },
   {
+    "term": "for loop",
+    "aliases": [
+      "for loops",
+      "loop",
+      "loops"
+    ],
+    "plain": "Runs the same indented lines once for each item in a list. Each time round, the loop variable holds the next item.",
+    "example": "for color in spell_colors:\n    print(color)"
+  },
+  {
     "term": "glue",
     "aliases": [
       "glues",
@@ -337,6 +387,16 @@
     "example": "IndexError: list index out of range"
   },
   {
+    "term": "infinite loop",
+    "aliases": [
+      "infinite loops",
+      "endless loop",
+      "a loop that never ends"
+    ],
+    "plain": "A loop whose question never becomes `False`, so it never stops. The site stops it for you: after a huge amount of printing, or after 5 seconds.",
+    "example": "while glug > 0:\n    print(glug)"
+  },
+  {
     "term": "input",
     "aliases": [
       "input()"
@@ -399,6 +459,17 @@
     "example": "chalk_wall = [48, 48, 47]"
   },
   {
+    "term": "list comprehension",
+    "aliases": [
+      "list comprehensions",
+      "comprehension",
+      "one-line loop",
+      "one-line loops"
+    ],
+    "plain": "A loop in one line that builds a new list: what to keep, then `for`, then an `if` if you want to pick. It always sits inside square brackets.",
+    "example": "[c for c in coins if c > 4]"
+  },
+  {
     "term": "list inside a list",
     "aliases": [
       "lists inside lists",
@@ -416,6 +487,26 @@
     ],
     "plain": "A list whose items are dictionaries. Pick a sheet by its position first, then read it by key.",
     "example": "roster[2][\"name\"]"
+  },
+  {
+    "term": "loop inside a loop",
+    "aliases": [
+      "loops inside loops",
+      "nested loop",
+      "nested loops",
+      "inner loop",
+      "outer loop"
+    ],
+    "plain": "A loop written in another loop's body. The inner loop runs all the way through on every pass of the outer one.",
+    "example": "for row in log:\n    for score in row:\n        print(score)"
+  },
+  {
+    "term": "loop variable",
+    "aliases": [
+      "loop variables"
+    ],
+    "plain": "The name after `for`. You choose it. On each pass through the loop it holds the next item of the list.",
+    "example": "for gap in chalk_wall:"
   },
   {
     "term": "match",
@@ -493,6 +584,16 @@
     ],
     "plain": "A value Python can do math with. Numbers have no quotes: `3` is a number, `\"3\"` is text.",
     "example": "armor_bonus = 3"
+  },
+  {
+    "term": "one-line choice",
+    "aliases": [
+      "one-line choices",
+      "conditional expression",
+      "one-line if"
+    ],
+    "plain": "Picks one of two values in one line: the value before `if` when the question is True, the value after `else` when it is False.",
+    "example": "\"lit\" if oil > 0 else \"dark\""
   },
   {
     "term": "or",
@@ -637,6 +738,16 @@
       "Run button"
     ],
     "plain": "Tell Python to do your lines, from top to bottom. Press Run as often as you like. It costs nothing."
+  },
+  {
+    "term": "running total",
+    "aliases": [
+      "running totals",
+      "accumulator",
+      "tally"
+    ],
+    "plain": "A variable that starts at 0 before a loop and grows on every pass. Set it to 0 above the loop, or it starts again every pass.",
+    "example": "total = 0\nfor mana in [18, 20]:\n    total = total + mana"
   },
   {
     "term": "show your working",
@@ -787,6 +898,15 @@
     ],
     "plain": "A box with a label. The label is the name. Inside is a value. You make one with `name = value`.",
     "example": "companion = \"Gearshift\""
+  },
+  {
+    "term": "while loop",
+    "aliases": [
+      "while loops",
+      "while"
+    ],
+    "plain": "Repeats its indented lines while a question is `True`. Something inside the loop must change, so the question can become `False`.",
+    "example": "while hours_left > 0:\n    hours_left = hours_left - 1"
   },
   {
     "term": "zip()",

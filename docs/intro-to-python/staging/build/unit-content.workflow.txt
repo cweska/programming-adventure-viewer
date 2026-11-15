@@ -1,0 +1,128 @@
+export const meta = {
+  name: 'intro-python-unit-content',
+  description: 'Author one Intro to Python unit (parts in parallel), harden checks, 4 student reps + teacher review, revise, verify',
+  phases: [
+    { title: 'Author', detail: 'parts in parallel, each harness-clean' },
+    { title: 'Harden', detail: 'adversarial check-gaming per part' },
+    { title: 'Student reps', detail: '4 reps review the whole unit' },
+    { title: 'Teacher', detail: 'teacher synthesizes directives per part' },
+    { title: 'Revise', detail: 'apply directives per part, harness-clean' },
+    { title: 'Verify', detail: 'whole-unit harness run, export check, consistency' },
+  ],
+}
+const A = args
+const REPO = '/home/user/programming-adventure-viewer'
+const SP = '/tmp/claude-0/-home-user-programming-adventure-viewer/649b9b27-c022-5e00-b0e0-a22a84b07233/scratchpad/intro-python'
+const STAGE = `${SP}/${A.stage}`
+const PRIV = `${SP}/private`
+const HARNESS = `${REPO}/docs/intro-to-python/prototypes/harness.py`
+const CUR = `${REPO}/docs/intro-to-python/design/curriculum.md`
+const U = `Unit ${A.unitNum}`
+
+const CONTEXT = `CONTEXT — read these first:
+- ${REPO}/docs/intro-to-python/design/teacher-decisions.md — THE TEACHER'S DECISIONS (override the curriculum where they conflict). The class
+  ALREADY PLAYED campaign Modules 1-2 and struggled; this course RE-GROUNDS them and REBUILDS CONFIDENCE ("you've seen this — now you'll get
+  it" campaign links). Own devices; optional pair-talk prompts; solo checkpoints. Units 1-2 are built; ${U} comes next.
+- ${CUR} — the final curriculum. ${U}'s spec: grep -n "^${A.heading}" and read to the next "^## Unit". Also "# 2. Site experience" sections
+  2.2 (help stack), 2.5 (check library), 2.9 (terminology), 2.11 (privacy), 2.12 (authoring rules/lints).
+- EARLIER UNITS AS BUILT (verified; the house style to match): ${STAGE}/u01*.py and ${STAGE}/u02*.py. Reuse their proven check-helper patterns
+  (shows()/print_check/rerun()/bnd()/no_is() style helpers inside checks), message tone, hint ladders, predict/names/pick/pair_talk/solo usage,
+  wrong_answers style, phone-width rule (fenced pictures and code lines ≤ 36 characters). ${A.earlierNote || ''}
+- ${REPO}/docs/intro-to-python/research/brief.md (world + Mar'tu's voice), ${REPO}/docs/intro-to-python/research/campaign-python-inventory.md.
+- Student groups (KEPT OUTSIDE THE REPO, never copy them into it): ${PRIV}/student-groups.md
+- ${REPO}/docs/intro-to-python/prototypes/FORMAT.md (EXACT field reference: predict needs choices + answer index; no unknown fields — the
+  exporter rejects them) and ${HARNESS}'s docstring; ${REPO}/src/lib/course/schema.ts.
+HELP LADDER: hints[0] "start me off", hints[1] "where to look", another_way, hints[2+] "teach", assemble "more structure", solution "show".
+3+ hints per checkpoint, 2+ another_way angles, assemble lines for make/write exercises.
+RULES: original content; no student names; accept any valid personalized value; kind, specific, plain messages (what happened + what to try).
+Catch the class's real slips for this unit and prove each with a wrong_answers entry: ${A.slips}
+Partials for multi-step exercises. engine False unless the spec asks for a campaign-mode rehearsal. Randomness: deterministic checks.
+UNIT dict for every part: id "${A.unitId}", order ${A.order}, title "${A.title}", subtitle "${A.subtitle}", published True, martu_intro, goals,
+campaign_links (identical in each part file). GLOSSARY entries only for NEW [[terms]] (earlier units define theirs).
+${A.extra || ''}
+RUN THE HARNESS (staging dir; earlier units' files there provide earlier concepts; later parts of this unit come from concept_map.json):
+  PROTOTYPE_DIR=${STAGE} python3 ${HARNESS} <prefix>        # your part
+  PROTOTYPE_DIR=${STAGE} python3 ${HARNESS} ${A.prefix}     # the whole unit
+Work ONLY in ${STAGE}. Do not touch the repo. Do not edit earlier units' files.`
+
+phase('Author')
+const authored = await pipeline(
+  A.parts,
+  (p) => agent(`You are a content author for ${U} of "Intro to Python", a Codecademy-style course taught by Mar'tu, set in Tor.
+${CONTEXT}
+
+YOUR PART: ${p.prefix} — ${p.scope}. Write ${STAGE}/${p.file}. Implement EVERY item in your scope from the curriculum spec, in order, with real
+check code. Run the harness on your prefix until 0 errors (simplify wording to clear reading-level warnings). Return: item/exercise list,
+harness summary line, anything you could not implement and why.`,
+    { label: `u${A.unitNum}:author:${p.prefix}`, phase: 'Author' }),
+  (report, p) => agent(`You are an ADVERSARIAL CHECK-BREAKER for ${U} of "Intro to Python". ${CONTEXT}
+
+Target file: ${STAGE}/${p.file} (author's report: ${String(report).slice(0, 1500)}).
+For EVERY exercise/project/testout: play the class's real students (${PRIV}/student-groups.md) and try to PASS the checks with code that is
+wrong or skips the learning goal (print the expected result directly instead of computing it; hard-code values; copy the example's names; satisfy
+a later step while an earlier one is wrong; the unit-specific slips listed above). Also try CORRECT-but-different solutions and make sure they
+PASS. Tighten each hole (kind, specific message) and add the cheat as a wrong_answers entry; loosen each over-strict check. Check quiz
+distractors and explanations. Harness on ${p.prefix} until 0 errors. Return: holes fixed, checks loosened, final harness summary line.`,
+    { label: `u${A.unitNum}:harden:${p.prefix}`, phase: 'Harden' }),
+)
+
+phase('Student reps')
+const GROUPS = [
+  { key: 'starting-from-zero', ids: 'A-02, A-03, A-04' },
+  { key: 'right-shape-wrong-meaning', ids: 'A-05, A-07, A-08, B-01' },
+  { key: 'steady-with-a-template', ids: 'B-02, B-03' },
+  { key: 'ready-to-stretch', ids: 'A-01, A-06' },
+]
+const files = A.parts.map(p => `${STAGE}/${p.file}`).join(', ')
+const reviews = await parallel(GROUPS.map(g => () => agent(`You are the STUDENT REPRESENTATIVE for the "${g.key}" group (students ${g.ids}).
+Ground yourself: read your group's section of ${PRIV}/student-groups.md and your students' worksheets in ${PRIV}/worksheet-evidence.json
+(ids ${g.ids}) — private files, never copy them into the repo. Read ${REPO}/docs/intro-to-python/design/teacher-decisions.md.
+Your classmates have done the earlier units (skim ${STAGE}/u0*.py headers to know what they know). Now read ALL of ${U} as built: ${files}
+(Mar'tu text, examples, steps, hints, another_way, predict, check MESSAGES, quizzes, projects, Quick Check). Walk through it as YOUR students
+would. Where would they get stuck, confused, bored, or pass without learning? Which messages wouldn't they understand? Which hint rungs jump too
+far? Is the Quick Check an honest fast path? Concrete: file + exercise id + quote + exact change + priority (must/should/nice). Max 700 words.
+Never write any name from the worksheets. Return markdown.`, { label: `u${A.unitNum}:rep:${g.key}`, phase: 'Student reps' })))
+
+phase('Teacher')
+const DIRECTIVES = { type: 'object', properties: {
+  big_picture: { type: 'string' },
+  per_file: { type: 'array', items: { type: 'object', properties: { prefix: { type: 'string' }, directives: { type: 'array', items: { type: 'string' } } }, required: ['prefix', 'directives'] } },
+  site_requests: { type: 'array', items: { type: 'string' }, description: 'changes that need the site (explainer messages, player), not content' },
+  declined: { type: 'array', items: { type: 'string' } } }, required: ['big_picture', 'per_file', 'site_requests', 'declined'] }
+const teacher = await agent(`You are the TEACHER agent: an experienced middle-school CS teacher who runs this classroom coding RPG. Four student reps
+reviewed ${U} (${files}). Their reviews:
+${GROUPS.map((g, i) => `### ${g.key}\n${reviews[i] ?? '(missing)'}`).join('\n\n')}
+
+Read ${REPO}/docs/intro-to-python/design/teacher-decisions.md and skim the files. Accept / modify / decline each request (we build with AI, so be
+generous with accommodations that don't hurt other groups; keep the big picture: confidence, campaign re-grounding, honest learning, realistic
+time — ${U} core is ~${A.coreMinutes} minutes). Content changes go in per_file (exercise id + change). Changes that need the SITE (new error
+explanations for this unit's slips, player behavior) go in site_requests — do not ask content files to add fields the schema lacks.`,
+  { label: `u${A.unitNum}:teacher`, phase: 'Teacher', schema: DIRECTIVES })
+
+phase('Revise')
+const revised = await parallel(A.parts.map(p => () => {
+  const mine = (teacher?.per_file || []).find(f => f.prefix === p.prefix)
+  return agent(`You are revising ${STAGE}/${p.file} (${U}, "Intro to Python"). ${CONTEXT}
+
+Teacher's big picture: ${teacher?.big_picture ?? '(none)'}
+Teacher's directives for THIS file:
+${(mine?.directives || ['(none — just re-verify)']).map((d, i) => `${i + 1}. ${d}`).join('\n')}
+
+Apply every directive precisely; keep checks honest (re-run wrong_answers; add new ones for new checks). Never add fields that FORMAT.md does
+not list. Harness on ${p.prefix} until 0 errors. Return: directives applied (one line each) and the final harness summary line.`,
+    { label: `u${A.unitNum}:revise:${p.prefix}`, phase: 'Revise' })
+}))
+
+phase('Verify')
+const final = await agent(`You are the final verifier for ${U} of "Intro to Python". Files: ${files}. ${CONTEXT}
+1. Run all real files together: temporarily move ${STAGE}/concept_map.json aside, run PROTOTYPE_DIR=${STAGE} python3 ${HARNESS} ${A.prefix},
+   restore concept_map.json. ${A.verifyNote || 'Fix every error in this unit until 0 errors.'} Never edit earlier units' files.
+2. Export check: python3 ${REPO}/scripts/course/export_prototypes.py --src ${STAGE} --out ${SP}/${A.stage}-export (read --help for the exact
+   flags). It must export with no errors (no unknown fields), and the unit JSON must also pass the repo's content rules: unique ids, every
+   [[term]] resolves, no duplicate glossary terms/aliases across units, fenced pictures and code lines ≤ 36 characters.
+3. Consistency: identical UNIT dict across parts; unique item ids; Mar'tu's voice; campaign links point to real part ids in
+   ${REPO}/content/modules/*/module.json; minutes vs the curriculum core (~${A.coreMinutes}) — report totals.
+Return: final harness summary line, the item list (kind, id, title, minutes, optional?, exercise count), remaining concerns.`,
+  { label: `u${A.unitNum}:verify`, phase: 'Verify' })
+
+return { unit: A.unitNum, teacher: teacher && { big_picture: teacher.big_picture, site_requests: teacher.site_requests, declined: teacher.declined }, revised, final }

@@ -1,0 +1,73 @@
+export const meta = {
+  name: 'intro-python-ship-unit',
+  description: 'Ship one Intro to Python unit from staging: bring in content, site requests, publish, all tests, review in browser, fix',
+  phases: [
+    { title: 'Build', detail: 'bring the unit into the repo, the site work its teacher asked for, publish, all tests + e2e' },
+    { title: 'Review', detail: 'play the unit as the class student groups' },
+    { title: 'Fix', detail: 'fix confirmed issues, re-run everything' },
+  ],
+}
+const A = args
+const REPO = A.repo
+const SP = '/tmp/claude-0/-home-user-programming-adventure-viewer/649b9b27-c022-5e00-b0e0-a22a84b07233/scratchpad/intro-python'
+const STAGE = `${SP}/${A.stage}`
+const PW = 'PLAYWRIGHT_CHROMIUM_PATH=/opt/pw-browsers/chromium-1243/chrome-linux64/chrome'
+const U = `Unit ${A.unitNum} (${A.unitId}, "${A.title}: ${A.subtitle}")`
+const BASE = `You are a senior engineer on the repo checkout at ${REPO} (a git worktree of programming-adventure-viewer; Next.js 15 static
+export to GitHub Pages; Pyodide worker; vitest; Playwright). WORK ONLY INSIDE ${REPO} — never edit /home/user/programming-adventure-viewer.
+The "Intro to Python" section is live with ${A.liveNote}. ${U} is authored and verified in the staging dir ${STAGE}
+(files ${A.prefix}*.py; harness 0 errors there). Its teacher ruling (big picture + site_requests) is ${STAGE}/TEACHER_RESULT.json and its
+final verifier's report is ${STAGE}/VERIFY_REPORT.md. Rules: content changes go in the prototype .py files under
+docs/intro-to-python/prototypes/, then harness (0 errors) and \`npm run course:export\` — never hand-edit content JSON; keep every existing
+test green (earlier units must behave exactly as before unless a fix is clearly better for them too); no student names or worksheet/sheet ids;
+do NOT git commit/push. Other agents author later units in scratchpad staging dirs and call the main checkout's harness — never change the
+harness's run semantics (additive warnings/validation are fine). node_modules in ${REPO} is a symlink to the main checkout's; if a tool fails
+because of the symlink, replace it with a real copy (\`rm node_modules && cp -a /home/user/programming-adventure-viewer/node_modules .\`).
+Playwright override (the lockfile's Chromium isn't installed here): prefix e2e runs with ${PW}; run \`npm run build:pages\` BEFORE
+\`npm run build\` (both write .next). Teacher decisions: docs/intro-to-python/design/teacher-decisions.md. Format: docs/intro-to-python/prototypes/FORMAT.md.
+Student groups (private, outside the repo, never copy into it): ${SP}/private/student-groups.md`
+
+phase('Build')
+const build = await agent(`${BASE}
+Bring ${U} into the site and publish it. (An earlier build run was cut off part-way by a usage limit, so the checkout may already hold some of
+its edits: see "git status" and "git diff". Review them, keep what is right, and finish the rest.)
+1. Copy ${STAGE}/${A.prefix}*.py into ${REPO}/docs/intro-to-python/prototypes/. Run the repo harness on ALL units (0 errors required).
+   The staging content was written before some newer conventions landed (read FORMAT.md and the harness warnings), so bring ${U} up to them:
+   "Start like this" hints go LAST, never hint 1, and the last hint's line must be in the solution (the harness warns on both — clear every
+   such warning for this unit); solo items and Quick Check builders use explainer="lean"; Quick Check check messages name the slip and the
+   evidence but never the fix (see how Unit 2's QC2 does it, including the assert that the lean rewrite matched the lesson message); Quick Check
+   forms set questions_to_pass like QC2. Keep every check honest: re-run wrong answers, add new ones for new checks.
+2. Implement EVERY site_request in TEACHER_RESULT.json (each one: the behaviour, a lean kind name where it is an explainer kind, and
+   table-driven tests built from this unit's own wrong answers). ${A.siteNote || ''}
+3. Make sure the explain context's unit order lets this unit's messages say what this unit has taught (and nothing later).
+4. Publish: published=True in every ${A.prefix} file's UNIT dict, \`npm run course:export\`, \`python3 scripts/course/export_prototypes.py --check\`.
+5. Browser tests: the generic per-unit parity spec (e2e/intro-python-units.spec.ts) must cover ${U} automatically — confirm it does. Add
+   e2e/intro-python-unit${A.unitNum}.spec.ts for this unit's new explainer kinds and any new player behaviour (lean vs full, a QC pass gate).
+6. Green: harness (0 errors), npm test, typecheck, lint, build:pages, build, and the FULL e2e suite (${PW} npm run test:e2e -- --trace off).
+7. Screenshots (dev server, deviceScaleFactor 1) of the course map, the ${A.unitId} unit page, one exercise in each lesson before/after a
+   wrong run with Help open, the unit's project, and a Quick Check task, at 1366x900 and 390x844 into ${SP}/screenshots/u${A.unitNum}-*.png.
+   Read them; fix what's broken or confusing.
+Report each command's final status line, e2e counts, and what you changed (files + one line each).`, { label: 'build', phase: 'Build' })
+
+phase('Review')
+const REVIEW = { type: 'object', properties: { findings: { type: 'array', items: { type: 'object', properties: {
+  severity: { type: 'string', enum: ['blocker', 'major', 'minor'] }, where: { type: 'string' }, problem: { type: 'string' },
+  evidence: { type: 'string' }, fix: { type: 'string' } }, required: ['severity', 'where', 'problem', 'evidence', 'fix'] } } }, required: ['findings'] }
+const review = await agent(`${BASE}
+You are a REVIEWER playing ${U} as the class's real students (read the student groups file). Start the dev server from ${REPO} and use
+Playwright to PLAY the unit at 390x844 and 1366x900 (screenshots to ${SP}/screenshots/u${A.unitNum}-review-*.png; Read them):
+${A.reviewFocus}
+Also check: every Help rung's order and aim, the lean explainer in solo/Quick Check items, Mar'tu's text rendering (no stray * [[ ]] or
+<placeholders>), phone layout, and that the Quick Check is an honest fast path. Report ONLY confirmed problems with evidence. Do not edit files.`,
+  { label: 'review', phase: 'Review', schema: REVIEW })
+
+phase('Fix')
+const fix = review && review.findings.length ? await agent(`${BASE}
+You are the FIXER. If the working tree already holds edits beyond the build's (an earlier fixer may have been cut off; see "git status" and
+"git diff"), review them, keep what is right, and finish the rest. Findings from a reviewer who played ${U}:
+${JSON.stringify(review.findings, null, 1)}
+Re-verify each; fix every blocker and major and cheap safe minors (content in the prototype .py files -> harness 0 errors -> npm run
+course:export). Re-run EVERYTHING green: harness, npm test, typecheck, lint, build:pages, build, full e2e (${PW} npm run test:e2e -- --trace off).
+Report per finding (fixed / not a problem / deferred + why) and the final status line of every command.`, { label: 'fix', phase: 'Fix' }) : 'no findings'
+
+return { build, findings: review?.findings ?? [], fix }

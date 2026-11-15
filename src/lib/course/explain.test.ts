@@ -10,6 +10,7 @@ import {
   foreignNames,
   GOT_FURTHER_LINE,
   leanExplanation,
+  LOOPS_UNIT_ORDER,
   slipName,
   type ExplainContext,
 } from "./explain";
@@ -2075,11 +2076,14 @@ describe("explainCourseError: Unit 5's slips (dictionaries), from the unit's own
     expect(explainCourseError(crashOf(glued), glued.code, { ...glued.context, unitOrder: 4 }).hint).toContain("like str(gearshift).");
   });
 
-  it("keeps every Unit 1-4 explanation exactly as it was before Unit 5 (kind, title and hint)", () => {
+  it("keeps every Unit 1-4 explanation exactly as it was before Unit 5 (kind, title and hint)", async () => {
     const before = JSON.parse(readFileSync(path.join(process.cwd(), "src/lib/course/explain.before-unit5.json"), "utf8")) as Record<string, string>;
     const now: Record<string, string> = {};
     for (const unitId of ["hello-world", "control-flow", "first-recipes", "lists"]) {
-      for (const wrong of unitWrongAnswers(unitId).crashes()) {
+      for (const [at, wrong] of unitWrongAnswers(unitId).crashes().entries()) {
+        // Hundreds of python3 runs, each one blocking: let the test worker answer vitest between them (a worker that
+        // stays blocked misses its heartbeat, "Timeout calling onTaskUpdate", and fails the whole run).
+        if (at % 10 === 0) await new Promise((resume) => setImmediate(resume));
         // The game's random is seeded, so a wrong answer that rolls a die crashes on the same line every time.
         const result = runCourseChecks(wrong.code, [], { setup: `import random as _seeded\n_seeded.seed(5)\n${wrong.setup}`, stdin: wrong.stdin });
         if (result.ok) continue;
@@ -2244,5 +2248,241 @@ describe("explainCourseError: Unit 5's slips (dictionaries), from the unit's own
     expect(raw).toContain('line 5');
     const lean = explainCourseError(raw, found.code, found.context);
     expect(lean.hint).toContain("The slip is on line 4: a missing comma in a list.");
+  });
+});
+
+/* ---------------------------------------------------------------------------------------------- */
+/* Unit 6 (loops)                                                                                  */
+/* ---------------------------------------------------------------------------------------------- */
+
+const unit6 = unitWrongAnswers("loops");
+
+describe("explainCourseError: Unit 6's slips (loops), from the unit's own wrong answers", () => {
+  // [exercise, the wrong answer's `why`, Python 3.13's own words, kind, what the full hint says]
+  const rows: [string, string, string, string, string][] = [
+    // (0) A list asked for a key inside a loop over it: the sheet is read through the loop variable.
+    ["for-each-yes/each-member", 'roster["name"] for member["name"] (TypeError)', "not str", "name-as-position",
+      'Line 7 asks a list for a key, like `roster["name"]`. A list has positions, not keys. Read one sheet through the loop variable: `member["name"]`.'],
+    ["for-each-yes/running-total", 'roster["mana"] for member["mana"] (TypeError)', "not str", "name-as-position",
+      'Line 10 asks a list for a key, like `roster["mana"]`. A list has positions, not keys. Read one sheet through the loop variable: `member["mana"]`.'],
+    ["for-each-yes/broken-spell-5a", 'indent mended, roster["name"] left (TypeError)', "not str", "name-as-position",
+      'Line 12 asks a list for a key, like `roster["name"]`.'],
+    ["the-velocite-watch", 'roster["name"] for member["name"] (TypeError)', "not str", "name-as-position",
+      'Read one sheet through the loop variable: `member["name"]`.'],
+    ["qc5-a/a-helper-for-each", 'roster["name"] for member["name"] (the TypeError row)', "not str", "name-as-position",
+      'Line 8 asks a list for a key, like `roster["name"]`.'],
+    // (1) The loop variable used as a position: it already holds one sheet.
+    ["for-each-yes/each-member", "the item used as an index (roster[hero])", "not dict", "name-as-position",
+      'Line 7 uses a whole sheet as a position, like `roster[member]`. A list\'s positions are numbers, and `member` already holds one sheet: read it directly, `member["name"]`.'],
+    ["for-each-yes/solo-5a", "the starter: the item used as an index, roster[member] (TypeError)", "not dict", "name-as-position",
+      'Line 8 uses a whole sheet as a position, like `roster[member]`.'],
+    ["qc5-b/a-helper-for-each", "the item used as an index (roster[member])", "not dict", "name-as-position",
+      'read it directly, `member["mana"]`.'],
+    ["the-velocite-watch", "the item used as an index (roster[member])", "not dict", "name-as-position",
+      "`member` already holds one sheet: use it directly, `member`."],
+    // (2) A `for` loop over one number.
+    ["for-each-yes/how-much-each-gap-shrank", "for i in len(...) ('int' object is not iterable)", "'int' object is not iterable", "loop-over-number",
+      "Line 2 asks a `for` loop to walk one number. A `for` loop needs a list or `range(...)`, not one number."],
+    ["for-each-yes/how-much-each-gap-shrank", "for i in 6: a bare number, not range", "'int' object is not iterable", "loop-over-number",
+      "Line 2 asks a `for` loop to walk one number."],
+    ["loops-in-one-line/loops-in-loops", "for i in len(...) (an int after `in`)", "'int' object is not iterable", "loop-over-number",
+      "Line 8 asks a `for` loop to walk one number."],
+    ["qc5-a/a-helper-for-each", "a loop over a number: for i in 4", "'int' object is not iterable", "loop-over-number",
+      "Line 7 asks a `for` loop to walk one number."],
+    // (3) A whole sheet, or a whole list, added to a number (or a whole sheet glued to text).
+    ["for-each-yes/running-total", "the whole sheet added (TypeError)", "'int' and 'dict'", "whole-card-compared",
+      '`member` is a whole sheet. Add one value from it by its key, like `member["mana"]`.'],
+    ["qc5-a/total-and-tired", "the whole sheet added (TypeError)", "'int' and 'dict'", "whole-card-compared",
+      '`member` is a whole sheet. Add one value from it by its key, like `member["mana"]`.'],
+    ["the-velocite-watch", "the whole list added instead of the item", "'int' and 'list'", "row-not-item",
+      "`values` is the whole list. Add the loop variable, `value`, instead."],
+    ["for-each-yes/solo-5a", "the sheet glued to text (TypeError)", "'dict' and 'str'", "whole-card-compared",
+      '`member` is a whole sheet, not text. Glue on one value from it by its key, like `member["name"]`.'],
+    // (4) A recipe's own ingredient name handed over outside it: in the loop, its loop variable.
+    ["for-each-yes/bars-for-everyone", "the recipe's ingredient name used in the loop's call, with the name (NameError)", "'hero' is not defined", "made-inside-recipe",
+      "`hero` is `mana_bar`'s own ingredient name. It only exists inside the recipe. Out here, hand over a value of your own: inside a loop, its loop variable, like `mana_bar(member)`."],
+    ["for-each-yes/bars-for-everyone", "the recipe's ingredient name used in the loop (NameError)", "'hero' is not defined", "made-inside-recipe",
+      "like `mana_bar(member)`."],
+    ["the-velocite-watch", "mana_bar's own ingredient name handed over in the loop", "'hero' is not defined", "made-inside-recipe",
+      "`hero` is `mana_bar`'s own ingredient name. It only exists inside the recipe."],
+    // The setup's helper (`def light_lantern(name):`): its word read as a promise, never "put quotes around it".
+    ["qc5-a/a-helper-for-each", "the helper's own word read as a promise: light_lantern(name)", "'name' is not defined", "made-inside-recipe",
+      '`name` is `light_lantern`\'s own ingredient name. It only exists inside the recipe. Out here, hand over a value of your own: inside a loop, its loop variable, like `light_lantern(member["name"])`.'],
+    // (5) A list's name in quotes in the `for` line: the crash comes later, the quotes are the slip.
+    ["while-the-clock-ticks/stop-at-the-first", "the quoted list name: the loop walks the letters of the text chalk_wall (TypeError)", "'<' not supported", "quoted-name",
+      "Take the quotes off `chalk_wall`. With quotes, the loop walks its letters. No quotes means look inside the list. Line 2 with no quotes: `for gap in chalk_wall:`"],
+    ["for-each-yes/each-member", "the list's name in quotes: the loop walks the letters of the text roster (TypeError)", "string indices must be integers", "quoted-name",
+      "Take the quotes off `roster`. With quotes, the loop walks its letters. No quotes means look inside the list. Line 4 with no quotes: `for member in roster:`"],
+    ["the-velocite-watch", "the list's name in quotes: the loop walks the letters of the text roster (TypeError)", "string indices must be integers", "quoted-name",
+      "Take the quotes off `roster`."],
+    // (6) A one-ingredient recipe handed its pieces with a comma, as print takes them.
+    ["for-each-yes/each-member", "a comma, as in print: the ley board takes one text (TypeError)", "takes 1 positional argument but 2 were given", "wrong-number-of-values",
+      "`show_on_ley_board` has 1 ingredient (`text`). The call on line 7 hands over 2. `show_on_ley_board` takes one piece of text. Glue the parts into one with `+`, with `str()` around a number."],
+    // (7) The article's loop over a dictionary: `.items` with no ( ), and two names for one key a pass.
+    ["looping-over-a-dictionary/spell-costs", ".items without brackets", "'builtin_function_or_method' object is not iterable", "call-needs-round-brackets",
+      "Line 7 hands the loop `spell_book.items` with no `( )`, so the loop gets the tool itself, not what it hands back. Call it: `for name, cost in spell_book.items():`"],
+    ["looping-over-a-dictionary/spell-costs", "two names with no .items()", "too many values to unpack", "wrong-number-of-values",
+      "Line 7 gives the loop 2 names, but a loop over `spell_book` hands over one key a pass. For each key with its value, walk `spell_book.items()`: `for name, cost in spell_book.items():`"],
+    // (8) A key with no quotes, read from the loop variable (it holds one sheet).
+    ["for-each-yes/solo-5a", "the key without quotes (NameError)", "'name' is not defined", "unquoted-key",
+      'A key is text, so it needs quotes: `"name"`. Without quotes, Python looks for a variable called `name`. Line 8 with quotes: `print(member["name"] + " keeps watch.")`'],
+    ["qc5-b/a-helper-for-each", "the key without quotes (NameError)", "'mana' is not defined", "unquoted-key",
+      'Line 8 with quotes: `draw_bar(member["mana"])`'],
+  ];
+
+  it.each(rows)("%s, %s: Python says %s, the explainer names %s", (key, why, python, kind, hint) => {
+    const found = unit6.find(key, why);
+    expect(found.order).toBe(LOOPS_UNIT_ORDER);
+    expect(found.failsAt, "a crash wrong answer").toBe(0);
+    const raw = crashOf(found);
+    expect(raw).toContain(python);
+    expect(raw, "the words the harness proved for this wrong answer").toContain(found.python);
+    const full = explainCourseError(raw, found.code, { ...found.context, explainer: "full" });
+    expect(full.kind, found.code).toBe(kind);
+    expect(full.hint).toContain(hint);
+    // Never Python's own words for a parameter name ("If it's text, put quotes around it").
+    expect(full.hint).not.toContain("put quotes around it");
+  });
+
+  it("names the slip, never the fix, in a lean exercise (SOLO and Quick Check), in the teacher's own words where given", () => {
+    // [exercise, why, kind, what the lean hint starts with]
+    const lean: [string, string, string, string][] = [
+      ["for-each-yes/solo-5a", "the starter: the item used as an index, roster[member] (TypeError)", "name-as-position",
+        "Line 8 uses a whole sheet as a position, like `roster[member]`. Python's last line, below, says what it found."],
+      ["for-each-yes/solo-5a", 'roster["name"] for member["name"] (TypeError)', "name-as-position",
+        'Line 8 asks a list for a key, like `roster["name"]`. A list has positions, not keys. Python\'s last line, below, says what it found.'],
+      ["for-each-yes/solo-5a", "the sheet glued to text (TypeError)", "whole-card-compared", "The slip is on line 8: a whole sheet glued to text."],
+      ["for-each-yes/solo-5a", "the key without quotes (NameError)", "unquoted-key", "The slip is on line 8: a key with no quotes."],
+      ["qc5-a/a-helper-for-each", "a loop over a number: for i in 4", "loop-over-number",
+        "Line 7 asks a `for` loop to walk one number. A `for` loop needs a list or `range(...)`, not one number. Python's last line"],
+      ["qc5-a/a-helper-for-each", "len without range: for i in len(roster)", "loop-over-number", "Line 7 asks a `for` loop to walk one number."],
+      ["qc5-a/a-helper-for-each", "the item used as an index (roster[member])", "name-as-position", "Line 8 uses a whole sheet as a position, like `roster[member]`. Python's"],
+      ["qc5-a/a-helper-for-each", "the helper's own word read as a promise: light_lantern(name)", "made-inside-recipe",
+        "The slip is on line 8: a name that only lives inside a recipe."],
+      ["qc5-b/a-helper-for-each", "the helper's own word read as a promise: draw_bar(mana)", "made-inside-recipe",
+        "The slip is on line 8: a name that only lives inside a recipe."],
+      ["qc5-a/total-and-tired", "the whole sheet added (TypeError)", "whole-card-compared", "The slip is on line 12: a whole sheet added where one value is meant."],
+      ["qc5-b/total-and-tired", 'roster["mana"] for member["mana"] (TypeError)', "name-as-position", 'Line 12 asks a list for a key, like `roster["mana"]`.'],
+    ];
+    for (const [key, why, kind, hint] of lean) {
+      const found = unit6.find(key, why);
+      expect(found.context.explainer, `${key} is a lean exercise`).toBe("lean");
+      const raw = crashOf(found);
+      const result = explainCourseError(raw, found.code, found.context);
+      expect(result.kind, `${key}: ${why}`).toBe(kind);
+      expect(result.explainer).toBe("lean");
+      expect(result.hint.startsWith(hint), `${key}: ${why}: ${result.hint}`).toBe(true);
+      expect(result.hint).toContain("Mend it yourself, then Run again.");
+      expect(result.title, `${key}: ${why}`).not.toContain("`");
+      // The full version's fix (its last code span) never shows in the lean one.
+      const full = explainCourseError(raw, found.code, { ...found.context, explainer: "full" });
+      const fix = [...full.hint.matchAll(/`([^`]+)`/g)].at(-1)?.[1];
+      expect(fix, `${key}: the full hint shows the fix`).toBeTruthy();
+      // (A `for` loop over a number says the same words in both: the teacher's ruling, "Lean: the same".)
+      if (full.lean !== full.hint) expect(result.hint, `${key}: ${why}`).not.toContain(fix as string);
+      expect(result.hint).not.toContain("loop variable:");
+      expect(result.hint).not.toContain("directly");
+    }
+    // A `for` loop over a number gets the teacher's lean words, which are its full words.
+    expect(slipName("loop-over-number")).toBe("a `for` loop over one number");
+    // The kinds this unit extends keep their earlier lean names (Units 1-5 say exactly what they said).
+    expect(slipName("name-as-position")).toBe("a name where a list needs a position");
+    expect(slipName("whole-card-compared")).toBe("a whole card compared with a number");
+    expect(slipName("row-not-item")).toBe("a whole row where one of its items is meant");
+    expect(slipName("made-inside-recipe")).toBe("a name that only lives inside a recipe");
+    expect(slipName("quoted-name")).toBe("quotes around a box's name");
+    expect(slipName("wrong-number-of-values")).toBe("the wrong number of values handed over");
+  });
+
+  it("keeps a run that never ends readable, and full even in a lean exercise", () => {
+    // The SOLO's own starter: the update moves the wrong way and it prints on every pass (the output limit stops it).
+    const solo = unit6.find("while-the-clock-ticks/solo-5b", "the starter: the update moves the wrong way (prints forever)");
+    const raw = crashOf(solo);
+    expect(raw).toContain("TooMuchOutput: This program printed more than 200,000 characters, so it was stopped.");
+    const flood = explainCourseError(raw, solo.code, solo.context);
+    expect(flood.kind).toBe("too-much-output");
+    expect(flood.title).toBe("Printing forever?");
+    expect(flood.explainer).toBeUndefined();
+    // A loop that prints nothing hits the 5-second limit: the player's own timeout line, explained the same way.
+    const silent = "oil = 4\nwhile oil > 0:\n    oil + 1\nprint(\"The lamp goes out.\")\n";
+    const timeout = explainCourseError("TimeoutError: The program ran too long and was stopped.", silent, { ...solo.context });
+    expect(timeout.kind).toBe("timeout");
+    expect(timeout.hint).toBe("Your code ran for more than 5 seconds, so it was stopped. A while loop may never end: make sure its condition can become False.");
+  });
+
+  it("opens only from Unit 6 on: Units 1 to 5 keep their older advice for the same code", () => {
+    // [exercise, why, the kind the explainer gave before Unit 6 (and still gives below it)]
+    const cases: [string, string, string][] = [
+      ["for-each-yes/each-member", 'roster["name"] for member["name"] (TypeError)', "name-as-position"],
+      ["for-each-yes/each-member", "the item used as an index (roster[hero])", "wrong-kind-of-value"],
+      ["for-each-yes/how-much-each-gap-shrank", "for i in len(...) ('int' object is not iterable)", "wrong-kind-of-value"],
+      ["for-each-yes/running-total", "the whole sheet added (TypeError)", "wrong-kind-of-value"],
+      ["the-velocite-watch", "the whole list added instead of the item", "wrong-kind-of-value"],
+      ["for-each-yes/solo-5a", "the sheet glued to text (TypeError)", "wrong-kind-of-value"],
+      ["for-each-yes/bars-for-everyone", "the recipe's ingredient name used in the loop's call, with the name (NameError)", "made-inside-recipe"],
+      ["qc5-a/a-helper-for-each", "the helper's own word read as a promise: light_lantern(name)", "unknown-name"],
+      ["qc5-a/a-helper-for-each", "the key without quotes (NameError)", "unknown-name"],
+      ["while-the-clock-ticks/stop-at-the-first", "the quoted list name: the loop walks the letters of the text chalk_wall (TypeError)", "compare-number-text"],
+      ["for-each-yes/each-member", "a comma, as in print: the ley board takes one text (TypeError)", "wrong-number-of-values"],
+      ["looping-over-a-dictionary/spell-costs", ".items without brackets", "wrong-kind-of-value"],
+      ["looping-over-a-dictionary/spell-costs", "two names with no .items()", "other"],
+    ];
+    for (const [key, why, before] of cases) {
+      const found = unit6.find(key, why);
+      const raw = crashOf(found);
+      const older = explainCourseError(raw, found.code, { ...found.context, unitOrder: 5, explainer: "full" });
+      expect(older.kind, `${key}: ${why}, unit 5`).toBe(before);
+      expect(older.lean).toBeUndefined();
+      expect(older.slip).toBeUndefined();
+    }
+    // The ley board's count reads the setup's `def` only from Unit 6: Unit 5 keeps the general words.
+    const board = unit6.find("for-each-yes/each-member", "a comma, as in print: the ley board takes one text (TypeError)");
+    expect(explainCourseError(crashOf(board), board.code, { ...board.context, unitOrder: 5 }).hint).toBe(
+      "The function call on line 7 has the wrong number of values inside its ( ).",
+    );
+    // Unit 3's ingredient words stay below Unit 6.
+    const bar = unit6.find("for-each-yes/bars-for-everyone", "the recipe's ingredient name used in the loop's call, with the name (NameError)");
+    expect(explainCourseError(crashOf(bar), bar.code, { ...bar.context, unitOrder: 5 }).hint).toContain("Out here, hand over a value itself in the call.");
+  });
+
+  it("keeps every Unit 1-5 explanation exactly as it was before Unit 6 (kind, title and hint)", async () => {
+    const before = JSON.parse(readFileSync(path.join(process.cwd(), "src/lib/course/explain.before-unit6.json"), "utf8")) as Record<string, string>;
+    const now: Record<string, string> = {};
+    for (const unitId of ["hello-world", "control-flow", "first-recipes", "lists", "dictionaries"]) {
+      for (const [at, wrong] of unitWrongAnswers(unitId).crashes().entries()) {
+        // Hundreds of python3 runs, each one blocking: let the test worker answer vitest between them (a worker that
+        // stays blocked misses its heartbeat, "Timeout calling onTaskUpdate", and fails the whole run).
+        if (at % 10 === 0) await new Promise((resume) => setImmediate(resume));
+        // The game's random is seeded, so a wrong answer that rolls a die crashes on the same line every time.
+        const result = runCourseChecks(wrong.code, [], { setup: `import random as _seeded\n_seeded.seed(5)\n${wrong.setup}`, stdin: wrong.stdin });
+        if (result.ok) continue;
+        const got = explainCourseError(result.traceback, wrong.code, wrong.context);
+        const hash = createHash("sha256").update(`${got.title}\n${got.hint}`).digest("hex").slice(0, 16);
+        now[`${unitId}:${wrong.key}:${wrong.why}`] = `${got.kind} ${hash}`;
+      }
+    }
+    const { _about: about, ...expected } = before;
+    expect(about).toContain("before Unit 6");
+    expect(Object.keys(now).length).toBe(Object.keys(expected).length);
+    expect(now).toEqual(expected);
+  }, 180_000);
+
+  it("keeps each new row in its place: a list read outside a loop, a real NameError and a shared ingredient name", () => {
+    const unit6Context: ExplainContext = { unitOrder: LOOPS_UNIT_ORDER };
+    // A list asked for a key outside any loop keeps Unit 5's position words.
+    expect(explainRun('roster = [{"name": "Pell"}, {"name": "Moss"}]\nprint(roster["Moss"])\n', [], unit6Context).hint).toContain("Moss is at position 1: `roster[1]`");
+    // `sum(5)` is not a `for` loop: the older words.
+    expect(explainRun("print(sum(5))\n", [], unit6Context).kind).toBe("wrong-kind-of-value");
+    // A quoted text that is not a variable's name is a loop over letters on purpose: no quotes row.
+    expect(explainRun('for letter in "abc":\n    print(letter + 1)\n', [], unit6Context).kind).not.toBe("quoted-name");
+    // Two recipes share an ingredient name: still that recipe's own name, never "put quotes around it".
+    const shared = 'def a(hero):\n    return hero\ndef b(hero):\n    return hero\nfor member in [1, 2]:\n    print(a(hero))\n';
+    const named = explainRun(shared, [], unit6Context);
+    expect(named.kind).toBe("made-inside-recipe");
+    expect(named.hint).toContain("like `a(member)`");
+    // `total += member`: the same row as `total = total + member`.
+    const plus = explainRun('roster = [{"name": "Pell", "mana": 3}]\ntotal = 0\nfor member in roster:\n    total += member\n', [], unit6Context);
+    expect(plus.kind).toBe("whole-card-compared");
+    expect(plus.hint).toContain('like `member["mana"]`');
   });
 });

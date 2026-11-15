@@ -31,7 +31,15 @@
  * the other way round, one level too deep, a near miss, a position, two keys in one `[ ]`, a variable's name in
  * quotes, `==` where one `=` stores, a key read to test whether it is there, a key no line makes), a position past
  * the end of a list of sheets (counted by its sheets), a variable's name in quotes in math, a whole sheet as a key
- * or in a comparison, math with `None`, and `str()` shown on the line's own read.
+ * or in a comparison, math with `None`, and `str()` shown on the line's own read. Unit 6 (loops) adds the loop's own
+ * slips, read from the program's `for` lines: a list asked for a key inside a loop over it (`roster["name"]`: read the
+ * sheet through the loop variable), a whole sheet used as a position (`roster[member]`), a `for` loop over one number
+ * (`for i in len(wall):`), a whole sheet or a whole list added to a number (`total + member`, `total + values`), a
+ * list's name in quotes in a `for` line (`for gap in "chalk_wall":`, whatever crash it causes later), a recipe's
+ * ingredient name used outside the recipe (`mana_bar(hero)` in the loop: hand over the loop variable), a
+ * one-ingredient recipe handed its pieces with a comma (`show_on_ley_board(member["name"], member["mana"])`), and a loop
+ * over a dictionary given `.items` with no `( )` or two names for one key a pass. Some of
+ * these rows say the slip in a sentence of their own when the explainer is lean (`lean`), still never the fix.
  *
  * ExplainContext sets how much it says: `unitOrder` keeps advice to what the class has met (no "make it with
  * def" before the Functions unit, no list tools before the Lists unit), `explainer: "lean"` names the kind of slip and the line but never the fix,
@@ -140,6 +148,8 @@ export type CourseErrorKind =
   | "whole-sheet-as-key"
   | "whole-card-compared"
   | "math-with-none"
+  // loops (Unit 6)
+  | "loop-over-number"
   // values
   | "input-is-text"
   | "text-plus-number"
@@ -189,6 +199,12 @@ export type CourseExplanation = Explanation & {
   slip?: string;
   /** The line the slip is on, when Python names the line after it (a sheet's missing comma): the lean explainer says this one. */
   slipLine?: number;
+  /**
+   * What the lean explainer says in place of "The slip is on line N: <the slip's name>." when the row has words of its
+   * own for the slip and the evidence (Unit 6: "Line 8 asks a list for a key, like `roster["name"]`. A list has
+   * positions, not keys."). Never the fix.
+   */
+  lean?: string;
 };
 
 /** The line a debugging exercise shows when a run gets further than the one before (ExercisePlayer). */
@@ -216,6 +232,13 @@ export const LISTS_UNIT_ORDER = 4;
  */
 export const DICTS_UNIT_ORDER = 5;
 
+/**
+ * Unit 6 ("Loops") teaches `for` (over a list, a list of sheets and `range(...)`), the loop variable, a running total,
+ * `while` and `break`. Its rows name the loop's own words (the loop variable, a pass, `range(...)`); before it the older
+ * advice is unchanged.
+ */
+export const LOOPS_UNIT_ORDER = 6;
+
 /** What the player knows about the exercise. Every field is optional; more context gives more exact help. */
 export type ExplainContext = {
   /** The worked example's code: a name copied from it gets "this name is from the example". */
@@ -240,7 +263,8 @@ export type ExplainContext = {
    * (RANDOM_UNIT_ORDER) `randint` the wrong way round is named; from Unit 3 the recipe rows speak the unit's words
    * (recipe, ingredient, hand over); from Unit 4 (LISTS_UNIT_ORDER) the list rows name square brackets, `.append()`
    * and the list tools; from Unit 5 (DICTS_UNIT_ORDER) the sheet rows name keys in quotes, the colon, square brackets
-   * for a key, the level a key sits on and a list of sheets (and nothing a later unit teaches: no loops, no f-strings).
+   * for a key, the level a key sits on and a list of sheets; from Unit 6 (LOOPS_UNIT_ORDER) the loop rows name the loop
+   * variable, `range(...)` and a pass (and nothing a later unit teaches: no f-strings, no `None` written in code).
    * Without a unit, those rows stay closed and the older advice is unchanged.
    */
   unitOrder?: number;
@@ -1815,7 +1839,9 @@ function explainValueCount(message: string, code: string, line: number | null, r
   const name = count?.[1] ?? "";
   const call = line ? `The call on line ${line}` : "This call";
   const handedText = (handed: number) => (handed === 0 ? "nothing" : String(handed));
-  const ingredients = count && /^[A-Za-z_]\w*$/.test(name) && unitAtLeast(context, FUNCTIONS_UNIT_ORDER) ? recipeIngredients(code, name) : null;
+  // From Unit 6, a recipe the setup makes counts too (the ley board's `show_on_ley_board(text)`).
+  const recipes = unitAtLeast(context, LOOPS_UNIT_ORDER) && context?.setup ? `${context.setup}\n${code}` : code;
+  const ingredients = count && /^[A-Za-z_]\w*$/.test(name) && unitAtLeast(context, FUNCTIONS_UNIT_ORDER) ? recipeIngredients(recipes, name) : null;
   if (count && ingredients) {
     const handed = count[2] !== undefined ? Number(count[3]) : ingredients.length - Number(count[4]);
     if (handed >= 0 && handed !== ingredients.length) {
@@ -1829,6 +1855,18 @@ function explainValueCount(message: string, code: string, line: number | null, r
       }
       const listed = ingredients.map((ingredient) => `\`${ingredient}\``).join(", ");
       const has = ingredients.length === 1 ? "1 ingredient" : `${ingredients.length} ingredients`;
+      // Unit 6: one piece of text handed over in parts, with commas, as print takes them (the ley board).
+      const called = line ? sourceLine(code, line) : "";
+      const textual = /^(text|line|message|words|note|label)$/.test(ingredients[0] ?? "") ||
+        new RegExp(`${escapeRegExp(name)}\\s*\\([^)]*["']`).test(codePart(called));
+      if (unitAtLeast(context, LOOPS_UNIT_ORDER) && ingredients.length === 1 && handed >= 2 && textual) {
+        return explain(
+          "wrong-number-of-values",
+          "Wrong number of values",
+          `\`${name}\` has ${has} (${listed}). ${call} hands over ${handedText(handed)}. \`${name}\` takes one piece of text. Glue the parts into one with \`+\`, with \`str()\` around a number.`,
+          raw,
+        );
+      }
       return explain(
         "wrong-number-of-values",
         "Wrong number of values",
@@ -2049,6 +2087,8 @@ function explainRecipeName(
         : `Inside \`${here.recipe}\`, make what it needs there, or hand it over as an ingredient.`;
     return explain("made-inside-recipe", "Another recipe's name", `${belongs} ${instead}`, raw);
   }
+  // Unit 6: the recipe's own ingredient name, used outside it: in a loop, the loop variable goes there.
+  if (ingredient && unitAtLeast(context, LOOPS_UNIT_ORDER)) return ingredientOutside(name, home.recipe, code, text, line, raw, context);
   if (ingredient) {
     const lead = `\`${name}\` is an ingredient of \`${home.recipe}\`, so it only exists inside the recipe while a call runs it. Line ${line} is outside the recipe`;
     // `warn(hero_name)`: the call itself hands the ingredient over, so the call needs a value of its own.
@@ -2578,6 +2618,14 @@ function explainName(
   if (unitAtLeast(context, FUNCTIONS_UNIT_ORDER)) {
     const recipe = explainRecipeName(name, code, text, line, raw, context);
     if (recipe) return recipe;
+  }
+  // Unit 6: a name that is only ever a recipe's ingredient (two recipes may share it): never "put quotes around it".
+  if (unitAtLeast(context, LOOPS_UNIT_ORDER)) {
+    const rows = (code ?? "").split("\n");
+    const makes = definedNames(code).filter((entry) => entry.name === name);
+    const onlyIngredient = makes.every((entry) => /^\s*def\b/.test(rows[entry.line - 1] ?? ""));
+    const home = onlyIngredient ? ingredientHome(name, code, line, context?.setup ?? "") : null;
+    if (home) return ingredientOutside(name, home, code, text, line, raw, context);
   }
 
   const defined = definedNames(code);
@@ -3896,6 +3944,8 @@ function explainSheetName(name: string, code: string, text: string, line: number
   const close = closeName(name, defined);
   const typo = close !== null && close.toLowerCase() !== name.toLowerCase();
   const sheets = sheetNames(code, context);
+  // Unit 6: `member` in `for member in roster:` holds one sheet, so `member[name]` is a key with no quotes too.
+  if (unitAtLeast(context, LOOPS_UNIT_ORDER)) for (const held of loopSheetNames(code, context)) sheets.add(held);
   const open = line === null ? [] : openBefore(code, line);
   const quote = (from: number) => `${body.slice(0, from)}"${name}"${body.slice(from + name.length)}`.trim();
   for (const found of mask.matchAll(new RegExp(`(?<![\\w.])${escapeRegExp(name)}(?![\\w(])`, "g"))) {
@@ -4888,6 +4938,281 @@ function sheetNumberRead(code: string, text: string, context?: ExplainContext): 
   return pick ? body.slice(pick.start, pick.end) : null;
 }
 
+/* ---------------------------------------------------------------------------------------------- */
+/* Loops (Unit 6)                                                                                  */
+/* ---------------------------------------------------------------------------------------------- */
+
+/** One `for` line of the program: its loop variable (or names, `name, cost`), what it walks, and its line. */
+type ForLoop = { variable: string; iterable: string; line: number; indent: number };
+
+const FOR_HEADER = /^(\s*)for\s+([A-Za-z_]\w*(?:\s*,\s*[A-Za-z_]\w*)*)\s+in\s+(.+?)\s*:\s*$/;
+
+/** The `for` lines whose body holds `line`, innermost first (by indent, as Python reads a block). */
+function enclosingLoops(code: string, line: number | null): ForLoop[] {
+  if (line === null) return [];
+  const rows = (code ?? "").split("\n");
+  const here = rows[line - 1];
+  if (here === undefined) return [];
+  let indent = codePart(here).trim() ? indentOf(here) : Number.POSITIVE_INFINITY;
+  const loops: ForLoop[] = [];
+  for (let at = line - 2; at >= 0 && indent > 0; at -= 1) {
+    const row = codePart(rows[at] ?? "");
+    if (!row.trim() || indentOf(row) >= indent) continue;
+    indent = indentOf(row);
+    const header = row.match(FOR_HEADER);
+    if (header) loops.push({ variable: header[2].replace(/\s+/g, ""), iterable: header[3].trim(), line: at + 1, indent });
+  }
+  return loops;
+}
+
+/** The loop whose body holds `line` and walks the list `name` (`for member in roster:`), innermost first. */
+function loopOver(code: string, line: number | null, name: string): ForLoop | null {
+  return enclosingLoops(code, line).find((loop) => loop.iterable === name && /^[A-Za-z_]\w*$/.test(loop.variable)) ?? null;
+}
+
+/**
+ * Unit 6: `for gap in "chalk_wall":` with a variable `chalk_wall` in the program (the setup's too). The loop walks the
+ * letters of that text, so the crash comes later, on a line that is right (`'<' not supported between instances of
+ * 'str' and 'int'`, `string indices must be integers`). The quotes are the slip: the quotes rule, and the `for` line
+ * without them. Only when the line Python stopped on is that `for` line or inside its body.
+ */
+function explainQuotedLoop(code: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  if (line === null) return null;
+  const rows = (code ?? "").split("\n");
+  const program = `${context?.setup ?? ""}\n${code ?? ""}`;
+  const made = new Set(definedNames(program).map((entry) => entry.name));
+  const loops = [{ variable: "", iterable: "", line, indent: 0 }, ...enclosingLoops(code, line)]
+    .map((loop) => ({ loop, header: codePart(rows[loop.line - 1] ?? "").match(FOR_HEADER) }))
+    .filter(({ header }) => header !== null);
+  for (const { loop, header } of loops) {
+    const quoted = header?.[3].trim().match(/^(["'])([A-Za-z_]\w*)\1$/);
+    if (!header || !quoted || !made.has(quoted[2])) continue;
+    const name = quoted[2];
+    const shape = new RegExp(`^\\s*${escapeRegExp(name)}\\s*=(?!=)\\s*([[{])`, "m").exec(program)?.[1];
+    const inside = shape === "[" ? "inside the list" : shape === "{" ? "inside the dictionary" : "inside the box with this label";
+    const fixed = codePart(rows[loop.line - 1] ?? "").trim().replace(quoted[0], name);
+    return {
+      ...explain(
+        "quoted-name",
+        "Quotes around a list's name",
+        `Take the quotes off \`${name}\`. With quotes, the loop walks its letters. No quotes means look ${inside}. Line ${loop.line} with no quotes: \`${fixed}\``,
+        raw,
+      ),
+      slip: "a list's name in quotes in a `for` line",
+      slipLine: loop.line,
+    };
+  }
+  return null;
+}
+
+/**
+ * Unit 6: "list indices must be integers or slices, not str" inside a loop over that list (`roster["name"]` under
+ * `for member in roster:`): the list asked for a key. Its sheets are read through the loop variable.
+ */
+function explainLoopListKey(message: string, code: string, text: string, line: number | null, raw: string): CourseExplanation | null {
+  if (!/indices must be integers or slices, not str/.test(message)) return null;
+  for (const chain of readChains(text)) {
+    const first = chain.reads[0];
+    const loop = first?.key !== undefined ? loopOver(code, line, chain.base) : null;
+    if (!loop) continue;
+    const read = codePart(text).slice(chain.start, chain.end);
+    const lean = `${lineWord(line)} asks a list for a key, like \`${read}\`. A list has positions, not keys.`;
+    return {
+      ...explain(
+        "name-as-position",
+        "A list has no keys",
+        `${lean} Read one sheet through the loop variable: \`${chainCode(loop.variable, keysBefore(chain, chain.reads.length))}\`.`,
+        raw,
+      ),
+      slip: "a key asked of a whole list",
+      lean,
+    };
+  }
+  return null;
+}
+
+/**
+ * Unit 6: "list indices must be integers or slices, not dict" with the loop variable as the position (`roster[member]`
+ * under `for member in roster:`): `member` already holds one sheet, so it is read directly.
+ */
+function explainLoopSheetAsPosition(message: string, code: string, text: string, line: number | null, raw: string): CourseExplanation | null {
+  if (!/indices must be integers or slices, not dict/.test(message)) return null;
+  for (const chain of readChains(text)) {
+    const first = chain.reads[0];
+    const loop = first?.name !== undefined ? loopOver(code, line, chain.base) : null;
+    if (!loop || loop.variable !== first.name) continue;
+    const lean = `${lineWord(line)} uses a whole sheet as a position, like \`${chain.base}[${first.name}]\`.`;
+    const direct = `${first.name}${chain.reads.slice(1).map((read) => `[${read.text}]`).join("")}`;
+    return {
+      ...explain(
+        "name-as-position",
+        "A sheet, not a position",
+        `${lean} A list's positions are numbers, and \`${first.name}\` already holds one sheet: ${chain.reads.length > 1 ? "read it directly" : "use it directly"}, \`${direct}\`.`,
+        raw,
+      ),
+      slip: "a whole sheet used as a position",
+      lean,
+    };
+  }
+  return null;
+}
+
+/** Unit 6: "'int' object is not iterable" on a `for` line (`for i in len(wall):`, `for i in 6:`): one number to walk. */
+function explainLoopOverNumber(message: string, text: string, line: number | null, raw: string): CourseExplanation | null {
+  if (!/^'(int|float)' object is not iterable/.test(message)) return null;
+  if (!/(^|[^\w.])for\s+[A-Za-z_][\w\s,]*\s+in\s/.test(maskStrings(codePart(text)))) return null;
+  const words = `${lineWord(line)} asks a \`for\` loop to walk one number. A \`for\` loop needs a list or \`range(...)\`, not one number.`;
+  return { ...explain("loop-over-number", "A loop over one number", words, raw), lean: words };
+}
+
+/**
+ * Unit 6: "'builtin_function_or_method' object is not iterable" on a `for` line (`for name, cost in spell_book.items:`):
+ * the tool named without its round brackets, so the loop gets the tool itself, not what it hands back.
+ */
+function explainLoopToolNotCalled(message: string, text: string, line: number | null, raw: string): CourseExplanation | null {
+  if (!/^'(builtin_function_or_method|method)' object is not iterable/.test(message)) return null;
+  const header = codePart(text).match(FOR_HEADER);
+  const tool = header?.[3].trim().match(/^([A-Za-z_]\w*)\s*\.\s*([A-Za-z_]\w*)$/);
+  if (!header || !tool) return null;
+  const fixed = codePart(text).trim().replace(header[3].trim(), `${tool[1]}.${tool[2]}()`);
+  return {
+    ...explain(
+      "call-needs-round-brackets",
+      "Round brackets for a call",
+      `${lineWord(line)} hands the loop \`${tool[1]}.${tool[2]}\` with no \`( )\`, so the loop gets the tool itself, not what it hands back. Call it: \`${fixed}\``,
+      raw,
+    ),
+    slip: "a tool named without its ( )",
+  };
+}
+
+/**
+ * Unit 6: "too many values to unpack (expected 2)" on `for name, cost in spell_book:`: a loop over a dictionary hands over
+ * one key a pass, so two names cannot share it. Each key with its value comes from `.items()`.
+ */
+function explainLoopNamesOverKeys(message: string, code: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  if (!/(too many|not enough) values to unpack/.test(message)) return null;
+  const header = codePart(text).match(FOR_HEADER);
+  const names = header?.[2].split(",").map((name) => name.trim()) ?? [];
+  const book = header?.[3].trim();
+  if (!header || names.length < 2 || !book || !/^[A-Za-z_]\w*$/.test(book) || !sheetsOf(code, context).names.has(book)) return null;
+  const fixed = codePart(text).trim().replace(new RegExp(`\\bin\\s+${escapeRegExp(book)}\\s*:`), `in ${book}.items():`);
+  return {
+    ...explain(
+      "wrong-number-of-values",
+      "One key a pass",
+      `${lineWord(line)} gives the loop ${names.length} names, but a loop over \`${book}\` hands over one key a pass. For each key with its value, walk \`${book}.items()\`: \`${fixed}\``,
+      raw,
+    ),
+    slip: "names for a loop that hands over one key",
+  };
+}
+
+/**
+ * Unit 6: "unsupported operand type(s) for +: 'int' and 'dict'" (`total = total + member`): a whole sheet added, so one
+ * value is read from it by its key (the one Mar'tu's version reads, else a number key of its sheets). And "... 'int'
+ * and 'list'" (`total = total + values` inside `for value in values:`): the whole list added, so the loop variable goes
+ * there. Null when the line's right-hand name cannot be read (the older words stay).
+ */
+function explainWholeAdded(message: string, code: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  const glued = /unsupported operand type\(s\) for \+: 'dict' and 'str'/.test(message);
+  const kinds = glued ? [message, "dict"] : message.match(/unsupported operand type\(s\) for \+=?: '(?:int|float)' and '(dict|list)'/);
+  if (!kinds) return null;
+  const mask = maskStrings(codePart(text));
+  const name = glued
+    ? mask.match(/(?<![\w.\]])([A-Za-z_]\w*)\s*\+/)?.[1]
+    : mask.match(/\+=?\s*([A-Za-z_]\w*)\b(?!\s*[[(.])/)?.[1];
+  if (!name || KEYWORDS.has(name)) return null;
+  if (kinds[1] === "list") {
+    const loop = loopOver(code, line, name);
+    return {
+      ...explain(
+        "row-not-item",
+        "A whole list",
+        `\`${name}\` is the whole list. ${loop ? `Add the loop variable, \`${loop.variable}\`, instead.` : "Add one item from it instead."}`,
+        raw,
+      ),
+      slip: "a whole list added where one item is meant",
+    };
+  }
+  // The sheet's number keys: from the list the loop walks, else from the sheet itself.
+  const sheets = sheetsOf(code, context);
+  const walked = enclosingLoops(code, line).find((loop) => loop.variable === name)?.iterable;
+  const owner = walked && /^[A-Za-z_]\w*$/.test(walked) ? walked : name;
+  const wanted = glued ? "text" : "number";
+  const values = entriesFor(sheets, owner).filter((entry) => entry.kind === wanted && entry.path.length === 0 && (entry.owner === owner || sheets.lists.has(owner)));
+  const solved = readChains(context?.solution ?? "").find((chain) => chain.base === name && chain.reads.length === 1 && chain.reads[0].key !== undefined && values.some((entry) => entry.key === chain.reads[0].key));
+  const key = solved?.reads[0].key ?? values[0]?.key;
+  const like = key ? `, like \`${name}["${key}"]\`` : "";
+  if (!sheets.names.has(name) && !walked) return null;
+  return {
+    ...explain(
+      "whole-card-compared",
+      "A whole sheet",
+      glued
+        ? `\`${name}\` is a whole sheet, not text. Glue on one value from it by its key${like}.`
+        : `\`${name}\` is a whole sheet. Add one value from it by its key${like}.`,
+      raw,
+    ),
+    slip: glued ? "a whole sheet glued to text" : "a whole sheet added where one value is meant",
+  };
+}
+
+/**
+ * Unit 6: the recipe's own ingredient name used outside it (`mana_bar(hero)` in the loop): it only exists inside the
+ * recipe, so the call hands over a value of its own, the loop variable when the line is inside a loop.
+ */
+function ingredientOutside(
+  name: string,
+  recipe: string,
+  code: string,
+  text: string,
+  line: number | null,
+  raw: string,
+  context?: ExplainContext,
+): CourseExplanation {
+  const loop = enclosingLoops(code, line).find((entry) => /^[A-Za-z_]\w*$/.test(entry.variable) && entry.variable !== name);
+  const called = new RegExp(`(^|[^\\w.])${escapeRegExp(recipe)}\\s*\\(`).test(maskStrings(codePart(text)));
+  const lead = `\`${name}\` is \`${recipe}\`'s own ingredient name. It only exists inside the recipe.`;
+  // The call Mar'tu's version makes in its loop, when it hands over the loop variable (`light_lantern(member["name"])`).
+  const solved = loop
+    ? (context?.solution ?? "").match(new RegExp(`(?<![\\w.])${escapeRegExp(recipe)}\\(\\s*${escapeRegExp(loop.variable)}\\b[^()]*\\)`))?.[0]
+    : undefined;
+  const instead = called
+    ? loop
+      ? `Out here, hand over a value of your own: inside a loop, its loop variable, like \`${solved ?? `${recipe}(${loop.variable})`}\`.`
+      : "Out here, hand over a value of your own in the call."
+    : loop
+      ? `Out here, inside the loop, use its loop variable, \`${loop.variable}\`.`
+      : `Out here, use a value of your own, or move this line inside \`${recipe}\`.`;
+  return explain("made-inside-recipe", "Only inside the recipe", `${lead} ${instead}`, raw);
+}
+
+/** Unit 6: a recipe (in the code or the setup) whose `def` line takes `name`, when `line` is outside that recipe. */
+function ingredientHome(name: string, code: string, line: number | null, setup = ""): string | null {
+  if (line === null) return null;
+  for (const block of recipeBlocks(code)) {
+    if (line >= block.start && line <= block.end) continue;
+    if ((recipeIngredients(code, block.recipe) ?? []).includes(name)) return block.recipe;
+  }
+  // The setup's recipes (`def light_lantern(name):`) run before the code: every line of the code is outside them.
+  for (const block of recipeBlocks(setup)) {
+    if (!block.recipe.startsWith("_") && (recipeIngredients(setup, block.recipe) ?? []).includes(name)) return block.recipe;
+  }
+  return null;
+}
+
+/** Unit 6: the loop variables that walk a list of sheets (`member` in `for member in roster:`): each holds one sheet. */
+function loopSheetNames(code: string, context?: ExplainContext): string[] {
+  const sheets = sheetsOf(code, context);
+  return (code ?? "").split("\n").flatMap((row) => {
+    const header = codePart(row).match(FOR_HEADER);
+    const items = header ? sheets.lists.get(header[3].trim()) : undefined;
+    const ofSheets = items && items.length > 0 && items.every((item) => item.name !== undefined || (item.ref !== undefined && sheets.names.has(item.ref)));
+    return header && ofSheets && /^[A-Za-z_]\w*$/.test(header[2]) ? [header[2]] : [];
+  });
+}
+
 function explainType(
   message: string,
   code: string,
@@ -4932,6 +5257,17 @@ function explainType(
   // `def hero(): "Lucky"` then `hero + " is ready."`: Python's own hint led to a recipe, not a box.
   const recipe = explainRecipeUsedAsBox(message, code, text, raw);
   if (recipe) return recipe;
+  // Unit 6: inside a loop over a list of sheets, a key asked of the list or a sheet used as a position; a `for` loop over
+  // one number; a whole sheet or a whole list added to a number. Before the Unit 5 rows, which do not know the loop.
+  if (unitAtLeast(context, LOOPS_UNIT_ORDER)) {
+    const loop =
+      explainLoopListKey(message, code, text, line, raw) ??
+      explainLoopSheetAsPosition(message, code, text, line, raw) ??
+      explainLoopOverNumber(message, text, line, raw) ??
+      explainLoopToolNotCalled(message, text, line, raw) ??
+      explainWholeAdded(message, code, text, line, raw, context);
+    if (loop) return loop;
+  }
   // Unit 5: a name where a list needs a position, a whole sheet as a key or in a comparison, math with `None`.
   if (unitAtLeast(context, DICTS_UNIT_ORDER)) {
     const sheet =
@@ -5083,6 +5419,12 @@ function explainParsed(parsed: Parsed, raw: string, code: string, context?: Expl
   const line = errorLine(raw);
   const text = sourceLine(code, line) || shownLine(raw);
 
+  // Unit 6: `for gap in "chalk_wall":` walks letters, so a right line crashes later: the quotes are the slip.
+  if (unitAtLeast(context, LOOPS_UNIT_ORDER) && /^(TypeError|IndexError|KeyError|AttributeError|ValueError)$/.test(type)) {
+    const quoted = explainQuotedLoop(code, line, raw, context);
+    if (quoted) return quoted;
+  }
+
   switch (type) {
     case "SyntaxError":
       return explainSyntax(message, type, text, line, raw, code, context);
@@ -5131,6 +5473,9 @@ function explainParsed(parsed: Parsed, raw: string, code: string, context?: Expl
       if (/remove\(x\): x not in list/.test(message) && unitAtLeast(context, LISTS_UNIT_ORDER)) {
         return explainRemoveMissing(text, line, raw);
       }
+      // Unit 6: two names in a `for` over a dictionary's keys: each key with its value comes from `.items()`.
+      const keys = unitAtLeast(context, LOOPS_UNIT_ORDER) ? explainLoopNamesOverKeys(message, code, text, line, raw, context) : null;
+      if (keys) return keys;
       // Unit 4 (tuples): `across, down, up = cabin`, one name per item.
       const unpack = unitAtLeast(context, LISTS_UNIT_ORDER) ? explainUnpackCount(message, line, raw) : null;
       if (unpack) return unpack;
@@ -5389,6 +5734,7 @@ const SLIP_NAMES: Record<CourseErrorKind, string> = {
   "whole-sheet-as-key": "a whole sheet used as a key",
   "whole-card-compared": "a whole card compared with a number",
   "math-with-none": "math with `None`",
+  "loop-over-number": "a `for` loop over one number",
   "input-is-text": "an input() answer used as a number",
   "text-plus-number": "text joined to a number",
   "number-plus-text": "a number added to text",
@@ -5437,14 +5783,15 @@ export function leanExplanation(full: CourseExplanation, raw = full.raw): Course
   const line = full.slipLine ?? errorLine(raw);
   // Titles are plain text (no code marks). A name that starts with a code word (or a sign, `=`) keeps its small letters.
   const plain = name.replace(/`/g, "").replace(/^(a|an|the) /, "");
-  const title = /^(def|else|elif|if|print|randint|input)\b|^[^A-Za-z]/.test(plain)
+  const title = /^(def|else|elif|if|print|randint|input|for|while|break)\b|^[^A-Za-z]/.test(plain)
     ? `Slip: ${name.replace(/`/g, "")}`
     : `${plain.charAt(0).toUpperCase()}${plain.slice(1)}`;
+  const slip = full.lean ?? `The slip is ${line ? `on line ${line}` : "in your code"}: ${name}.`;
   return {
     ...full,
     explainer: "lean",
     title,
-    hint: `The slip is ${line ? `on line ${line}` : "in your code"}: ${name}. Python's last line, below, says what it found. Mend it yourself, then Run again.`,
+    hint: `${slip} Python's last line, below, says what it found. Mend it yourself, then Run again.`,
   };
 }
 

@@ -619,12 +619,19 @@ export function ExercisePlayer({
   const activeCheckpoint = firstOpen >= 0 ? exercise.checkpoints[firstOpen] : null;
   /* The last run crashed: Python stopped before it could check any step (so "step 1" may already be right). */
   const crashed = view?.grade?.crashed === true;
-  const crashAt = crashed && view?.explanation ? crashLine(view.explanation.raw) : null;
+  /*
+   * A run that never ended (a loop that printed forever, or ran past the time limit): Python was stopped wherever the
+   * loop happened to be, often a line that is right (`print(hours_left)`), so there is no line to mend first. The
+   * task line says so, and Help stays on the step (Unit 6).
+   */
+  const endless = crashed && (view?.explanation?.kind === "timeout" || view?.explanation?.kind === "too-much-output");
+  const lineCrash = crashed && !endless;
+  const crashAt = lineCrash && view?.explanation ? crashLine(view.explanation.raw) : null;
   /*
    * The line the slip is on, when the explainer knows it is not the one Python stopped on (Unit 5: a sheet's missing
    * comma Python reports on the next line, a whole card read on the line above the comparison).
    */
-  const slipAt = crashed && view?.explanation?.slipLine && view.explanation.slipLine !== crashAt ? view.explanation.slipLine : null;
+  const slipAt = lineCrash && view?.explanation?.slipLine && view.explanation.slipLine !== crashAt ? view.explanation.slipLine : null;
   /* Steps that passed before, failing on the latest run that Python finished (a crash checks nothing). */
   const slippedSteps =
     view?.grade && !view.grade.crashed && !view.revealPass
@@ -636,12 +643,12 @@ export function ExercisePlayer({
   // a step that names that line ("Mend line 3 ...") gets the Help. When the steps name other lines and none
   // names this one, their Help would talk about a different line, so it waits until the code runs. In a
   // debugging exercise, a crash that got further than the last one aims past the slip just mended (crashAim).
-  const aimStep = crashed && view?.crashStep !== undefined ? view.crashStep : undefined;
+  const aimStep = lineCrash && view?.crashStep !== undefined ? view.crashStep : undefined;
   const crashStep = crashTarget(exercise.checkpoints, crashAt);
   const crashOnlyHelp =
     aimStep !== undefined
       ? aimStep === null
-      : crashed && crashAt !== null && crashStep < 0 && exercise.checkpoints.some((checkpoint) => namesALine(checkpoint.text));
+      : lineCrash && crashAt !== null && crashStep < 0 && exercise.checkpoints.some((checkpoint) => namesALine(checkpoint.text));
   const helpIndex = aimStep !== undefined && aimStep !== null ? aimStep : crashStep >= 0 ? crashStep : firstOpen;
   const helpCheckpoint = activeCheckpoint && helpIndex >= 0 ? exercise.checkpoints[helpIndex] : null;
   // Light support (projects, challenges): the full ladder waits for the first Run that does not finish, but the
@@ -677,7 +684,7 @@ export function ExercisePlayer({
    */
   const startStep = { solution: exercise.solution, line: helpCheckpoint ? stepLine(helpCheckpoint.hints) : null };
   const startInCode = (start: string) => codeHasStart(code, start, startStep);
-  const skipRung = (rung: Rung) => rung.kind === "start" && (crashed || startInCode(rung.start ?? ""));
+  const skipRung = (rung: Rung) => rung.kind === "start" && (lineCrash || startInCode(rung.start ?? ""));
   const climbed = helpState(rungs, helpCheckpoint ? rungsShown(saved?.hintsUsed, helpCheckpoint.id, rungs.length) : 0, showUnlocked, {
     preset,
     skip: skipRung,
@@ -861,7 +868,7 @@ export function ExercisePlayer({
       const explanation = grade.crashed ? explainCourseError(crashText, source, context) : null;
       // A debugging exercise's crash: which step Help aims at, past the slips already mended this visit.
       let aim: CrashAim | null = null;
-      if (debugging && grade.crashed && explanation && explanation.kind !== "timeout") {
+      if (debugging && grade.crashed && explanation && explanation.kind !== "timeout" && explanation.kind !== "too-much-output") {
         const line = crashLine(explanation.raw);
         const signature = `${line ?? "?"}:${pythonLastLine(explanation.raw)}`;
         const passedIds = [...before, ...outcome.passedNow];
@@ -1162,6 +1169,12 @@ export function ExercisePlayer({
               <span className="ex-task-label">{`Python stopped on line ${crashAt}.`}</span>{" "}
               {`Read its message under your code first: your ${noun.toLowerCase()}s come from it. Then put # at the start of line ${crashAt} and Run again.`}
             </p>
+          ) : activeCheckpoint && !done && endless ? (
+            // A run that never ended checks nothing either, but the line it was stopped on is no slip: the loop is.
+            <p className="ex-task-line" data-testid="task-line" data-crash="true" data-endless="true">
+              <span className="ex-task-label">First, make the loop end.</span>{" "}
+              {`Python stopped your program before it could check your ${noun.toLowerCase()}s. The message under your code says why.`}
+            </p>
           ) : activeCheckpoint && !done && crashed ? (
             // A crash checks nothing, so "step 1" may already be right: the line Python stopped at comes first.
             <p className="ex-task-line" data-testid="task-line" data-crash="true">
@@ -1446,7 +1459,7 @@ export function ExercisePlayer({
               compareOpen={compare !== null}
               showUnlocked={showUnlocked}
               runNumber={runNumber}
-              crashed={crashed}
+              crashed={lineCrash}
               crashLine={crashAt}
               slipLine={slipAt}
               crashOnly={crashOnlyHelp}
