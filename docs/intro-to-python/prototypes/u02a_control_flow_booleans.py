@@ -1878,8 +1878,8 @@ BROKEN_SPELL_2A = dict(
             ),
             dictated=False,
             hints=[
-                "Press Run and read the box: first its title, then Python's last line. It points at line 3, where a "
-                "number meets text. Which box holds text? Look at line 2.",
+                "Press Run and read the box: its title says TypeError, and Python's last line points at line 3, "
+                "where a number meets text. Which box holds text? Look at line 2.",
                 "Python's last line names `int` and `str`. `int` means a whole number, and `str` means text. Quotes "
                 "make text: `\"7\" > 3` makes Python stop, but `7 > 3` is True.",
                 "Delete the two `\"` marks around 15 on line 2. Line 2 becomes `needed = 15`.",

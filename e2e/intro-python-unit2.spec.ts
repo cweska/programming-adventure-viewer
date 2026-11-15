@@ -126,7 +126,7 @@ test.describe("Intro to Python, Unit 2: Control Flow", () => {
     await expect(page.getByTestId("help-button")).toContainText("Where to look");
     await page.getByTestId("help-button").click();
     await expect(page.getByTestId("help-rung-1")).toBeVisible();
-    await expect(page.getByTestId("help-locked")).toHaveText("More help opens after you press Run once.");
+    await expect(page.getByTestId("help-locked")).toHaveText("More help opens after you press Run once. Running code that isn't finished yet is fine.");
     await expect(page.getByTestId("help-button")).toHaveCount(0);
     await runAndWait(page, 1);
     await expect(page.getByTestId("help-locked")).toHaveCount(0);

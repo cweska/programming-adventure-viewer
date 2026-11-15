@@ -164,7 +164,7 @@ test.describe("Intro to Python, Unit 5: Dictionaries", () => {
     await open(page, "sheets-inside-sheets", "spell-book-of-spells");
     const stored = await runWrong(page, "sheets-inside-sheets/spell-book-of-spells", "CP2 round brackets", 1);
     await expect(stored).toHaveAttribute("data-kind", "list-needs-square-brackets");
-    await expect(hint).toContainText("Store in a dictionary with square brackets: spell_book[spell_name] = spell");
+    await expect(hint).toContainText("Store in a dictionary with square brackets [ ]: spell_book[spell_name] = spell");
     // Never Unit 3's "a recipe starts with def" or the == row.
     await expect(hint).not.toContainText("def");
     await expect(hint).not.toContainText("==");

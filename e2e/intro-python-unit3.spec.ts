@@ -188,7 +188,7 @@ test.describe("Intro to Python, Unit 3: Functions I: First Recipes", () => {
     await expect(page.getByTestId("explainer")).toHaveCount(0);
     const message = page.getByTestId("checkpoint-message");
     await expect(message).toContainText("Exactly enough does not pass.");
-    await expect(message).toContainText("(Mar'tu's check called latch_check(12), only inside the check");
+    await expect(message).toContainText("Mar'tu tested your recipe with a test call, latch_check(12)");
     await expect(message).not.toContainText(">=");
     await expect(message).not.toContainText("Which sign");
   });
@@ -200,7 +200,7 @@ test.describe("Intro to Python, Unit 3: Functions I: First Recipes", () => {
     await runAndWait(page, 1);
     await expect(page.getByTestId("stdout")).toHaveText("(Nothing was printed.)");
     await expect(page.getByTestId("stdout")).not.toContainText("55");
-    await expect(page.getByTestId("checkpoint-message-1")).toContainText("The editor holds more than the two row lines");
+    await expect(page.getByTestId("checkpoint-message-1")).toContainText("Your code holds more than the two row lines");
     // Rows only: they run (and print nothing), and the guard stays out of the way.
     await setCode(page, "# The ledger for ward_strength(2, 5)\nhanded_back_row = 45\nprinted_row = 55\n");
     await runAndWait(page, 2);

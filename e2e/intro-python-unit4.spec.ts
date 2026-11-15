@@ -164,7 +164,7 @@ test.describe("Intro to Python, Unit 4: Lists", () => {
     await runAndWait(page, 1);
     const soloMessage = page.getByTestId("checkpoint-message");
     await expect(soloMessage).toContainText("Your line reads the first gap, and the longest gap is not always the first.");
-    await expect(soloMessage).toContainText("(Mar'tu's check tried");
+    await expect(soloMessage).toContainText("Mar'tu tested your code with a test wall");
     await expect(soloMessage).not.toContainText("max(");
 
     await open(page, "qc3-a", "make-append-read");
