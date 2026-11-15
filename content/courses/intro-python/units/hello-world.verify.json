@@ -170,7 +170,7 @@
             "# Print a line that has _ and - and = in it."
           ],
           "failsAt": 1,
-          "messageContains": "Nothing printed"
+          "messageContains": "Nothing shows"
         },
         {
           "why": "symbols with no quotes",
@@ -220,7 +220,7 @@
             "print(\"Write Oogrish's words here\")"
           ],
           "failsAt": 1,
-          "messageContains": "Change"
+          "messageContains": "still says"
         },
         {
           "why": "copies the example's line",
@@ -260,7 +260,7 @@
             "print(\"Write words here\")"
           ],
           "failsAt": 1,
-          "messageContains": "starter's words"
+          "messageContains": "still says `Write words here`"
         },
         {
           "why": "check-breaker: own line added, placeholder line still printing",
@@ -269,7 +269,7 @@
             "print(\"Write Oogrish's words here\")"
           ],
           "failsAt": 1,
-          "messageContains": "starter's words"
+          "messageContains": "still says"
         },
         {
           "why": "check-breaker: the example's line with another final mark",
@@ -474,7 +474,7 @@
             "print(\"The hand is near the arc.\")"
           ],
           "failsAt": 1,
-          "messageContains": "still prints first"
+          "messageContains": "still shows before"
         },
         {
           "why": "moved, but no blank line",
@@ -495,7 +495,7 @@
             "print(\"Get inside, yes?\")"
           ],
           "failsAt": 2,
-          "messageContains": "just above"
+          "messageContains": "right above"
         },
         {
           "why": "deletes a line instead of moving one",
@@ -516,7 +516,7 @@
             "print(\"Get inside, yes?\")"
           ],
           "failsAt": 1,
-          "messageContains": "prints twice"
+          "messageContains": "shows twice"
         },
         {
           "why": "check-breaker: an empty line in the code instead of print()",
@@ -538,7 +538,7 @@
             "print(\"Get inside, yes?\")"
           ],
           "failsAt": 2,
-          "messageContains": "no brackets"
+          "messageContains": "no parentheses"
         }
       ],
       "notes": "meta: starter_level=S4; path=CC; skills=print-text; solo=false; dictates=1,2; foreign_names=; stages=P,R,M; trace=static step table (another_way). PR (pair prompt): own devices, so 'Seat A predicts, Seat B runs' became predict-and-compare, each on their own device. The blank-line check reads the raw output, so `print(\"\")` and `print(\" \")` pass too. Checks stay true when Lucky's side quest adds lines after the warning. Check-breaker pass: copying the warning to the bottom (it prints twice) now fails with its own message; CP2 names an empty code line and a bare `print` with no brackets (both silently print nothing). Loosened: the side quest accepts more than one blank line before Lucky's reply."
@@ -569,7 +569,7 @@
             "print(\"I will take first watch.\")"
           ],
           "failsAt": 1,
-          "messageContains": "still prints"
+          "messageContains": "still shows"
         },
         {
           "why": "puts the # inside the quotes",
@@ -793,7 +793,7 @@
             "print(\"companion\")"
           ],
           "failsAt": 1,
-          "messageContains": "example"
+          "messageContains": "still holds Gearshift"
         },
         {
           "why": "`companion = ` deleted: a bare value with no box",
@@ -831,7 +831,7 @@
             "print(\"companion\")"
           ],
           "failsAt": 1,
-          "messageContains": "typed by hand"
+          "messageContains": "Print the box instead"
         },
         {
           "why": "quotes put on line 2 too, so the box is never opened",
@@ -859,7 +859,7 @@
             "print(\"companion\")"
           ],
           "failsAt": 1,
-          "messageContains": "`def` makes a recipe"
+          "messageContains": "learn in Unit 3"
         },
         {
           "why": "unclosed quote",
@@ -901,7 +901,7 @@
             "print(\"Zelda\")"
           ],
           "failsAt": 1,
-          "messageContains": "no box"
+          "messageContains": "no name in front"
         },
         {
           "why": "a lone value, then print(character)",
@@ -1018,7 +1018,7 @@
             "print(character)"
           ],
           "failsAt": 1,
-          "messageContains": "no box"
+          "messageContains": "delete line 1"
         },
         {
           "why": "prints the hero typed by hand instead of the box",
@@ -1027,7 +1027,7 @@
             "print(\"Zelda\")"
           ],
           "failsAt": 2,
-          "messageContains": "typed by hand"
+          "messageContains": "Print the box instead"
         },
         {
           "why": "def used to make the box (valid Python: a recipe, not a box)",
@@ -1036,7 +1036,7 @@
             "print(character)"
           ],
           "failsAt": 1,
-          "messageContains": "`def` makes a recipe"
+          "messageContains": "learn in Unit 3"
         },
         {
           "why": "def with the box inside it",
@@ -1046,7 +1046,7 @@
             "print(character)"
           ],
           "failsAt": 1,
-          "messageContains": "`def` makes a recipe"
+          "messageContains": "learn in Unit 3"
         },
         {
           "why": "the example's name, misspelled (plager_name)",
@@ -1112,7 +1112,7 @@
             "weapon = \"Telegun\""
           ],
           "failsAt": 1,
-          "messageContains": "no box"
+          "messageContains": "no name in front"
         },
         {
           "why": "the wrong number",
@@ -1166,7 +1166,7 @@
             "\"Telegun\""
           ],
           "failsAt": 2,
-          "messageContains": "no box"
+          "messageContains": "no name in front"
         },
         {
           "why": "3, then a later line changes it to 30",
@@ -1185,7 +1185,7 @@
             "def weapon(): \"Telegun\""
           ],
           "failsAt": 2,
-          "messageContains": "`def` makes a recipe"
+          "messageContains": "learn in Unit 3"
         },
         {
           "why": "unclosed quote on the weapon",
@@ -1285,7 +1285,7 @@
             "print(9)"
           ],
           "failsAt": 1,
-          "messageContains": "typed by hand"
+          "messageContains": "Print the box instead"
         },
         {
           "why": "last line deleted",
@@ -1390,7 +1390,7 @@
             "print(14)"
           ],
           "failsAt": 1,
-          "messageContains": "typed by hand"
+          "messageContains": "Print the box instead"
         },
         {
           "why": "typed \"14\" as text in the print",
@@ -1401,7 +1401,7 @@
             "print(\"14\")"
           ],
           "failsAt": 1,
-          "messageContains": "typed by hand"
+          "messageContains": "Print the box instead"
         },
         {
           "why": "quotes around the name in the print",
@@ -1561,7 +1561,7 @@
             "print(weapon)"
           ],
           "failsAt": 4,
-          "messageContains": "no box"
+          "messageContains": "no name in front"
         },
         {
           "why": "glug_sips in quotes",
@@ -1587,7 +1587,7 @@
             "print(\"Telegun\")"
           ],
           "failsAt": 1,
-          "messageContains": "typed by hand"
+          "messageContains": "Print the box instead"
         },
         {
           "why": "print lines deleted instead of mending the boxes they need",
@@ -1611,7 +1611,7 @@
             "print(weapon)"
           ],
           "failsAt": 2,
-          "messageContains": "`def` makes a recipe"
+          "messageContains": "learn in Unit 3"
         },
         {
           "why": "unclosed quote on line 4",
@@ -1671,7 +1671,7 @@
             "print(\"a grumpy moth\")"
           ],
           "failsAt": 1,
-          "messageContains": "no box"
+          "messageContains": "no name in front"
         },
         {
           "why": "print with quotes around the name",
@@ -1716,7 +1716,7 @@
             "print(\"a grumpy moth\")"
           ],
           "failsAt": 2,
-          "messageContains": "typed by hand"
+          "messageContains": "Print the box instead"
         },
         {
           "why": "def used to make the box",
@@ -1725,7 +1725,7 @@
             "print(familiar)"
           ],
           "failsAt": 1,
-          "messageContains": "`def` makes a recipe"
+          "messageContains": "learn in Unit 3"
         },
         {
           "why": "unclosed quote",
@@ -1835,7 +1835,7 @@
             "print(coins)"
           ],
           "failsAt": 1,
-          "messageContains": "no box"
+          "messageContains": "no name in front"
         },
         {
           "why": "print with quotes around the name",
@@ -1890,7 +1890,7 @@
             "print(7)"
           ],
           "failsAt": 2,
-          "messageContains": "typed by hand"
+          "messageContains": "Print the box instead"
         },
         {
           "why": "def used to make a box",
@@ -1901,7 +1901,7 @@
             "print(coins)"
           ],
           "failsAt": 1,
-          "messageContains": "`def` makes a recipe"
+          "messageContains": "learn in Unit 3"
         },
         {
           "why": "satchel holds a number",
@@ -2008,7 +2008,7 @@
             "print(\"The gap shrank by 11\")"
           ],
           "failsAt": 1,
-          "messageContains": "Your 11 is right for 48 and 37"
+          "messageContains": "typed-in number where a box name should go"
         },
         {
           "why": "labelled output with the boxes the wrong way round",
@@ -2109,7 +2109,7 @@
             "rope_price = 2"
           ],
           "failsAt": 1,
-          "messageContains": "wants how many"
+          "messageContains": "needs how many"
         },
         {
           "why": "a number in quotes",
@@ -2131,7 +2131,7 @@
             "rope_price = 2"
           ],
           "failsAt": 1,
-          "messageContains": "no box"
+          "messageContains": "no name in front"
         },
         {
           "why": "placeholders left in",
@@ -2428,7 +2428,7 @@
             "print(total_cost)"
           ],
           "failsAt": 1,
-          "messageContains": "keeps it nowhere"
+          "messageContains": "no box keeps the answer"
         },
         {
           "why": "adds the rope boxes instead of multiplying",
@@ -2489,7 +2489,7 @@
             "rope_count = 1000"
           ],
           "failsAt": 2,
-          "messageContains": "top down"
+          "messageContains": "top to bottom"
         }
       ],
       "notes": "meta: starter_level=S4; path=CC; skills=combine-values; solo=false; dictates=1,4; foreign_names=map_count,map_price,map_cost,a,b,c; twin=Candles cost 1 coin each and Mar'tu needs 3; maps cost 6 and he needs 2. Make candle_cost, map_cost and supply_total (price-first, C9)\nThe Investigate (rope_count = 1000, total 2012) is checkpoint 4 so everyone does it; checks 1-3 compare against the student's own boxes, so they stay green at 1000. CMB uses two reruns on CP3 (lantern_count 7 -> 38; lantern_price 5, rope_count 6, rope_price 3 -> 33): every input changes in some rerun, so a total with any one number typed in fails. set_once: `rope_count = 1000` added at the bottom (instead of changing line 3) gets a top-down message, not a confusing slot message. LINE-TOTAL (`lantern_count * 12`, `rope_count * 10`) gets its own message instead of the placeholder default. PR (each partner gives one reason why typing 22 is a trap) is the pair_talk prompt. Point-at-it: 'Which part of your line is the price of one?' after CP1 (site feature)."
@@ -2716,7 +2716,7 @@
             "print(name + \" has \" + mana + \" mana.\")"
           ],
           "failsAt": 2,
-          "messageContains": "Numbers don't need quotes"
+          "messageContains": "Numbers don't get quotes"
         },
         {
           "why": "commas instead of glue: right output, skips + and str()",
@@ -2726,7 +2726,7 @@
             "print(name, \"has\", mana, \"mana.\")"
           ],
           "failsAt": 2,
-          "messageContains": "practises glue"
+          "messageContains": "practices gluing"
         },
         {
           "why": "a closing quote missing",
@@ -2797,7 +2797,7 @@
             "print(\"Kai has\")"
           ],
           "failsAt": 1,
-          "messageContains": "should print a line that starts with `Tester has`. Glue"
+          "messageContains": "it should show a line that starts with `Tester has`. Don't type Tester"
         },
         {
           "why": "CP1: the starter run as it is (nothing printed)",
@@ -2807,7 +2807,7 @@
             "# Print: Lucky has 26 mana.  Build it from the boxes."
           ],
           "failsAt": 1,
-          "messageContains": "Nothing is printed yet"
+          "messageContains": "Nothing shows in the Console yet"
         }
       ],
       "notes": "meta: starter_level=S4; path=CC; skills=concat-str; solo=false; dictates=1,2; foreign_names=drink,sips,pet\nDictated in two steps: CP1 prints the first two beads (`print(name + \" has \")` -> `Lucky has`), CP2 adds `+ str(mana) + \" mana.\"`. CP1's checks (no quoted box names, a line starting with the name and ` has`, a starts-with rerun with name Tester) stay true for the finished line, so both pass in one run. Investigate 1 (`\"Mana: \" + 26`, TypeError + explainer) is told in the Learn pane (no try-it that crashes on purpose); Investigate 2 (missing space) is the predict. OUT diff shows the first difference; CMB reruns with Tester / 4 and Zelda / 7 (two, so setting the boxes to the rerun's values and typing the line still fails). Any name a student puts in `name` passes; its diff never repeats it. The last check asks for `+` and `str()` (commas give the same output but skip the lesson), with a kind message. WA evidence: Lucky has26mana (spaces), typed answers (68)."
@@ -2987,7 +2987,7 @@
             "print(hero_name + \": \" + str(mana) + \"/\" + str(max_mana) + \" mana\")"
           ],
           "failsAt": 1,
-          "messageContains": "keeps it nowhere"
+          "messageContains": "no box keeps the answer"
         }
       ],
       "notes": "meta: starter_level=S3; path=CC; skills=combine-values,concat-str,reassign; solo=false; dictates=2; foreign_names=power,double,spare,backpack,pet,hp,max_hp\nLint (e): the solution uses another hero (Captain Glug) and passes; the assemble lines use Mar'tu's pick (Oogrish). The status-line check never echoes the student's hero: its message uses Tester / Zelda, and the side quest's diffs hide lines holding the hero (own('hero_name')). CP3 also needs `mana` read somewhere, so `str(max_mana)` twice (same output while mana starts full) is caught. More structure (G1 R13): the Teach hint shows the same beads with other names (pet / hp / max_hp, `Moth: 3/5 hp`), then the student's frame with ___ blanks. Lucky's side quest uses new lucky_* boxes so it never turns a finished checkpoint red."
@@ -3049,7 +3049,7 @@
             "print(\"[\" + bar + \"]\")"
           ],
           "failsAt": 1,
-          "messageContains": "not a number"
+          "messageContains": "Use the box `mana` instead"
         },
         {
           "why": "text plus a number",
@@ -3075,7 +3075,7 @@
             "print(\"[\" + bar + \"]\")"
           ],
           "failsAt": 1,
-          "messageContains": "not a number"
+          "messageContains": "Use the box `mana` instead"
         },
         {
           "why": "max mana typed as 5 inside the brackets (passes every rerun at max 5, and the 20/20 bar)",
@@ -3397,7 +3397,7 @@
             "print(candle_cost)"
           ],
           "failsAt": 2,
-          "messageContains": "keeps it nowhere"
+          "messageContains": "no box keeps the answer"
         },
         {
           "why": "the price typed into the cost",
@@ -3948,7 +3948,7 @@
             "print(\"First watch: \" + watch_keeper)"
           ],
           "failsAt": 7,
-          "messageContains": "no box"
+          "messageContains": "no name in front"
         },
         {
           "why": "the watch line typed",
@@ -4343,7 +4343,7 @@
             "hours_until_burst = 32"
           ],
           "failsAt": 3,
-          "messageContains": "top down"
+          "messageContains": "top to bottom"
         },
         {
           "why": "the last task changes the wrong box (mana_per_hour to 32)",
@@ -4878,7 +4878,7 @@
             "# D. One more letter, in triple quotes"
           ],
           "failsAt": 3,
-          "messageContains": "by hand"
+          "messageContains": "typed out"
         },
         {
           "why": "a border on top only",
@@ -5173,7 +5173,7 @@
             "print(hand)"
           ],
           "failsAt": 1,
-          "messageContains": "brackets"
+          "messageContains": "parentheses"
         },
         {
           "why": "added but never wrapped",
@@ -5414,7 +5414,7 @@
             "print(\"Zelda\")"
           ],
           "failsAt": 1,
-          "messageContains": "no box"
+          "messageContains": "no name in front"
         },
         {
           "why": "a box with another name",
@@ -5423,7 +5423,7 @@
             "print(hero)"
           ],
           "failsAt": 1,
-          "messageContains": "this task's box"
+          "messageContains": "this step's box"
         },
         {
           "why": "text with no quotes",
@@ -5500,7 +5500,7 @@
             "print(total_cost)"
           ],
           "failsAt": 2,
-          "messageContains": "Build it from the boxes"
+          "messageContains": "typed in"
         },
         {
           "why": "the line totals typed in",
@@ -5515,7 +5515,7 @@
             "print(total_cost)"
           ],
           "failsAt": 2,
-          "messageContains": "Build it from the boxes"
+          "messageContains": "typed in"
         },
         {
           "why": "the story's numbers typed into the formula",
@@ -5530,7 +5530,7 @@
             "print(total_cost)"
           ],
           "failsAt": 2,
-          "messageContains": "Build it from the boxes"
+          "messageContains": "typed in"
         },
         {
           "why": "bandages count and price swapped",
@@ -5684,7 +5684,7 @@
             "print(scout_name + \": \" + str(mana) + \"/\" + str(max_mana) + \" mana\")"
           ],
           "failsAt": 2,
-          "messageContains": "mana = mana - spell_cost"
+          "messageContains": "only the cost"
         },
         {
           "why": "the spell cost typed as a number",
@@ -5813,7 +5813,7 @@
             "print(\"Shield [\" + shield_bar + \"]\")"
           ],
           "failsAt": 1,
-          "messageContains": "Build it"
+          "messageContains": "typed in"
         },
         {
           "why": "the full part only",
@@ -5904,7 +5904,7 @@
             "print(16)"
           ],
           "failsAt": 3,
-          "messageContains": "print(max_stamina)"
+          "messageContains": "never prints the box"
         },
         {
           "why": "the name mended on line 5 instead",
@@ -5956,7 +5956,7 @@
             "print(\"Kratos\")"
           ],
           "failsAt": 1,
-          "messageContains": "no box"
+          "messageContains": "no name in front"
         },
         {
           "why": "a box with another name",
@@ -5965,7 +5965,7 @@
             "print(pet)"
           ],
           "failsAt": 1,
-          "messageContains": "this task's box"
+          "messageContains": "this step's box"
         },
         {
           "why": "text with no quotes",
@@ -6042,7 +6042,7 @@
             "print(supply_cost)"
           ],
           "failsAt": 2,
-          "messageContains": "Build it from the boxes"
+          "messageContains": "typed in"
         },
         {
           "why": "the line totals typed in",
@@ -6057,7 +6057,7 @@
             "print(supply_cost)"
           ],
           "failsAt": 2,
-          "messageContains": "Build it from the boxes"
+          "messageContains": "typed in"
         },
         {
           "why": "the story's numbers typed into the formula",
@@ -6072,7 +6072,7 @@
             "print(supply_cost)"
           ],
           "failsAt": 2,
-          "messageContains": "Build it from the boxes"
+          "messageContains": "typed in"
         },
         {
           "why": "candles count and price swapped",
@@ -6226,7 +6226,7 @@
             "print(caster_name + \": \" + str(mana) + \"/\" + str(max_mana) + \" mana\")"
           ],
           "failsAt": 2,
-          "messageContains": "mana = mana - shield_cost"
+          "messageContains": "only the cost"
         },
         {
           "why": "the spell cost typed as a number",
@@ -6355,7 +6355,7 @@
             "print(\"Glug [\" + meter + \"]\")"
           ],
           "failsAt": 1,
-          "messageContains": "Build it"
+          "messageContains": "typed in"
         },
         {
           "why": "the full part only",
@@ -6446,7 +6446,7 @@
             "print(4)"
           ],
           "failsAt": 3,
-          "messageContains": "print(glug_sips)"
+          "messageContains": "never prints the box"
         },
         {
           "why": "the name mended on line 5 instead",

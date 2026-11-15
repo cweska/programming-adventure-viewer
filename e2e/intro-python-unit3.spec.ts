@@ -95,7 +95,7 @@ test.describe("Intro to Python, Unit 3: Functions I: First Recipes", () => {
     const math = await runWrong(page, "recipes-with-names/send-it-back", "written like maths", 1);
     await expect(math).toHaveAttribute("data-explainer", "full");
     await expect(math).toHaveAttribute("data-kind", "recipe-like-math");
-    await expect(page.getByTestId("explainer-hint")).toContainText("Line 8 is math's way to write it.");
+    await expect(page.getByTestId("explainer-hint")).toContainText("Line 8 writes the recipe the way math writes f(x) = 2x.");
     await expect(page.getByTestId("explainer-hint")).toContainText("def max_fuel_for(cells):");
     await expect(page.getByTestId("explainer-hint")).not.toContainText("two equals");
     await expect(page.getByTestId("python-last-line")).toContainText("cannot assign to function call");
@@ -107,7 +107,7 @@ test.describe("Intro to Python, Unit 3: Functions I: First Recipes", () => {
 
     const early = await runWrong(page, "recipes-with-names/send-it-back", "try line uncommented", 3);
     await expect(early).toHaveAttribute("data-kind", "recipe-not-made-yet");
-    await expect(page.getByTestId("explainer-hint")).toContainText("max_fuel_for is one of this task's recipes");
+    await expect(page.getByTestId("explainer-hint")).toContainText("max_fuel_for is one of your task's recipes");
   });
 
   test("the wrong number of values names the recipe's own ingredients, and randint's numbers are swapped back", async ({ page }) => {
@@ -115,7 +115,7 @@ test.describe("Intro to Python, Unit 3: Functions I: First Recipes", () => {
     const count = await runWrong(page, "recipes-with-names/use-the-ingredients", "third call hands over one number", 1);
     await expect(count).toHaveAttribute("data-kind", "wrong-number-of-values");
     await expect(page.getByTestId("explainer-hint")).toHaveText(
-      /show_hit has 2 ingredients \(base_damage, bonus\)\. The call on line 6 hands over 1\. Hand over one value per ingredient\./,
+      /show_hit has 2 ingredients, base_damage and bonus, but the call on line 6 hands over 1\. Hand over one value per ingredient/,
     );
     await expect(page.getByTestId("explainer-hint")).not.toContainText("positional");
     await expect(page.getByTestId("python-last-line")).toContainText("missing 1 required positional argument");
@@ -123,7 +123,7 @@ test.describe("Intro to Python, Unit 3: Functions I: First Recipes", () => {
     await open(page, "recipes-with-names", "roll-recipe");
     const roll = await runWrong(page, "recipes-with-names/roll-recipe", "randint(die_size, 1)", 1);
     await expect(roll).toHaveAttribute("data-kind", "randint-backwards");
-    await expect(page.getByTestId("explainer-hint")).toContainText("Smallest number first: random.randint(1, die_size)");
+    await expect(page.getByTestId("explainer-hint")).toContainText("the smallest number goes first: random.randint(1, die_size)");
     await expect(page.getByTestId("python-last-line")).toContainText("empty range in randrange(20, 2)");
 
     await open(page, "recipes-with-names", "box-or-recipe");
@@ -152,7 +152,7 @@ test.describe("Intro to Python, Unit 3: Functions I: First Recipes", () => {
     const solo = await runWrong(page, "recipes-with-names/solo-6a", "a name the recipe never makes", 1);
     await expect(solo).toHaveAttribute("data-explainer", "lean");
     await expect(solo).toHaveAttribute("data-kind", "not-in-recipe");
-    await expect(page.getByTestId("explainer-hint")).toContainText("The slip is on line 9: a name this recipe never makes.");
+    await expect(page.getByTestId("explainer-hint")).toContainText("The mistake is on line 9: a name this recipe never makes.");
     await expect(page.getByTestId("explainer-hint")).not.toContainText("ingredient");
     await expect(page.getByTestId("python-last-line")).toContainText("name 'new_health' is not defined");
   });
@@ -168,7 +168,7 @@ test.describe("Intro to Python, Unit 3: Functions I: First Recipes", () => {
     const solo = await runWrong(page, "recipes-with-names/solo-6a", "two words with no quotes", 1);
     await expect(solo).toHaveAttribute("data-explainer", "lean");
     await expect(solo).toHaveAttribute("data-kind", "unquoted-words");
-    await expect(page.getByTestId("explainer-hint")).toContainText("The slip is on line 6: words with no quotes.");
+    await expect(page.getByTestId("explainer-hint")).toContainText("The mistake is on line 6: words with no quotes.");
     await expect(page.getByTestId("explainer-hint")).not.toContainText("Moth Queen");
     await expect(page.getByTestId("python-last-line")).toContainText("Perhaps you forgot a comma?");
   });
@@ -179,7 +179,7 @@ test.describe("Intro to Python, Unit 3: Functions I: First Recipes", () => {
     const math = await runWrong(page, "qc-r1-a/write-a-recipe", "= used to make a recipe (a call on the left)", 1);
     await expect(math).toHaveAttribute("data-explainer", "lean");
     await expect(math).toHaveAttribute("data-kind", "recipe-like-math");
-    await expect(page.getByTestId("explainer-hint")).toContainText("The slip is on line 1: a recipe written like math.");
+    await expect(page.getByTestId("explainer-hint")).toContainText("The mistake is on line 1: a recipe written like math.");
     await expect(page.getByTestId("explainer-hint")).not.toContainText("def armor_total");
 
     await open(page, "qc-r1-a", "a-check-of-your-own");
@@ -222,7 +222,7 @@ test.describe("Intro to Python, Unit 3: Functions I: First Recipes", () => {
     const key = "recipes-with-names/send-it-back";
     const borrowed = await runWrong(page, key, "with the try line on (the crash path", 1);
     await expect(borrowed).toHaveAttribute("data-kind", "not-in-recipe");
-    await expect(page.getByTestId("explainer-hint")).toContainText("result comes from Mar'tu's example. This recipe's box is fuel: hand that back.");
+    await expect(page.getByTestId("explainer-hint")).toContainText("result comes from the Example, not from your task. This recipe's box is fuel: hand that back.");
     const kitchen = await runWrong(page, key, "kitchen, with the try line on", 2);
     await expect(kitchen).toHaveAttribute("data-kind", "made-inside-recipe");
     await expect(page.getByTestId("explainer-hint")).toContainText("Inside max_fuel_for, hand back its own box, fuel.");

@@ -111,7 +111,7 @@ test.describe("Intro to Python, Unit 4: Lists", () => {
     const assigned = await runWrong(page, "many-values-one-name/fix-a-mark", "round brackets: assigning to a call", 1);
     await expect(assigned).toHaveAttribute("data-explainer", "full");
     await expect(assigned).toHaveAttribute("data-kind", "list-needs-square-brackets");
-    await expect(page.getByTestId("explainer-hint")).toContainText("Line 5 puts ( ) after chalk_wall. To change one item, use square brackets: chalk_wall[2] = 47");
+    await expect(page.getByTestId("explainer-hint")).toContainText("Line 5 puts parentheses ( ) after chalk_wall. To change one item of a list, use square brackets [ ]: chalk_wall[2] = 47");
     await expect(page.getByTestId("explainer-hint")).not.toContainText("==");
     await expect(page.getByTestId("python-last-line")).toContainText("cannot assign to function call");
 
@@ -121,13 +121,13 @@ test.describe("Intro to Python, Unit 4: Lists", () => {
     await expect(page.getByTestId("explainer-hint")).toContainText("+ joins two lists. To add one item, use .append(): chalk_wall.append(33)");
     const square = await runWrong(page, "many-values-one-name/new-chalk-mark", "square brackets for append's round ones", 2);
     await expect(square).toHaveAttribute("data-kind", "call-needs-round-brackets");
-    await expect(page.getByTestId("explainer-hint")).toContainText("Call it with round brackets: chalk_wall.append(33)");
+    await expect(page.getByTestId("explainer-hint")).toContainText("Call it with parentheses ( ): chalk_wall.append(33)");
     await expect(page.getByTestId("python-last-line")).toContainText("is not subscriptable");
 
     await open(page, "many-values-one-name", "lists-inside-lists");
     const comma = await runWrong(page, "many-values-one-name/lists-inside-lists", "a comma between the positions", 1);
     await expect(comma).toHaveAttribute("data-kind", "comma-in-brackets");
-    await expect(page.getByTestId("explainer-hint")).toContainText("Row then item takes two pairs of brackets: roster[2][0].");
+    await expect(page.getByTestId("explainer-hint")).toContainText("use two pairs of square brackets, like the row and seat on a theater ticket: roster[2][0].");
   });
 
   test("sorted after a dot, .remove() of a missing value and unquoted words in a list get the unit's words", async ({ page }) => {
@@ -145,7 +145,7 @@ test.describe("Intro to Python, Unit 4: Lists", () => {
     await open(page, "oogrishs-training-log");
     const words = await runWrong(page, "oogrishs-training-log", "a drill with no quotes, on one line", 1);
     await expect(words).toHaveAttribute("data-kind", "unquoted-words");
-    await expect(page.getByTestId("explainer-hint")).toContainText('If storm kick is text, put quotes around it: "storm kick".');
+    await expect(page.getByTestId("explainer-hint")).toContainText('If storm kick is words, put quotes around them, the way you quote someone\'s exact words: "storm kick".');
     await expect(page.getByTestId("python-last-line")).toContainText("Perhaps you forgot a comma?");
   });
 
@@ -154,7 +154,7 @@ test.describe("Intro to Python, Unit 4: Lists", () => {
     const solo = await runWrong(page, "many-values-one-name/solo-3a", "round brackets: the list called like a recipe", 1);
     await expect(solo).toHaveAttribute("data-explainer", "lean");
     await expect(solo).toHaveAttribute("data-kind", "list-needs-square-brackets");
-    await expect(page.getByTestId("explainer-hint")).toContainText("The slip is on line 3: round brackets where a list needs square ones.");
+    await expect(page.getByTestId("explainer-hint")).toContainText("The mistake is on line 3: parentheses where a list needs square brackets.");
     await expect(page.getByTestId("explainer-hint")).not.toContainText("wall[-1]");
     await expect(page.getByTestId("python-last-line")).toContainText("'list' object is not callable");
 
@@ -172,7 +172,7 @@ test.describe("Intro to Python, Unit 4: Lists", () => {
     const plus = await runWrong(page, "qc3-a/make-append-read", "+ a number, not a list", 1);
     await expect(plus).toHaveAttribute("data-explainer", "lean");
     await expect(plus).toHaveAttribute("data-kind", "list-plus-item");
-    await expect(page.getByTestId("explainer-hint")).toContainText("The slip is on line 4: one item joined to a list with +.");
+    await expect(page.getByTestId("explainer-hint")).toContainText("The mistake is on line 4: one item joined to a list with +.");
     await expect(page.getByTestId("explainer-hint")).not.toContainText("marks.append(33)");
     // A check message in the Quick Check names the slip and the evidence, never the line to type.
     await setCode(page, wrongAnswer("qc3-a/make-append-read", "the fix appended"));
@@ -192,7 +192,7 @@ test.describe("Intro to Python, Unit 4: Lists", () => {
     await runWrong(page, "qc3-b/make-append-read", "square brackets for append's round ones", 1);
     await expect(page.getByTestId("explainer")).toHaveAttribute("data-explainer", "lean");
     await expect(page.getByTestId("explainer")).toHaveAttribute("data-kind", "call-needs-round-brackets");
-    await expect(page.getByTestId("explainer-hint")).toContainText("The slip is on line 6: square brackets where a call needs round ones.");
+    await expect(page.getByTestId("explainer-hint")).toContainText("The mistake is on line 6: square brackets where a call needs parentheses.");
     await expect(page.getByTestId("explainer-hint")).not.toContainText("ore_used.append(9)");
   });
 

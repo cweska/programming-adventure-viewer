@@ -14,10 +14,10 @@ export const CHECK_SEPARATOR = "::";
 const TIMEOUT_TRACEBACK = "TimeoutError: The program ran too long and was stopped.";
 
 /** Shown for a bare `assert ...` with no message. */
-export const NOT_DONE_MESSAGE = "This step is not done yet. Read it again, or open a hint.";
+export const NOT_DONE_MESSAGE = "This step isn't done yet. Read the step again, or press 💡 Help for a hint.";
 
 /** Shown when a check result is missing (should not happen; the run was cut short). */
-export const NOT_CHECKED_MESSAGE = "This step was not checked. Press Run again.";
+export const NOT_CHECKED_MESSAGE = "This step wasn't checked. Press Run again.";
 
 export function flatCheckName(checkpointId: string, checkName: string): string {
   return `${checkpointId}${CHECK_SEPARATOR}${checkName}`;
@@ -54,27 +54,27 @@ export function checkMessage(raw: string, code = "", context?: ExplainContext): 
     }
   }
   if (/^[A-Za-z_][\w.]*(Error|Exception):/.test(text)) {
-    return `Checking this step hit a problem: ${text}. Look at the values your code makes.`;
+    return `Checking this step hit a problem. Python said: ${text}. Look at the values your code makes: a number where a number belongs, and text where text belongs.`;
   }
   return text;
 }
 
 /** "Can't find `health`." plus the name the code made instead, when there is a likely one. */
 function cantFind(name: string, code: string, context?: ExplainContext): string {
-  const plain = `Can't find \`${name}\`. Make sure your code makes \`${name}\`, spelled exactly like that.`;
+  const plain = `Can't find \`${name}\`. Your code needs a line that makes \`${name}\`, spelled exactly like that.`;
   if (!code) return plain;
   const made = [...new Set(definedNames(code).map((entry) => entry.name))].filter((other) => !other.startsWith("_"));
   // `traveler = input(...)` copied from the example, in a task whose variable is `name`.
   const fromExample = context?.example ? new Set(definedNames(context.example).map((entry) => entry.name)) : new Set<string>();
   const copied = made.find((other) => fromExample.has(other) && !(context?.names ?? []).includes(other));
   if (copied) {
-    return `Can't find \`${name}\`. Your code made \`${copied}\`, the name from the example. This task uses \`${name}\`.`;
+    return `Can't find \`${name}\`. Your code made \`${copied}\`, a name from the Example. Your task uses \`${name}\`.`;
   }
   const close = closeName(name, made);
   if (close && close.toLowerCase() === name.toLowerCase()) {
-    return `Can't find \`${name}\`. Your code made \`${close}\`, but capital letters matter: use \`${name}\`.`;
+    return `Can't find \`${name}\`. Your code made \`${close}\`, but capitals count, like in a password: use \`${name}\`.`;
   }
-  if (close) return `Can't find \`${name}\`. Your code made \`${close}\`. Check the spelling: the task asks for \`${name}\`.`;
+  if (close) return `Can't find \`${name}\`. Your code made \`${close}\`. Check the spelling: your step asks for \`${name}\`.`;
   return plain;
 }
 
@@ -147,7 +147,7 @@ function quietSlipFor(code: string, raw: string, stdout: string, context?: Expla
   if (!slip) return null;
   const printedNothing = stdout.trim() === "";
   // A lean exercise (SOLO, Quick Check) names the slip and its line, never the fix, as its explainer does.
-  const hint = context?.explainer === "lean" ? `The slip is on line ${slip.line}: ${slipName(slip.kind)}. Mend it yourself, then Run again.` : slip.hint;
+  const hint = context?.explainer === "lean" ? `The mistake is on line ${slip.line}: ${slipName(slip.kind)}. Fix it yourself, then press Run again.` : slip.hint;
   switch (slip.kind) {
     case "bare-value":
       return missingName || printedNothing ? hint : null;

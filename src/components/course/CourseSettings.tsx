@@ -83,6 +83,9 @@ export function CourseSettings({ className }: { className?: string }) {
       >
         <summary>Help options</summary>
         <div className="course-settings-body">
+          <p className="course-settings-intro">
+            These settings change how every lesson looks. For a hint on a step, press 💡 Help, under the Console.
+          </p>
           <fieldset className="course-preset" data-testid="setting-preset">
             <legend>How much should Mar&apos;tu explain?</legend>
             {PRESETS.map((option) => {

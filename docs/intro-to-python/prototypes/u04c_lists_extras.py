@@ -32,12 +32,15 @@ top-level `name = [...]` / `name = (...)` lines replaced, the item of a top-leve
 `name = name + [x]` or `name += [x]` replaced, and, when `watch` names lists, a snapshot of those lists taken after
 every top-level line. The project's checks read the snapshots, so task 3 is judged on the lists right after the
 insert, even when a later line (a pop, or a slip like `counts.sort()`) changes them again.
-In the articles, the project and the challenge, messages lead with the fix, then what happened, then the evidence
-in brackets, "(Mar'tu's check tried `counts = [4, 0, 11, 0, 8]`, only inside the check.)", about 35 words or
-fewer, invented values only (2.11): the project's messages say "a part you typed", never the student's own words.
-Quick Check messages are lean (Unit 2 ruling): they name the slip and keep the evidence bracket, never the line to
-type; a near-miss name gets the lesson's "Python matches names letter for letter: you wrote `mark`, the task needs
-`marks`." The rerun data uses invented Tor-style names only (Pell, Brakka, Moss, Glug, as u04a).
+Messages follow the plain-language guide 4.3 (the strings pass, as u04a and Units 2-3): what happened to the
+student's line, then the one thing to try, then the labelled evidence last, "Mar'tu tested your code with
+`counts = [4, 0, 11, 0, 8]` in place of yours.", about 35 words or fewer, invented values only (2.11): the
+project's messages never echo the student's own words. A test run that stops says what stopped it in plain words
+(_why: "your code asks for a position the list doesn't have"), never Python's raw error. No message says "the
+starter", "brackets" for `( )`, "follow" or "typed by hand" ("typed in" instead).
+Quick Check messages are lean (Unit 2 ruling): they name the mistake and keep the evidence, never the line to
+type; a near-miss name gets the lesson's "You wrote `mark`, but the task needs `marks`. Python matches names letter
+for letter." The rerun data uses invented Tor-style names only (Pell, Brakka, Moss, Glug, as u04a).
 
 The class's slips for this unit, each proven by a wrong_answers entry:
   index from 0: project task 3 `.insert(2, ...)`, QC C1 CP3 `marks[2] = 43`, QC C3 `roster[3][1]` /
@@ -192,19 +195,27 @@ def _case(_vals, _apps=None, _watch=()):
         return globals(), _lines(), '', [], [], []
     return _rerun(_vals, _apps, _watch)
 def _ev(_vals, _apps=None, _only=None):
+    # The evidence, always last and labelled (plain-language guide 4.3.3).
     if _vals is None:
         return ''
     _bits = ['`' + _k + ' = ' + _sh(_v) + '`' for _k, _v in _vals.items() if _only is None or _k in _only]
-    _t = " (Mar'tu's check tried " + (' and '.join(_bits) if _bits else 'other lists')
+    _t = " Mar'tu tested your code with " + (' and '.join(_bits) + ' in place of yours' if _bits else 'other lists')
     for _k, _v in (_apps or {}).items():
-        _t += ', then appended `' + _sh(_v) + '`'
-    return _t + ', only inside the check.)'
+        _t += ', and a test guess, `' + _sh(_v) + '`'
+    return _t + '.'
 def _keep(_name):
-    return ('Keep the line `' + _name + " = [...]` from the starter, so Mar'tu's check can try another list there.")
-def _stop(_vals, _apps, _err, _fix='Make it work for another list too.', _only=None):
+    return ('Your code has no line `' + _name + " = [...]`, so Mar'tu can't test it with another list. Put that "
+            'line back the way it was.')
+def _why(_err):
+    # What stopped Python on the test run, in plain words (plain-language guide 4.3.6), never the raw error.
+    _k = _err.split(':')[0]
+    if _k == 'IndexError':
+        return "On Mar'tu's test, Python stopped: your code asks for a position the list doesn't have."
+    return "On Mar'tu's test, Python stopped with " + ('an ' if _k[:1] in 'AEIOU' else 'a ') + _k + '.'
+def _stop(_vals, _apps, _err, _fix='Read every value from the list, so your code works for any list.', _only=None):
     if _err.startswith('IndexError'):
         _fix = 'Count from the end with `[-1]`, so it works for a list of any length.'
-    return _fix + ' With another list, Python stopped: ' + _err + '.' + _ev(_vals, _apps, _only)
+    return _why(_err) + ' ' + _fix + _ev(_vals, _apps, _only)
 def _nums(_l):
     return [_B.int(_x) for _x in _re.findall(r'(?<![\d.])-?\d+(?!\d)(?!\.\d)', _l)]
 def _plain(_rows):
@@ -292,11 +303,11 @@ def _lost(_w, _what='list'):
     # Lean (Quick Check): a near-miss name gets the lesson's sentence; otherwise the slip, with no line to type.
     _n = _near(_w)
     if _n:
-        return 'Python matches names letter for letter: you wrote `' + _n[0] + '`, the task needs `' + _w + '`.'
-    return ("Mar'tu's check found no `" + _w + ' = ...` line, so it has no ' + _what + ' to try.')
+        return 'You wrote `' + _n[0] + '`, but the task needs `' + _w + '`. Python matches names letter for letter.'
+    return ('Your code has no line that starts `' + _w + " = `, so Mar'tu has no " + _what + ' to test.')
 def _lstop(_vals, _apps, _err, _only=None):
     # Lean _stop: what stopped Python, and the evidence. No fix.
-    return 'With another list, Python stopped: ' + _err + '.' + _ev(_vals, _apps, _only)
+    return _why(_err) + _ev(_vals, _apps, _only)
 def _call(_fn, _a):
     # Call a recipe with a fresh copy of a list, quietly: (what it handed back, what it printed, the error).
     _keep_out = _sys.stdout
@@ -379,8 +390,9 @@ GLOSSARY = [
         term="tuple",
         aliases=["tuples"],
         plain=(
-            "Like a list that can't change. Round brackets instead of square ones. You read it by position, like a "
-            "list, but you can't add, remove or swap its items."
+            "A few values that stay together, in order, and can't change, like a point (3, 8) in math class. It "
+            "uses parentheses `( )`, not square brackets. You read it by position, like a list, but you can't add, "
+            "remove or swap its items."
         ),
         example='hero = ("Lucky", 26)',
     ),
@@ -388,19 +400,19 @@ GLOSSARY = [
         term="zip()",
         aliases=["zip"],
         plain=(
-            "Pairs up two lists, item by item: first with first, second with second. Each pair is a tuple. Wrap it "
-            "in `list()` to see the pairs."
+            "A tool that pairs up two lists, item by item, like the teeth of a zipper: first with first, second with "
+            "second. Each pair is a tuple. Put it inside `list()` to see the pairs."
         ),
-        example="list(zip(heroes, manas))",
+        example="list(zip(fruits, prices))",
     ),
     dict(
         term="parallel lists",
         aliases=["parallel list", "lists in step"],
         plain=(
-            "Two lists kept in step: item 0 of one goes with item 0 of the other, and so on. Change one, and you "
-            "must change the other the same way."
+            "Two lists that line up, like the two columns of a table in math class: item 0 of one goes with item 0 "
+            "of the other, and so on. When you change one, change the other the same way."
         ),
-        example='parts = ["lens", "coil"]\ncounts = [3, 7]',
+        example='foods = ["eggs", "milk"]\namounts = [12, 1]',
     ),
 ]
 
@@ -437,15 +449,20 @@ CABIN_MADE = chk(
     "cabin is a tuple: 12 across, 5 down",
     r'''
 _g = globals()
-assert 'cabin' in _g, 'Keep the line `cabin = ...` from the starter, and change its brackets.'
+assert 'cabin' in _g, ("Python can't find `cabin`. Put back line 4, `cabin = [12, 5]`, then change its square "
+                       'brackets to parentheses.')
 _c = _g['cabin']
 _k = type(_c).__name__
-assert _k != 'list', '`cabin` is still a list: square brackets. Use round brackets for a tuple: `cabin = (12, 5)`.'
-assert _k != 'int', '`(12)` on its own is just a number. A tuple needs a comma between its items: `(12, 5)`.'
-assert _k == 'tuple', 'Make `cabin` a tuple: two numbers between round brackets, `(12, 5)`.'
-assert not [_x for _x in _c if type(_x).__name__ == 'str'], 'Take the quotes off: 12 and 5 are numbers.'
-assert _c != (5, 12), 'Across comes first, then down: `(12, 5)`.'
-assert _c == (12, 5), 'Keep the two numbers, 12 across and 5 down: `cabin = (12, 5)`. `cabin` holds ' + _shn(_c) + '.'
+assert _k != 'list', ('`cabin` is still a list, because it has square brackets. Use parentheses to make a tuple: '
+                      '`cabin = (12, 5)`.')
+assert _k != 'int', ('`cabin` holds one number. With no comma, `(12)` is math parentheses around 12, not a tuple. '
+                     'Put a comma between the two items: `(12, 5)`.')
+assert _k == 'tuple', "`cabin` isn't a tuple yet. Put the two numbers between parentheses: `cabin = (12, 5)`."
+assert not [_x for _x in _c if type(_x).__name__ == 'str'], ('`cabin` holds text, because of the quotes. Take the '
+                                                            'quotes off: 12 and 5 are numbers.')
+assert _c != (5, 12), 'The two numbers are swapped. Across comes first, then down: `(12, 5)`.'
+assert _c == (12, 5), ("`cabin` holds the wrong numbers. Use 12 across and 5 down: `cabin = (12, 5)`. Right now it "
+                       'holds ' + _shn(_c) + '.')
 ''',
 )
 
@@ -455,26 +472,31 @@ CABIN_UNPACKED = chk(
 _g = globals()
 _left = [_m for _m in ('row', 'seat', 'door') if _m in _g]
 assert not (_left and not ('across' in _g and 'down' in _g)), (
-    '`' + (_left[0] if _left else '') + '` is a name from the example. This task' + chr(39)
-    + 's names are `across` and `down`: `across, down = cabin`.')
-assert 'across' in _g and 'down' in _g, 'Make `across` and `down` in one line: `across, down = cabin`.'
+    '`' + (_left[0] if _left else '') + "` is a name from the Example. This step's names are `across` and `down`: "
+    '`across, down = cabin`.')
+assert 'across' in _g and 'down' in _g, ("Python can't find `across` and `down` yet. Make both in one line: "
+                                         '`across, down = cabin`.')
 for _vals in (None, __OTHER__):
     _ns, _rows, _err, _miss, _seen, _snaps = _case(_vals)
-    assert not _miss, 'Keep the line `cabin = (12, 5)`, so Mar' + chr(39) + 'tu' + chr(39) + 's check can try another spot there.'
+    assert not _miss, ("Your code has no line `cabin = (12, 5)`, so Mar'tu can't test it with another spot. Make "
+                       '`cabin` with that one line.')
     _c = _ns.get('cabin')
     _a, _d = _ns.get('across'), _ns.get('down')
     _two = type(_c).__name__ == 'tuple' and _B.len(_c) == 2
     if _two and _a == _c[0] and _d == _c[1]:
         continue
-    assert not _err, _stop(_vals, None, _err, 'Make it work for another spot too.')
-    assert type(_a).__name__ not in ('tuple', 'list'), ('`across` holds the whole tuple. Put two names on the left, '
-                                                        'and Python hands out the items: `across, down = cabin`.')
-    assert not (_two and _a == _c[1] and _d == _c[0]), ('Across comes first: `across, down = cabin`. Your two names '
-                                                        'are the other way round.' + _ev(_vals))
+    assert not _err, _stop(_vals, None, _err, 'Read both numbers from `cabin`, so your code works for any spot.')
+    assert type(_a).__name__ not in ('tuple', 'list'), ('`across` holds the whole tuple, because it is the only name '
+                                                        'on the left of `=`. Put both names on the left, and Python '
+                                                        'hands out the items: `across, down = cabin`.')
+    assert not (_two and _a == _c[1] and _d == _c[0]), ('Your two names are in the wrong order, so `across` got the '
+                                                        'down number. Across comes first: `across, down = cabin`.'
+                                                        + _ev(_vals))
     assert not (_vals is not None and _a == _g['across'] and _d == _g['down']), (
-        'Read them from `cabin`: `across, down = cabin`. `across` stayed ' + _shn(_a, 'the same') + ', typed by hand.'
-        + _ev(_vals))
-    assert False, 'Unpack `cabin` into `across` and `down`: `across, down = cabin`.' + _ev(_vals)
+        'You typed the numbers in, so `across` stayed ' + _shn(_a, 'the same') + " when Mar'tu changed `cabin`. "
+        'Read both from `cabin`: `across, down = cabin`.' + _ev(_vals))
+    assert False, ("`across` and `down` don't hold the two items of `cabin`. Unpack it: `across, down = cabin`."
+                   + _ev(_vals))
 ''',
     OTHER=CABIN_OTHER,
 )
@@ -491,14 +513,17 @@ for _vals in (None, __OTHER__):
     _at = [_i for _i, _x in _B.enumerate(_got) if _x == _want[0]]
     if _at and _want[1] in _got[_at[0] + 1:]:
         continue
-    assert not _err, _stop(_vals, None, _err, 'Make it work for another spot too.')
-    assert not [_l for _l in _rows if _l.startswith('(')], ('Print the two numbers with their names, `across` and '
-                                                            '`down`. Your line shows the whole tuple.')
-    assert _got, 'Print `across`, then `down`: `print(across, down)`.'
-    assert not (_vals is not None and _got == _own), ('Print the variables, `across` and `down`, so the line follows '
-                                                     'the map. Your line shows numbers typed by hand.' + _ev(_vals))
-    assert not (_want[1] in _got and _want[0] in _got), 'Print across first, then down.'
-    assert False, 'Print both: `across`, then `down`. Your program printed ' + _B.str(_got) + '.' + _ev(_vals)
+    assert not _err, _stop(_vals, None, _err, 'Read both numbers from `cabin`, so your code works for any spot.')
+    assert not [_l for _l in _rows if _l.startswith('(')], ('Your line shows the whole tuple, with its parentheses. '
+                                                            'Print the two names instead: `print(across, down)`.')
+    assert _got, 'No number shows in the Console yet. Print `across`, then `down`: `print(across, down)`.'
+    assert not (_vals is not None and _got == _own), ("Your line shows numbers you typed in, so they stayed the same "
+                                                     "when Mar'tu changed `cabin`. Print the names instead: "
+                                                     '`print(across, down)`.' + _ev(_vals))
+    assert not (_want[1] in _got and _want[0] in _got), ('Your line shows down first. Print across first, then '
+                                                         'down: `print(across, down)`.')
+    assert False, ("Your line doesn't show `across`, then `down`. Write `print(across, down)`. The numbers it "
+                   'showed: ' + _B.str(_got) + '.' + _ev(_vals))
 ''',
     OTHER=CABIN_OTHER,
 )
@@ -507,16 +532,20 @@ CABIN_ON_THE_MAP = dict(
     id="cabin-on-the-map",
     title="A spot on the map",
     martu=(
-        "A spot on the map of Tor is two numbers: across, then down. My cabin sits at 12 across, 5 down. The "
-        "cabin does not move, so a [[tuple]] fits, yes?\n"
-        "Round brackets make a tuple. Two names on the left of `=` unpack it: each name takes one item, in order."
+        "A [[tuple]] is a few values that stay together, in order, and can't change. In math class, a point on a "
+        "graph is a pair like (3, 8): across first, then up. A tuple is that kind of pair. It uses parentheses "
+        "`( )`, not square brackets: `door = (3, 8)`.\n"
+        "*Unpacking* gives each item its own name, in one line. `row, seat = door` puts 3 in `row` and 8 in "
+        "`seat`. Math class says it this way: if (x, y) is (3, 8), then x is 3 and y is 8.\n"
+        "Here the parentheses make a tuple. They don't group math, the way they do in PEMDAS. My cabin sits at 12 "
+        "across, 5 down on the map of Tor, and the cabin does not move, yes?"
     ),
     example="door = (3, 8)\nrow, seat = door\nprint(row)\nprint(seat)\n",
     example_output="3\n8",
     introduces=["node:Tuple"],
     names=["cabin", "across", "down"],
     predict=dict(
-        q="A tuple can't change. Before you press Run: what happens here?",
+        q="`bag` is a tuple, and a tuple can't change. Before you press Run: what will this code do?",
         code='bag = ("rope", "lamp")\nbag.append("glug")\nprint(bag)\n',
         choices=[
             "('rope', 'lamp', 'glug')",
@@ -525,48 +554,59 @@ CABIN_ON_THE_MAP = dict(
         ],
         answer=1,
         explain=(
-            "Round brackets made a tuple, and a tuple can't grow, so it has no `.append()`. For a list that grows, "
-            "use square brackets: `[\"rope\", \"lamp\"]`."
+            "The parentheses made `bag` a tuple. A tuple can't grow, so it has no `.append()`, and Python stops with "
+            "an error. For a list that can grow, use square brackets: `[\"rope\", \"lamp\"]`."
         ),
     ),
-    pair_talk="Pair talk: before step 2, tell your partner what `across` and `down` will hold. Then each of you checks on your own screen.",
+    pair_talk="Pair talk: before Step 2, tell your partner which number `across` will hold, and which `down` will hold.",
     starter=CABIN_STARTER,
     checkpoints=[
         dict(
             id="make-a-tuple",
-            text="Change `cabin` into a tuple: round brackets instead of square ones.",
+            text=(
+                "On line 4, change the square brackets `[ ]` to parentheses `( )`. Line 4 then reads "
+                "`cabin = (12, 5)`, and `cabin` is a tuple."
+            ),
             dictated=True,
             hints=[
-                "Look at line 4. Square brackets make a list. Which brackets make a tuple?",
-                "With other names: `door = (3, 8)` is a tuple. Same numbers, round brackets.",
-                "Write `cabin = (12, 5)` on line 4.",
+                "Look at line 4, `cabin = [12, 5]`. Square brackets `[ ]` make a list. Which marks make a tuple?",
+                "A tuple uses parentheses. `door = (3, 8)` is a tuple of two numbers. Keep the comma between them.",
+                "Type `(` in place of `[`, and `)` in place of `]`. Line 4 becomes `cabin = (12, 5)`.",
             ],
             checks=[CABIN_MADE],
-            pass_line="Mar'tu: Twelve across, five down. It stays put, like the cabin.",
+            pass_line="`cabin` is a tuple now. Mar'tu: Twelve across, five down. It can't move, like my cabin.",
         ),
         dict(
             id="unpack-it",
-            text="Unpack `cabin` into `across` and `down`, in one line.",
+            text=(
+                "Under the `# 2.` note, unpack `cabin` into two names, `across` and `down`, in one line. `across` "
+                "gets item 0 and `down` gets item 1."
+            ),
             dictated=False,
             hints=[
-                "Look under task 2. Two names on the left, one tuple on the right. Python hands out the items in order.",
-                "With other names: `row, seat = door` puts 3 in `row` and 8 in `seat`.",
-                "Write `across, down = cabin` under task 2.",
+                "Look at the empty line under the `# 2.` note. Put two names on the left of `=` and the tuple on the "
+                "right. Which name should get item 0?",
+                "Unpacking hands out the items in order, like dealing cards. `row, seat = door` puts 3 in `row` and 8 "
+                "in `seat`.",
+                "Write `across, down = cabin` under `# 2.`",
             ],
             checks=[CABIN_UNPACKED],
-            pass_line="Gearshift: Visor dims. Two names, two numbers. Clean.",
+            pass_line="Two names, two numbers: `across` is 12 and `down` is 5. Gearshift: Visor dims. Clean.",
         ),
         dict(
             id="print-the-spot",
-            text="Print `across`, then `down`.",
+            text=(
+                "Under the `# 3.` note, type `print(across, down)` and press Run. You should see `12 5` in the "
+                "Console."
+            ),
             dictated=True,
             hints=[
-                "Look under task 3. Use the two names you just made, in one `print` with a comma between them.",
-                "With other names: `print(row, seat)` shows `3 8`.",
-                "Write `print(across, down)` under task 3.",
+                "Look at the last line, under the `# 3.` note. Use the two names you made in Step 2.",
+                "A comma in `print` puts a space between two values: `print(row, seat)` shows `3 8`.",
+                "Write `print(across, down)` under `# 3.`",
             ],
             checks=[CABIN_SHOWN],
-            pass_line="Lucky: Twelve across. I could find that. Probably.",
+            pass_line="The Console shows the spot: 12 across, 5 down. Lucky: I could find that. Probably.",
         ),
     ],
     solution=CABIN_SOLUTION,
@@ -581,50 +621,54 @@ CABIN_ON_THE_MAP = dict(
             label="Two seats, bolted down",
             text=(
                 "```text\ncabin = (12, 5)\n         |   |\n    across   down\n```\n"
-                "A tuple is a row of seats bolted to the floor. You can read who sits where. You can't add a seat."
+                "A tuple is like a row of seats bolted to the floor. You can read who sits in each seat, but you can't "
+                "add a seat or take one away."
             ),
         ),
         dict(
             angle="everyday",
             label="A street address",
             text=(
-                "A street address is a house number, then a street. Always both, always in that order, and it "
-                "doesn't change when you visit. That is a tuple's job."
+                "A street address is a house number, then a street name. It always has both, always in that order, "
+                "and it doesn't change when you visit. A tuple works the same way."
             ),
         ),
         dict(
             angle="step-by-step",
             text=(
-                "1. `cabin = (12, 5)`: round brackets, a comma between.\n"
-                "2. `across, down = cabin`: `across` takes item 0, `down` takes item 1.\n"
+                "1. `cabin = (12, 5)`: parentheses, with a comma between the numbers.\n"
+                "2. `across, down = cabin`: `across` gets item 0, and `down` gets item 1.\n"
                 "3. `print(across, down)` shows `12 5`."
             ),
         ),
         dict(
             angle="shorter",
-            text="`( )` makes a tuple that can't change. `a, b = pair` unpacks it, in order.",
+            text="`( )` makes a tuple, which can't change. `row, seat = door` unpacks it, in order.",
         ),
     ],
     bonus=dict(
         by="gearshift",
         title="The far corner",
         text=(
-            "Gearshift wants the spot one step further across. On a new line, print `across + 1`, then `down`."
+            "Gearshift wants the spot one step further across. On a new line at the bottom, print `across + 1`, "
+            "then `down`, with a comma between them."
         ),
-        hints=["Add 1 to `across` only. `down` stays as it is.", "Write `print(across + 1, down)` at the bottom."],
+        hints=["Only `across` changes: add 1 to it. `down` stays as it is.",
+               "Write `print(across + 1, down)` at the bottom."],
         checks=[
             chk(
                 "one step further across is printed",
                 r'''
 for _vals in (None, __OTHER__):
     _ns, _rows, _err, _miss, _seen, _snaps = _case(_vals)
-    assert not _err, _stop(_vals, None, _err, 'Make it work for another spot too.')
+    assert not _err, _stop(_vals, None, _err, 'Read both numbers from `cabin`, so your code works for any spot.')
     _c = _ns.get('cabin')
     _want = [_c[0] + 1, _c[1]]
     # one line or two: across + 1 somewhere, then down after it
     _got = _B.sum([_nums(_l) for _l in _plain(_rows)], [])
     _ok = [_i for _i, _x in _B.enumerate(_got) if _x == _want[0] and _want[1] in _got[_i + 1:]]
-    assert _ok, 'Print `across + 1`, then `down`: `print(across + 1, down)`.' + _ev(_vals)
+    assert _ok, ("No line shows `across + 1`, then `down`. Add `print(across + 1, down)` at the bottom."
+                 + _ev(_vals))
 ''',
                 OTHER=CABIN_OTHER,
             )
@@ -635,11 +679,14 @@ for _vals in (None, __OTHER__):
         module="friends-in-low-places",
         part="map-of-tor",
         why=(
-            "You looked at the map of Tor in the campaign. A spot on a map is always two numbers, in the same order. "
-            "That fixed shape is a tuple's job."
+            "You looked at the map of Tor in the campaign. A spot on a map is always two numbers, in the same order, "
+            "and it doesn't change. That fits a tuple."
         ),
     ),
-    takeaway="`cabin = (12, 5)` is a tuple: read it like a list, but it can't change. `across, down = cabin` unpacks it.",
+    takeaway=(
+        "`cabin = (12, 5)` is a tuple: you read it like a list, but it can't change. `across, down = cabin` gives "
+        "each item its own name."
+    ),
     wrong_answers=[
         dict(why="the starter (still a list: square brackets vs round ones)", code=CABIN_STARTER, fails_at=1,
              message_contains="still a list"),
@@ -651,18 +698,18 @@ for _vals in (None, __OTHER__):
         dict(why="the example's names copied (row, seat)", code=_cabin(unpack="row, seat = cabin", show="print(row, seat)"),
              fails_at=2, message_contains="from the example"),
         dict(why="the values typed by hand", code=_cabin(unpack="across, down = 12, 5"), fails_at=2,
-             message_contains="typed by hand"),
+             message_contains="typed the numbers in"),
         dict(why="one name takes the whole tuple", code=_cabin(unpack="across = cabin\ndown = cabin", show=None),
              fails_at=2, message_contains="whole tuple"),
         dict(why="the names the other way round", code=_cabin(unpack="down, across = cabin"), fails_at=2,
-             message_contains="other way round"),
+             message_contains="wrong order"),
         dict(why="three names for two items", code=_cabin(unpack="across, down, up = cabin"), fails_at=0,
              message_contains="not enough values"),
         dict(why="read by position, counting from 1 (IndexError)",
              code=_cabin(unpack="across = cabin[1]\ndown = cabin[2]"), fails_at=0,
              message_contains="tuple index out of range"),
         dict(why="the numbers typed in the print", code=_cabin(show="print(12, 5)"), fails_at=3,
-             message_contains="typed by hand"),
+             message_contains="typed in"),
         dict(why="the whole tuple printed", code=_cabin(show="print(cabin)"), fails_at=3, message_contains="whole tuple"),
         dict(why="down printed first", code=_cabin(show="print(down, across)"), fails_at=3,
              message_contains="across first"),
@@ -680,26 +727,34 @@ for _vals in (None, __OTHER__):
 TUPLES_ARTICLE = dict(
     kind="article",
     id="tuples",
-    title="Tuples: Pairs That Stay Put",
+    title="Tuples: Pairs That Can't Change",
     optional=True,
     minutes=10,
-    summary="A tuple is a list that can't change: round brackets, read by position, and unpacked into names.",
+    summary=(
+        "A tuple is like a list that can't change, written with parentheses: `(12, 5)`. Read it by position, or "
+        "give each item its own name."
+    ),
     introduces=["node:Tuple"],
     body=(
-        "Some things come in a fixed shape. A spot on the map of Tor is two numbers: across, then down. A hero's "
-        "row is a name, then a mana number.\n"
-        "For these, Python has the [[tuple]]. It is like a list, with round brackets instead of square ones:\n"
+        "Some values come in pairs that always go together. In math class, a point on a graph is a pair like "
+        "(3, 8): across first, then up. The order matters, and both numbers belong to the same point. A spot on "
+        "the map of Tor works the same way: 12 across, 5 down.\n"
+        "For pairs like these, Python has the [[tuple]]. It is like a list, but it uses parentheses `( )` instead "
+        "of square brackets `[ ]`:\n"
         "```python\nspot = (12, 5)\n```\n"
-        "You read a tuple like a list. `spot[0]` is 12, `spot[-1]` is 5, and `len(spot)` is 2.\n"
-        "But a tuple can't change. `spot[0] = 3` stops Python with a [[TypeError]]: a tuple *does not support item "
-        "assignment*. And a tuple has no `.append()` at all.\n"
-        "Why want a list you can't change? A tuple says: these belong together, in this order, and they stay put. "
-        "Nobody changes one by mistake.\n"
-        "Watch your brackets. `[48, 47]` is a list. `(48, 47)` is a tuple. If Python says a tuple *has no "
-        "attribute 'append'*, you used round brackets where square ones belong.\n"
-        "One more trick, called unpacking. Two names on the left take the items in order:\n"
+        "You read a tuple the same way you read a list. `spot[0]` is 12, `spot[-1]` is 5, and `len(spot)` is 2.\n"
+        "But a tuple can't change. `spot[0] = 3` makes Python stop with a [[TypeError]] that says a tuple *does "
+        "not support item assignment*: you can't put a new item in. A tuple has no `.append()` either.\n"
+        "Why use a list you can't change? A tuple says: these values belong together, in this order. Nobody "
+        "changes one by mistake.\n"
+        "Check which marks you typed. `[48, 47]` is a list. `(48, 47)` is a tuple. If Python says a tuple *has no "
+        "attribute 'append'*, you typed parentheses where square brackets belong. Here, parentheses make a tuple. "
+        "They don't group math, the way they do in PEMDAS.\n"
+        "One more trick: *unpacking*. It gives each item its own name, in one line. Put two names on the left of "
+        "`=`, and they get the items in order:\n"
         "```python\nname, mana = (\"Lucky\", 26)\n```\n"
-        "Now `name` holds `\"Lucky\"` and `mana` holds 26."
+        "Now `name` holds `\"Lucky\"` and `mana` holds 26. It's like math class saying: if (x, y) is (3, 8), then x "
+        "is 3 and y is 8."
     ),
     examples=[
         dict(code="spot = (12, 5)\nprint(spot[0])\nprint(spot[-1])\nprint(len(spot))\n", output="12\n5\n2"),
@@ -743,7 +798,7 @@ def _colors(make="pairs = list(zip(heroes, colors))", last="print(pairs[-1])"):
 COLORS_SOLUTION = _colors()
 COLORS_OTHER = {"heroes": ["Pell", "Brakka", "Moss"], "colors": ["green", "grey", "red"]}
 # The evidence bracket for this try-it names the other lists in words (both lists in code would be long).
-COLORS_EV = " (Mar'tu's check tried 3 other heroes and colors, only inside the check.)"
+COLORS_EV = " Mar'tu tested your code with test lists of 3 other heroes and their colors."
 
 PAIRS_MADE = chk(
     "pairs holds each hero with their color",
@@ -756,26 +811,32 @@ for _vals in (None, __OTHER__):
     _p = _ns.get('pairs')
     if _lists and _p == _B.list(_B.zip(_h, _c)):
         continue
-    assert not (_err and not _uses('call:zip')), ('Make the pairs with `zip()`: `list(zip(heroes, colors))`. It '
-                                                 'pairs lists of any length, first with first.' + __EV__)
+    assert not (_err and not _uses('call:zip')), ('Python stopped on test lists of another length. Make the pairs '
+                                                 'with `zip()`, which works for lists of any length: '
+                                                 '`list(zip(heroes, colors))`.' + __EV__)
     assert not _err, _stop(None, None, _err) + __EV__
-    assert 'pairs' in _ns, 'Keep the line `pairs = ` from the starter, and put `list(zip(heroes, colors))` after the `=`.'
-    assert type(_p).__name__ != 'zip', ('Wrap it in `list()`: `list(zip(heroes, colors))`. On its own, `zip()` hands '
-                                        'back a zip object, not pairs you can see.')
-    assert _p != [], "`pairs` is still the starter's `[]`. Make it `list(zip(heroes, colors))`."
-    assert not (_lists and _p == [_h, _c]), ('`[heroes, colors]` sets the two whole lists side by side. `zip()` makes '
-                                             'pairs: the first hero with the first color, and so on.')
-    assert not (_lists and _p == _B.list(_B.zip(_c, _h))), 'Heroes first, then colors: `zip(heroes, colors)`.'
-    assert not (_lists and _p == _B.list(_B.zip(_h))), 'Hand `zip()` both lists, heroes first: `zip(heroes, colors)`.'
+    assert 'pairs' in _ns, ("Python can't find `pairs`. Put back line 6, `pairs = []`, and change it to "
+                            '`pairs = list(zip(heroes, colors))`.')
+    assert type(_p).__name__ != 'zip', ('`pairs` holds a zip, not pairs you can see. Put `zip()` inside `list()`: '
+                                        '`list(zip(heroes, colors))`.')
+    assert _p != [], '`pairs` is still the empty list `[]`. Change line 6 to `pairs = list(zip(heroes, colors))`.'
+    assert not (_lists and _p == [_h, _c]), ('`[heroes, colors]` puts the two whole lists side by side, as one list of '
+                                             'two lists. Use `list(zip(heroes, colors))` to pair the first hero with '
+                                             'the first color, and so on.')
+    assert not (_lists and _p == _B.list(_B.zip(_c, _h))), ('Your pairs start with the color. Put heroes first, then '
+                                                            'colors: `zip(heroes, colors)`.')
+    assert not (_lists and _p == _B.list(_B.zip(_h))), ('`zip()` got only one list, so each pair has one item. Hand it '
+                                                        'both lists, heroes first: `zip(heroes, colors)`.')
     assert not _typed_list('pairs'), (
-        'Zip them from the lists: `list(zip(heroes, colors))`, so the pairs follow the lists. `pairs` holds pairs '
-        'typed by hand.')
-    assert _uses('call:zip'), ('Make the pairs with `zip()`: `list(zip(heroes, colors))`. It pairs lists of any '
-                               'length, first with first.' + (__EV__ if _vals is not None else ''))
+        "You typed the pairs in, so they won't change to match when the lists change. Make them from the lists: "
+        '`list(zip(heroes, colors))`.')
+    assert _uses('call:zip'), ("`pairs` isn't made with `zip()`, so it doesn't fit lists of another length. Make the "
+                               'pairs with `zip()`: `list(zip(heroes, colors))`.' + (__EV__ if _vals is not None else ''))
     assert not (_vals is not None and _p == globals().get('pairs')), (
-        'Zip them from the lists: `list(zip(heroes, colors))`. `pairs` stayed the same: pairs typed by hand.'
-        + (__EV__ if _vals is not None else ''))
-    assert False, 'Make `pairs` with `list(zip(heroes, colors))`.' + (__EV__ if _vals is not None else '')
+        "`pairs` stayed the same when Mar'tu changed the lists, so the pairs are typed in. Make them from the lists: "
+        '`list(zip(heroes, colors))`.' + (__EV__ if _vals is not None else ''))
+    assert False, ("`pairs` doesn't hold each hero with their color. Make it with `list(zip(heroes, colors))`."
+                   + (__EV__ if _vals is not None else ''))
 ''',
     OTHER=COLORS_OTHER, EV=COLORS_EV,
 )
@@ -794,13 +855,17 @@ for _vals in (None, __OTHER__):
         continue
     assert not _err, _stop(None, None, _err) + __EV__
     assert not [_l for _l in _p if _first[0] in _l and _first[1] in _l], (
-        'That is the first pair. The last one is at the end: count from the end, `pairs[-1]`.' + (__EV__ if _vals is not None else ''))
-    assert not [_l for _l in _p if _want[0] in _l], 'Print the whole pair, hero and color: `pairs[-1]`.'
+        'Your line shows the first pair, because position 0 is the first. For the last pair, count from the end: '
+        '`print(pairs[-1])`.' + (__EV__ if _vals is not None else ''))
+    assert not [_l for _l in _p if _want[0] in _l], ('Your line shows the hero but not the color. Print the whole '
+                                                     'pair: `print(pairs[-1])`.')
     assert not (_vals is not None and _p and _p == _own), (
-        'Read it from `pairs`: `pairs[-1]`, so it follows the lists. Your line shows a pair typed by hand.' + (__EV__ if _vals is not None else ''))
-    assert _p, ('Print one pair on its own, the last: `pairs[-1]`. Your program prints only lists, in square '
-                'brackets.' + (__EV__ if _vals is not None else ''))
-    assert False, 'Print the last pair in `pairs`: count from the end, `pairs[-1]`.' + (__EV__ if _vals is not None else '')
+        "You typed the pair in, so it stayed the same when Mar'tu changed the lists. Read it from `pairs`: "
+        '`print(pairs[-1])`.' + (__EV__ if _vals is not None else ''))
+    assert _p, ('Your code prints only lists, in square brackets. Print one pair on its own, the last one: '
+                '`print(pairs[-1])`.' + (__EV__ if _vals is not None else ''))
+    assert False, ("Your line doesn't show the last pair of every list. Count from the end: `print(pairs[-1])`."
+                   + (__EV__ if _vals is not None else ''))
 ''',
     OTHER=COLORS_OTHER, EV=COLORS_EV,
 )
@@ -809,16 +874,18 @@ SPELL_COLORS = dict(
     id="spell-colors",
     title="Spell colors",
     martu=(
-        "Every hero's magic has a color. Oogrish's is gold. Gearshift's is fire orange. Two lists, kept in step, "
-        "yes? The first hero goes with the first color.\n"
-        "[[zip()]] pairs them up for you. Wrap it in `list()`, so you can see the pairs."
+        "[[zip()]] pairs up two lists, item by item, like the zipper on a coat: the first tooth on one side meets "
+        "the first tooth on the other. Each pair is a tuple. Put `zip()` inside `list()` to see the pairs, the way "
+        "you did with `list(range(1, 7))`: `list(zip(coins, values))` gives `[('copper', 1), ('brass', 5)]`.\n"
+        "Every hero's magic has a color. Oogrish's is gold, and Gearshift's is fire orange. Your `heroes` and "
+        "`colors` lists are in the same order, so the first hero goes with the first color, yes?"
     ),
     example='coins = ["copper", "brass"]\nvalues = [1, 5]\nprint(list(zip(coins, values)))\n',
     example_output="[('copper', 1), ('brass', 5)]",
     introduces=["call:zip"],
     names=["heroes", "colors", "pairs"],
     predict=dict(
-        q="One list is longer. Before you press Run: what will this print?",
+        q="`hats` has one more item than `names`. Before you press Run: what will this print?",
         code='names = ["Pell", "Brakka"]\nhats = ["red", "blue", "green"]\nprint(list(zip(names, hats)))\n',
         choices=[
             "[('Pell', 'red'), ('Brakka', 'blue'), ('green',)]",
@@ -828,37 +895,43 @@ SPELL_COLORS = dict(
         ],
         answer=2,
         explain=(
-            "`zip()` makes pairs until the shorter list runs out. `\"green\"` has no partner, so it is left out. "
-            "No error."
+            "`zip()` stops making pairs when the shorter list runs out, like a zipper with one side shorter. "
+            "`\"green\"` has no partner, so it is left out, and there is no error."
         ),
     ),
-    pair_talk="Pair talk: before you run step 1, tell your partner what `pairs[0]` will be. Then each of you checks on your own screen.",
+    pair_talk="Pair talk: before you press Run in Step 1, tell your partner what `pairs[0]` will be.",
     starter=COLORS_STARTER,
     checkpoints=[
         dict(
             id="zip-them",
-            text="Make `pairs` with `list(zip(heroes, colors))`.",
+            text=(
+                "On line 6, change `pairs = []` to `pairs = list(zip(heroes, colors))`. Press Run: the Console "
+                "shows four pairs, each in parentheses."
+            ),
             dictated=True,
             hints=[
-                "Look at the `pairs = []` line. `zip()` takes both lists, heroes first. `list()` around it turns "
-                "the zip into pairs you can see.",
-                "With other names: `list(zip(coins, values))` pairs each coin with its value.",
+                "Look at line 6, `pairs = []`. What goes after the `=`? `zip()` needs both lists, `heroes` first.",
+                "`list(zip(coins, values))` pairs each coin with its value. `list()` around `zip()` lets you see "
+                "the pairs.",
                 "Write `pairs = list(zip(heroes, colors))` in place of `pairs = []`.",
             ],
             checks=[PAIRS_MADE],
-            pass_line="Bomb Shell: Teal. Mine. Logged.",
+            pass_line="Four pairs, each hero with a color. Bomb Shell: Teal. Mine. Logged.",
         ),
         dict(
             id="last-pair",
-            text="Print the last pair in `pairs`.",
+            text=(
+                "Under the `# 2.` note, print the last pair in `pairs`. Read it so it works for a list of any length."
+            ),
             dictated=False,
             hints=[
-                "Look under task 2. The last pair is at the end of `pairs`. Count from the end.",
-                "With other names: `print(steps[-1])` shows the last item of `steps`, whatever its length.",
-                "Write `print(pairs[-1])` under task 2.",
+                "Look at the empty line under the `# 2.` note. Which position is the last item, however long the "
+                "list is?",
+                "A minus counts from the end: `print(steps[-1])` shows the last item of `steps`, however long it is.",
+                "Write `print(pairs[-1])` under `# 2.`",
             ],
             checks=[LAST_PAIR],
-            pass_line="Lucky: Silver. Obviously. It goes with the armor.",
+            pass_line="You printed the last pair. Lucky: Silver. It goes with the armor.",
         ),
     ],
     solution=COLORS_SOLUTION,
@@ -882,13 +955,13 @@ SPELL_COLORS = dict(
             label="Socks from the wash",
             text=(
                 "Two piles from the wash: left socks and right socks, in the same order. You take one from each "
-                "pile and roll them into a pair. `zip()` does that, pile by pile."
+                "pile and roll them into a pair. `zip()` does that, one from each list."
             ),
         ),
         dict(
             angle="step-by-step",
             text=(
-                "1. `zip(heroes, colors)` makes the pairs, but hides them.\n"
+                "1. `zip(heroes, colors)` makes the pairs, but you can't see them yet.\n"
                 "2. `list(...)` around it shows them: `[('Oogrish', 'gold'), ...]`.\n"
                 "3. `pairs[-1]` is the last pair."
             ),
@@ -897,16 +970,17 @@ SPELL_COLORS = dict(
             angle="campaign",
             label="You've seen this",
             text=(
-                "In the campaign, Mar'tu's four replies sat in four boxes, and the game matched `\"option 1\"` to "
-                "the first one. Two lists and a `zip()` do that matching."
+                "In the campaign, you wrote Mar'tu's four replies in four boxes, and the game matched `\"option 1\"` "
+                "to the first reply. Two lists and a `zip()` can do that matching."
             ),
         ),
     ],
     bonus=dict(
         by="lucky",
-        title="What's in it for me?",
-        text="Lucky wants his color only. On a new line, print just the color from the last pair.",
-        hints=["A pair is a tuple: the hero is `[0]`, the color is `[1]`.", "Write `print(pairs[-1][1])` at the bottom."],
+        title="Lucky's color",
+        text="Lucky wants only his color. On a new line at the bottom, print only the color from the last pair.",
+        hints=["A pair is a tuple. Read it by position: the hero is item `[0]`, and the color is item `[1]`.",
+               "Write `print(pairs[-1][1])` at the bottom."],
         checks=[
             chk(
                 "the last color is printed on its own",
@@ -916,7 +990,7 @@ for _vals in (None, __OTHER__):
     assert not _err, _stop(_vals, None, _err)
     _want = _ns['colors'][_B.len(_ns['heroes']) - 1]
     assert [_l for _l in _plain(_rows) if _l.rstrip('.!') == _want], (
-        'Print only the color from the last pair: `pairs[-1][1]`.' + _ev(_vals))
+        'No line shows only the last color. Print item 1 of the last pair: `print(pairs[-1][1])`.' + _ev(_vals))
 ''',
                 OTHER=COLORS_OTHER,
             )
@@ -929,14 +1003,16 @@ for _vals in (None, __OTHER__):
         snippet='option_1 = "We will help you."\noption_2 = "What is the decay?"',
         why=(
             "You wrote four replies in four boxes, `option_1` to `option_4`, and the game matched `\"option 1\"` to "
-            "the first. As two lists, labels and replies, `zip()` would pair each label with its reply."
+            "the first reply. With two lists, one of labels and one of replies, `zip()` would pair each label with "
+            "its reply."
         ),
     ),
     takeaway="`list(zip(heroes, colors))` pairs two lists, first with first. `pairs[-1]` is the last pair.",
     wrong_answers=[
-        dict(why="the starter (pairs is still [])", code=COLORS_STARTER, fails_at=1, message_contains="still the starter"),
+        dict(why="the starter (pairs is still [])", code=COLORS_STARTER, fails_at=1,
+             message_contains="still the empty list"),
         dict(why="no list(): a zip object", code=_colors("pairs = zip(heroes, colors)", last=None), fails_at=1,
-             message_contains="Wrap it in `list()`"),
+             message_contains="inside `list()`"),
         dict(why="the two lists side by side", code=_colors("pairs = [heroes, colors]", last=None), fails_at=1,
              message_contains="side by side"),
         dict(why="colors first", code=_colors("pairs = list(zip(colors, heroes))", last=None), fails_at=1,
@@ -945,7 +1021,7 @@ for _vals in (None, __OTHER__):
              message_contains="both lists"),
         dict(why="the pairs typed by hand",
              code=_colors('pairs = [("Oogrish", "gold"), ("Lucky", "silver")]', last=None), fails_at=1,
-             message_contains="typed by hand"),
+             message_contains="typed the pairs in"),
         dict(why="the example's names copied", code=_colors("pairs = list(zip(coins, values))", last=None), fails_at=0,
              message_contains="'coins' is not defined"),
         dict(why="the pairs read one by one: right for 4 heroes, not for 3 (no zip)",
@@ -965,7 +1041,7 @@ for _vals in (None, __OTHER__):
         dict(why="len used as a position (IndexError)", code=_colors(last="print(pairs[len(pairs)])"), fails_at=0,
              message_contains="out of range"),
         dict(why="the last pair typed by hand", code=_colors(last='print(("Lucky", "silver"))'), fails_at=2,
-             message_contains="typed by hand"),
+             message_contains="typed the pair in"),
         dict(why="the hero without the color", code=_colors(last="print(pairs[-1][0])"), fails_at=2,
              message_contains="whole pair"),
     ],
@@ -986,22 +1062,25 @@ ZIP_ARTICLE = dict(
     title="zip(): Two Lists, Side by Side",
     optional=True,
     minutes=10,
-    summary="Two lists kept in step, paired up item by item with `zip()`: first with first, second with second.",
+    summary="Pair up two lists that line up, item by item, with `zip()`: first with first, second with second.",
     introduces=["call:zip"],
     body=(
         "Sometimes two lists go together, item by item:\n"
         "```python\nheroes = [\"Oogrish\", \"Lucky\"]\nmanas = [18, 26]\n```\n"
-        "`heroes[0]` goes with `manas[0]`, and `heroes[1]` goes with `manas[1]`. Two lists kept in step like "
-        "this are [[parallel lists]].\n"
-        "[[zip()]] works like the zipper on a coat. It joins the two sides tooth by tooth: first with first, "
-        "second with second. Each pair is a [[tuple]].\n"
+        "`heroes[0]` goes with `manas[0]`, and `heroes[1]` goes with `manas[1]`. It's like a table in math class "
+        "with two columns: each row pairs a name with a number. Two lists that line up like this are called "
+        "[[parallel lists]].\n"
+        "[[zip()]] pairs them up. It works like the zipper on a coat, which joins the two sides tooth by tooth: "
+        "first with first, second with second. Each pair is a [[tuple]], a pair in parentheses.\n"
         "```python\npairs = list(zip(heroes, manas))\n```\n"
         "Now `pairs` holds `[('Oogrish', 18), ('Lucky', 26)]`.\n"
-        "Why the `list()`? On its own, `zip()` hands back a zipper nobody has pulled yet. Print it, and you see "
-        "something like `<zip object at 0x7f3a...>`. `list()` pulls the zipper, and you get the pairs.\n"
-        "If one list is shorter, `zip()` stops when it runs out. There is no error. The extra items are left out.\n"
-        "You have seen this. In the campaign, Mar'tu's four replies sat in four boxes, `option_1` to `option_4`, "
-        "and the game matched `\"option 1\"` to the first one. Two lists and a `zip()` do that matching."
+        "Why the `list()`? On its own, `zip()` hands back a zipper nobody has pulled yet. If you print it, you see "
+        "something like `<zip object at 0x7f3a...>`. `list()` pulls the zipper, so you can see the pairs. You did "
+        "the same with `list(range(1, 7))`.\n"
+        "If one list is shorter, `zip()` stops when the shorter list runs out. There is no error: the extra items "
+        "are left out.\n"
+        "You've seen this in the campaign. Mar'tu's four replies sat in four boxes, `option_1` to `option_4`, and "
+        "the game matched `\"option 1\"` to the first one. Two lists and a `zip()` can do that matching."
     ),
     examples=[
         dict(
@@ -1123,9 +1202,9 @@ def _seen_list(_snaps, _name, _want):
     return _want is not None and any(_s[_name] == _want for _s in _snaps)
 def _inv_stop(_vals, _err, _only=None):
     if _err.startswith('ValueError') and _calls_of('remove'):
-        return ('Use `.pop()`, which takes the last part, whatever its name. With other parts, `.remove()` stopped '
-                'Python with a ValueError.' + _ev(_vals, None, ('parts',)))
-    return _stop(_vals, None, _err, 'Make it work for other lists too.', _only)
+        return ("On Mar'tu's test, `.remove()` stopped Python, because the part you named isn't in that list. Use "
+                '`.pop()`, which takes the last part, whatever its name.' + _ev(_vals, None, ('parts',)))
+    return _stop(_vals, None, _err, 'Read every value from the lists, so your code works for any lists.', _only)
 '''
 
 
@@ -1138,18 +1217,21 @@ INV_PARTS_MADE = chk(
     r'''
 _kind, _v = _first_lit('parts')
 assert not ('tools' in globals() and (_kind == 'missing' or not _v)), (
-    '`tools` is the name from the hint. This task' + chr(39) + 's list is `parts`: put your part names in `parts = []`.')
-assert _kind != 'missing', 'Keep the line `parts = []` from the starter, and put your part names inside its square brackets.'
-assert _kind != 'Tuple', ('Use square brackets for the list: `parts = [ ... ]`. Round brackets make a tuple, and a '
-                          'tuple can' + chr(39) + 't grow.')
-assert _is_list(_v), 'Make `parts` a list: part names between square brackets, like `["lens", "coil"]`.'
+    "`tools` is the name from the hint. This task's list is named `parts`: put your part names in `parts = []`.")
+assert _kind != 'missing', ("Python can't find `parts`. Put back the line `parts = []` under the `# 1.` note, and put "
+                            'your part names inside its square brackets.')
+assert _kind != 'Tuple', ("`parts` has parentheses, so it is a tuple, and a tuple can't grow. Use square brackets for "
+                          'the list: `parts = [ ... ]`.')
+assert _is_list(_v), "`parts` isn't a list yet. Put part names between square brackets, like `[\"lens\", \"coil\"]`."
 assert _v, '`parts` is still empty. Put 4 or more part names between the square brackets, each in quotes.'
 for _x in _v:
     _k = type(_x).__name__
-    assert _k not in ('list', 'tuple'), 'Keep only names in `parts`, like `"lens"`. The counts get their own list in task 2.'
-    assert _k != 'int', '`parts` holds names, each in quotes. The numbers go in `counts`, in task 2.'
-    assert _k == 'str' and _x.strip(), 'Put each part' + chr(39) + 's name in quotes, like `"brass lens"`.'
-assert _B.len(_v) >= 4, 'Put at least 4 parts in `parts`. It has ' + _B.str(_B.len(_v)) + '.'
+    assert _k not in ('list', 'tuple'), ('`parts` holds pairs or lists. Keep only names in `parts`, like `"lens"`. The '
+                                         'counts get their own list in task 2.')
+    assert _k != 'int', '`parts` has a number in it. It holds only names, each in quotes. The numbers go in `counts`, in task 2.'
+    assert _k == 'str' and _x.strip(), ("One item in `parts` isn't a part name. Put each part's name in quotes, like "
+                                        '`"brass lens"`.')
+assert _B.len(_v) >= 4, '`parts` has ' + _B.str(_B.len(_v)) + ' names. Put at least 4 parts in it.'
 ''',
 )
 
@@ -1159,17 +1241,18 @@ INV_COUNTS_MADE = chk(
 _kind, _v = _first_lit('counts')
 _pk, _pv = _first_lit('parts')
 assert not ('stock' in globals() and (_kind == 'missing' or not _v)), (
-    '`stock` is the name from the hint. This task' + chr(39) + 's list is `counts`: put your numbers in `counts = []`.')
-assert _kind != 'missing', 'Keep the line `counts = []` from the starter, and put your numbers inside its square brackets.'
-assert _kind != 'Tuple', 'Use square brackets for the list: `counts = [ ... ]`. Round brackets make a tuple.'
-assert _is_list(_v), 'Make `counts` a list: whole numbers between square brackets, like `[3, 0, 7]`.'
+    "`stock` is the name from the hint. This task's list is named `counts`: put your numbers in `counts = []`.")
+assert _kind != 'missing', ("Python can't find `counts`. Put back the line `counts = []` under the `# 2.` note, and "
+                            'put your numbers inside its square brackets.')
+assert _kind != 'Tuple', '`counts` has parentheses, so it is a tuple. Use square brackets for the list: `counts = [ ... ]`.'
+assert _is_list(_v), "`counts` isn't a list yet. Put whole numbers between square brackets, like `[3, 0, 7]`."
 assert _v, '`counts` is still empty. Put one whole number in it for each part, in the same order.'
 _txt = [_x for _x in _v if type(_x).__name__ == 'str']
-assert not _txt, 'Take the quotes off the counts. With quotes they are text, and counts are numbers, like `3`.'
-assert _B.all([_is_int(_x) for _x in _v]), 'Make each count a whole number, like `3`.'
+assert not _txt, 'The counts have quotes, so they are text. Take the quotes off: counts are numbers, like `3`.'
+assert _B.all([_is_int(_x) for _x in _v]), "One count isn't a whole number. Make each count a whole number, like `3`."
 _n = _B.len(_pv) if _is_list(_pv) else 0
-assert _B.len(_v) == _n, ('Give each part one count: `parts` has ' + _B.str(_n) + ' names, but `counts` has '
-                          + _B.str(_B.len(_v)) + ' numbers.')
+assert _B.len(_v) == _n, ('`parts` has ' + _B.str(_n) + ' names, but `counts` has ' + _B.str(_B.len(_v))
+                          + ' numbers. Give each part one count.')
 ''',
 )
 
@@ -1184,18 +1267,19 @@ _swapped = [_n for _n in _calls_of('insert') if _B.len(_n.args) == 2 and type(_n
             and _n.args[1].value == 1 and not (type(_n.args[0]).__name__ == 'Constant' and _n.args[0].value == 1)]
 def _where(_k, _name, _demo):
     if _k == 2:
-        return ('Positions start at 0: second place is position 1. Use `' + _name + '.insert(1, ' + _demo
-                + ')`.')
+        return ('The new item went in third. Positions start at 0, like a ruler, so second place is position 1: `'
+                + _name + '.insert(1, ' + _demo + ')`.')
     if _k == 0:
-        return 'Position 0 is the first place. The new one goes second: `' + _name + '.insert(1, ' + _demo + ')`.'
-    return ('Put it second, at position 1: `' + _name + '.insert(1, ' + _demo + ')`. It went in at position '
-            + _B.str(_k) + '.')
+        return ('The new item went in first, because position 0 is the first place. It goes second: `' + _name
+                + '.insert(1, ' + _demo + ')`.')
+    return ('The new item went in at position ' + _B.str(_k) + '. Put it second, at position 1: `' + _name
+            + '.insert(1, ' + _demo + ')`.')
 for _vals in __CASES__:
     _ns, _rows, _err, _miss, _seen, _snaps = _rerun(_vals or {}, None, _WATCH)
     assert not _miss, _keep(_miss[0] if _miss else 'parts')
     _P, _C = _orig(_vals)
     if not (_is_list(_P) and _is_list(_C)):
-        assert False, 'Finish tasks 1 and 2 first: `parts` and `counts`, each a list.'
+        assert False, "`parts` or `counts` isn't a list yet. Finish tasks 1 and 2 first."
     _kp = [_ins_at(_s['parts'], _P) for _s in _snaps]
     _kc = [_ins_at(_s['counts'], _C) for _s in _snaps]
     _okp = [_s['parts'][1] for _s, _k in _B.zip(_snaps, _kp) if _k == 1 and type(_s['parts'][1]).__name__ == 'str']
@@ -1205,45 +1289,47 @@ for _vals in __CASES__:
     if _okp and _okc and _grow_p <= 1 and _grow_c <= 1:
         continue
     assert not _err, _inv_stop(_vals, _err)
-    assert _grow_p <= 1, ('Put in one new part, once: `parts.insert(1, ...)`. `parts` grew by ' + _B.str(_grow_p)
-                          + '.' + _ev(_vals, None, ('parts',)))
-    assert _grow_c <= 1, ('Put in one new count, once: `counts.insert(1, ...)`. `counts` grew by ' + _B.str(_grow_c)
-                          + '.' + _ev(_vals, None, ('counts',)))
+    assert _grow_p <= 1, ('`parts` grew by ' + _B.str(_grow_p) + ' items. Put in one new part, once: '
+                          '`parts.insert(1, ...)`.' + _ev(_vals, None, ('parts',)))
+    assert _grow_c <= 1, ('`counts` grew by ' + _B.str(_grow_c) + ' items. Put in one new count, once: '
+                          '`counts.insert(1, ...)`.' + _ev(_vals, None, ('counts',)))
     def _pop_first(_name):
         _i = [_n.lineno for _n in _calls_of('insert', _name)]
         _p = [_n.lineno for _n in _calls_of('pop', _name)]
         return _i and _p and _B.min(_p) < _B.min(_i)
     if not _okp:
         _ev_p = _ev(_vals, None, ('parts',))
-        assert not _set_at('parts'), ('Use `parts.insert(1, ...)`, which squeezes the new part in. `parts[1] = ...` '
-                                      'swapped out a part instead.')
+        assert not _set_at('parts'), ('`parts[1] = ...` swapped out a part instead of adding one. Use '
+                                      '`parts.insert(1, ...)`, which squeezes the new part in.')
         assert not (_calls_of('append', 'parts') and not _calls_of('insert', 'parts')), (
-            'Use `parts.insert(1, ...)`: `.append()` adds at the end, and the new part goes second.')
-        assert not _pop_first('parts'), ('Do task 3 before task 4: insert first, then pop. Lines run top to bottom, '
-                                         'so your pop ran before your insert.')
+            '`.append()` adds at the end, but the new part goes second. Use `parts.insert(1, ...)`.')
+        assert not _pop_first('parts'), ('Your pop ran before your insert, because Python reads top to bottom, like a '
+                                         'page. Do task 3 before task 4: insert first, then pop.')
         _ks = [_k for _k in _kp if _k >= 0]
         if _ks:
             _new = [_s['parts'][_k] for _s, _k in _B.zip(_snaps, _kp) if _k >= 0][0]
-            assert type(_new).__name__ == 'str', 'Put the new part' + chr(39) + 's name in quotes, like `"ley needle"`.'
+            assert type(_new).__name__ == 'str', "The new part has no quotes. Put its name in quotes, like `\"ley needle\"`."
             assert False, _where(_ks[0], 'parts', '"ley needle"') + _ev_p
-        assert False, ('Put a new part second in `parts` with `.insert()`: `parts.insert(1, "ley needle")`, or a part '
-                       'of your own.' + _ev_p)
+        assert False, ("`parts` didn't get a new item. Put a new part second with `.insert()`: "
+                       '`parts.insert(1, "ley needle")`, or a part of your own.' + _ev_p)
     _ev_c = _ev(_vals, None, ('counts',))
-    assert not _set_at('counts'), ('Use `counts.insert(1, ...)`, which squeezes the new count in. `counts[1] = ...` '
-                                   'swapped out a count instead.')
+    assert not _set_at('counts'), ('`counts[1] = ...` swapped out a count instead of adding one. Use '
+                                   '`counts.insert(1, ...)`, which squeezes the new count in.')
     assert not [_n for _n in _swapped if type(_n.func.value).__name__ == 'Name' and _n.func.value.id == 'counts'], (
-        'Position first, then the value: `counts.insert(1, 2)` puts 2 at position 1.')
+        'The position and the value are swapped. Position first, then the value: `counts.insert(1, 2)` puts 2 at '
+        'position 1.')
     assert not (_calls_of('append', 'counts') and not _calls_of('insert', 'counts')), (
-        'Use `counts.insert(1, ...)`: `.append()` adds at the end, and the new count goes second, next to its part.')
-    assert not _pop_first('counts'), ('Do task 3 before task 4: insert first, then pop. Lines run top to bottom, '
-                                      'so your pop ran before your insert.')
+        '`.append()` adds at the end, but the new count goes second, next to its part. Use `counts.insert(1, ...)`.')
+    assert not _pop_first('counts'), ('Your pop ran before your insert, because Python reads top to bottom, like a '
+                                      'page. Do task 3 before task 4: insert first, then pop.')
     _ks = [_k for _k in _kc if _k >= 0]
     if _ks:
         _new = [_s['counts'][_k] for _s, _k in _B.zip(_snaps, _kc) if _k >= 0][0]
-        assert type(_new).__name__ != 'str', 'Take the quotes off the new count. Counts are numbers.'
-        assert _is_int(_new), 'Make the new count a whole number, like `2`.'
+        assert type(_new).__name__ != 'str', 'The new count has quotes, so it is text. Take the quotes off: counts are numbers.'
+        assert _is_int(_new), "The new count isn't a whole number. Make it a whole number, like `2`."
         assert False, _where(_ks[0], 'counts', '2') + _ev_c
-    assert False, ('Insert its count too: `counts.insert(1, 2)`, so each count stays in step with its part.' + _ev_c)
+    assert False, ("`counts` didn't get a new count. Insert its count too: `counts.insert(1, 2)`, so each count stays "
+                   'lined up with its part.' + _ev_c)
 ''',
 )
 
@@ -1256,7 +1342,8 @@ for _vals in __CASES__:
     assert not _miss, _keep(_miss[0] if _miss else 'parts')
     _P, _C = _orig(_vals)
     _IP, _IC = _inserted(_snaps, _P, _C)
-    assert _IP is not None and _IC is not None, 'Finish task 3 first: the new part and its count, second in both lists.'
+    assert _IP is not None and _IC is not None, ("The new part and its count aren't second in both lists yet. Finish "
+                                                 'task 3 first.')
     # Seen right after the pop, and still one shorter at the end (a second pop would hide behind the first).
     _fp, _fcn = _ns.get('parts'), _ns.get('counts')
     _okp = _seen_list(_snaps, 'parts', _IP[:-1]) and _is_list(_fp) and _B.len(_fp) == _B.len(_IP) - 1
@@ -1266,35 +1353,44 @@ for _vals in __CASES__:
         continue
     assert not _err, _inv_stop(_vals, _err)
     _evp = _ev(_vals, None, ('parts',))
-    assert not _seen_list(_snaps, 'parts', _IP[1:]), ('Leave the brackets empty: `parts.pop()` takes the last part. '
-                                                      '`.pop(0)` took the first.' + _evp)
-    assert not _B.callable(_b), 'Add `()` after `.pop`: `parts.pop()`. Without them, nothing is popped.'
+    assert not _seen_list(_snaps, 'parts', _IP[1:]), ('`.pop(0)` took the first part, not the last. Leave the '
+                                                      'parentheses empty: `parts.pop()` takes the last part.' + _evp)
+    assert not _B.callable(_b), ("Without `()`, `.pop` doesn't run, so nothing is popped. Add `()` after `.pop`: "
+                                 '`parts.pop()`.')
     if not _okp:
-        assert not _seen_list(_snaps, 'parts', _IP[:-2]), ('Pop once. Two parts came off `parts`, so it no longer '
-                                                           'lines up with `counts`.' + _evp)
-        assert not _seen_list(_snaps, 'parts', _IP[:-1]), ('Pop once, then leave `parts` alone: it should end one '
-                                                           'part shorter than after task 3.' + _evp)
-        assert not (_b == _IP[-1]), ('Use `.pop()`: it reads the last part *and* takes it off. `parts[-1]` only reads '
-                                     'it.' + _evp)
-        assert not _calls_of('pop', 'parts'), 'Pop the last part off `parts` itself: `borrowed = parts.pop()`.' + _evp
-        assert False, 'Take the last part off `parts` and keep it: `borrowed = parts.pop()`.' + _evp
+        assert not _seen_list(_snaps, 'parts', _IP[:-2]), ('Two parts came off `parts`, so it no longer lines up with '
+                                                           '`counts`. Pop once.' + _evp)
+        assert not _seen_list(_snaps, 'parts', _IP[:-1]), ('`parts` changed again after the pop. Pop once, then leave '
+                                                           '`parts` alone: it should end one part shorter than after '
+                                                           'task 3.' + _evp)
+        assert not (_b == _IP[-1]), ('`parts[-1]` only reads the last part, so it stays in the list. Use `.pop()`: it '
+                                     'reads the last part *and* takes it off.' + _evp)
+        assert not _calls_of('pop', 'parts'), '`parts` still has its last part. Pop it off: `borrowed = parts.pop()`.' + _evp
+        assert False, ("`parts` doesn't end one part shorter. Take the last part off and keep it: "
+                       '`borrowed = parts.pop()`.' + _evp)
     if not _okc:
         _evc = _ev(_vals, None, ('counts',))
-        assert not _seen_list(_snaps, 'counts', _IC[1:]), ('Leave the brackets empty: `counts.pop()` takes the last '
-                                                           'count. `.pop(0)` took the first.' + _evc)
-        assert not _seen_list(_snaps, 'counts', _IC[:-2]), ('Pop once. Two counts came off `counts`, so it no longer '
-                                                            'lines up with `parts`.' + _evc)
-        assert not _seen_list(_snaps, 'counts', _IC[:-1]), ('Pop once, then leave `counts` alone: it should end one '
-                                                            'count shorter than after task 3.' + _evc)
-        assert False, 'Pop `counts` too: `counts.pop()`, so each count stays in step with its part.' + _evc
+        assert not _seen_list(_snaps, 'counts', _IC[1:]), ('`.pop(0)` took the first count, not the last. Leave the '
+                                                           'parentheses empty: `counts.pop()` takes the last count.'
+                                                           + _evc)
+        assert not _seen_list(_snaps, 'counts', _IC[:-2]), ('Two counts came off `counts`, so it no longer lines up '
+                                                            'with `parts`. Pop once.' + _evc)
+        assert not _seen_list(_snaps, 'counts', _IC[:-1]), ('`counts` changed again after the pop. Pop once, then '
+                                                            'leave `counts` alone: it should end one count shorter '
+                                                            'than after task 3.' + _evc)
+        assert False, ('`counts` still has its last count, so it no longer lines up with `parts`. Pop `counts` too: '
+                       '`counts.pop()`.' + _evc)
     assert not ('taken' in _ns and 'borrowed' not in _ns), ('`taken` is the name from the hint. This task keeps the '
                                                             'part in `borrowed`: `borrowed = parts.pop()`.')
-    assert 'borrowed' in _ns, 'Keep what `.pop()` hands back: `borrowed = parts.pop()`.'
-    assert not _B.callable(_b), 'Add `()` after `.pop`: `parts.pop()`. Without them, nothing is popped.'
-    assert not _is_int(_b), '`borrowed` holds a count. Keep the part' + chr(39) + 's name: `borrowed = parts.pop()`.'
-    assert not (_vals is not None and _b == _own_b), ('Keep what `.pop()` hands back: `borrowed = parts.pop()`. '
-                                                     '`borrowed` stayed the same: a part typed by hand.' + _evp)
-    assert False, 'Keep the popped part in `borrowed`: `borrowed = parts.pop()`.' + _evp
+    assert 'borrowed' in _ns, ('There is no `borrowed` yet, so the popped part is thrown away. Keep what `.pop()` '
+                               'hands back: `borrowed = parts.pop()`.')
+    assert not _B.callable(_b), ("Without `()`, `.pop` doesn't run, so nothing is popped. Add `()` after `.pop`: "
+                                 '`parts.pop()`.')
+    assert not _is_int(_b), "`borrowed` holds a count, not a part's name. Pop it from `parts`: `borrowed = parts.pop()`."
+    assert not (_vals is not None and _b == _own_b), ("The part's name in `borrowed` is typed in, so it stayed the "
+                                                     "same when Mar'tu changed the lists. Keep what `.pop()` hands "
+                                                     'back: `borrowed = parts.pop()`.' + _evp)
+    assert False, "`borrowed` doesn't hold the last part. Keep the popped part in it: `borrowed = parts.pop()`." + _evp
 ''',
 )
 
@@ -1307,7 +1403,7 @@ for _vals in __CASES__:
     assert not _miss, _keep(_miss[0] if _miss else 'counts')
     _P, _C = _orig(_vals)
     _IP, _IC = _inserted(_snaps, _P, _C)
-    assert _IC is not None, 'Finish tasks 3 and 4 first.'
+    assert _IC is not None, "Tasks 3 and 4 aren't done yet. Finish them first."
     _PC = _IC[:-1]
     _E = _B.sorted(_PC)[-3:]
     _t = _ns.get('top_three')
@@ -1316,33 +1412,36 @@ for _vals in __CASES__:
         continue
     assert not _err, _inv_stop(_vals, _err, ('counts',))
     _evc = _ev(_vals, None, ('counts',))
-    assert 'top_three' in _ns, 'Keep the line `top_three = ` from the starter, and build it after the `=`.'
-    assert type(_t).__name__ != 'NoneType', ('Use `sorted(counts)`: `.sort()` hands back `None`, so `top_three` '
-                                             'holds `None`.')
+    assert 'top_three' in _ns, ("Python can't find `top_three`. Put back the line `top_three = []` under the `# 5.` "
+                                'note, and build the list after the `=`.')
+    assert type(_t).__name__ != 'NoneType', ('`top_three` holds `None`, because `.sort()` hands back nothing. Use '
+                                             '`sorted(counts)`, which hands back a sorted copy.')
     if _fc != _PC:
         _alias = [_n.targets[0].id for _n in _ast.parse(_source).body if type(_n).__name__ == 'Assign'
                   and _B.len(_n.targets) == 1 and type(_n.targets[0]).__name__ == 'Name'
                   and type(_n.value).__name__ == 'Name' and _n.value.id == 'counts' and _n.targets[0].id != 'counts']
         _sorted_alias = [_a for _a in _alias if _calls_of('sort', _a)]
         # The student's own name is never echoed back (2.11): the message names the pattern instead.
-        assert not _sorted_alias, ('A second name for `counts`, like `copy = counts`, is still the same list, so '
-                                   'sorting one sorts both. Use `sorted(counts)`: a real copy.' + _evc)
-        assert _fc != _B.sorted(_PC), ('Sort a copy: `sorted(counts)`. `.sort()` sorted `counts` itself, so the counts '
-                                       'no longer line up with their parts.' + _evc)
-        assert False, 'Leave `counts` as it was after task 4. Only `top_three` should change.' + _evc
-    assert _t != [], "`top_three` is still the starter's `[]`. Make it `sorted(counts)[-3:]`."
-    assert not _is_int(_t), 'That is one count. A slice has a colon: `sorted(counts)[-3:]`.' + _evc
-    assert _is_list(_t), 'Make `top_three` a list: `sorted(counts)[-3:]`.'
-    assert _t != _B.sorted(_PC)[:3], ('Those are the 3 smallest. A sorted copy has the biggest at the end: '
+        assert not _sorted_alias, ('A second name for `counts`, like `copy = counts`, is a nickname for the same list, '
+                                   'so sorting one sorts both. Use `sorted(counts)`: a real copy.' + _evc)
+        assert _fc != _B.sorted(_PC), ('`.sort()` sorted `counts` itself, so the counts no longer line up with their '
+                                       'parts. Sort a copy instead: `sorted(counts)`.' + _evc)
+        assert False, '`counts` changed in task 5. Leave it as it was after task 4: only `top_three` should change.' + _evc
+    assert _t != [], '`top_three` is still the empty list `[]`. Make it the 3 biggest counts: `sorted(counts)[-3:]`.'
+    assert not _is_int(_t), '`top_three` holds one count, not three. A slice needs a colon: `sorted(counts)[-3:]`.' + _evc
+    assert _is_list(_t), "`top_three` isn't a list. Make it a slice of a sorted copy: `sorted(counts)[-3:]`."
+    assert _t != _B.sorted(_PC)[:3], ('`top_three` holds the 3 smallest. A sorted copy puts the biggest at the end: '
                                       '`sorted(counts)[-3:]`.' + _evc)
-    assert _t != _B.sorted(_PC)[-3:-1], ('Leave the end empty: `[-3:]`. A slice stops *before* its end number, so '
-                                         '`[-3:-1]` leaves out the biggest.' + _evc)
-    assert not _same_items(_t, _PC[-3:]), ('Sort first, then slice: `sorted(counts)[-3:]`. The last 3 counts are not '
-                                           'always the biggest.' + _evc)
-    assert _t != _B.sorted(_PC), 'Slice off the last 3: `sorted(counts)[-3:]`. `top_three` holds every count.'
-    assert not (_vals is not None and _t == _own_t), ('Build it from `counts`: `sorted(counts)[-3:]`. `top_three` '
-                                                     'stayed ' + _shn(_t, 'the same') + ', typed by hand.' + _evc)
-    assert False, 'Make `top_three` the 3 biggest counts: `sorted(counts)[-3:]`. It holds ' + _shn(_t) + '.' + _evc
+    assert _t != _B.sorted(_PC)[-3:-1], ('`[-3:-1]` leaves out the biggest, because a slice stops *before* its end '
+                                         'number, like `range`. Leave the end empty: `[-3:]`.' + _evc)
+    assert not _same_items(_t, _PC[-3:]), ("The last 3 counts aren't always the biggest. Sort first, then slice: "
+                                           '`sorted(counts)[-3:]`.' + _evc)
+    assert _t != _B.sorted(_PC), '`top_three` holds every count. Slice off the last 3: `sorted(counts)[-3:]`.'
+    assert not (_vals is not None and _t == _own_t), ('The numbers in `top_three` are typed in, so they stayed '
+                                                     + _shn(_t, 'the same') + " when Mar'tu changed the lists. Build "
+                                                     'it from `counts`: `sorted(counts)[-3:]`.' + _evc)
+    assert False, ("`top_three` isn't the 3 biggest counts. Make it `sorted(counts)[-3:]`. Right now it holds "
+                   + _shn(_t) + '.' + _evc)
 ''',
 )
 
@@ -1351,7 +1450,8 @@ INV_ZEROS_SAID = inv_chk(
     r'''
 _quoted = [_n for _n in _calls_of('count') if _n.args and type(_n.args[0]).__name__ == 'Constant'
            and type(_n.args[0].value).__name__ == 'str']
-assert not _quoted, 'Take the quotes off: `"0"` is text, and `counts` holds numbers. Use `counts.count(0)`.'
+assert not _quoted, ('`"0"` in quotes is text, but `counts` holds numbers, so no item matches. Take the quotes off: '
+                     '`counts.count(0)`.')
 _own = _lastnums(_lines())
 for _vals in __CASES__:
     _ns, _rows, _err, _miss, _seen, _snaps = _rerun(_vals or {}, None, _WATCH)
@@ -1363,14 +1463,17 @@ for _vals in __CASES__:
         continue
     assert not _err, _inv_stop(_vals, _err, ('counts',))
     _evc = _ev(_vals, None, ('counts',))
-    assert not _calls_of('count', 'parts'), 'Count in `counts`: the numbers live there. `parts` holds names, so it has no 0s.'
-    assert _got, 'Print how many counts are 0: `print(counts.count(0))`.'
-    assert not (_is_list(_fc) and _B.len(_fc) in _got), ('Use `.count(0)`: `len()` counts every part, and `.count(0)` '
-                                                       'counts only the 0s.' + _evc)
-    assert not (_vals is not None and _got == _own), ('Count with `counts.count(0)`, so it follows the list. Your line '
-                                                     'shows ' + _B.str(_got[-1]) + ', a number typed by hand.' + _evc)
-    assert False, ('Print how many parts are used up: `counts.count(0)`. With these lists it is ' + _B.str(_want) + '.'
-                   + _evc)
+    assert not _calls_of('count', 'parts'), ('`parts` holds names, so it has no 0s to count. Count in `counts`, where '
+                                             'the numbers are: `counts.count(0)`.')
+    assert _got, 'No number shows in the Console for task 6. Print how many counts are 0: `print(counts.count(0))`.'
+    assert not (_is_list(_fc) and _B.len(_fc) in _got), ('Your line shows how many parts there are in all, because '
+                                                       '`len()` counts every item. Use `.count(0)`, which counts only '
+                                                       'the 0s.' + _evc)
+    assert not (_vals is not None and _got == _own), ('The number on your line is typed in, so it stayed '
+                                                     + _B.str(_got[-1]) + " when Mar'tu changed the lists. Count "
+                                                     'with `counts.count(0)`.' + _evc)
+    assert False, ("Your line doesn't show how many counts are 0. Use `print(counts.count(0))`. The answer should be "
+                   + _B.str(_want) + '.' + _evc)
 ''',
 )
 
@@ -1387,26 +1490,31 @@ for _vals in __CASES__:
     if _lists and _i == _B.list(_B.zip(_fp, _fc)):
         continue
     assert not _err, _inv_stop(_vals, _err)
-    assert 'inventory' in _ns, 'Keep the line `inventory = ` from the starter, and put `list(zip(parts, counts))` after the `=`.'
-    assert type(_i).__name__ != 'zip', ('Wrap it in `list()`: `list(zip(parts, counts))`. On its own, `zip()` hands '
-                                        'back a zip object, not the pairs.')
-    assert _i != [], "`inventory` is still the starter's `[]`. Make it `list(zip(parts, counts))`."
-    assert not (_lists and _i == [_fp, _fc]), ('`[parts, counts]` sets the two whole lists side by side. `zip()` makes '
-                                               'pairs: each part with its count.')
-    assert not (_lists and _i == _B.list(_B.zip(_fc, _fp))), 'Parts first, then counts: `zip(parts, counts)`.'
-    assert not (_lists and _i == _B.list(_B.zip(_fp))), 'Hand `zip()` both lists: `zip(parts, counts)`.'
+    assert 'inventory' in _ns, ("Python can't find `inventory`. Put back the line `inventory = []` under the `# 7.` "
+                                'note, and change it to `inventory = list(zip(parts, counts))`.')
+    assert type(_i).__name__ != 'zip', ('`inventory` holds a zip, not pairs you can see. Put `zip()` inside `list()`: '
+                                        '`list(zip(parts, counts))`.')
+    assert _i != [], '`inventory` is still the empty list `[]`. Make it `list(zip(parts, counts))`.'
+    assert not (_lists and _i == [_fp, _fc]), ('`[parts, counts]` puts the two whole lists side by side, as one list of '
+                                               'two lists. `zip()` makes pairs instead: each part with its count.')
+    assert not (_lists and _i == _B.list(_B.zip(_fc, _fp))), ('Your pairs start with the count. Put parts first, then '
+                                                              'counts: `zip(parts, counts)`.')
+    assert not (_lists and _i == _B.list(_B.zip(_fp))), ('`zip()` got only one list, so each pair has one item. Hand it '
+                                                         'both lists: `zip(parts, counts)`.')
     _early = [_s for _s in _snaps if _is_list(_s['parts']) and _is_list(_s['counts'])
               and _i == _B.list(_B.zip(_s['parts'], _s['counts']))]
-    assert not _early, ('Make `inventory` at the bottom, after the insert and the pop, so it pairs the lists as they '
-                        'end up.' + _ev(_vals))
+    assert not _early, ('`inventory` was made before the insert and the pop, so it pairs the old lists. Python reads '
+                        'top to bottom, so make `inventory` at the bottom, under `# 7.`' + _ev(_vals))
     assert not _typed_list('inventory'), (
-        'Zip it from the lists: `list(zip(parts, counts))`, so the pairs follow them. `inventory` holds pairs typed '
-        'by hand.')
-    assert _uses('call:zip'), ('Make the pairs with `zip()`: `list(zip(parts, counts))`. It pairs every part with its '
-                               'count, however many parts there are.' + _ev(_vals, None, ('parts',)))
-    assert not (_vals is not None and _i == _own_i), ('Zip it from the lists: `list(zip(parts, counts))`. `inventory` '
-                                                     'stayed the same: pairs typed by hand.' + _ev(_vals))
-    assert False, 'Make `inventory` with `list(zip(parts, counts))`.' + _ev(_vals)
+        "The pairs in `inventory` are typed in, so they won't change to match the lists. Zip them from the lists: "
+        '`list(zip(parts, counts))`.')
+    assert _uses('call:zip'), ("`inventory` isn't made with `zip()`, so it misses parts on a longer list. Make the pairs "
+                               'with `zip()`: `list(zip(parts, counts))`.' + _ev(_vals, None, ('parts',)))
+    assert not (_vals is not None and _i == _own_i), ("`inventory` stayed the same when Mar'tu changed the lists, so "
+                                                     'its pairs are typed in. Zip them from the lists: '
+                                                     '`list(zip(parts, counts))`.' + _ev(_vals))
+    assert False, ("`inventory` doesn't pair each part with its count. Make it with `list(zip(parts, counts))`."
+                   + _ev(_vals))
 ''',
 )
 
@@ -1418,8 +1526,8 @@ for _vals in __CASES__:
     assert not _err, _inv_stop(_vals, _err, ('counts',))
     _fc = _ns.get('counts')
     _want = _B.sum(_fc) if _is_list(_fc) else -1
-    assert _want in _lastnums(_rows), ('Print the total of every count: `print(sum(counts))`, at the bottom.'
-                                       + _ev(_vals, None, ('counts',)))
+    assert _want in _lastnums(_rows), ('No line shows the total of every count. Add `print(sum(counts))` at the '
+                                       'bottom.' + _ev(_vals, None, ('counts',)))
 ''',
 )
 
@@ -1437,120 +1545,151 @@ PROJECT_3P2 = dict(
     title="The Basement Inventory",
     optional=True,
     minutes=35,
-    summary="Keep the resonance array's parts in two lists that stay in step: insert, pop, sort a copy, count and zip.",
+    summary=(
+        "Track the parts in Mar'tu's basement with two lists that line up. Insert, pop, sort a copy, count and zip."
+    ),
     intro=(
-        "Under the trap door, Mar'tu's basement is full of brass. These are the parts of the resonance array, "
-        "hauled back from the Institute. Bomb Shell keeps the inventory.\n"
-        "Two [[parallel lists|lists kept in step]]: `parts` holds the names, and `counts` holds how many of each. "
-        "`counts[0]` goes with `parts[0]`. Whatever you do to one list, do to the other.\n"
-        "Seven tasks, in order. The comments in the editor mark each one. Any parts you like.\n"
-        "Before this: the lesson More List Tools (insert and pop), How many times? in Extra practice (`.count()`), "
-        "and the zip() article."
+        "You'll build two lists that line up, called [[parallel lists]]: `parts` holds the names of the parts, and "
+        "`counts` holds how many of each part there are. `counts[0]` goes with `parts[0]`, like the two columns of "
+        "a table in math class. Whatever you do to one list, do the same to the other.\n"
+        "Under the trap door, Mar'tu's basement is full of brass parts for the resonance array, his machine of "
+        "brass instruments. Bomb Shell keeps the inventory: a list of what is down there, and how many.\n"
+        "There are seven tasks, in order. In your code, the notes `# 1.` to `# 7.` mark where each one goes. Pick "
+        "any parts you like. Can't decide? Press the Mar'tu's pick button, next to Names to use.\n"
+        "Before this, do the lesson More List Tools (`.insert()` and `.pop()`), How many times? in Extra practice "
+        "(`.count()`), and the zip() article."
     ),
     martu=(
-        "Two lists, one inventory. If the lists slip out of step, the lens gets the coil's count. Then my array "
-        "lies to me, yes?\n"
-        "My check tries other lists, with other parts. So read everything from the lists, and never type a number "
-        "you can see."
+        "Two lists, one inventory. Keep them lined up: when you add or take away an item in `parts`, do the same "
+        "in `counts`. If they get out of line, the lens gets the coil's count, and my array lies to me, yes?\n"
+        "I test your code with other lists, with other parts. So read every number from the lists, the way a "
+        "formula in math class works for any numbers. Don't type in a number you can see."
     ),
     names=["parts", "counts", "borrowed", "top_three", "inventory"],
     pick=INV_PICK,
     pair_talk=(
-        "Pair talk: before task 5, tell your partner why `counts.sort()` would break the inventory, but "
-        "`sorted(counts)` would not. Then each of you types it on your own screen."
+        "Pair talk: before Task 5, tell your partner why `counts.sort()` would break the inventory, but "
+        "`sorted(counts)` would not."
     ),
     starter=INV_STARTER,
     checkpoints=[
         dict(
             id="list-the-parts",
-            text="1. Make `parts` a list of 4 or more part names, each in quotes.",
+            text=(
+                "Under the `# 1.` note, fill in `parts = []`. Put 4 or more part names between its square brackets. "
+                "Give each name its own quotes, with a comma between each two."
+            ),
             dictated=False,
             hints=[
-                "Look at task 1. Put the names between the square brackets, each in quotes, with a comma between "
-                "them.",
-                "A list of names with other names: `tools = [\"saw\", \"rope\", \"lamp\", \"pick\"]`.",
-                "Write `parts = [\"brass lens\", \"tuning fork\", \"copper coil\", \"glass bell\"]`, or your own parts.",
+                "Look at `parts = []`, under the `# 1.` note. The names go between the square brackets. Does each "
+                "name have its own quotes?",
+                "A list of words looks like this: `tools = [\"saw\", \"rope\", \"lamp\", \"pick\"]`. Each word is "
+                "text, so each gets its own quotes, and a comma goes between each two.",
+                "Write `parts = [\"brass lens\", \"tuning fork\", \"copper coil\", \"glass bell\"]` in place of "
+                "`parts = []`. You can use your own part names.",
             ],
             checks=[INV_PARTS_MADE],
-            pass_line="Bomb Shell: Parts. Listed.",
+            pass_line="`parts` holds your part names. Bomb Shell: Parts. Listed.",
         ),
         dict(
             id="count-each-part",
-            text="2. Make `counts`: one whole number for each part, in the same order.",
+            text=(
+                "Under the `# 2.` note, fill in `counts = []` with one whole number for each part, in the same order "
+                "as `parts`. No quotes: counts are numbers."
+            ),
             dictated=False,
             hints=[
-                "Look at task 2. `counts[0]` is how many of `parts[0]` there are. One number per part, no quotes.",
-                "With other names: `tools` has 4 names, so `stock = [2, 0, 5, 1]` has 4 numbers.",
-                "Write `counts = [3, 0, 7, 5]`, one number for each of your parts.",
+                "Look at `counts = []`, under the `# 2.` note. `counts[0]` is how many of `parts[0]` there are. How "
+                "many numbers do you need?",
+                "If `tools` has 4 names, its counts need 4 numbers, with no quotes: `stock = [2, 0, 5, 1]`.",
+                "Write `counts = [3, 0, 7, 5]` in place of `counts = []`, with one number for each of your parts.",
             ],
             checks=[INV_COUNTS_MADE],
-            pass_line="Gearshift: Visor dims. Two lists, same length. In step.",
+            pass_line="Each part has a count. Gearshift: Visor dims. Two lists, same length. Lined up.",
         ),
         dict(
             id="insert-a-new-part",
-            text="3. A new part turned up. Put it second in `parts`, and its count second in `counts`.",
+            text=(
+                "A new part turned up. Under the `# 3.` note, use `.insert()` twice:\n"
+                "1. Put the new part second in `parts`.\n"
+                "2. Put its count second in `counts`."
+            ),
             dictated=False,
             hints=[
-                "Look at task 3. `.insert()` takes the position first, then the value. Second place is position 1, "
-                "because positions start at 0. Do it to both lists.",
-                "With other names: `tools.insert(1, \"hook\")` and `stock.insert(1, 4)` keep the two lists in step.",
-                "Write `parts.insert(1, \"ley needle\")`, then `counts.insert(1, 2)`.",
+                "Look under the `# 3.` note. Positions start at 0, like a ruler. So which position is second place?",
+                "`.insert()` takes the position first, then the value: `tools.insert(1, \"hook\")` puts hook second. "
+                "Then `stock.insert(1, 4)` puts its count second, so the lists stay lined up.",
+                "Write `parts.insert(1, \"ley needle\")` under `# 3.`, then `counts.insert(1, 2)` on the next line.",
             ],
             checks=[INV_INSERTED],
-            pass_line="Lucky: A new part. Is it worth anything?",
+            pass_line="The new part and its count are both second. Lucky: Is it worth anything?",
         ),
         dict(
             id="pop-the-last-part",
-            text="4. Lucky borrowed the last part. Pop it off both lists, and keep its name in `borrowed`.",
+            text=(
+                "Lucky borrowed the last part. Under the `# 4.` note, take it off both lists with `.pop()`:\n"
+                "1. Pop `parts`, and keep the part's name in `borrowed`.\n"
+                "2. Pop `counts` too."
+            ),
             dictated=False,
             hints=[
-                "Look at task 4. `.pop()` with empty brackets takes the last item off and hands it back. Pop "
-                "`counts` too, or the lists slip out of step.",
-                "With other names: `taken = tools.pop()` and `stock.pop()` take the last tool and its number.",
-                "Write `borrowed = parts.pop()`, then `counts.pop()`.",
+                "Look under the `# 4.` note. Which tool takes the last item off a list and hands it back?",
+                "`.pop()` with empty parentheses takes the last item off and hands it back: `taken = tools.pop()` "
+                "keeps the last tool in `taken`. Then `stock.pop()` takes its number off too, so the lists stay "
+                "lined up.",
+                "Write `borrowed = parts.pop()` under `# 4.`, then `counts.pop()` on the next line.",
             ],
             checks=[INV_POPPED],
-            pass_line="Bomb Shell: Borrowed. Noted. Lucky.",
+            pass_line="Both lists are one shorter, and still lined up. Bomb Shell: Borrowed. Noted. Lucky.",
         ),
         dict(
             id="top-three",
-            text="5. Make `top_three` the 3 biggest counts, from a sorted copy of `counts`.",
+            text=(
+                "Under the `# 5.` note, make `top_three` hold the 3 biggest counts. Take them from a sorted copy of "
+                "`counts`, so `counts` itself stays lined up with `parts`."
+            ),
             dictated=False,
             hints=[
-                "Look at task 5. `sorted(counts)` is a copy, smallest first, so the biggest 3 are at the end. "
-                "Slice them off with a colon.",
-                "With other names: `sorted(stock)[-2:]` is the 2 biggest numbers in `stock`, and `stock` keeps its "
-                "order.",
+                "Look at `top_three = []`, under the `# 5.` note. In a sorted copy, smallest first, where do the 3 "
+                "biggest sit?",
+                "`sorted(stock)` is a sorted copy, like a photocopy you put in order. A slice from `-2` to the end "
+                "cuts off the last 2: `sorted(stock)[-2:]` is the 2 biggest, and `stock` keeps its order.",
                 "Write `top_three = sorted(counts)[-3:]` in place of `top_three = []`.",
             ],
             checks=[INV_TOPPED],
-            pass_line="Gearshift: The counts still line up. Copy sorted, list untouched.",
+            pass_line="`top_three` holds the 3 biggest, and `counts` still lines up. Gearshift: Copy sorted, list untouched.",
         ),
         dict(
             id="used-up",
-            text="6. Print how many parts are used up: how many counts are 0. Use `.count()`.",
+            text=(
+                "Under the `# 6.` note, print how many parts are used up, meaning how many counts are 0. Use "
+                "`.count()`."
+            ),
             dictated=False,
             hints=[
-                "Look at task 6. `.count(0)` counts how many items in the list are 0. Ask `counts`, where the numbers "
-                "live.",
-                "With other names: `stock.count(5)` counts how many 5s `stock` holds.",
-                "Write `print(counts.count(0))` under task 6.",
+                "Look under the `# 6.` note. Which list holds the numbers: `parts` or `counts`?",
+                "`.count()` counts how many items match: `stock.count(5)` counts how many 5s `stock` holds. `len()` "
+                "would count every item.",
+                "Write `print(counts.count(0))` under `# 6.`",
             ],
             checks=[INV_ZEROS_SAID],
-            pass_line="Mar'tu: Used up. I will add it to the list of things to fetch. Another list, yes?",
+            pass_line="You counted the parts that are used up. Mar'tu: I will add them to my list of things to fetch. Another list, yes?",
         ),
         dict(
             id="zip-the-inventory",
-            text="7. Make `inventory` with `zip()`, so each part sits with its count.",
+            text=(
+                "Under the `# 7.` note, make `inventory` with `zip()`, so each part is paired with its count. Press "
+                "Run: the Console shows the pairs, each in parentheses."
+            ),
             dictated=False,
             hints=[
-                "Look at task 7. `zip()` takes both lists, parts first. Wrap it in `list()` so you can see the "
-                "pairs.",
-                "With other names: `list(zip(tools, stock))` gives `[(\"saw\", 2), (\"rope\", 0), ...]`.",
+                "Look at `inventory = []`, under the `# 7.` note. `zip()` needs both lists. Which list goes first?",
+                "`list(zip(tools, stock))` gives `[(\"saw\", 2), (\"rope\", 0), ...]`: each tool with its number. "
+                "`list()` around `zip()` lets you see the pairs.",
                 "Write `inventory = list(zip(parts, counts))` in place of `inventory = []`.",
             ],
             checks=[INV_ZIPPED],
-            pass_line="Mar'tu: Every part with its count. The array may stop lying to me. Good work.",
+            pass_line="Every part is paired with its count. Mar'tu: The array may stop lying to me. Good work.",
         ),
     ],
     solution=INV_SOLUTION,
@@ -1573,10 +1712,11 @@ PROJECT_3P2 = dict(
     another_way=[
         dict(
             angle="picture",
-            label="Two shelves, in step",
+            label="Two shelves, lined up",
             text=(
                 "```text\n         0      1      2\nparts  lens   fork   coil\ncounts    3      0      7\n```\n"
-                "Position 0 on one shelf goes with position 0 on the other. Insert on one shelf, insert on the other."
+                "Position 0 on one shelf goes with position 0 on the other. If you insert on one shelf, insert on "
+                "the other too."
             ),
         ),
         dict(
@@ -1590,10 +1730,10 @@ PROJECT_3P2 = dict(
         dict(
             angle="step-by-step",
             text=(
-                "1. `parts = [...]` and `counts = [...]`, same length.\n"
+                "1. `parts = [...]` and `counts = [...]`, the same length.\n"
                 "2. `.insert(1, ...)` into both.\n"
                 "3. `borrowed = parts.pop()`, then `counts.pop()`.\n"
-                "4. `sorted(counts)[-3:]`: a copy, so `counts` stays in step.\n"
+                "4. `sorted(counts)[-3:]`: a copy, so `counts` stays lined up.\n"
                 "5. `counts.count(0)`.\n"
                 "6. `list(zip(parts, counts))`."
             ),
@@ -1603,7 +1743,7 @@ PROJECT_3P2 = dict(
             label="You've seen this",
             text=(
                 "In the campaign, `party.members` held the four of you, in order. The party panel showed each "
-                "member's mana bar in that same order: two things kept in step."
+                "member's mana bar in that same order: two things lined up."
             ),
         ),
     ],
@@ -1611,7 +1751,8 @@ PROJECT_3P2 = dict(
         by="bomb-shell",
         title="Bomb Shell's tally",
         text="Bomb Shell wants the total. At the bottom, print how many parts there are in all: every count added up.",
-        hints=["`sum()` adds up every number in a list.", "Write `print(sum(counts))` at the bottom."],
+        hints=["`sum()` adds up all the numbers in a list. It's like adding a column of numbers in math class.",
+               "Write `print(sum(counts))` at the bottom."],
         checks=[INV_BONUS],
         solution=INV_SOLUTION + "print(sum(counts))\n",
     ),
@@ -1624,8 +1765,8 @@ PROJECT_3P2 = dict(
         ),
     ),
     takeaway=(
-        "Parallel lists: do the same to both. `.insert(1, x)` puts x second, `.pop()` takes the last, `sorted()` "
-        "copies, `zip()` pairs."
+        "Parallel lists: whatever you do to one, do to the other. `.insert(1, ...)` puts an item second, `.pop()` "
+        "takes the last, `sorted()` makes a copy, and `zip()` pairs them."
     ),
     wrong_answers=[
         dict(why="the starter (empty lists)", code=INV_STARTER, fails_at=1, message_contains="still empty"),
@@ -1703,12 +1844,12 @@ PROJECT_3P2 = dict(
         dict(why="sliced without sorting", code=_inv(INV_PARTS, INV_COUNTS, INV_INSERT, INV_POP, "top_three = counts[-3:]\n"),
              fails_at=5, message_contains="Sort first"),
         dict(why="the top three typed by hand", code=_inv(INV_PARTS, INV_COUNTS, INV_INSERT, INV_POP, "top_three = [2, 3, 7]\n"),
-             fails_at=5, message_contains="typed by hand"),
+             fails_at=5, message_contains="typed in"),
         dict(why="one count, not a slice", code=_inv(INV_PARTS, INV_COUNTS, INV_INSERT, INV_POP, "top_three = sorted(counts)[-3]\n"),
              fails_at=5, message_contains="one count"),
         dict(why="the used-up count typed by hand",
              code=_inv(INV_PARTS, INV_COUNTS, INV_INSERT, INV_POP, INV_TOP, "print(1)\n"), fails_at=6,
-             message_contains="typed by hand"),
+             message_contains="typed in"),
         dict(why="0 in quotes", code=_inv(INV_PARTS, INV_COUNTS, INV_INSERT, INV_POP, INV_TOP, 'print(counts.count("0"))\n'),
              fails_at=6, message_contains="quotes off"),
         dict(why="len counts every part", code=_inv(INV_PARTS, INV_COUNTS, INV_INSERT, INV_POP, INV_TOP, "print(len(counts))\n"),
@@ -1721,7 +1862,7 @@ PROJECT_3P2 = dict(
              message_contains="not subscriptable"),
         dict(why="no list(): a zip object", code=_inv(INV_PARTS, INV_COUNTS, INV_INSERT, INV_POP, INV_TOP, INV_ZEROS,
                                                       "inventory = zip(parts, counts)\n"),
-             fails_at=7, message_contains="Wrap it in `list()`"),
+             fails_at=7, message_contains="inside `list()`"),
         dict(why="the two lists side by side", code=_inv(INV_PARTS, INV_COUNTS, INV_INSERT, INV_POP, INV_TOP, INV_ZEROS,
                                                          "inventory = [parts, counts]\n"),
              fails_at=7, message_contains="side by side"),
@@ -1731,7 +1872,7 @@ PROJECT_3P2 = dict(
         dict(why="the pairs typed by hand",
              code=_inv(INV_PARTS, INV_COUNTS, INV_INSERT, INV_POP, INV_TOP, INV_ZEROS,
                        'inventory = [("brass lens", 3), ("ley needle", 2)]\n'), fails_at=7,
-             message_contains="typed by hand"),
+             message_contains="typed in"),
         dict(why="zipped before the insert and pop (top to bottom)",
              code=_inv(INV_PARTS, INV_COUNTS + "inventory = list(zip(parts, counts))\n", INV_INSERT, INV_POP, INV_TOP,
                        INV_ZEROS, ""),
@@ -1819,27 +1960,27 @@ REFACTOR_SOLUTION = _refactor()
 REFACTOR_WANT = ["Oldest gap: 48", "Newest gap: 37", "Shrink: 11"]
 # Another wall, 5 gaps: `[1]` reads 58, a counted `[6]` stops with an IndexError, and the shrink is 14, not 11.
 REFACTOR_OTHER = [60, 58, 55, 51, 46]
-REFACTOR_EV = " (Mar'tu's check tried the wall `[60, 58, 55, 51, 46]`, only inside the check.)"
+REFACTOR_EV = " Mar'tu tested your code with a test wall, `[60, 58, 55, 51, 46]`."
 
 REFACTOR_ONE_LIST = chk(
     "the hour_ boxes are gone, and chalk_wall holds the seven gaps",
     r'''
 _made = _made_names()
 _hours = [_m for _m in _made if _m.startswith('hour_')]
-assert not _hours, ('The `hour_` boxes are still there. This task keeps all seven gaps in one list, `chalk_wall`, '
-                    'and reads every number from it.')
+assert not _hours, ('The `hour_` boxes are still there. Put all seven gaps in one list, `chalk_wall`, and delete '
+                    'the `hour_` lines.')
 _kind, _v = _first_lit('chalk_wall')
 if _kind == 'missing':
     _n = _near('chalk_wall')
-    assert not _n, 'Python matches names letter for letter: you wrote `' + _n[0] + '`, the task needs `chalk_wall`.'
-    assert 'nights' not in _made, ('`nights` is the name from the example. This task' + chr(39) + 's list is '
-                                   '`chalk_wall`.')
-    assert False, 'Make one list called `chalk_wall` for the seven gaps, oldest first.'
-assert _kind != 'Tuple', 'Round brackets make a tuple. A list has square brackets.'
-assert _is_list(_v), '`chalk_wall` should be a list: the seven gaps between square brackets, with commas.'
-assert not [_x for _x in _v if type(_x).__name__ == 'str'], ('The gaps have quotes, so they are text. Gaps are '
-                                                            'numbers, with no quotes.')
-assert _v == __WALL__, ('`chalk_wall` should hold the seven gaps the boxes held, oldest first. It holds '
+    assert not _n, 'You wrote `' + _n[0] + '`, but the task needs `chalk_wall`. Python matches names letter for letter.'
+    assert 'nights' not in _made, ("`nights` is the name from the Example. This task's list is named `chalk_wall`.")
+    assert False, "Python can't find `chalk_wall`. Make one list named `chalk_wall` for the seven gaps, oldest first."
+assert _kind != 'Tuple', '`chalk_wall` has parentheses, so it is a tuple. A list uses square brackets `[ ]`.'
+assert _is_list(_v), ("`chalk_wall` isn't a list yet. Put the seven gaps between square brackets, with a comma "
+                      'between each two.')
+assert not [_x for _x in _v if type(_x).__name__ == 'str'], ('The gaps have quotes, so they are text. Take the quotes '
+                                                            'off: gaps are numbers.')
+assert _v == __WALL__, ("`chalk_wall` doesn't hold the seven gaps from the boxes, oldest first. Right now it holds "
                         + _shn(_v) + '.')
 ''',
     WALL=WALL,
@@ -1855,17 +1996,18 @@ for _w in __WANT__:
     if _hit:
         _at = _hit[0] + 1
         continue
-    assert _w not in _got, 'Keep the three lines in the old order: the oldest gap, the newest gap, then the shrink.'
+    assert _w not in _got, ('Your three lines are in a different order. Keep the old order: the oldest gap, the newest '
+                            'gap, then the shrink.')
     _label = _w.split(':')[0] + ':'
     _same = [_l for _l in _got if _l.startswith(_label)]
     if _same:
         _n = _nums(_same[0])
         _shown = _B.str(_n[-1]) if _n else 'something else'
-        assert _shown != '-11', ('The shrink shows -11: the take-away runs the wrong way round. The oldest gap '
-                                 'comes first.')
-        assert False, ('The `' + _label + '` line shows ' + _shown + '. The seven-box program showed `' + _w + '`.')
-    assert False, ('The seven-box program printed `' + _w + '`. Yours has no line like it: keep the words the '
-                   'same, and read the number from the list.')
+        assert _shown != '-11', ('The shrink shows a minus number, because your subtraction is the wrong way around. '
+                                 'Put the oldest gap first: the oldest minus the newest.')
+        assert False, ('Your `' + _label + '` line shows ' + _shown + ', but the old program showed `' + _w + '`.')
+    assert False, ('The old program printed `' + _w + '`, and yours has no line like it. Keep the words the same, and '
+                   'read the number from the list.')
 ''',
     WANT=REFACTOR_WANT,
 )
@@ -1875,33 +2017,35 @@ REFACTOR_FOLLOWS = chk(
     r'''
 _o = __OTHER__
 _ns, _rows, _err, _miss, _seen, _snaps = _rerun({'chalk_wall': _o})
-assert not _miss, ("Keep one `chalk_wall = [...]` line with the seven gaps, so Mar'tu's check can try "
-                   "another wall there.")
+assert not _miss, ("Your code has no one line `chalk_wall = [...]` with the seven gaps, so Mar'tu can't test it with "
+                   'another wall. Make `chalk_wall` with one line like that.')
 _want = ['Oldest gap: ' + _B.str(_o[0]), 'Newest gap: ' + _B.str(_o[-1]), 'Shrink: ' + _B.str(_o[0] - _o[-1])]
 if not _B.all([_w in _rows for _w in _want]):
-    assert not _err.startswith('IndexError'), ('With another wall, Python stopped: ' + _err + '. A position counted '
-                                               'for 7 gaps does not fit a shorter wall. Count from the end for the '
-                                               'newest.' + __EV__)
-    assert not _err, 'With another wall, Python stopped: ' + _err + '.' + __EV__
+    assert not _err.startswith('IndexError'), (_why(_err) + " A position counted for 7 gaps doesn't fit a shorter "
+                                               'wall. Count from the end for the newest.' + __EV__)
+    assert not _err, _why(_err) + ' Read every number from `chalk_wall`, so your code works on any wall.' + __EV__
     def _shown(_label):
         _l = [_x for _x in _rows if _x.startswith(_label)]
         _n = _nums(_l[0]) if _l else []
         return _n[-1] if _n else None
     _a, _b, _c = _shown('Oldest gap:'), _shown('Newest gap:'), _shown('Shrink:')
     if _a != _o[0]:
-        assert _a != 48, 'The oldest gap is typed, not read from `chalk_wall`, so it shows 48 on any wall.' + __EV__
-        assert _a != _o[1], 'Positions start at 0, so that read the second gap, not the oldest.' + __EV__
-        assert False, ('The oldest gap does not follow the wall: it shows ' + _B.str(_a) + ', not '
+        assert _a != 48, ('Your oldest gap is typed in, so it shows 48 on every wall. Read it from `chalk_wall`: '
+                          'position 0 is the oldest.' + __EV__)
+        assert _a != _o[1], ('Your oldest gap is the second gap on the test wall. Positions start at 0, like a ruler, '
+                             'so the oldest is at position 0.' + __EV__)
+        assert False, ("Your oldest gap doesn't change to match the test wall: it shows " + _B.str(_a) + ', not '
                        + _B.str(_o[0]) + '.' + __EV__)
     if _b != _o[-1]:
-        assert _b != 37, 'The newest gap is typed, not read from `chalk_wall`, so it shows 37 on any wall.' + __EV__
-        assert False, ('The newest gap does not follow the wall: it shows ' + _B.str(_b) + ', not '
+        assert _b != 37, 'Your newest gap is typed in, so it shows 37 on every wall. Read it from `chalk_wall`.' + __EV__
+        assert False, ("Your newest gap doesn't change to match the test wall: it shows " + _B.str(_b) + ', not '
                        + _B.str(_o[-1]) + '. Count from the end, so it fits a wall of any length.' + __EV__)
-    assert _c != 11, ('The shrink is still a typed number, so it shows 11 on another wall too. Let the code work '
-                      'it out from the oldest and newest gaps.' + __EV__)
-    assert _c != _o[1] - _o[-1], 'Positions start at 0, so the shrink starts from the second gap.' + __EV__
-    assert False, ('The shrink does not follow the wall: it shows ' + _B.str(_c) + ', not '
-                   + _B.str(_o[0] - _o[-1]) + '. It is the oldest gap take away the newest.' + __EV__)
+    assert _c != 11, ('Your shrink is still a typed number, so it shows 11 on every wall. Let the code work it out: '
+                      'the oldest gap minus the newest.' + __EV__)
+    assert _c != _o[1] - _o[-1], ('Your shrink starts from the second gap on the test wall. Positions start at 0, so '
+                                  'the oldest gap is at position 0.' + __EV__)
+    assert False, ("Your shrink doesn't change to match the test wall: it shows " + _B.str(_c) + ', not '
+                   + _B.str(_o[0] - _o[-1]) + '. The shrink is the oldest gap minus the newest.' + __EV__)
 ''',
     OTHER=REFACTOR_OTHER, EV=REFACTOR_EV,
 )
@@ -1914,9 +2058,9 @@ for _vals in (None, {'chalk_wall': __OTHER__}):
     _w = _ns.get('chalk_wall')
     _want = 'Last drop: ' + _B.str(_w[-2] - _w[-1]) if _is_list(_w) and _B.len(_w) > 1 else '?'
     _ev_w = '' if _vals is None else __EV__
-    assert not _err, 'With another wall, Python stopped: ' + _err + '.' + _ev_w
-    assert _want in _rows, ('Print `Last drop:` and the newest gap take away the one before it, both read from '
-                            '`chalk_wall`.' + _ev_w)
+    assert not _err, _why(_err) + ' Read every number from `chalk_wall`, so your code works on any wall.' + _ev_w
+    assert _want in _rows, ('No line shows `Last drop:` with the right number. Print `Last drop:` and the gap before '
+                            'the newest minus the newest, both read from `chalk_wall`.' + _ev_w)
 ''',
     OTHER=REFACTOR_OTHER, EV=REFACTOR_EV,
 )
@@ -1930,14 +2074,17 @@ CHALLENGE_ONE_LIST = dict(
     minutes=10,
     support="light",
     summary=(
-        "A stretch: rewrite a seven-box program with one list, so it prints the same thing and works out the "
-        "shrink itself."
+        "A stretch: rewrite a program that uses seven boxes so it uses one list. It shows the same three lines, and "
+        "works out the shrink from the list."
     ),
     martu=(
-        "Before you knew lists, my wall lived in seven boxes. The program works. But the shrink is typed by hand, "
-        "so one new gap and it lies, yes?\n"
-        "Rewrite it with one list. Same three lines, word for word. My check also tries another wall, only inside "
-        "the check, so read every number from the list."
+        "Rewriting code to do the same job in a better way is like revising an essay in English class. The ideas "
+        "stay the same, but the sentences get clearer. Before you knew lists, my wall lived in seven boxes, "
+        "`hour_1` to `hour_7`. Rewrite the program with one list, `chalk_wall`. Show the same three lines, word for "
+        "word.\n"
+        "The old program has a typed-in answer: `print(\"Shrink:\", 11)`. The *shrink* is how much the gap got "
+        "shorter, the oldest gap minus the newest. Let the code work it out from the list. I test your code with "
+        "another wall, so read every number from the list, yes?"
     ),
     example=(
         "nights = [9, 8, 6]\nfirst = nights[0]\nlast = nights[-1]\n"
@@ -1947,30 +2094,34 @@ CHALLENGE_ONE_LIST = dict(
     names=["chalk_wall"],
     pair_talk=(
         "Pair talk: before you start, tell your partner which box holds the oldest gap and which holds the newest, "
-        "and how a list reads each one. Then each of you rewrites it on your own screen."
+        "and which position of a list reads each one."
     ),
     starter=REFACTOR_STARTER,
     checkpoints=[
         dict(
             id="rewrite-with-one-list",
             text=(
-                "Rewrite it with one list, `chalk_wall`, so it prints the same thing, and let the code work out "
-                "the shrink."
+                "Rewrite the program with one list, in three parts:\n"
+                "1. Replace the seven `hour_` lines with one list, `chalk_wall`, oldest gap first.\n"
+                "2. Make each `print` read its number from `chalk_wall`.\n"
+                "3. Let the code work out the shrink: the oldest gap minus the newest."
             ),
             dictated=False,
             hints=[
-                "Look at the seven `hour_` lines: their numbers, oldest first, go into one list. Then look at each "
-                "print: which position of the list does it need?",
-                "With other names: in the example, `nights[0]` is the first item, `nights[-1]` the last, and "
-                "`first - last` is how much it dropped.",
-                "The shrink is the oldest gap take away the newest. Read both from `chalk_wall`, so a new wall "
-                "gets a new shrink.",
-                "Write `chalk_wall = [48, 48, 47, 46, 44, 41, 37]` in place of the seven hour lines. Then read the oldest and the newest gap from it, and print the shrink as one take away the other.",
+                "Look at the seven `hour_` lines at the top. Their numbers, oldest first, go into one list. Then look "
+                "at each `print`: which position of the list does it need?",
+                "In the Example, `nights[0]` is the first item and `nights[-1]` is the last. `first - last` is how "
+                "much it dropped.",
+                "The shrink is the oldest gap minus the newest gap. Read both from `chalk_wall`, so a new wall gets a "
+                "new shrink, like a formula in math class.",
+                "Write `chalk_wall = [48, 48, 47, 46, 44, 41, 37]` in place of `hour_1 = 48`, and delete the other "
+                "six `hour_` lines. Then read the oldest and newest gaps from `chalk_wall`, and print the shrink as "
+                "the oldest minus the newest.",
             ],
             checks=[REFACTOR_ONE_LIST, REFACTOR_SAME, REFACTOR_FOLLOWS],
             pass_line=(
-                "Mar'tu: Same three lines, one list. Chalk a new gap, and the shrink keeps up. That is why we have "
-                "lists, yes?"
+                "Same three lines, from one list. Mar'tu: Chalk a new gap and press Run, and the shrink changes to "
+                "match. That is why we have lists, yes?"
             ),
         ),
     ],
@@ -1994,8 +2145,8 @@ CHALLENGE_ONE_LIST = dict(
             text=(
                 "1. Put the seven numbers in `chalk_wall`, oldest first.\n"
                 "2. Delete the seven `hour_` lines.\n"
-                "3. Each print reads from the list: the oldest at `[0]`, the newest at `[-1]`.\n"
-                "4. The shrink is the oldest take away the newest, worked out from those two reads."
+                "3. Each `print` reads from the list: the oldest at `[0]`, the newest at `[-1]`.\n"
+                "4. The shrink is the oldest minus the newest, worked out from those two reads."
             ),
         ),
         dict(
@@ -2011,10 +2162,10 @@ CHALLENGE_ONE_LIST = dict(
         by="bomb-shell",
         title="The newest drop",
         text=(
-            "Bomb Shell wants the newest drop. At the bottom, print `Last drop:` and how much the newest gap "
-            "shrank from the one before it."
+            "Bomb Shell wants the newest drop: how much the newest gap shrank from the gap before it. At the "
+            "bottom, print `Last drop:` and that number."
         ),
-        hints=["The one before the newest is `[-2]`. Take the newest away from it.",
+        hints=["The gap before the newest is at position `[-2]`, second from the end. Subtract the newest from it.",
                "Write `drop = chalk_wall[-2] - newest` at the bottom, then `print(\"Last drop:\", drop)`."],
         checks=[REFACTOR_BONUS],
         solution=REFACTOR_SOLUTION + 'drop = chalk_wall[-2] - newest\nprint("Last drop:", drop)\n',
@@ -2024,12 +2175,13 @@ CHALLENGE_ONE_LIST = dict(
         part="chalk-wall",
         why=(
             "You have seen this wall. Oogrish ran a finger down it, and the newest number, 37, was circled twice. "
-            "One list holds the whole wall, so every read and the shrink keep up when a new gap is chalked."
+            "One list holds the whole wall. When a new gap is chalked, every read and the shrink change to match "
+            "when you press Run again."
         ),
     ),
     takeaway=(
-        "One list for seven boxes: `[0]` is the oldest, `[-1]` the newest, and the code works out the shrink, so "
-        "it keeps up with a new wall."
+        "One list in place of seven boxes: `[0]` is the oldest, `[-1]` the newest, and the code works out the "
+        "shrink, so it changes to match a new wall."
     ),
     wrong_answers=[
         dict(why="the starter (seven boxes, the shrink typed)", code=REFACTOR_STARTER, fails_at=1,
@@ -2061,7 +2213,7 @@ CHALLENGE_ONE_LIST = dict(
         dict(why="the shrink the wrong way round (newest - oldest)",
              code=_refactor(prints='print("Oldest gap:", oldest)\nprint("Newest gap:", newest)\n'
                                    'print("Shrink:", newest - oldest)\n'),
-             fails_at=1, message_contains="wrong way round"),
+             fails_at=1, message_contains="wrong way around"),
         dict(why="the oldest typed by hand (print(48), not chalk_wall[0])",
              code=_refactor(reads="oldest = 48\nnewest = chalk_wall[-1]\n"), fails_at=1, message_contains="typed"),
         dict(why="index from 1: the oldest read with [1] (right here only because the first two gaps are both 48)",
@@ -2162,17 +2314,17 @@ def _qc_make(form, name, start, rule, guess, fix, other, other_guess, story="", 
         r'''
 _kind, _v = _first_lit(__NAME__)
 assert not ('steps' in globals() and (_kind == 'missing' or not _v)), (
-    '`steps` is a name from a hint. This task' + chr(39) + 's list is `' + __NAME__ + '`.')
+    "`steps` is a name from a hint. This task's list is named `" + __NAME__ + '`.')
 assert _kind != 'missing', _lost(__NAME__)
-assert _kind != 'Tuple', 'Round brackets make a tuple, not a list.'
-assert _is_list(_v), '`' + __NAME__ + '` is not a list.'
+assert _kind != 'Tuple', '`' + __NAME__ + '` has parentheses, so it is a tuple, not a list.'
+assert _is_list(_v), '`' + __NAME__ + "` isn't a list."
 assert _v or not _near(__NAME__), _lost(__NAME__)
 assert _v, '`' + __NAME__ + '` is still empty.'
 _txt = [_x for _x in _v if type(_x).__name__ == 'str']
 assert not _txt, 'The numbers have quotes, so they are text.'
 # Lucky's fixed copy is let through here, so a retyped first line gets task 3's message, not this one.
 _fine = (__WANT__, __FIXED__)
-assert not (_v[:3] in _fine and _B.len(_v) > 3), 'The guess is typed into the first list, so nothing is appended.'
+assert not (_v[:3] in _fine and _B.len(_v) > 3), 'Your guess is typed into the first list, so nothing is appended.'
 assert _v in _fine, '`' + __NAME__ + '` holds ' + _shn(_v) + ', not ' + __NUMS__ + ' in that order.'
 ''',
         NAME=name, NUMS=nums, WANT=start, FIXED=fixed,
@@ -2210,18 +2362,18 @@ for _vals in (None, {__NAME__: __OTHER__}):
     assert not _ok, 'Your guess, ' + _B.str(_g[-1]) + ', is not ' + __SIDE__ + ' ' + _B.str(__EDGE__) + '.'
     assert not _err, _lstop(_vals, None, _err)
     if _is_list(_g) and _B.len(_g) == _B.len(_start):
-        assert not _bare, '`+` makes a new, longer list, and that line throws it away.'
-        assert not _early, ('The append is above the line that makes `' + __NAME__ + '`, and lines run top to '
+        assert not _bare, '`+` makes a new, longer list, but nothing keeps it, so Python throws it away.'
+        assert not _early, ('The append is above the line that makes `' + __NAME__ + '`, and Python reads top to '
                             'bottom.')
         assert _B.len(_lits) < 2, 'A second `' + __NAME__ + ' = [...]` line makes a brand-new list.' + _ev(_vals)
         assert False, 'Nothing was added to the end of `' + __NAME__ + '`.' + _ev(_vals)
     assert _is_list(_g), '`' + __NAME__ + '` is no longer a list.'
     assert _B.len(_g) == _B.len(_start) + 1, ('`' + __NAME__ + '` grew by ' + _B.str(_B.len(_g) - _B.len(_start))
-                                              + ', not by one guess.' + _ev(_vals))
+                                              + ' items, not by one guess.' + _ev(_vals))
     _new = _g[-1]
     assert type(_new).__name__ != 'str', 'The guess has quotes, so it is text, not a number.'
     assert type(_new).__name__ != 'list', 'The guess went in with square brackets, so a whole list was appended.'
-    assert False, 'The new last item of `' + __NAME__ + '` is not one whole number.' + _ev(_vals)
+    assert False, 'The new last item of `' + __NAME__ + "` isn't one whole number." + _ev(_vals)
 ''',
         NAME=name, WANT=start, OTHER=other[:len(start)], OKRULE=ok_rule, SIDE=side, EDGE=edge,
     )
@@ -2235,7 +2387,7 @@ _want = __FIXED__
 if not (_is_list(_g) and _B.len(_g) == _B.len(_want) + 1 and _g[:-1] == _want):
     assert _is_list(_g), '`' + __NAME__ + '` is no longer a list.'
     _top = _g[:_B.len(_want)]
-    assert not (_eqs and not _subs), ('`==` only asks whether two things are equal. It changes nothing, so the '
+    assert not (_eqs and not _subs), ('`==` only asks whether two things are the same. It changes nothing, so the '
                                       + __OLD__ + ' is still there.')
     assert not (_calls_of('append', __NAME__) and _B.len(_g) > _B.len(_want) + 1 and _g[-1] == __FIXV__
                 and _g[1] == __OLDV__), '`.append()` adds ' + __FIX__ + ' at the end, so the ' + __OLD__ + ' is still there.'
@@ -2256,8 +2408,8 @@ if not (_is_list(_g) and _B.len(_g) == _B.len(_want) + 1 and _g[:-1] == _want):
         r'''
 _lits = _typed_list(__NAME__)
 assert not (_B.len(_lits) == 1 and _ast.literal_eval(_lits[0].value) != __WANT__), (
-    'The `' + __NAME__ + ' = [...]` line was typed again, with ' + __FIX__ + ' in it, so Lucky' + chr(39) + 's '
-    'copy was retyped, not changed by position.')
+    'The `' + __NAME__ + ' = [...]` line was typed again with ' + __FIX__ + ' in it, so the list was retyped, not '
+    'changed by position.')
 assert _B.len(_lits) < 2, 'The list was typed again. This task changes one item by its position, not the whole list.'
 # The other list has the start's length, so a position counted from the end (`[-2]` before the append, `[-3]`
 # after it) lands on the same item as in the student's own run.
@@ -2275,8 +2427,9 @@ _rest = lambda _l: [_x for _i, _x in _B.enumerate(_l[:_B.len(_o)]) if _i != 1]
 _moved = _is_list(_g) and _B.len(_g) > 1 and _rest(_g) == _rest(_o) and _g[1] != _o[1]
 if not (_is_list(_g) and _g[:_B.len(_want)] == _want) and not _moved:
     assert not (_is_list(_g) and _g[:_B.len(__FIXED__)] == __FIXED__), (
-        'With another list, the fix does not follow: the list was typed again.' + _ev(_vals, _apps))
-    assert False, ('With another list, position 1 ends up as ' + _shn(_g[1] if _is_list(_g) and _g[1:] else None)
+        "On Mar'tu's test list, position 1 didn't change to match: the whole list was typed again."
+        + _ev(_vals, _apps))
+    assert False, ("On Mar'tu's test list, position 1 ends up as " + _shn(_g[1] if _is_list(_g) and _g[1:] else None)
                    + ', not ' + __FIX__ + '.' + _ev(_vals, _apps))
 ''',
         NAME=name, WANT=start, FIX=str(fix), FIXV=fix, FIXED=fixed, OTHER=other[:len(start)],
@@ -2307,19 +2460,19 @@ for _vals, _apps in ((None, None), ({__NAME__: __OTHER__}, {__NAME__: __OTHERGUE
         continue
     assert not _err, _lstop(_vals, _apps, _err)
     assert _got or not [_l for _l in _rows if _l.startswith('[')], 'Your line shows the whole list, not one item.'
-    assert _got, 'No number was printed.'
+    assert _got, 'No number shows in the Console.'
     _apl = [_n.lineno for _n in _calls_of('append', __NAME__)]
     _early = [_n for _n in _ast.parse(_source).body if type(_n).__name__ == 'Expr' and type(_n.value).__name__ == 'Call'
               and type(_n.value.func).__name__ == 'Name' and _n.value.func.id == 'print' and _apl
               and _n.lineno < _B.min(_apl)]
     assert not _early, 'The print is above the append, so it ran before the guess was added.'
     assert not (_vals is not None and _got == _own and _typed_print()), (
-        'That number was typed, not read from the list.' + _ev(_vals, _apps))
+        'That number was typed in, not read from the list.' + _ev(_vals, _apps))
     assert not (_vals is not None and _got == _own), ('Your line shows ' + _B.str(_got[-1]) + ' even when the list '
                                                      'holds other numbers.' + _ev(_vals, _apps))
-    assert not _front, ('A position counted from the front fits one length only, so another list' + chr(39) + 's last '
-                        'item is missed.' + _ev(_vals, _apps))
-    assert False, 'That read does not find the last item of every list.' + _ev(_vals, _apps)
+    assert not _front, ('A position counted from the front fits one length only, so it misses the last item of a '
+                        'longer list.' + _ev(_vals, _apps))
+    assert False, "That read doesn't find the last item of every list." + _ev(_vals, _apps)
 ''',
         NAME=name, OTHER=other, OTHERGUESS=other_guess,
     )
@@ -2329,10 +2482,10 @@ for _vals, _apps in ((None, None), ({__NAME__: __OTHER__}, {__NAME__: __OTHERGUE
         title="Make, append, fix, read",
         martu=(
             lead
-            + f"Lucky copied {copied} for you. Make the list, append your guess, mend Lucky's slip by its "
-            "position, then print the last item, read from the list. My check tries another list, only inside the "
-            "check, so never type a number you can see.\n"
-            f"Stuck? Skip it, or try the lesson {lesson}. Tasks you pass here stay ticked."
+            + f"Lucky copied {copied} for you. Four steps: make the list, append your guess, fix Lucky's mistake by "
+            "its position, and print the last item. I test your code with another list, so read every number from "
+            "the list. Don't type in a number you can see.\n"
+            f"Stuck? Skip this task, or go back to the lesson {lesson}. Tasks you pass here stay ✓ done."
         ),
         names=[name, "append"],
         pick=str(guess),
@@ -2342,44 +2495,51 @@ for _vals, _apps in ((None, None), ({__NAME__: __OTHER__}, {__NAME__: __OTHERGUE
         checkpoints=[
             dict(
                 id="make-the-list",
-                text=f"Make `{name}` a list holding {nums}, in that order.",
+                text=f"Under the `# 1.` note, make `{name}` a list that holds {nums}, in that order.",
                 dictated=False,
                 hints=[
-                    "Numbers go between square brackets, with a comma between each two. No quotes.",
-                    "With other names: `steps = [9, 8, 6]` is a list of three numbers.",
+                    f"Look at `{name} = []`. The numbers go between the square brackets, with a comma between each "
+                    "two, and no quotes.",
+                    "`steps = [9, 8, 6]` is a list of three numbers.",
                     f"Write `{name} = {start!r}` in place of `{name} = []`.",
                 ],
                 checks=[made],
             ),
             dict(
                 id="append-a-guess",
-                text=f"Append your guess for the next one: a whole number {side} {edge}.",
+                text=(
+                    f"Under the `# 2.` note, append your guess for the next number to the end of `{name}`. Your "
+                    f"guess is a whole number {side} {edge}."
+                ),
                 dictated=False,
                 hints=[
-                    "`.append()` adds one item to the end of the list itself. The number goes in the round brackets.",
-                    "With other names: `steps.append(5)` adds 5 to the end of `steps`.",
+                    "`.append()` adds one item to the end of the list itself. The number goes inside the parentheses.",
+                    "`steps.append(5)` adds 5 to the end of `steps`.",
                     f"Write `{name}.append({guess})` under the `# 2.` note, with your own guess.",
                 ],
                 checks=[appended],
             ),
             dict(
                 id="fix-by-position",
-                text=f"Lucky miscopied the {old}: it should be {fix}. Change it by its position. Don't retype the list.",
+                text=(
+                    f"Lucky copied one number wrong. Under the `# 3.` note, change the {old} to {fix} by its "
+                    "position. Don't type the whole list again."
+                ),
                 dictated=False,
                 hints=[
-                    f"Positions start at 0, so the {old} sits at position 1. One `=` puts a new item there.",
-                    "With other names: `steps[0] = 10` changes the first item of `steps`, and keeps the rest.",
+                    f"Positions start at 0, like a ruler, so the {old} is at position 1. One `=` puts a new item there.",
+                    "`steps[0] = 10` changes the first item of `steps` and keeps the rest.",
                     f"Write `{name}[1] = {fix}` under the `# 3.` note.",
                 ],
                 checks=[fix_value, fix_line, fix_by_position],
             ),
             dict(
                 id="print-the-last",
-                text=f"Print the last item of `{name}`, read from the list.",
+                text=f"Under the `# 4.` note, print the last item of `{name}`, read from the list.",
                 dictated=False,
                 hints=[
                     "Count from the end, so it works for a list of any length.",
-                    "With other names: `print(steps[-1])` shows the last item of `steps`.",
+                    "A minus counts from the end: `print(steps[-1])` shows the last item of `steps`.",
                     f"Write `print({name}[-1])` under the `# 4.` note.",
                 ],
                 checks=[last],
@@ -2394,7 +2554,7 @@ for _vals, _apps in ((None, None), ({__NAME__: __OTHER__}, {__NAME__: __OTHERGUE
         another_way=[
             dict(angle="step-by-step", text=(
                 f"1. `{name} = {start!r}`. 2. `.append()` adds your guess at the end. 3. Position 1 is the second "
-                f"item: one `=` swaps the {old} out. 4. `[-1]` reads the last item, however long the list is.")),
+                f"item: one `=` swaps out the {old}. 4. `[-1]` reads the last item, however long the list is.")),
             dict(angle="shorter", text="Square brackets and commas, `.append()`, a change by position, then `[-1]`."),
         ],
         takeaway=(
@@ -2440,7 +2600,7 @@ for _vals, _apps in ((None, None), ({__NAME__: __OTHER__}, {__NAME__: __OTHERGUE
                  code=program(mend=f"{name} = {fixed + [guess]!r}"), fails_at=3, message_contains="typed again"),
             dict(why="the fix: retyped through list() (only the re-run catches it)",
                  code=program(mend=f"{name} = list({fixed + [guess]!r})"), fails_at=3,
-                 message_contains="does not follow"),
+                 message_contains="whole list was typed again"),
             dict(why="the fix one position off (index from 1)", code=program(mend=f"{name}[2] = {fix}"), fails_at=3,
                  message_contains="Positions start at 0"),
             dict(why="the fix with == (a question, not a change)", code=program(mend=f"{name}[1] == {fix}"),
@@ -2453,7 +2613,7 @@ for _vals, _apps in ((None, None), ({__NAME__: __OTHER__}, {__NAME__: __OTHERGUE
             dict(why="the fix in quotes", code=program(mend=f'{name}[1] = "{fix}"'), fails_at=3,
                  message_contains="quotes"),
             dict(why="the last item typed by hand", code=program(show=f"print({guess})"), fails_at=4,
-                 message_contains="typed, not read"),
+                 message_contains="typed in, not read"),
             dict(why="a position from the start only fits this length", code=program(show=f"print({name}[3])"),
                  fails_at=4, message_contains="counted from the front"),
             dict(why="len used as a position (IndexError)", code=program(show=f"print({name}[len({name})])"),
@@ -2518,10 +2678,11 @@ _defs = [_n for _n in _ast.walk(_ast.parse(_source)) if type(_n).__name__ == 'Fu
 _fn = globals().get('newest_three')
 _nm = _near('newest_three')
 assert _B.callable(_fn) and _defs, (
-    ('Python matches names letter for letter: you wrote `' + _nm[0] + '`, the task needs `newest_three`.') if _nm
-    else ('The recipe `newest_three` is gone, so Mar' + chr(39) + 'tu' + chr(39) + 's check has nothing to call.'))
+    ('You wrote `' + _nm[0] + '`, but the task needs `newest_three`. Python matches names letter for letter.') if _nm
+    else ("The recipe `newest_three` is gone, so Mar'tu has nothing to test."))
 _args = [_a.arg for _a in _defs[-1].args.args]
-assert _args == [__PARAM__], 'The ingredient' + chr(39) + 's name changed: the starter named it `' + __PARAM__ + '`.'
+assert _args == [__PARAM__], ("The ingredient's name changed: it was `" + __PARAM__ + '` in the code you started '
+                              'with.')
 '''
     ret = chk(
         "newest_three hands its answer back with return (RET)",
@@ -2546,29 +2707,32 @@ if _bad:
     _i = _bad[0]
     _a = _cases[_i]
     _out, _pr, _err = _got[_i]
-    _ev1 = " (Mar'tu's check called `newest_three(" + _sh(_a) + ")`"
-    _back = ': it handed back ' + _shn(_out) + '.)'
-    _none = ': it handed back `None`: nothing came back.)'
-    _both = (" (Mar'tu's check called `newest_three(" + _sh(_cases[0]) + ")` and `newest_three("
-             + _sh(_cases[1]) + ")`: both handed back " + _shn(_got[0][0]) + '.)')
+    _ev1 = " Mar'tu tested your recipe with a test call, `newest_three(" + _sh(_a) + ")`"
+    _back = ': it handed back ' + _shn(_out) + '.'
+    _none = ': it handed back `None`, so nothing came back.'
+    _both = (" Mar'tu tested your recipe with two test calls, `newest_three(" + _sh(_cases[0]) + ")` and "
+             "`newest_three(" + _sh(_cases[1]) + ")`: both handed back " + _shn(_got[0][0]) + '.')
     if __OUTER__ in _inner:
         _msg = 'The recipe reads the list from outside, not the one it is handed.' + _ev1 + _back
     elif _err.startswith('IndexError'):
-        _msg = 'The recipe asks for a position the list does not have.' + _ev1 + ': Python stopped with IndexError.)'
+        _msg = ("The recipe asks for a position the list doesn't have." + _ev1
+                + ': Python stopped with an IndexError.')
     elif _err:
-        _msg = 'The recipe stops on some lists.' + _ev1 + ': Python stopped with ' + _err.split(':')[0] + '.)'
+        _k = _err.split(':')[0]
+        _msg = ('The recipe stops with an error on some lists.' + _ev1 + ': Python stopped with '
+                + ('an ' if _k[:1] in 'AEIOU' else 'a ') + _k + '.')
     elif _out is None and _pr:
         _msg = 'The recipe prints the three, but hands nothing back.' + _ev1 + _none
     elif _out is None:
         _msg = 'The recipe hands nothing back.' + _ev1 + _none
     elif _out == []:
-        _msg = 'The recipe still hands back the starter' + chr(39) + 's empty list.' + _ev1 + _back
+        _msg = 'The recipe still hands back the empty list `[]`.' + _ev1 + _back
     elif _got[0][0] == _got[1][0]:
-        _msg = 'That list was typed, not cut from the list the recipe is handed.' + _both
+        _msg = 'That list was typed in, not cut from the list the recipe is handed.' + _both
     elif type(_out).__name__ == 'tuple':
-        _msg = 'That hands back a tuple, in round brackets, not one list.' + _ev1 + _back
+        _msg = 'That hands back a tuple, in parentheses, not one list.' + _ev1 + _back
     elif type(_out).__name__ == 'str':
-        _msg = 'The recipe hands back text, not the items.' + _ev1 + '.)'
+        _msg = 'The recipe hands back text, not the items.' + _ev1 + '.'
     elif _is_int(_out):
         _msg = 'That is one item, not three.' + _ev1 + _back
     elif _out == _a:
@@ -2581,12 +2745,12 @@ if _bad:
     elif _out == _a[:3]:
         _msg = 'Those are the three oldest, not the three newest.' + _ev1 + _back
     elif _is_list(_out) and _same_items(_out, _a[-3:]):
-        _msg = 'Right three, but sorted: the newest keep the order they have in the list.' + _ev1 + _back
+        _msg = 'The right three, but sorted: the newest keep the order they have in the list.' + _ev1 + _back
     elif _is_list(_out) and _same_items(_out, _B.sorted(_a)[-3:]):
         _msg = 'Those are the three biggest, not the three newest.' + _ev1 + _back
     else:
-        _msg = ('That is not the three newest of every list.' + _ev1 + ': it handed back ' + _shn(_out) + ', not '
-                + _sh(_a[-3:]) + '.)')
+        _msg = ("That isn't the three newest of every list." + _ev1 + ': it handed back ' + _shn(_out) + ', not '
+                + _sh(_a[-3:]) + '.')
     assert False, _msg
 ''',
         PARAM=param, OUTER=outer, CASES=cases, COUNTED=counted, LEN=len(start),
@@ -2595,7 +2759,7 @@ if _bad:
         "newest_three cuts them with one slice",
         defs + r'''
 _sl = [_n for _n in _ast.walk(_defs[-1]) if type(_n).__name__ == 'Slice']
-assert _sl, 'Right three, but read one by one. This task cuts them with one slice.'
+assert _sl, 'The right three, but read one by one. This task cuts them with one slice.'
 ''',
         PARAM=param,
     )
@@ -2604,10 +2768,10 @@ assert _sl, 'Right three, but read one by one. This task cuts them with one slic
         title="The three newest",
         martu=(
             lead
-            + f"The three newest, as a recipe that works for a {what} of any length. My check hands it a shorter "
-            f"{what} and a longer one, only inside the check, so cut them from the {what} it is handed, yes?\n"
-            "Stuck? Skip it, or try the lessons Many Values, One Name and Reading the Wall Closely. Tasks you pass "
-            "here stay ticked."
+            + f"Finish the recipe `newest_three` so it hands back the three newest items of a {what} of any length. "
+            f"I test it by handing it a shorter {what} and a longer one, so work with the {what} it is handed, yes?\n"
+            "Stuck? Skip this task, or go back to the lessons Many Values, One Name and Reading the Wall Closely. "
+            "Tasks you pass here stay ✓ done."
         ),
         names=["newest_three", param],
         support="none",
@@ -2617,14 +2781,14 @@ assert _sl, 'Right three, but read one by one. This task cuts them with one slic
             dict(
                 id="slice-the-newest",
                 text=(
-                    f"Make `newest_three({param})` hand back the three newest items of any {what} it is handed, "
-                    "with one slice."
+                    f"Change `return []` so `newest_three({param})` hands back the three newest items, the last "
+                    f"three, of any {what} it is handed. Use one slice."
                 ),
                 dictated=False,
                 hints=[
                     f"Inside the recipe, the {what} it is handed is called `{param}`. Slice that: start 3 from the "
                     "end, and leave the end empty.",
-                    "With other names: `return steps[-2:]` hands back the last two items of `steps`.",
+                    "`return steps[-2:]` hands back the last two items of `steps`.",
                     f"Write `return {param}[-3:]` in place of `return []`.",
                 ],
                 checks=[ret, par, sliced],
@@ -2740,16 +2904,16 @@ for _vals in (None, {__TABLE__: __OTHER__}):
     _got = _lastnums(_rows)
     if _want in _got:
         continue
-    assert not _err, 'With another `' + __TABLE__ + '`, Python stopped: ' + _err + '.' + _ev_t
+    assert not _err, _why(_err) + _ev_t
     assert not [_l for _l in _rows if _l == _B.str(_T[__ROW__])], 'Your line shows the whole row, not one item in it.'
     assert not [_l for _l in _plain(_rows) if _B.str(_T[__ROW__][0]) in _l and not _nums(_l)], (
         '`[0]` is the name, not the ' + __WHAT__ + '.')
     assert not (_T[__ROW__ + 1][1] in _got), 'Rows start at 0, so that is the wrong row.' + _ev_t
     assert not (_vals is not None and _got == _own and _typed_print()), (
-        'That number was typed, not read from `' + __TABLE__ + '`.' + _ev_t)
+        'That number was typed in, not read from `' + __TABLE__ + '`.' + _ev_t)
     assert not (_vals is not None and _got == _own), ('Your line shows ' + _B.str(_got[-1]) + ' even with another `'
                                                      + __TABLE__ + '`.' + _ev_t)
-    assert False, 'That is not ' + __LABEL__ + ' on every `' + __TABLE__ + '`.' + _ev_t
+    assert False, "That isn't " + __LABEL__ + ' on every `' + __TABLE__ + '`.' + _ev_t
 ''',
         TABLE=table, OTHER=other_table, OTHEREV=other_ev, ROW=row, WHAT=what, LABEL=label,
     )
@@ -2767,16 +2931,18 @@ for _vals in (None, {__NUMS__: __OTHERNUMS__}):
         continue
     assert not _err, _lstop(_vals, None, _err)
     _nm = _near('ordered')
-    assert 'ordered' in _ns or not _nm, ('Python matches names letter for letter: you wrote `' + (_nm or [''])[0]
-                                         + '`, the task needs `ordered`.')
+    assert 'ordered' in _ns or not _nm, ('You wrote `' + (_nm or [''])[0] + '`, but the task needs `ordered`. Python '
+                                         'matches names letter for letter.')
     assert 'ordered' in _ns, 'The line that makes `ordered` is gone.'
     assert type(_o).__name__ != 'NoneType', '`.sort()` hands back `None`, so `ordered` holds `None`: nothing came back.'
     if _m != _start or _o is _m:
         assert not (_alias and not _calls_of('sort', __NUMS__)), ('`ordered = ' + __NUMS__ + '` gives the same list '
-                                                                  'a second name, so sorting one sorts both.')
+                                                                  'a second name, like a nickname, so sorting one '
+                                                                  'sorts both.')
         assert False, '`.sort()` sorted `' + __NUMS__ + '` itself, so `' + __NUMS__ + '` lost its order.' + _ev(_vals)
     assert not _is_int(_o), '`ordered` holds one number, not a sorted copy.' + _ev(_vals)
-    assert not (_vals is not None and _o == _own), '`ordered` was typed, not sorted from `' + __NUMS__ + '`.' + _ev(_vals)
+    assert not (_vals is not None and _o == _own), ('`ordered` was typed in, not sorted from `' + __NUMS__ + '`.'
+                                                   + _ev(_vals))
     assert False, '`ordered` holds ' + _shn(_o) + ', not a sorted copy of `' + __NUMS__ + '`.' + _ev(_vals)
 ''',
         NUMS=nums_name, OTHERNUMS=other_nums, START=nums,
@@ -2784,12 +2950,14 @@ for _vals in (None, {__NUMS__: __OTHERNUMS__}):
     plain_print = sorted(nums)
     return dict(
         id="mend-the-reads",
-        title="Mend the reads",
+        title="Fix two bugs",
         martu=(
-            "Two slips: one loud, one quiet. Read Python's last line and mend the line it names. Then read what "
-            f"the program prints. My check tries another `{table}` and other numbers, only inside the check.\n"
-            "Stuck? Skip it, or try the lessons Many Values, One Name and Reading the Wall Closely. Tasks you pass "
-            "here stay ticked."
+            "This code has two [[bug|bugs]]: one loud, one quiet. *Mend* means fix. For the loud one, Python stops: "
+            "read the title of the error box, then *Python's last line*, then fix the line number it gives. For the "
+            "quiet one, Python runs, so press Run and read what the Console shows. I test your code with another "
+            f"`{table}` and other numbers.\n"
+            "Stuck? Skip this task, or go back to the lessons Many Values, One Name and Reading the Wall Closely. "
+            "Tasks you pass here stay ✓ done."
         ),
         names=[table, nums_name, "ordered", "sorted"],
         support="none",
@@ -2798,26 +2966,33 @@ for _vals in (None, {__NUMS__: __OTHERNUMS__}):
         checkpoints=[
             dict(
                 id="mend-the-read",
-                text=f"Mend the line that should print {label}, read from `{table}`.",
+                text=(
+                    f"Mend line {table_code.count(chr(10)) + 2} so it prints {label}, read from `{table}`."
+                ),
                 dictated=False,
                 hints=[
-                    "Read Python's last line. Which line does it name?",
-                    "Outer number first: which row. Rows start at 0. Inner number second: `[1]` is the "
-                    f"{what}.",
-                    "With other names: `shelf[0][1]` is the second item of the first row.",
+                    "Read the error box in the Console: first its title, then *Python's last line*. Which line number "
+                    "does it give?",
+                    "Read it like a theater ticket: the first number is the row, and rows start at 0. The second "
+                    f"number is the seat in that row: `[1]` is the {what}.",
+                    "`shelf[0][1]` is the second item of the first row.",
                     f"Write `{fixed}` in place of `{loud}`.",
                 ],
                 checks=[read_check],
             ),
             dict(
                 id="mend-the-sort",
-                text=f"Mend the sort so `ordered` holds a sorted copy, and `{nums_name}` keeps its order.",
+                text=(
+                    f"Mend line {table_code.count(chr(10)) + 5} so `ordered` holds a sorted copy, and `{nums_name}` "
+                    "keeps its order."
+                ),
                 dictated=False,
                 hints=[
-                    "No message now, so read what the program printed last.",
+                    "This bug is quiet: Python doesn't stop. Read the last line in the Console. Is it a sorted list?",
                     f"`.sort()` sorts `{nums_name}` itself and hands back `None`: nothing comes back. Which tool "
                     "hands back a sorted copy?",
-                    "With other names: `ups = sorted(steps)` makes a sorted copy, and `steps` keeps its order.",
+                    "`ups = sorted(steps)` makes a sorted copy, like a photocopy you put in order. `steps` keeps its "
+                    "order.",
                     f"Write `ordered = sorted({nums_name})` in place of `ordered = {nums_name}.sort()`.",
                 ],
                 checks=[sort_check],
@@ -2832,8 +3007,8 @@ for _vals in (None, {__NUMS__: __OTHERNUMS__}):
         ),
         another_way=[
             dict(angle="step-by-step", text=(
-                f"1. Run and read the last line: an IndexError. 2. Mend the read: row {row}, then `[1]`. 3. Run again: "
-                f"`None` is printed, because nothing came back. 4. Use `sorted({nums_name})`.")),
+                f"1. Press Run and read the error box: an IndexError. 2. Fix the read: row {row}, then `[1]`. 3. Press "
+                f"Run again: the Console shows `None`, because nothing came back. 4. Use `sorted({nums_name})`.")),
             dict(angle="shorter", text=f"`{table}[{row}][1]`: row first, then item. `sorted()` copies; `.sort()` hands back `None`."),
         ],
         takeaway=f"`{table}[{row}][1]`: row first, from 0, then the item. `sorted()` hands back a copy; `.sort()` hands back `None`.",
@@ -2848,7 +3023,7 @@ for _vals in (None, {__NUMS__: __OTHERNUMS__}):
             dict(why="the name printed", code=program(f"print({table}[{row}][0])"), fails_at=1,
                  message_contains="`[0]` is the name"),
             dict(why=f"the {what} typed by hand", code=program(f"print({want})"), fails_at=1,
-                 message_contains="typed, not read"),
+                 message_contains="typed in, not read"),
             dict(why="the inner position still 2 (IndexError)", code=program(f"print({table}[{row}][2])"), fails_at=0,
                  message_contains="out of range"),
             dict(why="sorted the original (a copy versus the original)",
@@ -2884,11 +3059,13 @@ for _vals in (None, {__NUMS__: __OTHERNUMS__}):
 
 
 ROSTER_OTHER = [["Pell", 31], ["Brakka", 7], ["Moss", 15], ["Glug", 3]]
-ROSTER_OTHER_EV = " (Mar'tu's check tried another roster: Pell 31, Brakka 7, Moss 15, Glug 3, only inside the check.)"
+ROSTER_OTHER_EV = " Mar'tu tested your code with a test roster of Pell 31, Brakka 7, Moss 15 and Glug 3."
 DRILLS_OTHER = [["kick", 11], ["leap", 14], ["block", 17], ["dodge", 19]]
-DRILLS_OTHER_EV = " (Mar'tu's check tried other drills: kick 11, leap 14, block 17, dodge 19, only inside the check.)"
+DRILLS_OTHER_EV = " Mar'tu tested your code with test drills: kick 11, leap 14, block 17 and dodge 19."
+# Form B's lead ends with a space, not a new paragraph, so "Keep it short" still shows the task with it.
 ORE_LEAD = (
-    "Bomb Shell's Velocite ore powers everything. This list is how many chunks he used each day.\n"
+    "Bomb Shell's Velocite ore powers everything. `ore_used` is how many chunks of ore he used each day, oldest "
+    "day first. "
 )
 
 QC3_A = dict(
@@ -2898,8 +3075,9 @@ QC3_A = dict(
     optional=True,
     minutes=14,
     summary=(
-        "Three short tasks and two questions, no hints. Pass all three tasks and get both questions right to test "
-        "out of Unit 4. Stuck on one? The lessons teach all of it, and tasks you pass here stay ticked."
+        "Three short tasks and two questions, with no hints. Pass all three tasks and get both questions right to "
+        "test out of Unit 4: you show you know it, so you can skip its lessons. Stuck on one? The lessons teach all "
+        "of it, and tasks you pass here stay done."
     ),
     questions_to_pass=2,
     exercises=[
@@ -2908,8 +3086,8 @@ QC3_A = dict(
                    [9, 8, 7, 6]),
         _qc_mend("A", "roster", ROSTER_CODE, 2, "Bomb Shell", "mana", "manas", [26, 18, 24, 20], ROSTER_OTHER,
                  ROSTER_OTHER_EV, [12, 30, 8, 21],
-                 "Mar'tu: The gaps shrink, 48 down to 37. Bomb Shell studied the wall: thirty-two hours, maybe "
-                 "less. That is Unit 4, yes? Want a stretch? Try The Basement Inventory."),
+                 "Both bugs fixed. Mar'tu: The gaps shrink, 48 down to 37, and the next burst comes sooner. Want "
+                 "a stretch? Try The Basement Inventory."),
     ],
     notes=(
         "Quick Check 3, form A (code tasks). Questions live in qc3-a-questions. Pass = every code task plus both "
@@ -2939,8 +3117,9 @@ QC3_B = dict(
     optional=True,
     minutes=14,
     summary=(
-        "Three short tasks and two questions, no hints. Pass all three tasks and get both questions right to test "
-        "out of Unit 4. Stuck on one? The lessons teach all of it, and tasks you pass here stay ticked."
+        "Three short tasks and two questions, with no hints. Pass all three tasks and get both questions right to "
+        "test out of Unit 4: you show you know it, so you can skip its lessons. Stuck on one? The lessons teach all "
+        "of it, and tasks you pass here stay done."
     ),
     questions_to_pass=2,
     exercises=[
@@ -2950,8 +3129,8 @@ QC3_B = dict(
                    [1, 2, 4, 8], story=ORE_STORY, lead="Bomb Shell's ore list again. ", what="list"),
         _qc_mend("B", "drills", DRILLS_CODE, 1, "shield wall", "score", "scores", [6, 9, 5, 7], DRILLS_OTHER,
                  DRILLS_OTHER_EV, [12, 4, 15, 10],
-                 "Mar'tu: His ore runs low, and the burst comes sooner. Bomb Shell counts every chunk. That is Unit "
-                 "4, yes? Want a stretch? Try The Basement Inventory."),
+                 "Both bugs fixed. Mar'tu: Bomb Shell's ore runs low, and the burst comes sooner. He counts every "
+                 "chunk. Want a stretch? Try The Basement Inventory."),
     ],
     notes=(
         "Quick Check 3, form B: Bomb Shell's Velocite ore (`ore_used`: chunks used each day, told in the starter "
@@ -3025,13 +3204,13 @@ QC3_A_QUESTIONS = _qc_questions(
     "A",
     (
         "`chalk_wall` holds `[48, 48, 47, 46, 44, 41, 37]`. `roster` holds four rows: `[\"Oogrish\", 18]`, "
-        "`[\"Gearshift\", 20]`, `[\"Bomb Shell\", 24]` and `[\"Lucky\", 26]`. What will this print?",
+        "`[\"Gearshift\", 20]`, `[\"Bomb Shell\", 24]` and `[\"Lucky\", 26]`. What will these three lines print?",
         WALL_LINE + ROSTER_CODE,
         "print(chalk_wall[-2])\nprint(len(chalk_wall))\nprint(roster[1][0])\n",
         "41\n7\nGearshift",
         ["37\n7\nGearshift", "41\n6\nGearshift", "41\n7\nOogrish", "41\n7\nGearshift", "41\n7\nLucky"],
         (
-            "`[-2]` is the second from the end: 41. `len` counts the gaps: 7 (the last position is 6). Row 1 is the "
+            "`[-2]` is second from the end: 41. `len` counts the gaps: 7, while the last position is 6. Row 1 is the "
             "second row, because rows start at 0, and `[0]` is its name: Gearshift."
         ),
         "Skills list-index, list-nested. Distractors: -2 read as the last (37), len read as the last position (6), "
@@ -3042,8 +3221,8 @@ QC3_A_QUESTIONS = _qc_questions(
         "[1, 2, 3, 9]",
         ["[1, 2, 3, 4, 9]", "[0, 1, 2, 3, 9]", "[1, 2, 3, 9]", "[1, 2, 3, [9]]"],
         (
-            "`range(1, 4)` counts 1, 2, 3: the stop is left out. `+` joins two lists into one, so the 9 sits at the "
-            "end as an item of its own, not inside brackets."
+            "`range(1, 4)` counts 1, 2, 3 and stops before 4, like the open dot on a number line. `+` joins two "
+            "lists into one, so 9 goes at the end as an item of its own, not inside its own square brackets."
         ),
         "Skills range-slice-sort (the stop is left out) and list-append-len (`+` joins two lists). Replaces "
         "what-sort-hands-back (teacher ruling: C3 CP2 tests sort/None in code). Distractors: the stop included (4), "
@@ -3055,13 +3234,13 @@ QC3_B_QUESTIONS = _qc_questions(
     "B",
     (
         "`ore_used` holds `[2, 3, 3, 4, 5, 7]`. `drills` holds four rows: `[\"cane parry\", 7]`, "
-        "`[\"shield wall\", 5]`, `[\"slow breaths\", 9]` and `[\"roll and rise\", 6]`. What will this print?",
+        "`[\"shield wall\", 5]`, `[\"slow breaths\", 9]` and `[\"roll and rise\", 6]`. What will these three lines print?",
         ORE_LINE + DRILLS_CODE,
         "print(ore_used[-2])\nprint(len(ore_used))\nprint(drills[1][0])\n",
         "5\n6\nshield wall",
         ["7\n6\nshield wall", "5\n6\nshield wall", "5\n5\nshield wall", "5\n6\ncane parry", "5\n6\nroll and rise"],
         (
-            "`[-2]` is the second from the end: 5. `len` counts the days: 6 (the last position is 5). Row 1 is the "
+            "`[-2]` is second from the end: 5. `len` counts the days: 6, while the last position is 5. Row 1 is the "
             "second row, because rows start at 0, and `[0]` is its name: shield wall."
         ),
         "Form B of read-by-position. Distractors: -2 read as the last (7), len read as the last position (5), row 1 "
@@ -3072,8 +3251,8 @@ QC3_B_QUESTIONS = _qc_questions(
         "[2, 3, 4, 8]",
         ["[2, 3, 4, 5, 8]", "[2, 3, 4, [8]]", "[0, 1, 2, 3, 4, 8]", "[2, 3, 4, 8]"],
         (
-            "`range(2, 5)` counts 2, 3, 4: the stop is left out. `+` joins two lists into one, so the 8 sits at the "
-            "end as an item of its own, not inside brackets."
+            "`range(2, 5)` counts 2, 3, 4 and stops before 5, like the open dot on a number line. `+` joins two "
+            "lists into one, so 8 goes at the end as an item of its own, not inside its own square brackets."
         ),
         "Form B of count-and-join. Distractors: the stop included (5), counted from 0, `+` read as putting a list "
         "inside a list. The right one is authored last.",
@@ -3089,23 +3268,26 @@ CHALK_NOTES_3 = dict(
     kind="cheatsheet",
     id="chalk-notes",
     title="Mar'tu's Chalk Notes: Lists",
-    summary="Everything from Unit 4 on one page. Printable.",
+    summary="All of Unit 4 on one page, ready to print.",
     entries=[
         dict(concept="Make a list: `[ ]` and commas", code="wall = [48, 47, 46]\nprint(wall)\n", output="[48, 47, 46]",
-             note="Square brackets around, commas between. Numbers have no quotes. (Lesson: Many Values, One Name)"),
+             note="Square brackets go around the items, and a comma goes between each two. Numbers get no quotes. "
+             "(Lesson: Many Values, One Name)"),
         dict(concept="The first is `[0]`", code="wall = [48, 47, 46]\nprint(wall[0])\nprint(wall[1])\n",
-             output="48\n47", note="Positions start at 0. `[1]` is the second item."),
+             output="48\n47", note="Positions start at 0, like a ruler. `[1]` is the second item."),
         dict(concept="The last is `[-1]`", code="wall = [48, 47, 46]\nprint(wall[-1])\nprint(wall[-2])\n",
-             output="46\n47", note="Negative positions count from the end. `[-1]` works for a list of any length."),
-        dict(concept="Change one item: `wall[i] = x`", code="wall = [48, 74, 46]\nwall[1] = 47\nprint(wall)\n",
-             output="[48, 47, 46]", note="Fix a mark by its position. No retyping the list."),
-        dict(concept="Grow it: `.append(x)`", code="wall = [48, 47]\nwall.append(46)\nprint(wall)\n",
-             output="[48, 47, 46]", note="Adds one item to the end of the list itself."),
-        dict(concept="Join two lists: `a + b`", code="old = [48, 48]\nnew = [47, 46]\nprint(old + new)\n",
-             output="[48, 48, 47, 46]", note="`+` joins two lists into a new one. `wall + 33` is a TypeError: "
+             output="46\n47", note="A minus counts from the end. `[-1]` is the last item of a list of any length."),
+        dict(concept="Change one item: `wall[1] = 47`", code="wall = [48, 74, 46]\nwall[1] = 47\nprint(wall)\n",
+             output="[48, 47, 46]", note="Fix one item by its position. The rest of the list stays as it is."),
+        dict(concept="Grow it: `.append()`", code="wall = [48, 47]\nwall.append(46)\nprint(wall)\n",
+             output="[48, 47, 46]", note="Adds one item to the end of the list itself, like an appendix at the end "
+             "of a book."),
+        dict(concept="Join two lists: `old + new`", code="old = [48, 48]\nnew = [47, 46]\nprint(old + new)\n",
+             output="[48, 48, 47, 46]", note="`+` joins two lists into a new one. `wall + 33` stops with a TypeError: "
              "`+` needs a list on both sides."),
         dict(concept="How many: `len()`", code="wall = [48, 47, 46]\nprint(len(wall))\n", output="3",
-             note="The last position is `len - 1`, here 2, because positions start at 0."),
+             note="`len()` counts the items. The last position is one less, `len - 1`, here 2, because positions "
+             "start at 0."),
         dict(concept="A recipe that takes a list",
              code=("def newest_mark(wall):\n    return wall[len(wall) - 1]\n\nprint(newest_mark([9, 8, 7]))\n"
                    "print(newest_mark([48, 41]))\n"),
@@ -3115,32 +3297,35 @@ CHALK_NOTES_3 = dict(
         dict(concept="A list inside a list: `roster[3][1]`",
              code='roster = [\n    ["Oogrish", 18],\n    ["Gearshift", 20],\n    ["Bomb Shell", 24],\n'
                   '    ["Lucky", 26],\n]\nprint(roster[3][1])\n',
-             output="26", note="Outer number first: which row. Inner number second: which item in it."),
+             output="26", note="Read it like a theater ticket: row first, then seat. `roster[3]` is row 3, and "
+             "`[1]` is item 1 in that row."),
         dict(concept="Count: `range(1, 7)` stops before 7", code="print(list(range(1, 7)))\n",
-             output="[1, 2, 3, 4, 5, 6]", note="The stop is left out. `list()` turns the count into a list. "
-             "(Lesson: Reading the Wall Closely)"),
+             output="[1, 2, 3, 4, 5, 6]", note="It counts 1 to 6: the stop is left out, like the open dot on a "
+             "number line. `list()` turns the count into a list. (Lesson: Reading the Wall Closely)"),
         dict(concept="Slice: `wall[-3:]`",
              code="wall = [48, 48, 47, 46, 44, 41, 37]\nprint(wall[-3:])\nprint(wall[0:2])\n",
-             output="[44, 41, 37]\n[48, 48]", note="A slice is a new list. The end is left out: `[0:2]` takes 0 and 1. "
-             "An empty end runs to the edge."),
+             output="[44, 41, 37]\n[48, 48]", note="A slice copies part of a list, like quoting a few lines of a "
+             "poem. The end is left out: `[0:2]` copies positions 0 and 1. With no end number, it runs to the end of "
+             "the list."),
         dict(concept="`sorted(wall)` versus `wall.sort()`",
              code="wall = [46, 41, 44]\nprint(sorted(wall))\nprint(wall)\nx = wall.sort()\nprint(x)\n",
              output="[41, 44, 46]\n[46, 41, 44]\nNone",
              note="`sorted()` hands back a sorted copy and leaves `wall` alone. `.sort()` sorts `wall` itself and "
              "hands back `None`: nothing comes back."),
         dict(concept="Error: no such position", code="wall = [48, 47, 46]\nprint(wall[3])\n",
-             note="IndexError: list index out of range. Three items sit at positions 0, 1 and 2. For the last item, "
-             "use `[-1]`, never `[len(wall)]`."),
-        dict(concept="Error: round brackets after a list", code="wall = [48, 47, 46]\nprint(wall(0))\n",
-             note="TypeError: 'list' object is not callable. Read a list with square brackets: `wall[0]`."),
+             note="IndexError: list index out of range means there is no item at that position. Three items sit at "
+             "positions 0, 1 and 2. For the last item, use `[-1]`, never `[len(wall)]`."),
+        dict(concept="Error: parentheses after a list", code="wall = [48, 47, 46]\nprint(wall(0))\n",
+             note="TypeError: 'list' object is not callable means Python tried to run the list like a recipe. "
+             "Read a list with square brackets: `wall[0]`."),
         dict(concept="Error: a missing comma", code="wall = [48 47]\n",
-             note="SyntaxError: invalid syntax. Perhaps you forgot a comma? Inside a list, items are separated by "
-             "commas."),
+             note="SyntaxError: invalid syntax means Python can't read the line, like a sentence with broken "
+             "grammar. Perhaps you forgot a comma? Inside a list, a comma goes between each two items."),
         dict(concept="Error: `.sort()` handed back nothing", code="wall = [46, 41]\nx = wall.sort()\nprint(x[0])\n",
-             note="TypeError: 'NoneType' object is not subscriptable. `x` holds `None`: nothing came back. Use "
-             "`sorted(wall)`."),
+             note="TypeError: 'NoneType' object is not subscriptable means you used `[ ]` on `None`. `x` holds "
+             "`None`, because nothing came back. Use `sorted(wall)`."),
         dict(concept="(extra) `.count()`", code="wall = [48, 48, 47]\nprint(wall.count(48))\n", output="2",
-             note="How many items are 48. `len()` counts them all. (Extra practice: Reading the Wall)"),
+             note="Counts how many items are 48. `len()` counts every item. (Extra practice: Reading the Wall)"),
         dict(concept="(extra) `.insert()` and `.pop()`",
              code="wall = [48, 46]\nwall.insert(1, 47)\nnewest = wall.pop()\nprint(wall)\nprint(newest)\n",
              output="[48, 47]\n46", note="`.insert(position, value)` squeezes an item in. `.pop()` takes the last item "
@@ -3152,12 +3337,12 @@ CHALK_NOTES_3 = dict(
              code="wall = [41, 46, 39]\nprint(max(wall))\nprint(min(wall))\nprint(sum(wall))\n",
              output="46\n39\n126", note="The biggest, the smallest, and the total, wherever they sit."),
         dict(concept="(extra) A tuple: `( )`", code='hero = ("Lucky", 26)\nname, mana = hero\nprint(name)\nprint(mana)\n',
-             output="Lucky\n26", note="Like a list that can't change. Two names on the left unpack it, in order. "
-             "(Article: Tuples)"),
+             output="Lucky\n26", note="Like a list that can't change, written with parentheses. Two names on the left "
+             "of `=` unpack it: each name gets one item, in order. (Article: Tuples)"),
         dict(concept="(extra) Pair two lists: `zip()`",
              code='heroes = ["Oogrish", "Lucky"]\nmanas = [18, 26]\nprint(list(zip(heroes, manas)))\n',
-             output="[('Oogrish', 18), ('Lucky', 26)]", note="First with first, second with second. Wrap it in "
-             "`list()` to see the pairs. (Article: zip())"),
+             output="[('Oogrish', 18), ('Lucky', 26)]", note="Pairs two lists, first with first, second with second. "
+             "Put it inside `list()` to see the pairs. (Article: zip())"),
     ],
     notes=(
         "Cheatsheet 3 (the spec's entries in order, then the error rows and the extras from the optional items). "

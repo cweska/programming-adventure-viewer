@@ -13,7 +13,7 @@
     "aliases": [
       "count()"
     ],
-    "plain": "Counts how many items in a list are the same as the value you hand it. A value that isn't there counts 0.",
+    "plain": "Counts how many times a value shows up in a list, like tally marks in math class. A value that isn't in the list counts 0.",
     "example": "[48, 48, 47].count(48)"
   },
   {
@@ -29,7 +29,7 @@
     "aliases": [
       "insert()"
     ],
-    "plain": "Puts a new item into a list at a position: the position first, then the value. Every item after it moves one place along.",
+    "plain": "Puts a new item into a list at a position. You give the position first, then the value. Each item after it moves back one place, like people in a line when a friend steps in.",
     "example": "wall.insert(2, 47)"
   },
   {
@@ -47,7 +47,7 @@
     "aliases": [
       "pop()"
     ],
-    "plain": "Takes the last item off a list and hands it back. `.pop(0)` takes the first item instead. The list gets shorter.",
+    "plain": "Takes the last item off a list and hands it back, so you can keep it in a variable. The list gets one shorter. `.pop(0)` takes the first item instead.",
     "example": "newest = wall.pop()"
   },
   {
@@ -55,12 +55,12 @@
     "aliases": [
       "remove()"
     ],
-    "plain": "Takes the first item that is the same as the value you hand it out of a list. You give the value, not the position. If the value isn't there, Python stops with a ValueError.",
+    "plain": "Takes a value out of a list: the first item that is the same as the value you hand it. You give the value, not its position. If the value isn't in the list, Python stops with a ValueError.",
     "example": "wall.remove(99)"
   },
   {
     "term": "and",
-    "plain": "Joins two questions. `a and b` is `True` only when both are `True`.",
+    "plain": "Joins two yes-or-no questions. The answer is `True` only when both answers are `True`, like *homework done and room clean*.",
     "example": "mana >= cost and affinity >= required"
   },
   {
@@ -70,8 +70,8 @@
       "append()",
       "appends"
     ],
-    "plain": "Adds one item to the end of a list. It changes the list itself and hands back nothing.",
-    "example": "chalk_wall.append(33)"
+    "plain": "Adds one item to the end of a list, the way an appendix goes at the end of a book. It changes the list itself and hands back nothing.",
+    "example": "marks.append(6)"
   },
   {
     "term": "argument",
@@ -79,8 +79,8 @@
       "arguments",
       "what you hand over"
     ],
-    "plain": "The value you hand over when you call a recipe. In `warn(\"Lucky\")`, the argument is `\"Lucky\"`.",
-    "example": "warn(\"Lucky\")"
+    "plain": "What you hand over when you call a recipe. In `wave(\"Pip\")`, the argument is `\"Pip\"`.",
+    "example": "wave(\"Pip\")"
   },
   {
     "term": "assert",
@@ -89,8 +89,8 @@
       "seal",
       "seals"
     ],
-    "plain": "A line that says what must be true. If it is true, nothing happens. If it is not, Python stops with `AssertionError`.",
-    "example": "assert passed == True"
+    "plain": "A line that says what must be true at that spot. If it is true, nothing happens. If it is not, Python stops with `AssertionError`.",
+    "example": "assert door_open == True"
   },
   {
     "term": "at least",
@@ -101,8 +101,8 @@
       "exactly enough",
       "boundary"
     ],
-    "plain": "`>=` means *at least*: exactly the number still counts. `<=` means *at most*. `>` and `<` leave the number itself out.",
-    "example": "roll >= needed"
+    "plain": "`>=` means *at least*, like ≥ in math class: the number itself counts. `<=` means *at most*, like ≤. `>` and `<` leave the number itself out.",
+    "example": "coins >= price"
   },
   {
     "term": "AttributeError",
@@ -117,23 +117,15 @@
     "aliases": [
       "blocks"
     ],
-    "plain": "The indented lines under an `if`, `elif` or `else`. They run together, or not at all.",
+    "plain": "The indented lines under an `if`, `elif` or `else` line, like the sub-points under one main point in an outline. They run together, or not at all.",
     "example": "if hours_left < 3:\n    print(\"Get inside!\")\n    print(\"Shield up.\")"
-  },
-  {
-    "term": "brackets",
-    "aliases": [
-      "bracket"
-    ],
-    "plain": "The marks `(` and `)`. They come in pairs too. `print` keeps what it shows between them.",
-    "example": "print(\"Hi\")"
   },
   {
     "term": "branch",
     "aliases": [
       "branches"
     ],
-    "plain": "One path through an `if` chain: the `if` part, one `elif` part, or the `else` part. Only one runs.",
+    "plain": "One of the paths Python can take: the lines under the `if`, under one `elif`, or under the `else`. Python takes only one of them.",
     "example": "elif choice == \"option 2\":"
   },
   {
@@ -145,8 +137,8 @@
       "quiet bug",
       "loud bug"
     ],
-    "plain": "A slip in the code. A loud bug stops Python with a message. A quiet bug runs, but gives a wrong answer: print the values to find it.",
-    "example": "print(mana)\nprint(cost)"
+    "plain": "A mistake in code. A loud bug stops Python with an error. A quiet bug runs, but gives a wrong answer: print the values to find it.",
+    "example": "print(gold)\nprint(price)"
   },
   {
     "term": "call",
@@ -156,8 +148,8 @@
       "called",
       "call it"
     ],
-    "plain": "Running a recipe: its name, then brackets. `say_steady()` runs the steps once. No brackets, no run.",
-    "example": "say_steady()"
+    "plain": "To run a recipe, write its name, then `()`. `say_hi()` runs its steps once. With no `()`, nothing runs.",
+    "example": "say_hi()"
   },
   {
     "term": "checkpoint",
@@ -171,7 +163,7 @@
     "aliases": [
       "colons"
     ],
-    "plain": "The `:` mark at the end of an `if`, `elif` or `else` line. It says: here comes the block.",
+    "plain": "The `:` mark at the end of an `if`, `elif` or `else` line. As in English, a colon says: here comes the list. Here, the list is the indented lines under it.",
     "example": "if roll >= needed:"
   },
   {
@@ -179,7 +171,7 @@
     "aliases": [
       "comments"
     ],
-    "plain": "A line that starts with `#`. Python skips it. It is a note for people.",
+    "plain": "A note for people: a line that starts with `#` (Shift+3). Python skips it, the way actors skip saying the stage directions in a play script.",
     "example": "# Lucky's lines for tonight"
   },
   {
@@ -190,15 +182,15 @@
       "comparison sign",
       "comparison signs"
     ],
-    "plain": "A yes/no question about two values, like `dex < needed`. The signs are `<` `>` `<=` `>=` `==` `!=`. Python answers `True` or `False`.",
-    "example": "dex < needed"
+    "plain": "A yes-or-no question about two values, like `owls > wolves`. The signs are `<` `>` `<=` `>=` `==` `!=`, much like the signs in math class. Python answers `True` or `False`.",
+    "example": "owls > wolves"
   },
   {
     "term": "console",
     "aliases": [
       "the console"
     ],
-    "plain": "The space under the editor. Your printed lines and Python's messages show up there."
+    "plain": "The space under your code where Python's answers appear: what `print` shows, and Python's error messages."
   },
   {
     "term": "decimal",
@@ -206,7 +198,7 @@
       "decimals",
       "decimal number"
     ],
-    "plain": "A number with a point in it, like `24.0` or `42.5`. Dividing with `/` always gives one.",
+    "plain": "A number with a decimal point, like `24.0` or `42.5`, as in math class. Dividing with `/` always gives one.",
     "example": "print(48 / 2)"
   },
   {
@@ -214,8 +206,8 @@
     "aliases": [
       "def line"
     ],
-    "plain": "The word that makes a recipe: `def`, the recipe's name, brackets, and a colon. The steps go under it, indented. `def` never makes a box.",
-    "example": "def barrier_report():"
+    "plain": "The word that starts a recipe: `def`, the recipe's name, parentheses `( )` and a colon. The steps go under it, indented. `def` never makes a box.",
+    "example": "def say_hi():"
   },
   {
     "term": "defined",
@@ -223,7 +215,7 @@
       "not defined",
       "define"
     ],
-    "plain": "Made already. A name is defined once a line like `name = value` has run. \"Not defined\" means Python looked for something saved with that name and found nothing.",
+    "plain": "Python has a definition for the name: a line like `name = value` already ran. \"Not defined\" means Python looked for the name and found nothing, like a word missing from a glossary.",
     "example": "NameError: name 'hero' is not defined"
   },
   {
@@ -241,7 +233,7 @@
     "aliases": [
       "else if"
     ],
-    "plain": "Short for else, if: another question, asked only when the ones above were `False`. Python takes the first branch whose answer is `True`.",
+    "plain": "Short for else, if: another question, asked only when the questions above it were `False`. Python runs the lines under the first question whose answer is `True`.",
     "example": "if hours_left <= 2:\n    color = \"red\"\nelif hours_left <= 12:\n    color = \"bright blue\""
   },
   {
@@ -249,7 +241,7 @@
     "aliases": [
       "otherwise"
     ],
-    "plain": "The part that runs when the `if` question was `False`. It has no question of its own.",
+    "plain": "The part that runs when the `if` question was `False`. It means otherwise, and it has no question of its own.",
     "example": "if roll >= needed:\n    print(\"It opens.\")\nelse:\n    print(\"It holds.\")"
   },
   {
@@ -258,7 +250,7 @@
       "error messages",
       "message from Python"
     ],
-    "plain": "Python's note that it could not finish your code. It is information, not a mark. Read the last line first, then look at the line it names.",
+    "plain": "Python's note that it stopped at a line it couldn't run, like a teacher's note in the margin: it points to the spot, and it isn't a grade. Read the box's title, then Python's last line, then fix the line with that number.",
     "example": "SyntaxError: unterminated string literal"
   },
   {
@@ -266,7 +258,7 @@
     "aliases": [
       "whole division"
     ],
-    "plain": "Divide, then keep only the whole part. `50 // 12` is 4, because 12 fits into 50 four whole times.",
+    "plain": "Divide and keep only the whole part (floor means round down). In math class, 50 ÷ 12 = 4 R 2, and `50 // 12` gives the 4.",
     "example": "print(50 // 12)"
   },
   {
@@ -277,7 +269,7 @@
       "concatenate",
       "concatenation"
     ],
-    "plain": "Join texts end to end with `+`. Python adds no spaces, so put the spaces inside the quotes.",
+    "plain": "Join texts end to end with `+`, like a compound word: sun + flower is sunflower. Python adds no spaces, so put the spaces inside the quotes.",
     "example": "\"Shield\" + \" up.\""
   },
   {
@@ -286,7 +278,7 @@
       "if statement",
       "if line"
     ],
-    "plain": "A line that asks a yes-or-no question. When the answer is `True`, Python runs the indented lines under it. When it is `False`, Python skips them.",
+    "plain": "A line that asks a yes-or-no question, like *If it rains, take a coat.* When the answer is `True`, Python runs the indented lines under it. When it is `False`, Python skips them.",
     "example": "if hours_left < 3:\n    print(\"Get inside!\")"
   },
   {
@@ -295,7 +287,7 @@
       "imports",
       "import random"
     ],
-    "plain": "Brings in a set of tools Python keeps on the shelf. `import random` brings in Python's dice.",
+    "plain": "Brings in a set of tools that Python keeps on a shelf, like fetching a dice bin. `import random` brings in Python's dice.",
     "example": "import random"
   },
   {
@@ -303,7 +295,7 @@
     "aliases": [
       "in (a list)"
     ],
-    "plain": "Asks whether a value is somewhere in a list. Python answers `True` or `False`.",
+    "plain": "Asks a yes-or-no question: is this value somewhere in the list? Python answers `True` or `False`.",
     "example": "32 in wall"
   },
   {
@@ -313,7 +305,7 @@
       "indentation",
       "indents"
     ],
-    "plain": "Spaces at the start of a line. Four spaces under an `if` mean: this line belongs to the `if`.",
+    "plain": "Spaces at the start of a line. Four spaces under an `if` mean: this line belongs to the `if`, like a sub-point under a main point in an outline.",
     "example": "if mana < 6:\n    print(\"Low mana.\")"
   },
   {
@@ -324,8 +316,8 @@
       "position",
       "positions"
     ],
-    "plain": "An item's place in a list. Counting starts at 0, so `[0]` is the first item. `[-1]` counts from the end: the last item.",
-    "example": "chalk_wall[0]"
+    "plain": "An item's place in a list. Positions count from 0, like a ruler, so `[0]` is the first item. `[-1]` counts from the end: the last item.",
+    "example": "marks[0]"
   },
   {
     "term": "IndexError",
@@ -333,7 +325,7 @@
       "index error",
       "list index out of range"
     ],
-    "plain": "Python's message when you ask for a position the list doesn't have. A list of 7 items has positions 0 to 6, so `[7]` is out of range.",
+    "plain": "The error Python shows when you ask for a position the list doesn't have. A list of 7 items has positions 0 to 6, so `[7]` is out of range.",
     "example": "IndexError: list index out of range"
   },
   {
@@ -341,7 +333,7 @@
     "aliases": [
       "input()"
     ],
-    "plain": "A command that asks a question and waits for an answer. The answer always comes back as text.",
+    "plain": "`input()` asks a question and waits for an answer. The answer always comes back as text, even a 3.",
     "example": "name = input(\"Who goes there? \")"
   },
   {
@@ -349,7 +341,7 @@
     "aliases": [
       "int"
     ],
-    "plain": "Turns text that looks like a whole number into a real number, so you can do math with it. `int(\"3\")` gives 3.",
+    "plain": "`int` is short for integer, a whole number. `int()` turns text like `\"3\"` into the number 3, so you can do math with it.",
     "example": "sips = int(\"3\")"
   },
   {
@@ -360,8 +352,8 @@
       "is not the same as",
       "!="
     ],
-    "plain": "`==` asks whether two values are the same. `!=` asks whether they are different. One `=` does something else: it puts a value in a box (read it as *gets*).",
-    "example": "clock_color == \"red\""
+    "plain": "`==` asks whether two values are the same. `!=` asks whether they are different, like ≠ in math. One `=` does something else: it puts a value in a box. Read one `=` as *gets*.",
+    "example": "pet == \"cat\""
   },
   {
     "term": "key",
@@ -387,16 +379,16 @@
       "len",
       "length"
     ],
-    "plain": "Counts the items in a list. The last position is always one less than `len()`, because counting starts at 0.",
-    "example": "len(chalk_wall)"
+    "plain": "Counts the items in a list. The last position is always one less than `len()`, because positions count from 0.",
+    "example": "len(marks)"
   },
   {
     "term": "list",
     "aliases": [
       "lists"
     ],
-    "plain": "Many values kept under one name, in order. Square brackets hold the list, and commas go between the items.",
-    "example": "chalk_wall = [48, 48, 47]"
+    "plain": "Many values kept in order under one name, like a data set in math class. Square brackets hold the list, and a comma goes between each two items.",
+    "example": "marks = [9, 8, 7]"
   },
   {
     "term": "list inside a list",
@@ -405,8 +397,8 @@
       "nested list",
       "nested lists"
     ],
-    "plain": "A list whose items are lists, like rows on a shelf. Read the row first, then the item in it: `roster[3][1]`.",
-    "example": "roster[3][1]"
+    "plain": "A list whose items are lists. Read it like a theater ticket: the row first, then the seat in that row: `seats[3][1]`.",
+    "example": "seats[3][1]"
   },
   {
     "term": "list of dictionaries",
@@ -423,7 +415,7 @@
       "match statement",
       "case"
     ],
-    "plain": "Another way to choose: `match choice:` then one `case` for each value. `case _:` catches anything else.",
+    "plain": "Another way to choose between options: `match choice:`, then one `case` line for each value. `case _:` catches anything else, like `else`.",
     "example": "match choice:\n    case \"option 1\":\n        print(\"Then we leave at dawn.\")\n    case _:\n        print(\"Hm.\")"
   },
   {
@@ -433,7 +425,7 @@
       "operator",
       "operators"
     ],
-    "plain": "The signs Python does math with: `+` adds, `-` subtracts, `*` multiplies (times), `/` divides.",
+    "plain": "The signs Python does math with: `+` plus, `-` minus, `*` times (×) and `/` divided by (÷). The keyboard has no × or ÷ key, so Python uses `*` and `/`.",
     "example": "print(48 - 37)"
   },
   {
@@ -442,8 +434,19 @@
       "max()",
       "min()"
     ],
-    "plain": "`max()` hands back the biggest item in a list, and `min()` the smallest, wherever they are.",
+    "plain": "`max()` hands back the biggest number in a list, and `min()` hands back the smallest, wherever they are. Math class calls them the maximum and the minimum.",
     "example": "max([41, 46, 39])"
+  },
+  {
+    "term": "mend",
+    "aliases": [
+      "mends",
+      "mended",
+      "slip",
+      "slips"
+    ],
+    "plain": "To fix a small mistake in your code, the way you mend a small tear in a sleeve. A slip is a small mistake.",
+    "example": "print(\"Hi)   becomes   print(\"Hi\")"
   },
   {
     "term": "NameError",
@@ -451,8 +454,8 @@
       "name error",
       "name errors"
     ],
-    "plain": "Python met a name that no line has made yet. Often a typo, a capital letter, missing quotes, or a box used before the line that makes it.",
-    "example": "print(mama)\nNameError: name 'mama' is not defined"
+    "plain": "Python met a name that no line has made yet. It's like a story that says \"she\" but never says who she is. Check for a typo, a capital letter, missing quotes, or a box used before it is made.",
+    "example": "print(Gold)\nNameError: name 'Gold' is not defined"
   },
   {
     "term": "nested dictionary",
@@ -470,8 +473,8 @@
     "aliases": [
       "NoneType"
     ],
-    "plain": "Python's word for nothing. A recipe with no `return` line hands back `None`.",
-    "example": "print(lucky_max)   # None"
+    "plain": "Python's word for nothing. It is not 0. A recipe with no `return` line hands back `None`.",
+    "example": "print(answer)   # None"
   },
   {
     "term": "not",
@@ -491,12 +494,12 @@
     "aliases": [
       "numbers"
     ],
-    "plain": "A value Python can do math with. Numbers have no quotes: `3` is a number, `\"3\"` is text.",
+    "plain": "An amount Python can do math with, like points in a game. Numbers get no quotes: `3` is a number, and `\"3\"` is text.",
     "example": "armor_bonus = 3"
   },
   {
     "term": "or",
-    "plain": "Joins two questions. `a or b` is `True` when at least one of them is `True`.",
+    "plain": "Joins two yes-or-no questions. The answer is `True` when at least one answer is `True`, and also when both are.",
     "example": "first_roll >= needed or second_roll >= needed"
   },
   {
@@ -504,7 +507,7 @@
     "aliases": [
       "operator order"
     ],
-    "plain": "The order Python does math in. Brackets first, then `**`, then `*` `/` `//` `%`, then `+` and `-`. So `2 + 3 * 4` is 14.",
+    "plain": "The order Python does math in: PEMDAS, as in math class. Parentheses first, then `**`, then `*` `/` `//` `%`, then `+` and `-`, so `2 + 3 * 4` is 14.",
     "example": "print((2 + 3) * 4)"
   },
   {
@@ -521,8 +524,8 @@
       "parallel list",
       "lists in step"
     ],
-    "plain": "Two lists kept in step: item 0 of one goes with item 0 of the other, and so on. Change one, and you must change the other the same way.",
-    "example": "parts = [\"lens\", \"coil\"]\ncounts = [3, 7]"
+    "plain": "Two lists that line up, like the two columns of a table in math class: item 0 of one goes with item 0 of the other, and so on. When you change one, change the other the same way.",
+    "example": "foods = [\"eggs\", \"milk\"]\namounts = [12, 1]"
   },
   {
     "term": "parameter",
@@ -531,20 +534,31 @@
       "ingredient",
       "ingredients"
     ],
-    "plain": "An ingredient's name on the recipe card, in the brackets on the `def` line. It is a box that gets filled each time the recipe is called.",
-    "example": "def warn(hero_name):"
+    "plain": "An ingredient: a named blank in the parentheses on the `def` line, like the x in f(x). Each call fills it with a value.",
+    "example": "def wave(friend):"
+  },
+  {
+    "term": "parentheses",
+    "aliases": [
+      "parenthesis",
+      "brackets",
+      "bracket",
+      "round brackets"
+    ],
+    "plain": "The marks `(` and `)`, the same marks you use in math class. They come in pairs: `print` keeps what it shows between them.",
+    "example": "print(\"Hi\")"
   },
   {
     "term": "pass",
     "plain": "A line that does nothing. A recipe needs at least one line inside it, so `pass` holds the spot, like a blank recipe card, until you write a real step.",
-    "example": "def step_north():\n    pass"
+    "example": "def tidy_up():\n    pass"
   },
   {
     "term": "placeholder",
     "aliases": [
       "placeholders"
     ],
-    "plain": "A stand-in value, like the `0` in a starter. It holds the place until you put the real thing there.",
+    "plain": "A stand-in value, like a `0` in the code you start with. It holds the place until you put the real number there.",
     "example": "lantern_count = 0"
   },
   {
@@ -553,7 +567,7 @@
       "powers",
       "exponent"
     ],
-    "plain": "A number times itself, again and again. `2 ** 3` means 2 × 2 × 2, which is 8.",
+    "plain": "A number multiplied by itself, like 2³ in math class. In Python, `2 ** 3` means 2 × 2 × 2, which is 8.",
     "example": "print(2 ** 3)"
   },
   {
@@ -561,7 +575,7 @@
     "aliases": [
       "print()"
     ],
-    "plain": "The Python command that shows words on the screen, in the console.",
+    "plain": "Shows something on the screen, in the Console under your code. In Python, print means show on the screen, not print on paper.",
     "example": "print(\"Barrier's holding.\")"
   },
   {
@@ -569,7 +583,7 @@
     "aliases": [
       "prompts"
     ],
-    "plain": "The question `input()` shows before it waits, like `\"Who goes there? \"`.",
+    "plain": "The question `input()` shows before it waits for an answer, like `\"Who goes there? \"`.",
     "example": "input(\"How many sips? \")"
   },
   {
@@ -579,7 +593,7 @@
       "quote mark",
       "quote marks"
     ],
-    "plain": "The marks around words: `\"` or `'`. They come in pairs, one before the words and one after.",
+    "plain": "The marks `\"` or `'` around text. They come in pairs, one before and one after, like quotation marks around someone's exact words in English class.",
     "example": "\"Steady, now.\""
   },
   {
@@ -588,7 +602,7 @@
       "random.randint",
       "random.randint()"
     ],
-    "plain": "`random.randint(1, 6)` gives a random whole number from 1 to 6. Both ends are included.",
+    "plain": "Rolls a fair die: `random.randint(1, 6)` gives any whole number from 1 to 6. Both ends are included, so 1 and 6 can come up.",
     "example": "random.randint(1, 20)"
   },
   {
@@ -596,8 +610,8 @@
     "aliases": [
       "range"
     ],
-    "plain": "Counts from a start number up to a stop number. The stop is left out: `range(1, 7)` gives 1 to 6. `list(range(1, 7))` turns the count into a list.",
-    "example": "list(range(1, 7))"
+    "plain": "Counts from a start number and stops before the stop number: `range(1, 7)` gives 1 to 6. `list(range(1, 7))` turns the count into a list.",
+    "example": "list(range(1, 4))"
   },
   {
     "term": "recipe",
@@ -606,8 +620,8 @@
       "function",
       "functions"
     ],
-    "plain": "A named set of steps, made with `def`. Making a recipe does not run it. Calling its name with `()` runs the steps. Python calls a recipe a function.",
-    "example": "def say_steady():\n    print(\"Steady, now.\")\n\nsay_steady()"
+    "plain": "A set of steps with a name, made with `def`. Python calls it a function. Making it runs nothing: calling its name with `()` runs the steps.",
+    "example": "def say_hi():\n    print(\"Hi.\")\n\nsay_hi()"
   },
   {
     "term": "remainder",
@@ -615,7 +629,7 @@
       "remainders",
       "modulo"
     ],
-    "plain": "What is left over after dividing. `50 % 12` is 2: four 12s make 48, and 2 is left.",
+    "plain": "What is left over after dividing. In 50 ÷ 12 = 4 R 2, the remainder is 2, and `50 % 12` gives it. Here `%` is not percent.",
     "example": "print(50 % 12)"
   },
   {
@@ -627,8 +641,8 @@
       "handed back",
       "return value"
     ],
-    "plain": "Hands a value back to the line that called the recipe, and ends the recipe. Catch it in a box, or it is gone: `lucky_max = max_mana_for(13)`.",
-    "example": "def max_mana_for(affinity):\n    total = affinity * 2\n    return total"
+    "plain": "Hands a value back to the line that called the recipe, and ends the recipe. Catch it in a box, or it's gone: `six = double(3)`.",
+    "example": "def double(n):\n    return n * 2"
   },
   {
     "term": "run",
@@ -636,17 +650,18 @@
       "runs",
       "Run button"
     ],
-    "plain": "Tell Python to do your lines, from top to bottom. Press Run as often as you like. It costs nothing."
+    "plain": "Tell Python to do your code, from the top line down. Press ▶ Run, just above your code, as often as you like: running unfinished code is fine."
   },
   {
-    "term": "show your working",
+    "term": "show your work",
     "aliases": [
+      "show your working",
       "combine",
       "let the code combine it",
       "build it from the boxes"
     ],
-    "plain": "Build a value from boxes, like `total_cost = lantern_cost + rope_cost`, instead of typing the answer. Then it stays right when a box changes.",
-    "example": "total_cost = lantern_cost + rope_cost"
+    "plain": "Write the math with box names, like `area = length * width`, instead of typing the answer, the way math class asks you to show your work. Then, when a box changes and you press Run again, the answer changes to match.",
+    "example": "area = length * width"
   },
   {
     "term": "slice",
@@ -654,8 +669,8 @@
       "slices",
       "slicing"
     ],
-    "plain": "A copy of part of a list, made with a colon: `[2:5]` takes positions 2, 3 and 4. The end is left out. The list itself does not change.",
-    "example": "chalk_wall[-3:]"
+    "plain": "A copy of part of a list, like an excerpt from a poem. `[2:5]` copies positions 2, 3 and 4: the end is left out, and the list itself doesn't change.",
+    "example": "marks[-3:]"
   },
   {
     "term": "sorted()",
@@ -665,8 +680,8 @@
       "sort()",
       "sort"
     ],
-    "plain": "`sorted(wall)` hands back a new list, smallest first, and leaves `wall` as it is. `wall.sort()` sorts the list itself and hands back nothing.",
-    "example": "shortest_first = sorted(chalk_wall)"
+    "plain": "`sorted(marks)` hands back a sorted copy, smallest first, and leaves `marks` as it is. `marks.sort()` sorts the list itself and hands back nothing.",
+    "example": "low_first = sorted(marks)"
   },
   {
     "term": "stamp",
@@ -675,7 +690,7 @@
       "repetition",
       "repeat a mark"
     ],
-    "plain": "`*` with text and a number stamps the text that many times. `\"█\" * 3` gives `███`.",
+    "plain": "`*` with text and a number repeats the text, like pressing a stamp that many times. In math, 3 × 4 means 4 + 4 + 4, and `\"█\" * 3` means `\"█\" + \"█\" + \"█\"`: `███`.",
     "example": "\"█\" * 3"
   },
   {
@@ -683,7 +698,7 @@
     "aliases": [
       "str"
     ],
-    "plain": "Turns a value into text. `str(26)` gives the text `\"26\"`, which can be glued to other text.",
+    "plain": "`str` is short for string, Python's word for text. `str(26)` gives the text `\"26\"`, which can be glued to other text.",
     "example": "\"Mana: \" + str(26)"
   },
   {
@@ -692,7 +707,7 @@
       "strings",
       "text"
     ],
-    "plain": "Words inside quotes. Python shows them exactly as you typed them.",
+    "plain": "Text inside quotes: letters, digits, spaces or marks, strung together like beads on a string. Python shows it exactly as you typed it.",
     "example": "\"Shield up.\""
   },
   {
@@ -709,8 +724,8 @@
       "syntax error",
       "syntax errors"
     ],
-    "plain": "Python could not read a line: a missing quote, bracket or colon, or a sign it does not know. Nothing runs until it is mended.",
-    "example": "if mana < 6\nSyntaxError: expected ':'"
+    "plain": "A line Python can't read. *Syntax* is how a line is put together, like grammar in English class. A missing quote, parenthesis or colon stops everything until you fix it.",
+    "example": "if rain > 0\nSyntaxError: expected ':'"
   },
   {
     "term": "traceback",
@@ -718,8 +733,8 @@
       "tracebacks",
       "full message"
     ],
-    "plain": "Python's full message when a program stops. Read the last line first: the error's name, then what went wrong. Above it, the message names the line where Python stopped.",
-    "example": "File \"main.py\", line 4\nNameError: name 'mana_cost' is not defined"
+    "plain": "Python's full message when your code stops, under Show Python's full message. Its last line gives the error's name and what went wrong. A line above it gives the line number where Python stopped.",
+    "example": "File \"main.py\", line 3\nNameError: name 'lantren' is not defined"
   },
   {
     "term": "triple quotes",
@@ -727,7 +742,7 @@
       "triple-quoted",
       "multi-line string"
     ],
-    "plain": "Three quote marks in a row, `\"\"\"`. The text between two sets of them can run over many lines.",
+    "plain": "Three quote marks in a row, `\"\"\"`. They start text that can go over many lines, and three more end it, the way a poem keeps its line breaks.",
     "example": "print(\"\"\"Line one\nLine two\"\"\")"
   },
   {
@@ -742,7 +757,7 @@
       "booleans",
       "yes/no answer"
     ],
-    "plain": "Python's yes and no. They have capital letters and no quotes. A question like `6 > 15` gives back one of them.",
+    "plain": "Python's words for yes and no. They start with a capital letter and have no quotes. Python answers a question like `6 > 15` with one of them.",
     "example": "print(18 > 12)"
   },
   {
@@ -750,7 +765,7 @@
     "aliases": [
       "tuples"
     ],
-    "plain": "Like a list that can't change. Round brackets instead of square ones. You read it by position, like a list, but you can't add, remove or swap its items.",
+    "plain": "A few values that stay together, in order, and can't change, like a point (3, 8) in math class. It uses parentheses `( )`, not square brackets. You read it by position, like a list, but you can't add, remove or swap its items.",
     "example": "hero = (\"Lucky\", 26)"
   },
   {
@@ -759,15 +774,15 @@
       "type error",
       "type errors"
     ],
-    "plain": "Two values that don't fit together, like text glued to a number. Turn the number into text with `str()`, or take the quotes off a number.",
-    "example": "print(\"Mana: \" + 7)\nTypeError: can only concatenate str (not \"int\") to str"
+    "plain": "Two values that don't fit together, like adding 5 meters to 3 seconds in math. Most often it is text glued to a number. Turn the number into text with `str()`, or take the quotes off the number.",
+    "example": "print(\"Gold: \" + 7)\nTypeError: can only concatenate str (not \"int\") to str"
   },
   {
     "term": "value",
     "aliases": [
       "values"
     ],
-    "plain": "The thing inside a box: text in quotes, like `\"Lucky\"`, or a number, like `26`.",
+    "plain": "What goes in a box: text in quotes, like `\"Lucky\"`, or a number, like `26`.",
     "example": "mana = 26"
   },
   {
@@ -775,7 +790,7 @@
     "aliases": [
       "value error"
     ],
-    "plain": "The value is the right kind, but Python can't use it here. With a list, often `.remove()` of a value that is not in it.",
+    "plain": "The error Python shows when a value is the right kind but can't be used here. With lists, it usually means `.remove()` was asked for a value that isn't in the list.",
     "example": "[48, 47].remove(99)\nValueError: list.remove(x): x not in list"
   },
   {
@@ -785,7 +800,7 @@
       "box",
       "boxes"
     ],
-    "plain": "A box with a label. The label is the name. Inside is a value. You make one with `name = value`.",
+    "plain": "A box with a name on it and a value inside. It's like x in math, but you pick the name, and `name = value` makes one.",
     "example": "companion = \"Gearshift\""
   },
   {
@@ -793,7 +808,7 @@
     "aliases": [
       "zip"
     ],
-    "plain": "Pairs up two lists, item by item: first with first, second with second. Each pair is a tuple. Wrap it in `list()` to see the pairs.",
-    "example": "list(zip(heroes, manas))"
+    "plain": "A tool that pairs up two lists, item by item, like the teeth of a zipper: first with first, second with second. Each pair is a tuple. Put it inside `list()` to see the pairs.",
+    "example": "list(zip(fruits, prices))"
   }
 ]

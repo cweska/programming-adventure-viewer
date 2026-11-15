@@ -13,12 +13,14 @@ Teacher ruling on the Unit 2 reviews, as applied here:
     then cast_spell's chain rebuilt, where the order and the exact boundary both matter) all gate test-out. Every
     QC2 exercise and the SOLO set `explainer="lean"`: the crash explainer names the kind of slip and the line, and
     leaves out the fix (Python's own text stays visible). Not applied back to the live Unit 1. QC2 is 15 minutes.
-  * Rerun messages start with the fix, say what happened, and end with the evidence in brackets, "(Mar'tu's check
-    tried X, only inside the check.)", in about 35 words or fewer. One order rule: "first, the test that lets the
-    fewest numbers through". A box still holding the starter's placeholder is named as such ("still holds the
-    starter's `0`"); a missing starter box gets "Keep the box X from the starter".
+  * Strings pass (design/plain-language-guide.md, 4.3): a rerun message says what happened, then the one thing to
+    try, then the labelled evidence, "Mar'tu tested your code with a test number, `distance = 5`." (the shape u02b
+    uses), in about 35 words. One order rule: "put first the question that lets the fewest numbers through". A box
+    still holding the starter's placeholder is named as such ("still holds the placeholder `0`"); a missing starter
+    box gets "Python can't find X. Keep the line that makes it". QC2 and SOLO messages stay lean.
   * Start me off (from the last hint) gives the line's left side only, before the sign or the and/or. In debug
-    steps hints[0] is "Read Python's last line" (for a quiet bug: what the program printed). SOLO pass lines: "You did that on your own. On your map: ✓ ...".
+    steps hints[0] teaches the reading routine (the box's title, then Python's last line; for a quiet bug: what the
+    code printed). SOLO pass lines keep "You did that on your own." (no "On your map:", guide 4.6).
   * Time: 2C-07's quiet bug is tested with `roll = 12` for one Run (then the dice go back), and 2C-01's notes are
     filled in while Python's message is still on screen, before line 4 is switched off.
 
@@ -93,27 +95,39 @@ def _with(_vals):
     return _parts[0] if len(_parts) == 1 else ', '.join(_parts[:-1]) + ' and ' + _parts[-1]
 def _a_roll(_r):
     return ('an ' if str(_r)[:1] == '8' or _r in (11, 18) else 'a ') + str(_r)
-def _did(_vals, _rolls, _end='', _again='ran your code again'):
-    # The evidence, always in brackets at the END of a message: what the rerun changed.
+def _tested(_vals, _rolls):
+    # The labelled evidence (plain-language guide 4.3.3): 'a test number, `distance = 5`', 'a test roll: a 7'.
     _bits = []
     if _vals:
-        _bits.append('tried ' + _with(_vals))
+        _nums = all(type(_v).__name__ == 'int' for _v in _vals.values())
+        _bits.append((('a test number' if _nums else 'a test value') if len(_vals) == 1 else
+                      ('test numbers' if _nums else 'test values')) + ', ' + _with(_vals))
     if _rolls:
-        _bits.append('rolled ' + ', then '.join(_a_roll(_r) for _r in _rolls) + ' for you')
-    return "(Mar'tu's check " + ' and '.join(_bits or [_again]) + ', only inside the check' + _end + '.)'
-def _mend(_first, _what, _vals, _rolls, _again='ran your code again'):
-    # A rerun message: the fix first, then what happened, then the evidence in brackets.
-    return _first + ' ' + (_what + ' ' if _what else '') + _did(_vals, _rolls, '', _again)
+        _bits.append(('a test roll: ' if len(_rolls) == 1 else 'test rolls: ')
+                     + ', then '.join(_a_roll(_r) for _r in _rolls))
+    return ', and '.join(_bits)
+def _did(_vals, _rolls, _end='', _again='again'):
+    # The evidence, always at the END of a message: what Mar'tu's test changed. `_again` is said when it changed
+    # nothing ("again", or "with the numbers already in it").
+    _t = _tested(_vals, _rolls)
+    return "Mar'tu tested your code with " + _t + '.' if _t else "Mar'tu tested your code " + _again + '.'
+def _mend(_first, _what, _vals, _rolls, _again='again'):
+    # A rerun message: what happened, then the one thing to try, then the evidence.
+    return (_what + ' ' if _what else '') + _first + ' ' + _did(_vals, _rolls, '', _again)
 def _printed(_line):
-    return 'Your program printed `' + _line + '`' + ('' if _line[-1:] in '.!?' else '.')
+    return 'Your code printed `' + _line + '`' + ('' if _line[-1:] in '.!?' else '.')
 def _changed(_vals, _base):
     # Only the values a rerun changed from the starter's, so the evidence stays short.
     return {_k: _v for _k, _v in _vals.items() if _base is None or _base.get(_k) != _v}
 def _stop(_vals, _rolls, _err):
-    return 'Mend this slip, then Run again: ' + _err + ' ' + _did(_vals, _rolls, ', and your program stopped there')
+    _t = _tested(_vals, _rolls)
+    _e = _err.rstrip('.')
+    return ("Your code stopped with an error when Mar'tu tested it" + (' with ' + _t if _t else ' again')
+            + '. Python said: ' + _e + ('' if _e.endswith('?') else '.')
+            + ' Fix that line: it has to work for other numbers too.')
 def _keep(_name):
-    return ('Keep the box `' + _name + '` from the starter, as `' + _name + " = value` on its own line, so Mar'tu's "
-            'check can change that line to try other values.')
+    return ("Mar'tu can't find a line with `" + _name + ' = ` and one plain value. Keep that line the way it was '
+            'at the start: he tests your code by changing that value.')
 def _starters(_name, _value):
     # True when a top-level line still gives `_name` the starter's placeholder value.
     return any(type(_n).__name__ == 'Assign' and len(_n.targets) == 1 and type(_n.targets[0]).__name__ == 'Name'
@@ -190,9 +204,9 @@ def lines_check(label, cases, setup=""):
         "    assert not _miss, _keep(_miss[0])\n"
         "    assert not _err, _stop(_vals, _rolls, _err)\n"
         "    for _w in _want:\n"
-        "        assert _w in _rows, _mend(_tail, '`' + _w + '` did not print.', _vals, _rolls)\n"
+        "        assert _w in _rows, _mend(_tail, '`' + _w + '` did not show in the Console.', _vals, _rolls)\n"
         "    for _w in _never:\n"
-        "        assert _w not in _rows, _mend(_tail, '`' + _w + '` printed anyway.', _vals, _rolls)\n"
+        "        assert _w not in _rows, _mend(_tail, '`' + _w + '` showed in the Console anyway.', _vals, _rolls)\n"
     )
     return (label, code)
 
@@ -220,26 +234,29 @@ def box_check(label, target, cases, setup="", show=None, foreign=(), placeholder
         "    _ns, _rows, _calls, _err, _miss = _rerun(_vals, _rolls)\n"
         "    assert not _miss, _keep(_miss[0])\n"
         "    _shown = {_k: _v for _k, _v in _vals.items() if _k in _show_only} if _show_only else _changed(_vals, _base)\n"
-        "    _again = 'ran your code again' if _base is None else 'ran your code again with the starter' + chr(39) + 's numbers'\n"
+        "    _again = 'again' if _base is None else 'with the numbers already in it'\n"
         "    assert not _err, _stop(_shown, _rolls, _err)\n"
         "    if _left and (_target not in _ns or _ns[_target] != _want):\n"
-        "        assert False, ('Use the box `' + _target + '`: `' + _left[0] + '` comes from the example.')\n"
-        "    assert _target in _ns, ('Keep the box `' + _target + '` from the starter.' if _placeholder is not None\n"
-        "                            else 'Make a box named `' + _target + '`: start a line with `' + _target + ' = `.')\n"
+        "        assert False, ('`' + _left[0] + '` comes from the example in Help, not from your task. Use the box `'\n"
+        "                       + _target + '`.')\n"
+        "    assert _target in _ns, (('Python can' + chr(39) + 't find `' + _target + '`. Keep the line that makes it: it was '\n"
+        "                             'there at the start.') if _placeholder is not None\n"
+        "                            else 'Python can' + chr(39) + 't find a box named `' + _target + '`. Start a line with `'\n"
+        "                            + _target + ' = `.')\n"
         "    _got = _ns[_target]\n"
         "    _was = globals().get(_target)\n"
         "    if type(_got).__name__ == 'str' and type(_want).__name__ == 'bool':\n"
-        "        assert False, ('Take the quotes off: `' + _target + '` holds the text ' + _show(_got) + '. '\n"
+        "        assert False, ('`' + _target + '` holds the text ' + _show(_got) + ', because of the quotes. Take the quotes off. '\n"
         "                       '`True` and `False` have no quotes: they are Python' + chr(39) + 's yes and no.')\n"
         "    if _placeholder is not None and repr(_got) == repr(_placeholder) and _starters(_target, _placeholder):\n"
-        "        _how = '`' + _target + '` still holds the starter' + chr(39) + 's `' + repr(_placeholder) + '`.'\n"
+        "        _how = '`' + _target + '` still holds the placeholder `' + repr(_placeholder) + '`.'\n"
         "    else:\n"
         "        _how = ('`' + _target + '` ' + ('stayed ' if _got == _was else 'became ') + _show(_got) + ', not '\n"
         "                + _show(_want) + '.')\n"
         "    assert type(_got).__name__ == type(_want).__name__ and _got == _want, _mend(_tail, _how, _shown, _rolls, _again)\n"
     )
     if lean:
-        code = _leaned(code, [("'Take the quotes off: `' + _target + '` holds the text '", "'`' + _target + '` holds the text '")])
+        code = _leaned(code, [("', because of the quotes. Take the quotes off. '", "', because of the quotes. '")])
     return (label, code)
 
 
@@ -248,11 +265,12 @@ _R, _N_name = __ROLL__, __NEEDED__
 _via_rolls = __VIA_ROLLS__
 _F = __FACES__
 _N = globals().get(_N_name)
-assert _N is not None, 'Keep the box `' + _N_name + '` from the starter, as `' + _N_name + ' = ` and a whole number.'
-assert type(_N).__name__ == 'int', 'Give `' + _N_name + '` a whole number, with no quotes.'
+assert _N is not None, ("Python can't find `" + _N_name + '`. Keep `' + _N_name + ' = ` and a whole number on a '
+                        'line of its own, the way it was at the start.')
+assert type(_N).__name__ == 'int', '`' + _N_name + '` needs a whole number, with no quotes.'
 if _via_rolls:
-    assert 2 <= _N <= _F, ('Pick a `' + _N_name + '` from 2 to ' + str(_F) + ': a d' + str(_F) + ' roll is 1 to '
-                           + str(_F) + '.')
+    assert 2 <= _N <= _F, ('`' + _N_name + '` holds ' + str(_N) + '. Pick a `' + _N_name + '` from 2 to ' + str(_F)
+                           + ': a d' + str(_F) + ' rolls 1 to ' + str(_F) + '.')
     _lo, _hi = 1, _F
 else:
     _lo, _hi = _N - 6, _N + 6
@@ -269,8 +287,8 @@ def _ev(_r, _n=None):
 def _ev_many(_rs):
     _list = ', '.join(str(_r) for _r in _rs[:-1]) + ' and ' + str(_rs[-1])
     if _via_rolls:
-        return "(Mar'tu's check rolled " + _list + ' for you, only inside the check.)'
-    return "(Mar'tu's check tried `" + _R + '` at ' + _list + ', only inside the check.)'
+        return "Mar'tu tested your code with test rolls: " + _list + '.'
+    return "Mar'tu tested your code with test numbers for `" + _R + '`: ' + _list + '.'
 def _try(_r, _n=None):
     _n = _N if _n is None else _n
     _vals, _rolls = _case_of(_r, _n)
@@ -278,18 +296,19 @@ def _try(_r, _n=None):
     assert not _miss, _keep(_miss[0])
     assert not _err, _stop(_vals, _rolls, _err)
     if _via_rolls:
-        assert _calls, ('Roll the die into `' + _R + '` with `random.randint(1, ' + str(_F) + ")`, so Mar'tu's check "
-                        'can roll for you.')
+        assert _calls, ('`' + _R + "` isn't rolled with the die, so Mar'tu can't test your code with his own rolls. "
+                        'Roll it with `' + _R + ' = random.randint(1, ' + str(_F) + ')`.')
     return _mask(_rows, [_r, _n])
 _H = _try(_hi)
 _L = _try(_lo)
-assert _H, ('Print a success line when `' + _R + '` reaches `' + _N_name + '`. Your program printed nothing. '
-            + _ev(_hi))
-assert _L, 'Add `else:` with a failure line under it. Your program printed nothing. ' + _ev(_lo)
+assert _H, ('A roll that reaches `' + _N_name + '` showed nothing in the Console. '
+            'Print a success line under the `if`, indented. ' + _ev(_hi))
+assert _L, ('A low roll showed nothing in the Console. '
+            'Add `else:` with a failure line under it, indented. ' + _ev(_lo))
 _E = _try(_N)
 if _H == _L:
-    assert _E == _H, ('Use `>=`, so a higher roll passes too. Only a roll of exactly ' + str(_N) + ' gave the success '
-                      'line. ' + _ev_many([_lo, _N, _hi]))
+    assert _E == _H, ('Only a roll of exactly ' + str(_N) + ' gave the success line: a higher roll did not. '
+                      'Use `>=`, so a higher roll passes too. ' + _ev_many([_lo, _N, _hi]))
     # The same words in both branches, or an `if` that never asks with the boxes (`if True:`, `if 14 >= 12:`, a
     # lone print): say only what is really wrong.
     _same = False
@@ -298,73 +317,68 @@ if _H == _L:
             _w = [sorted(_c.value for _x in _b for _c in _ast.walk(_x) if type(_c).__name__ == 'Constant'
                          and type(_c.value).__name__ == 'str') for _b in (_n.body, _n.orelse)]
             _same = _same or bool(_w[0] and _w[0] == _w[1])
-    assert not _same, ('Give the success line and the failure line different words: both say the same thing. '
-                       + _ev_many([_lo, _hi]))
-    assert False, ('Ask whether `' + _R + '` reaches `' + _N_name + '` after `if`, using the boxes, so the answer can '
-                   'change. Both rolls printed the same line. ' + _ev_many([_lo, _hi]))
+    assert not _same, ('Your success line and your failure line say the same thing. '
+                       'Give them different words. ' + _ev_many([_lo, _hi]))
+    assert False, ('A low roll and a high roll showed the same line, so the answer never changes. '
+                   'After `if`, ask whether `' + _R + '` reaches `' + _N_name + '`, using the box names. '
+                   + _ev_many([_lo, _hi]))
 # Exactly one of the two lines prints. A failure line with no indent (no `else:`) prints after every roll.
-assert [_l for _l in _L if _l not in _H], ('Put the failure line under `else:`, indented, so only one line prints. It '
-                                           'printed the failure line as well as the success line. ' + _ev(_hi))
-assert [_l for _l in _H if _l not in _L], ('Indent the success line under the `if`, and the failure line under '
-                                           '`else:`. It printed the success line as well as the failure line. ' + _ev(_lo))
-assert _E == _H, (('Use `>=`, so exactly enough passes: a roll of ' + str(_N) + ' or more gives the success line. It '
-                   'gave the failure line. ' if _E == _L else
-                   'Print the success line here, the same as for a high roll. ') + _ev(_N))
+assert [_l for _l in _L if _l not in _H], ('A high roll showed the failure line as well as the success line. '
+                                           'Put the failure line under `else:`, indented, so only one of them shows. '
+                                           + _ev(_hi))
+assert [_l for _l in _H if _l not in _L], ('A low roll showed the success line as well as the failure line. '
+                                           'Indent the success line under the `if`, and the failure line under '
+                                           '`else:`. ' + _ev(_lo))
+assert _E == _H, (('A roll of exactly ' + str(_N) + ' gave the failure line. '
+                   'Use `>=`, so exactly enough passes: ' + str(_N) + ' or more gives the success line. ' if _E == _L else
+                   'A roll of exactly ' + str(_N) + ' should give the success line, the same as a high roll. ')
+                  + _ev(_N))
 _B = _try(_N - 1)
-assert _B == _L, (('Give a roll below `' + _N_name + '` the failure line. It gave the success line. ' if _B == _H else
-                   'Print the failure line here, the same as for a low roll. ') + _ev(_N - 1))
+assert _B == _L, (('A roll one below `' + _N_name + '` gave the success line. '
+                   'Make it give the failure line: only `' + _N_name + '` or more passes. ' if _B == _H else
+                   'A roll one below `' + _N_name + '` should give the failure line, the same as a low roll. ')
+                  + _ev(_N - 1))
 if _N + 1 <= _hi:
     _A = _try(_N + 1)
-    assert _A == _H, 'Print the success line here, the same as for a high roll. ' + _ev(_N + 1)
+    assert _A == _H, ('A roll one above `' + _N_name + '` should give the success line, the same as a high roll. '
+                      + _ev(_N + 1))
 _M = _N + 3 if (not _via_rolls or _N + 3 <= _F) else _N - 3
 _B2 = _try(_M - 1, _M)
 _E2 = _try(_M, _M)
-assert _B2 == _L and _E2 == _H, ('Ask with the box `' + _N_name + '`, not a number you typed. With `' + _N_name + ' = '
-                                 + str(_M) + '`, your program ' + ('passed ' + _a_roll(_M - 1) if _B2 != _L else
-                                 'failed ' + _a_roll(_M)) + ". (Mar'tu's check tried `" + _N_name + ' = ' + str(_M)
-                                 + '`, only inside the check.)')
+assert _B2 == _L and _E2 == _H, ('With a test number, `' + _N_name + ' = ' + str(_M) + '`, your code '
+                                 + ('let ' + _a_roll(_M - 1) + ' pass' if _B2 != _L else
+                                    'did not let ' + _a_roll(_M) + ' pass') + '. '
+                                 'Ask with the box name `' + _N_name + '`, not a number you typed.')
 # With `needed` at the top face no roll can go past it, so `==` would hide: one more try, above the new needed.
 if _M + 1 <= (_F if _via_rolls else _M + 1):
     _A2 = _try(_M + 1, _M)
-    assert _A2 == _H, ('Use `>=`, so a roll that reaches `' + _N_name + '` or goes past it passes. '
-                       + _a_roll(_M + 1)[0].upper() + _a_roll(_M + 1)[1:] + ' did not pass. ' + _ev(_M + 1, _M))
+    assert _A2 == _H, ('A roll that goes past `' + _N_name + '` should pass too, but ' + _a_roll(_M + 1)
+                       + ' did not. Use `>=`, so a roll that reaches `' + _N_name + '` or goes past it passes. '
+                       + _ev(_M + 1, _M))
 '''
 
 
 _BND_LEAN = [
-    ("""('Roll the die into `' + _R + '` with `random.randint(1, ' + str(_F) + ")`, so Mar'tu's check "
-                        'can roll for you.')""", """("Mar'tu's check found no die rolled into `" + _R + '`, so it can not roll for you.')"""),
-    ("""('Print a success line when `' + _R + '` reaches `' + _N_name + '`. Your program printed nothing. '""",
-     """('A roll that reaches `' + _N_name + '` printed nothing. '"""),
-    ("""'Add `else:` with a failure line under it. Your program printed nothing. '""", """'A low roll printed nothing. '"""),
-    ("""('Use `>=`, so a higher roll passes too. Only a roll of exactly ' + str(_N) + ' gave the success '
-                      'line. '""", """('Only a roll of exactly ' + str(_N) + ' gave the success line: a higher roll did not. '"""),
-    ("""('Give the success line and the failure line different words: both say the same thing. '""",
-     """('The success line and the failure line say the same thing. '"""),
-    ("""('Ask whether `' + _R + '` reaches `' + _N_name + '` after `if`, using the boxes, so the answer can '
-                   'change. Both rolls printed the same line. '""", """('Both rolls printed the same line, so the answer never changes. '"""),
-    ("""('Put the failure line under `else:`, indented, so only one line prints. It '
-                                           'printed the failure line as well as the success line. '""",
-     """('A high roll printed the failure line as well as the success line. '"""),
-    ("""('Indent the success line under the `if`, and the failure line under '
-                                           '`else:`. It printed the success line as well as the failure line. '""",
-     """('A low roll printed the success line as well as the failure line. '"""),
-    ("""(('Use `>=`, so exactly enough passes: a roll of ' + str(_N) + ' or more gives the success line. It '
-                   'gave the failure line. ' if _E == _L else
-                   'Print the success line here, the same as for a high roll. ')""",
-     """(('A roll of exactly ' + str(_N) + ' gave the failure line. ' if _E == _L else
-                   'A roll of exactly ' + str(_N) + ' did not give the success line. ')"""),
-    ("""(('Give a roll below `' + _N_name + '` the failure line. It gave the success line. ' if _B == _H else
-                   'Print the failure line here, the same as for a low roll. ')""",
-     """(('A roll below `' + _N_name + '` gave the success line. ' if _B == _H else
-                   'A roll below `' + _N_name + '` did not give the failure line. ')"""),
-    ("""'Print the success line here, the same as for a high roll. ' + _ev(_N + 1)""",
-     """'A roll above `' + _N_name + '` did not give the success line. ' + _ev(_N + 1)"""),
-    ("""('Ask with the box `' + _N_name + '`, not a number you typed. With `' + _N_name + ' = '""", """('With `' + _N_name + ' = '"""),
-    ('\'failed \' + _a_roll(_M)) + ". (Mar\'tu\'s check tried `"',
-     '\'failed \' + _a_roll(_M)) + \': the `if` does not follow the box `\' + _N_name + "`. (Mar\'tu\'s check tried `"'),
-    ("""('Use `>=`, so a roll that reaches `' + _N_name + '` or goes past it passes. '""",
-     """('A roll that goes past `' + _N_name + '` should pass too. '"""),
+    ("""'Roll it with `' + _R + ' = random.randint(1, ' + str(_F) + ')`.'""", "''"),
+    ("'Print a success line under the `if`, indented. '", "''"),
+    ("'Add `else:` with a failure line under it, indented. '", "''"),
+    ("'Use `>=`, so a higher roll passes too. '", "''"),
+    ("'Give them different words. '", "''"),
+    ("""'After `if`, ask whether `' + _R + '` reaches `' + _N_name + '`, using the box names. '""", "''"),
+    ("'Put the failure line under `else:`, indented, so only one of them shows. '", "''"),
+    ("""'Indent the success line under the `if`, and the failure line under '
+                                           '`else:`. '""", "''"),
+    ("""'Use `>=`, so exactly enough passes: ' + str(_N) + ' or more gives the success line. ' if""", "'' if"),
+    ("""'A roll of exactly ' + str(_N) + ' should give the success line, the same as a high roll. '""",
+     """'A roll of exactly ' + str(_N) + ' did not give the success line. '"""),
+    ("""'Make it give the failure line: only `' + _N_name + '` or more passes. ' if""", "'' if"),
+    ("""'A roll one below `' + _N_name + '` should give the failure line, the same as a low roll. '""",
+     """'A roll one below `' + _N_name + '` did not give the failure line. '"""),
+    ("""'A roll one above `' + _N_name + '` should give the success line, the same as a high roll. '""",
+     """'A roll one above `' + _N_name + '` did not give the success line. '"""),
+    ("""'Ask with the box name `' + _N_name + '`, not a number you typed.')""",
+     """'The `if` did not change to match `' + _N_name + '`.')"""),
+    ("""' did not. Use `>=`, so a roll that reaches `' + _N_name + '` or goes past it passes. '""", "' did not. '"),
 ]
 
 
@@ -384,38 +398,39 @@ _target, _faces, _placeholder = __TARGET__, __FACES__, __PLACEHOLDER__
 _ns, _rows, _calls, _err, _miss = _rerun({}, __ROLLS__)
 assert not _err, _stop({}, __ROLLS__, _err)
 _fix = '`' + _target + ' = random.randint(1, ' + str(_faces) + ')`'
-assert _target in _ns, 'Keep the box `' + _target + '` from the starter, and roll it: ' + _fix + '.'
+assert _target in _ns, ("Python can't find `" + _target + '`.'
+                        ' Keep the line that makes it, and roll the die there: ' + _fix + '.')
 _got = _ns[_target]
 # Python's own message for `=` in an `if` suggests `:=`, which quietly puts a new value in the box.
 _walrus = [_n for _n in _ast.walk(_ast.parse(_source)) if type(_n).__name__ == 'NamedExpr'
            and type(_n.target).__name__ == 'Name' and _n.target.id == _target]
-assert not _walrus, ('To ask a question in an `if`, use a sign like `>=` or `==`. `:=` puts a new value in `'
-                     + _target + '`, the same as `=`, so it no longer holds the roll.')
+assert not _walrus, ('`:=` puts a new value in `' + _target + '`, the same as `=`, so it no longer holds the roll.'
+                     ' To ask a question in an `if`, use a sign like `>=` or `==`.')
 _from = [_c for _c in _calls if _c[2] == _got]
 assert not (_placeholder is not None and not _from and _starters(_target, _placeholder)), (
-    'Roll it: ' + _fix + '. `' + _target + "` still holds the starter's `" + str(_placeholder) + '`.')
-assert _assigned_from_expression(_target) and _calls, 'Roll it: ' + _fix + '. `' + _target + '` holds a number you typed.'
-assert _from, 'Roll it: ' + _fix + '. `' + _target + '` does not hold the roll yet.'
+    '`' + _target + '` still holds the placeholder `' + str(_placeholder) + '`.'
+    ' Roll the die into it: ' + _fix + '.')
+assert _assigned_from_expression(_target) and _calls, ('`' + _target + '` holds a number you typed, so it is the same '
+                                                       'every Run. Roll the die instead: ' + _fix + '.')
+assert _from, '`' + _target + '` does not hold the roll yet. Roll the die into it: ' + _fix + '.'
 _a, _b = _from[0][0], _from[0][1]
 _call = '`random.randint(' + str(_a) + ', ' + str(_b) + ')`'
-_die = ('Use ' + _fix + ': a d' + str(_faces) + ' has faces 1 to ' + str(_faces) + ', and `randint` includes both '
-        'ends. ')
-assert _a >= 1, _die + _call + ' can give ' + str(_a) + '.'
-assert _b <= _faces, _die + _call + ' can give ' + str(_b) + '.'
-assert _b >= _faces, _die + _call + ' never gives ' + str(_faces) + '.'
-assert _a <= 1, _die + _call + ' never gives 1.'
+_die = (' A d' + str(_faces) + ' has faces 1 to ' + str(_faces) + '.'
+        ' Use ' + _fix + ': `randint` includes both ends.')
+assert _a >= 1, _call + ' can give ' + str(_a) + '.' + _die
+assert _b <= _faces, _call + ' can give ' + str(_b) + '.' + _die
+assert _b >= _faces, _call + ' never gives ' + str(_faces) + '.' + _die
+assert _a <= 1, _call + ' never gives 1.' + _die
 '''
 
 
 _RND_LEAN = [
-    ("""'Keep the box `' + _target + '` from the starter, and roll it: ' + _fix + '.'""", """'Keep the box `' + _target + '` from the starter.'"""),
-    ("""('To ask a question in an `if`, use a sign like `>=` or `==`. `:=` puts a new value in `'""", """('`:=` puts a new value in `'"""),
-    ('\'Roll it: \' + _fix + \'. `\' + _target + "` still holds the starter\'s `"', '\'`\' + _target + "` still holds the starter\'s `"'),
-    ("""'Roll it: ' + _fix + '. `' + _target + '` holds a number you typed.'""",
-     """'`' + _target + '` holds a number you typed, so it is the same every Run.'"""),
-    ("""'Roll it: ' + _fix + '. `' + _target + '` does not hold the roll yet.'""", """'`' + _target + '` does not hold the roll yet.'"""),
-    ("""('Use ' + _fix + ': a d' + str(_faces) + ' has faces 1 to ' + str(_faces) + ', and `randint` includes both '
-        'ends. ')""", """('A d' + str(_faces) + ' has faces 1 to ' + str(_faces) + ', but ')"""),
+    ("' Keep the line that makes it, and roll the die there: ' + _fix + '.'", "''"),
+    ("' To ask a question in an `if`, use a sign like `>=` or `==`.'", "''"),
+    ("' Roll the die into it: ' + _fix + '.')", "'')"),
+    ("""'every Run. Roll the die instead: ' + _fix + '.')""", """'every Run.')"""),
+    ("""` does not hold the roll yet. Roll the die into it: ' + _fix + '.'""", """` does not hold the roll yet.'"""),
+    ("""' Use ' + _fix + ': `randint` includes both ends.')""", "'')"),
 ]
 
 
@@ -457,17 +472,17 @@ if "__NAME__" not in globals():
     _bare = [_n.lineno for _n in _tree.body if type(_n).__name__ == "Expr" and type(_n.value).__name__ == "Constant" and type(_n.value.value).__name__ in ("str", "int", "float")]
     _other = [_m for _m in _made if _m not in _skip]
     if _near:
-        _msg = "Python matches names letter for letter: you wrote `" + _near[0] + "`, the task needs `__NAME__`."
+        _msg = "You wrote `" + _near[0] + "`, but the task needs `__NAME__`. Python matches names letter for letter, capitals too."
     elif _left:
-        _msg = "`" + _left[0] + "` is a name from an example or an earlier step. This task's box is `__NAME__`."
+        _msg = "`" + _left[0] + "` is a name from an example or an earlier step. This step's box is `__NAME__`."
     elif _bare:
-        _msg = "Line " + str(_bare[0]) + " is a value with no box, so Python made it and forgot it. Put `__NAME__ = ` in front of it."
+        _msg = "Line " + str(_bare[0]) + " is a value with no name in front, so Python reads it and throws it away. Put `__NAME__ = ` in front of it."
     elif _other:
-        _msg = "You made a box named `" + _other[0] + "`, but this task's box is `__NAME__`. Python matches names letter for letter."
+        _msg = "You made a box named `" + _other[0] + "`, but this step's box is `__NAME__`. Python matches names letter for letter."
     elif __KEPT__:
-        _msg = "Keep the box `__NAME__` from the starter: a line that starts `__NAME__ = `."
+        _msg = "Python can't find `__NAME__`. Keep the line that starts `__NAME__ = `: it was there at the start."
     else:
-        _msg = "Make a box named `__NAME__`: start a line with `__NAME__ = `."
+        _msg = "Python can't find a box named `__NAME__`. Start a line with `__NAME__ = `."
     assert False, _msg'''
 
 
@@ -495,8 +510,9 @@ def strexact_check(wanted, label="the quoted text is exact", lean=False):
         "_texts = [_c.value for _c in _asked if type(_c.value).__name__ == 'str']\n"
         "_bad = [(_t, _w) for _t in _texts for _w in _wanted "
         "if _t != _w and _squash(_t) == _squash(_w) and _w not in _texts]\n"
-        "assert not _bad, (" + ("" if lean else "'Copy the option exactly: ' + ") + "'`\"' + (_bad[0][0] if _bad else '') + '\"` and `\"' + "
-        "(_bad[0][1] if _bad else '') + '\"` are different text to Python. Every letter, space and capital counts.')\n",
+        "assert not _bad, ('`\"' + (_bad[0][0] if _bad else '') + '\"` and `\"' + "
+        "(_bad[0][1] if _bad else '') + '\"` are different text to Python. Every letter, space and capital counts.'"
+        + ("" if lean else " + ' Copy the option exactly.'") + ")\n",
     )
 
 
@@ -541,7 +557,8 @@ def _said(_rows):
         return 'fail'
     return 'other'
 def _ev(_vals, _m):
-    return "(Mar'tu's check tried " + _with(_vals) + ', so `mana` was ' + str(_m) + ' at the `if`, only inside the check.)'
+    _nums = 'a test number, ' if len(_vals) == 1 else 'test numbers, '
+    return "Mar'tu tested your code with " + _nums + _with(_vals) + '. `mana` was ' + str(_m) + ' at the `if`.'
 def _expect(_vals, _want, _fix, _what):
     _ns2, _rows2 = _rows_for(_vals)
     _m = _ns2.get('mana')
@@ -549,24 +566,25 @@ def _expect(_vals, _want, _fix, _what):
     if _got == _want:
         return
     _line = _CAST if _want == 'cast' else _FAIL
-    assert _got != 'other', ('Keep both lines as they are, and mend only the `if`. Your program did not print `'
-                             + _line + '` on its own. ' + _ev(_vals, _m))
-    assert False, _fix + ' ' + _what + ' ' + _ev(_vals, _m)
+    assert _got != 'other', ('Your code did not print `' + _line + '` on its own. Keep both print lines as they are, '
+                             'and fix only the `if`. ' + _ev(_vals, _m))
+    assert False, _what + ' ' + _fix + ' ' + _ev(_vals, _m)
 _ns, _rows = _rows_for({})
 _M = _ns.get('mana')
-assert _M is not None, 'Keep the box `mana` from the starter.'
-assert type(_M).__name__ == 'int', 'Keep `mana` a whole number, as in the starter.'
+assert _M is not None, "Python can't find `mana`. Keep the lines that make it, the way they were at the start."
+assert type(_M).__name__ == 'int', '`mana` does not hold a whole number. Keep it a whole number, the way it was at the start.'
 _expect({'cost': _M}, 'cast', 'Use `>=`, which means *at least*: exactly enough mana should cast.',
-        'Your program printed `' + _FAIL + '`')
+        'With exactly enough mana, your code printed `' + _FAIL + '`')
 _expect({'cost': _M + 1}, 'fail', 'Compare the boxes `mana` and `cost`: one short is not enough.',
-        'Your program cast the ward.')
-_expect({'cost': _M - 1}, 'cast', 'Let more than enough mana cast too.', 'Your program printed `' + _FAIL + '`')
+        'With one mana too few, your code still cast the ward.')
+_expect({'cost': _M - 1}, 'cast', 'More than enough mana should cast too.',
+        'With more than enough mana, your code printed `' + _FAIL + '`')
 _ns3, _rows3 = _rows_for({'mana': 20, 'cost': 99})
 _M2 = _ns3.get('mana')
 _expect({'mana': 20, 'cost': _M2}, 'cast', 'Ask with the boxes `mana` and `cost`, not numbers you typed.',
-        'Exactly enough again, but your program said not enough.')
+        'With other numbers and exactly enough mana, your code said not enough.')
 _expect({'mana': 20, 'cost': _M2 + 1}, 'fail', 'Ask with the boxes `mana` and `cost`, not numbers you typed.',
-        'One short again, but your program cast the ward.')
+        'With other numbers and one mana too few, your code still cast the ward.')
 '''
 
 
@@ -600,13 +618,14 @@ def _sets_of(_name):
     return _found
 for _name in __NAMES__:
     _p = _prints_of(_name)
-    assert _p, 'Add `print(' + _name + ')` on its own line, just above the `if`, and Run.'
-    assert min(_p) < _at, ('Move `print(' + _name + ')` above the `if`, so it shows the value before Python decides. '
-                           'Now it is below the `if` line.')
+    assert _p, ('Your code has no `print(' + _name + ')` line yet. Add it on its own line, right above the `if` line, '
+                'and press Run.')
+    assert min(_p) < _at, ('`print(' + _name + ')` is below the `if` line. Move it right above the `if`, so it shows '
+                           'the value before Python decides.')
     _last = max(_sets_of(_name) or [0])
-    assert any(_last < _x < _at for _x in _p), ('Move `print(' + _name + ')` down, just above the `if`. It sits above '
-                                               'line ' + str(_last) + ', which changes `' + _name + '`, so it shows the '
-                                               'old value.')
+    assert any(_last < _x < _at for _x in _p), ('`print(' + _name + ')` is above line ' + str(_last) + ', which changes `'
+                                               + _name + '`, so it shows the old value. Move it down, right above the '
+                                               '`if` line.')
 '''
 
 
@@ -622,12 +641,12 @@ import sys as _sys
 _target = __TARGET__
 _tree0 = _ast.parse(_source)
 _seals = [_n for _n in _ast.walk(_tree0) if type(_n).__name__ == 'Assert']
-assert len(_seals) >= 3, ('Write one `assert` line under each `# seal:` comment: three in all. You have '
-                          + str(len(_seals)) + (' seal.' if len(_seals) == 1 else ' seals.'))
+assert len(_seals) >= 3, ('You have ' + str(len(_seals)) + (' seal.' if len(_seals) == 1 else ' seals.')
+                          + ' Write one `assert` line under each `# seal:` note: three in all.')
 _about = [_n for _n in _seals if any(type(_x).__name__ == 'Name' and _x.id == _target for _x in _ast.walk(_n.test))]
-assert len(_about) >= 3, ('Make each seal say what `' + _target + '` must be, like `assert ' + _target
-                          + ' == True`. ' + str(len(_about)) + ' of yours ' + ('is' if len(_about) == 1 else 'are')
-                          + ' about `' + _target + '`.')
+assert len(_about) >= 3, (('None of your seals are' if not _about else 'Only ' + str(len(_about)) + ' of your seals '
+                           + ('is' if len(_about) == 1 else 'are')) + ' about `' + _target + '`. Make each seal say '
+                          'what `' + _target + '` must be, like `assert ' + _target + ' == True`.')
 def _says_the_answer(_t):
     # `assert passed`, `assert not passed`, or `passed` compared with True / False (either side, any sign)
     _k = type(_t).__name__
@@ -641,8 +660,9 @@ def _says_the_answer(_t):
                 and any(type(_s).__name__ == 'Constant' and type(_s.value).__name__ == 'bool' for _s in _sides))
     return False
 _plain = [_n for _n in _about if _says_the_answer(_n.test)]
-assert len(_plain) >= 3, ('Make each seal say the answer for its roll, `True` or `False`, like `assert ' + _target
-                          + ' == True`. A seal that copies the question `roll >= needed` only repeats the line above it.')
+assert len(_plain) >= 3, ('A seal that copies the question `roll >= needed` only repeats the line above it. Make '
+                          'each seal say the answer for its roll, `True` or `False`, like `assert ' + _target
+                          + ' == True`.')
 def _broken(_how):
     _tree = _ast.parse(_source)
     for _n in _ast.walk(_tree):
@@ -665,13 +685,13 @@ def _broken(_how):
     finally:
         _sys.stdout = _keep_out
     return _caught
-_ev = " (Mar'tu's check broke your `" + _target + "` lines on purpose, only inside the check.)"
-assert _broken('gt'), ('Seal the roll of exactly ' + __NEEDED__ + ': `' + _target + '` must be `True` there. None of '
-                       'your seals noticed `>=` changed to `>`.' + _ev)
-assert _broken('eq'), ('Seal a roll above ' + __NEEDED__ + ': `' + _target + '` must be `True` there too. None of your '
-                       'seals noticed `>=` changed to `==`.' + _ev)
-assert _broken('always'), ('Seal a roll below ' + __NEEDED__ + ': `' + _target + '` must be `False` there. None of '
-                           'your seals noticed `' + _target + '` made always `True`.' + _ev)
+_ev = " Mar'tu tested your seals by breaking a copy of your `" + _target + "` lines on purpose."
+assert _broken('gt'), ('None of your seals noticed when `>=` was changed to `>`. Seal the roll of exactly '
+                       + __NEEDED__ + ': `' + _target + '` must be `True` there.' + _ev)
+assert _broken('eq'), ('None of your seals noticed when `>=` was changed to `==`. Seal a roll above ' + __NEEDED__
+                       + ': `' + _target + '` must be `True` there too.' + _ev)
+assert _broken('always'), ('None of your seals noticed when `' + _target + '` was made always `True`. Seal a roll '
+                           'below ' + __NEEDED__ + ': `' + _target + '` must be `False` there.' + _ev)
 '''
 
 
@@ -689,6 +709,11 @@ _tails = {
     'jeep': 'Walk only when walking beats the jeep *and* the Telegun.',
     'telegun': 'Take the Telegun here: it is free on this roll.',
 }
+_winner = {
+    'foot': 'walking',
+    'jeep': 'the jeep',
+    'telegun': 'the Telegun',
+}
 _names = {}
 for _d, _r in _cases:
     _vals = {'distance': _d}
@@ -699,14 +724,16 @@ for _d, _r in _cases:
     _want = min(_f, _j, _t)
     _key = 'telegun' if _t == _want else ('jeep' if _j == _want else 'foot')
     _road, _cost = _ns.get('road'), _ns.get('cost')
-    assert 'road' in _ns and 'cost' in _ns, 'Keep the boxes `road` and `cost` from the starter: each branch sets both.'
-    _held = ("still holds the starter's `0`" if _cost == 0 and _starters('cost', 0) else 'holds ' + _show(_cost))
-    assert _cost == _want, _mend(_tails[_key], '`cost` ' + _held + '; the cheapest is ' + str(_want) + '.', _vals, [_r])
-    assert not (_road == '___' and _starters('road', '___')), ('Put the road' + chr(39) + 's name in `road`, in quotes, '
-        'in each branch: `"on foot"`, `"the jeep"` or `"the Telegun"`. `road` still holds the starter' + chr(39)
-        + 's `"___"`.')
+    assert 'road' in _ns and 'cost' in _ns, ("Python can't find `road` or `cost`. Keep both boxes from the start: "
+                                             'each branch sets both.')
+    _held = ('still holds the placeholder `0`' if _cost == 0 and _starters('cost', 0) else 'holds ' + _show(_cost))
+    assert _cost == _want, _mend(_tails[_key], '`cost` ' + _held + ', but the cheapest road here is ' + _winner[_key]
+                                 + ', at ' + str(_want) + ' coins.', _vals, [_r])
+    assert not (_road == '___' and _starters('road', '___')), ('`road` still holds the placeholder `"___"`. In each '
+        'branch, put the road' + chr(39) + 's name in `road`, in quotes: `"on foot"`, `"the jeep"` or `"the Telegun"`.')
     assert type(_road).__name__ == 'str' and _road.strip() and _road.strip() != '___', (
-        'Put the road in `road`, as text in quotes, in each branch: `"on foot"`, `"the jeep"` or `"the Telegun"`.')
+        '`road` does not hold text. In each branch, put the road' + chr(39) + 's name in `road`, in quotes: '
+        '`"on foot"`, `"the jeep"` or `"the Telegun"`.')
     if _key in _names:
         assert _road == _names[_key], _mend('Give each road one name, the same every time.', 'The '
             + ('walk' if _key == 'foot' else _key) + ' won again, but `road` held different text.', _vals, [_r])
@@ -734,11 +761,11 @@ for _d, _r in __CASES__:
 _all = set(_x[2] for _x in _runs if _x[2])
 for _vals, _r, _road, _cost, _rows in _runs:
     _ok = [_l for _l in _rows if _road and _road in _l and _re.search(_whole(_cost), _l)]
-    assert _ok, _mend('Print the text in `road` and `str(cost)` in one line, glued with `+`.', 'No line showed both.',
-                      _vals, [_r])
+    assert _ok, _mend('Print the text in `road` and `str(cost)` in one line, glued with `+`.', 'No line in the '
+                      'Console showed both the road and its cost.', _vals, [_r])
     # a line that lists every road and every cost does not tell the party which one the code picked
     _others = [_o for _o in _all if _o != _road and _o not in _road]
-    assert any(not any(_o in _l for _o in _others) for _l in _ok), _mend('Tell the party only the road the code '
+    assert any(not any(_o in _l for _o in _others) for _l in _ok), _mend('Tell the party only the road your code '
         'picked.', 'Your line names every road.', _vals, [_r])
 '''
 
@@ -754,11 +781,12 @@ for _d, _r, _want in __CASES__:
     assert not _err, _stop(_vals, [_r], _err)
     _cost = _ns.get('cost')
     if _want:
-        assert 'Pack extra glug.' in _rows, _mend('Also print `Pack extra glug.` when `cost` is 150 or more: use `>=`.',
-                                                 'The trip cost ' + str(_cost) + ' coins.', _vals, [_r])
+        assert 'Pack extra glug.' in _rows, _mend('Print it when `cost` is 150 or more: use `>=`.', 'The trip cost '
+                                                 + str(_cost) + ' coins, but `Pack extra glug.` did not show.', _vals, [_r])
     else:
-        assert 'Pack extra glug.' not in _rows, _mend('Ask about `cost`: under 150, no `Pack extra glug.`', 'The trip '
-                                                      'cost ' + str(_cost) + ' coins.', _vals, [_r])
+        assert 'Pack extra glug.' not in _rows, _mend('Ask about `cost`, so it shows only at 150 coins or more.', 'The '
+                                                      'trip cost ' + str(_cost) + ' coins, and `Pack extra glug.` showed '
+                                                      'anyway.', _vals, [_r])
 '''
 
 
@@ -778,8 +806,8 @@ _made = [_n for _n in _ast.walk(_tree) if _sets(_n)]
 _two = [_n for _n in _made if len(_n.targets) > 1]
 _also = [_t.id for _n in _two for _t in _n.targets if type(_t).__name__ == 'Name' and _t.id != _target]
 _pre = _fix + ' ' if _fix else ''
-assert not _two, (_pre + 'Your `' + _target + '` line has two `=` signs, so it puts a value in `'
-                  + (_also[0] if _also else _target) + '` too. `=` puts a value in a box.')
+assert not _two, (_pre + 'Your `' + _target + '` line has two `=` signs, so it also puts a value in `'
+                  + (_also[0] if _also else _target) + '`. Each `=` puts a value in a box.')
 def _names(_n):
     return {_x.id for _x in _ast.walk(_n) if type(_x).__name__ == 'Name'}
 _used = set()
@@ -793,7 +821,7 @@ _quoted = [_n for _n in _made if type(_n.value).__name__ == 'Constant' and type(
 _asked = bool(_used & set(_boxes))
 _still = [_n for _n in _made if _placeholder is not None and type(_n.value).__name__ == 'Constant'
           and repr(_n.value.value) == repr(_placeholder)]
-assert not _still or _asked, _pre + '`' + _target + "` still holds the starter's `" + repr(_placeholder) + '`.'
+assert not _still or _asked, _pre + '`' + _target + '` still holds the placeholder `' + repr(_placeholder) + '`.'
 assert not _made or _quoted or _asked, (_pre + '`' + _target + '` is made from values you typed, so it can never '
                                         'change when the boxes change.')
 '''
@@ -813,8 +841,8 @@ _target = __TARGET__
 _asks = [_n.lineno for _n in _ast.parse(_source).body if type(_n).__name__ == 'Expr'
          and any(type(_q).__name__ == 'Compare' and type(_q.left).__name__ == 'Name' and _q.left.id == _target
                  and type(_q.ops[0]).__name__ == 'Eq' for _q in _ast.walk(_n.value))]
-assert not _asks, ('Use one `=` to put the answer in `' + _target + '`: `=` puts, `==` only asks. Line '
-                   + str(_asks[0] if _asks else 0) + ' asks a question and forgets the answer.')
+assert not _asks, ('Line ' + str(_asks[0] if _asks else 0) + ' asks a question with `==` and throws the answer '
+                   'away: `==` only asks. Use one `=` to put the answer in `' + _target + '`.')
 '''
 
 
@@ -823,17 +851,14 @@ def gets_check(target, lean=False):
     It runs, so only a check can catch it."""
     code = _GETS.replace("__TARGET__", repr(target))
     if lean:
-        code = _leaned(code, [("""('Use one `=` to put the answer in `' + _target + '`: `=` puts, `==` only asks. Line '
-                   + str(_asks[0] if _asks else 0) + ' asks a question and forgets the answer.')""",
-                               """('Line ' + str(_asks[0] if _asks else 0) + ' asks a question with `==` and forgets the '
-                   'answer: `==` only asks.')""")])
+        code = _leaned(code, [(""" Use one `=` to put the answer in `' + _target + '`.')""", """')""")])
     return (f"{target} gets the answer with =", code)
 
 
 _BARRIER = r'''
 _three = __LINES__
 _base = __BASE__
-_again = 'ran your code again with the starter' + chr(39) + 's numbers'
+_again = 'with the numbers already in it'
 _order = ['S', 'M', 'C']
 for _vals, _key, _fix in __CASES__:
     _ns, _rows, _calls, _err, _miss = _rerun(_vals, [])
@@ -841,11 +866,11 @@ for _vals, _key, _fix in __CASES__:
     assert not _miss, _keep(_miss[0])
     assert not _err, _stop(_shown, [], _err)
     _got = [_three[_k] for _k in _order if _three[_k] in _rows]
-    assert _got, _mend('Keep the three lines from the starter as they are, one under each branch.', 'None of them '
-                       'printed.', _shown, [], _again)
+    assert _got, _mend('Keep the three print lines the way they were at the start, one under each branch.', 'None '
+                       'of them showed in the Console.', _shown, [], _again)
     assert len(_got) == 1, _mend('Use one chain, `if`, `elif`, `else`, so only one line prints.',
-                                 'It printed all three.' if len(_got) == 3 else 'It printed two of them.', _shown, [],
-                                 _again)
+                                 'Your code printed all three lines.' if len(_got) == 3 else
+                                 'Your code printed two of the lines.', _shown, [], _again)
     assert _got[0] == _three[_key], _mend(_fix, _printed(_got[0]), _shown, [], _again)
 '''
 
@@ -859,8 +884,8 @@ def barrier_check(label, lines, cases, base, lean=False):
             .replace("__CASES__", repr([(dict(v), k, f) for v, k, f in cases])))
     if lean:
         code = _leaned(code, [
-            ("""_mend('Keep the three lines from the starter as they are, one under each branch.', 'None of them '
-                       'printed.'""", """_mend('None of the three lines from the starter printed.', ''"""),
+            ("""_mend('Keep the three print lines the way they were at the start, one under each branch.', 'None '
+                       'of them showed in the Console.'""", """_mend('None of the three print lines showed in the Console.', ''"""),
             ("""_mend('Use one chain, `if`, `elif`, `else`, so only one line prints.',""",
              """_mend('Only one of the three lines should print.',"""),
         ])
@@ -876,8 +901,8 @@ def lower_brackets_check(box, lean=False):
         "_called = [id(_n.func) for _n in _ast.walk(_tree) if type(_n).__name__ == 'Call']\n"
         "_raw = [_n.lineno for _n in _ast.walk(_tree) if type(_n).__name__ == 'Attribute' and _n.attr == 'lower' "
         "and id(_n) not in _called]\n"
-        f"assert not _raw, '{'' if lean else f'Add `()`: `{box}.lower()`. '}Line ' + str(_raw[0] if _raw else 0) + ' has `.lower` with no "
-        "`()`, so it never runs.'\n",
+        "assert not _raw, 'Line ' + str(_raw[0] if _raw else 0) + ' has `.lower` with no `()`, so it never runs."
+        + ("" if lean else f" Add `()`: `{box}.lower()`.") + "'\n",
     )
 
 
@@ -891,10 +916,11 @@ for _vals, _want, _never in __CASES__:
     assert not _miss, _keep(_miss[0])
     assert not _err, _stop(_vals, [], _err)
     _ok = all(_w in _rows for _w in _want) and not any(_w in _rows for _w in _never)
-    _what = ('`' + _want[0] + '` did not print.' if _want and _want[0] not in _rows else 'Another reply printed too.')
+    _what = ('`' + _want[0] + '` did not show in the Console.' if _want and _want[0] not in _rows else
+             'Another reply showed too.')
     if _lone:
-        assert _ok, _mend('Keep the copy: `' + _box + ' = ' + _box + '.lower()`. Line ' + str(_lone[0]) + ' makes a '
-                          'copy, then forgets it.', _what, _vals, [])
+        assert _ok, _mend('Line ' + str(_lone[0]) + ' makes a small-letter copy and throws it away. Keep the copy: `'
+                          + _box + ' = ' + _box + '.lower()`.', _what, _vals, [])
     assert _ok, _mend('Use `.lower()`, so any capitals get their reply.', _what, _vals, [])
 '''
 
@@ -907,8 +933,8 @@ def lower_kept_check(label, box, cases, lean=False):
             .replace("__CASES__", repr([(dict(v), list(w), list(n)) for v, w, n in cases])))
     if lean:
         code = _leaned(code, [
-            ("""_mend('Keep the copy: `' + _box + ' = ' + _box + '.lower()`. Line ' + str(_lone[0]) + ' makes a '
-                          'copy, then forgets it.'""", """_mend('Line ' + str(_lone[0]) + ' makes a lower-case copy, then forgets it.'"""),
+            (""" Keep the copy: `'
+                          + _box + ' = ' + _box + '.lower()`.'""", """'"""),
             ("""_mend('Use `.lower()`, so any capitals get their reply.'""", """_mend('A choice typed with capitals does not get its reply.'"""),
         ])
     return (label, code)
@@ -951,55 +977,55 @@ GLOSSARY = [
         term="traceback",
         aliases=["tracebacks", "full message"],
         plain=(
-            "Python's full message when a program stops. Read the last line first: the error's name, then what "
-            "went wrong. Above it, the message names the line where Python stopped."
+            "Python's full message when your code stops, under Show Python's full message. Its last line gives the "
+            "error's name and what went wrong. A line above it gives the line number where Python stopped."
         ),
-        example='File "main.py", line 4\nNameError: name \'mana_cost\' is not defined',
+        example='File "main.py", line 3\nNameError: name \'lantren\' is not defined',
     ),
     dict(
         term="SyntaxError",
         aliases=["syntax error", "syntax errors"],
         plain=(
-            "Python could not read a line: a missing quote, bracket or colon, or a sign it does not know. Nothing "
-            "runs until it is mended."
+            "A line Python can't read. *Syntax* is how a line is put together, like grammar in English class. A "
+            "missing quote, parenthesis or colon stops everything until you fix it."
         ),
-        example="if mana < 6\nSyntaxError: expected ':'",
+        example="if rain > 0\nSyntaxError: expected ':'",
     ),
     dict(
         term="NameError",
         aliases=["name error", "name errors"],
         plain=(
-            "Python met a name that no line has made yet. Often a typo, a capital letter, missing quotes, or a box "
-            "used before the line that makes it."
+            "Python met a name that no line has made yet. It's like a story that says \"she\" but never says who "
+            "she is. Check for a typo, a capital letter, missing quotes, or a box used before it is made."
         ),
-        example="print(mama)\nNameError: name 'mama' is not defined",
+        example="print(Gold)\nNameError: name 'Gold' is not defined",
     ),
     dict(
         term="TypeError",
         aliases=["type error", "type errors"],
         plain=(
-            "Two values that don't fit together, like text glued to a number. Turn the number into text with "
-            "`str()`, or take the quotes off a number."
+            "Two values that don't fit together, like adding 5 meters to 3 seconds in math. Most often it is text "
+            "glued to a number. Turn the number into text with `str()`, or take the quotes off the number."
         ),
-        example='print("Mana: " + 7)\nTypeError: can only concatenate str (not "int") to str',
+        example='print("Gold: " + 7)\nTypeError: can only concatenate str (not "int") to str',
     ),
     dict(
         term="bug",
         aliases=["bugs", "debug", "debugging", "quiet bug", "loud bug"],
         plain=(
-            "A slip in the code. A loud bug stops Python with a message. A quiet bug runs, but gives a wrong "
+            "A mistake in code. A loud bug stops Python with an error. A quiet bug runs, but gives a wrong "
             "answer: print the values to find it."
         ),
-        example="print(mana)\nprint(cost)",
+        example="print(gold)\nprint(price)",
     ),
     dict(
         term="assert",
         aliases=["asserts", "seal", "seals"],
         plain=(
-            "A line that says what must be true. If it is true, nothing happens. If it is not, Python stops "
-            "with `AssertionError`."
+            "A line that says what must be true at that spot. If it is true, nothing happens. If it is not, Python "
+            "stops with `AssertionError`."
         ),
-        example="assert passed == True",
+        example="assert door_open == True",
     ),
 ]
 
@@ -1096,102 +1122,120 @@ PROJECT_2P2 = dict(
     title="Three Roads to the Institute",
     optional=True,
     minutes=35,
-    summary="Walk, ride Gearshift's jeep, or trust Lucky's Telegun? Work out each cost, then let the code pick the cheapest.",
+    summary="Walk, ride Gearshift's jeep, or jump with Lucky's Telegun? Work out what each road costs, then let your code pick the cheapest.",
     intro=(
-        "Mar'tu needs more brass instruments from the old Institute. Three ways to get there:\n"
-        "1. On foot: the party eats glug rations, more for a longer road.\n"
-        "2. Gearshift's jeep form: 2 coins of starlode a mile, plus 5 coins to start.\n"
-        "3. Lucky's Telegun: free on a good roll. On a roll under 15, Lucky lands in a hedge. Again.\n"
-        "Nobody agrees how far it is. So the code must pick the cheapest road for any `distance`."
+        "Mar'tu needs brass instruments from the old Institute. There are three ways to get there, and every cost "
+        "is counted in coins:\n"
+        "1. On foot: the party packs glug, Lucky's drink, for the road. A longer walk needs more.\n"
+        "2. Gearshift's jeep form: 2 coins of starlode (his fuel) for each mile, plus 5 coins to start.\n"
+        "3. Lucky's Telegun, which jumps the party there: free on a roll of 15 or more. Under 15, Lucky lands in a "
+        "hedge, and you walk anyway. Again.\n"
+        "Nobody agrees how far it is. So your code must pick the cheapest road for any `distance` (the miles). "
+        "The prices are in the notes in your code, under `# A.`, `# B.` and `# C.`"
     ),
     martu=(
-        "Five parts, in order: A, B, C, D, E. Each part has its comment in the editor.\n"
-        "Work out what each road costs, then let the code choose. Mar'tu's check tries other distances and other "
-        "rolls, so build every cost from the boxes, yes?\n"
+        "This project has five parts, A to E. Each part has a note in your code, like `# A. Rations on foot`, "
+        "and the list under Your tasks uses the same letters. First work out what each road costs. Then an "
+        "`if` / `elif` / `else` picks the cheapest.\n"
+        "Build every cost from the boxes, like a formula in math class: area = length × width works for any "
+        "rectangle, but the answer 12 fits only one. I test your code with other distances and other rolls.\n"
         "I counted everything in coins. Starlode, glug, hedges. Everything."
     ),
     names=ROADS_NAMES,
     pair_talk=(
-        "Pair talk: before part D, guess with your partner which road wins at 5, 30 and 80 miles. "
+        "Pair talk: before part D, guess with your partner which road is cheapest at 5, 30 and 80 miles. "
         "Then each of you checks it on your own screen."
     ),
     starter=ROADS_STARTER,
     checkpoints=[
         dict(
             id="rations-on-foot",
-            text="A. Replace `foot_cost = 0` with an `if`/`elif`/`else` that sets `foot_cost` from `distance`, using the three tiers.",
+            text=(
+                "A. Replace `foot_cost = 0` with an `if` / `elif` / `else` that gives `foot_cost` the right price "
+                "for `distance`. The three prices are in the note under `# A.`"
+            ),
             dictated=False,
             hints=[
-                "Look at the comment under `# A`. Three tiers means `if`, then `elif`, then `else`. Exactly 10 miles "
-                "is still *up to 10*.",
-                "A tier chain with other numbers:\n```python\nif weight <= 2:\n    fee = 1\nelif weight <= 9:\n"
-                "    fee = 4\nelse:\n    fee = 12\n```\nThe first true branch wins. So: first, the test that lets the "
-                "fewest numbers through.",
-                "Write `if distance <= 10:` and `foot_cost = 8` under it, indented. Then `elif distance <= "
-                "50:` with 70, and `else:` with 150.",
+                "Look at the note under `# A.` It gives three prices, so you need three branches: `if`, `elif` and "
+                "`else`. Does exactly 10 miles count as *up to 10*?",
+                "A price chain for mailing a parcel, with other names:\n```python\nif weight <= 2:\n    fee = 1\n"
+                "elif weight <= 9:\n    fee = 4\nelse:\n    fee = 12\n```\nPython checks from the top, like a grading "
+                "scale. It runs only the first true branch. So the question that lets the fewest numbers through goes "
+                "first: `<= 2` before `<= 9`.",
+                "Write `if distance <= 10:` in place of `foot_cost = 0`, with `foot_cost = 8` under it, indented. "
+                "Then add `elif distance <= 50:` with `foot_cost = 70` under it, and `else:` with `foot_cost = 150` "
+                "under it.",
             ],
             checks=[
                 box_check("foot_cost follows the tiers", "foot_cost", foreign=["fee", "weight"], placeholder=0, cases=[
-                    ({"distance": 5}, None, 8, "Ask `distance <= 10` first: first, the test that lets the fewest "
-                     "numbers through."),
-                    ({"distance": 10}, None, 8, "Use `<=`: exactly 10 miles is still up to 10, so 8 coins."),
-                    ({"distance": 11}, None, 70, "Give 11 miles the middle tier: more than 10, so 70 coins."),
-                    ({"distance": 50}, None, 70, "Use `<=`: exactly 50 miles is still up to 50, so 70 coins."),
-                    ({"distance": 51}, None, 150, "Give longer than 50 miles 150 coins: that is the `else`."),
-                    ({"distance": 80}, None, 150, "Give longer than 50 miles 150 coins: that is the `else`."),
+                    ({"distance": 5}, None, 8, "Ask `distance <= 10` first: put first the question that lets the "
+                     "fewest numbers through."),
+                    ({"distance": 10}, None, 8, "Use `<=`: exactly 10 miles is still up to 10, so it costs 8 coins."),
+                    ({"distance": 11}, None, 70, "Give 11 miles the middle price, 70 coins: it is more than 10, but "
+                     "not more than 50."),
+                    ({"distance": 50}, None, 70, "Use `<=`: exactly 50 miles is still up to 50, so it costs 70 coins."),
+                    ({"distance": 51}, None, 150, "Give any trip longer than 50 miles 150 coins: that is the `else`."),
+                    ({"distance": 80}, None, 150, "Give any trip longer than 50 miles 150 coins: that is the `else`."),
                 ]),
             ],
             pass_line="Oogrish: Eight coins of glug for a short walk. Steady, now.",
         ),
         dict(
             id="jeep-cost",
-            text="B. Make `jeep_cost` from `distance`: 2 coins a mile, plus 5 to start.",
+            text="B. Change `jeep_cost = 0` so it works out the cost from `distance`: 2 coins times the miles, plus 5 coins to start.",
             dictated=False,
             hints=[
-                "Look at the comment under `# B`. The cost changes with the miles, so build it from `distance`.",
-                "Per mile, plus a start fee, with other names: `fare = 3 * stops + 2`. Python does `*` before `+`.",
-                "Write `jeep_cost = 2 * distance + 5`.",
+                "Look at the note under `# B.` The cost changes with the miles. Which box holds the miles?",
+                "A cost for each stop, plus a fee to start, with other names: `fare = 3 * stops + 2`. It's a formula, "
+                "like in math class. Python uses PEMDAS, so it does `*` (times) before `+`.",
+                "Write `jeep_cost = 2 * distance + 5` in place of `jeep_cost = 0`.",
             ],
             checks=[
                 box_check("jeep_cost follows the distance", "jeep_cost", foreign=["fare", "stops"], placeholder=0, cases=[
-                    ({"distance": 5}, None, 15, "Build it from `distance`: 2 coins a mile for 5 miles is 10, plus 5 to "
-                     "start."),
-                    ({"distance": 30}, None, 65, "Build it from `distance`: 2 coins a mile, plus 5 to start."),
-                    ({"distance": 80}, None, 165, "Build it from `distance`: 2 coins a mile, plus 5 to start."),
-                    ({"distance": 12}, None, 29, "Build it from `distance`, so it works for any distance: 2 coins a mile, "
-                     "plus 5 to start."),
-                    ({"distance": 72}, None, 149, "Build it from `distance`, so it works for any distance: 2 coins a mile, "
-                     "plus 5 to start."),
+                    ({"distance": 5}, None, 15, "Build it from `distance`: 2 coins times 5 miles is 10, plus 5 to "
+                     "start is 15."),
+                    ({"distance": 30}, None, 65, "Build it from `distance`: 2 coins times the miles, plus 5 to start."),
+                    ({"distance": 80}, None, 165, "Build it from `distance`: 2 coins times the miles, plus 5 to start."),
+                    ({"distance": 12}, None, 29, "Build it from `distance`, so it works for any distance: 2 coins times "
+                     "the miles, plus 5 to start."),
+                    ({"distance": 72}, None, 149, "Build it from `distance`, so it works for any distance: 2 coins times "
+                     "the miles, plus 5 to start."),
                 ]),
             ],
             pass_line="Gearshift: Visor dims. Fuel math logged.",
         ),
         dict(
             id="telegun-roll",
-            text="C. Roll a d20 into `telegun_roll`.",
+            text="C. Replace the `0` in `telegun_roll = 0` with a roll of a d20 (a die with 20 faces): `random.randint(1, 20)`.",
             dictated=True,
             hints=[
-                "Look under `# C`. `import random` is already at the top of the program.",
-                "`random.randint(1, 6)` rolls a d6: lowest face first, then the highest. Both ends are included.",
-                "Write `telegun_roll = random.randint(1, 20)`.",
+                "Look at `telegun_roll = 0`, under `# C.` What goes in place of the `0`? `import random` is already "
+                "on line 1.",
+                "`random.randint(1, 6)` rolls a d6, a die with 6 faces: the lowest face first, then the highest. Both "
+                "ends can come up.",
+                "Write `telegun_roll = random.randint(1, 20)` in place of `telegun_roll = 0`.",
             ],
             checks=[rnd_check("telegun_roll is a d20", "telegun_roll", 20, [7], placeholder=0)],
         ),
         dict(
             id="telegun-cost",
-            text="C. Set `telegun_cost`: 0 on a roll of 15 or more, or `foot_cost` plus 10 on a lower roll.",
+            text=(
+                "C. Replace `telegun_cost = 0` with an `if` / `else` that asks about `telegun_roll`. On a roll of 15 "
+                "or more, `telegun_cost` is 0. On a lower roll, it is `foot_cost` plus 10."
+            ),
             dictated=False,
             hints=[
-                "Two outcomes, so `if` and `else`. Exactly 15 still jumps. On a miss you walk anyway, so start from "
-                "`foot_cost`.",
-                "With other names: `if dice >= 4:` / `    toll = 0` / `else:` / `    toll = fare + 2`.",
-                "Write `if telegun_roll >= 15:` with `telegun_cost = 0` under it. Then `else:` with "
-                "`telegun_cost = foot_cost + 10`.",
+                "Look at the notes under `# C.` There are two outcomes, so you need `if` and `else`. Does a roll of "
+                "exactly 15 still jump?",
+                "With other names:\n```python\nif dice >= 4:\n    toll = 0\nelse:\n    toll = fare + 2\n```\nOn a miss "
+                "you walk anyway. So the cost starts from what walking costs.",
+                "Write `if telegun_roll >= 15:` in place of `telegun_cost = 0`, with `telegun_cost = 0` under it, "
+                "indented. Then add `else:` with `telegun_cost = foot_cost + 10` under it.",
             ],
             checks=[
                 box_check("telegun_cost follows the roll", "telegun_cost", foreign=["toll", "dice"], placeholder=0, cases=[
-                    ({"distance": 30}, [14], 80, "Use `foot_cost + 10` under 15: Lucky lands in a hedge, so you walk "
-                     "anyway, plus 10 coins of glug."),
+                    ({"distance": 30}, [14], 80, "Under 15, use `foot_cost + 10`: Lucky lands in a hedge, and you "
+                     "walk anyway."),
                     ({"distance": 30}, [15], 0, "Use `>=`: a roll of exactly 15 still jumps for free."),
                     ({"distance": 30}, [20], 0, "Make it 0 on a roll of 15 or more: the jump is free."),
                     ({"distance": 5}, [1], 18, "Build it from `foot_cost`, not a number you typed."),
@@ -1203,29 +1247,34 @@ PROJECT_2P2 = dict(
         ),
         dict(
             id="pick-the-cheapest",
-            text="D. Write an `if`/`elif`/`else` that puts the cheapest road in `road` and its cost in `cost`.",
+            text=(
+                "D. Replace `road = \"___\"` and `cost = 0` with an `if` / `elif` / `else` that does what the three "
+                "notes under `# D.` say. Each branch puts the road's name in `road` and its cost in `cost`."
+            ),
             dictated=False,
             hints=[
-                "Follow the three comments under `# D`. Each branch sets two boxes: `road` gets the road's name, in "
-                "quotes, and `cost` gets that road's cost box.",
-                "`and` is True only when both questions are True. With other names: `if a < b and a < c:` means *a "
-                "is the smallest*.",
-                "Each branch sets both boxes, indented under it: for the jeep, `road = \"the jeep\"` and then "
+                "Read the three notes under `# D.` Each note is one branch. Which two boxes does each branch set?",
+                "`and` is True when both answers are True. With other names, `if tea < milk and tea < juice:` asks: "
+                "*is tea the cheapest?*",
+                "Each branch sets both boxes, indented under it. For the jeep: `road = \"the jeep\"`, then "
                 "`cost = jeep_cost`. The `else:` has no question: it takes the Telegun.",
-                "Start with `if foot_cost < jeep_cost and foot_cost < telegun_cost:`, then `elif jeep_cost < "
-                "telegun_cost:`, then `else:`. Each branch sets `road` and `cost`.",
+                "Write `if foot_cost < jeep_cost and foot_cost < telegun_cost:` in place of `road = \"___\"`, then "
+                "`elif jeep_cost < telegun_cost:`, then `else:`. Under each one, indented, set `road` and `cost`. "
+                "Delete `cost = 0`.",
             ],
             checks=[road_check("the cheapest road wins", ROAD_CASES)],
             pass_line="Mar'tu: The code chooses. Nobody argues with the code. Except Lucky.",
         ),
         dict(
             id="tell-the-party",
-            text="E. Print one line that shows the road and its cost.",
+            text="E. Under `# E.`, print one line that tells the party the road and what it costs. Glue the parts with `+`.",
             dictated=False,
             hints=[
-                "Glue the text in `road` and the number in `cost` into one line. A number needs `str()` first.",
-                "With other names: `print(\"Buy \" + item + \" for \" + str(price) + \" coins.\")`.",
-                "Write `print(\"Take \" + road + \": \" + str(cost) + \" coins.\")`.",
+                "Look under `# E.` Which box holds the road's name, and which holds its cost? Is the cost text or a "
+                "number?",
+                "With other names: `print(\"Buy \" + item + \" for \" + str(price) + \" coins.\")`. `+` glues text, "
+                "and `str()` turns a number into text first, as in Unit 1.",
+                "Write `print(\"Take \" + road + \": \" + str(cost) + \" coins.\")` under `# E.`",
             ],
             checks=[road_print_check("the line shows the road and its cost", [(30, 3), (5, 15), (80, 14), (72, 2)])],
             pass_line="Mar'tu: Good. Pack the brass cart. We leave when the Clock allows.",
@@ -1252,30 +1301,31 @@ PROJECT_2P2 = dict(
             angle="picture",
             label="The three roads, side by side",
             text=(
-                "Costs in coins, with a Telegun roll under 15 (a hedge):\n"
+                "What each road costs, in coins, when the Telegun roll is under 15 (a hedge):\n"
                 "```text\nmiles  walk  jeep  Telegun\n  5      8    15     18\n"
                 " 30     70    65     80\n 80    150   165    160\n```\n"
-                "On a roll of 15 or more, the Telegun column is 0, and it wins every time."
+                "On a roll of 15 or more, the Telegun costs 0, so it is the cheapest every time."
             ),
         ),
         dict(
             angle="step-by-step",
             label="One part at a time",
             text=(
-                "1. A: three tiers, so `if`, `elif`, `else`. First, the test that lets the fewest numbers through.\n"
-                "2. B: one line, built from `distance`.\n"
-                "3. C: roll, then `if`/`else` on the roll.\n"
-                "4. D: ask *is walking the smallest?*, then *is the jeep smaller than the Telegun?*, then `else`.\n"
-                "5. E: glue `road` and `str(cost)` into one line."
+                "1. A: three prices, so `if`, `elif`, `else`. Put first the question that lets the fewest numbers "
+                "through.\n"
+                "2. B: one line, worked out from `distance`.\n"
+                "3. C: roll the die, then an `if` / `else` on the roll.\n"
+                "4. D: ask *is walking the cheapest?*, then *is the jeep cheaper than the Telegun?*, then `else`.\n"
+                "5. E: glue `road` and `str(cost)` into one line with `+`."
             ),
         ),
         dict(
             angle="campaign",
             label="You've seen this",
             text=(
-                "`cast_spell` in the barrier part picked one of three paths: not skilled enough, not enough mana, "
-                "or cast. Python checked from the top and took the first true branch. Your road chooser works the "
-                "same way."
+                "In the game, `cast_spell` held the barrier by picking one of three paths: not skilled enough, not "
+                "enough mana, or cast. Python checked from the top and took the first true branch. Your road "
+                "picker works the same way."
             ),
         ),
     ],
@@ -1283,12 +1333,12 @@ PROJECT_2P2 = dict(
         by="lucky",
         title="Pack extra glug",
         text=(
-            "Long trips make Lucky thirsty. After part E, if the trip costs 150 coins or more, also print "
-            "`Pack extra glug.` Ask about `cost`, so it works for every road."
+            "Add an `if` at the very end, after part E: when `cost` is 150 coins or more, also print "
+            "`Pack extra glug.` Ask about `cost`, so it works for every road. Long trips make Lucky thirsty."
         ),
         hints=[
-            "150 or more counts, so `>=`. A cost of 149 should stay quiet.",
-            "At the end, write `if cost >= 150:` and `print(\"Pack extra glug.\")` under it, indented.",
+            "Does exactly 150 count? Then the sign is `>=`. A cost of 149 should print nothing extra.",
+            "At the very end, write `if cost >= 150:` with `print(\"Pack extra glug.\")` under it, indented.",
         ],
         checks=[glug_check("extra glug on 150 coins or more", [(80, 14, True), (72, 2, False), (30, 3, False),
                                                                 (80, 15, False)])],
@@ -1302,11 +1352,12 @@ PROJECT_2P2 = dict(
             'elif caster["mana"] < spell["mana_cost"]:\n    ...\nelse:\n    ...'
         ),
         why=(
-            "You have seen this shape. `cast_spell` asks one question, then another, then has an `else` for "
-            "everything left. You just wrote the same shape for three roads, and joined two questions with `and`."
+            "You've seen this shape. `cast_spell` asks one question, then another, then has an `else` for "
+            "everything left. Now you get it: you wrote the same shape for three roads, and joined two questions "
+            "with `and`."
         ),
     ),
-    takeaway="Pick the smallest of three: `if a < b and a < c:`, then `elif b < c:`, then `else:`.",
+    takeaway="To pick the cheapest of three, use `if` with `and`, then `elif`, then `else`.",
     wrong_answers=[
         dict(why="tiers with < (exactly 10 miles costs 70)", code=_roads(FOOT_CHAIN.replace("<=", "<")), fails_at=1,
              message_contains="Exactly 10 miles"),
@@ -1317,7 +1368,7 @@ PROJECT_2P2 = dict(
         dict(why="the walk's cost typed for 30 miles", code=_roads("foot_cost = 70\n"), fails_at=1,
              message_contains="not 8"),
         dict(why="part A left as the starter's placeholder", code=_roads(), fails_at=1,
-             message_contains="still holds the starter's `0`"),
+             message_contains="still holds the placeholder `0`"),
         dict(why="the hint example's box (fee) copied instead of foot_cost",
              code=_roads(FOOT_CHAIN.replace("foot_cost", "fee")), fails_at=1, message_contains="comes from the example"),
         dict(why="the hint example's box (fare) copied, the placeholder kept",
@@ -1343,7 +1394,7 @@ PROJECT_2P2 = dict(
         dict(why="the plus 5 inside the brackets", code=_roads(FOOT_CHAIN, "jeep_cost = 2 * (distance + 5)\n"),
              fails_at=2, message_contains="not 15"),
         dict(why="the Telegun never rolled (the starter's placeholder kept)", code=_roads(FOOT_CHAIN, JEEP_LINE),
-             fails_at=3, message_contains="still holds the starter's `0`"),
+             fails_at=3, message_contains="still holds the placeholder `0`"),
         dict(why="a d19 for the Telegun", code=_roads(FOOT_CHAIN, JEEP_LINE, "telegun_roll = random.randint(1, 19)\n"),
              fails_at=3, message_contains="never gives 20"),
         dict(why="> 15 (a roll of exactly 15 lands in the hedge)",
@@ -1422,10 +1473,10 @@ PROJECT_2P2 = dict(
 REMEMBERS_2C = dict(
     kind="quiz",
     id="2c-remembers",
-    title="Mar'tu remembers…",
+    title="Quick review: 2 questions, not scored",
     optional=True,
     minutes=1,
-    summary="Two quick questions from earlier lessons. Nothing is scored.",
+    summary="Two questions from the last lesson, If the Clock Turns Red, to warm up. Nothing is scored.",
     notes=(
         "meta: path=CC; unscored warm-up shown inline before Lesson 2C; recall from 2B (randint includes both ends; a "
         "two-branch trace). A miss shows the answer and a one-line why, with no red X."
@@ -1438,7 +1489,7 @@ REMEMBERS_2C = dict(
             choices=["Yes", "No"],
             answer=0,
             why_wrong={1: "`randint` includes both ends. 6 is the top end, so it can come up, like on a real d6."},
-            explain="Yes. `random.randint(1, 6)` gives 1, 2, 3, 4, 5 or 6. Both ends are included.",
+            explain="Yes. `random.randint(1, 6)` gives 1, 2, 3, 4, 5 or 6. Both ends are included, like the faces of a real die.",
             notes="2B-07 recall. Distractor: the top-excluded belief (range-style).",
         ),
         dict(
@@ -1451,7 +1502,10 @@ REMEMBERS_2C = dict(
             ),
             choices=["The latch pops open.", "That latch hates me.", "The latch pops open.\nThat latch hates me."],
             answer="That latch hates me.",
-            explain="11 is not at least 12, so Python skips the `if` part and runs the `else` part. Only one branch runs.",
+            explain=(
+                "`roll >= needed` asks: is 11 at least 12? No, so the answer is `False`. Python skips the line under "
+                "the `if` and runs the line under `else`. Only one of the two runs."
+            ),
             notes="2B-03 recall. Distractors: the wrong branch, and both branches running.",
         ),
     ],
@@ -1499,13 +1553,15 @@ BAD_LINE_CHECKS = [
     _record_check("bad_line", [
         "_v = bad_line",
         "assert type(_v).__name__ != 'str', " + say(
-            "Take the quotes off: a line number is a number. `bad_line` holds text, because of the quotes."),
-        "assert type(_v).__name__ == 'int', " + say("Give `bad_line` a whole number, with no quotes."),
+            "`bad_line` holds text, because of the quotes. Take the quotes off: a line number is a number."),
+        "assert type(_v).__name__ == 'int', " + say("`bad_line` does not hold a whole number. Give it the line number, "
+                                                    "with no quotes."),
         "assert _v != 0, " + say(
-            "Put the line number from Python's message in `bad_line`: look for the word `line` and a number. "
-            "`bad_line` still holds the starter's `0`."),
-        "assert _v == 4, " + say("Find `line` in Python's message, and the number after it. `bad_line` holds ") + " + str(_v) + " + say(
-            ", but Python stopped on another line."),
+            "`bad_line` still holds the placeholder `0`. Put the line number from Python's message there: look for "
+            "the word `line` and a number."),
+        "assert _v == 4, " + say("`bad_line` holds ") + " + str(_v) + " + say(
+            ", but Python stopped on another line. Find the word `line` in Python's full message, and the number "
+            "after it."),
     ]),
 ]
 
@@ -1514,22 +1570,25 @@ ERROR_TYPE_CHECKS = [
     _record_check("error_type", [
         "_v = error_type",
         "assert _v is not NameError, " + say(
-            "`NameError` without quotes is Python's own name for that error. Write the words in quotes: "
+            "`NameError` with no quotes means Python's own error, not its name as text. Put it in quotes: "
             "`\"NameError\"`."),
-        "assert type(_v).__name__ == 'str', " + say("Give `error_type` text, in quotes."),
+        "assert type(_v).__name__ == 'str', " + say("`error_type` does not hold text. Give it the error's name, in "
+                                                    "quotes."),
         "_t = _v.strip().strip(chr(39) + chr(34) + ':').strip()",
-        "assert _t, " + say("Copy the error's name from the last line of Python's message, between the quotes. "
-                            "`error_type` still holds the starter's empty quotes."),
+        "assert _t, " + say("`error_type` still holds empty quotes. Copy the error's name from Python's last line "
+                            "in between them."),
         "assert 'defined' not in _t, " + say(
-            "That is the whole last line. The error's name is only the first word, before the `:`."),
+            "`error_type` holds the whole last line. The error's name is only the first word, before the `:`."),
         "assert _t != 'mana_cost', " + say(
             "`mana_cost` is the name Python could not find. The error's name is the first word of the last line, "
             "before the `:`."),
         "assert not (' ' in _t and _t.replace(' ', '').lower() == 'nameerror'), " + say(
-            "Python writes the error's name as one word, with no space: `NameError`. Every space counts."),
+            "`error_type` has a space in the middle. Python writes the error's name as one word: `NameError`. "
+            "Every space counts."),
         "assert _t.lower() == 'nameerror', " + say(
             "Python's last line starts with the error's name, then a `:`. Copy that first word into the quotes."),
-        "assert _t == 'NameError', " + say("Copy the name exactly as Python writes it: `NameError`, with two capitals."),
+        "assert _t == 'NameError', " + say("`error_type` has different capitals. Copy the name exactly as Python "
+                                           "writes it: `NameError`, with two capitals."),
     ]),
 ]
 
@@ -1537,20 +1596,20 @@ MISSING_NAME_CHECKS = [
     name_check("missing_name", skip=FIZZLE_KNOWN, kept=True),
     _record_check("missing_name", [
         "_v = missing_name",
-        "assert type(_v).__name__ == 'str', " + say("Give `missing_name` text, in quotes."),
+        "assert type(_v).__name__ == 'str', " + say("`missing_name` does not hold text. Give it the name, in quotes."),
         "_t = _v.strip().strip(chr(39) + chr(34)).strip()",
-        "assert _t, " + say("Copy the name from Python's last line, between the quotes. `missing_name` still holds the "
-                            "starter's empty quotes."),
+        "assert _t, " + say("`missing_name` still holds empty quotes. Copy the name from Python's last line in between "
+                            "them."),
         "assert _t.lower() != 'nameerror', " + say(
-            "That is the error's name. This box wants the name Python could not find: it sits inside the little "
-            "`'` marks."),
+            "`missing_name` holds the error's name. This box needs the name Python could not find: it sits inside "
+            "the little `'` marks."),
         "assert _t != 'spell_cost', " + say(
-            "`spell_cost` is the box the spell really has. Which name could Python not find? It sits inside the "
-            "little `'` marks in the last line."),
+            "`spell_cost` is the box the spell really has, so Python could find it. Copy the name it could not find: "
+            "it sits inside the little `'` marks in the last line."),
         "assert not ('mana_cost' in _t and _t != 'mana_cost'), " + say(
-            "Put only the name in the box, without the words around it."),
+            "`missing_name` holds more than the name. Put only the name in the quotes, without the words around it."),
         "assert _t.lower() != 'mana_cost' or _t == 'mana_cost', " + say(
-            "Copy the name exactly as Python writes it. Capitals count."),
+            "`missing_name` has different capitals. Copy the name exactly as Python writes it: capitals count."),
         "assert _t == 'mana_cost', " + say(
             "Python's last line says `name '...' is not defined`. Copy the name between the little `'` marks."),
     ]),
@@ -1560,14 +1619,14 @@ ANATOMY_OF_A_FIZZLE = dict(
     id="anatomy-of-a-fizzle",
     title="Anatomy of a fizzle",
     martu=(
-        "When a spell fizzles, Python leaves you a note. The full note is a [[traceback]]. It looks scary. It is "
-        "not. Three parts matter:\n"
-        "1. The last line: the error's name, then what went wrong.\n"
-        "2. The line number: where Python stopped.\n"
-        "3. The name or mark it is talking about.\n"
-        "Run Bomb Shell's spell. It fizzles on purpose. While the note is still on screen, write down what it "
-        "says, in three boxes. Then switch line 4 off with `#` and Run again, so the rest can run. Good practice "
-        "for boxes, too."
+        "When a spell *fizzles*, it fails, and Python stops with an error. In the box in the Console, Show "
+        "Python's full message opens Python's whole note: a [[traceback]]. Like a teacher's note in the margin, it "
+        "points to the spot. In the game it's all you get. Read it from the bottom up.\n"
+        "1. The last line: the error's name, then what went wrong, like `NameError: name 'lantren' is not defined`.\n"
+        "2. Higher up, `line` and a number: where Python stopped.\n"
+        "3. Inside the little `'` marks: the name Python could not find.\n"
+        "Press Run. While the message is on screen, copy the three parts into the boxes at the bottom. Then put "
+        "`#` at the start of line 4 and press Run again."
     ),
     names=["bad_line", "error_type", "missing_name"],
     predict=dict(
@@ -1579,46 +1638,48 @@ ANATOMY_OF_A_FIZZLE = dict(
         ],
         answer=2,
         explain=(
-            "Python stops at line 4. No line made a box called `mana_cost` (the spell's box is `spell_cost`). "
-            "Python does not guess, and it does not skip the line: line 5 never runs."
+            "Python stops at line 4. No line made a box called `mana_cost`: the spell's box is `spell_cost`. "
+            "Python doesn't guess what you meant, and it doesn't skip the line, so line 5 never runs."
         ),
     ),
     starter=FIZZLE_STARTER,
     checkpoints=[
         dict(
             id="record-the-line",
-            text="Make `bad_line` hold the line number that Python's message names.",
+            text="Replace the `0` in `bad_line = 0` with the line number where Python stopped.",
             dictated=False,
             hints=[
-                "Look for the word `line` in Python's message, still on screen. The number after it is where Python "
-                "stopped. Message gone? Take the `#` off line 4 and Run.",
+                "Look at the box in the Console. Press Show Python's full message and find the word `line` with a "
+                "number after it. Message gone? Take the `#` off line 4 and press Run.",
                 "In `File \"main.py\", line 9`, the line number is 9. A line number is a number, so no quotes.",
-                "Write `bad_line = 4`: Python's message says `line 4`.",
+                "Write `bad_line = 4` in place of `bad_line = 0`. Python's message says `line 4`.",
             ],
             checks=BAD_LINE_CHECKS,
         ),
         dict(
             id="record-the-type",
-            text="Make `error_type` hold the error's name, as text.",
+            text="In `error_type = \"\"`, type the error's name between the quotes. It is the first word of Python's last line.",
             dictated=False,
             hints=[
-                "Read the last line first. The error's name comes before the `:`.",
+                "Read Python's last line, in the box in the Console. Which word comes before the `:`?",
                 "In `ZeroDivisionError: division by zero`, the error's name is `ZeroDivisionError`. Text goes in quotes.",
-                "Write `error_type = \"NameError\"`: the first word of the last line, in quotes.",
+                "Write `error_type = \"NameError\"` in place of `error_type = \"\"`: the first word of the last line, "
+                "in quotes.",
             ],
             checks=ERROR_TYPE_CHECKS,
         ),
         dict(
             id="record-the-name",
-            text="Make `missing_name` hold the name Python could not find, as text.",
+            text="In `missing_name = \"\"`, type the name Python could not find between the quotes. It sits inside the little `'` marks in Python's last line.",
             dictated=False,
             hints=[
-                "The last line says `name '...' is not defined`. The name is between the little `'` marks.",
+                "Look at Python's last line: `name '...' is not defined`. What is between the little `'` marks?",
                 "In `name 'shield' is not defined`, the missing name is `shield`. Copy it letter for letter.",
-                "Write `missing_name = \"mana_cost\"`: the name between the little `'` marks, in quotes.",
+                "Write `missing_name = \"mana_cost\"` in place of `missing_name = \"\"`: the name between the little "
+                "`'` marks, in quotes.",
             ],
             checks=MISSING_NAME_CHECKS,
-            pass_line="Mar'tu: Line, name of the error, the name it could not find. You read the whole note. Good.",
+            pass_line="Mar'tu: The line, the error's name, and the name it could not find. You read the whole message. Good.",
         ),
     ],
     solution=FIZZLE_SOLUTION,
@@ -1633,11 +1694,11 @@ ANATOMY_OF_A_FIZZLE = dict(
     another_way=[
         dict(
             angle="picture",
-            label="The note, with labels",
+            label="The message, part by part",
             text=(
-                "1. The last line, read it first: `NameError: name 'mana_cost' is not defined`. The first word, "
+                "1. The last line, read it first: `NameError: name 'mana_cost' is not defined`. Its first word, "
                 "`NameError`, is the error's name.\n"
-                "2. Above it: `File \"main.py\", line 4`. That is the line where Python stopped.\n"
+                "2. Higher up: `File \"main.py\", line 4`. That is the line where Python stopped.\n"
                 "3. Inside the little `'` marks: `mana_cost`, the name Python could not find."
             ),
         ),
@@ -1645,8 +1706,9 @@ ANATOMY_OF_A_FIZZLE = dict(
             angle="step-by-step",
             label="Where to look, in order",
             text=(
-                "1. Read the last line first: the error's name, then what went wrong.\n"
-                "2. Then look at the line it names.\n"
+                "1. In the box in the Console, read the title, then Python's last line: the error's name, then what "
+                "went wrong.\n"
+                "2. Find the line number, and go to that line in your code.\n"
                 "3. On that line, find the name or mark the message talks about."
             ),
         ),
@@ -1654,8 +1716,8 @@ ANATOMY_OF_A_FIZZLE = dict(
             angle="everyday",
             label="A note on the door",
             text=(
-                "It is like a note from a courier: *Could not deliver on line 4: nobody called mana_cost lives "
-                "here.* The courier is not angry. The note says where, and what was missing."
+                "It is like a note from a delivery driver: *Could not deliver to line 4: nobody called mana_cost "
+                "lives here.* The driver is not angry. The note says where, and what was missing."
             ),
         ),
         dict(angle="shorter", text="Last line: the error's name and the missing name. Full message: the line number."),
@@ -1668,8 +1730,8 @@ ANATOMY_OF_A_FIZZLE = dict(
         by="bomb-shell",
         title="Log it",
         text=(
-            "Bomb Shell keeps a fizzle log. Under your notes, print one line built from your three boxes, like "
-            "`Line 4: NameError (mana_cost)`."
+            "Bomb Shell keeps a log of every fizzle. At the very end of your code, print one line glued together "
+            "from your three boxes, so it shows `Line 4: NameError (mana_cost)`."
         ),
         hints=[
             "Glue the parts with `+`. `bad_line` is a number, so it needs `str()`. Add `\" (\"` and `\")\"` around the name.",
@@ -1680,7 +1742,8 @@ ANATOMY_OF_A_FIZZLE = dict(
                 ({}, None, ["Line 4: NameError (mana_cost)"], [],
                  "Glue the three boxes: `\"Line \" + str(bad_line) + \": \" + error_type + \" (\" + missing_name + \")\"`."),
                 ({"bad_line": 9, "error_type": "TypeError", "missing_name": "shield"}, None,
-                 ["Line 9: TypeError (shield)"], [], "Build the line from the three boxes, so it follows them."),
+                 ["Line 9: TypeError (shield)"], [], "Build the line from the three boxes, so it changes when they "
+                 "change."),
             ]),
         ],
         solution=FIZZLE_SOLUTION + "print(\"Line \" + str(bad_line) + \": \" + error_type + \" (\" + missing_name + \")\")\n",
@@ -1690,18 +1753,18 @@ ANATOMY_OF_A_FIZZLE = dict(
         part="program-movement",
         snippet='party.move("left")',
         why=(
-            "You have seen notes like this. At the cabin door, leave the quotes off and write `party.move(left)`, "
-            "and Python stops with the same kind of note: `NameError: name 'left' is not defined`. Same three "
-            "parts: the error's name, the line, the name it could not find."
+            "You've seen messages like this. At the cabin door, if you left the quotes off and wrote "
+            "`party.move(left)`, Python stopped with the same kind of message: `NameError: name 'left' is not "
+            "defined`. Now you can read all three parts: the error's name, the line, and the name it could not find."
         ),
     ),
-    takeaway="Read the last line first: the error's name, then what went wrong. The full message names the line.",
+    takeaway="In Python's full message, read the last line first: the error's name, then what went wrong. Higher up, `line` and a number say where Python stopped.",
     wrong_answers=[
         dict(why="the starter: the spell fizzles on line 4", code=FIZZLE_STARTER, fails_at=0, message_contains="mana_cost"),
         dict(why="notes filled in, but line 4 not switched off", code=_fizzle("4", '"NameError"', '"mana_cost"', spell=FIZZLE_SPELL),
              fails_at=0, message_contains="mana_cost"),
         dict(why="line 4 switched off, the notes still the starter's (nothing read yet)", code=_fizzle(), fails_at=1,
-             message_contains="still holds the starter's `0`"),
+             message_contains="still holds the placeholder `0`"),
         dict(why="the line number in quotes", code=_fizzle('"4"'), fails_at=1, message_contains="number"),
         dict(why="the next line's number", code=_fizzle("5"), fails_at=1, message_contains="another line"),
         dict(why="NameError without quotes (runs silently)", code=_fizzle("4", "NameError"), fails_at=2,
@@ -1720,7 +1783,7 @@ ANATOMY_OF_A_FIZZLE = dict(
         dict(why="the error's name in the missing_name box", code=_fizzle("4", '"NameError"', '"NameError"'), fails_at=3,
              message_contains="error's name"),
         dict(why="the missing name left as the starter's empty quotes", code=_fizzle("4", '"NameError"'), fails_at=3,
-             message_contains="starter's empty quotes"),
+             message_contains="still holds empty quotes"),
         dict(why="the missing name with a capital", code=_fizzle("4", '"NameError"', '"Mana_cost"'), fails_at=3,
              message_contains="Capitals"),
     ],
@@ -1771,9 +1834,11 @@ NO_ERROR_WRONG_ANSWER = dict(
     id="no-error-wrong-answer",
     title="No error, wrong answer",
     martu=(
-        "No message this time. The code runs. It just gives the wrong answer.\n"
-        "Oogrish has exactly enough mana for Lantern Ward, and the ward does not go up. A quiet [[bug]].\n"
-        "When there is no message to read, make Python show you the values. Print them, look, then mend."
+        "This [[bug]] is quiet: the code runs with no error, but the answer is wrong. It's like spell-check, which "
+        "won't catch *their* for *there*. With no error to read, make Python show you the values, like `print(mana)`. "
+        "It's the same as showing your work in math class: each step on paper shows where it went wrong.\n"
+        "Oogrish has exactly enough mana (magic power) for his Lantern Ward spell, but the ward does not go up.\n"
+        "Print the values right above the `if`, look at them, then fix the `if`."
     ),
     names=["mana", "cost"],
     predict=dict(
@@ -1789,29 +1854,36 @@ NO_ERROR_WRONG_ANSWER = dict(
     checkpoints=[
         dict(
             id="show-the-values",
-            text="Add `print(mana)` and `print(cost)` just above the `if`, then Run and read the two numbers.",
+            text=(
+                "Show the two values before Python decides, in three moves:\n"
+                "1. Click at the end of line 3, `cost = 9    # Lantern Ward`, and press Enter.\n"
+                "2. Type `print(mana)`, press Enter, and type `print(cost)`. Both start at the left edge, with no spaces.\n"
+                "3. Press Run. You should see 9, then 9, above `Not enough mana.`"
+            ),
             dictated=True,
             hints=[
-                "Read the last line your program printed: `Not enough mana.` No error, so Python can't tell you why. "
-                "The values can.",
-                "The prints go on new lines just above `if mana > cost:`, with no spaces in front, so they run before "
-                "Python decides.",
-                "Printing a box shows what is inside it right now: `print(gold)` shows `12` if `gold` holds 12.",
+                "Look at the Console: it shows `Not enough mana.` and no error box, so Python can't tell you why. "
+                "Which two boxes does the `if` on line 4 compare?",
+                "Printing a box shows what is in it right now: `print(gold)` shows `12` if `gold` holds 12. Put the "
+                "prints above the `if`, with no spaces in front, so they run before Python decides.",
+                "Write `print(mana)` and then `print(cost)` on two new lines above `if mana > cost:`.",
             ],
             checks=[prints_above("print(mana) and print(cost) are above the if", ["mana", "cost"])],
-            pass_line="Mar'tu: 9 and 9. Exactly enough. So why no ward? Look at the sign.",
+            pass_line="Mar'tu: 9 and 9. Exactly enough. So why no ward? Next: look at the sign in the `if`.",
         ),
         dict(
             id="mend-the-sign",
-            text="Mend the `if`, so exactly enough mana casts the ward.",
+            text="Mend the sign in `if mana > cost:`, so exactly enough mana casts the ward.",
             dictated=False,
             hints=[
-                "Read what your program printed: 9, then 9, then `Not enough mana.` Is that the right answer?",
-                "Look at the sign in the `if`. Which sign says *at least*, so 9 against 9 passes?",
-                "`>` leaves out the boundary; `>=` includes it. `4 > 4` is False, but `4 >= 4` is True.",
+                "Look at the Console: 9, then 9, then `Not enough mana.` With 9 mana and a cost of 9, is that the right "
+                "answer?",
+                "Look at the sign in the `if`. `4 > 4` is False, but `4 >= 4` is True. Which sign says *at least*, so 9 "
+                "against 9 passes?",
+                "Write `if mana >= cost:` in place of `if mana > cost:`. `>=` means *at least*, so 9 against 9 passes.",
             ],
             checks=[enough_check("exactly enough mana casts", CAST_LINE, LOW_LINE)],
-            pass_line="Oogrish: The ward holds. Steady, now. Printing the values found it.",
+            pass_line="Oogrish: The ward holds. Steady, now. Printing the values found the bug.",
         ),
     ],
     solution=WARD_SOLUTION,
@@ -1824,17 +1896,17 @@ NO_ERROR_WRONG_ANSWER = dict(
     another_way=[
         dict(
             angle="why",
-            label="Why does this work? Print-debugging",
+            label="Why printing the values works",
             text=(
-                "Printing the values is a real technique. Real programmers do it every day. When the code runs "
-                "but the answer is wrong, the values tell you which line to doubt."
+                "Printing the values is a real way to find bugs, and programmers use it every day. When the code "
+                "runs but the answer is wrong, the values tell you which line to doubt."
             ),
         ),
         dict(
             angle="step-by-step",
             label="Hunt a quiet bug",
             text=(
-                "1. Print the values just before the line that decides: here, the `if`.\n"
+                "1. Print the values right before the line that decides: here, the `if`.\n"
                 "2. Do the question by hand: is 9 > 9? No.\n"
                 "3. Should it be yes? Exactly enough should cast. So the sign is the bug."
             ),
@@ -1843,8 +1915,17 @@ NO_ERROR_WRONG_ANSWER = dict(
             angle="campaign",
             label="You've seen this",
             text=(
-                "The barrier part said it plainly: use `<` and not `<=`, because a caster with exactly enough mana "
-                "can still cast. Same boundary, seen from the other side."
+                "In the game, the barrier part said it plainly: use `<` and not `<=`, because a caster with exactly "
+                "enough mana can still cast. It's the same boundary, seen from the other side."
+            ),
+        ),
+        dict(
+            angle="math class",
+            label="From math class",
+            text=(
+                "On a number line, `>` is the open dot: the number itself is left out, so 9 > 9 is False. `>=` is "
+                "the filled dot: 9 counts, so 9 >= 9 is True. Exactly enough should cast, so the ward needs the "
+                "filled dot."
             ),
         ),
         dict(angle="shorter", text="No error? Print the values. 9 and 9 should cast, so use `>=`."),
@@ -1854,12 +1935,12 @@ NO_ERROR_WRONG_ANSWER = dict(
         part="hold-the-barrier",
         snippet='elif caster["mana"] < spell["mana_cost"]:',
         why=(
-            "You have seen this boundary. `cast_spell` used `<`, not `<=`, so a caster with exactly enough mana "
-            "still casts. When a cast fails with no error, print the mana and the cost: the values show the "
-            "boundary."
+            "You've seen this boundary. `cast_spell` used `<`, not `<=`, so a caster with exactly enough mana "
+            "still cast. Now you get why. When a cast fails with no error, print the mana and the cost: the values "
+            "show the boundary."
         ),
     ),
-    takeaway="No error but a wrong answer? Print the values just before the line that decides.",
+    takeaway="No error but a wrong answer? Print the values right before the line that decides.",
     wrong_answers=[
         dict(why="starter unchanged (no prints yet)", code=WARD_STARTER, fails_at=1, message_contains="print(mana)"),
         dict(why="prints added, > kept (the quiet bug)", code=_ward(">", prints=True), fails_at=2,
@@ -1906,9 +1987,10 @@ EQUALS_IS_NOT_DEF = dict(
     id="equals-is-not-def",
     title="`=` is not `def`",
     martu=(
-        "You have seen `def` in the campaign, at the very first door: `def move_left():`. It is a big word, so it "
-        "feels like the word for making things.\n"
-        "`def` is for making recipes. We start those next unit. A box needs only `=`."
+        "To make a box, you need only a name, `=`, and a value: `snack = \"glug\"`. You saw `def` at the very first "
+        "door in the game, `def move_left():`, so it can feel like the word for making things. It isn't. `def` "
+        "starts a set of named steps, which you will write in the next unit.\n"
+        "Line 1 puts `def` in front of a box, so Python stops. Take it out."
     ),
     example="snack = \"glug\"\nprint(snack + \" is ready.\")\n",
     example_output="glug is ready.",
@@ -1917,13 +1999,18 @@ EQUALS_IS_NOT_DEF = dict(
     checkpoints=[
         dict(
             id="make-hero",
-            text="Make `hero` a box that holds `\"Lucky\"`.",
+            text=(
+                "Fix line 1 in two moves:\n"
+                "1. Delete the word `def` and the space after it, so line 1 reads `hero = \"Lucky\"`.\n"
+                "2. Press Run. You should see `Lucky is ready.` in the Console."
+            ),
             dictated=True,
             hints=[
-                "Read Python's last line: `expected '('`. After `def`, Python expects a recipe, not a box.",
+                "Read the box in the Console: its title, then Python's last line, `expected '('`. After `def`, "
+                "Python expects a name and then `(`, because `def` starts named steps, not a box.",
                 "Look at line 1. One word is extra. A box is a name, `=`, and a value.",
-                "A box with other names: `snack = \"glug\"`. No `def`, and no brackets around the name.",
-                "Change line 1 to `hero = \"Lucky\"`, with no `def`.",
+                "A box with other names: `snack = \"glug\"`. No `def`, and no parentheses around the name.",
+                "Delete `def` and the space after it, at the start of line 1. Line 1 becomes `hero = \"Lucky\"`.",
             ],
             checks=[
                 name_check("hero", foreign=["snack"]),
@@ -1931,12 +2018,14 @@ EQUALS_IS_NOT_DEF = dict(
                     "hero holds text",
                     "_v = hero",
                     "assert not callable(_v), " + say(
-                        "To make a box, write `hero = \"Lucky\"`. `hero` is a recipe made with `def`, not a box."),
-                    "assert type(_v).__name__ == 'str', " + say("Give `hero` text, in quotes: `\"Lucky\"`."),
-                    "assert _v.strip(), " + say("Put the name between the quotes. `hero` holds empty quotes."),
+                        "`hero` was made with `def`, so it is a set of named steps, not a box. To make a box, write "
+                        "`hero = \"Lucky\"`, with no `def`."),
+                    "assert type(_v).__name__ == 'str', " + say("`hero` does not hold text. Give it `\"Lucky\"`, in "
+                                                                "quotes."),
+                    "assert _v.strip(), " + say("`hero` holds empty quotes. Put the name `Lucky` between them."),
                 ),
             ],
-            pass_line="Lucky: Lucky is ready. Obviously.",
+            pass_line="Lucky: Lucky is ready. Lucky was born ready.",
         ),
     ],
     solution=NOT_DEF_SOLUTION,
@@ -1947,14 +2036,14 @@ EQUALS_IS_NOT_DEF = dict(
     another_way=[
         dict(
             angle="picture",
-            label="Box or recipe?",
+            label="A box, or `def`?",
             text=(
                 "1. `hero = \"Lucky\"` is a box: a name, `=`, a value.\n"
-                "2. `def move_left():` is a recipe: `def`, a name, `()` and `:`.\n"
-                "Next unit you write recipes. Today, only boxes."
+                "2. `def move_left():` starts named steps: `def`, a name, `()` and `:`.\n"
+                "In the next unit you write named steps. Today, only boxes."
             ),
         ),
-        dict(angle="everyday", text="A label on a jar needs no instructions. `def` is for writing instructions."),
+        dict(angle="everyday", text="A name tag on a jar needs no instructions. `def` is for writing instructions."),
         dict(angle="shorter", text="A box: `name = value`. No `def`."),
     ],
     campaign_link=dict(
@@ -1962,11 +2051,11 @@ EQUALS_IS_NOT_DEF = dict(
         part="program-movement",
         snippet="def move_left():\n    party.move(\"left\")",
         why=(
-            "You have seen this. `def move_left():` made a recipe the arrow keys could call. Next unit you write "
-            "your own recipes, and then it will make sense. A box never needs `def`."
+            "You've seen this. `def move_left():` wrote named steps that the game ran when you moved left. In the "
+            "next unit you write your own, and then it will make sense. A box never needs `def`."
         ),
     ),
-    takeaway="A box is `name = value`. `def` is only for recipes.",
+    takeaway="A box is `name = value`. It never needs `def`.",
     wrong_answers=[
         dict(why="the starter: def to make a box", code=NOT_DEF_STARTER, fails_at=0, message_contains="expected '('"),
         dict(why="def with brackets around the value", code="def hero = (\"Lucky\")\nprint(hero + \" is ready.\")\n",
@@ -1988,7 +2077,7 @@ EQUALS_IS_NOT_DEF = dict(
         dict(why="an unclosed quote", code="hero = \"Lucky\nprint(hero + \" is ready.\")\n", fails_at=0,
              message_contains="unterminated"),
         dict(why="the value on its own, with no box (a variable is just its value)",
-             code="\"Lucky\"\nprint(\"Lucky\" + \" is ready.\")\n", fails_at=1, message_contains="no box"),
+             code="\"Lucky\"\nprint(\"Lucky\" + \" is ready.\")\n", fails_at=1, message_contains="no name in front"),
     ],
     notes=(
         meta(starter_level="S4", path="CC", skills="make-variable", solo="false", dictates="1",
@@ -2030,22 +2119,22 @@ ROUTINE_SOLUTION = _encounter()
 # CP1 reruns with a scripted low roll (3) and high roll (18), far from the boundary, so the quiet `>` bug cannot
 # change it, and a typed encounter line can't pass by a lucky real roll.
 _SHOWS_ENCOUNTER = r"""
-assert 'encounter' in globals(), ('Keep the box' + chr(39) + 's name `encounter`, and mend the line that shows it: '
-                                  '`print(encounter)`.')
+assert 'encounter' in globals(), ("Python can't find `encounter`. Keep the box's name `encounter` on lines 6 and 8, "
+                                  'and fix the line that shows it: `print(encounter)`.')
 _seen = {}
 for _r in (3, 18):
     _ns, _rows, _calls, _err, _miss = _rerun({}, [_r])
     assert not _err, _stop({}, [_r], _err)
-    assert 'encounter' in _ns, ('Keep the box' + chr(39) + 's name `encounter`, and mend the line that shows it: '
-                                '`print(encounter)`.')
+    assert 'encounter' in _ns, ("Python can't find `encounter`. Keep the box's name `encounter` on lines 6 and 8, "
+                                'and fix the line that shows it: `print(encounter)`.')
     _e = str(_ns['encounter'])
     assert _e in _rows, _mend('Print the box `encounter`, spelled the same as where it is made.', 'The encounter '
-                              'did not show.', {}, [_r])
+                              'line did not show in the Console.', {}, [_r])
     _seen[_r] = (_e, _rows)
 if _seen[3][0] != _seen[18][0]:
     for _r, _other in ((3, 18), (18, 3)):
         assert _seen[_other][0] not in _seen[_r][1], _mend('Show only the box `encounter`: the `if` picks one.',
-                                                           'Your program showed both encounters.', {}, [_r])
+                                                           'Your code showed both encounters.', {}, [_r])
 """
 SHOWS_ENCOUNTER = ("the encounter is shown", _rerun_code() + _SHOWS_ENCOUNTER)
 
@@ -2053,67 +2142,78 @@ _SHOWS_ROLL_LINE = r"""
 for _r in (7, 16):
     _ns, _rows, _calls, _err, _miss = _rerun({}, [_r])
     assert not _err, _stop({}, [_r], _err)
-    assert _calls, ("Put the dice back on line 3: `roll = random.randint(1, 20)`, so Mar'tu's check can roll for you. "
-                    'A typed roll is fine for one Run.')
-    assert len(_calls) == 1, ('Roll once, on line 3, and show the box: `str(roll)`. Your program rolls the die more '
-                              'than once, so the line can show a different number from the one the `if` used.')
+    assert _calls, ("`roll` isn't rolled with the die, so Mar'tu can't test your code with his own rolls. Put the "
+                    'dice back on line 3: `roll = random.randint(1, 20)`. A typed roll is fine for one Run.')
+    assert len(_calls) == 1, ('Your code rolls the die more than once, so the line can show a different number from '
+                              'the one the `if` used. Roll once, on line 3, and show the box: `str(roll)`.')
     assert any('Rolled' in _l and _re.search(_whole(_r), _l) for _l in _rows), _mend(
-        'Glue the roll in with `str(roll)`.', 'The line did not show `Rolled: ' + str(_r) + '`.', {}, [_r])
+        'Glue the roll in with `str(roll)`.', 'No line showed `Rolled: ' + str(_r) + '`.', {}, [_r])
 """
 
 DEBUG_ROUTINE = dict(
     id="debug-routine",
     title="The four-step routine",
     martu=(
-        "Here is how I hunt [[bug|bugs]]. Four steps, every time:\n"
-        "1. Read the last line.\n"
-        "2. Go to the line it names.\n"
-        "3. Check the line above, and where its boxes were made.\n"
-        "4. No message, but a wrong answer? Print the values.\n"
-        "This encounter script has three bugs. Two are loud. One is quiet. To test the quiet one, type `roll = 12` "
-        "on line 3 for one Run, then put the dice back."
+        "You've met [[bug|bugs]] before: a loud bug stops Python with an error, and a quiet bug runs but gives a "
+        "wrong answer. I hunt both with the same four steps every time, the way you proofread an essay one "
+        "mark at a time.\n"
+        "1. Read the box in the Console: its title, then Python's last line.\n"
+        "2. Find the line number, and go to that line.\n"
+        "3. Check the line above it too, and the lines where its boxes were made.\n"
+        "4. No error, but a wrong answer? Print the values.\n"
+        "This 12-line script about the road ahead has three bugs: two loud, one quiet."
     ),
     names=["encounter", "roll", "needed", "str"],
     pair_talk=(
         "Pair talk: say the four steps out loud to your partner while you hunt the first bug. Then each of you "
-        "mends it on your own screen."
+        "fixes it on your own screen."
     ),
     starter=ROUTINE_STARTER,
     checkpoints=[
         dict(
             id="mend-the-name",
-            text="Mend the name Python can't find.",
+            text="Mend the name on line 9 that Python can't find.",
             dictated=False,
             hints=[
-                "Read Python's last line. It even asks: `Did you mean ...?`",
-                "Steady, now. Go to line 9, the line Python names, and compare it with lines 6 and 8.",
-                "Python matches names letter for letter: `lantern` and `lanternn` are two different names.",
+                "Read the box in the Console. First its title, then Python's last line. Python even asks: `Did you "
+                "mean ...?`",
+                "Python matches names letter for letter, so `lantern` and `lanternn` are two names. Go to line 9, "
+                "where Python stopped. Compare its name with lines 6 and 8.",
+                "Write `print(encounter)` in place of `print(encounterr)`: one r at the end, the way lines 6 and 8 "
+                "spell it.",
             ],
             checks=[SHOWS_ENCOUNTER],
         ),
         dict(
             id="glue-the-roll",
-            text="Mend the line that glues the roll to text.",
+            text="Mend line 10, which glues the roll to text.",
             dictated=False,
             hints=[
-                "Read Python's last line, from the new Run. Which line does it name?",
-                "It can only glue text to text. Go to line 10, then check line 3: what kind of value does `roll` "
-                "hold?",
+                "Press Run again and read the new box: its title, then Python's last line. Which line number does it "
+                "give?",
+                "Python can only glue text to text. Go to line 10, then check line 3, where `roll` is made: does "
+                "`roll` hold text or a number?",
                 "`\"Gold: \" + str(gold)` turns the number into text first, so the glue works.",
-                "Change line 10 to `print(\"Rolled: \" + str(roll))`.",
+                "Write `print(\"Rolled: \" + str(roll))` in place of `print(\"Rolled: \" + roll)`.",
             ],
             checks=[("the line shows the roll", _rerun_code() + _SHOWS_ROLL_LINE)],
         ),
         dict(
             id="exactly-enough",
-            text="A roll of exactly `needed` should pass. Find the quiet bug and mend it.",
+            text=(
+                "The last bug is quiet: a roll of exactly `needed` should pass, but it doesn't. Three moves:\n"
+                "1. Change line 3 to `roll = 12` and press Run. Does Oogrish spot the cart?\n"
+                "2. Mend the sign in the `if` on line 5, so a roll of exactly 12 passes.\n"
+                "3. Put line 3 back to `roll = random.randint(1, 20)`."
+            ),
             dictated=False,
             hints=[
-                "No message now, so read what your program printed. For one Run, change line 3 to `roll = 12`: does "
-                "Oogrish spot the cart?",
-                "Look at line 5, the `if`. A roll of 12 against `needed = 12` should pass. Which sign says *at "
-                "least*? Then put the dice back on line 3.",
-                "`>` leaves out the boundary; `>=` includes it. `12 >= 12` is True.",
+                "No error box now, so read what your code printed. With `roll = 12` on line 3 and `needed = 12`, does "
+                "Oogrish spot the cart? Should he?",
+                "Look at the sign in the `if` on line 5. On a number line, `>` is the open dot: 12 itself is left out. "
+                "Which sign is the filled dot, so 12 counts?",
+                "Write `if roll >= needed:` in place of `if roll > needed:`. Then put "
+                "`roll = random.randint(1, 20)` back on line 3.",
             ],
             checks=[bnd_check("exactly enough passes", "roll", "needed", via_rolls=True)],
             pass_line="Oogrish: Three bugs, four steps. Steady, now. You read every one.",
@@ -2129,40 +2229,44 @@ DEBUG_ROUTINE = dict(
             angle="step-by-step",
             label="The routine on this script",
             text=(
-                "1. Last line: `name 'encounterr' is not defined`. Step 2: line 9. Step 3: lines 6 and 8 make "
-                "`encounter`, with one r.\n"
-                "2. Run again. Last line: `can only concatenate str`. Line 10. Step 3: line 3 makes `roll` a number.\n"
-                "3. No message. Step 4: set `roll = 12` for one Run and read what prints. Then put the dice back."
+                "1. First bug. Python's last line: `name 'encounterr' is not defined`. It stopped on line 9. Lines 6 "
+                "and 8 make `encounter`, with one r at the end.\n"
+                "2. Second bug. Press Run again. Python's last line: `can only concatenate str`, Python's way of "
+                "saying it can only glue text. It stopped on line 10. Line 3 makes `roll` a number, so it needs "
+                "`str()`.\n"
+                "3. Third bug, the quiet one. No error box. Set `roll = 12` for one Run and read what prints. Then put "
+                "the dice back."
             ),
         ),
         dict(
             angle="picture",
             label="Loud and quiet",
             text=(
-                "```text\nloud bug:\n  Python stops, names a line.\n  Steps 1 to 3 find it.\n"
-                "quiet bug:\n  no message, wrong answer.\n  Step 4 finds it.\n```"
+                "```text\nloud bug:\n  Python stops, gives a line.\n  Steps 1 to 3 find it.\n"
+                "quiet bug:\n  no error, wrong answer.\n  Step 4 finds it.\n```"
             ),
         ),
         dict(
             angle="campaign",
             label="You've seen this",
             text=(
-                "The trap-door checks said `return roll >= required_roll`. A roll of exactly the number needed "
-                "passed. The quiet bug here is the same boundary."
+                "In the game, the trap-door checks said `return roll >= required_roll`. A roll of exactly the number "
+                "needed passed. The quiet bug here is the same boundary."
             ),
         ),
-        dict(angle="shorter", text="Read the last line. Go to the line. Check above. Print the values."),
+        dict(angle="shorter", text="Read the box. Go to the line. Check the line above. No error? Print the values."),
     ],
     campaign_link=dict(
         module="friends-in-low-places",
         part="skill-checks",
         snippet="return roll >= required_roll",
         why=(
-            "You have seen this. Each trap-door check used `>=`, so a roll of exactly the number needed still "
-            "passed. Swap in `>` and nothing crashes, the check is just wrong. Only step 4 finds that."
+            "You've seen this. Each trap-door check used `>=`, so a roll of exactly the number needed still "
+            "passed. Swap in `>` and Python doesn't stop, but the check gives the wrong answer. Only step 4 finds "
+            "that."
         ),
     ),
-    takeaway="Read the last line. Go to the line it names. Check the line above. No message? Print the values.",
+    takeaway="Read the box: its title, then Python's last line. Go to that line, and check the line above it. No error? Print the values.",
     wrong_answers=[
         dict(why="the starter (the typo is reported first)", code=ROUTINE_STARTER, fails_at=0, message_contains="encounterr"),
         dict(why="typo mended, the roll still glued without str()",
@@ -2188,7 +2292,7 @@ DEBUG_ROUTINE = dict(
              code=_encounter(show="encounterr").replace("    encounter = ", "    encounterr = "), fails_at=1,
              message_contains="Keep the box's name"),
         dict(why="the encounter line typed (passes only on a lucky real roll)",
-             code=_encounter(show="\"He spots the peddler's cart first.\""), fails_at=1, message_contains="rolled a 3"),
+             code=_encounter(show="\"He spots the peddler's cart first.\""), fails_at=1, message_contains="test roll: a 3"),
         dict(why="the box shown, plus a typed encounter line", code=_encounter(
             show="encounter)\nprint(\"He spots the peddler's cart first.\""), fails_at=1, message_contains="both encounters"),
         dict(why="needed moved to the top face so == hides (no roll can go past 20)",
@@ -2221,7 +2325,10 @@ SOLO_2C_STARTER = "mana = 14\nprint(\"Mana: \" + mana)\n"
 SOLO_2C = dict(
     id="solo-2c",
     title="Show Mar'tu",
-    martu="A short one, just for you. One fizzle. Read the last line, then mend it.",
+    martu=(
+        "A short one, on your own: one fizzle. Read the box in the Console, its title and then Python's last line. "
+        "Then go to the line with that number and fix it."
+    ),
     solo=True,
     # Teacher ruling on the Unit 2 reviews: in Unit 2 SOLO items (and every QC2 exercise) the crash explainer
     # names the kind of slip and the line, and leaves out the fix. Python's own text stays visible.
@@ -2231,35 +2338,37 @@ SOLO_2C = dict(
     checkpoints=[
         dict(
             id="make-it-print",
-            text="Make the line print.",
+            text="Make line 2 show `Mana: 14` in the Console.",
             dictated=False,
             hints=[
-                "Read Python's last line. What can it only glue?",
-                "Look at line 2, the line Python names. `mana` holds a number, and `+` glues text to text.",
+                "Read Python's last line in the box. What can Python only glue?",
+                "Look at line 2, where Python stopped. `mana` holds a number, and `+` glues text to text.",
                 "`\"Gold: \" + str(gold)` turns the number into text first.",
             ],
             checks=[
+                # SOLO (plain-language guide 4.3.7): lean messages, the mistake and the evidence, never the fix.
                 lines_check("the line shows the mana", [
-                    ({"mana": 14}, None, ["Mana: 14"], [], "Glue the box with `str(mana)`, so it shows `Mana: 14`."),
-                    ({"mana": 3}, None, ["Mana: 3"], [], "Build the line from the box `mana`, so it follows it."),
-                    ({"mana": 26}, None, ["Mana: 26"], [], "Build the line from the box `mana`, so it follows it."),
+                    ({"mana": 14}, None, ["Mana: 14"], [], "Line 2 has to show the number in `mana`."),
+                    ({"mana": 3}, None, ["Mana: 3"], [], "Line 2 has to show the number in `mana`, whatever it is."),
+                    ({"mana": 26}, None, ["Mana: 26"], [], "Line 2 has to show the number in `mana`, whatever it is."),
                 ]),
             ],
-            pass_line="Mar'tu: You did that on your own. On your map: ✓ read Python's message and glue a number with `str()`.",
+            pass_line="Mar'tu: You did that on your own. You read Python's message and glued a number with `str()`.",
         ),
     ],
     solution="mana = 14\nprint(\"Mana: \" + str(mana))\n",
     another_way=[
-        dict(angle="step-by-step", text="1. Read the last line: it can only glue text. 2. Line 2. 3. Wrap the number in `str()`."),
+        dict(angle="step-by-step", text=(
+            "1. Read Python's last line: it can only glue text.\n2. Go to line 2.\n3. Put the number inside `str()`.")),
         dict(angle="shorter", text="Text + number? Use `str(mana)`."),
     ],
-    takeaway="On your own: read the last line, find the line, mend the slip.",
+    takeaway="On your own: read the box, go to the line Python stopped on, and fix the mistake.",
     wrong_answers=[
         dict(why="the starter (text + number)", code=SOLO_2C_STARTER, fails_at=0, message_contains="concatenate"),
         dict(why="the mana typed into the text", code="mana = 14\nprint(\"Mana: 14\")\n", fails_at=1,
              message_contains="mana = 3"),
         dict(why="the word mana in quotes", code="mana = 14\nprint(\"Mana: \" + \"mana\")\n", fails_at=1,
-             message_contains="str(mana)"),
+             message_contains="the number in `mana`"),
         dict(why="mana made into text (breaks any other number)", code="mana = \"14\"\nprint(\"Mana: \" + mana)\n",
              fails_at=1, message_contains="stopped"),
         dict(why="str around the wrong part", code="mana = 14\nprint(str(\"Mana: \") + mana)\n", fails_at=0,
@@ -2271,8 +2380,8 @@ SOLO_2C = dict(
         meta(starter_level="S4", path="CC", skills="concat-str,read-traceback", solo="true", dictates="",
              foreign_names="gold", seat_b='roll = 9 / print("Roll: " + roll) (the same TypeError, with the roll)') + "\n"
         "SOLO, one bug (C6), explainer='lean' (teacher ruling: the crash explainer names the kind of slip and the "
-        "line, not the fix; Python's own text stays visible). Rung 0 is 'Read Python's last line'; the pass line "
-        "uses 2A's form ('You did that on your own. On your map: ✓ ...'). Seat A (and anyone solo) gets "
+        "line, not the fix; Python's own text stays visible), and lean check messages (guide 4.3.7). Rung 0 is "
+        "'Read Python's last line'; the pass line keeps 'You did that on your own.' Seat A (and anyone solo) gets "
         "`print(\"Mana: \" + mana)`; seat B would get "
         "`print(\"Roll: \" + roll)` once pair mode ships. Recorded, never blocking, never shown to a partner. CMB "
         "at 14, 3 and 26 (the spec's CMB + str: a comma print, `print(\"Mana:\", mana)`, also shows `Mana: 14` and "
@@ -2285,7 +2394,7 @@ LESSON_2C = dict(
     id="when-spells-fizzle",
     title="When Spells Fizzle: Reading Errors",
     minutes=18,
-    summary="Read Python's message like Mar'tu does: the last line, the line it names, and the values when there is no message.",
+    summary="Read Python's error messages like Mar'tu does, find the line, and fix it. No error but a wrong answer? Print the values.",
     notes=(
         "Lesson 2C (CC; 2C-05 SC). Preceded by 2c-remembers. The syllabus's Errors lesson, kept at the end of the "
         "unit; the full four-step routine lives in 2C-07. Exactly one SOLO (solo-2c). Non-dictated checkpoints: "
@@ -2313,38 +2422,42 @@ SYNTAX_SOLUTION = _syntax()
 
 SYNTAX_FIZZLES = dict(
     id="syntax-fizzles",
-    title="Syntax fizzles",
+    title="Lines Python can't read",
     martu=(
-        "Three slips that stop Python before anything runs: a quote, a colon, a bracket. Each one is a "
-        "[[SyntaxError]]: Python could not read a line.\n"
-        "Guess first: three slips, so how many messages will you see? Press Run and count.\n"
-        "Then mend them one at a time, and read the new message after each Run."
+        "*Syntax* is how a line is put together, like grammar in English class. A [[SyntaxError]] means Python "
+        "can't read a line, so it stops before anything runs. This spell has three: a missing `\"`, a missing `:` "
+        "and a missing `)`.\n"
+        "Guess first: three mistakes, so how many error boxes will you see? Press Run and count.\n"
+        "Then fix them one at a time. After each fix, press Run and read the new box. A new error means Python "
+        "got further."
     ),
     names=["mana"],
     starter=SYNTAX_STARTER,
     checkpoints=[
         dict(
             id="close-the-quote",
-            text="Mend line 2 so it shows `Shield up.`",
+            text="Mend line 2, so it shows `Shield up.` in the Console.",
             dictated=False,
             hints=[
-                "Read Python's last line. *Unterminated* means the text never ended.",
+                "Read the box in the Console. First its title, then Python's last line. *Unterminated* means the "
+                "text never ended.",
                 "Look at line 2. Quotes come in pairs: one before the words, one after.",
-                "`print(\"Fine.\")` has a `\"` before the words and another after them, before the `)`.",
+                "Type `\"` right after `Shield up.`, before the `)`. Line 2 becomes `print(\"Shield up.\")`.",
             ],
             checks=[
                 check("shows Shield up.", "assert 'Shield up.' in _lines(), " + say(
-                    "Put the closing `\"` after the words, before the `)`, so line 2 shows `Shield up.`")),
+                    "`Shield up.` did not show in the Console. Put the closing `\"` right after the words, before the "
+                    "`)` on line 2.")),
             ],
         ),
         dict(
             id="add-the-colon",
-            text="Mend the `if` line.",
+            text="Mend the `if` on line 3.",
             dictated=False,
             hints=[
-                "Read Python's last line, from the new Run: `expected ':'`.",
-                "Look at the very end of line 3.",
-                "Every `if` line ends with a colon: `if rain > 0:`.",
+                "Press Run again and read the new box. Python's last line says `expected ':'`.",
+                "Look at the very end of line 3. Every `if` line ends with a colon, like `if rain > 0:`.",
+                "Type `:` at the very end of line 3. Line 3 becomes `if mana < 6:`.",
             ],
             checks=[
                 lines_check("Low mana. only when mana is low", [
@@ -2359,30 +2472,32 @@ SYNTAX_FIZZLES = dict(
         ),
         dict(
             id="close-the-bracket",
-            text="Mend the last line so it shows the mana.",
+            text="Mend line 5, the last line, so it shows the mana.",
             dictated=False,
             hints=[
-                "Read Python's last line: `'(' was never closed`.",
-                "Count the `(` and the `)` on line 5. Brackets come in pairs.",
+                "Press Run again and read the new box. Python's last line says `'(' was never closed`.",
+                "Count the `(` and the `)` on line 5. Parentheses come in pairs, like in math class: "
                 "`print(str(gold))` has two `(` and two `)`.",
+                "Type `)` at the very end of line 5. Line 5 becomes `print(\"Mana: \" + str(mana))`.",
             ],
             checks=[
                 lines_check("the mana line follows mana", [
                     ({"mana": 5}, None, ["Mana: 5"], [], "Add the missing `)` at the end of line 5."),
-                    ({"mana": 2}, None, ["Mana: 2"], [], "Build the line from the box `mana`, so it follows it."),
+                    ({"mana": 2}, None, ["Mana: 2"], [], "Build the line from the box `mana`, so it changes when "
+                     "`mana` changes."),
                 ]),
             ],
-            pass_line="Mar'tu: Three slips, three runs. One at a time, yes? That is normal.",
+            pass_line="Mar'tu: Three mistakes, three runs. One at a time, yes? That is normal.",
         ),
     ],
     solution=SYNTAX_SOLUTION,
     another_way=[
         dict(
             angle="why",
-            label="Why only one message?",
+            label="Why only one error box?",
             text=(
-                "Python reads the whole program before it runs any of it. It stops at the first line it can't "
-                "read, so it never gets to the other slips. Mend that one, run again, and it shows you the next. "
+                "Python reads all of your code before it runs any of it. It stops at the first line it can't read, "
+                "so it never gets to the other mistakes. Fix that one, press Run again, and it shows you the next. "
                 "That is why errors come one at a time."
             ),
         ),
@@ -2390,18 +2505,21 @@ SYNTAX_FIZZLES = dict(
             angle="picture",
             label="Python reads, then runs",
             text=(
-                "```text\nPython reads every line.\nStuck on line 2?\n  -> stop: one message.\nAll fine?\n"
-                "  -> run the program.\n```\n"
-                "With a syntax slip, nothing runs at all. Not even line 1."
+                "```text\nPython reads every line.\nStuck on line 2?\n  -> stop: one error box.\nAll fine?\n"
+                "  -> run the code.\n```\n"
+                "With a SyntaxError, nothing runs at all. Not even line 1."
             ),
         ),
         dict(
             angle="step-by-step",
-            text="1. Run. 2. Read the last line. 3. Mend that one slip. 4. Run again: a new message is progress.",
+            text=(
+                "1. Press Run.\n2. Read the box: its title, then Python's last line.\n3. Fix that one mistake.\n"
+                "4. Press Run again. A new error means Python got further."
+            ),
         ),
-        dict(angle="shorter", text="Quotes in pairs. Colon after `if`. Brackets in pairs."),
+        dict(angle="shorter", text="Quotes in pairs. A colon after `if`. Parentheses in pairs."),
     ],
-    takeaway="Python reports one SyntaxError at a time. Mend it, run again, read the next.",
+    takeaway="Python shows one SyntaxError at a time. Fix it, press Run again, and read the next one.",
     wrong_answers=[
         dict(why="the starter (the unclosed quote is reported first)", code=SYNTAX_STARTER, fails_at=0,
              message_contains="unterminated"),
@@ -2462,11 +2580,12 @@ NAMES_SOLUTION = _names()
 
 NAME_FIZZLES = dict(
     id="name-fizzles",
-    title="Name fizzles",
+    title="Names Python can't find",
     martu=(
-        "Four [[NameError|NameErrors]]. Each one means: Python met a name that no line has made yet.\n"
-        "The causes differ: a typo, a box used too early, words without quotes, a capital letter. Read the last "
-        "line each time. Sometimes Python even asks: *Did you mean ...?*"
+        "A [[NameError]] means Python met a name that no line has made yet. It's like a story that says *she "
+        "grabbed it* but never said who *she* is. `print(mama)` stops Python if no line made `mama`.\n"
+        "This spell has four, each for a different reason: a typo, a box used too early, words without quotes, "
+        "and a capital letter. Read the box each time. Sometimes Python even asks: *Did you mean ...?*"
     ),
     names=["mana", "shield", "spell", "health"],
     starter=NAMES_STARTER,
@@ -2476,31 +2595,36 @@ NAME_FIZZLES = dict(
             text="Mend line 2 so it shows the mana.",
             dictated=False,
             hints=[
-                "Read Python's last line. It asks: `Did you mean: 'mana'?`",
-                "Compare the name on line 2 with the box made on line 1, letter by letter.",
-                "`lantern` and `lantren` are two different names to Python. Capitals and plurals count too.",
+                "Read the box in the Console: its title, then Python's last line. It asks: `Did you mean: 'mana'?`",
+                "Compare the name on line 2 with the box made on line 1, letter by letter. `lantern` and `lantren` "
+                "are two different names to Python.",
+                "Change `mama` to `mana` on line 2. Line 2 becomes `print(\"Mana: \" + str(mana))`.",
             ],
             checks=[
                 check(
                     "the box is still mana",
                     "assert 'mama' not in globals(), " + say(
-                        "Keep line 1 as it was, and mend the name on line 2: the box is `mana`. You renamed the box "
-                        "on line 1 to `mama`, to match the slip."),
+                        "You renamed the box on line 1 to `mama`, to match the mistake. Keep line 1 as it was, and fix "
+                        "the name on line 2: the box is `mana`."),
                 ),
                 lines_check("the mana line follows mana", [
                     ({"mana": 20}, None, ["Mana: 20"], [], "Use the box's real name on line 2: `str(mana)`."),
-                    ({"mana": 7}, None, ["Mana: 7"], [], "Build the line from the box `mana`, so it follows it."),
+                    ({"mana": 7}, None, ["Mana: 7"], [], "Build the line from the box `mana`, so it changes when "
+                     "`mana` changes."),
                 ]),
             ],
         ),
         dict(
             id="make-it-first",
-            text="Make `shield` before the line that uses it.",
+            text="Move `shield = 8` from line 4 up above line 3, so `shield` is made before line 3 uses it.",
             dictated=False,
             hints=[
-                "Read Python's last line: `name 'shield' is not defined`. Which line makes `shield`?",
-                "Python runs from top to bottom. On line 3, has any line made `shield` yet?",
-                "A box must be made before it is used:\n```python\ngold = 12\nprint(gold)\n```",
+                "Press Run again and read the new box. Python's last line: `name 'shield' is not defined`. Which line "
+                "makes `shield`?",
+                "Python reads your code like a page in a book, from the top line down. On line 3, has any line made "
+                "`shield` yet? A box must be made before it is used:\n```python\ngold = 12\nprint(gold)\n```",
+                "Write `shield = 8` above `print(\"Shield: \" + str(shield))`. Then delete the old `shield = 8` under "
+                "that print line, so the box is made once.",
             ],
             checks=[
                 lines_check("the shield line follows shield", [
@@ -2511,40 +2635,45 @@ NAME_FIZZLES = dict(
         ),
         dict(
             id="quote-the-spell",
-            text="Make `spell` hold the text `Fireball`.",
+            text="On line 5, put quotes around `Fireball`, so `spell` holds the text `Fireball`.",
             dictated=True,
             hints=[
-                "Read Python's last line: `name 'Fireball' is not defined`. Is `Fireball` a box, or words?",
-                "Python looked for a box called `Fireball` and found none. You meant the words.",
-                QUOTES_RULE,
+                "Press Run again and read the new box. Python's last line: `name 'Fireball' is not defined`. Is "
+                "`Fireball` a box, or words?",
+                "Python looked for a box called `Fireball` and found none. You meant the words. " + QUOTES_RULE,
+                "Type `\"` before and after `Fireball` on line 5. Line 5 becomes `spell = \"Fireball\"`.",
             ],
             checks=[
                 check(
                     "spell holds text",
-                    "assert type(spell).__name__ == 'str', " + say("Give `spell` text, in quotes."),
-                    "assert spell.strip(), " + say("Put the spell's name between the quotes. `spell` holds empty quotes."),
+                    "assert type(spell).__name__ == 'str', " + say("`spell` does not hold text. Give it the spell's "
+                                                                    "name, in quotes."),
+                    "assert spell.strip(), " + say("`spell` holds empty quotes. Put the spell's name between them."),
                 ),
             ],
         ),
         dict(
             id="match-the-health",
-            text="Make the box and the line that shows it both use the name `health`.",
+            text="Line 8 uses `health`, but line 7 makes `Health`. Change line 7 so both lines use the name `health`.",
             dictated=False,
             hints=[
-                "Read Python's last line. It asks: `Did you mean: 'Health'?`",
-                "Compare line 6 with line 7. One name has a capital, one does not. The task's name is `health`.",
-                "Python sees `Gold` and `gold` as two different names. Use the same capitals every time.",
+                "Press Run again and read the new box. Python's last line asks: `Did you mean: 'Health'?`",
+                "Compare line 7 with line 8. One name has a capital, one does not. Python sees `Gold` and `gold` as "
+                "two different names. The task's name is `health`.",
+                "Change the `H` in `Health` on line 7 to a small `h`. Line 7 becomes `health = 100`.",
             ],
             checks=[
                 name_check("health", skip=["mana", "shield", "spell"]),
                 check(
                     "no Health box",
                     "assert 'Health' not in globals(), " + say(
-                        "Python matches names letter for letter: you wrote `Health`, the task needs `health`."),
+                        "You wrote `Health`, but the task needs `health`. Python matches names letter for letter, "
+                        "capitals too."),
                 ),
                 lines_check("the health line follows health", [
                     ({"health": 100}, None, ["Health: 100"], [], "Show the box `health` on the last line."),
-                    ({"health": 55}, None, ["Health: 55"], [], "Build the line from the box `health`, so it follows it."),
+                    ({"health": 55}, None, ["Health: 55"], [], "Build the line from the box `health`, so it changes "
+                     "when `health` changes."),
                 ]),
             ],
             pass_line="Mar'tu: Four names, four reasons. Python is picky. Now you are too.",
@@ -2563,8 +2692,8 @@ NAME_FIZZLES = dict(
         dict(
             angle="step-by-step",
             text=(
-                "1. Read the last line: which name?\n2. Search the code for that name, letter for letter.\n"
-                "3. No line makes it? Make it first, or fix the spelling, or add quotes if you meant words."
+                "1. Read Python's last line: which name?\n2. Look through your code for that name, letter for "
+                "letter.\n3. No line makes it? Make it first, fix the spelling, or add quotes if you meant words."
             ),
         ),
         dict(angle="shorter", text="Not defined? Check the spelling, the capitals, the order, and the quotes."),
@@ -2621,11 +2750,13 @@ SILVER = "Lucky casts Silver Shield."
 
 TYPE_FIZZLES = dict(
     id="type-fizzles",
-    title="Type fizzles",
+    title="Text and numbers mixed up",
     martu=(
-        "A [[TypeError]] means two values that don't fit together. Text and a number, mostly.\n"
-        "Read the last line. Then look at the line it names, and at where its boxes were made. The slip is not "
-        "always on the line Python names."
+        "A [[TypeError]] means two values that don't fit together, like adding 5 meters to 3 seconds in math. "
+        "In Python it's mostly text and a number: `\"Mana: \" + 14` stops Python, because `+` can only glue text "
+        "to text.\n"
+        "Read the box, then go to the line Python stopped on. Also check the lines where its boxes were made: the "
+        "mistake is not always on the line where Python stopped."
     ),
     names=["mana", "cost", "str"],
     starter=TYPES_STARTER,
@@ -2635,36 +2766,41 @@ TYPE_FIZZLES = dict(
             text="Mend line 2 so it shows the mana.",
             dictated=False,
             hints=[
-                "Read Python's last line. What can it only glue?",
-                "Look at line 2, the line Python names. Python can only glue text to text, and `mana` holds a number.",
+                "Read the box in the Console: its title, then Python's last line. What can Python only glue?",
+                "Look at line 2, where Python stopped. Python can only glue text to text, and `mana` holds a number.",
                 "`\"Gold: \" + str(gold)` turns the number into text first.",
-                "Change line 2 to `print(\"Mana: \" + str(mana))`.",
+                "Write `print(\"Mana: \" + str(mana))` in place of `print(\"Mana: \" + mana)`.",
             ],
             checks=[
                 lines_check("the mana line follows mana", [
                     ({"mana": 14}, None, ["Mana: 14"], [], "Glue the box with `str(mana)`."),
-                    ({"mana": 3}, None, ["Mana: 3"], [], "Build the line from the box `mana`, so it follows it."),
+                    ({"mana": 3}, None, ["Mana: 3"], [], "Build the line from the box `mana`, so it changes when "
+                     "`mana` changes."),
                 ]),
             ],
         ),
         dict(
             id="cost-is-a-number",
-            text="Line 4 compares a number with text. Mend the line that makes `cost`, so it holds a number.",
+            text="Line 4 compares a number with text. Mend line 3, which makes `cost`, so `cost` holds a number.",
             dictated=False,
             hints=[
-                "Read Python's last line: `'>=' not supported between instances of 'int' and 'str'`. Which box holds "
-                "text?",
-                "Python names line 4, but the text comes from line 3. Look at the quotes there.",
-                "`\"7\" > 3` crashes, but `7 > 3` is True. Numbers don't need quotes.",
+                "Press Run again and read the new box. Python's last line: `'>=' not supported between instances of "
+                "'int' and 'str'`. In Python's words, `int` means a whole number and `str` means text. Which box "
+                "holds text?",
+                "Python stopped on line 4, but the text comes from line 3. Look at the quotes there. `\"7\" > 3` "
+                "stops Python, but `7 > 3` is True.",
+                "Delete both `\"` around the `9` on line 3. Line 3 becomes `cost = 9`.",
             ],
             checks=[
                 check(
                     "cost holds a number",
                     "assert type(cost).__name__ != 'str', " + say(
-                        "Take the quotes off on line 3: numbers don't need quotes. `cost` still holds text."),
-                    "assert type(cost).__name__ == 'int', " + say("Give `cost` a whole number, like `9`."),
-                    "assert cost == 9, " + say("Keep the 9, and take off only the quotes: Silver Shield costs 9. `cost` "
-                                               "holds ") + " + str(cost) + '.'",
+                        "`cost` still holds text, because of the quotes on line 3. Take the quotes off: numbers "
+                        "don't need quotes."),
+                    "assert type(cost).__name__ == 'int', " + say("`cost` does not hold a whole number. Give it `9`, "
+                                                                  "with no quotes."),
+                    "assert cost == 9, " + say("`cost` holds ") + " + str(cost) + " + say(
+                        ", but Silver Shield costs 9. Keep the 9, and take off only the quotes."),
                 ),
                 # Only `mana` changes in the rerun, so `cost = int("9")` (Unit 1's int()) passes too.
                 lines_check("Lucky casts with enough mana", [
@@ -2673,7 +2809,7 @@ TYPE_FIZZLES = dict(
                     ({"mana": 30}, None, [SILVER], [], "Keep `if mana >= cost:` as it is: more than enough mana casts too."),
                 ]),
             ],
-            pass_line="Lucky: Silver Shield. Shiny. Obviously.",
+            pass_line="Lucky: Silver Shield. Shiny, like me.",
         ),
     ],
     solution=TYPES_SOLUTION,
@@ -2685,11 +2821,14 @@ TYPE_FIZZLES = dict(
         ),
         dict(
             angle="step-by-step",
-            text="1. Read the last line: which two kinds? 2. Go to the line. 3. Check the line that made each box.",
+            text=(
+                "1. Read Python's last line: which two kinds of value?\n2. Go to the line Python stopped on.\n"
+                "3. Check the line that made each box."
+            ),
         ),
-        dict(angle="shorter", text="Gluing? `str()` the number. Comparing? No quotes on numbers."),
+        dict(angle="shorter", text="Gluing? Put the number in `str()`. Comparing? No quotes on numbers."),
     ],
-    takeaway="TypeError: text and a number mixed. Use `str()` to glue; take the quotes off numbers you compare.",
+    takeaway="A TypeError mixes text and a number. Use `str()` to glue a number to text, and take the quotes off numbers you compare.",
     wrong_answers=[
         dict(why="the starter (text + number first)", code=TYPES_STARTER, fails_at=0, message_contains="concatenate"),
         dict(why="glue mended, cost still text", code=_types(cost='"9"'), fails_at=0, message_contains="not supported between"),
@@ -2724,7 +2863,7 @@ EXTRA_2X = dict(
     title="Extra practice: More fizzles",
     optional=True,
     minutes=11,
-    summary="More broken spells to mend: syntax slips, names Python can't find, and text mixed with numbers.",
+    summary="More broken spells to fix: lines Python can't read, names it can't find, and text mixed with numbers.",
     notes="2X pool (2C-02, 2C-03, 2C-04). Optional; feeds twins, the spaced queue and early finishers.",
     exercises=[SYNTAX_FIZZLES, NAME_FIZZLES, TYPE_FIZZLES],
 )
@@ -2754,9 +2893,9 @@ SEAL_THE_CHECK = dict(
     id="seal-the-check",
     title="Seal the check",
     martu=(
-        "Three rolls against a `needed` of 15: one below, one exactly, one above. Under each one, write a seal "
-        "that says what `passed` must be.\n"
-        "Then Mar'tu's check breaks your `passed` lines on purpose. Good seals catch it."
+        "Your code tries three rolls against a `needed` of 15: 14, then exactly 15, then 16. Under each `# seal:` "
+        "note, write an `assert` that says what `passed` must be for that roll, like `assert passed == True`.\n"
+        "Then I test your seals: I break a copy of your `passed` lines on purpose. Good seals notice."
     ),
     introduces=["node:Assert"],
     names=["passed"],
@@ -2764,14 +2903,14 @@ SEAL_THE_CHECK = dict(
     checkpoints=[
         dict(
             id="three-seals",
-            text="Under each `# seal:` comment, write an `assert` that says what `passed` must be for that roll.",
+            text="Under each of the three `# seal:` notes, write an `assert` line that says what `passed` must be for that roll.",
             dictated=False,
             hints=[
-                "A roll of 14 against 15 fails, so `passed` must be `False` there. What must it be for exactly 15? "
-                "And for 16?",
-                "A seal with other names: `assert door_open == True` stops the program if the door is shut.",
-                "Under the first `# seal:`, write `assert passed == False`. Under the other two, `assert "
-                "passed == True`.",
+                "Look at the three `roll =` lines. A roll of 14 against 15 fails, so `passed` must be `False` there. "
+                "What must it be for exactly 15? And for 16?",
+                "A seal with other names: `assert door_open == True` stops the code if the door is shut.",
+                "Write `assert passed == False` under the first `# seal:`. Under the other two `# seal:` notes, write "
+                "`assert passed == True`.",
             ],
             checks=[seal_check("the seals catch a broken check", "passed", 15)],
             pass_line="Mar'tu: Sealed. If anyone swaps that `>=` for `>`, your seals will shout. Good.",
@@ -2788,20 +2927,21 @@ SEAL_THE_CHECK = dict(
             label="Three seals on a number line",
             text=(
                 "```text\n   14        15        16\n   fail  |  pass      pass\n   ^          ^          ^\n"
-                " False     True       True\n```\nThe seal at exactly 15 is the one that catches `>`."
+                " False     True       True\n```\nThe seal at exactly 15 is the one that catches a `>`."
             ),
         ),
         dict(
             angle="why",
             label="Why does this work?",
             text=(
-                "`>` instead of `>=` gives no error: a quiet bug. A seal at the boundary says what must be true. "
-                "When it is not, Python stops. The quiet bug becomes a loud one."
+                "`>` instead of `>=` gives no error: a quiet bug. A seal at the boundary, the exact number that "
+                "should still pass, says what must be true. When it is not, Python stops. The quiet bug becomes a "
+                "loud one."
             ),
         ),
         dict(angle="shorter", text="Below: `False`. Exactly: `True`. Above: `True`."),
     ],
-    takeaway="`assert passed == True` stops the program if `passed` is not True. Seal the boundary.",
+    takeaway="`assert passed == True` stops your code if `passed` is not True. Put a seal at the boundary: the exact number that should pass.",
     wrong_answers=[
         dict(why="the starter (no seals yet)", code=SEAL_STARTER, fails_at=1, message_contains="three in all"),
         dict(why="every seal says True (the roll of 14 should fail)",
@@ -2850,19 +2990,19 @@ MARTUS_SEAL = dict(
     title="Mar'tu's Seal",
     optional=True,
     minutes=10,
-    summary="An `assert` line says what must be true. Seal your checks at the boundary, and quiet bugs get loud.",
+    summary="An `assert` line says what must be true. Put one at the boundary, the exact number that should pass, and a quiet bug becomes loud.",
     introduces=["node:Assert"],
     body=(
-        "At the Institute we sealed our work: a line that says what *must* be true. If it isn't, Python stops and "
-        "tells you.\n"
-        "A seal is an [[assert]] line: the word `assert`, then a yes-or-no question. `assert passed == True` says: "
+        "A seal is an [[assert]] line: the word `assert`, then a yes-or-no question whose answer must be `True`. "
+        "It's like checking a math answer by putting it back into the equation. `assert passed == True` says: "
         "`passed` must be `True` here.\n"
-        "If the answer is `True`, nothing happens, and the program goes on. If it is `False`, Python stops with "
-        "`AssertionError` and names the line:\n"
+        "If the answer is `True`, nothing happens, and your code goes on. If it is `False`, Python stops with "
+        "`AssertionError` and gives the line:\n"
         "```text\nFile \"main.py\", line 4\n    assert passed == True\nAssertionError\n```\n"
         "Why bother? Seals catch quiet [[bug|bugs]]. A `>` where `>=` belongs gives no error at all. A seal at the "
-        "boundary turns that quiet bug into a loud one.\n"
-        "The campaign never asks for seals. They are for the careful, yes?"
+        "*boundary*, the exact number that should still pass, turns that quiet bug into a loud one.\n"
+        "At the Institute we sealed our work this way. The campaign never asks for seals. They are for the "
+        "careful, yes?"
     ),
     examples=[
         dict(code="roll = 15\nneeded = 15\npassed = roll >= needed\nassert passed == True\nprint(\"Sealed. A 15 passes.\")\n",
@@ -2911,9 +3051,10 @@ def _qc_roll(form, faces, needed, win, lose):
         id="roll-your-own",
         title="A skill check of your own",
         martu=_QC_MARTU + (
-            f"Your own skill check. Pick how hard it is, roll a d{faces}, and say what happened. Mar'tu's check "
-            "rolls the die for you, so it can try every kind of roll.\n"
-            "Stuck? Skip it, or try the lesson If the Clock Turns Red. Tasks you pass here stay ticked."
+            f"Your own skill check, like the trap-door checks in the game. Pick how hard it is, roll a d{faces} (a "
+            f"die with {faces} faces), and print what happened. When I test your code, I roll the die for you, so I "
+            "can try every kind of roll.\n"
+            "Stuck? Skip it, or go back to the lesson If the Clock Turns Red. Tasks you pass here stay done."
         ),
         names=["needed", "roll"],
         support="none",
@@ -2924,12 +3065,12 @@ def _qc_roll(form, faces, needed, win, lose):
         checkpoints=[
             dict(
                 id="pick-needed",
-                text=f"Set `needed` to any number from 2 to {faces}.",
+                text=f"On line 3, replace the `0` in `needed = 0` with any whole number from 2 to {faces}.",
                 dictated=False,
                 hints=[
                     "Look at line 3. `needed` is how high the roll must be. Numbers have no quotes.",
                     "A box gets a number like this: `target = 7`.",
-                    f"Write `needed = {needed}`, or any number from 2 to {faces}.",
+                    f"Write `needed = {needed}` in place of `needed = 0`, or use any number from 2 to {faces}.",
                 ],
                 checks=[
                     name_check("needed", foreign=["target", "score"], skip=["roll"], kept=True),
@@ -2943,29 +3084,32 @@ def _qc_roll(form, faces, needed, win, lose):
                         "and [getattr(_t, 'id', '') for _t in _n.targets] == ['needed'] "
                         "and type(_n.value).__name__ == 'Constant' and _n.value.value == 0]",
                         "assert not (_v == 0 and _zero), " + say(
-                            f"`needed` still holds the starter's `0`, and the task asks for a number from 2 to {faces}."),
+                            f"`needed` still holds the placeholder `0`, and the task asks for a number from 2 to {faces}."),
                         f"assert 2 <= _v <= {faces}, " + say("`needed` holds ") + " + str(_v) + " + say(
                             f", but the task asks for a number from 2 to {faces}: a d{faces} roll is 1 to {faces}."),
                         "assert not _assigned_from_expression('needed'), " + say(
-                            "`needed` is worked out, not one typed number, so Mar'tu's check can not change it to "
-                            "try other rolls."),
+                            "`needed` is worked out, not one typed number, so Mar'tu can't change it to test other "
+                            "rolls."),
                     ),
                 ],
             ),
             dict(
                 id=f"roll-a-d{faces}",
-                text=f"Roll a d{faces} into `roll`.",
+                text=f"On line 4, replace the `0` in `roll = 0` with a roll of a d{faces}, a die with {faces} faces.",
                 dictated=True,
                 hints=[
                     f"A d{faces} has faces 1 to {faces}, and `randint` includes both ends.",
                     "`random.randint(1, 4)` rolls a d4: lowest face first, then the highest.",
-                    f"Write `roll = random.randint(1, {faces})`.",
+                    f"Write `roll = random.randint(1, {faces})` in place of `roll = 0`.",
                 ],
                 checks=[rnd_check(f"roll is a d{faces}", "roll", faces, [5], placeholder=0, lean=True)],
             ),
             dict(
                 id="succeed-or-fail",
-                text="Print a success line when `roll` reaches `needed`, and a failure line otherwise.",
+                text=(
+                    "Under the last note, write an `if` / `else`: print a success line when `roll` reaches `needed`, "
+                    "and a failure line otherwise. A roll of exactly `needed` counts."
+                ),
                 dictated=False,
                 hints=[
                     "Exactly enough passes, so which sign? Then `else:` for the failure line.",
@@ -2983,13 +3127,15 @@ def _qc_roll(form, faces, needed, win, lose):
             distractors=[f"roll = random.randint(1, {faces - 1})", "if roll > needed:", "else roll < needed:"],
         ),
         another_way=[
-            dict(angle="step-by-step", text=f"1. `needed = ` a number from 2 to {faces}. 2. Roll with `random.randint(1, {faces})`. 3. `if`, a sign, then `else:`."),
+            dict(angle="step-by-step", text=(
+                f"1. `needed = ` a number from 2 to {faces}.\n2. Roll with `random.randint(1, {faces})`.\n"
+                "3. `if`, a sign, then `else:`.")),
             dict(angle="picture", text=f"```text\n1 ... needed-1 | needed ... {faces}\n     fail      |     pass\n```"),
         ],
         takeaway=f"Roll with `random.randint(1, {faces})`, then `if roll >= needed:` and `else:`.",
         wrong_answers=[
             dict(why="the starter (needed still the starter's 0)", code=starter, fails_at=1,
-                 message_contains="still holds the starter's `0`"),
+                 message_contains="still holds the placeholder `0`"),
             dict(why="> instead of >= (exactly enough fails)", code=program(test="roll > needed"), fails_at=3,
                  message_contains="exactly"),
             dict(why=f"a d{faces - 1} (the top face left out)", code=program(roll=f"random.randint(1, {faces - 1})"),
@@ -2998,9 +3144,9 @@ def _qc_roll(form, faces, needed, win, lose):
                  message_contains="can give 0"),
             dict(why="a roll typed by hand", code=program(roll="7"), fails_at=2, message_contains="typed"),
             dict(why="the roll left as the starter's 0", code=program(roll="0"), fails_at=2,
-                 message_contains="still holds the starter's `0`"),
+                 message_contains="still holds the placeholder `0`"),
             dict(why="the needed number typed into the if", code=program(test=f"roll >= {needed}"), fails_at=3,
-                 message_contains="does not follow the box `needed`"),
+                 message_contains="did not change to match `needed`"),
             dict(why="needed left at 0", code=program(need=0), fails_at=1, message_contains=f"from 2 to {faces}"),
             dict(why="needed in quotes (the compare crashes)", code=program(need=f'"{needed}"'), fails_at=0,
                  message_contains="not supported between"),
@@ -3014,7 +3160,7 @@ def _qc_roll(form, faces, needed, win, lose):
                  message_contains="expected ':'"),
             dict(why="no else (a low roll prints nothing)",
                  code=program(branches=f"if roll >= needed:\n    print(\"{win}\")\n"), fails_at=3,
-                 message_contains="A low roll printed nothing"),
+                 message_contains="A low roll showed nothing"),
             dict(why="the print not indented under the if",
                  code=program(branches=f"if roll >= needed:\nprint(\"{win}\")\nelse:\n    print(\"{lose}\")\n"),
                  fails_at=0, message_contains="indented block"),
@@ -3032,11 +3178,11 @@ def _qc_roll(form, faces, needed, win, lose):
                  code=program(need=f"random.randint(2, {faces})"), fails_at=1, message_contains="not one typed number"),
             dict(why="lean: the d(faces-1) message names the slip, never the fixed call",
                  code=program(roll=f"random.randint(1, {faces - 1})"), fails_at=2,
-                 message_contains=f"A d{faces} has faces 1 to {faces}, but `random.randint(1, {faces - 1})` never gives"),
+                 message_contains=f"`random.randint(1, {faces - 1})` never gives {faces}. A d{faces} has faces 1 to {faces}"),
             dict(why="lean: > for >= names the evidence, not the sign", code=program(test="roll > needed"), fails_at=3,
                  message_contains=f"A roll of exactly {needed} gave the failure line"),
             dict(why="lean: if True names the evidence", code=program(test="True"), fails_at=3,
-                 message_contains="Both rolls printed the same line, so the answer never changes"),
+                 message_contains="showed the same line, so the answer never changes"),
         ],
         notes=_qc_meta("randint,boundary,if-else", "2", "score,target", form) + "\n"
         f"QC2 C1, form {form} (a d{faces}). Any needed from 2 to {faces} passes (lint e): BND reads it from the "
@@ -3072,10 +3218,10 @@ def _qc_mend(form, first, second, first_line, second_line):
         id="mend-the-choices",
         title="Mend the choices",
         martu=_QC_MARTU + (
-            "Three slips in a dialogue chain: two loud, one quiet. Read Python's last line, go to the line it "
-            "names, and mend it. Then run again for the next. When Python goes quiet, read what your program "
-            "printed.\n"
-            "Stuck? Skip it, or try the lesson When Spells Fizzle. Tasks you pass here stay ticked."
+            "Three mistakes in a dialogue chain, like the dialogue options in the game: two loud, one quiet. For "
+            "each loud one, read the box, go to the line Python stopped on, and fix it. Then press Run again for the "
+            "next. When there is no error box, read what your code printed.\n"
+            "Stuck? Skip it, or go back to the lesson When Spells Fizzle. Tasks you pass here stay done."
         ),
         names=["choice", "lower"],
         support="none",
@@ -3084,11 +3230,11 @@ def _qc_mend(form, first, second, first_line, second_line):
         checkpoints=[
             dict(
                 id="mend-the-ask",
-                text=f"Mend the line that asks about `\"{first}\"`.",
+                text=f"Mend line 3, the line that asks about `\"{first}\"`.",
                 dictated=False,
                 hints=[
-                    "Read Python's last line. Which line does it name?",
-                    "Python names line 3 and asks: `Maybe you meant '=='`? Which sign asks a question?",
+                    "Read the box: its title, then Python's last line. Which line did Python stop on?",
+                    "Python stopped on line 3 and asks: `Maybe you meant '=='`? Which sign asks a question?",
                     "`=` puts a value in a box. `==` asks: is the same as? `if mana == 0:` asks whether mana is 0.",
                 ],
                 checks=[
@@ -3109,11 +3255,11 @@ def _qc_mend(form, first, second, first_line, second_line):
             ),
             dict(
                 id="mend-the-quotes",
-                text=f"Mend the line that asks about {second}.",
+                text=f"Mend line 5, the line that asks about `{second}`.",
                 dictated=False,
                 hints=[
-                    "Read Python's last line, from the new Run. Which line does it name?",
-                    f"Python says `invalid syntax` on line 5. Two bare words: is `{second}` a box, or text?",
+                    "Press Run again and read the new box. Which line did Python stop on?",
+                    f"Python says `invalid syntax` on line 5. Two words with no quotes: is `{second}` a box, or text?",
                     QUOTES_RULE + " The option is text, so it needs quotes.",
                 ],
                 checks=[
@@ -3127,13 +3273,13 @@ def _qc_mend(form, first, second, first_line, second_line):
             ),
             dict(
                 id="any-capitals",
-                text=f"Make `\"{big}\"`, with a capital, get the same reply as `\"{second}\"`.",
+                text=f"The last mistake is quiet: no error box. Make `\"{big}\"`, typed with a capital, get the same reply as `\"{second}\"`.",
                 dictated=False,
                 hints=[
-                    f"No message now, so read what your program printed: `{hm}` Is that the reply `\"{big}\"` should get?",
-                    "Look at line 2. It makes a lower-case copy of `choice`. Where does that copy go?",
-                    "`.lower()` gives a copy, and the box itself stays the same. To keep the copy, put it in the "
-                    "box: `shout = shout.lower()`.",
+                    f"No error box now, so read what your code printed: `{hm}` Is that the reply `\"{big}\"` should get?",
+                    "Look at line 2. It makes a small-letter copy of `choice`. Where does that copy go?",
+                    "`.lower()` gives a small-letter copy, and the box itself stays the same. To keep the copy, put it "
+                    "back in the box: `shout = shout.lower()`.",
                 ],
                 checks=[
                     lower_kept_check("any capitals get their reply", "choice", lean=True, cases=[
@@ -3151,8 +3297,8 @@ def _qc_mend(form, first, second, first_line, second_line):
         ),
         another_way=[
             dict(angle="step-by-step", text=(
-                "1. Run and read the last line. 2. Mend the line it names. 3. Run again for the next. 4. No message, "
-                f"but `{hm}`? Look at line 2: is the copy kept?")),
+                "1. Press Run and read the box.\n2. Fix the line Python stopped on.\n3. Press Run again for the "
+                f"next.\n4. No error box, but `{hm}`? Look at line 2: is the copy kept?")),
             dict(angle="shorter", text=f"`==` asks. `\"{second}\"` needs quotes. Keep the copy: `choice = choice.lower()`."),
         ],
         takeaway="`==` to ask, quotes around text you compare with, and keep the `.lower()` copy: `choice = choice.lower()`.",
@@ -3165,13 +3311,13 @@ def _qc_mend(form, first, second, first_line, second_line):
                  code=program(ask=f"if choice = \"{first}\":", lower="choice.lower()"), fails_at=0,
                  message_contains="=="),
             dict(why="both loud slips mended, the lower-case copy still forgotten (the quiet slip)", code=loud_mended,
-                 fails_at=3, message_contains="then forgets it"),
+                 fails_at=3, message_contains="throws it away"),
             dict(why="the option mended with a capital O",
                  code=program(other=f"elif choice == \"{big}\":"), fails_at=2, message_contains="every letter"),
             dict(why="= in the elif too", code=program(other=f"elif choice = \"{second}\":", lower="choice.lower()"),
                  fails_at=0, message_contains="=="),
             dict(why="elif turned into a second if (the else joins it)",
-                 code=program(other=f"if choice == \"{second}\":"), fails_at=1, message_contains="printed anyway"),
+                 code=program(other=f"if choice == \"{second}\":"), fails_at=1, message_contains="showed in the Console anyway"),
             dict(why="the option mended without the space",
                  code=program(other=f"elif choice == \"{second.replace(' ', '')}\":"), fails_at=2,
                  message_contains="every letter"),
@@ -3184,7 +3330,7 @@ def _qc_mend(form, first, second, first_line, second_line):
             dict(why="the starter's value lowered by hand, line 2 deleted (a typed fix: capitals still fail)",
                  code=program(lower="", value=second), fails_at=3, message_contains="typed with capitals does not get"),
             dict(why="the starter's value lowered by hand, the forgotten copy left",
-                 code=program(lower="choice.lower()", value=second), fails_at=3, message_contains="then forgets it"),
+                 code=program(lower="choice.lower()", value=second), fails_at=3, message_contains="throws it away"),
             dict(why="lower(choice) (the dot left out)", code=program(lower="choice = lower(choice)"), fails_at=0,
                  message_contains="'lower' is not defined"),
             dict(why="the copy compared with capitals",
@@ -3194,7 +3340,7 @@ def _qc_mend(form, first, second, first_line, second_line):
                  code=program(lower="", other=f"elif choice == \"{second}\" or choice == \"{big}\":"), fails_at=3,
                  message_contains="typed with capitals does not get"),
             dict(why="lean: the forgotten copy is named, not the fixed line", code=loud_mended, fails_at=3,
-                 message_contains="makes a lower-case copy, then forgets it"),
+                 message_contains="makes a small-letter copy and throws it away"),
         ],
         notes=_qc_meta("read-traceback,elif-chain,quote-text,compare", "", "mana,shout", form) + "\n"
         f"QC2 C2, form {form}. Two loud slips, both SyntaxErrors (verified in 3.13: `=` in an if -> \"invalid "
@@ -3252,15 +3398,16 @@ def _qc_barrier(form, hero, spell, mana, affinity, lines, pass_line):
     starter = program()
     solution = program(can, chain)
     # Lean (a test-out, no hints): each message says what should have happened, and the evidence, never the fix.
-    typed = "With other values in the boxes, the answer did not follow them."
+    typed = "With other values in the boxes, the answer did not change to match them."
     return dict(
         id="hold-the-barrier",
         title="Hold the barrier",
         martu=_QC_MARTU + (
-            f"`cast_spell`, rebuilt. First `can_cast`: {hero} needs enough mana *and* enough affinity. Then put "
-            f"the three lines in one chain, in the order the comments give. Exactly enough still casts. Mar'tu's "
-            "check tries other spells, so ask with the boxes.\n"
-            "Stuck? Skip it, or try the lesson If the Clock Turns Red. Tasks you pass here stay ticked."
+            f"Rebuild `cast_spell` from the game, with plain boxes. First, `can_cast`: {hero} needs enough mana "
+            "(magic power) *and* enough affinity (how strong a hero's magic is). Then put the three print lines in "
+            "one chain, in the order the notes give. Exactly enough still casts. I test your code with other "
+            "spells, so ask with the boxes.\n"
+            "Stuck? Skip it, or go back to the lesson If the Clock Turns Red. Tasks you pass here stay done."
         ),
         names=["can_cast", "mana", "cost", "affinity", "required"],
         support="none",
@@ -3269,13 +3416,13 @@ def _qc_barrier(form, hero, spell, mana, affinity, lines, pass_line):
         checkpoints=[
             dict(
                 id="can-cast",
-                text="Make `can_cast` say whether `mana` reaches `cost` and `affinity` reaches `required`. Exactly "
-                     "enough counts.",
+                text="On line 8, replace `False` in `can_cast = False` with a question: does `mana` reach `cost`, "
+                     "and does `affinity` reach `required`? Exactly enough counts.",
                 dictated=False,
                 hints=[
                     "Two questions, and both must be `True`. Which word joins them? Which sign says *at least*?",
                     "`and` is True only when both sides are True: `print(3 >= 3 and 5 >= 9)` prints `False`.",
-                    "Write `can_cast = mana >= cost and affinity >= required`.",
+                    "Write `can_cast = mana >= cost and affinity >= required` in place of `can_cast = False`.",
                 ],
                 checks=[
                     gets_check("can_cast", lean=True),
@@ -3293,17 +3440,18 @@ def _qc_barrier(form, hero, spell, mana, affinity, lines, pass_line):
             ),
             dict(
                 id="cast-spell-chain",
-                text="Put the three print lines in an `if` / `elif` / `else`, in the order the comments give. Exactly "
-                     "enough still casts.",
+                text="Put the three print lines at the bottom into an `if` / `elif` / `else`, in the order the notes "
+                     "under `# 2.` give. Exactly enough still casts.",
                 dictated=False,
                 hints=[
-                    "Follow the comments under `# 2.`: `if`, then `elif`, then `else`, each line indented under its "
-                    "branch. *Lower than* is `<`.",
-                    "Exactly enough must cast, so the not-enough questions leave the boundary out: `9 < 9` is `False`.",
+                    "Read the notes under `# 2.`: `if`, then `elif`, then `else`, each print line indented under "
+                    "its branch. *Lower than* is `<`.",
+                    "Exactly enough must cast. So each *not enough* question uses `<`, which leaves the number itself "
+                    "out: `9 < 9` is `False`.",
                     "Both short? Python takes the first true branch, so the affinity question goes first, the way "
                     "`cast_spell` did.",
-                    "Write `if affinity < required:`, then `elif mana < cost:`, then `else:`, each with its "
-                    "line under it.",
+                    "Write `if affinity < required:`, then `elif mana < cost:`, then `else:`, each with its print "
+                    "line indented under it.",
                 ],
                 checks=[
                     barrier_check("each spell gets one line, in cast_spell's order",
@@ -3335,11 +3483,11 @@ def _qc_barrier(form, hero, spell, mana, affinity, lines, pass_line):
                 "```text\naffinity lower? -> not skilled\n  no\nmana lower?     -> not enough mana\n  no\n"
                 "else            -> the barrier holds\n```")),
             dict(angle="step-by-step", text=(
-                "1. `can_cast`: two questions with `>=`, joined by `and`. 2. The chain: `if` affinity is lower, "
-                "`elif` mana is lower, `else` cast. 3. Exactly enough? `9 < 9` is `False`, so it casts.")),
+                "1. `can_cast`: two questions with `>=`, joined by `and`.\n2. The chain: `if` affinity is lower, "
+                "`elif` mana is lower, `else` cast.\n3. Exactly enough? `9 < 9` is `False`, so it casts.")),
             dict(angle="campaign", label="You've seen this", text=(
-                "`cast_spell` asked about affinity, then mana, then cast. It used `<`, not `<=`, because a caster with "
-                "exactly enough mana can still cast.")),
+                "In the game, `cast_spell` asked about affinity, then mana, then cast. It used `<`, not `<=`, because "
+                "a caster with exactly enough mana can still cast.")),
         ],
         campaign_link=dict(
             module="friends-in-low-places",
@@ -3349,14 +3497,14 @@ def _qc_barrier(form, hero, spell, mana, affinity, lines, pass_line):
                 'elif caster["mana"] < spell["mana_cost"]:\n    ...\nelse:\n    ...'
             ),
             why=(
-                "You have seen this. You just rebuilt `cast_spell`'s chain with plain boxes: affinity first, then "
+                "You've seen this. Now you've rebuilt `cast_spell`'s chain with plain boxes: affinity first, then "
                 "mana, then `else`, with `<` so exactly enough still casts. Same shape, now yours."
             ),
         ),
         takeaway="`and` needs both. In a chain the first true branch wins, so order matters; `<` lets exactly enough cast.",
         wrong_answers=[
             dict(why="the starter (can_cast still the starter's False)", code=starter, fails_at=1,
-                 message_contains="still holds the starter's `False`"),
+                 message_contains="still holds the placeholder `False`"),
             dict(why="or instead of and", code=program(can.replace(" and ", " or "), chain), fails_at=1,
                  message_contains="is one short here, so the spell should not cast"),
             dict(why="> instead of >= (exactly enough fails)", code=program(can.replace(">=", ">"), chain), fails_at=1,
@@ -3367,7 +3515,7 @@ def _qc_barrier(form, hero, spell, mana, affinity, lines, pass_line):
                  message_contains="values you typed"),
             dict(why="the starter's numbers typed into the question",
                  code=program(f"can_cast = mana >= {mana} and affinity >= {affinity}", chain), fails_at=1,
-                 message_contains="the answer did not follow them"),
+                 message_contains="the answer did not change to match them"),
             dict(why="only the mana asked", code=program("can_cast = mana >= cost", chain), fails_at=1,
                  message_contains="`affinity` is one short"),
             dict(why="== for = (the answer asked, then forgotten)",
@@ -3389,11 +3537,11 @@ def _qc_barrier(form, hero, spell, mana, affinity, lines, pass_line):
             dict(why="the starter's numbers typed into the chain",
                  code=program(can, chain.replace("affinity < required", f"affinity < {affinity}")
                               .replace("mana < cost", f"mana < {mana}")),
-                 fails_at=2, message_contains="the answer did not follow them"),
+                 fails_at=2, message_contains="the answer did not change to match them"),
             dict(why="the signs turned around (> for <)", code=program(can, chain.replace(" < ", " > ")), fails_at=2,
                  message_contains="plenty of both should reach the barrier line"),
             dict(why="a line reworded", code=program(can, chain.replace(c_line, c_line.rstrip(".!") + " now.")),
-                 fails_at=2, message_contains="None of the three lines from the starter printed"),
+                 fails_at=2, message_contains="None of the three print lines showed"),
             dict(why="an elif with no if above it", code=program(can, chain.replace("if affinity", "elif affinity", 1)),
                  fails_at=0, message_contains="invalid syntax"),
             dict(why="elif after else",
@@ -3433,7 +3581,7 @@ QC2_A = dict(
     minutes=15,
     summary=(
         "Three short tasks and four questions, no hints. Pass all three tasks and get 3 of the 4 questions right "
-        "to test out of Unit 2. Stuck on one? The lessons teach all of it, and tasks you pass here stay ticked."
+        "to test out of Unit 2. Stuck on one? The lessons teach all of it, and tasks you pass here stay done."
     ),
     questions_to_pass=3,
     exercises=[
@@ -3441,7 +3589,7 @@ QC2_A = dict(
         _qc_mend("A", "option 1", "option 2", "Mar'tu: Then we take the jeep.", "Mar'tu: Then we walk."),
         _qc_barrier("A", "Oogrish", "Lantern Ward", 9, 9,
                     ("Oogrish isn't skilled enough.", "Oogrish doesn't have enough mana.", "The barrier holds."),
-                    "Mar'tu: Bomb Shell rolled for the wall. You mended our choices. Oogrish held the barrier. "
+                    "Mar'tu: Bomb Shell rolled for the wall. You fixed our choices. Oogrish held the barrier. "
                     "That is Unit 2, yes? Want a stretch? Try Three Roads to the Institute."),
     ],
     notes=(
@@ -3469,7 +3617,7 @@ QC2_B = dict(
     minutes=15,
     summary=(
         "Three short tasks and four questions, no hints. Pass all three tasks and get 3 of the 4 questions right "
-        "to test out of Unit 2. Stuck on one? The lessons teach all of it, and tasks you pass here stay ticked."
+        "to test out of Unit 2. Stuck on one? The lessons teach all of it, and tasks you pass here stay done."
     ),
     questions_to_pass=3,
     exercises=[
@@ -3477,7 +3625,7 @@ QC2_B = dict(
         _qc_mend("B", "option 3", "option 4", "Mar'tu: Then we rest here.", "Mar'tu: Then we follow the river."),
         _qc_barrier("B", "Gearshift", "Ember Wall", 14, 10,
                     ("Gearshift isn't skilled enough.", "Gearshift doesn't have enough mana.", "Barrier's holding."),
-                    "Mar'tu: Gearshift rolled for the cart. You mended our choices. The barrier is holding. "
+                    "Mar'tu: Gearshift rolled for the cart. You fixed our choices. The barrier is holding. "
                     "That is Unit 2, yes? Want a stretch? Try Three Roads to the Institute."),
     ],
     notes=(
@@ -3558,7 +3706,7 @@ QC2_A_QUESTIONS = _qc_questions(
         "True",
         (
             "`mana >= cost` is True, but `affinity >= required` is False: 9 is not at least 10. `and` needs both, so "
-            "the brackets give False. `not` flips it: True. Oogrish can't cast this one yet."
+            "the part in parentheses gives False. `not` flips it: True. Oogrish can't cast this one yet."
         ),
         "Skill and-or-not (Q4), Oogrish's affinity 9 against a spell that needs 10. Reading `and` as `or` gives "
         "False.",
@@ -3592,7 +3740,7 @@ QC2_B_QUESTIONS = _qc_questions(
         "True",
         (
             "`mana >= cost` is False: 26 is not at least 30. `affinity >= required` is True. `and` needs both, so "
-            "the brackets give False. `not` flips it: True. Lucky is 4 mana short."
+            "the part in parentheses gives False. `not` flips it: True. Lucky is 4 mana short."
         ),
         "Form B of not-and (Lucky: mana 26, affinity 13). Reading `and` as `or` gives False.",
     ),
@@ -3615,15 +3763,15 @@ CHALK_NOTES_2 = dict(
              output="True\nFalse",
              note="Read `=` as *gets* and `==` as *is the same as*. Every letter, space and capital counts."),
         dict(concept="The other signs", code="print(5 != 6)\nprint(3 <= 3)\nprint(4 < 4)\n", output="True\nTrue\nFalse",
-             note="`!=` is not the same as. `<` less than, `>` more than, `<=` at most, `>=` at least."),
+             note="`!=` means *is not the same as*. `<` is less than, `>` is more than, `<=` is at most, and `>=` is at least."),
         dict(concept="Exactly enough: `>=`", code="roll = 15\nneeded = 15\nprint(roll >= needed)\nprint(roll > needed)\n",
-             output="True\nFalse", note="`>` leaves out the boundary. `>=` includes it, so exactly enough still passes."),
+             output="True\nFalse", note="On a number line, `>` is the open dot: the number itself is left out. `>=` is the filled dot, so exactly enough still passes."),
         dict(concept="Any capitals: `.lower()`", code="answer = \"YES\"\nprint(answer == \"yes\")\nprint(answer.lower() == \"yes\")\n",
-             output="False\nTrue", note="`answer.lower()` gives a lower-case copy, so capitals stop mattering. "
-             "Alone on a line, the copy is forgotten: keep it with `answer = answer.lower()`."),
+             output="False\nTrue", note="`answer.lower()` gives a small-letter copy, so capitals stop mattering. "
+             "Alone on a line, the copy is thrown away: keep it with `answer = answer.lower()`."),
         dict(concept="`if`, a colon, and an indent", code="hours_left = 2\nif hours_left < 3:\n    print(\"Get inside!\")\n",
-             output="Get inside!", note="The colon says *here comes the block*. Four spaces say *this belongs to the if*. "
-             "(Lesson: If the Clock Turns Red)"),
+             output="Get inside!", note="The colon says *here come its steps*. The lines under it, indented 4 spaces, "
+             "belong to the `if`, like sub-points in an outline. (Lesson: If the Clock Turns Red)"),
         dict(concept="`else`: otherwise",
              code="roll = 9\nneeded = 12\nif roll >= needed:\n    print(\"The latch pops open.\")\nelse:\n"
                   "    print(\"That latch hates me.\")\n",
@@ -3631,20 +3779,21 @@ CHALK_NOTES_2 = dict(
         dict(concept="`elif`: the first true branch wins",
              code="hours_left = 2\nif hours_left <= 2:\n    print(\"red\")\nelif hours_left <= 12:\n    print(\"bright blue\")\n"
                   "else:\n    print(\"calm blue\")\n",
-             output="red", note="Python checks from the top and runs only the first true branch. So: first, the "
-             "test that lets the fewest numbers through. `else` is always last."),
+             output="red", note="Python checks from the top and runs only the first true branch, like a grading "
+             "scale. So put first the question that lets the fewest numbers through. `else` is always last."),
         dict(concept="`and`, `or`, `not`",
              code="mana = 9\ncost = 6\naffinity = 9\nrequired = 9\nprint(mana >= cost and affinity >= required)\n"
                   "print(mana >= 20 or affinity >= 9)\nprint(not True)\n",
-             output="True\nTrue\nFalse", note="`and` needs both. `or` needs one. `not` flips the answer."),
+             output="True\nTrue\nFalse", note="`and` needs both answers True. `or` needs at least one. `not` flips the answer."),
         dict(concept="Dice: `random.randint`", code="import random\nroll = random.randint(1, 20)\nprint(roll)\n",
              note="`import random` once, at the top. `random.randint(1, 20)` gives 1 to 20, both ends included."),
         dict(concept="The four-step routine", code="print(\"Rolled: \" + 7)\n",
-             note="1. Read the last line. 2. Go to the line it names. 3. Check the line above, and where its boxes "
-             "were made. 4. No message, but a wrong answer? Print the values. (Lesson: When Spells Fizzle)"),
+             note="1. Read the box: its title, then Python's last line. 2. Go to the line Python stopped on. 3. Check "
+             "the line above it, and where its boxes were made. 4. No error, but a wrong answer? Print the values. "
+             "(Lesson: When Spells Fizzle)"),
         dict(concept="Error: `=` in an `if`", code="roll = 20\nif roll = 20:\n    print(\"A perfect roll!\")\n",
              note="SyntaxError: invalid syntax. Maybe you meant '==' or ':=' instead of '='? To ask, use `==`. "
-             "(`:=` puts a value in a box, like `=`.)"),
+             "Python also offers `:=`, but that puts a value in a box, like `=`."),
         dict(concept="Error: a missing colon", code="if mana < 6\n    print(\"Low mana.\")\n",
              note="SyntaxError: expected ':'. Every `if`, `elif` and `else` line ends with `:`."),
         dict(concept="Error: `elif` after `else`",
@@ -3654,12 +3803,13 @@ CHALK_NOTES_2 = dict(
              note="NameError: name 'mama' is not defined. Did you mean: 'mana'? Check the spelling, the capitals, "
              "the order, and the quotes."),
         dict(concept="Error: text and a number", code="cost = \"9\"\nprint(14 >= cost)\n",
-             note="TypeError: '>=' not supported between instances of 'int' and 'str'. Take the quotes off the number."),
+             note="TypeError: '>=' not supported between instances of 'int' and 'str'. Here `int` means a whole number "
+             "and `str` means text. Take the quotes off the number."),
         dict(concept="No error, wrong answer",
              code="mana = 9\ncost = 9\nprint(mana)\nprint(cost)\nif mana > cost:\n    print(\"Cast.\")\nelse:\n"
                   "    print(\"Not enough mana.\")\n",
              output="9\n9\nNot enough mana.",
-             note="A quiet bug. Print the values just before the line that decides: 9 and 9 should cast, so use `>=`."),
+             note="A quiet bug. Print the values right before the line that decides: 9 and 9 should cast, so use `>=`."),
         dict(concept="(extra) Another way to choose: `match`",
              code="choice = \"option 2\"\nmatch choice:\n    case \"option 1\":\n        print(\"Then we leave at dawn.\")\n"
                   "    case \"option 2\":\n        print(\"Rest first, yes?\")\n    case _:\n        print(\"Hm.\")\n",
@@ -3667,8 +3817,8 @@ CHALK_NOTES_2 = dict(
              "(Article: Match)"),
         dict(concept="(extra) Mar'tu's seal: `assert`",
              code="roll = 15\nneeded = 15\npassed = roll >= needed\nassert passed == True\nprint(\"Sealed.\")\n",
-             output="Sealed.", note="If the seal is not true, Python stops with AssertionError. Seal the boundary. "
-             "(Article: Mar'tu's Seal)"),
+             output="Sealed.", note="If the seal is not true, Python stops with AssertionError. Put a seal at the "
+             "boundary, the exact number that should pass. (Article: Mar'tu's Seal)"),
     ],
     notes="Cheatsheet 2 (spec items in order, then the error rows and the extras). Entries with `output` are run and "
     "checked by the harness; the dice entry has none (lint 9: never a random value in an output).",
