@@ -259,7 +259,7 @@ describe("proactive Help offers", () => {
   });
 
   it("says one kind line, and \"read the last line\" only after a crash (there is an error message to read)", () => {
-    expect(helpOfferLine("misses", true)).toContain("Read the last line first");
+    expect(helpOfferLine("misses", true)).toContain("Read the title of the box in the Console");
     expect(helpOfferLine("misses")).not.toContain("last line");
     expect(helpOfferLine("misses")).toContain("Steady, now. Want a nudge?");
     expect(helpOfferLine("time")).toMatch(/nudge/);

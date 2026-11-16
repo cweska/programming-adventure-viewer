@@ -269,7 +269,7 @@ function ItemFinish({
             {questions
               ? `Pass every task, then get ${questionsNeeded(questions.needed, questions.total)} questions right, to test out.`
               : "Pass every task to test out."}{" "}
-            Stuck? That is fine. The lessons teach all of it.
+            Stuck? That&apos;s fine. The lessons teach all of it.
           </p>
         )}
         <Link className={complete ? "course-button" : "ex-quiet-link"} href={complete ? nextHref : unitHrefValue} data-testid="item-continue">

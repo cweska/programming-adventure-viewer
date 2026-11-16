@@ -149,8 +149,8 @@ export function UnitPage({ unit, campaign, glossary }: UnitPageProps) {
           ) : (
             <>
               <p>
-                <strong>Already know this?</strong> Try the Quick Check. Pass it and this unit counts as done. No hints,
-                no pressure: you can always do the lessons.
+                <strong>Already know this?</strong> Try the Quick Check: a few short tasks, with no hints. Pass it and this
+                unit counts as done. If something is new, that&apos;s fine: the lessons teach all of it, step by step.
               </p>
               <Link className="course-button" href={itemHref(unit.id, quickCheck.id)} data-testid="testout-start">
                 Try the Quick Check
@@ -199,7 +199,7 @@ export function UnitPage({ unit, campaign, glossary }: UnitPageProps) {
       {campaign.length > 0 ? (
         <aside className="unit-campaign" data-testid="unit-campaign">
           <p>
-            <strong>Where you will use this:</strong>{" "}
+            <strong>Where this shows up in the game:</strong>{" "}
             {campaign.map((module, index) => (
               <span key={module.id}>
                 {index > 0 ? ", " : null}

@@ -60,50 +60,55 @@ if "__NAME__" not in globals():
     _near = [_m for _m in _made if _m not in _foreign and _close(_m)]
     _bare = [_n.lineno for _n in _tree.body if type(_n).__name__ == "Expr" and type(_n.value).__name__ == "Constant" and type(_n.value.value).__name__ in ("str", "int", "float")]
     if _near:
-        _msg = "Python matches names letter for letter: you wrote `" + _near[0] + "`, the task needs `__NAME__`."
+        _msg = "You wrote `" + _near[0] + "`, but this step's box is `__NAME__`. Python matches names letter for letter, capitals too."
     elif _left:
-        _msg = "`" + _left[0] + "` is a name from an example or an earlier step. This task's box is `__NAME__`."
+        _msg = "`" + _left[0] + "` is a name from an example, not from this step. This step's box is `__NAME__`."
     elif _bare:
-        _msg = "Line " + str(_bare[0]) + " is a value with no box, so Python made it and forgot it. Put `__NAME__ = ` in front of it."
+        _msg = "Line " + str(_bare[0]) + " is a value with no name in front, so Python reads it and throws it away.__BARE_FIX__"
     elif [_m for _m in _made if _m not in __SKIP__]:
-        _msg = "You made a box named `" + [_m for _m in _made if _m not in __SKIP__][0] + "`, but this task's box is `__NAME__`. Python matches names letter for letter."
+        _msg = "You made a box named `" + [_m for _m in _made if _m not in __SKIP__][0] + "`, but this step's box is `__NAME__`. Python matches names letter for letter."
     else:
-        _msg = "Make a box named `__NAME__`: start a line with `__NAME__ = `."
+        _msg = "__NONE__"
     assert False, _msg'''
 
 
-def box_check(name, foreign=(), skip=()):
+def box_check(name, foreign=(), skip=(), lean=False):
     """NAME + LEFT + BARE (+ another name): the box exists, or the message says why not.
-    `skip` = boxes the starter already makes, never named as the student's wrong box."""
-    code = (_BOX_TEMPLATE.replace("__NAME__", name).replace("__FOREIGN__", repr(list(foreign)))
+    `skip` = boxes the starter already makes, never named as the student's wrong box.
+    `lean` (Quick Check): the same checks, with messages that say what is wrong and where, never the fix."""
+    bare_fix = "" if lean else " Put `__NAME__ = ` in front of it."
+    none_msg = "There is no box named `__NAME__` yet." if lean else "Make a box named `__NAME__`: start a line with `__NAME__ = `."
+    code = (_BOX_TEMPLATE.replace("__BARE_FIX__", bare_fix).replace("__NONE__", none_msg)
+            .replace("__NAME__", name).replace("__FOREIGN__", repr(list(foreign)))
             .replace("__SKIP__", repr(list(skip))))
     return (f"there is a box named {name}", code)
 
 
 def text_check(name):
-    """TEXT: the box holds non-empty text."""
+    """TEXT: the box holds non-empty text. (Quick Check only, so the messages are lean.)"""
     return (
         f"{name} holds text",
         f"_v = {name}\n"
-        f"assert type(_v).__name__ == 'str', {'`' + name + '` holds `'!r} + repr(_v) + '`. This step wants text in quotes.'\n"
-        f"assert _v.strip(), '`{name}` holds empty quotes. Put some words between them.'",
+        f"assert type(_v).__name__ == 'str', {'`' + name + '` holds `'!r} + repr(_v) + '`, which is not text in quotes.'\n"
+        f"assert _v.strip(), '`{name}` holds empty quotes, with nothing between them.'",
     )
 
 
 def bare_check():
-    """BARE: no line is just a value (it raises no error, so only a check can catch it)."""
+    """BARE: no line is just a value (it raises no error, so only a check can catch it). (Quick Check only: lean.)"""
     return (
         "no value is left without a box",
         "import ast as _ast\n"
         "_bare = [_n.lineno for _n in _ast.parse(_source).body if type(_n).__name__ == 'Expr' "
         "and type(_n.value).__name__ == 'Constant' and type(_n.value.value).__name__ in ('str', 'int', 'float')]\n"
-        "assert not _bare, 'Line ' + str(_bare[0]) + ' is a value with no box, so Python made it and forgot it. "
-        "Delete it, or put a name and `=` in front of it.'",
+        "assert not _bare, 'Line ' + str(_bare[0]) + ' is a value with no name in front, so Python reads it and "
+        "throws it away.'",
     )
 
 
 def print_check(name):
-    """PRINT: a print uses the box (alone, or glued: `print("Hero: " + name)`), and its value shows."""
+    """PRINT: a print uses the box (alone, or glued: `print("Hero: " + name)`), and its value shows.
+    (Quick Check only, so the messages are lean.)"""
     return (
         f"prints the box {name}",
         "import ast as _ast\n"
@@ -111,9 +116,9 @@ def print_check(name):
         "and type(_n.func).__name__ == 'Name' and _n.func.id == 'print' for _a in _n.args]\n"
         f"_named = [_x for _a in _args for _x in _ast.walk(_a) if type(_x).__name__ == 'Name' and _x.id == '{name}']\n"
         f"_quoted = [_a for _a in _args if type(_a).__name__ == 'Constant' and _a.value == '{name}']\n"
-        f"assert _named or not _quoted, 'That prints the word \"{name}\". Take the quotes off so Python opens the box.'\n"
-        f"assert _named, 'Add a line that prints the box: `print({name})`.'\n"
-        f"assert any(str({name}).strip() in _l for _l in _lines()), 'Run it again: the console should show what is inside `{name}`.'",
+        f"assert _named or not _quoted, 'Your `print` shows the word {name}, because `{name}` is in quotes.'\n"
+        f"assert _named, 'Your code never prints the box `{name}`.'\n"
+        f"assert any(str({name}).strip() in _l for _l in _lines()), 'The Console does not show what is inside `{name}`.'",
     )
 
 
@@ -127,7 +132,7 @@ for _n in _ast.walk(_ast.parse(_source)):
 def _squash(_m):
     return _m.lower().replace("_", "").rstrip("s")
 _near = [_m for _m in _made if _m != "__NAME__" and _squash(_m) == _squash("__NAME__")]
-assert not _near, "Python matches names letter for letter: you wrote `" + (_near or ["?"])[0] + "`, the task needs `__NAME__`."'''
+assert not _near, "You wrote `" + (_near or ["?"])[0] + "`, but this step's box is `__NAME__`. Python matches names letter for letter, capitals too."'''
 
 
 def near_check(name):
@@ -136,18 +141,21 @@ def near_check(name):
 
 
 def num_story_check(count_name, price_name, count, price, what):
-    """NUM + SWAP + LINE-TOTAL + the story's values, for one "how many? / how much is one?" pair."""
+    """NUM + SWAP + LINE-TOTAL + the story's values, for one "how many? / how much is one?" pair.
+    (Quick Check only, so the messages are lean: what is wrong and where, never the fix.)"""
     return (
         f"{count_name} and {price_name} hold the story's numbers",
         f"_c, _p = {count_name}, {price_name}\n"
         f"for _n, _v in (({count_name!r}, _c), ({price_name!r}, _p)):\n"
-        "    assert type(_v).__name__ != 'str', '`' + _n + '` holds text, because of the quotes. Numbers don\\'t need quotes.'\n"
+        "    assert type(_v).__name__ != 'str', '`' + _n + '` holds text, because its number is in quotes.'\n"
         f"assert not (_c == {price} and _p == {count}), "
-        f"{f'You swapped them: {count} is how many {what}, and {price} is the price of one.'!r}\n"
+        f"{f'`{count_name}` and `{price_name}` are swapped: each one holds the other number.'!r}\n"
         f"assert _p != {count * price}, "
-        f"{f'{count * price} is already the cost of all {count} {what}. `{price_name}` wants the price of one.'!r}\n"
-        f"assert _c == {count}, {'`' + count_name + '` holds '!r} + str(_c) + {f'. The story says {count} {what}. Replace the 0.'!r}\n"
-        f"assert _p == {price}, {'`' + price_name + '` holds '!r} + str(_p) + {f'. The story says one costs {price} coins. Replace the 0.'!r}",
+        f"{f'`{price_name}` holds {count * price}, which is already the cost of all {count} {what}, not the price of one.'!r}\n"
+        f"assert _c == {count}, ({f'`{count_name}` still holds the placeholder 0.'!r} if _c == 0 else "
+        f"{'`' + count_name + '` holds '!r} + str(_c) + {f', not how many {what} the story needs.'!r})\n"
+        f"assert _p == {price}, ({f'`{price_name}` still holds the placeholder 0.'!r} if _p == 0 else "
+        f"{'`' + price_name + '` holds '!r} + str(_p) + {', not the price of one in the story.'!r})",
     )
 
 
@@ -188,34 +196,53 @@ _CMB_HEAD = r'''
     _kind = 'numbers' if all(type(_v).__name__ == 'int' for _v in _vals.values()) else 'values'
     _parts = ['`' + _k + ' = ' + _show(_v) + '`' for _k, _v in _vals.items()]
     _what = _parts[0] if len(_parts) == 1 else ', '.join(_parts[:-1]) + ' and ' + _parts[-1]
+    _t = 'test ' + ('number' if _kind == 'numbers' else 'value') + ('' if len(_parts) == 1 else 's')
+    _test = ('a ' if len(_parts) == 1 else '') + _t
     _ns, _out, _err, _miss = _rerun(_vals)
-    assert not _miss, 'Keep the line that sets `' + _miss[0] + '`. Mar\'tu\'s check changes that line to try other ' + _kind + ', so keep it as `name = value`.'
-    assert not _err, 'Mar\'tu\'s check tried your code with ' + _what + ' (only inside the check) and it stopped: ' + _err
+    assert not _miss, 'The line that sets `' + _miss[0] + '` is gone. Mar\'tu tests your code by changing that line, so keep it as `' + _miss[0] + ' = ` and a value.'
+    assert not _err, 'Your code stopped with an error when Mar\'tu tested it with ' + _test + ', ' + _what + '. Python said `' + _err + '`. Your math should work for any ' + _kind + '.'
 '''
 
-# CMB message lead shared with u01c's rerun(): "Mar'tu's check tried your code with `a = 7` (only inside the check:
-# leave your own numbers as they are). This time, `total` stayed 22, but it should be 38." It says "values" instead
-# of "numbers" when the check also swaps in text (C3's hero name Tester).
+# CMB message, in the order of the plain-language guide (section 4.3): what happened to the student's line, then
+# the step's one fix (the tail: empty in the Quick Check, which stays lean), then the labeled evidence. A box that
+# still holds the starter's 0 is named as the placeholder, with no evidence. It says "values" instead of "numbers"
+# when the check also swaps in text (C3's made-up hero name Tester).
 _CMB_VALUE = "for _vals, _want in __CASES__:" + _CMB_HEAD + r'''    _got = _ns.get('__TARGET__')
     _was = globals().get('__TARGET__')
-    assert _got == _want, 'Mar\'tu\'s check tried your code with ' + _what + ' (only inside the check: leave your own ' + _kind + ' as they are). This time, `__TARGET__` ' + ('stayed ' if _got == _was else 'became ') + _show(_got) + ', but it should be ' + _show(_want) + '. ' + __TAIL__
+    _proof = 'Mar\'tu tested it with ' + _test + ', ' + _what + ': `__TARGET__` should be ' + _show(_want) + '. Don\'t type the ' + _t + '.'
+    if _got == _was and type(_got).__name__ == 'int' and _got == 0:
+        _msg = '`__TARGET__` still holds the placeholder 0. ' + __TAIL__
+    elif _got == _was:
+        _msg = '`__TARGET__` stays ' + _show(_got) + ' even when the boxes change, so its line has something typed in. ' + __TAIL__ + _proof
+    else:
+        _msg = '`__TARGET__` comes out wrong when the boxes hold other ' + _kind + '. ' + __TAIL__ + _proof
+    assert _got == _want, _msg.strip()
 '''
 
 _CMB_LINE = "for _vals, _want in __CASES__:" + _CMB_HEAD + r'''    _rows = [_l.strip() for _l in _out.splitlines() if _l.strip()]
     _said = ('it printed `' + _rows[-1] + '`') if _rows else 'it printed nothing'
-    assert _want in _rows, 'Mar\'tu\'s check tried your code with ' + _what + ' (only inside the check: leave your own ' + _kind + ' as they are). This time, your program should print `' + _want + '`, but ' + _said + '. ' + __TAIL__
+    assert _want in _rows, (__TAIL__ + 'Mar\'tu tested it with ' + _test + ', ' + _what + ': it should print `' + _want + '`, but ' + _said + '. Don\'t type the ' + _t + '.').strip()
 '''
 
 
-def cmb_check(target, cases, tail="Build it from the boxes, so it follows."):
-    """CMB on a box: run again with other values; `target` must follow. cases = [(values, expected), ...]."""
-    code = _RERUN + _CMB_VALUE.replace("__CASES__", repr(cases)).replace("__TARGET__", target).replace("__TAIL__", repr(tail))
+def _tail(text):
+    """A tail sentence ends with one space, so the evidence can follow it; an empty tail stays empty."""
+    return text.strip() + " " if text.strip() else ""
+
+
+def cmb_check(target, cases, tail=""):
+    """CMB on a box: run again with other values; `target` must change to match. cases = [(values, expected), ...].
+    `tail` is the step's one fix, between what happened and the evidence. Leave it empty in the Quick Check."""
+    code = (_RERUN + _CMB_VALUE.replace("__CASES__", repr(cases)).replace("__TARGET__", target)
+            .replace("__TAIL__", repr(_tail(tail))))
     return (f"{target} follows other numbers", code)
 
 
-def cmb_line_check(cases, tail="Build it from the boxes, so it follows.", label="the line follows other values"):
-    """CMB on printed output: run again with other values; the expected line must appear."""
-    code = _RERUN + _CMB_LINE.replace("__CASES__", repr(cases)).replace("__TAIL__", repr(tail))
+def cmb_line_check(cases, tail="Part of your line is typed in, so it does not change when the boxes change.",
+                   label="the line follows other values"):
+    """CMB on printed output: run again with other values; the expected line must appear. `tail` says what
+    happened (it comes first): the Quick Check's status line, already right for the student's own numbers."""
+    code = _RERUN + _CMB_LINE.replace("__CASES__", repr(cases)).replace("__TAIL__", repr(_tail(tail)))
     return (label, code)
 
 
@@ -230,8 +257,8 @@ def out_line_check(expr, label, tail):
         "while _at < min(len(_want), len(_got)) and _want[_at] == _got[_at]:\n"
         "    _at += 1\n"
         "_same = (' They match up to `' + _want[:_at] + '`, then differ.') if _at else ''\n"
-        "assert _rows, 'Print the line, built from the boxes. It should show `' + _want + '`.'\n"
-        "assert _want in _rows, 'Expected `' + _want + '`. You printed `' + _got + '`.' + _same + "
+        "assert _rows, 'Your code prints nothing yet. The line should show `' + _want + '`.'\n"
+        "assert _want in _rows, 'Your last line shows `' + _got + '`, but it should show `' + _want + '`.' + _same + "
         f"{(' ' + tail) if tail else ''!r}",
     )
 
@@ -255,16 +282,16 @@ UNIT = dict(
         "Hi. It is me, Mar'tu. Before we continue on our adventure, we go back to the first words, yes?\n"
         "A lot of that campaign code felt like a wall, yes? We will take the wall apart, one stone at a time.\n"
         "Every spell begins as words. Python is fussy about words. More fussy than Lucky is about glug, yes?\n"
-        "Tonight: how to say something, how to keep something in a box, and how to let Python do the sums."
+        "Tonight: how to say something, how to keep something in a box, and how to let Python do the math."
     ),
     goals=[
-        "Show words on the screen with `print()`, in matching quotes",
-        "Write `#` notes for humans, and switch a line off",
-        "Make a box (variable) with `name = value`, using the exact name the task asks for",
-        "Put a new value in a box, like `mana = mana - cost`",
-        "Do math with `+`, `-`, `*` and `/`, and let the code combine your boxes",
-        "Glue text together with `+` and `str()`, and draw a bar with `\"█\" * mana`",
-        "Read Python's message and mend the slips everyone makes",
+        "Make Python show words on the screen",
+        "Write notes that Python skips",
+        "Keep words or a number in a named box (a variable)",
+        "Change what is in a box",
+        "Let Python do the math with your boxes",
+        "Join words and numbers into one line, and draw a mana bar from blocks",
+        "Read Python's error messages and fix small mistakes",
     ],
     campaign_links=["leylines-awaken", "friends-in-low-places"],
 )
@@ -273,46 +300,55 @@ GLOSSARY = [
     dict(
         term="power",
         aliases=["powers", "exponent"],
-        plain="A number times itself, again and again. `2 ** 3` means 2 × 2 × 2, which is 8.",
+        plain="A number multiplied by itself, like 2³ in math class. In Python, `2 ** 3` means 2 × 2 × 2, which is 8.",
         example="print(2 ** 3)",
     ),
     dict(
         term="floor division",
         aliases=["whole division"],
-        plain="Divide, then keep only the whole part. `50 // 12` is 4, because 12 fits into 50 four whole times.",
+        plain=(
+            "Divide and keep only the whole part (floor means round down). In math class, 50 ÷ 12 = 4 R 2, "
+            "and `50 // 12` gives the 4."
+        ),
         example="print(50 // 12)",
     ),
     dict(
         term="remainder",
         aliases=["remainders", "modulo"],
-        plain="What is left over after dividing. `50 % 12` is 2: four 12s make 48, and 2 is left.",
+        plain=(
+            "What is left over after dividing. In 50 ÷ 12 = 4 R 2, the remainder is 2, and `50 % 12` gives it. "
+            "Here `%` is not percent."
+        ),
         example="print(50 % 12)",
     ),
     dict(
         term="order of operations",
         aliases=["operator order"],
         plain=(
-            "The order Python does math in. Brackets first, then `**`, then `*` `/` `//` `%`, then `+` and `-`. "
-            "So `2 + 3 * 4` is 14."
+            "The order Python does math in: PEMDAS, as in math class. Parentheses first, then `**`, then "
+            "`*` `/` `//` `%`, then `+` and `-`, so `2 + 3 * 4` is 14."
         ),
         example="print((2 + 3) * 4)",
     ),
     dict(
         term="input",
         aliases=["input()"],
-        plain="A command that asks a question and waits for an answer. The answer always comes back as text.",
+        plain="`input()` asks a question and waits for an answer. The answer always comes back as text, even a 3.",
         example='name = input("Who goes there? ")',
     ),
     dict(
         term="prompt",
         aliases=["prompts"],
-        plain="The question `input()` shows before it waits, like `\"Who goes there? \"`.",
+        plain="The question `input()` shows before it waits for an answer, like `\"Who goes there? \"`.",
         example='input("How many sips? ")',
     ),
     dict(
         term="int()",
         aliases=["int"],
-        plain="Turns text that looks like a whole number into a real number, so you can do math with it. `int(\"3\")` gives 3.",
+        plain=(
+            "`int` is short for integer, a whole number. `int()` turns text like `\"3\"` into the number 3, "
+            "so you can do math with it."
+        ),
         example='sips = int("3")',
     ),
 ]
@@ -372,8 +408,8 @@ SIGN_SOLUTION = _sign(ink="▓", top=_BORDER, bottom=_BORDER, mark=_M_LETTER)
 _INK_ROWS = _RERUN + r'''
 _a = _rerun({'ink': '#'})
 _b = _rerun({'ink': '@'})
-assert not _a[3], 'Keep the line `ink = "█"` near the top, with the mark in quotes.'
-assert not _a[2], 'With `ink` set to `#`, the program stopped: ' + _a[2]
+assert not _a[3], 'Keep a line like `ink = "█"` near the top, with one mark in quotes. Mar\'tu tests your sign by changing that mark.'
+assert not _a[2], 'When Mar\'tu tested your sign with `ink = "#"`, Python stopped with an error. Python said `' + _a[2] + '`. Check each row that uses `ink`.'
 _ra, _rb = _a[1].split('\n'), _b[1].split('\n')
 _ink_rows = [_i for _i in range(min(len(_ra), len(_rb))) if _ra[_i] != _rb[_i]]
 _texts = [_n.value for _n in _ast.walk(_ast.parse(_source)) if type(_n).__name__ == 'Constant' and type(_n.value).__name__ == 'str']
@@ -386,13 +422,14 @@ def ink_rows_check(at_least, letter, group, shape_msg):
     return (
         f"at least {at_least} rows follow ink",
         _INK_ROWS
-        + "assert 'ink' not in _texts, 'That `\"ink\"` is in quotes, so it is just the word ink. "
-        "Take the quotes off so Python opens the box.'\n"
-        + f"assert len(_ink_rows) >= {at_least}, 'Mar\\'tu repainted the sign with `#`, and only ' + str(len(_ink_rows)) + "
-        f"' rows changed. Draw all five rows of the {letter} with `ink`, not a typed █, so they repaint too.'\n"
+        + "assert 'ink' not in _texts, 'Your code has `\"ink\"` in quotes, so Python shows the word ink. "
+        "Take the quotes off `ink`. Quotes mean these exact letters. No quotes means look inside the box with this label.'\n"
+        + f"assert len(_ink_rows) >= {at_least}, 'So far, ' + str(len(_ink_rows)) + "
+        f"' rows of your sign change when `ink` changes. Draw all 5 rows of the {letter} under `# {letter}` with `ink`, "
+        "not a typed █, so they repaint too.'\n"
         + "_mixed = [_i for _i in _ink_rows if any(_x == _y and _x.strip() for _x, _y in zip(_ra[_i], _rb[_i]))]\n"
-        "assert not _mixed, 'When Mar\\'tu repainted with `#`, one row came out `' + _ra[_mixed[0]].strip() + "
-        "'`. Part of it is a typed mark. Make every mark in that row come from `ink`.'\n"
+        "assert not _mixed, 'One row has a typed mark: when Mar\\'tu repainted the sign with `#`, it came out `' + "
+        "_ra[_mixed[0]].strip() + '`. Make every mark in that row come from `ink`.'\n"
         + f"_mine = _ink_rows[{5 * group}:{5 * group + 5}]\n"
         + "assert any(_re.search(r'#\\s+#', _ra[_i]) for _i in _mine), " + repr(shape_msg),
     )
@@ -403,27 +440,27 @@ BORDER_CHECK = (
     _INK_ROWS
     + r'''
 _shown = [(_i, _l.strip()) for _i, _l in enumerate(_captured_stdout.split('\n')) if _l.strip()]
-assert _shown, 'Run the sign first, so it prints something.'
+assert _shown, 'Your sign printed nothing. Keep the rows of the letters, and press Run again.'
 _ti, _top = _shown[0]
-assert _ti not in _ink_rows, 'Your first line changes when `ink` changes, so it is part of a letter. Print a border above the T first, made from another mark, like `print("=" * 9)`.'
+assert _ti not in _ink_rows, 'Your first line changes when `ink` changes, so it is part of a letter, not a border. Under `# A. Top border`, print a border made from another mark: `print("=" * 9)`.'
 _stamped = len(_top) >= 5 and any((_top[:_k] * len(_top))[:len(_top)] == _top for _k in (1, 2, 3))
-assert _stamped, 'Your top line should be one mark stamped many times, like `"=" * 9`.'
-assert not any(_top in _t for _t in _texts), 'Your border is typed out by hand. Let Python stamp it with `*`, like `"=" * 9`.'
+assert _stamped, 'Your top line is not one mark repeated. Stamp one mark many times with `*`: `print("=" * 9)`.'
+assert not any(_top in _t for _t in _texts), 'Your border is typed out, mark by mark. Let Python stamp it with `*`: `print("=" * 9)`.'
 _last_ink = max(_ink_rows) if _ink_rows else -1
-assert any(_i > _last_ink and _l == _top for _i, _l in _shown), 'Print the same border again under the last letter, so the sign has a top and a bottom.'
+assert any(_i > _last_ink and _l == _top for _i, _l in _shown), 'Your sign has a top border but no bottom one. Under `# C. Bottom border`, print the same border again.'
 ''',
 )
 
 REPAINT_CHECK = (
     "ink holds a new mark",
-    _NEAR_TEMPLATE.replace("__NAME__", "ink").replace("the task needs", "the sign uses")
-    + "\nassert type(ink).__name__ == 'str' and ink.strip(), 'Keep `ink` as a mark in quotes, like `\"▓\"`.'\n"
-    "assert ink != '█', 'Change `ink` to another mark, like `\"#\"` or `\"@\"`. Then run, and watch every letter follow.'\n"
+    _NEAR_TEMPLATE.replace("__NAME__", "ink").replace("this step's box is", "the sign's box is")
+    + "\nassert type(ink).__name__ == 'str' and ink.strip(), 'Keep `ink` as one mark in quotes, like `\"▓\"`.'\n"
+    "assert ink != '█', '`ink` still holds █. On line 2, change it to another mark, like `#` or `@`, and press Run.'\n"
     + _INK_ROWS
     + "_now = _captured_stdout.split('\\n')\n"
     "_stale = [_i for _i in _ink_rows if _i < len(_now) and ink not in _now[_i]]\n"
-    "assert not _stale, 'The sign still prints the old mark, because `ink` changes after the letters are drawn. "
-    "Change the `ink = ` line near the top instead, so every row below it uses the new mark.'",
+    "assert not _stale, 'The sign still shows the old mark, because your new `ink` line comes after the letters are drawn. "
+    "Python reads top to bottom. Change the mark on line 2 instead, and delete the new line.'",
 )
 
 TRIPLE_LETTER_CHECK = (
@@ -436,7 +473,7 @@ for _n in _ast.walk(_ast.parse(_source)):
             _v = _a.value if type(_a).__name__ == 'Constant' else globals().get(_a.id) if type(_a).__name__ == 'Name' else None
             if type(_v).__name__ == 'str':
                 _best = max(_best, len([_l for _l in _v.splitlines() if _l.strip()]))
-assert _uses('const:multiline_str'), 'Draw one more letter inside one `print`, between triple quotes `"""`.'
+assert _uses('const:multiline_str'), 'Your code has no text in triple quotes yet. Under `# D`, put one `print` with your letter between triple quotes `"""`.'
 assert _best >= 5, 'Your triple-quoted letter has ' + str(_best) + (' row' if _best == 1 else ' rows') + '. Make it five rows tall, like the others.'
 ''',
 )
@@ -447,15 +484,20 @@ WARD_SIGN = dict(
     title="The Ward Sign",
     optional=True,
     minutes=25,
-    summary="Paint TOR down the barrier post in big block letters. One box of ink repaints the whole sign.",
+    summary=(
+        "Draw the word TOR in big block letters, one letter under another. Every mark comes from one box, `ink`, "
+        "so one change to `ink` changes the whole sign."
+    ),
     intro=(
-        "Mar'tu wants a ward sign on the barrier post, in big block letters: `TOR`.\n"
+        "Mar'tu wants a ward sign on the barrier post: a sign that helps protect the barrier. It spells `TOR` in "
+        "big block letters, one letter under another, because the post is tall and thin.\n"
         "Wards work better when they are tidy. Probably."
     ),
     martu=(
-        "The post is tall and thin, so the letters go down it, one under another. Each letter is five rows.\n"
-        "Every row uses the box `ink`. Change `ink` once, and the whole sign repaints.\n"
-        "I drew the T. You draw the rest, yes?"
+        "Each `print` draws one row of a letter. `ink * 5` stamps the mark in `ink` 5 times: `█████`. "
+        "`\"  \" + ink` glues 2 spaces in front of one mark. Each letter is 5 rows tall.\n"
+        "Every row uses the box `ink`, so one change to `ink` changes the whole sign. I drew the T. "
+        "You draw the rest, yes?"
     ),
     example='chalk = "#"\nprint(chalk)\nprint(chalk)\nprint(chalk)\nprint(chalk)\nprint(chalk * 4)\n',
     example_output="#\n#\n#\n#\n####",
@@ -463,10 +505,10 @@ WARD_SIGN = dict(
     pick="▓",
     pair_talk=(
         "Pair talk: before you change `ink`, ask your partner which rows will change. "
-        "Then each of you runs it on your own screen."
+        "Then each of you presses Run on your own screen."
     ),
     predict=dict(
-        q="What will the T part of the starter print?",
+        q="Before you press Run: what will the 5 lines under `# T` print?",
         choices=[
             "█████\n  █\n  █\n  █\n  █",
             "inkinkinkinkink\n  ink\n  ink\n  ink\n  ink",
@@ -474,7 +516,7 @@ WARD_SIGN = dict(
         ],
         answer=0,
         explain=(
-            "`ink` has no quotes, so Python opens the box and finds █. "
+            "`ink` has no quotes, so Python looks inside the box and finds █. "
             "`ink * 5` stamps it five times. `\"  \" + ink` glues two spaces in front of one mark."
         ),
     ),
@@ -482,11 +524,12 @@ WARD_SIGN = dict(
     checkpoints=[
         dict(
             id="letter-o",
-            text="Under `# O`, draw an O five rows tall. Use `ink` on every row.",
+            text="Under `# O`, draw an O that is 5 rows tall, with one `print` for each row. Use `ink` for every mark.",
             dictated=False,
             hints=[
-                "Start under `# O` with the top row: `print(ink * 5)`.",
-                "Look at the T. Every row has `ink` in it. An O needs a top row, three side rows, and a bottom row.",
+                "Find `# O` in your code, under the T. Start under `# O` with the top row: `print(ink * 5)`.",
+                "Look at the T. Every row has `ink` in it. An O needs a top row, three rows with two sides, "
+                "and a bottom row.",
                 "`ink * 5` stamps 5 marks. `ink + \"   \" + ink` is a mark, 3 spaces, a mark. "
                 "With other names, `print(chalk + \"  \" + chalk)` shows `#  #`.",
                 "Top and bottom: `print(ink * 5)`. The three rows between: `print(ink + \"   \" + ink)`.",
@@ -497,13 +540,14 @@ WARD_SIGN = dict(
         ),
         dict(
             id="letter-r",
-            text="Under `# R`, draw an R five rows tall, with `ink` again.",
+            text="Under `# R`, draw an R that is 5 rows tall, with one `print` for each row. Use `ink` for every mark again.",
             dictated=False,
             hints=[
-                "Start under `# R` with the top of the R: `print(ink * 4)`.",
-                "An R is a top bar, a row with two sides, a middle bar, then two legs. Count your rows: five.",
+                "Find `# R` in your code, under your O. Start under `# R` with the top of the R: `print(ink * 4)`.",
+                "An R is a top bar, a row with two sides, a middle bar, then two rows of legs. Count your rows: five.",
                 "Mix stamps and spaces. `ink * 4` is a bar. `ink + \"   \" + ink` is two sides. "
                 "`ink + \"  \" + ink` is a leg that leans in.",
+                "All five rows of the R, top to bottom:\n"
                 "```python\nprint(ink * 4)\nprint(ink + \"   \" + ink)\nprint(ink * 4)\n"
                 "print(ink + \"  \" + ink)\nprint(ink + \"   \" + ink)\n```",
             ],
@@ -513,13 +557,17 @@ WARD_SIGN = dict(
         ),
         dict(
             id="border",
-            text="Print a border above the T and again under the R. Stamp it with `*`, like `\"=\" * 9`.",
+            text=(
+                "Add a border line, `print(\"=\" * 9)`, in two places:\n"
+                "1. Under `# A. Top border`, so it comes before the T.\n"
+                "2. Under `# C. Bottom border`, so it comes after the R."
+            ),
             dictated=True,
             hints=[
                 "Under `# A. Top border`, type `print(\"=\" * 9)`.",
                 "The first line of the sign should be the border. The same line goes again under the R, at `# C`.",
                 "`*` stamps a mark many times: `\"~\" * 4` gives `~~~~`. Use a mark that is not `ink`, so the border "
-                "stays put when the ink changes.",
+                "stays the same when the ink changes.",
                 "Put `print(\"=\" * 9)` under `# A. Top border`, and again under `# C. Bottom border`.",
             ],
             checks=[BORDER_CHECK],
@@ -527,14 +575,19 @@ WARD_SIGN = dict(
         ),
         dict(
             id="repaint",
-            text="Change `ink` to another mark, like `\"#\"` or `\"@\"`, or press Mar'tu's pick. Run, and watch the whole sign repaint.",
+            text=(
+                "Change the mark in `ink`, in two moves:\n"
+                "1. On line 2, change the `█` between the quotes to another mark, like `#` or `@`. Or press the "
+                "Mar'tu's pick button, next to Names to use.\n"
+                "2. Press Run. Every letter of the sign changes to the new mark."
+            ),
             dictated=True,
             hints=[
                 "Line 2 starts `ink = `. Change only what is inside the quotes.",
                 "Look at line 2: `ink = \"█\"`. That one box paints every letter.",
-                "A box holds one value at a time. Put a new mark in it, and every line that uses it changes. "
-                "In the Example, `chalk = \"*\"` would repaint the whole L.",
-                "`ink = \"#\"`",
+                "A box holds one value at a time. Put a new mark in it and press Run: every line that uses it "
+                "changes to match. In the Example, `chalk = \"*\"` would repaint the whole L.",
+                "Type `#` in place of the `█` on line 2. Line 2 becomes `ink = \"#\"`.",
             ],
             checks=[REPAINT_CHECK],
             pass_line="Mar'tu: One change, whole sign. That is why we keep the ink in a box.",
@@ -542,19 +595,20 @@ WARD_SIGN = dict(
         dict(
             id="triple-letter",
             text=(
-                "Under `# D`, draw one more letter with triple quotes `\"\"\"`, five rows tall: your hero's first "
-                "letter, maybe. Draw it with any key: `#`, `@`, `X`."
+                "Under `# D`, draw one more letter, 5 rows tall, inside one `print`. Three quote marks `\"\"\"` start "
+                "text that can go over many lines, and three more end it. Draw with any key, like `#` or `X`: "
+                "your hero's first letter, maybe."
             ),
             dictated=False,
             hints=[
-                "Under `# D`, start with `print(\"\"\"` and press Enter.",
-                "Look for `# D` near the bottom. One `print`, triple quotes, and five rows of marks between them.",
+                "Find `# D` at the bottom of your code. Under `# D`, start with `print(\"\"\"` and press Enter.",
+                "Type one `print(`, then three quotes, then five rows of marks, then three quotes and `)`.",
                 "Triple quotes hold many lines. This draws a small L:\n```python\nprint(\"\"\"#\n#\n###\"\"\")\n```",
                 "```python\nprint(\"\"\"\n█   █\n██ ██\n█ █ █\n█   █\n█   █\"\"\")\n```",
             ],
             checks=[TRIPLE_LETTER_CHECK],
             pass_line=(
-                "Mar'tu: Change `ink` again and run. Your triple-quoted letter keeps its old marks, yes? "
+                "Mar'tu: Try changing `ink` again and press Run. Your new letter keeps its own marks, yes? "
                 "Quotes mean these exact letters."
             ),
         ),
@@ -583,9 +637,9 @@ WARD_SIGN = dict(
     another_way=[
         dict(
             angle="picture",
-            label="Squared paper",
+            label="Graph paper",
             text=(
-                "Draw the letter on squared paper first. Each row of squares is one `print`. "
+                "Draw the letter on graph paper first. Each row of squares is one `print`. "
                 "A filled square is `ink`. An empty square is a space inside quotes.\n"
                 "```\n█████   print(ink * 5)\n█   █   print(ink + \"   \" + ink)\n```"
             ),
@@ -618,10 +672,11 @@ WARD_SIGN = dict(
     ],
     bonus=dict(
         by="lucky",
-        title="What's in it for me?",
+        title="Sign it in your spell color",
         text=(
-            "Lucky wants credit. Make a box named `spell_color` that holds your hero's spell color, like "
-            "`\"silver\"`. Then print one last line under the sign, built from `spell_color`, like `Painted in silver`."
+            "Lucky wants credit. Two moves, at the very bottom of your code:\n"
+            "1. Make a box named `spell_color` that holds your hero's spell color in quotes, like `\"silver\"`.\n"
+            "2. Under it, print one last line that glues words to `spell_color` with `+`, like `Painted in silver`."
         ),
         hints=[
             "Make the box first: `spell_color = \"silver\"`.",
@@ -631,18 +686,20 @@ WARD_SIGN = dict(
             (
                 "spell_color holds text",
                 "assert type(spell_color).__name__ == 'str' and spell_color.strip(), "
-                "'Make `spell_color` hold a color word, in quotes.'",
+                "'Make `spell_color` hold a color word in quotes, like `\"silver\"`.'",
             ),
             (
                 "the last line is built from spell_color",
                 _RERUN
                 + "_rows = _lines()\n"
                 "assert _rows and spell_color in _rows[-1], "
-                "'Print a last line under the sign that uses `spell_color`, like `print(\"Painted in \" + spell_color)`.'\n"
+                "'Your last line does not show your spell color yet. Under the box, print a line that uses "
+                "`spell_color`, like `print(\"Painted in \" + spell_color)`.'\n"
                 "_t = _rerun({'spell_color': 'moth-grey'})\n"
                 "_tr = [_l.strip() for _l in _t[1].splitlines() if _l.strip()]\n"
                 "assert _tr and 'moth-grey' in _tr[-1], "
-                "'When `spell_color` became \"moth-grey\", your last line did not change. Build it from `spell_color`.'",
+                "'Your last line has the color typed in. Glue the box instead: `print(\"Painted in \" + spell_color)`. "
+                "Mar\\'tu tested it with a made-up color, moth-grey, and your line did not change. Don\\'t type moth-grey.'",
             ),
         ],
         solution=SIGN_SOLUTION + 'spell_color = "silver"\nprint("Painted in " + spell_color)\n',
@@ -652,7 +709,7 @@ WARD_SIGN = dict(
         part="mana-bars",
         snippet='filled = "█" * caster["mana"]',
         why=(
-            "You have seen this stamp. The mana bars were `\"█\"` times the caster's mana. "
+            "You've seen this stamp. The campaign's mana bars were `\"█\"` times the caster's mana. "
             "Same `*`, same blocks. Tonight it paints a sign."
         ),
     ),
@@ -700,7 +757,7 @@ WARD_SIGN = dict(
         dict(why="def used to make the ink box", code=_sign().replace('ink = "█"', 'def ink = "█"'),
              fails_at=0, message_contains="expected"),
         dict(why="the border typed out by hand", code=_sign(top='print("=========")\n', bottom='print("=========")\n'),
-             fails_at=3, message_contains="by hand"),
+             fails_at=3, message_contains="typed out"),
         dict(why="a border on top only", code=_sign(top=_BORDER), fails_at=3, message_contains="again"),
         dict(why="the border made from ink, so it is part of the letters",
              code=_sign(top="print(ink * 9)\n", bottom="print(ink * 9)\n"), fails_at=3, message_contains="changes when"),
@@ -745,8 +802,9 @@ WHERE_IS_THE_HAND = dict(
     id="where-is-the-hand",
     title="Where is the hand?",
     martu=(
-        "The Ley Clock has 12 marks, 0 to 11. `% 12` wraps any count back onto the clock. "
-        "Add first, in brackets. Then wrap."
+        "`%` gives the remainder. In math class, 50 ÷ 12 = 4 R 2, and `50 % 12` gives the 2. The Ley Clock has "
+        "12 marks, 0 to 11, so `% 12` wraps any count back onto the clock. Here `%` is not percent.\n"
+        "`50 // 12` gives the 4, the whole part. PEMDAS still works: add inside parentheses first, then wrap."
     ),
     example="glass_mark = 8\nhours_slept = 6\nprint((glass_mark + hours_slept) % 12)\n",
     example_output="2",
@@ -755,11 +813,14 @@ WHERE_IS_THE_HAND = dict(
         "Pair talk: each of you picks a new `start` and `hours`. Your partner guesses the mark before you press Run."
     ),
     predict=dict(
-        q="Warm-up. What will this print?",
+        q="Warm-up, before you press Run: what will this line print?",
         code="print(10 - 2 * 3)\n",
         choices=["24", "4", "10 - 2 * 3"],
         answer=1,
-        explain="Python does `*` before `-`: 2 * 3 is 6, and 10 - 6 is 4. Brackets would go first: `(10 - 2) * 3` is 24.",
+        explain=(
+            "PEMDAS, as in math class: Python does `*` (times) before `-`. 2 × 3 is 6, and 10 − 6 is 4. "
+            "Parentheses would go first: `(10 - 2) * 3` is 24."
+        ),
     ),
     starter=(
         "start = 10    # the mark the hand is on now\n"
@@ -772,53 +833,59 @@ WHERE_IS_THE_HAND = dict(
     checkpoints=[
         dict(
             id="find-the-hand",
-            text="Make `hand` hold the mark where the hand stops, built from `start` and `hours`.",
+            text=(
+                "On line 3, replace the `0` in `hand = 0` with math that finds the mark where the hand stops: add "
+                "`start` and `hours`, then wrap the total with `% 12`. Use the box names, not numbers."
+            ),
             dictated=False,
             hints=[
-                "Replace the 0 in `hand = 0`. Start with `(start + hours)`.",
-                "Look at line 3. Which two boxes say where the hand starts and how far it moves?",
+                "Look at line 3. Replace the 0 in `hand = 0`. Start with `(start + hours)`.",
+                "Which two boxes say where the hand starts and how far it moves? They are on lines 1 and 2.",
                 "`%` wraps a count onto the clock: `14 % 12` is 2. With other names: "
-                "`(glass_mark + hours_slept) % 12`. Add in brackets first.",
-                "`hand = (start + hours) % 12`",
+                "`(glass_mark + hours_slept) % 12`. Add inside parentheses first.",
+                "Write `hand = (start + hours) % 12` in place of `hand = 0`.",
             ],
             checks=[
                 near_check("hand"),
                 (
                     "hand is a mark on the clock",
                     "_v = hand\n"
-                    "assert type(_v).__name__ != 'float', '`hand` holds ' + str(_v) + '. `/` divides. "
-                    "`%` gives what is left over, and that is the mark.'\n"
+                    "assert type(_v).__name__ != 'float', '`hand` holds ' + str(_v) + ', a decimal, because `/` divides. "
+                    "Use `%`: it gives what is left over, the remainder, and that is the mark.'\n"
                     "assert _v != start + hours, '`hand` holds ' + str(_v) + ', but the clock only has marks 0 to 11. "
-                    "Add in brackets first, then wrap: `(start + hours) % 12`.'\n"
-                    "assert _v == (start + hours) % 12, '`hand` holds ' + str(_v) + '. Start at `start`, move `hours` marks, "
-                    "then wrap with `% 12`.'",
+                    "Add inside parentheses first, then wrap with `% 12`.'\n"
+                    "assert _v == (start + hours) % 12, ('`hand` still holds the placeholder 0. ' if _v == 0 else "
+                    "'`hand` holds ' + str(_v) + '. ') + 'Start at `start`, move `hours` marks, then wrap with `% 12`.'",
                 ),
                 cmb_check("hand", [({"start": 9, "hours": 50}, 11), ({"start": 11, "hours": 1}, 0)],
-                          tail="Build it from `start` and `hours`, so it follows."),
+                          tail="Use the box names `start` and `hours`, not numbers."),
             ],
-            pass_line="Mar'tu: Mark 3. It is not a compass, Lucky. It goes round.",
+            pass_line="Mar'tu: Mark 3. It is not a compass, Lucky. It goes around.",
         ),
         dict(
             id="count-the-turns",
-            text="Make `turns` hold how many times the hand passes mark 0. Use `//`.",
+            text=(
+                "On line 4, replace the `0` in `turns = 0` with how many times the hand passes mark 0. Use `//` "
+                "on the same total: it keeps only the whole part, like the 4 in 50 ÷ 12 = 4 R 2."
+            ),
             dictated=False,
             hints=[
-                "Replace the 0 in `turns = 0`. Start with `(start + hours) //`.",
-                "Look at line 4. Every 12 hours the hand passes mark 0 once.",
+                "Look at line 4. Replace the 0 in `turns = 0`. Start with `(start + hours) //`.",
+                "Every 12 hours, the hand passes mark 0 once.",
                 "`//` divides and keeps the whole part: `26 // 12` is 2, so 26 hours from mark 0 pass it twice.",
-                "`turns = (start + hours) // 12`",
+                "Write `turns = (start + hours) // 12` in place of `turns = 0`.",
             ],
             checks=[
                 near_check("turns"),
                 (
                     "turns counts whole trips",
-                    "assert type(turns).__name__ != 'float', '`turns` holds ' + str(turns) + '. `/` gives a decimal. "
-                    "`//` keeps only the whole turns.'\n"
+                    "assert type(turns).__name__ != 'float', '`turns` holds ' + str(turns) + ', a decimal, because `/` "
+                    "gives decimals. Use `//`: it keeps only the whole part.'\n"
                     "assert turns == (start + hours) // 12, '`turns` holds ' + str(turns) + '. Count whole trips around "
                     "12 marks: divide the total by 12 with `//`.'",
                 ),
                 cmb_check("turns", [({"start": 9, "hours": 50}, 4), ({"start": 1, "hours": 2}, 0)],
-                          tail="Build it from `start` and `hours`, so it follows."),
+                          tail="Use the box names `start` and `hours`, not numbers."),
             ],
         ),
     ],
@@ -841,7 +908,10 @@ WHERE_IS_THE_HAND = dict(
     another_way=[
         dict(
             angle="picture",
-            text="The marks go round, then start again:\n```\n... 9 10 11 0 1 2 3 ...\n```\nCount 5 steps from 10: 11, 0, 1, 2, 3.",
+            text=(
+                "The marks go around, then start again:\n```\n... 9 10 11 0 1 2 3 ...\n```\n"
+                "Count 4 steps from 9: 10, 11, 0, 1. The hand stops on mark 1."
+            ),
         ),
         dict(
             angle="everyday",
@@ -849,20 +919,31 @@ WHERE_IS_THE_HAND = dict(
             text="A wall clock does this. Three hours after 11 o'clock is 2 o'clock, not 14 o'clock. `(11 + 3) % 12` is 2.",
         ),
         dict(
+            angle="math class",
+            label="From math class",
+            text=(
+                "This is long division with a remainder. 50 ÷ 12 = 4 R 2: 12 fits into 50 four whole times, and 2 "
+                "is left over. `50 // 12` gives the 4, and `50 % 12` gives the 2."
+            ),
+        ),
+        dict(
             angle="step-by-step",
             text="1. Add: `start + hours`.\n2. Too big for the clock? Take away 12, and again, until it fits.\n"
             "3. What is left is the mark. `% 12` does steps 2 and 3 at once.",
         ),
-        dict(angle="shorter", text="`hand = (start + hours) % 12`. Brackets first, then wrap."),
+        dict(angle="shorter", text="`hand = (start + hours) % 12`. Parentheses first, then wrap."),
     ],
-    takeaway="`%` gives the remainder, `//` the whole part: `(start + hours) % 12` wraps a count onto the clock.",
+    takeaway=(
+        "In 50 ÷ 12 = 4 R 2, `50 // 12` gives the 4 and `50 % 12` gives the 2. `(start + hours) % 12` wraps a "
+        "count onto the clock."
+    ),
     wrong_answers=[
         dict(why="the mark worked out by hand", code="start = 10\nhours = 5\nhand = 3\nturns = 1\nprint(hand)\nprint(turns)\n",
              fails_at=1, message_contains="11"),
         dict(why="the story's numbers typed into the formula",
              code="start = 10\nhours = 5\nhand = (10 + 5) % 12\nturns = 0\nprint(hand)\n", fails_at=1, message_contains="11"),
         dict(why="no brackets, so % happens first",
-             code="start = 10\nhours = 5\nhand = start + hours % 12\nturns = 0\nprint(hand)\n", fails_at=1, message_contains="brackets"),
+             code="start = 10\nhours = 5\nhand = start + hours % 12\nturns = 0\nprint(hand)\n", fails_at=1, message_contains="parentheses"),
         dict(why="added but never wrapped",
              code="start = 10\nhours = 5\nhand = start + hours\nturns = 0\nprint(hand)\n", fails_at=1, message_contains="0 to 11"),
         dict(why="/ instead of %",
@@ -894,21 +975,25 @@ CLOCK_MATH = dict(
     title="Clock Math",
     optional=True,
     minutes=12,
-    summary="Three more math marks, `**`, `//` and `%`, and the order Python does math in. Then the Ley Clock.",
+    summary=(
+        "Three more math signs, `**`, `//` and `%`, and PEMDAS in Python. Then you work out where the Ley Clock's "
+        "hand stops."
+    ),
     introduces=["op:Pow", "op:Mod", "op:FloorDiv"],
     body=(
-        "Three more math marks. You do not need them for the campaign. They are here for the curious, yes?\n"
-        "1. `**` is a [[power]]: `2 ** 3` means 2 × 2 × 2, which is 8.\n"
-        "2. `//` is [[floor division]]: divide, then keep only the whole part. `50 // 12` is 4.\n"
-        "3. `%` gives the [[remainder]]: what is left over after dividing. `50 % 12` is 2.\n"
-        "Python follows an [[order of operations]]. Brackets first. Then `**`. Then `*`, `/`, `//` and `%`. "
-        "Then `+` and `-`. So `2 + 3 * 4` is 14, but `(2 + 3) * 4` is 20.\n"
-        "Now the Ley Clock. It has 12 marks, numbered 0 to 11. After mark 11 comes mark 0 again. "
-        "The hand moves one mark each hour.\n"
+        "Three more math signs. You don't need them for the campaign. They are here for the curious, yes?\n"
+        "1. `**` is a [[power]], like 2³ in math class: `2 ** 3` means 2 × 2 × 2, which is 8.\n"
+        "2. `//` is [[floor division]]. *Floor* means round down: divide, then keep only the whole part. "
+        "In math class, 50 ÷ 12 = 4 R 2, and `50 // 12` gives the 4.\n"
+        "3. `%` gives the [[remainder]], what is left over: `50 % 12` gives the 2. Here `%` is not percent.\n"
+        "Python uses the [[order of operations]] you know from math class as PEMDAS. Parentheses first. "
+        "Then `**`. Then `*`, `/`, `//` and `%`. Then `+` and `-`. So `2 + 3 * 4` is 14, but `(2 + 3) * 4` is 20.\n"
+        "Now the Ley Clock. It has 12 marks, numbered 0 to 11. After mark 11 comes mark 0 again, the way a wall "
+        "clock goes from 12 back to 1. The hand moves one mark each hour.\n"
         "The hand is on mark 9. Where is it 50 hours from now? Add first, then wrap: `(9 + 50) % 12` is 11.\n"
-        "The brackets matter. `9 + 7 % 12` does the `%` first and gives 16, which is not even a mark. "
+        "The parentheses matter. `9 + 7 % 12` does the `%` first and gives 16, which is not even a mark. "
         "`(9 + 7) % 12` gives 4.\n"
-        "It is not a compass, Lucky. It is a clock. It goes round."
+        "It is not a compass, Lucky. It is a clock. It goes around."
     ),
     examples=[
         dict(code="print(2 + 3 * 4)\nprint((2 + 3) * 4)\n", output="14\n20"),
@@ -964,11 +1049,11 @@ _GREET_CHECK = (
     _QUIET
     + r'''
 assert _usedA >= 1, 'Your program never asks the traveler\'s name. Keep line 1: `traveler = input("Who goes there? ")`.'
-assert not _errB or 'EOF' in _errB, 'When the traveler typed Tester, the program stopped: ' + _errB
+assert not _errB or 'EOF' in _errB, 'Your code stopped with an error when Mar\'tu tested it with a made-up name, Tester. Python said `' + _errB + '`. Check the line that uses `traveler`.'
 _follow = [_y for _x, _y in _pairs if 'Lucky' in _x and 'Tester' in _y]
-assert _follow or not any('traveler' in _x for _x in _a), 'That prints the word traveler. Take the quotes off so Python opens the box.'
-assert _follow or not any('Lucky' in _x for _x in _a), 'When the traveler typed Tester, your greeting still said Lucky. Build it from `traveler`, like `"Welcome, " + traveler`.'
-assert _follow, 'Print a greeting with the traveler\'s name in it, like `print("Welcome, " + traveler + ".")`.'
+assert _follow or not any('traveler' in _x for _x in _a), 'Your greeting shows the word traveler, because `traveler` is in quotes. Take the quotes off `traveler`. Quotes mean these exact letters. No quotes means look inside the box with this label.'
+assert _follow or not any('Lucky' in _x for _x in _a), 'Your greeting says Lucky because the name is typed in. Use the box instead: `print("Welcome, " + traveler)`. Mar\'tu tested your code with a made-up name, Tester, and it still said Lucky. Don\'t type Tester.'
+assert _follow, 'Under `# 1.`, print a greeting with the traveler\'s name in it, like `print("Welcome, " + traveler + ".")`.'
 assert any(_y.replace('Tester', '').strip(' .,!?:;-') for _y in _follow), 'Your line shows only the name. Add a greeting word too, like `print("Welcome, " + traveler)`.'
 ''',
 )
@@ -982,8 +1067,8 @@ _s = _nsA.get('sips')
 assert type(_s).__name__ != 'str', '`sips` holds the text ' + _show(_s) + '. `input()` always hands back text. Wrap it to make a number: `int(input(...))`.'
 assert type(_s).__name__ != 'float', '`sips` holds ' + str(_s) + ', a decimal. Use `int()` for a whole number of sips.'
 # `sips = sips * 2` later on (a fair reassign, for step 3) leaves 6 and 10 in the box: that still follows the answer.
-assert type(_s).__name__ == 'int' and _s in (3, 6), '`sips` should hold the answer to the sips question, as a number. When the traveler answered 3, it held ' + _show(_s) + '.'
-assert _nsB.get('sips') == _s // 3 * 5, 'When the traveler asked for 5 sips, `sips` still held ' + _show(_nsB.get('sips')) + '. Keep the answer itself in `sips`: `sips = int(input("How many sips? "))`.'
+assert type(_s).__name__ == 'int' and _s in (3, 6), '`sips` held ' + _show(_s) + ' when the traveler answered 3. Keep the answer to the sips question in `sips`, as a number.'
+assert _nsB.get('sips') == _s // 3 * 5, 'Your `sips` has a number typed in. Keep the answer itself in `sips`: `sips = int(input("How many sips? "))`. Mar\'tu tested it with a test answer, 5 sips, and `sips` still held ' + _show(_nsB.get('sips')) + '.'
 ''',
 )
 
@@ -993,11 +1078,11 @@ _DOUBLE_CHECK = (
     + r'''
 def _nums(_l):
     return _re.findall(r'\d+', _l)
-assert not any('sipssips' in _x for _x in _a), 'That doubles the word sips. Take the quotes off so Python opens the box.'
-assert not any('33' in _nums(_x) for _x in _a), 'Your program printed 33. That is the text "3" twice. Make `sips` a number with `int()` first.'
-assert any('6' in _nums(_x) for _x in _a), 'Print double the sips: 3 sips should show 6. Try `print(sips * 2)`.'
-assert not _errB, 'When the traveler asked for 5 sips, the program stopped: ' + _errB
-assert any('6' in _nums(_x) and '10' in _nums(_y) for _x, _y in _pairs), 'When the traveler asked for 5 sips, your line that showed 6 did not change to 10. Build it from `sips`, like `print(sips * 2)`.'
+assert not any('sipssips' in _x for _x in _a), 'Your line doubles the word sips, because `sips` is in quotes. Take the quotes off `sips`. Quotes mean these exact letters. No quotes means look inside the box with this label.'
+assert not any('33' in _nums(_x) for _x in _a), 'Your program printed 33. That is the text "3" glued twice. Make `sips` a number with `int()` first.'
+assert any('6' in _nums(_x) for _x in _a), 'Nothing shows 6 yet. With 3 sips, double is 6. Under `# 3.`, print `sips` times 2.'
+assert not _errB, 'Your code stopped with an error when Mar\'tu tested it with a test answer, 5 sips. Python said `' + _errB + '`. Check the line that uses `sips`.'
+assert any('6' in _nums(_x) and '10' in _nums(_y) for _x, _y in _pairs), 'Your line that shows 6 has a number typed in. Use the box instead: `print(sips * 2)`. Mar\'tu tested it with a test answer, 5 sips, and your line did not change to 10. Don\'t type 10.'
 ''',
 )
 
@@ -1005,23 +1090,27 @@ WHO_GOES_THERE = dict(
     id="who-goes-there",
     title="Who goes there?",
     martu=(
-        "Ask with `input()`. The answer comes back as text. For math, wrap it in `int()`. "
-        "The answers come from the Input box under the editor."
+        "`input()` asks a question and waits for the answer. The answer always comes back as text, like writing on "
+        "a paper form. For math, wrap it in `int()`. `int` is short for integer, a whole number: `int(\"3\")` gives 3.\n"
+        "The answers come from the area labeled Input for your program, under your code, one answer per line."
     ),
     example='visitor = input("Who knocks? ")\nprint("Come in, " + visitor + ".")\n',
     example_output="Who knocks? Lucky\nCome in, Lucky.",
     stdin=["Lucky", "3"],
     names=["traveler", "sips"],
     pair_talk=(
-        "Pair talk: each of you changes the answers in your own Input box. Tell your partner what your program "
-        "will print, then run it."
+        "Pair talk: each of you changes the answers in the area labeled Input for your program, on your own screen. "
+        "Tell your partner what your program will print, then press Run."
     ),
     predict=dict(
-        q="What will this print?",
+        q="Before you press Run: what will this code print?",
         code='coins = "4"\nprint(coins + coins)\n',
         choices=["8", "44", "an error"],
         answer=1,
-        explain="`\"4\"` is in quotes, so it is text. `+` glues text: 44. Every answer from `input()` is text like this.",
+        explain=(
+            "`\"4\"` is in quotes, so it is text, and `+` glues text like a compound word: `44`. "
+            "Every answer from `input()` is text like this."
+        ),
     ),
     starter=(
         'traveler = input("Who goes there? ")\n'
@@ -1034,39 +1123,45 @@ WHO_GOES_THERE = dict(
     checkpoints=[
         dict(
             id="greet",
-            text="Print a greeting that uses `traveler`, like `Welcome, Lucky.`",
+            text=(
+                "Under `# 1.`, print a greeting. Glue words to the box `traveler` with `+`. With the answer Lucky, "
+                "you should see something like `Welcome, Lucky.`"
+            ),
             dictated=False,
             hints=[
-                "Start with `print(\"Welcome, \" + `.",
+                "Go to the empty line under `# 1.`. Start with `print(\"Welcome, \" + `.",
                 "Line 1 already asked the name and keeps it in `traveler`. Use that box, with no quotes.",
                 "`+` glues text. With other names: `print(\"Come in, \" + visitor + \".\")`.",
-                "`print(\"Welcome, \" + traveler + \".\")`",
+                "Write `print(\"Welcome, \" + traveler + \".\")` under `# 1.`.",
             ],
             checks=[_GREET_CHECK],
             pass_line="Mar'tu: Polite. The barrier likes polite.",
         ),
         dict(
             id="ask-sips",
-            text="Make a box named `sips` that asks how many sips, and holds the answer as a number.",
+            text=(
+                "Under `# 2.`, ask the traveler how many sips they want, and keep the answer in a box named `sips`, "
+                "as a number. Ask with `input()`, as line 1 does, and wrap it in `int( )`."
+            ),
             dictated=False,
             hints=[
-                "Start the line with `sips = int(input(`.",
+                "Go to the empty line under `# 2.`. Start the line with `sips = int(input(`.",
                 "Look at line 1. It asks a question the same way. This time, wrap the `input(...)` in `int()`.",
                 "`input()` hands back text. `int()` turns text like `\"4\"` into the number 4. "
                 "With other names: `coins = int(input(\"Coins? \"))`.",
-                "`sips = int(input(\"How many sips? \"))`",
+                "Write `sips = int(input(\"How many sips? \"))` under `# 2.`.",
             ],
             checks=[box_check("sips", foreign=["visitor", "coins"], skip=["traveler"]), _SIPS_CHECK],
         ),
         dict(
             id="double",
-            text="Print double the sips, built from `sips`.",
+            text="Make a new line under `# 3.` and print double the sips: the box `sips` times 2.",
             dictated=False,
             hints=[
-                "Start with `print(sips`.",
+                "Click at the end of the `# 3.` line and press Enter. Start with `print(sips`.",
                 "`sips` is a number now. Python can do math with it.",
-                "`*` multiplies numbers: with other names, `print(coins * 3)`.",
-                "`print(sips * 2)`",
+                "`*` means times: with other names, `print(coins * 3)`.",
+                "Write `print(sips * 2)` under `# 3.`.",
             ],
             checks=[_DOUBLE_CHECK],
             pass_line="Lucky: Six sips. Fine. But I'm keeping track.",
@@ -1102,8 +1197,8 @@ WHO_GOES_THERE = dict(
         dict(
             angle="everyday",
             label="A form",
-            text="A paper form only holds writing. Even the age box holds the written mark 13, not a number you can add. "
-            "`int()` reads the writing and gives you a number.",
+            text="A paper form only holds writing. Even the line for your age holds the written 13, not a number you "
+            "can add. `int()` reads the writing and gives you a number.",
         ),
         dict(
             angle="from the campaign",
@@ -1117,7 +1212,7 @@ WHO_GOES_THERE = dict(
         part="program-dialogue-options",
         snippet='if (user.clicked() == "option 1"):',
         why=(
-            "You have seen this. `user.clicked()` hands back text, the same way `input()` does. "
+            "You've seen this. `user.clicked()` hands back text, the same way `input()` does. "
             "So the campaign compared it with text in quotes: `\"option 1\"`."
         ),
     ),
@@ -1180,12 +1275,12 @@ ASKING_THE_TRAVELER = dict(
     body=(
         "Sometimes a program should ask. The [[input]] command, `input()`, shows a question, called the [[prompt]], "
         "and waits for an answer.\n"
-        "Whatever comes back is text. Even `3` comes back as the text `\"3\"`.\n"
-        "Text cannot do math. `\"3\" + \"3\"` glues to `33`. To get a real number, use [[int]]: "
-        "`int(input(\"Sips? \"))`.\n"
-        "On this site, the answers come from the box called Input for your program, one answer per line. "
-        "Change them and run again, as often as you like.\n"
-        "You have seen this before. In the campaign, `user.clicked()` handed back text, like `\"option 1\"`. "
+        "Whatever comes back is text, like writing on a paper form. Even `3` comes back as the text `\"3\"`.\n"
+        "Text can't do math: `\"3\" + \"3\"` glues to `33`. To get a real number, use [[int]]: "
+        "`int(input(\"Sips? \"))`. `int` is short for integer, a whole number.\n"
+        "On this site, the answers come from the area labeled Input for your program, under your code, one answer "
+        "per line. Change them and press Run again, as often as you like.\n"
+        "You've seen this before. In the campaign, `user.clicked()` handed back text, like `\"option 1\"`. "
         "That is why the dialogue code compared it with words in quotes."
     ),
     examples=[
@@ -1218,12 +1313,15 @@ def _qc_meta(skills, dictates, foreign="", form="A"):
 # ---- C1: make a box with the exact name (make-variable, exact-names, quote-text) ----
 
 def _c1(form, name, what, foreign, ex_code, ex_out, pick, wrong_value="Zelda", other_name="hero"):
+    # A story word in the box's name gets its gloss in Mar'tu's first paragraph (form B's `familiar`).
+    gloss = " A familiar is a wizard's animal helper, like an owl." if name == "familiar" else ""
     return dict(
         id="make-a-box",
         title="A box with the right name",
         martu=_QC_MARTU + (
-            f"Make a box with the exact name the task asks for. Any {what} works.\n"
-            "Stuck on one? Skip it, or try the lesson Boxes With Labels. Tasks you pass here stay ticked."
+            f"Make a box (a variable) with the exact name this step asks for, letter for letter. Any {what} "
+            f"works.{gloss}\n"
+            "Stuck? Skip this task, or practice in the lesson Boxes With Labels. Tasks you pass here stay done."
         ),
         example=ex_code,
         example_output=ex_out,
@@ -1234,23 +1332,24 @@ def _c1(form, name, what, foreign, ex_code, ex_out, pick, wrong_value="Zelda", o
         checkpoints=[
             dict(
                 id=f"make-{name.replace('_', '-')}",
-                text=f"Make a box named `{name}` that holds any {what}, in quotes.",
+                text=f"Under `# Make the box here:`, make a box named `{name}` that holds any {what}, in quotes.",
                 dictated=False,
                 hints=[
                     f"Start the line with `{name} = `.",
-                    f"Find the word `{name}` in this step. That is the box's label, not the Example's.",
-                    "A box is `name = value`. The name has no quotes. Text values do. Example: `snack = \"glug\"`.",
+                    f"Find the word `{name}` in this step. That is the box's name, not the Example's.",
+                    f"Write `{name} = \"{pick}\"` under `# Make the box here:`. The name has no quotes. "
+                    f"The {what} in the quotes can be any you like.",
                 ],
-                checks=[box_check(name, foreign=foreign), text_check(name), bare_check()],
+                checks=[box_check(name, foreign=foreign, lean=True), text_check(name), bare_check()],
             ),
             dict(
                 id=f"print-{name.replace('_', '-')}",
-                text=f"Print `{name}`.",
+                text=f"Under `# Print it here:`, print the box `{name}`, so the Console shows what is inside it.",
                 dictated=True,
                 hints=[
                     "Start the line with `print(`.",
                     f"The Example prints its box by name, with no quotes. Do the same with `{name}`.",
-                    QUOTES_RULE,
+                    f"Write `print({name})` under `# Print it here:`. {QUOTES_RULE}",
                 ],
                 checks=[print_check(name)],
             ),
@@ -1260,16 +1359,17 @@ def _c1(form, name, what, foreign, ex_code, ex_out, pick, wrong_value="Zelda", o
         assemble=dict(lines=[f'{name} = "{pick}"', f"print({name})"],
                       distractors=[f'{foreign[0]} = "{pick}"', f'print("{name}")']),
         another_way=[
-            dict(angle="picture", text=f"```\n{name}   =   \"{wrong_value}\"\n label   gets  value\n```"),
+            dict(angle="picture", text=f"```\n{name}   =   \"{wrong_value}\"\n name    gets   value\n```"),
             dict(angle="shorter", text=f"Name, `=`, value in quotes. Then `print({name})`."),
         ],
-        takeaway=f"Use the task's exact name: `{name} = \"...\"`, then `print({name})`.",
+        takeaway=f"Use the step's exact name: `{name} = \"...\"`, then `print({name})`.",
         wrong_answers=[
             dict(why="the example's name", code=f'{foreign[0]} = "{wrong_value}"\nprint({foreign[0]})\n',
                  fails_at=1, message_contains="example"),
-            dict(why="a lone value", code=f'"{wrong_value}"\nprint("{wrong_value}")\n', fails_at=1, message_contains="no box"),
+            dict(why="a lone value", code=f'"{wrong_value}"\nprint("{wrong_value}")\n', fails_at=1,
+                 message_contains="no name in front"),
             dict(why="a box with another name", code=f'{other_name} = "{wrong_value}"\nprint({other_name})\n', fails_at=1,
-                 message_contains="this task's box"),
+                 message_contains="this step's box"),
             dict(why="text with no quotes", code=f"{name} = {wrong_value}\nprint({name})\n", fails_at=0,
                  message_contains=wrong_value),
             dict(why="def used to make a box", code=f'def {name} = "{wrong_value}"\nprint({name})\n', fails_at=0,
@@ -1312,27 +1412,33 @@ def _c2(form, story, a, b, total_name, a_vals, b_vals, cases, total):
         f"_other = [_m for _m in _made if _m != {total_name!r} and globals().get(_m) == {total} and _m not in "
         f"{[ac, ap, bc, bp]!r}]\n"
         f"assert not ({total_name} == 0 and _other), 'Your new box `' + (_other or ['?'])[0] + '` holds {total}, "
-        f"but `{total_name}` still holds 0. Put it in `{total_name}`.'\n"
-        f"assert {total_name} != {ac} + {bc}, 'You added how many, not costs. Multiply each count by its price first.'\n"
-        f"assert {total_name} == {total}, '`{total_name}` holds ' + str({total_name}) + ', but the story costs {total} "
-        "coins in all. Multiply each count by its price, then add.'",
+        f"but `{total_name}` still holds 0.'\n"
+        f"assert {total_name} != {ac} + {bc}, '`{total_name}` adds up how many of each thing, not what they cost.'\n"
+        f"assert {total_name} == {total}, ('`{total_name}` still holds the placeholder 0.' if {total_name} == 0 else "
+        f"'`{total_name}` holds ' + str({total_name}) + ', which is not the cost of everything in the story.')",
     )
     return dict(
         id="total-cost",
-        title="Let the code combine it",
-        martu=_QC_MARTU + "Let the code combine it. First, put each number from the story in its own box.",
+        title="Show your work: the total",
+        martu=_QC_MARTU + (
+            "The story is in the `#` notes at the top of your code. Put each of its numbers in its own box. "
+            "Then let Python work out the total from the boxes: show your work, as in math class."
+        ),
         names=[ac, ap, bc, bp, total_name],
         support="none",
         starter=starter,
         checkpoints=[
             dict(
                 id="fill-the-boxes",
-                text="Fill in the four boxes from the story.",
+                text=(
+                    "Replace the `0` in each of the four boxes with a number from the story, in the `#` notes at the "
+                    "top. Ask each number: is it how many, or how much is one?"
+                ),
                 dictated=False,
                 hints=[
                     f"Start with the first box: `{ac} = `.",
                     "Read the story again. For each number, ask: how many? or how much is one?",
-                    "In '2 maps at 6 coins', 2 is how many and 6 is the price of one. A 0 in the starter is a "
+                    "In '2 maps at 6 coins', 2 is how many and 6 is the price of one. Each 0 in your code is a "
                     "placeholder: replace it.",
                 ],
                 checks=[num_story_check(ac, ap, a_vals[0], a_vals[1], aw),
@@ -1340,12 +1446,15 @@ def _c2(form, story, a, b, total_name, a_vals, b_vals, cases, total):
             ),
             dict(
                 id="combine",
-                text=f"Make `{total_name}` the cost of everything, built from the boxes.",
+                text=(
+                    f"On the `{total_name} = 0` line, replace the `0` with math that works out the cost of everything. "
+                    "Use the four box names, not numbers."
+                ),
                 dictated=False,
                 hints=[
                     f"Start with `{total_name} = {ac} * `.",
                     f"Look at `{total_name} = 0`. Each thing costs how many times the price of one. Then add them.",
-                    "Python can do math with boxes. With other names: `map_cost = map_count * map_price`.",
+                    f"Write `{total_name} = {formula}` in place of `{total_name} = 0`. Python can do math with boxes.",
                 ],
                 checks=[newbox, cmb_check(total_name, cases)],
             ),
@@ -1359,18 +1468,19 @@ def _c2(form, story, a, b, total_name, a_vals, b_vals, cases, total):
         ),
         another_way=[
             dict(angle="everyday", label="An online cart",
-                 text="Change how many you want, and the cart's total changes by itself. Your total should work like that."),
+                 text="Change how many you want and press Update: the cart works the total out again from how many "
+                 "times the price. Run is your Update button, and your total should work like that."),
             dict(angle="shorter", text=f"`{total_name} = {formula}`"),
         ],
-        takeaway="How many × how much is one, for each thing, then add: and let the code do it.",
+        takeaway="For each thing, how many × how much is one, then add. Write it with the box names and let Python do it.",
         wrong_answers=[
             dict(why="the total worked out by hand", code=filled + f"{total_name} = {total}\nprint({total_name})\n",
-                 fails_at=2, message_contains="Build it from the boxes"),
+                 fails_at=2, message_contains="typed in"),
             dict(why="the line totals typed in", code=filled + f"{total_name} = {a_vals[0] * a_vals[1]} + {b_vals[0] * b_vals[1]}\n"
-                 f"print({total_name})\n", fails_at=2, message_contains="Build it from the boxes"),
+                 f"print({total_name})\n", fails_at=2, message_contains="typed in"),
             dict(why="the story's numbers typed into the formula",
                  code=filled + f"{total_name} = {a_vals[0]} * {a_vals[1]} + {b_vals[0]} * {b_vals[1]}\nprint({total_name})\n",
-                 fails_at=2, message_contains="Build it from the boxes"),
+                 fails_at=2, message_contains="typed in"),
             dict(why=f"{aw} count and price swapped",
                  code=story + f"{ac} = {a_vals[1]}\n{ap} = {a_vals[0]}\n{bc} = {b_vals[0]}\n{bp} = {b_vals[1]}\n"
                  f"{total_name} = {formula}\nprint({total_name})\n",
@@ -1414,56 +1524,65 @@ def _c3(form, who_name, who, affinity, cost_name, cost, aff_case, cost_case, lin
     return dict(
         id="status-line",
         title="A status line",
-        martu=_QC_MARTU + "Max mana is twice the magical affinity. Spend one spell, then print the status line.",
+        martu=_QC_MARTU + (
+            "Magical affinity means how strong a hero's magic is. Max mana, the most mana a hero can hold, is twice "
+            "the magical affinity. Spend one spell, then print a status line: one line with the hero's name and "
+            "mana, like the stats text in a game."
+        ),
         names=["max_mana", "mana", cost_name, who_name, "magical_affinity"],
         support="none",
         starter=starter,
         checkpoints=[
             dict(
                 id="max-mana",
-                text="Make `max_mana` twice the magical affinity, built from `magical_affinity`.",
+                text=(
+                    "On the `max_mana = 0` line, replace the `0` with twice the magical affinity. Use the box name "
+                    "`magical_affinity`, not a number."
+                ),
                 dictated=False,
                 hints=[
                     "Start with `max_mana = magical_affinity`.",
                     "Look at `max_mana = 0`. Replace the 0 with math on `magical_affinity`.",
-                    "Twice means times 2. With other names: `max_glow = glow * 2`.",
+                    "Twice means times 2. Write `max_mana = magical_affinity * 2` in place of `max_mana = 0`.",
                 ],
-                checks=[cmb_check("max_mana", [({"magical_affinity": aff_case}, aff_case * 2)],
-                                  tail="Build it from `magical_affinity`, so it follows.")],
+                checks=[cmb_check("max_mana", [({"magical_affinity": aff_case}, aff_case * 2)])],
             ),
             dict(
                 id="spend",
-                text=f"Spend one spell: take `{cost_name}` away from `mana`.",
+                text=f"Under `# Spend one spell here:`, spend one spell: take `{cost_name}` away from what is in `mana`.",
                 dictated=False,
                 hints=[
                     "Start the line with `mana = mana - `.",
                     "Find `# Spend one spell here:`. Put the answer back in the same box.",
-                    "Read `=` as gets: glow gets glow minus cost, `glow = glow - cost`.",
+                    f"Read `=` as gets: mana gets mana minus the cost. Write `mana = mana - {cost_name}` under "
+                    "`# Spend one spell here:`.",
                 ],
                 checks=[
                     (
                         "mana went down",
-                        f"assert mana != max_mana, '`mana` didn\\'t change. Put the answer back in the box: "
-                        f"`mana = mana - {cost_name}`.'\n"
-                        f"assert mana != {cost_name} or mana == max_mana - {cost_name}, '`mana` holds only the cost now. "
-                        f"Take the cost away from what is in `mana`: `mana = mana - {cost_name}`.'\n"
+                        "assert mana != max_mana, '`mana` didn\\'t change, so no spell was spent.'\n"
+                        f"assert mana != {cost_name} or mana == max_mana - {cost_name}, '`mana` holds only the cost now, "
+                        "not what is left after the spell.'\n"
                         f"assert mana == max_mana - {cost_name}, '`mana` holds ' + str(mana) + ', but full mana minus one "
-                        f"spell is ' + str(max_mana - {cost_name}) + '. Python runs top to bottom: work out `max_mana` above "
-                        f"the line `mana = max_mana`, then spend the spell once.'",
+                        f"spell is ' + str(max_mana - {cost_name}) + '. Python reads top to bottom: look at what `max_mana` "
+                        "held when the line `mana = max_mana` ran.'",
                     ),
                     cmb_check("mana", [({cost_name: cost_case}, max_mana - cost_case),
-                                       ({"magical_affinity": aff_case}, aff_case * 2 - cost)],
-                              tail="Take the cost away from `mana` in code, so it follows."),
+                                       ({"magical_affinity": aff_case}, aff_case * 2 - cost)]),
                 ],
             ),
             dict(
                 id="status",
-                text=f"Print the status line, built from the boxes, like `{status}`.",
+                text=(
+                    "Under `# Print the status line here`, print the status line from the boxes, glued with `+`, "
+                    f"so it looks like `{status}`."
+                ),
                 dictated=False,
                 hints=[
                     f"Start with `print({who_name} + \": \" + `.",
-                    "Which parts come from boxes, and which are fixed words? Numbers need `str()` before `+` glues them.",
-                    "`+` glues text. `str(7)` makes 7 into text. With other names: `print(snack + \": \" + str(sips))`.",
+                    "Which parts come from boxes, and which are fixed words? Numbers need `str()` before `+` glues them. "
+                    "The `\"/\"` is in quotes, so it is a slash, not divide.",
+                    f"`+` glues text, and `str(7)` makes 7 into text. Write `{line}` under `# Print the status line here`.",
                 ],
                 checks=[
                     out_line_check(f"{who_name} + ': ' + str(mana) + '/' + str(max_mana) + ' mana'", "the status line",
@@ -1484,11 +1603,15 @@ def _c3(form, who_name, who, affinity, cost_name, cost, aff_case, cost_case, lin
         ),
         another_way=[
             dict(angle="step-by-step",
-                 text="1. `max_mana` from the affinity.\n2. `mana` gets `mana` minus the cost.\n"
-                 "3. Glue: name, `\": \"`, `str(mana)`, `\"/\"`, `str(max_mana)`, `\" mana\"`."),
+                 text="1. `max_mana` is the affinity times 2.\n2. `mana` gets `mana` minus the cost.\n"
+                 "3. Glue: name, `\": \"`, `str(mana)`, `\"/\"`, `str(max_mana)`, `\" mana\"`. The `\"/\"` is in "
+                 "quotes, so it is a slash, not divide."),
             dict(angle="shorter", text=f"`{line}`"),
         ],
-        takeaway="Compute from boxes, change a box with `mana = mana - cost`, and glue numbers with `str()`.",
+        takeaway=(
+            "Work out values from boxes, change a box with `mana = mana - cost`, and glue numbers into text "
+            "with `str()`."
+        ),
         wrong_answers=[
             dict(why="max_mana worked out by hand", code=head + f"max_mana = {max_mana}\nmana = max_mana\n{cost_name} = {cost}\n"
                  f"mana = mana - {cost_name}\n{line}\n", fails_at=1, message_contains=str(aff_case * 2)),
@@ -1496,7 +1619,7 @@ def _c3(form, who_name, who, affinity, cost_name, cost, aff_case, cost_case, lin
             dict(why="the subtraction not put back", code=p1 + f"mana - {cost_name}\n{line}\n", fails_at=2,
                  message_contains="didn't change"),
             dict(why="the old dash advice followed: mana gets only the cost", code=p1 + f"mana = {cost_name}\n{line}\n",
-                 fails_at=2, message_contains=f"mana = mana - {cost_name}"),
+                 fails_at=2, message_contains="only the cost"),
             dict(why="the spell cost typed as a number", code=p1 + f"mana = mana - {cost}\n{line}\n", fails_at=2,
                  message_contains=str(max_mana - cost_case)),
             dict(why="mana = max_mana runs before max_mana is worked out",
@@ -1533,31 +1656,36 @@ def _c4(form, full, count_name, max_name, bar_name, count, maximum, label, cases
     return dict(
         id="mana-bar",
         title="A bar for any number",
-        martu=_QC_MARTU + "It must work for any numbers. Full blocks for what is left, empty blocks for what is used.",
+        martu=_QC_MARTU + (
+            "Draw a bar like a fuel gauge: full blocks for what is left, then empty blocks for what is used. "
+            "It must work for any numbers."
+        ),
         names=[bar_name],
         support="none",
         starter=starter,
         checkpoints=[
             dict(
                 id="build-the-bar",
-                text=f"Make `{bar_name}`: full blocks for `{count_name}`, then empty blocks for the rest of `{max_name}`.",
+                text=(
+                    f"Replace the `\"\"` in `{bar_name} = \"\"` with the bar: `full` repeated `{count_name}` times, "
+                    f"then `empty` for the rest of `{max_name}`."
+                ),
                 dictated=False,
                 hints=[
                     f"Start with `{bar_name} = full * {count_name} + `.",
                     f"How many empty blocks are there when `{count_name}` is {count} of {maximum}?",
-                    "Python does `*` before `-`, so wrap the subtraction in brackets: `empty * (a - b)`.",
+                    f"Write `{good}` in place of `{bar_name} = \"\"`. PEMDAS: the parentheses make Python subtract "
+                    "before it multiplies.",
                 ],
                 checks=[
                     (
                         "the bar has both parts",
                         f"_want = full * {count_name} + empty * ({max_name} - {count_name})\n"
-                        f"assert {bar_name} != '', '`{bar_name}` is still empty. Fill it: full blocks for `{count_name}`, "
-                        f"then empty blocks for the rest.'\n"
-                        f"assert {bar_name} != full * {count_name}, '`{bar_name}` has the full blocks but no empty ones. "
-                        f"Add `empty` times what is used: `({max_name} - {count_name})`.'\n"
+                        f"assert {bar_name} != '', '`{bar_name}` is still empty: it holds the placeholder `\"\"`.'\n"
+                        f"assert {bar_name} != full * {count_name}, '`{bar_name}` has the full blocks but no empty ones.'\n"
                         f"assert {bar_name} == _want, '`{bar_name}` holds \"' + str({bar_name}) + '\". With these numbers it should hold \"' + _want + '\".'",
                     ),
-                    cmb_check(bar_name, cases, tail=f"Build it from `{count_name}` and `{max_name}`, so it follows."),
+                    cmb_check(bar_name, cases),
                 ],
             ),
         ],
@@ -1574,7 +1702,10 @@ def _c4(form, full, count_name, max_name, bar_name, count, maximum, label, cases
                  "Used is `empty * (" + max_name + " - " + count_name + ")`."),
             dict(angle="shorter", text=f"`{good}`"),
         ],
-        takeaway="`\"█\" * n` stamps n blocks; wrap the gap in brackets: `empty * (max - now)`.",
+        takeaway=(
+            f"`\"█\" * 4` stamps 4 blocks. Put the subtraction in parentheses so it goes first: "
+            f"`empty * ({max_name} - {count_name})`."
+        ),
         wrong_answers=[
             dict(why="no brackets around the subtraction",
                  code=code(f"{bar_name} = full * {count_name} + empty * {max_name} - {count_name}"),
@@ -1582,7 +1713,7 @@ def _c4(form, full, count_name, max_name, bar_name, count, maximum, label, cases
             dict(why="the empty count typed in", code=code(f"{bar_name} = full * {count_name} + empty * {maximum - count}"),
                  fails_at=1, message_contains=count_name),
             dict(why="the bar typed in", code=code(f'{bar_name} = "{full * count + "░" * (maximum - count)}"'),
-                 fails_at=1, message_contains="Build it"),
+                 fails_at=1, message_contains="typed in"),
             dict(why="the full part only", code=code(f"{bar_name} = full * {count_name}"), fails_at=1, message_contains="empty"),
         ],
         notes=_qc_meta("repeat-string", "", "", form) + "\n"
@@ -1610,48 +1741,52 @@ def _c5(form, words, box, start, take, name_bad, name_good, value):
     )
     return dict(
         id="mend-three",
-        title="Mend three slips",
-        martu=_QC_MARTU + "Three slips you have seen before, on three lines. Read the last line of Python's message first.",
+        title="Fix three mistakes",
+        martu=_QC_MARTU + (
+            "Three mistakes you've seen before, on three lines. *Mend* means fix. When Python stops, read the title "
+            "of the box in the Console, then Python's last line. Find the line number, fix that line, and press "
+            "Run again."
+        ),
         names=[box, name_good],
         support="none",
         starter=starter,
         checkpoints=[
             dict(
                 id="mend-the-quote",
-                text=f"Mend line 1 so it prints `{words}`.",
+                text=f"Mend line 1 so it shows `{words}` in the Console.",
                 dictated=False,
                 hints=[
-                    "Look at the end of line 1, just before the `)`.",
+                    "Look at the end of line 1, right before the `)`.",
                     "Quotes come in pairs: one before the words, one after.",
-                    "With other words: `print(\"Steady, now.\")` has a quote at each end.",
+                    f"Type `\"` right after `{words}` on line 1. Line 1 becomes `print(\"{words}\")`.",
                 ],
                 checks=[("prints the words",
-                         f"assert {words!r} in _lines(), {'Line 1 should print exactly `' + words + '`. Put the closing quote right after the words, before the `)`.'!r}")],
+                         f"assert {words!r} in _lines(), {'Line 1 does not show exactly `' + words + '` yet.'!r}")],
             ),
             dict(
                 id="mend-the-number",
-                text=f"Mend line 3 so it takes {take} away from `{box}`, as a number.",
+                text=f"Mend line 3 so it takes the number {take} away from `{box}`.",
                 dictated=False,
                 hints=[
                     f"Look at the `\"{take}\"` on line 3.",
                     "Numbers have no quotes. With quotes, it is text, and Python can't take text away from a number.",
-                    f"With other names: `glow = glow - 2`, not `glow = glow - \"2\"`.",
+                    f"Delete the two `\"` around the {take} on line 3. Line 3 becomes `{box} = {box} - {take}`.",
                 ],
                 checks=[
                     (
                         f"{box} is {start - take}, worked out by Python",
                         f"assert type({box}).__name__ == 'int' and {box} == {start - take}, "
-                        f"'`{box}` should be {start - take}: {start} take away {take}.'\n"
+                        f"'`{box}` should hold {start - take}, which is {start} take away {take}.'\n"
                         "import ast as _ast\n"
                         "_done = [_n for _n in _ast.walk(_ast.parse(_source)) if (type(_n).__name__ == 'AugAssign' "
                         f"and type(_n.target).__name__ == 'Name' and _n.target.id == {box!r}) or (type(_n).__name__ == "
                         "'Assign' and type(_n.value).__name__ != 'Constant' and any(type(_t).__name__ == 'Name' and "
                         f"_t.id == {box!r} for _t in _n.targets))]\n"
-                        f"assert _done, '`{box}` holds {start - take}, but it was typed in. "
-                        f"Keep the subtraction and let Python do it: `{box} - {take}`.'",
+                        f"assert _done, '`{box}` holds {start - take}, but the {start - take} is typed in, not worked out "
+                        "by Python.'",
                     ),
                     cmb_check(box, [({box: start + 10}, start + 10 - take)],
-                              tail=f"Take {take} away from `{box}` itself: `{box} = {box} - {take}`."),
+                              tail=f"Line 3 does not take {take} away from `{box}` itself."),
                 ],
             ),
             dict(
@@ -1660,21 +1795,21 @@ def _c5(form, words, box, start, take, name_bad, name_good, value):
                 dictated=False,
                 hints=[
                     f"Compare line 4 and line 5 letter by letter.",
-                    "Python matches names letter for letter. A capital letter makes a different name.",
-                    "`Glow` and `glow` are two different boxes to Python.",
+                    "Python matches names letter for letter. One capital letter makes a new name.",
+                    f"On line 4, change `{name_bad}` to `{name_good}`. Line 4 becomes `{name_good} = {value}`.",
                 ],
                 checks=[
-                    box_check(name_good, skip=[box]),
-                    (f"no {name_bad} left over", f"assert {name_bad!r} not in globals(), '`{name_bad}` is still there. "
-                     f"To Python it is a different box from `{name_good}`. Mend line 4 instead of adding a new line.'"),
+                    box_check(name_good, skip=[box], lean=True),
+                    (f"no {name_bad} left over", f"assert {name_bad!r} not in globals(), '`{name_bad}` is still there, "
+                     f"on its own line. To Python it is a different box from `{name_good}`.'"),
                     print_check(name_good),
                     ("the box is printed", f"assert {name_good} == {value} and {str(value)!r} in _lines(), "
                      f"'`{name_good}` should hold {value}, and line 5 should print it.'"),
                 ],
                 pass_line=(
-                    "Mar'tu: Mended. Since you skipped ahead, my notes: the gaps between bursts shrink, 48 hours, "
-                    "then 37. Bomb Shell thinks thirty-two, maybe less. My ledger is built from boxes, so one change "
-                    "fixes every line. The Night Watch Ledger is open whenever you like."
+                    "Mar'tu: Fixed. You skipped ahead, so here are my notes: the hours between bursts keep shrinking, "
+                    "48, then 37. Bomb Shell thinks thirty-two, maybe less. The Night Watch Ledger is open whenever "
+                    "you like."
                 ),
             ),
         ],
@@ -1685,10 +1820,11 @@ def _c5(form, words, box, start, take, name_bad, name_good, value):
         ),
         another_way=[
             dict(angle="step-by-step",
-                 text="1. Run.\n2. Read the last line of the message.\n3. Look at the line it names.\n4. Mend that one slip. Run again."),
+                 text="1. Press Run.\n2. Read the title of the box in the Console, then Python's last line.\n"
+                 "3. Find the line number, and fix that one mistake.\n4. Press Run again."),
             dict(angle="shorter", text="Close the quote. Take the quotes off the number. Match the name letter for letter."),
         ],
-        takeaway="Close quotes in pairs, keep numbers unquoted, and match names letter for letter.",
+        takeaway="Quotes come in pairs, numbers get no quotes, and names match letter for letter.",
         wrong_answers=[
             dict(why="the quote left open", code=starter, fails_at=0, message_contains="unterminated"),
             dict(why="the number left in quotes", code=fixed.replace(f"{box} - {take}", f'{box} - "{take}"'),
@@ -1701,7 +1837,7 @@ def _c5(form, words, box, start, take, name_bad, name_good, value):
                  code=fixed.replace(f"{name_good} = {value}\n", f"{name_bad} = {value}\n{name_good} = {value}\n"),
                  fails_at=3, message_contains="still there"),
             dict(why="the number typed into the print instead of the box",
-                 code=fixed.replace(f"print({name_good})", f"print({value})"), fails_at=3, message_contains=f"print({name_good})"),
+                 code=fixed.replace(f"print({name_good})", f"print({value})"), fails_at=3, message_contains="never prints the box"),
             dict(why="the name mended on line 5 instead",
                  code=fixed.replace(f"{name_good} = {value}", f"{name_bad} = {value}").replace(f"print({name_good})", f"print({name_bad})"),
                  fails_at=3, message_contains=name_good),
@@ -1725,8 +1861,8 @@ QC1_A = dict(
     optional=True,
     minutes=10,
     summary=(
-        "Five short tasks, no hints. Pass all five to test out of Unit 1. "
-        "Stuck on one? The lessons teach all of it, and tasks you pass here stay ticked."
+        "Form A: five short tasks, no hints. Pass all five to test out of Unit 1: you show you know it, so you can "
+        "skip its lessons. Stuck on one? The lessons teach all of it, and tasks you pass here stay done."
     ),
     exercises=[
         _c1("A", "party_leader", "hero", ["guide"], 'guide = "Gearshift"\nprint(guide)\n', "Gearshift", "Captain Glug"),
@@ -1768,8 +1904,8 @@ QC1_B = dict(
     optional=True,
     minutes=10,
     summary=(
-        "Five short tasks, no hints. Pass all five to test out of Unit 1. "
-        "Stuck on one? The lessons teach all of it, and tasks you pass here stay ticked."
+        "Form B: the same skills as Form A with different tasks, for a second try. Five short tasks, no hints. "
+        "Pass all five to test out of Unit 1. Tasks you pass here stay done."
     ),
     exercises=[
         _c1("B", "familiar", "creature", ["steed"], 'steed = "a brass jeep"\nprint(steed)\n', "a brass jeep",
@@ -1805,31 +1941,34 @@ QC1_A_QUESTIONS = dict(
     title="Quick Check 1 · Form A questions",
     optional=True,
     minutes=3,
-    summary="Three questions that go with Quick Check 1. Two of three right is a pass.",
+    summary="Three questions to check yourself. They don't decide whether you test out.",
     questions=[
         dict(
             type="mc",
             id="read-the-bar",
-            q="What does this line show?",
+            q="What does this line show in the Console?",
             code='print("Mana [" + "█" * 3 + "░" * 2 + "] " + str(3) + "/" + str(5))\n',
             choices=["Mana [███░░] 3/5", "Mana [███░░]3/5", "Mana [█3░2] 3/5", "Mana [█░] 3/5"],
             answer=0,
             why_wrong={
-                1: "Look at `\"] \"`: there is a space after the bracket, and spaces are text too.",
+                1: "Look at `\"] \"`: there is a space after the `]`, and spaces are text too.",
                 2: "`*` stamps the block 3 times. It does not glue the number on.",
                 3: "`\"█\" * 3` is three blocks, not one.",
             },
-            explain="`*` stamps: 3 full blocks, 2 empty ones. `\"] \"` adds the bracket and a space. `str()` turns 3 and 5 into text.",
+            explain="`*` stamps: 3 full blocks, 2 empty ones. `\"] \"` adds the `]` and a space. `str()` turns 3 and 5 into text, so `+` can glue them.",
             notes="Skills repeat-string, concat-str (reading). G4 R26. Distractors: the missing space, `█3░2`, one stamp.",
         ),
         dict(
             type="predict",
             id="change-the-box",
-            q="What does this print?",
+            q="What does this code print?",
             code="x = 5\nx = x - 2\nprint(x)\n",
             answer="3",
             choices=["3", "5\n2", "7", "5"],
-            explain="Line 2 takes what is in `x` now (5), takes away 2, and puts 3 back in `x`. A box keeps only its latest value.",
+            explain=(
+                "In math, x = x − 2 has no answer, but in Python `=` means gets. Line 2 works out 5 − 2 with what is "
+                "in `x` now, then puts 3 back in `x`. A box keeps only its latest value."
+            ),
             notes="Skill reassign. Distractors: both values stay (A-03/A-04 trace model), added instead (7), first value only.",
         ),
         dict(
@@ -1840,7 +1979,7 @@ QC1_A_QUESTIONS = dict(
             answer=1,
             why_wrong={
                 0: "A name can't have a space. Python reads two names and stops. Use `_` instead.",
-                2: "A box's name never has quotes. Quotes make it text, and text can't be a label.",
+                2: "A box's name never has quotes. Quotes make it text, and text can't be a name.",
             },
             explain="Names have no spaces and no quotes: `magical_affinity = 9`.",
             notes="Skill exact-names. Evidence: A-06 `total pizzaparty`; A-02 `def (\"character\")` name-in-quotes.",
@@ -1859,31 +1998,34 @@ QC1_B_QUESTIONS = dict(
     title="Quick Check 1 · Form B questions",
     optional=True,
     minutes=3,
-    summary="Three questions that go with Quick Check 1. Two of three right is a pass.",
+    summary="Three questions to check yourself. They don't decide whether you test out.",
     questions=[
         dict(
             type="mc",
             id="read-the-bar",
-            q="What does this line show?",
+            q="What does this line show in the Console?",
             code='print("Glug [" + "▓" * 2 + "░" * 4 + "] " + str(2) + "/" + str(6))\n',
             choices=["Glug [▓▓░░░░] 2/6", "Glug [▓▓░░░░]2/6", "Glug [▓2░4] 2/6", "Glug [▓░] 2/6"],
             answer=0,
             why_wrong={
-                1: "Look at `\"] \"`: there is a space after the bracket, and spaces are text too.",
+                1: "Look at `\"] \"`: there is a space after the `]`, and spaces are text too.",
                 2: "`*` stamps the block 2 times. It does not glue the number on.",
                 3: "`\"▓\" * 2` is two blocks, not one.",
             },
-            explain="`*` stamps: 2 full blocks, 4 empty ones. `\"] \"` adds the bracket and a space. `str()` turns 2 and 6 into text.",
+            explain="`*` stamps: 2 full blocks, 4 empty ones. `\"] \"` adds the `]` and a space. `str()` turns 2 and 6 into text, so `+` can glue them.",
             notes="Form B of read-the-bar.",
         ),
         dict(
             type="predict",
             id="change-the-box",
-            q="What does this print?",
+            q="What does this code print?",
             code="y = 8\ny = y - 3\nprint(y)\n",
             answer="5",
             choices=["5", "8\n3", "11", "8"],
-            explain="Line 2 takes what is in `y` now (8), takes away 3, and puts 5 back in `y`. A box keeps only its latest value.",
+            explain=(
+                "In math, y = y − 3 has no answer, but in Python `=` means gets. Line 2 works out 8 − 3 with what is "
+                "in `y` now, then puts 5 back in `y`. A box keeps only its latest value."
+            ),
             notes="Form B of change-the-box.",
         ),
         dict(
@@ -1894,7 +2036,7 @@ QC1_B_QUESTIONS = dict(
             answer=1,
             why_wrong={
                 0: "A name can't have a space. Python reads two names and stops. Use `_` instead.",
-                2: "A box's name never has quotes. Quotes make it text, and text can't be a label.",
+                2: "A box's name never has quotes. Quotes make it text, and text can't be a name.",
             },
             explain="Names have no spaces and no quotes: `spell_color = \"teal\"`. The value can have quotes. The name can't.",
             notes="Form B of which-name.",
@@ -1918,52 +2060,68 @@ CHALK_NOTES = dict(
     summary="Everything from Unit 1 on one page. Printable.",
     entries=[
         dict(concept="Show words: `print`", code='print("Shield up.")\n', output="Shield up.",
-             note="Quotes and brackets come in pairs: one opens, one closes. (Lesson: Words in Quotes)"),
+             note="`print` shows text on the screen, in the Console. Quotes and parentheses come in pairs: one opens, "
+             "one closes. (Lesson: Words in Quotes)"),
         dict(concept="A blank line", code='print("Steady, now.")\nprint()\nprint("Barrier\'s holding.")\n',
              output="Steady, now.\n\nBarrier's holding.", note="`print()` with nothing inside prints an empty line."),
         dict(concept="Notes for people: `#`", code="# Lucky's lines for tonight\n# print(\"Not this one.\")\nprint(\"Fine.\")\n",
-             output="Fine.", note="Python skips any line that starts with `#`. Put `#` in front of a line to switch it off."),
+             output="Fine.", note="A line that starts with `#` is a note for people (a comment), like a stage direction in a "
+             "play. Python skips it, so a `#` in front of a line switches that line off."),
         dict(concept="A box: `name = value`", code='companion = "Gearshift"\nprint(companion)\nprint("companion")\n',
              output="Gearshift\ncompanion",
-             note="A box's name never has quotes. " + QUOTES_RULE + " (Lesson: Boxes With Labels)"),
-        dict(concept="Numbers stand alone", code="armor_bonus = 3\nprint(armor_bonus + 2)\n", output="5",
-             note="Numbers have no quotes. `\"3\"` is text that only looks like a number."),
+             note="Read `=` as gets: companion gets Gearshift. A box's name never has quotes. " + QUOTES_RULE
+             + " (Lesson: Boxes With Labels)"),
+        dict(concept="Numbers don't get quotes", code="armor_bonus = 3\nprint(armor_bonus + 2)\n", output="5",
+             note="A number gets no quotes, so Python can do math with it. `\"3\"` in quotes is text, like the 3 on a "
+             "jersey: nobody adds two jerseys."),
         dict(concept="Change a box", code="mana = 26\nspell_cost = 3\nmana = mana - spell_cost\nprint(mana)\n", output="23",
-             note="Read it as: mana gets mana minus spell cost. The right side runs first, then the answer goes back in the box."),
+             note="Read it as: mana gets mana minus spell cost. In math, x = x − 3 has no answer, but Python works out the "
+             "right side first, then puts the answer back in the box."),
         dict(concept="Math: `+ - * /`", code="print(46 + 2)\nprint(48 - 37)\nprint(9 * 2)\nprint(48 / 2)\n",
-             output="48\n11\n18\n24.0", note="`/` always gives a decimal, like `24.0`. (Lesson: Math and Glue)"),
+             output="48\n11\n18\n24.0", note="`*` means times (there's no × key) and `/` means divided by. `/` always gives "
+             "a decimal, like `24.0`. (Lesson: Math and Glue)"),
         dict(concept="How many × how much is one",
              code="lantern_count = 3\nlantern_price = 4\nlantern_cost = lantern_count * lantern_price\nprint(lantern_cost)\n",
              output="12",
-             note="Put each number in a labeled box. Then let the code combine them, so the total follows when a number "
-             "changes. Never type the total in yourself."),
+             note="Put each number in a named box. Then write the math with the box names, like a formula in math class. "
+             "Change a number and press Run again: the total changes to match. Never type the total in yourself."),
         dict(concept="Glue text: `+` and `str()`", code='mana = 7\nprint("Mana: " + str(mana))\n', output="Mana: 7",
-             note="`+` glues text to text. A number must become text first, with `str()`. Spaces are text too."),
+             note="`+` glues text to text, like a compound word: sun + flower is sunflower. A number must become text "
+             "first, with `str()`, short for string (text). Spaces are text too."),
         dict(concept="Stamp a mark: `*`", code='print("█" * 3 + "░" * 2)\n', output="███░░",
-             note="`+` glues two texts. `*` stamps one text a number of times."),
-        dict(concept="Brackets for the gap", code='mana = 3\nmax_mana = 5\nprint("░" * (max_mana - mana))\n', output="░░",
-             note="Python does `*` before `-`, so wrap the subtraction in brackets."),
+             note="`*` stamps one text a number of times, like repeated addition: `\"█\" * 3` is `\"█\" + \"█\" + \"█\"`."),
+        dict(concept="Parentheses for the gap", code='mana = 3\nmax_mana = 5\nprint("░" * (max_mana - mana))\n', output="░░",
+             note="PEMDAS, as in math class: Python does `*` before `-`, so put the subtraction in parentheses."),
         dict(concept="Error: an unclosed quote", code='print("Shield up.)\n',
-             note="SyntaxError: unterminated string literal. Add the missing quote."),
-        dict(concept="Error: an unclosed bracket", code='print("Shield up."\n',
-             note="SyntaxError: '(' was never closed. Add the missing `)`."),
+             note="Python's last line: `SyntaxError: unterminated string literal`. Syntax means how a line is put "
+             "together, like grammar. Some text in quotes never closes. Add the missing quote."),
+        dict(concept="Error: a missing closing parenthesis", code='print("Shield up."\n',
+             note="Python's last line: `SyntaxError: '(' was never closed`. A `(` has no `)` to match it. "
+             "Add the missing `)`."),
         dict(concept="Error: a name it doesn't know", code="Max_Mana = 18\nprint(max_mana)\n",
-             note="NameError: name 'max_mana' is not defined. Names match letter for letter, capitals too."),
+             note="Python's last line: `NameError: name 'max_mana' is not defined`. Python has no box with that exact "
+             "name. Names match letter for letter, capitals too."),
         dict(concept="Error: a space in a name", code="magical affinity = 9\n",
-             note="SyntaxError: invalid syntax. Use `_` instead of a space: `magical_affinity`."),
+             note="Python's last line: `SyntaxError: invalid syntax`. Python can't read the line, because a name can't "
+             "have a space. Use `_` instead: `magical_affinity`."),
         dict(concept="Error: text plus a number", code='print("Mana: " + 7)\n',
-             note="TypeError: can only concatenate str (not \"int\") to str. Use `str(7)`."),
+             note="Python's last line: `TypeError: can only concatenate str (not \"int\") to str`. Concatenate means "
+             "glue, str means text and int means a whole number: you can only glue text to text. Use `str(7)`."),
         dict(concept="Error: `def` to make a box", code='def character = "Zelda"\n',
-             note="SyntaxError. `def` is for something else. To make a box, write `character = \"Zelda\"`."),
+             note="Python's last line starts with `SyntaxError`. `def` is for something you'll learn in Unit 3. To make "
+             "a box, write the name, `=`, then the value: `character = \"Zelda\"`."),
         dict(concept="(extra) Many lines at once", code='print("""Glug canteen: half full.\nSmell: still terrible.""")\n',
              output="Glug canteen: half full.\nSmell: still terrible.",
-             note="Triple quotes let one `print` show many lines. (Extra practice: Many lines at once)"),
+             note="Three quote marks start text that can go over many lines, and three more end it. It is not a `#` "
+             "note: Python prints it. (Extra practice: Many lines at once)"),
         dict(concept="(extra) The short way: `+=` and `-=`", code="mana = 26\nmana -= 3\nmana += 1\nprint(mana)\n", output="24",
              note="`mana -= 3` is short for `mana = mana - 3`. (Extra practice: The short way)"),
         dict(concept="(extra) Clock math: `%`, `//`, `**`", code="print((9 + 50) % 12)\nprint(50 // 12)\nprint(2 ** 3)\n",
-             output="11\n4\n8", note="`%` is what is left over, `//` the whole part, `**` a power. (Article: Clock Math)"),
+             output="11\n4\n8", note="In 50 ÷ 12 = 4 R 2, `//` gives the 4 and `%` gives the 2. Here `%` is not "
+             "percent. `**` is a power: `2 ** 3` is 8. (Article: Clock Math)"),
         dict(concept="(extra) Asking: `input()`", code='sips = int(input("How many sips? "))\nprint(sips * 2)\n',
-             note="`input()` always hands back text. `int()` makes it a number. (Article: Asking the Traveler)"),
+             note="`input()` always hands back text. `int()` makes it a number: `int` is short for integer, a whole "
+             "number. (Article: Asking the Traveler)"),
     ],
     notes="Cheatsheet 1 (spec items in order, then the extras). Entries with `output` are run and checked by the harness.",
 )

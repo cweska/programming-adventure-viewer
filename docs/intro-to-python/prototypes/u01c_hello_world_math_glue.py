@@ -8,10 +8,11 @@ call:str (1C-06) and node:AugAssign (1C-05, pool only: no core code shows `+=`).
 Who this is for: the class already played campaign Modules 1 and 2 and struggled most with exactly this part:
 nobody let the code combine values (everyone hard-coded 68), counts and prices were swapped, and `mana-bars` /
 `hold-the-barrier` felt like a wall. So every combine step is checked by BEHAVIOR: the check re-runs the
-student's program with other numbers (CMB, curriculum 2.5) and the message shows the little rerun table in one
-sentence ("Mar'tu's check tried your code with `lantern_count = 7` (only inside the check: leave your own numbers
-as they are). This time, `total_cost` stayed 22, but it should be 38."). Mar'tu says once, in chalk-math, that
-the checks swap in other numbers.
+student's program with other numbers (CMB, curriculum 2.5). The message gives the one fix first, then the
+labelled evidence (plain-language guide 4.3): "`total_cost` has a typed-in number. Use the box names, not
+numbers: `lantern_cost + rope_cost`. Mar'tu tested your code with a test number, `lantern_count = 7`:
+`total_cost` should be 38, but it stayed 22. Don't type the test number." Mar'tu says once, in chalk-math, that
+he tests the line with other numbers, like a formula.
 
 Check builders below (plain string templates, no student values ever echoed back):
   slot()        NAME / LEFT / NEWBOX / BARE / TEXT-vs-NUM plus per-exercise rules, for one box's value
@@ -35,7 +36,7 @@ assemble = More structure, solution = Show.
 # ---------------------------------------------------------------------------------------------
 
 QUOTES_RULE = "Quotes mean these exact letters. No quotes means look inside the box with this label."
-TEXT_NOT_NUM = "`%s` holds text, because of the quotes. Numbers don't need quotes."
+TEXT_NOT_NUM = "`%s` holds text, because of the quotes. Numbers don't get quotes: take them off."
 
 # Shared preamble: which names the student made, near-miss test, lone values, and the namespace.
 _NAMES_PRE = (
@@ -111,20 +112,34 @@ def _with_text(changes):
     return parts[0] if len(parts) == 1 else ", ".join(parts[:-1]) + " and " + parts[-1]
 
 
-def rerun(label, changes, pre, cond, msg):
+def _test_words(changes):
+    """How a rerun's made-up values are named in its message (curriculum 2.5; plain-language guide 4.3.3):
+    ("a test number", "the test number", "Don't type the test number.")."""
+    names = [value for value in changes.values() if isinstance(value, str)]
+    count = len(changes) - len(names)
+    nums = "a test number" if count == 1 else "test numbers"
+    the_nums = "the test number" if count == 1 else "the test numbers"
+    if not names:
+        return nums, the_nums, "Don't type %s." % the_nums
+    if not count:
+        return "a made-up name", "the made-up name", "Don't type %s." % " or ".join(names)
+    return ("a made-up name and " + nums, "them", "Don't type %s or %s." % (" or ".join(names), the_nums))
+
+
+def rerun(label, changes, pre, cond, msg, fix):
     """CMB. Re-runs the student's program with `changes` swapped in, inside the check only (the student's own
     code and numbers are never touched). `pre` sets up names from the rerun (_r its namespace, _R = _r.get, _p its
-    printed lines); `cond` must hold; `msg` is an expression for the rest of the message after the shared lead:
-    "Mar'tu's check tried your code with `last_gap = 41` (only inside the check: leave your own numbers as they
-    are). This time, " + msg. One lead for every rerun message, so the check reads as fair, not as a trick. A rerun
-    that crashes says "Mar'tu's check tried your code with ... (only inside the check) and it stopped: " + error."""
-    kind = "numbers" if all(isinstance(v, int) for v in changes.values()) else "values"
-    lead = (
-        "Mar'tu's check tried your code with %s (only inside the check: leave your own numbers as they are). "
-        "This time, " % _with_text(changes)
-    )
-    keep = "`. Mar'tu's check changes that line to try other " + kind + ", so keep it as `name = value`."
-    crash = "Mar'tu's check tried your code with %s (only inside the check) and it stopped: " % _with_text(changes)
+    printed lines); `cond` must hold. The message puts the one thing to try first, then the labelled evidence
+    (plain-language guide 4.3): `fix` (plain words, the step's own names), then "Mar'tu tested your code with a test
+    number, `last_gap = 41`: " + `msg` (an expression: what the rerun should show, and what it showed), then
+    "Don't type the test number." A rerun that crashes says so in plain words, with Python's own
+    words in the middle, never at the end (guide 4.3.6; translating them is S8)."""
+    kind = "number" if all(isinstance(v, int) for v in changes.values()) else "value"
+    what, _, tail = _test_words(changes)
+    lead = " Mar'tu tested your code with %s, %s: " % (what, _with_text(changes))
+    keep = " = ` and a " + kind + " on a line of its own. Mar'tu tests your code by changing that line."
+    crash = "Your code stopped when Mar'tu tested it with %s, %s. Python said: " % (what, _with_text(changes))
+    crash_end = ". Check the line Python gives: it has to work for other numbers too."
     code = _RERUN_DEF + (
         f"_r, _p, _f, _e = _rerun({changes!r})\n"
         "_R = _r.get\n"
@@ -132,10 +147,10 @@ def rerun(label, changes, pre, cond, msg):
         f"_miss = [_k for _k in {list(changes)!r} if _k not in _f]\n"
         "assert not _miss or _miss[0] in _g0, 'Make a box named `' + (_miss[0] if _miss else '') + "
         "'`: start a line with `' + (_miss[0] if _miss else '') + ' = `.'\n"
-        f"assert not _miss, 'Keep the line that sets `' + (_miss[0] if _miss else '') + {keep!r}\n"
-        f"assert not _e, {crash!r} + _e\n"
+        f"assert not _miss, 'Keep `' + (_miss[0] if _miss else '') + {keep!r}\n"
+        f"assert not _e, {crash!r} + _e + {crash_end!r}\n"
         f"{pre}\n"
-        f"assert {cond}, {lead!r} + {msg}\n"
+        f"assert {cond}, {fix!r} + {lead!r} + {msg} + ' ' + {tail!r}\n"
     )
     return (label, code)
 
@@ -147,7 +162,8 @@ def rerun_box(label, changes, target, want, fix):
         changes,
         f"_want = {want}\n_got = _R({target!r})\n_was = _g0.get({target!r})",
         "_got == _want and type(_got).__name__ == type(_want).__name__",
-        f"'`{target}` ' + ('stayed ' if _got == _was else 'became ') + str(_got) + ', but it should be ' + str(_want) + '. ' + {fix!r}",
+        f"'`{target}` should be ' + str(_want) + ', but it ' + ('stayed ' if _got == _was else 'became ') + str(_got) + '.'",
+        fix,
     )
 
 
@@ -161,10 +177,11 @@ def rerun_line(label, changes, want, fix, show=True, hide="''", word=False, star
     `hide` (an expression over the student's names, e.g. a creative hero box) is never repeated back: the nearest
     printed line is left out of the message when it contains it (privacy, 2.11)."""
     shown = (
-        "(', but it printed nothing' if not _p else ('' if (_hide and _hide in _nn) else ', but it printed `' + _nn + '`'))"
+        "(', but it showed nothing' if not _p else ('' if (_hide and _hide in _nn) else ', but it showed `' + _nn + '` instead'))"
         if show
         else "''"
     )
+    the_what = _test_words(changes)[1]
     if word:
         hit = (
             "import re as _re\n"
@@ -177,16 +194,13 @@ def rerun_line(label, changes, want, fix, show=True, hide="''", word=False, star
         hit = "_hit = lambda _l: _l == _want\n"
     if starts:
         typed = (
-            "('your program printed a line that starts with `' + _want + '`, but that line is the same even without "
-            "the change, so it is typed in. ')"
+            "('your line that starts with `' + _want + '` shows the same with or without " + the_what
+            + ", so it is typed in.')"
         )
-        should = f"('your program should print a line that starts with `' + _want + '`' + {shown} + '. ')"
+        should = f"('it should show a line that starts with `' + _want + '`' + {shown} + '.')"
     else:
-        typed = (
-            "('your program printed `' + _want + '`, but that line prints `' + _want + '` even without the change, "
-            "so it is typed in. ')"
-        )
-        should = f"('your program should print `' + _want + '`' + {shown} + '. ')"
+        typed = "('your line `' + _want + '` shows the same with or without " + the_what + ", so it is typed in.')"
+        should = f"('it should show `' + _want + '`' + {shown} + '.')"
     return rerun(
         label,
         changes,
@@ -199,7 +213,8 @@ def rerun_line(label, changes, want, fix, show=True, hide="''", word=False, star
         "_at = [_i for _i, _l in enumerate(_p) if _hit(_l)]\n"
         "_ok = bool(_at) and (_same or any(_i >= len(_old) or not _hit(_old[_i]) for _i in _at))",
         "_ok",
-        f"({typed} if _at else {should}) + {fix!r}",
+        f"({typed} if _at else {should})",
+        fix,
     )
 
 
@@ -227,14 +242,14 @@ def slot(label, name, want, *, known, default, foreign=(), rules=()):
         "_newb = [_m for _m in _made if _m != _name and _m not in _known and _m not in _foreign "
         "and type(_g.get(_m)).__name__ == type(_want).__name__ and _g.get(_m) == _want]\n"
         "if not _ok and not _msg and _near:\n"
-        f"    _msg = 'Python matches names letter for letter: you wrote `' + _near[0] + {'`, the task needs `' + name + '`.'!r}\n"
+        f"    _msg = 'Your box is named `' + _near[0] + {'`, but this step needs `' + name + '`. Names match letter for letter, capitals too.'!r}\n"
         "if not _ok and not _msg and _left:\n"
-        f"    _msg = '`' + _left[0] + {'` is a name from the example or an earlier step. This task' + chr(39) + 's box is `' + name + '`.'!r}\n"
+        f"    _msg = '`' + _left[0] + {'` is a name from the Example or an earlier step. This step needs the box `' + name + '`: use that name instead.'!r}\n"
         "if not _ok and not _msg and _newb:\n"
         f"    _msg = 'Your new box `' + _newb[0] + '` holds ' + str(_want) + ', but `{name}` ' + "
-        f"('still holds ' + str(_have) if _name in _g else 'is not made yet') + {'. Put it in `' + name + '`.'!r}\n"
+        f"('still holds ' + str(_have) if _name in _g else 'is not made yet') + {'. This step needs the name `' + name + '`: use it instead of the new name.'!r}\n"
         "if not _ok and not _msg and _name not in _g and _bare:\n"
-        f"    _msg = 'Line ' + str(_bare[0]) + {' is a value with no box, so Python made it and forgot it. Put `' + name + ' = ` in front of it.'!r}\n"
+        f"    _msg = 'Line ' + str(_bare[0]) + {' is a value with no name in front, so Python reads it and throws it away, like a phone number saved with no contact name. Put `' + name + ' = ` in front of it.'!r}\n"
         "if not _ok and not _msg and _name not in _g:\n"
         f"    _msg = {'Make a box named `' + name + '`: start a line with `' + name + ' = `.'!r}\n"
         "if not _ok and not _msg and _have == 0 and _want != 0:\n"
@@ -250,12 +265,14 @@ def story_pair(label, count_name, price_name, count, price, things, *, known, wi
     """SWAP / LINE-TOTAL / wild count / placeholder / NEWBOX for a count box and a price box filled from a story.
     A right pair always passes (no near-miss nagging about other boxes); the diagnosis runs only when it is wrong.
     `swap_extra` is appended to the SWAP message (e.g. why a swapped pair still gives the right product)."""
-    swap = "You swapped them: %d is how many %s, %d is the price of one." % (count, things, price)
+    swap = "You swapped them: %d is how many %s, and %d is the price of one." % (count, things, price)
     if price_first:
         swap += " This story gives the price first."
     swap += swap_extra
-    line_total = "%d is already the cost of all %d %s. This box wants the price of one." % (count * price, count, things)
-    count_total = "%d is already the cost of all %d %s. This box wants how many." % (count * price, count, things)
+    line_total = "%d is already the cost of all %d %s. `%s` needs the price of one." % (
+        count * price, count, things, price_name)
+    count_total = "%d is already the cost of all %d %s. `%s` needs how many." % (
+        count * price, count, things, count_name)
     code = _NAMES_PRE + (
         f"_names = {[count_name, price_name]!r}\n"
         f"_known = {list(known)!r}\n"
@@ -265,11 +282,12 @@ def story_pair(label, count_name, price_name, count, price, things, *, known, wi
         "_msg = ''\n"
         "_near = [(_m, _w) for _w in _names for _m in _made if _m not in _known and _m not in _names and _close(_m, _w)]\n"
         "if not _ok and _near:\n"
-        "    _msg = 'Python matches names letter for letter: you wrote `' + _near[0][0] + '`, the task needs `' + _near[0][1] + '`.'\n"
+        "    _msg = 'Your box is named `' + _near[0][0] + '`, but this step needs `' + _near[0][1] + '`. "
+        "Names match letter for letter, capitals too.'\n"
         "for _w in _names:\n"
         "    if not _ok and not _msg and _w not in _g and _bare:\n"
-        "        _msg = 'Line ' + str(_bare[0]) + ' is a value with no box, so Python made it and forgot it. "
-        "Put `' + _w + ' = ` in front of it.'\n"
+        "        _msg = 'Line ' + str(_bare[0]) + ' is a value with no name in front, so Python reads it and throws it "
+        "away, like a phone number saved with no contact name. Put `' + _w + ' = ` in front of it.'\n"
         "    if not _ok and not _msg and _w not in _g:\n"
         "        _msg = 'Make a box named `' + _w + '`: start a line with `' + _w + ' = `.'\n"
         "    if not _ok and not _msg and type(_g[_w]).__name__ == 'str':\n"
@@ -286,15 +304,16 @@ def story_pair(label, count_name, price_name, count, price, things, *, known, wi
         f"        _msg = {count_total!r}\n"
         "    elif _newb:\n"
         "        _msg = 'Your new box `' + _newb[0][0] + '` holds ' + str(_wants[_newb[0][1]]) + ', but `' + _newb[0][1] + "
-        "'` still holds 0. Put the number in `' + _newb[0][1] + '`.'\n"
+        "'` still holds 0. Put the number in `' + _newb[0][1] + '` instead.'\n"
         f"    elif _c not in (0, {count}, {price}):\n"
         f"        _msg = {wild!r}\n"
         "    elif _c == 0 or _p == 0:\n"
-        "        _msg = 'A 0 is a placeholder: replace it with the number from the story.'\n"
+        f"        _msg = '`' + ({count_name!r} if _c == 0 else {price_name!r}) + '` still holds the placeholder 0. "
+        "Replace the 0 with the number from the story in the `#` note.'\n"
         f"    elif _c != {count}:\n"
-        f"        _msg = {'`' + count_name + '` answers how many ' + things + '. Read the story again.'!r}\n"
+        f"        _msg = {'`' + count_name + '` answers how many ' + things + '. Read the story in the `#` note again: which number is how many?'!r}\n"
         "    else:\n"
-        f"        _msg = {'`' + price_name + '` answers how much one costs. Read the story again.'!r}\n"
+        f"        _msg = {'`' + price_name + '` answers how much one costs. Read the story in the `#` note again: which number is the price of one?'!r}\n"
         "assert _ok, _msg\n"
     )
     return (label, code)
@@ -324,17 +343,17 @@ def out_line(label, want, missing, privacy=False, spaces="Check the spaces in yo
         "    return _k\n"
         "_msg = ''\n"
         "if _want not in _ls and not _ls:\n"
-        f"    _msg = 'Nothing is printed yet. ' + {missing!r}\n"
+        f"    _msg = 'Nothing shows in the Console yet. ' + {missing!r}\n"
         "elif _want not in _ls and not _cands:\n"
-        f"    _msg = 'Expected `' + _want + '`, and no printed line matches it yet. ' + {missing!r}\n"
+        f"    _msg = 'No line in the Console shows `' + _want + '` yet. ' + {missing!r}\n"
         "elif _want not in _ls:\n"
         "    _near = max(_cands, key=_pre)\n"
         "    _i = _pre(_near)\n"
         "    _shown = _near.replace('`', \"'\")\n"
-        "    _head = 'Expected `' + _want + '`, you printed `' + _shown + '`. '\n"
+        "    _head = 'Your line shows `' + _shown + '`, but it should show `' + _want + '`. '\n"
         "    _before = _want[:_i].strip()\n"
         "    if _i == 0:\n"
-        "        _msg = _head + 'They differ at the very start. ' + " + repr(missing) + "\n"
+        "        _msg = _head + 'They are different from the very start. ' + " + repr(missing) + "\n"
         "    elif _want[_i:_i + 1] == ' ' and _near[_i:_i + 1] != ' ':\n"
         "        _msg = _head + 'A space is missing right after `' + _before + '`.'\n"
         "    elif _near[_i:_i + 1] == ' ' and _want[_i:_i + 1] != ' ':\n"
@@ -342,7 +361,7 @@ def out_line(label, want, missing, privacy=False, spaces="Check the spaces in yo
         "    elif _i >= len(_near):\n"
         "        _msg = _head + 'Your line stops early, right after `' + _before + '`.'\n"
         "    else:\n"
-        "        _msg = _head + 'They differ right after `' + _before + '`.'\n"
+        "        _msg = _head + 'They are different right after `' + _before + '`.'\n"
         "assert not _msg, _msg\n"
     )
     return (label, code)
@@ -356,7 +375,7 @@ def no_bare_math(label, box):
         "_loose = [_n.lineno for _n in _ast.parse(_source).body if type(_n).__name__ == 'Expr' "
         "and type(_n.value).__name__ == 'BinOp']\n"
         "assert not _loose, 'Line ' + str(_loose[0] if _loose else 0) + "
-        f"{' works out a new number, but `' + box + '` didn' + chr(39) + 't change: put the answer back with `' + box + ' = ` in front.'!r}",
+        f"{' works out a new number, but `' + box + '` didn' + chr(39) + 't change, so Python throws the answer away. Put `' + box + ' = ` in front of that line.'!r}",
     )
 
 
@@ -368,8 +387,9 @@ def loose_math(label):
         "import ast as _ast\n"
         "_loose = [_n.lineno for _n in _ast.parse(_source).body if type(_n).__name__ == 'Expr' "
         "and type(_n.value).__name__ == 'BinOp']\n"
-        "assert not _loose, 'Line ' + str(_loose[0] if _loose else 0) + ' works out a number, but keeps it nowhere. "
-        "Which box should keep it? Put that box' + chr(39) + 's name and `=` in front.'",
+        "assert not _loose, 'Line ' + str(_loose[0] if _loose else 0) + ' works out a number, but no box keeps the "
+        "answer, so Python throws it away. In front of that line, put the name of the box that should hold it, "
+        "then `=`.'",
     )
 
 
@@ -387,9 +407,10 @@ def set_once(label, names):
         "and _n.id == _k and type(_n.ctx).__name__ == 'Load']\n"
         "    if len(_sets) > 1 and any(_sets[0] < _u < _sets[-1] for _u in _uses):\n"
         "        _late.append((_k, _sets[0], _sets[-1]))\n"
-        "assert not _late, '`' + (_late[0][0] if _late else '') + '` is set again on line ' + str(_late[0][2] if _late else 0) + "
-        "', below the lines that use it. Python runs from the top down, so those lines never see the new number. "
-        "Change line ' + str(_late[0][1] if _late else 0) + ' instead.'",
+        "assert not _late, 'You put a new number in `' + (_late[0][0] if _late else '') + '` on line ' + "
+        "str(_late[0][2] if _late else 0) + ', but the lines above it already used the old number. "
+        "Python reads top to bottom. Change the number on line ' + str(_late[0][1] if _late else 0) + "
+        "' instead, and delete line ' + str(_late[0][2] if _late else 0) + '.'",
     )
 
 
@@ -400,8 +421,8 @@ def near_names(label, names, known):
         _NAMES_PRE
         + f"_names = {list(names)!r}\n_known = {list(known)!r}\n"
         "_near = [(_m, _w) for _w in _names for _m in _made if _m not in _known and _m not in _names and _close(_m, _w)]\n"
-        "assert not _near, 'Python matches names letter for letter: you wrote `' + (_near[0][0] if _near else '') + "
-        "'`, the task needs `' + (_near[0][1] if _near else '') + '`.'\n",
+        "assert not _near, 'Your box is named `' + (_near[0][0] if _near else '') + "
+        "'`, but this step needs `' + (_near[0][1] if _near else '') + '`. Names match letter for letter, capitals too.'\n",
     )
 
 
@@ -433,16 +454,16 @@ UNIT = dict(
         "Hi. It is me, Mar'tu. Before we continue on our adventure, we go back to the first words, yes?\n"
         "A lot of that campaign code felt like a wall, yes? We will take the wall apart, one stone at a time.\n"
         "Every spell begins as words. Python is fussy about words. More fussy than Lucky is about glug, yes?\n"
-        "Tonight: how to say something, how to keep something in a box, and how to let Python do the sums."
+        "Tonight: how to say something, how to keep something in a box, and how to let Python do the math."
     ),
     goals=[
-        "Show words on the screen with `print()`, in matching quotes",
-        "Write `#` notes for humans, and switch a line off",
-        "Make a box (variable) with `name = value`, using the exact name the task asks for",
-        "Put a new value in a box, like `mana = mana - cost`",
-        "Do math with `+`, `-`, `*` and `/`, and let the code combine your boxes",
-        "Glue text together with `+` and `str()`, and draw a bar with `\"█\" * mana`",
-        "Read Python's message and mend the slips everyone makes",
+        "Make Python show words on the screen",
+        "Write notes that Python skips",
+        "Keep words or a number in a named box (a variable)",
+        "Change what is in a box",
+        "Let Python do the math with your boxes",
+        "Join words and numbers into one line, and draw a mana bar from blocks",
+        "Read Python's error messages and fix small mistakes",
     ],
     campaign_links=["leylines-awaken", "friends-in-low-places"],
 )
@@ -451,46 +472,59 @@ GLOSSARY = [
     dict(
         term="math signs",
         aliases=["math sign", "operator", "operators"],
-        plain="The signs Python does math with: `+` adds, `-` subtracts, `*` multiplies (times), `/` divides.",
+        plain=(
+            "The signs Python does math with: `+` plus, `-` minus, `*` times (×) and `/` divided by (÷). "
+            "The keyboard has no × or ÷ key, so Python uses `*` and `/`."
+        ),
         example="print(48 - 37)",
     ),
     dict(
         term="decimal",
         aliases=["decimals", "decimal number"],
-        plain="A number with a point in it, like `24.0` or `42.5`. Dividing with `/` always gives one.",
+        plain="A number with a decimal point, like `24.0` or `42.5`, as in math class. Dividing with `/` always gives one.",
         example="print(48 / 2)",
     ),
     dict(
         term="placeholder",
         aliases=["placeholders"],
-        plain="A stand-in value, like the `0` in a starter. It holds the place until you put the real thing there.",
+        plain="A stand-in value, like a `0` in the code you start with. It holds the place until you put the real number there.",
         example="lantern_count = 0",
     ),
     dict(
-        term="show your working",
-        aliases=["combine", "let the code combine it", "build it from the boxes"],
+        term="show your work",
+        aliases=["show your working", "combine", "let the code combine it", "build it from the boxes"],
         plain=(
-            "Build a value from boxes, like `total_cost = lantern_cost + rope_cost`, instead of typing the answer. "
-            "Then it stays right when a box changes."
+            "Write the math with box names, like `area = length * width`, instead of typing the answer, the way math "
+            "class asks you to show your work. Then, when a box changes and you press Run again, the answer changes "
+            "to match."
         ),
-        example="total_cost = lantern_cost + rope_cost",
+        example="area = length * width",
     ),
     dict(
         term="glue",
         aliases=["glues", "gluing", "concatenate", "concatenation"],
-        plain="Join texts end to end with `+`. Python adds no spaces, so put the spaces inside the quotes.",
+        plain=(
+            "Join texts end to end with `+`, like a compound word: sun + flower is sunflower. Python adds no spaces, "
+            "so put the spaces inside the quotes."
+        ),
         example='"Shield" + " up."',
     ),
     dict(
         term="str()",
         aliases=["str"],
-        plain="Turns a value into text. `str(26)` gives the text `\"26\"`, which can be glued to other text.",
+        plain=(
+            "`str` is short for string, Python's word for text. `str(26)` gives the text `\"26\"`, which can be glued "
+            "to other text."
+        ),
         example='"Mana: " + str(26)',
     ),
     dict(
         term="stamp",
         aliases=["stamps", "repetition", "repeat a mark"],
-        plain="`*` with text and a number stamps the text that many times. `\"█\" * 3` gives `███`.",
+        plain=(
+            "`*` with text and a number repeats the text, like pressing a stamp that many times. In math, 3 × 4 means "
+            "4 + 4 + 4, and `\"█\" * 3` means `\"█\" + \"█\" + \"█\"`: `███`."
+        ),
         example='"█" * 3',
     ),
 ]
@@ -502,10 +536,10 @@ GLOSSARY = [
 REMEMBERS_1C = dict(
     kind="quiz",
     id="1c-remembers",
-    title="Mar'tu remembers…",
+    title="Quick review: 2 questions (not scored)",
     optional=True,
     minutes=1,
-    summary="Two quick questions from earlier lessons. Nothing is scored.",
+    summary="Two quick questions from earlier lessons, to warm up. Nothing is scored.",
     notes=(
         "meta: path=CC; unscored warm-up shown inline before Lesson 1C; recall from 1B (box vs quoted name) and "
         "1A (closing quote). A miss shows the answer and a one-line why, with no red X."
@@ -514,20 +548,21 @@ REMEMBERS_1C = dict(
         dict(
             type="mc",
             id="which-makes-a-box",
-            q="Which line makes a box?",
+            q="Which line makes a box named `hero` that holds the text Lucky?",
             choices=['"hero" = "Lucky"', 'hero = "Lucky"'],
             answer=1,
-            why_wrong={0: "A box's name never goes in quotes. The name is a label, not text to show."},
-            explain="`hero = \"Lucky\"` makes a box named `hero` with Lucky inside. " + QUOTES_RULE,
+            why_wrong={0: "A box's name never goes in quotes. In quotes, `\"hero\"` is only the letters h-e-r-o, "
+                          "and letters can't hold a value."},
+            explain="`hero = \"Lucky\"` makes a box named `hero` with Lucky inside: hero gets Lucky. " + QUOTES_RULE,
         ),
         dict(
             type="bug",
             id="mend-shield-up",
-            q="Mend this line so it shows Shield up.",
+            q="Fix this line so it shows Shield up.",
             code='print("Shield up.)\n',
             fix='print("Shield up.")\n',
             expected_output="Shield up.",
-            explain="Quotes come in pairs. Add the closing `\"` right after the period.",
+            explain="Quotes come in pairs, like quotation marks in English class. Add the closing `\"` right after the period.",
         ),
     ],
 )
@@ -543,28 +578,30 @@ CHALK_MATH = dict(
     id="chalk-math",
     title="Mar'tu's chalk math",
     martu=(
-        "Python does math with `+`, `-`, `*` and `/`. Guess each answer, then run.\n"
-        "These are the [[math signs]]. No quotes around the math, so Python works it out.\n"
-        "My checks are sneaky: they put other numbers in your boxes and run your code again, to see if your line "
-        "follows. Your own code is not changed. A typed answer can't keep up."
+        "Python does math with [[math signs]]: `+` (plus), `-` (minus), `*` (times: there's no × key) and `/` "
+        "(divided by). `print(9 * 2)` shows 18.\n"
+        "A gap is the hours between two leyline bursts. On my chalk wall, the first gap was 48, the last 37.\n"
+        "In math, area = length × width works for any rectangle. Make your line a formula too: I test it with "
+        "other numbers."
     ),
     introduces=["op:Add", "op:Sub", "op:Mult", "op:Div"],
     example="owl_hoots = 6\nwolf_howls = 3\nprint(owl_hoots + wolf_howls)\n",
     example_output="9",
     names=["first_gap", "last_gap"],
     predict=dict(
-        q="What will this print?",
+        q="What will these three lines show in the Console?",
         code="print(46 + 44)\nprint(48 - 37)\nprint(9 * 2)\n",
         choices=["90\n11\n18", "46 + 44\n48 - 37\n9 * 2", "90 11 18 all on one line"],
         answer=0,
         explain=(
-            "Python works out each sum and prints the answer, not the sum. Now add `print(48 / 2)` and run. "
-            "Surprised? Dividing with `/` always gives a [[decimal]]: `24.0` is the same amount as 24."
+            "Python works out each math problem and shows the answer, not the problem. Try it if you like (it's not "
+            "a step): add `print(48 / 2)` and press Run. Dividing with `/` always gives a [[decimal]]: `24.0` is the "
+            "same amount as 24."
         ),
     ),
     pair_talk=(
-        "Pair talk: each of you guesses the three answers first. Compare, then each of you runs your own code. "
-        "Then both add `print(48 / 2)`: who expected the `.0`?"
+        "Pair talk: each of you guesses the three answers first. Compare, then each of you presses Run on your own "
+        "code. Then both add `print(48 / 2)`: who expected the `.0`?"
     ),
     starter=(
         "first_gap = 48\n"
@@ -575,13 +612,16 @@ CHALK_MATH = dict(
     checkpoints=[
         dict(
             id="print-the-shrink",
-            text="Replace the `0` so the line prints how much the gap shrank. Use `first_gap` and `last_gap`.",
+            text=(
+                "Replace the `0` on line 4 with the bigger gap minus the smaller gap. Use the box names `first_gap` "
+                "and `last_gap`, not the numbers."
+            ),
             dictated=True,
             hints=[
-                "Start like this: `print(first_gap - `",
-                "Which two boxes hold the gaps? The line should use both, with no numbers typed in.",
-                "Python can subtract boxes. If `a = 9` and `b = 4`, then `print(a - b)` shows 5. "
-                "No quotes around it, so Python does the math.",
+                "Look at line 4, `print(0)`. The `0` is the part to replace. Start like this: `print(first_gap - `",
+                "Python can subtract boxes, the same way it subtracts numbers. If `owls = 9` and `wolves = 4`, then "
+                "`print(owls - wolves)` shows 5. No quotes around the math, so Python works it out.",
+                "Replace the `0` on line 4 with `first_gap - last_gap`. Line 4 becomes `print(first_gap - last_gap)`.",
             ],
             checks=[
                 # Labelled output counts (A-06): a line holding 11 as a whole number, like `The gap shrank by 11`.
@@ -590,34 +630,37 @@ CHALK_MATH = dict(
                     "import re as _re\n"
                     r"_eleven = any(_re.search(r'(?<![\w.-])11(?![\w.])', _l) for _l in _lines())" "\n"
                     "assert _eleven or not any('first_gap' in _l or 'last_gap' in _l for _l in _lines()), "
-                    "'That printed the letters, because of the quotes. Take the quotes off so Python does the math. "
-                    + QUOTES_RULE + "'",
+                    "'Your line shows the box names as letters, because they are in quotes. Take the quotes off the "
+                    "math so Python works it out. " + QUOTES_RULE + "'",
                 ),
                 (
                     "bigger gap first",
                     "import re as _re\n"
                     r"assert not any(_re.search(r'(?<![\w.])-11(?![\w.])', _l) for _l in _lines()), "
-                    "'Your line printed -11. Put the bigger gap first: `first_gap - last_gap`.'",
+                    "'Your line shows -11, because the smaller gap comes first. Put the bigger gap first: "
+                    "`first_gap - last_gap`.'",
                 ),
                 (
                     "prints 11",
                     "import re as _re\n"
                     r"assert any(_re.search(r'(?<![\w.-])11(?![\w.])', _l) for _l in _lines()), "
-                    "'The gap shrank by 11, and your program does not print 11 yet. "
-                    "Replace the 0 with the two boxes and a minus sign.'",
+                    "'Your line does not show the answer yet. Replace the `0` on line 4 with the two box names and a "
+                    "minus sign: `first_gap - last_gap`.'",
                 ),
                 rerun_line(
                     "the shrink is built from the boxes",
                     {"last_gap": 41},
                     "str(_R('first_gap') - _R('last_gap'))",
-                    "Your 11 is right for 48 and 37. Use the two boxes, so Python does the math for any numbers.",
+                    "Your line has a typed-in number where a box name should go. Use the box names, not numbers: "
+                    "`print(first_gap - last_gap)`.",
                     word=True,
                 ),
                 rerun_line(
                     "the shrink uses first_gap too",
                     {"first_gap": 52},
                     "str(_R('first_gap') - _R('last_gap'))",
-                    "Use the box `first_gap` too, not the number 48.",
+                    "Your line uses the number 48 instead of the box `first_gap`. Use the box names, not numbers: "
+                    "`print(first_gap - last_gap)`.",
                     word=True,
                 ),
             ],
@@ -641,50 +684,55 @@ CHALK_MATH = dict(
             text=(
                 "Two jars and a minus sign:\n"
                 "```text\n[ first_gap: 48 ]\n        -\n[ last_gap: 37 ]\n        ->  11\n```\n"
-                "Python opens both jars, takes one number from the other, and prints the answer."
+                "Python looks inside both jars, takes the second number away from the first, and shows the answer."
             ),
         ),
         dict(
             angle="everyday",
             label="A calculator that remembers",
             text=(
-                "A box is a calculator memory. `first_gap - last_gap` says: take the number saved as first_gap, "
-                "minus the one saved as last_gap. Change a saved number, and the answer changes with it."
+                "A box is like a calculator's memory. `first_gap - last_gap` says: take the number saved as "
+                "first_gap, minus the one saved as last_gap. Change a saved number and press Run again, and the "
+                "answer changes to match."
             ),
         ),
         dict(
             angle="in Tor",
             label="The chalk wall",
             text=(
-                "My chalk wall: 48, 48, 47, 46, 44, 41, 37. Each number is the hours between two bursts. "
-                "The first gap was 48. The last was 37. How much did it shrink? 48 take away 37."
+                "My chalk wall: 48, 48, 47, 46, 44, 41, 37. Each number is a gap, the hours between two bursts "
+                "(blasts from the leylines). The first gap was 48. The last was 37. How much did the gap shrink? "
+                "48 take away 37."
             ),
         ),
-        dict(angle="shorter", text="`print(first_gap - last_gap)`: two boxes, a minus sign, no quotes."),
+        dict(angle="shorter", text="`print(first_gap - last_gap)`: two box names, a minus sign, no quotes."),
     ],
     bonus=dict(
         by="lucky",
-        title="What's in it for me?",
+        title="Lucky wants the middle",
         text=(
-            "Lucky wants the middle of it. On a new line, print the average of the first and last gap: "
-            "add them in brackets, then divide by 2."
+            "Lucky wants the middle. On a new line under line 4, show the average of the two gaps: add them inside "
+            "parentheses, then divide by 2. It's PEMDAS: parentheses first."
         ),
         hints=[
-            "Start like this: `print((first_gap + last_gap) / 2)`",
-            "Python does `/` before `+`, so the brackets make it add first.",
+            "Make a new line under line 4. Start like this: `print((first_gap + last_gap) / 2)`",
+            "PEMDAS: Python divides before it adds, as in math class. So put parentheses around "
+            "`first_gap + last_gap` to make it add first.",
         ],
         checks=[
             (
                 "prints the average",
                 "import re as _re\n"
                 r"assert any(_re.search(r'(?<![\w.-])42\.5(?![\w.])', _l) for _l in _lines()), "
-                "'Print the average: `(first_gap + last_gap) / 2` gives 42.5.'",
+                "'The average does not show yet. On a new line, write `print((first_gap + last_gap) / 2)`. "
+                "It should show 42.5.'",
             ),
             rerun_line(
                 "the average is built from the boxes",
                 {"last_gap": 41},
                 "str((_R('first_gap') + _R('last_gap')) / 2)",
-                "Use the two boxes in brackets, then `/ 2`.",
+                "Your average has a typed-in number. Use the box names, not numbers: "
+                "`(first_gap + last_gap) / 2`.",
                 word=True,
             ),
         ],
@@ -696,11 +744,14 @@ CHALK_MATH = dict(
         module="friends-in-low-places",
         part="chalk-wall",
         why=(
-            "You have seen this wall: 48, 48, 47, 46, 44, 41, 37. Gearshift's visor dimmed while he ran the math in "
-            "his head. Now Python runs it for you."
+            "You've seen this wall: 48, 48, 47, 46, 44, 41, 37. Gearshift's visor dimmed while he did the math in "
+            "his head. Now Python does it for you."
         ),
     ),
-    takeaway="`+ - * /` do math. Use the boxes, not the answer: `print(first_gap - last_gap)`. `/` gives a decimal.",
+    takeaway=(
+        "`+` plus, `-` minus, `*` times, `/` divided by. Write the math with box names, like a formula: "
+        "`print(first_gap - last_gap)`. `/` always gives a decimal."
+    ),
     wrong_answers=[
         dict(why="the answer typed by hand (everyone's 68)", code="first_gap = 48\nlast_gap = 37\nprint(11)\n",
              fails_at=1, message_contains="41"),
@@ -720,7 +771,7 @@ CHALK_MATH = dict(
              code="first_gap = 48\nlast_gap = 37\nprint(owl_hoots - wolf_howls)\n", fails_at=0, message_contains="not defined"),
         dict(why="labelled answer typed in whole (A-06 style, but no boxes)",
              code='first_gap = 48\nlast_gap = 37\nprint("The gap shrank by 11")\n', fails_at=1,
-             message_contains="Your 11 is right for 48 and 37"),
+             message_contains="typed-in number where a box name should go"),
         dict(why="labelled output with the boxes the wrong way round",
              code='first_gap = 48\nlast_gap = 37\nprint("The gap shrank by", last_gap - first_gap)\n', fails_at=1,
              message_contains="bigger gap first"),
@@ -749,9 +800,10 @@ WHAT_EACH_NUMBER_MEANS = dict(
     id="what-each-number-means",
     title="What does each number mean?",
     martu=(
-        "Before any math, ask two questions about each number: how many? how much is one? "
-        "Put each number in the box that means that.\n"
-        "A number in the wrong box trips up everyone once. Normal. Now we ask first, yes?"
+        "Ask each number a question: is it *how many*, or *how much is one*? How much is one is the unit price "
+        "from math class, like \"4 coins each\".\n"
+        "A `#` can go at the end of a line too. In `rope_count = 0  # how many?`, Python runs the code and skips "
+        "the note. Put your number where the 0 is."
     ),
     names=["lantern_count", "lantern_price", "rope_count", "rope_price"],
     pair_talk=(
@@ -768,40 +820,48 @@ WHAT_EACH_NUMBER_MEANS = dict(
     checkpoints=[
         dict(
             id="lantern-boxes",
-            text="Mar'tu needs 3 lanterns that cost 4 coins each. Fill in the two lantern boxes from this story.",
+            text=(
+                "On line 3 and line 4, replace each 0 with a number from the lantern story on line 1. The story: "
+                "Mar'tu needs 3 lanterns that cost 4 coins each."
+            ),
             dictated=True,
             hints=[
-                "Start with how many lanterns: change the 0 after `lantern_count = `.",
-                "Ask each number: how many? or how much is one?",
-                "In '2 maps at 6 coins', 2 is how many and 6 is the price of one. "
-                "A 0 in the starter is a [[placeholder]]: replace it.",
+                "Look at line 3, `lantern_count = 0  # how many?`. How many lanterns does Mar'tu need?",
+                "Ask each number its question. In '2 maps at 6 coins', 2 is how many maps, and 6 is the price of one "
+                "map. Each 0 is a [[placeholder]]: it holds the place until you put the real number there.",
+                "Replace the 0 on line 3 with `3`, and the 0 on line 4 with `4`. Keep the `#` notes as they are.",
             ],
             checks=[
                 story_pair(
                     "the lantern boxes match the story", "lantern_count", "lantern_price", 3, 4, "lanterns",
                     known=["lantern_count", "lantern_price", "rope_count", "rope_price"],
-                    wild="Lucky would like 1000 lanterns. The story says 3. Use the story's numbers here: "
-                    "you get your 1000 in the next exercise.",
+                    wild="`lantern_count` should be how many lanterns the story on line 1 says: 3. Lucky gets his "
+                    "1000 in the next exercise.",
                 ),
             ],
             pass_line="Mar'tu: 3 lanterns, 4 coins for one. Each number in its own box.",
         ),
         dict(
             id="rope-boxes",
-            text="Fill in the two rope boxes. This story gives the price first.",
+            text=(
+                "On line 5 and line 6, fill in the two rope boxes from the rope story on line 2. A coil is one roll "
+                "of rope. This story gives the price first."
+            ),
             dictated=False,
             hints=[
-                "Find how many coils Mar'tu needs. That number goes after `rope_count = `.",
-                "Read the rope story slowly. Which number has 'a coil' after it?",
-                "'Candles cost 1 coin each, and I need 3': the price comes first, but 3 is still how many. "
-                "Ask the question, not the order.",
+                "Look at the rope story on line 2. Which number is how many coils Mar'tu needs? That one goes on "
+                "line 5, after `rope_count = `.",
+                "A coil is one roll of rope. \"I need 5 coils\": 5 is how many. \"2 coins a coil\": 2 is the price "
+                "of one. The price comes first here, but ask the question, not the order.",
+                "Replace the 0 on line 5 with `5`, and the 0 on line 6 with `2`. Then `rope_count` holds how many "
+                "coils, and `rope_price` holds the price of one.",
             ],
             checks=[
                 story_pair(
                     "the rope boxes match the story", "rope_count", "rope_price", 5, 2, "coils",
                     known=["lantern_count", "lantern_price", "rope_count", "rope_price"],
-                    wild="Lucky would like 1000 coils of rope. The story says 5. Use the story's numbers here: "
-                    "you get your 1000 in the next exercise.",
+                    wild="`rope_count` should be how many coils the story on line 2 says: 5. Lucky gets his 1000 "
+                    "in the next exercise.",
                     price_first=True,
                 ),
             ],
@@ -855,16 +915,27 @@ WHAT_EACH_NUMBER_MEANS = dict(
             label="My jar shelf",
             text="How many jars? How much for one jar? Two questions, two boxes. Ask before you write, yes?",
         ),
+        dict(
+            angle="math class",
+            label="From math class",
+            text=(
+                "A ratio table shows the unit price:\n"
+                "```text\nlanterns  coins\n   1        4\n   3       12\n```\n"
+                "4 coins is how much one lantern costs. 3 is how many lanterns. 12 is the cost of all of them, "
+                "so it goes in neither box."
+            ),
+        ),
     ],
     bonus=dict(
         by="lucky",
-        title="What's in it for me?",
+        title="Lucky's own shopping",
         text=(
-            "Lucky has his own shopping in mind. Write your own small shopping story in a `#` note, "
-            "then make two new boxes for it: how many, and how much is one."
+            "Lucky has his own shopping in mind. Under line 6, write a short shopping story in a `#` note. "
+            "Then make two new boxes for it: how many, and how much is one."
         ),
         hints=[
-            "A note starts with `#`, like `# Lucky needs 2 canteens that cost 7 coins each.`",
+            "A note starts with `#`, like `# Lucky needs 2 canteens that cost 7 coins each.` A canteen is a water "
+            "bottle.",
             "Then two boxes with new names, like `canteen_count = 2` and `canteen_price = 7`.",
         ],
         checks=[
@@ -875,7 +946,7 @@ WHAT_EACH_NUMBER_MEANS = dict(
                 "_starter = ['# how many?', '# how much is one?', \"# Mar'tu needs 3 lanterns that cost 4 coins each.\", "
                 "\"# Rope costs 2 coins a coil, and Mar'tu needs 5 coils.\"]\n"
                 "assert [_n for _n in _notes if _n not in _starter and len(_n) > 3], "
-                "'Write your shopping story in a note of your own: a line that starts with `#`.'",
+                "'Your own shopping story is not there yet. Write it in a new note: a line that starts with `#`.'",
             ),
             (
                 "two new number boxes",
@@ -883,7 +954,8 @@ WHAT_EACH_NUMBER_MEANS = dict(
                 "_old = ['lantern_count', 'lantern_price', 'rope_count', 'rope_price']\n"
                 "_new = [_t.id for _n in _ast.parse(_source).body if type(_n).__name__ == 'Assign' for _t in _n.targets "
                 "if type(_t).__name__ == 'Name' and _t.id not in _old and type(globals().get(_t.id)).__name__ == 'int']\n"
-                "assert len(set(_new)) >= 2, 'Make two new boxes with numbers for your story: how many, and how much is one.'",
+                "assert len(set(_new)) >= 2, 'Make two new boxes with numbers for your story, with new names: how many, "
+                "and how much is one.'",
             ),
         ],
         solution=(
@@ -908,13 +980,13 @@ WHAT_EACH_NUMBER_MEANS = dict(
              fails_at=1, message_contains="all 3"),
         dict(why="the line total in the count box (A-05/A-07/A-08 'numbers from my math')",
              code="lantern_count = 12\nlantern_price = 4\nrope_count = 5\nrope_price = 2\n",
-             fails_at=1, message_contains="wants how many"),
+             fails_at=1, message_contains="needs how many"),
         dict(why="a number in quotes",
              code='lantern_count = "3"\nlantern_price = 4\nrope_count = 5\nrope_price = 2\n',
              fails_at=1, message_contains="quotes"),
         dict(why="a lone number replaces the box line",
              code="3\nlantern_price = 4\nrope_count = 5\nrope_price = 2\n",
-             fails_at=1, message_contains="no box"),
+             fails_at=1, message_contains="no name in front"),
         dict(why="placeholders left in",
              code="lantern_count = 3\nlantern_price = 0\nrope_count = 5\nrope_price = 2\n",
              fails_at=1, message_contains="placeholder"),
@@ -940,16 +1012,16 @@ COST_KNOWN = ["lantern_count", "lantern_price", "rope_count", "rope_price", "lan
 COST_FOREIGN = ["map_count", "map_price", "map_cost", "a", "b", "c"]
 COST_BOXES = "lantern_count = 3\nlantern_price = 4\nrope_count = 5\nrope_price = 2\n"
 COST_BOXES_1000 = "lantern_count = 3\nlantern_price = 4\nrope_count = 1000\nrope_price = 2\n"
-COMBINE_FIX = "Build it from the boxes, so the code does the math."
 COST_INPUTS = ["lantern_count", "lantern_price", "rope_count", "rope_price"]
 
 LET_THE_CODE_COMBINE = dict(
     id="let-the-code-combine",
-    title="Let the code combine it",
+    title="Let Python do the math",
     martu=(
-        "Do not work the total out yourself. Let Python combine the boxes. "
-        "Then the total stays right when a number changes.\n"
-        "Some call this [[show your working|showing your working]]. Watch the Example."
+        "Don't work the total out yourself. Write the math with the box names and let Python work it out, like a "
+        "formula. In math class, this is [[show your work]]. The Example does it: "
+        "`map_cost = map_count * map_price`.\n"
+        "Python is not a spreadsheet: when a number changes, press Run again, and the total changes to match."
     ),
     example=(
         "# Oogrish buys 2 maps at 6 coins.\n"
@@ -974,12 +1046,18 @@ LET_THE_CODE_COMBINE = dict(
     checkpoints=[
         dict(
             id="lantern-cost",
-            text="Replace the `0` in `lantern_cost` so Python multiplies the two lantern boxes.",
+            text=(
+                "On line 5, replace the `0` with `lantern_count * lantern_price`: how many lanterns times the price "
+                "of one."
+            ),
             dictated=True,
             hints=[
+                "Look at line 5, `lantern_cost = 0`. The `0` is the part to replace. "
                 "Start like this: `lantern_cost = lantern_count * `",
-                "Look at the Example: `map_cost = map_count * map_price`. Which two lantern boxes match those?",
-                "`*` multiplies. If `a = 2` and `b = 6`, then `c = a * b` puts 12 in `c`.",
+                "`*` means times. The Example does the same: `map_cost = map_count * map_price`. Which two lantern "
+                "boxes match `map_count` and `map_price`? If `bags = 2` and `bag_price = 6`, `bags * bag_price` is 12.",
+                "Replace the `0` on line 5 with `lantern_count * lantern_price`. Line 5 becomes "
+                "`lantern_cost = lantern_count * lantern_price`.",
             ],
             checks=[
                 loose_math("the math is kept in a box"),
@@ -989,29 +1067,33 @@ LET_THE_CODE_COMBINE = dict(
                     known=COST_KNOWN, foreign=COST_FOREIGN,
                     rules=[
                         ("_have == lantern_count + lantern_price",
-                         "That adds the two boxes. A cost is how many times the price of one: use `*`."),
+                         "Your line adds the two boxes with `+`. A cost is how many times the price of one, so "
+                         "use `*`."),
                         # LINE-TOTAL: `lantern_count * 12` multiplies by the line total again.
                         ("_have in (lantern_count * lantern_count * lantern_price, "
                          "lantern_price * lantern_count * lantern_price)",
-                         "12 is already the cost of all 3 lanterns, so multiplying by it again gives too much. "
-                         "Multiply how many by the price of one: `lantern_count * lantern_price`."),
+                         "Your line multiplies by 12, which is already the cost of all 3 lanterns. Multiply how many "
+                         "by the price of one: `lantern_count * lantern_price`."),
                     ],
-                    default="Make `lantern_cost` from the two lantern boxes: how many `*` the price of one.",
+                    default="Make `lantern_cost` the two lantern boxes multiplied: `lantern_count * lantern_price`.",
                 ),
                 rerun_box(
                     "lantern_cost follows its boxes", {"lantern_count": 7, "lantern_price": 5}, "lantern_cost",
-                    "_R('lantern_count') * _R('lantern_price')", COMBINE_FIX,
+                    "_R('lantern_count') * _R('lantern_price')",
+                    "`lantern_cost` has a typed-in number. Use the box names, not numbers: "
+                    "`lantern_count * lantern_price`.",
                 ),
             ],
         ),
         dict(
             id="rope-cost",
-            text="Do the same for `rope_cost`.",
+            text="On line 6, replace the `0` in `rope_cost = 0` the same way: multiply the two rope boxes.",
             dictated=False,
             hints=[
-                "Start like this: `rope_cost = rope_count * `",
-                "Your `lantern_cost` line is the pattern. Which boxes are about rope?",
-                "If `a = 2` and `b = 6`, then `c = a * b` puts 12 in `c`. Same shape, rope boxes.",
+                "Look at line 6, `rope_cost = 0`. Start like this: `rope_cost = rope_count * `",
+                "Your `lantern_cost` line on line 5 is the pattern: how many times the price of one. Which two boxes "
+                "are about rope?",
+                "Replace the `0` on line 6 with `rope_count * rope_price`.",
             ],
             checks=[
                 loose_math("the math is kept in a box"),
@@ -1021,29 +1103,31 @@ LET_THE_CODE_COMBINE = dict(
                     known=COST_KNOWN, foreign=COST_FOREIGN,
                     rules=[
                         ("_have == rope_count + rope_price",
-                         "That adds the two boxes. A cost is how many times the price of one: use `*`."),
+                         "Your line adds the two boxes with `+`. A cost is how many times the price of one, so "
+                         "use `*`."),
                         # LINE-TOTAL: `rope_count * 10` multiplies by the line total again.
                         ("_have in (rope_count * rope_count * rope_price, rope_price * rope_count * rope_price)",
-                         "10 is already the cost of all 5 coils, so multiplying by it again gives too much. "
-                         "Multiply how many by the price of one: `rope_count * rope_price`."),
+                         "Your line multiplies by 10, which is already the cost of all 5 coils. Multiply how many by "
+                         "the price of one: `rope_count * rope_price`."),
                     ],
-                    default="Make `rope_cost` from the two rope boxes, the same way as `lantern_cost`.",
+                    default="Multiply the two rope boxes, the same way line 5 makes `lantern_cost`.",
                 ),
                 rerun_box(
                     "rope_cost follows its boxes", {"rope_count": 6, "rope_price": 3}, "rope_cost",
-                    "_R('rope_count') * _R('rope_price')", COMBINE_FIX,
+                    "_R('rope_count') * _R('rope_price')",
+                    "`rope_cost` has a typed-in number. Use the box names, not numbers: multiply the two rope boxes.",
                 ),
             ],
         ),
         dict(
             id="total-cost",
-            text="Make `total_cost` the sum of the two costs.",
+            text="On line 7, replace the `0` so `total_cost` adds the two cost boxes, `lantern_cost` and `rope_cost`.",
             dictated=False,
             hints=[
-                "Start like this: `total_cost = lantern_cost + `",
-                "Look at `total_cost = 0`. Which two costs make the total?",
-                "Python can add boxes. If `a = 2` and `b = 5`, then `c = a + b` puts 7 in `c`, "
-                "and it stays right when `a` changes.",
+                "Look at line 7, `total_cost = 0`. Start like this: `total_cost = lantern_cost + `",
+                "The total is the lantern cost plus the rope cost. Python can add boxes: if `apples = 2` and "
+                "`pears = 5`, then `apples + pears` is 7.",
+                "Replace the `0` on line 7 with `lantern_cost + rope_cost`.",
             ],
             checks=[
                 loose_math("the math is kept in a box"),
@@ -1053,37 +1137,47 @@ LET_THE_CODE_COMBINE = dict(
                     "lantern_count * lantern_price + rope_count * rope_price",
                     known=COST_KNOWN, foreign=COST_FOREIGN,
                     rules=[("_have == lantern_count + rope_count",
-                            "You added how many, not costs. Add the two cost boxes: `lantern_cost + rope_cost`.")],
-                    default="Make `total_cost` from the two cost boxes, added together.",
+                            "Your line adds how many lanterns and coils, not costs. Add the two cost boxes: "
+                            "`lantern_cost + rope_cost`.")],
+                    default="Add the two cost boxes: `lantern_cost + rope_cost`.",
                 ),
                 rerun_box(
                     "total_cost follows the lantern boxes", {"lantern_count": 7}, "total_cost",
-                    "_R('lantern_count') * _R('lantern_price') + _R('rope_count') * _R('rope_price')", COMBINE_FIX,
+                    "_R('lantern_count') * _R('lantern_price') + _R('rope_count') * _R('rope_price')",
+                    "`total_cost` has a typed-in number. Use the box names, not numbers: `lantern_cost + rope_cost`.",
                 ),
                 rerun_box(
                     "total_cost follows every box", {"lantern_price": 5, "rope_count": 6, "rope_price": 3}, "total_cost",
-                    "_R('lantern_count') * _R('lantern_price') + _R('rope_count') * _R('rope_price')", COMBINE_FIX,
+                    "_R('lantern_count') * _R('lantern_price') + _R('rope_count') * _R('rope_price')",
+                    "`total_cost` has a typed-in number. Use the box names, not numbers: `lantern_cost + rope_cost`.",
                 ),
             ],
-            pass_line="Mar'tu: 22 coins, and you never did the sum. Good. Now watch this.",
+            pass_line="Mar'tu: 22 coins, and Python did the math. Next: change one number and watch the total change.",
         ),
         dict(
             id="a-thousand-ropes",
-            text="Now change `rope_count` to 1000 and run. Watch `total_cost` follow.",
+            text=(
+                "On line 3, change `rope_count = 5` to `rope_count = 1000`. Press Run. `total_cost` changes too, and "
+                "you never touched that line."
+            ),
             dictated=True,
             hints=[
-                "Change line 3 to `rope_count = 1000`.",
-                "Which line says how many coils? Change only that one.",
-                "Change a box at the top, and every line built from it follows. That is why we let the code combine.",
+                "Look at line 3, `rope_count = 5`. It is the only line to change.",
+                "Every line built from `rope_count` uses its new number when you press Run again. Python is not a "
+                "spreadsheet: nothing changes until you press Run.",
+                "Change the `5` on line 3 to `1000`. Line 3 becomes `rope_count = 1000`. Press Run.",
             ],
             checks=[
-                ("rope_count is 1000", "assert rope_count == 1000, 'Change line 3 to `rope_count = 1000`, then run.'"),
+                ("rope_count is 1000",
+                 "assert rope_count == 1000, '`rope_count` is not 1000 yet. Change line 3 to `rope_count = 1000`, "
+                 "then press Run.'"),
                 (
                     "the total is printed",
-                    "assert str(total_cost) in _lines(), 'Keep `print(total_cost)` at the bottom, so you can watch it follow.'",
+                    "assert str(total_cost) in _lines(), 'Keep `print(total_cost)` as the last line, so the total "
+                    "shows in the Console.'",
                 ),
             ],
-            pass_line="Mar'tu: 2012 coins. You did not do that sum, yes? The code did. Lucky, put the rope down.",
+            pass_line="Mar'tu: 2012 coins. You didn't do that math, yes? Python did. Lucky, put the rope down.",
         ),
     ],
     solution=(
@@ -1115,24 +1209,26 @@ LET_THE_CODE_COMBINE = dict(
             text=(
                 "```text\nlantern_count * lantern_price\n  --> lantern_cost\n\nrope_count * rope_price\n  --> rope_cost\n\n"
                 "lantern_cost + rope_cost\n  --> total_cost\n```\n"
-                "Change any box on the left, and the arrows carry it all the way to the total."
+                "Change any box on the left and press Run again: the arrows carry the new number all the way to the "
+                "total."
             ),
         ),
         dict(
             angle="everyday",
             label="An online cart",
             text=(
-                "In an online cart, change the quantity from 3 to 7 and the total updates by itself. "
-                "That only works because the cart multiplies and adds. It never stores the total as a typed number."
+                "In an online cart, you change the quantity from 3 to 7 and press Update. The cart works out the "
+                "total again from quantity × price. It never keeps a typed-in total. In Python, Run is your Update "
+                "button."
             ),
         ),
         dict(
             angle="show your working",
-            label="Show your working",
+            label="Show your work",
             text=(
-                "In math class, a teacher wants the working, not just the answer. Python is the same. "
-                "`total_cost = 22` is just the answer. `total_cost = lantern_cost + rope_cost` is the working, "
-                "and Python checks it every time it runs."
+                "In math class, a teacher wants your work, not only the answer. Python is the same. "
+                "`total_cost = 22` is only the answer. `total_cost = lantern_cost + rope_cost` is the work, "
+                "and Python does it again every time you press Run."
             ),
         ),
         dict(angle="shorter", text="Cost = how many `*` price of one. Total = cost `+` cost. Never type the answer."),
@@ -1147,25 +1243,26 @@ LET_THE_CODE_COMBINE = dict(
     ],
     bonus=dict(
         by="lucky",
-        title="What's in it for me?",
+        title="Coins left over",
         text=(
-            "Mar'tu has 30 coins. Make `coins = 30`, then print how many coins are left after the shopping, "
-            "built from the boxes. With 1000 ropes, expect bad news."
+            "Mar'tu has 30 coins. Under `print(total_cost)`, make a box `coins = 30`. Then show how many coins are "
+            "left: the coins minus the total cost, using the box names. With 1000 ropes, expect bad news."
         ),
         hints=[
-            "Start like this: `coins = 30`, then `print(coins - `",
-            "What is left is the coins take away the total cost.",
+            "Add two lines under `print(total_cost)`. Start like this: `coins = 30`, then `print(coins - `",
+            "`print(coins - total_cost)` shows what is left: the coins take away the total cost.",
         ],
         checks=[
-            ("coins is 30", "assert coins == 30, 'Make `coins = 30`.'"),
+            ("coins is 30", "assert coins == 30, 'Make a box `coins = 30` on a new line.'"),
             (
                 "prints what is left",
-                "assert str(coins - total_cost) in _lines(), 'Print what is left: `coins - total_cost`.'",
+                "assert str(coins - total_cost) in _lines(), 'What is left does not show yet. Add "
+                "`print(coins - total_cost)`.'",
             ),
             rerun_line(
                 "what is left follows the boxes", {"lantern_count": 7},
                 "str(_R('coins') - _R('lantern_count') * _R('lantern_price') - _R('rope_count') * _R('rope_price'))",
-                "Use `coins - total_cost`, so it follows the boxes.",
+                "Your line has a typed-in number. Use the box names, not numbers: `print(coins - total_cost)`.",
             ),
         ],
         solution=(
@@ -1179,11 +1276,14 @@ LET_THE_CODE_COMBINE = dict(
         part="mana-bars",
         snippet='empty = "░" * (caster["max_mana"] - caster["mana"])',
         why=(
-            "You have seen this line. Nobody typed how much mana was used. The code took it from the caster's "
+            "You've seen this line. Nobody typed how much mana was used. The code worked it out from the caster's "
             "boxes, so the bar was right for Oogrish, Gearshift, Bomb Shell and Lucky. Same idea as your total."
         ),
     ),
-    takeaway="Let the code combine it: `total_cost = lantern_cost + rope_cost`. Then it follows when a box changes.",
+    takeaway=(
+        "Write the math with box names: `total_cost = lantern_cost + rope_cost`. Change a box and press Run again, "
+        "and the total changes to match."
+    ),
     wrong_answers=[
         dict(why="the total typed by hand (everyone's 68)",
              code=COST_BOXES + "lantern_cost = lantern_count * lantern_price\nrope_cost = rope_count * rope_price\n"
@@ -1238,7 +1338,7 @@ LET_THE_CODE_COMBINE = dict(
              fails_at=3, message_contains="quotes"),
         dict(why="the math worked out on a line of its own, kept in no box (B-02/B-03 lone value)",
              code=COST_BOXES + "lantern_cost = 0\nlantern_count * lantern_price\nrope_cost = 0\ntotal_cost = 0\nprint(total_cost)\n",
-             fails_at=1, message_contains="keeps it nowhere"),
+             fails_at=1, message_contains="no box keeps the answer"),
         dict(why="adds the rope boxes instead of multiplying",
              code=COST_BOXES + "lantern_cost = lantern_count * lantern_price\nrope_cost = rope_count + rope_price\n"
              "total_cost = 0\nprint(total_cost)\n",
@@ -1253,7 +1353,7 @@ LET_THE_CODE_COMBINE = dict(
         dict(why="CP4 done as a new line at the bottom (side-work habit): the total never sees 1000",
              code=COST_BOXES + "lantern_cost = lantern_count * lantern_price\nrope_cost = rope_count * rope_price\n"
              "total_cost = lantern_cost + rope_cost\nprint(total_cost)\nrope_count = 1000\n",
-             fails_at=2, message_contains="top down"),
+             fails_at=2, message_contains="top to bottom"),
     ],
     notes=(
         meta(starter_level="S4", path="CC", skills="combine-values", solo="false", dictates="1,4",
@@ -1280,14 +1380,15 @@ SPEND_MANA = dict(
     id="spend-mana",
     title="Spend some mana",
     martu=(
-        "`mana = mana - spell_cost` means: take what is in `mana` now, subtract the cost, "
-        "and put the answer back in `mana`.\n"
-        "Read `=` as gets: mana gets mana minus spell cost."
+        "In math class, x = x − 3 has no answer. But Python's `=` isn't a math statement. Python works out the "
+        "right side first, with what's in the box now: 26 − 3 is 23. Then 23 goes back in the box: "
+        "`mana = mana - spell_cost`.\n"
+        "Read it as: mana gets mana minus spell cost. To cast a spell means to use it once."
     ),
     names=["mana", "spell_cost"],
     tracer=True,
     predict=dict(
-        q="What will this print?",
+        q="Before you press Run: what will this code show in the Console?",
         choices=["20", "23", "26", "29"],
         answer=0,
         explain=(
@@ -1296,7 +1397,7 @@ SPEND_MANA = dict(
             "2. `spell_cost = 3`: mana still holds 26.\n"
             "3. `mana = mana - spell_cost`: 26 - 3, so 23.\n"
             "4. The same line again: 23 - 3, so 20.\n"
-            "5. `print(mana)`: mana holds 20, so 20 prints."
+            "5. `print(mana)`: mana holds 20, so 20 shows."
         ),
     ),
     pair_talk=(
@@ -1307,33 +1408,38 @@ SPEND_MANA = dict(
     checkpoints=[
         dict(
             id="three-casts",
-            text="Make it three casts.",
+            text=(
+                "Each `mana = mana - spell_cost` line casts the spell once. Add one more of those lines, right above "
+                "`print(mana)`. You should see 17."
+            ),
             dictated=True,
             hints=[
-                "Click at the end of line 4, press Enter, and type `mana = `.",
-                "Which line spends mana? You need one more of it, above the `print`.",
+                "Look at lines 3 and 4: each one casts the spell once. Click at the end of line 4, press Enter, and "
+                "type `mana = `.",
                 "Python works out the right side first, using what is in the box now. If `glow = 8`, then "
                 "`glow = glow - 2` puts 6 back in `glow`.",
+                "Write `mana = mana - spell_cost` above `print(mana)`.",
             ],
             checks=[
                 near_names("the names are exact", ["mana", "spell_cost"], ["mana", "spell_cost"]),
                 no_bare_math("the answer goes back in the box", "mana"),
                 (
                     "three casts print 17",
-                    "assert '-17' not in _lines(), 'Your new line takes `mana` away from `spell_cost`, so it gives -17. "
+                    "assert '-17' not in _lines(), 'Your new line takes `mana` away from `spell_cost`, so it shows -17. "
                     "Put `mana` first: `mana = mana - spell_cost`.'\n"
-                    "assert '17' in _lines() or mana != 17, '`mana` holds 17, but it was printed too early. "
-                    "Put `print(mana)` below the third cast.'\n"
-                    "assert '17' in _lines() or mana != 20, '`mana` is 20, which is two casts. "
-                    "Add one more `mana = mana - spell_cost` line above the `print`.'\n"
-                    "assert '17' in _lines() or mana != 14, '`mana` is 14, which is four casts. "
-                    "Keep three `mana = mana - spell_cost` lines, then the `print`.'\n"
-                    "assert '17' in _lines(), 'Three casts of 3 from 26 leave 17. "
-                    "Add a third `mana = mana - spell_cost` line above the `print`.'",
+                    "assert '17' in _lines() or mana != 17, '`mana` ends at 17, but `print(mana)` ran too early, "
+                    "before the third cast. Move `print(mana)` to the last line.'\n"
+                    "assert '17' in _lines() or mana != 20, '`mana` ends at 20: that is only two casts. "
+                    "Add one more `mana = mana - spell_cost` line above `print(mana)`.'\n"
+                    "assert '17' in _lines() or mana != 14, '`mana` ends at 14: that is four casts. "
+                    "Keep three `mana = mana - spell_cost` lines, then `print(mana)`.'\n"
+                    "assert '17' in _lines(), 'The Console does not show three casts yet. "
+                    "Add a third `mana = mana - spell_cost` line above `print(mana)`.'",
                 ),
                 rerun_line(
                     "the casts use spell_cost", {"spell_cost": 5}, "str(26 - 3 * _R('spell_cost'))",
-                    "Spend `spell_cost` in each cast, not a number.",
+                    "Some of your code has a typed-in number. Use the box names, not numbers: every cast is "
+                    "`mana = mana - spell_cost`.",
                 ),
                 (
                     "each cast changes the box",
@@ -1342,7 +1448,7 @@ SPEND_MANA = dict(
                     "and any(getattr(_t, 'id', '') == 'mana' for _t in _n.targets) and type(_n.value).__name__ == 'BinOp' "
                     "and type(_n.value.op).__name__ == 'Sub') or (type(_n).__name__ == 'AugAssign' "
                     "and getattr(_n.target, 'id', '') == 'mana' and type(_n.op).__name__ == 'Sub')]\n"
-                    "assert len(_casts) >= 3, 'Your program prints 17, but `mana` only changed ' + str(len(_casts)) + "
+                    "assert len(_casts) >= 3, '17 shows, but `mana` only changed ' + str(len(_casts)) + "
                     "' times. Give the third cast its own line, `mana = mana - spell_cost`, so the box keeps the answer.'",
                 ),
             ],
@@ -1394,20 +1500,21 @@ SPEND_MANA = dict(
     ],
     bonus=dict(
         by="lucky",
-        title="What's in it for me?",
+        title="Lucky shares his glug",
         text=(
-            "After the third cast, Lucky shares his glug: +2 mana. Below the `print`, add 2 to `mana` the same way, "
-            "then print `mana` again."
+            "After the third cast, Lucky shares his glug (his drink): +2 mana. Under `print(mana)`, add 2 to `mana` "
+            "the same way, then show `mana` again."
         ),
         hints=[
-            "Start like this: `mana = mana + `",
-            "Then another `print(mana)` under it.",
+            "Add two lines under `print(mana)`. Start like this: `mana = mana + `",
+            "`mana = mana + 2` puts 2 more in the box. Then add another `print(mana)` under it.",
         ],
         checks=[
-            ("prints 19 after the glug", "assert '19' in _lines(), 'After the glug, `mana` should be 19. Add 2 the same way, then print it.'"),
+            ("prints 19 after the glug", "assert '19' in _lines(), '19 does not show yet. Under `print(mana)`, add "
+             "`mana = mana + 2`, then another `print(mana)`.'"),
             rerun_line(
                 "the glug line uses the box", {"spell_cost": 5}, "str(26 - 3 * _R('spell_cost') + 2)",
-                "Add 2 to what is in `mana` now: `mana = mana + 2`.",
+                "Your code has a typed-in number. Add 2 to what is in `mana` now: `mana = mana + 2`.",
             ),
         ],
         solution=SPEND_SOLUTION + "mana = mana + 2\nprint(mana)\n",
@@ -1417,11 +1524,14 @@ SPEND_MANA = dict(
         part="hold-the-barrier",
         snippet='caster["mana"] = caster["mana"] - spell["mana_cost"]',
         why=(
-            "You have seen this line in `cast_spell`. It is `mana = mana - spell_cost` with longer labels: "
+            "You've seen this line in `cast_spell`. It is `mana = mana - spell_cost` with longer names: "
             "take the caster's mana now, subtract the spell's cost, put the answer back."
         ),
     ),
-    takeaway="`mana = mana - spell_cost`: the right side first, with what is in the box now; the answer goes back in.",
+    takeaway=(
+        "`mana = mana - spell_cost`: Python works out the right side first, with what is in the box now, then puts "
+        "the answer back in the box."
+    ),
     wrong_answers=[
         dict(why="the final mana typed by hand", code="mana = 26\nspell_cost = 3\nmana = 17\nprint(mana)\n",
              fails_at=1, message_contains="5"),
@@ -1477,8 +1587,9 @@ def named_out(label, tail, missing_lucky, missing_own, spaces):
 
 GLUE_OUT = named_out(
     "prints Lucky has 26 mana.", "' has ' + str(mana) + ' mana.'",
-    "Print `Lucky has 26 mana.`, glued from `name`, fixed words and `str(mana)`.",
-    "Print the line glued from `name`, fixed words and `str(mana)`, like `Tester has 4 mana.`",
+    "Show `Lucky has 26 mana.`, glued from `name`, the words in quotes, and `str(mana)`.",
+    "Show the line glued from `name`, the words in quotes, and `str(mana)`. With a made-up name, Tester, and 4 "
+    "mana, it would show `Tester has 4 mana.`",
     "Check the spaces: one after the name, and one on each side of the number.",
 )
 
@@ -1489,8 +1600,8 @@ GLUE_NO_QUOTED_NAMES = (
     "_q = [_n.value for _n in _ast.walk(_ast.parse(_source)) if type(_n).__name__ == 'Constant' "
     "and type(_n.value).__name__ == 'str' and _n.value.strip() in ('mana', 'name')]\n"
     "_right = str(name) + ' has ' + str(mana) + ' mana.' in _lines()\n"
-    "assert _right or not _q, '`\"' + (_q[0].strip() if _q else '') + '\"` in quotes is just those letters. "
-    + QUOTES_RULE + "'",
+    "assert _right or not _q, 'Take the quotes off `' + (_q[0].strip() if _q else '') + '`. In quotes, it is only "
+    "those letters, not the box. " + QUOTES_RULE + "'",
 )
 
 # CP1 of glue-words: some printed line starts with the name and ` has` (the finished line does too). The message
@@ -1502,12 +1613,12 @@ GLUE_FIRST_BEAD = (
     "_msg = ''\n"
     "if not any(_l.startswith(_first) for _l in _ls):\n"
     "    if not _ls:\n"
-    "        _msg = 'Nothing is printed yet. Type `print(name + \" has \")` and run.'\n"
+    "        _msg = 'Nothing shows in the Console yet. Type `print(name + \" has \")` on a new line under the `#` note, and press Run.'\n"
     "    elif any(_l.startswith(str(name) + 'has') for _l in _ls):\n"
     "        _msg = 'A space is missing between the name and `has`. Spaces are text too: put them inside the quotes, `\" has \"`.'\n"
     "    else:\n"
-    "        _msg = 'Print the name from the box, then ` has`. For a hero named Tester, that is `Tester has`. "
-    "Type `print(name + \" has \")`.'\n"
+    "        _msg = 'Your line does not start with the name from the box, then ` has`. Type `print(name + \" has \")`. "
+    "With a made-up name, Tester, it would show `Tester has`.'\n"
     "assert not _msg, _msg\n",
 )
 
@@ -1515,16 +1626,18 @@ GLUE_WORDS = dict(
     id="glue-words",
     title="Glue words together",
     martu=(
-        "`+` [[glue|glues]] text to text. A number must become text first: `str(26)` gives `\"26\"`. "
-        "Spaces are text too.\n"
-        "`\"Mana: \" + 26` makes Python stop: it will not glue text to a number. `\"Mana: \" + str(26)` works."
+        "`+` has two jobs. Between numbers it adds: `2 + 3` is 5. Between texts it [[glue|glues]], like a compound "
+        "word: `\"sun\" + \"flower\"` is `\"sunflower\"`, with no space. To glue a number, make it text first with "
+        "[[str()|`str()`]], short for *string*: `str(26)` gives `\"26\"`.\n"
+        "`\"Mana: \" + 26` makes Python stop. `\"Mana: \" + str(26)` works. Spaces are text too, so put them inside "
+        "the quotes."
     ),
     introduces=["call:str"],
     example='drink = "glug"\nsips = 5\nprint("Lucky drinks " + drink + ".")\nprint("Sips left: " + str(sips))\n',
     example_output="Lucky drinks glug.\nSips left: 5",
     names=["name", "mana", "str"],
     predict=dict(
-        q="What will this print?",
+        q="What will this line show in the Console?",
         code='print("Lucky" + "is" + "ready.")\n',
         choices=["Lucky is ready.", "Luckyisready.", "Lucky + is + ready."],
         answer=1,
@@ -1537,54 +1650,68 @@ GLUE_WORDS = dict(
     checkpoints=[
         dict(
             id="lucky-has",
-            text="Start small: print `Lucky has`, built from `name` and the words `\" has \"`. Run it.",
+            text=(
+                "On a new line under the `#` note, type `print(name + \" has \")` and press Run. The spaces inside the "
+                "quotes matter. You should see `Lucky has`."
+            ),
             dictated=True,
             hints=[
-                "Type `print(name + \" has \")` and run.",
-                "`name` has no quotes: it is a box. ` has ` is fixed words, so it goes in quotes, spaces and all.",
-                "`\"Hi \" + pet` glues fixed words to the text in the box `pet`.",
+                "Click at the end of line 3, the `#` note, and press Enter. Then type `print(name + \" has \")` on the "
+                "new line 4 and press Run.",
+                "Words to show go in quotes, spaces and all. A box name has no quotes, so Python looks inside it: "
+                "`\"Hi \" + pet` glues `Hi ` to the text in the box `pet`.",
+                "Type `print(name + \" has \")` on line 4, under the `#` note.",
             ],
             checks=[
                 GLUE_NO_QUOTED_NAMES,
                 GLUE_FIRST_BEAD,
                 rerun_line(
                     "the name comes from the box", {"name": "Tester"}, "'Tester has'",
-                    "Glue the box `name`, not typed letters: `print(name + \" has \")`.", hide=own("name"), starts=True,
+                    "Your line has the name typed in, not the box. Use the box instead: `print(name + \" has \")`.",
+                    hide=own("name"), starts=True,
                 ),
             ],
             pass_line="Mar'tu: Two beads on the string. Now the number.",
         ),
         dict(
             id="lucky-has-mana",
-            text="Now add the number and the end, `+ str(mana) + \" mana.\"`, so it prints `Lucky has 26 mana.`",
+            text=(
+                "Click just before the last `)` on your `print` line and type `+ str(mana) + \" mana.\"`. You should "
+                "see `Lucky has 26 mana.`"
+            ),
             dictated=True,
             hints=[
-                "Click just before the last `)` and type `+ str(mana) + \" mana.\"`",
-                "`mana` holds a number. What does a number need before it can be glued?",
-                "The frame: `print(name + \" has \" + ___ + \" mana.\")`. The blank turns the number into text.",
+                "Look at the last `)` on your `print` line. The new pieces go just before it.",
+                "`mana` holds a number, and `+` won't glue text to a number. `str(mana)` makes a text copy of the "
+                "number, so it can be glued.",
+                "Click just before the last `)` on line 4 and type `+ str(mana) + \" mana.\"`. Line 4 becomes "
+                "`print(name + \" has \" + str(mana) + \" mana.\")`.",
             ],
             checks=[
                 GLUE_NO_QUOTED_NAMES,
                 (
                     "mana holds a number",
                     "assert type(mana).__name__ == 'int', '`mana` holds text, because of the quotes. Numbers don' + "
-                    "chr(39) + 't need quotes: keep `mana = 26`, and turn it into text in the line with `str(mana)`.'",
+                    "chr(39) + 't get quotes: change line 2 back to `mana = 26`, and use `str(mana)` in your `print` line.'",
                 ),
                 GLUE_OUT,
                 rerun_line(
                     "the line is built from the boxes", {"name": "Tester", "mana": 4},
                     "_R('name') + ' has ' + str(_R('mana')) + ' mana.'",
-                    "Build the line from `name` and `str(mana)`, so it follows the boxes.", hide=own("name"),
+                    "Your line has typed-in words or numbers. Use the box names instead: `name` and `str(mana)`.",
+                    hide=own("name"),
                 ),
                 rerun_line(
                     "the line follows other boxes too", {"name": "Zelda", "mana": 7},
                     "_R('name') + ' has ' + str(_R('mana')) + ' mana.'",
-                    "Build the line from `name` and `str(mana)`, so it follows the boxes.", hide=own("name"),
+                    "Your line has typed-in words or numbers. Use the box names instead: `name` and `str(mana)`.",
+                    hide=own("name"),
                 ),
                 (
                     "glued with + and str()",
-                    "assert _uses('op:Add') and _uses('call:str'), 'Your line prints the right words. This step "
-                    "practises glue: join the pieces with `+`, and turn the number into text with `str(mana)`.'",
+                    "assert _uses('op:Add') and _uses('call:str'), 'Your line uses commas, which add the spaces for "
+                    "you. This step practices gluing: put `+` between the pieces, and turn the number into text with "
+                    "`str(mana)`.'",
                 ),
             ],
             pass_line="Lucky: Twenty-six. Fine. But I'm keeping track.",
@@ -1611,15 +1738,16 @@ GLUE_WORDS = dict(
             label="Gluing labels",
             text=(
                 "Glue three paper labels in a row. Nothing adds the gaps for you: if you want a gap, it must be "
-                "printed on a label. In Python, the gap is a space inside the quotes."
+                "written on a label. In Python, the gap is a space inside the quotes."
             ),
         ),
         dict(
             angle="step-by-step",
             label="Build it piece by piece",
             text=(
-                "1. `print(name)`, run.\n2. `print(name + \" has \")`, run.\n"
-                "3. `print(name + \" has \" + str(mana))`, run.\n4. Add `+ \" mana.\"`, run. Check every space."
+                "1. `print(name)`, press Run.\n2. `print(name + \" has \")`, press Run.\n"
+                "3. `print(name + \" has \" + str(mana))`, press Run.\n4. Add `+ \" mana.\"`, press Run. Check every "
+                "space."
             ),
         ),
         dict(
@@ -1633,25 +1761,28 @@ GLUE_WORDS = dict(
     ],
     bonus=dict(
         by="lucky",
-        title="What's in it for me?",
+        title="Lucky wants a bigger line",
         text=(
-            "Lucky wants it to look bigger. Make a box `max_mana = 26`, then on a new line print "
-            "`Lucky has 26 of 26 mana.`, built from the boxes."
+            "Lucky wants it to look bigger. Under your `print` line, make a box `max_mana = 26`. Then add a new "
+            "`print` line that shows `Lucky has 26 of 26 mana.`, glued from the boxes."
         ),
         hints=[
-            "Start like this: `max_mana = 26`",
-            "Copy your `print` line and add `+ \" of \" + str(max_mana)` in the right place.",
+            "Add the new lines under your `print` line. Start like this: `max_mana = 26`",
+            "Copy your `print` line. Then put `+ \" of \" + str(max_mana)` right after `str(mana)`.",
         ],
         checks=[
-            ("max_mana is 26", "assert max_mana == 26, 'Make a box `max_mana = 26`.'"),
+            ("max_mana is 26", "assert max_mana == 26, 'Make a box `max_mana = 26` on a new line.'"),
             named_out("prints the of-line", "' has ' + str(mana) + ' of ' + str(max_mana) + ' mana.'",
-                      "Print `Lucky has 26 of 26 mana.` on a new line.",
-                      "Print the of-line on a new line, like `Tester has 4 of 30 mana.`",
+                      "Show `Lucky has 26 of 26 mana.` on a new line.",
+                      "Show the new line, glued from the boxes. With a made-up name, Tester, it would look like "
+                      "`Tester has 4 of 30 mana.`",
                       "Check the spaces: one on each side of `has` and `of`, and one before `mana.`"),
             rerun_line(
                 "the of-line is built from the boxes", {"name": "Tester", "mana": 4, "max_mana": 30},
                 "_R('name') + ' has ' + str(_R('mana')) + ' of ' + str(_R('max_mana')) + ' mana.'",
-                "Build it from `name`, `str(mana)` and `str(max_mana)`.", hide=own("name"),
+                "Your line has typed-in words or numbers. Use the box names: `name`, `str(mana)` and "
+                "`str(max_mana)`.",
+                hide=own("name"),
             ),
         ],
         solution=(
@@ -1664,7 +1795,7 @@ GLUE_WORDS = dict(
         part="mana-bars",
         snippet='return "Mana [" + filled + empty + "] " + str(caster["mana"]) + "/" + str(caster["max_mana"])',
         why=(
-            "You have seen this line, and it probably looked like a wall. Now read it as beads: text, text, "
+            "You've seen this line, and it probably looked like a wall. Now read it as beads: text, text, "
             "text, `str()` of a number, text, `str()` of a number. That is all it ever was."
         ),
     ),
@@ -1685,10 +1816,10 @@ GLUE_WORDS = dict(
              fails_at=2, message_contains="typed in"),
         dict(why="the number quoted so it glues without str() (NUM)",
              code='name = "Lucky"\nmana = "26"\nprint(name + " has " + mana + " mana.")\n',
-             fails_at=2, message_contains="Numbers don't need quotes"),
+             fails_at=2, message_contains="Numbers don't get quotes"),
         dict(why="commas instead of glue: right output, skips + and str()",
              code='name = "Lucky"\nmana = 26\nprint(name, "has", mana, "mana.")\n',
-             fails_at=2, message_contains="practises glue"),
+             fails_at=2, message_contains="practices gluing"),
         dict(why="a closing quote missing", code='name = "Lucky"\nmana = 26\nprint(name + " has + str(mana) + " mana.")\n',
              fails_at=0, message_contains="SyntaxError"),
         dict(why="gaming: boxes set to the rerun's values, then the line typed",
@@ -1702,10 +1833,10 @@ GLUE_WORDS = dict(
         dict(why="CP1: gaming the message: the typed bead plus the Tester bead the message showed",
              code='name = "Lucky"\nmana = 26\nprint("Lucky has")\nprint("Tester has")\n', fails_at=1, message_contains="typed in"),
         dict(why="CP1: the student's own hero typed (the message shows Tester, never the hero)",
-             code='name = "Kai"\nmana = 26\nprint("Kai has")\n', fails_at=1, message_contains="should print a line that starts with `Tester has`. Glue"),
+             code='name = "Kai"\nmana = 26\nprint("Kai has")\n', fails_at=1, message_contains="it should show a line that starts with `Tester has`. Don't type Tester"),
         dict(why="CP1: the starter run as it is (nothing printed)",
              code='name = "Lucky"\nmana = 26\n# Print: Lucky has 26 mana.  Build it from the boxes.\n', fails_at=1,
-             message_contains="Nothing is printed yet"),
+             message_contains="Nothing shows in the Console yet"),
     ],
     notes=(
         meta(starter_level="S4", path="CC", skills="concat-str", solo="false", dictates="1,2",
@@ -1744,8 +1875,11 @@ STATUS_LINE_EX = dict(
     id="status-line",
     title="A status line",
     martu=(
-        "Build Oogrish's status line from boxes. Max mana is twice the magical affinity.\n"
-        "You may put any hero in `hero_name`. The boxes do the rest."
+        "A status line shows a hero's name and mana, like the stats text in a game: `Oogrish: 18/18 mana`. Max "
+        "mana is the most mana a hero can hold. It is twice the magical affinity, how strong the hero's magic is. "
+        "Twice means times 2.\n"
+        "The 0s on lines 3 and 4 are placeholders: their `#` notes say what goes there. Any hero can go in "
+        "`hero_name`."
     ),
     names=["hero_name", "magical_affinity", "max_mana", "mana", "str"],
     pick='"Oogrish"',
@@ -1753,12 +1887,12 @@ STATUS_LINE_EX = dict(
     checkpoints=[
         dict(
             id="max-mana",
-            text="Make `max_mana` twice as big as `magical_affinity`.",
+            text="On line 3, replace the `0` so `max_mana` is `magical_affinity` times 2.",
             dictated=False,
             hints=[
-                "Start like this: `max_mana = magical_affinity * `",
-                "Twice means times 2. Which box holds the affinity?",
-                "If `power = 7`, then `double = power * 2` puts 14 in `double`, and it follows when `power` changes.",
+                "Look at line 3, `max_mana = 0  # twice the affinity`. Start like this: `max_mana = magical_affinity * `",
+                "Twice means times 2. If `power = 7`, then `power * 2` is 14. Which box holds the affinity?",
+                "Replace the `0` on line 3 with `magical_affinity * 2`. Keep the `#` note as it is.",
             ],
             checks=[
                 loose_math("the math is kept in a box"),
@@ -1766,57 +1900,71 @@ STATUS_LINE_EX = dict(
                     "max_mana is twice the affinity", "max_mana", "magical_affinity * 2",
                     known=STATUS_KNOWN, foreign=["power", "double"],
                     rules=[
-                        ("_have == magical_affinity + 2", "That adds 2. Twice means times 2: use `* 2`."),
-                        ("_have == magical_affinity", "That is the affinity once. Twice means times 2."),
+                        ("_have == magical_affinity + 2", "Your line adds 2. Twice means times 2, so use `* 2`."),
+                        ("_have == magical_affinity", "That is the affinity only once. Twice means times 2: "
+                         "`magical_affinity * 2`."),
                     ],
-                    default="Make `max_mana` from the box `magical_affinity`, times 2.",
+                    default="Make `max_mana` the affinity times 2: `magical_affinity * 2`.",
                 ),
                 rerun_box("max_mana follows the affinity", {"magical_affinity": 13}, "max_mana",
-                          "_R('magical_affinity') * 2", "Build it from `magical_affinity`."),
+                          "_R('magical_affinity') * 2",
+                          "`max_mana` has a typed-in number. Use the box name, not a number: `magical_affinity * 2`."),
             ],
         ),
         dict(
             id="mana-full",
-            text="Make `mana` start full: `mana = max_mana`.",
+            text="On line 4, replace the `0` with `max_mana`, so `mana` starts full: `mana = max_mana`.",
             dictated=True,
             hints=[
-                "Change line 4 to start with `mana = `.",
-                "Full means mana is the same as the max. Which box holds the max?",
-                "A box can get what is in another box: `spare = backpack` copies what is in `backpack`.",
+                "Look at line 4, `mana = 0  # starts full`. The `0` is only a placeholder.",
+                "Full means the mana is as big as the max. A box can get what is in another box: "
+                "`spare = backpack` copies what is in `backpack`. Which box holds the max?",
+                "Replace the `0` on line 4 with `max_mana`. Line 4 becomes `mana = max_mana  # starts full`.",
             ],
             checks=[
                 slot("mana starts full", "mana", "max_mana", known=STATUS_KNOWN, foreign=["spare", "backpack"],
-                     default="Mana starts full: write `mana = max_mana`."),
+                     default="`mana` should start full, the same as `max_mana`. Write `mana = max_mana`."),
                 rerun_box("mana follows max_mana", {"magical_affinity": 13}, "mana", "_R('magical_affinity') * 2",
-                          "Use the box: `mana = max_mana`."),
+                          "`mana` has a typed-in number. Use the box name, not a number: `mana = max_mana`."),
             ],
         ),
         dict(
             id="print-status",
-            text="Print the status line for your hero, like `Oogrish: 18/18 mana`. Build it from the boxes.",
+            text=(
+                "On line 6, a new line at the bottom, show your hero's status line, like `Oogrish: 18/18 mana`. Glue "
+                "it from the boxes with `+` and `str()`. The `\"/\"` goes in quotes, so it's a slash, not divide."
+            ),
             dictated=False,
             hints=[
-                "Start like this: `print(hero_name + \": \" + `",
-                "Which boxes go between the fixed words? Name, then mana, then max mana.",
+                "Add a new line under line 5, the `# Print:` note. Start like this: `print(hero_name + \": \" + `",
+                "Between the words in quotes go three boxes: the name, then the mana, then the max mana. The two "
+                "numbers need `str()`.",
                 "Same beads, other names: `print(pet + \": \" + str(hp) + \"/\" + str(max_hp) + \" hp\")` shows "
-                "`Moth: 3/5 hp`. Your frame: `print(hero_name + \": \" + ___ + \"/\" + ___ + \" mana\")`.",
+                "`Moth: 3/5 hp`. Your frame: `print(hero_name + \": \" + ___ + \"/\" + ___ + \" mana\")`. Fill each "
+                "___ with `str()` of a box.",
             ],
             checks=[
                 out_line(
                     "prints the status line",
                     "hero_name + ': ' + str(mana) + '/' + str(max_mana) + ' mana'",
-                    "Your status line should be the hero's name, `: `, the mana, `/`, the max mana, then ` mana`. "
-                    "For a hero named Tester with 26 mana, that is `Tester: 26/26 mana`.",
+                    "Your status line is not showing yet. Glue the hero's name, `: `, the mana, `/`, the max mana, "
+                    "then ` mana`. With a made-up name, Tester, and 26 mana, it would show `Tester: 26/26 mana`.",
                     privacy=True,
                     spaces="Check the spaces: one after the colon, and one before `mana`. Like `Tester: 26/26 mana`.",
                 ),
                 rerun_line(
                     "the status line is built from the boxes", {"hero_name": "Tester", "magical_affinity": 13},
-                    "'Tester: 26/26 mana'", "Build the line from the boxes, with `str()` on each number.", show=False,
+                    "'Tester: 26/26 mana'",
+                    "Your line has typed-in words or numbers. Use the box names: `hero_name`, `str(mana)` and "
+                    "`str(max_mana)`.",
+                    show=False,
                 ),
                 rerun_line(
                     "the status line follows other boxes too", {"hero_name": "Zelda", "magical_affinity": 5},
-                    "'Zelda: 10/10 mana'", "Build the line from the boxes, with `str()` on each number.", show=False,
+                    "'Zelda: 10/10 mana'",
+                    "Your line has typed-in words or numbers. Use the box names: `hero_name`, `str(mana)` and "
+                    "`str(max_mana)`.",
+                    show=False,
                 ),
                 (
                     "the first number is mana",
@@ -1826,7 +1974,7 @@ STATUS_LINE_EX = dict(
                     "mana the hero has now: glue in `str(mana)` there, and `str(max_mana)` after the `/`.'",
                 ),
             ],
-            pass_line="Mar'tu: Hm. That one goes in my ledger.",
+            pass_line="Mar'tu: Hm. That one goes in my ledger, my notebook for the night.",
         ),
     ],
     solution=_status("Captain Glug"),
@@ -1852,40 +2000,49 @@ STATUS_LINE_EX = dict(
         dict(
             angle="step-by-step",
             text=(
-                "1. `max_mana = magical_affinity * 2`, run.\n2. `mana = max_mana`, run.\n"
-                "3. `print(hero_name + \": \")`, run.\n4. Add `+ str(mana) + \"/\" + str(max_mana) + \" mana\"`, run."
+                "1. `max_mana = magical_affinity * 2`, press Run.\n2. `mana = max_mana`, press Run.\n"
+                "3. `print(hero_name + \": \")`, press Run.\n"
+                "4. Add `+ str(mana) + \"/\" + str(max_mana) + \" mana\"`, press Run."
             ),
         ),
         dict(
             angle="in Tor",
             label="My ledger",
-            text="In my ledger, every hero gets one line: name, colon, mana over max mana. Same shape, every night.",
+            text=(
+                "My ledger is my notebook for the night. In it, every hero gets one line: name, colon, mana over max "
+                "mana. Same shape, every night."
+            ),
         ),
         dict(angle="shorter", text="Max is affinity `* 2`. Mana gets max. Glue: name, `\": \"`, mana, `\"/\"`, max, `\" mana\"`."),
     ],
     bonus=dict(
         by="lucky",
-        title="What's in it for me?",
+        title="Lucky's status line",
         text=(
-            "Lucky's turn. Make `lucky_affinity = 13`, then `lucky_max` (twice it) and `lucky_mana` (full). "
-            "Spend 3 from `lucky_mana`, then print `Lucky: 23/26 mana`, built from the boxes."
+            "Lucky's turn. At the bottom of your code:\n"
+            "1. Make `lucky_affinity = 13`, then `lucky_max` (twice it) and `lucky_mana` (full).\n"
+            "2. Take 3 away from `lucky_mana`.\n"
+            "3. Show `Lucky: 23/26 mana`, glued from the boxes."
         ),
         hints=[
             "Same shape as Oogrish: `lucky_max = lucky_affinity * 2`, then `lucky_mana = lucky_max`.",
-            "Spend: `lucky_mana = lucky_mana - 3`. Then glue the line with `str()`.",
+            "Take 3 away: `lucky_mana = lucky_mana - 3`. Then glue the line with `+` and `str()`.",
         ],
         checks=[
-            out_line("prints Lucky's line", "'Lucky: 23/26 mana'", "Print `Lucky: 23/26 mana`, built from the lucky boxes.",
+            out_line("prints Lucky's line", "'Lucky: 23/26 mana'",
+                     "Glue `Lucky: 23/26 mana` from the `lucky_` boxes with `+` and `str()`.",
                      hide=own("hero_name")),
             rerun_line("Lucky's line follows his boxes", {"lucky_affinity": 10}, "'Lucky: 17/20 mana'",
-                       "Build every number from `lucky_affinity`.", hide=own("hero_name")),
+                       "Your line has a typed-in number. Use the box names, not numbers: `lucky_max` and `lucky_mana` "
+                       "both come from `lucky_affinity`.",
+                       hide=own("hero_name")),
         ],
         solution=_status("Oogrish") + (
             "lucky_affinity = 13\nlucky_max = lucky_affinity * 2\nlucky_mana = lucky_max\nlucky_mana = lucky_mana - 3\n"
             'print("Lucky: " + str(lucky_mana) + "/" + str(lucky_max) + " mana")\n'
         ),
     ),
-    takeaway="Build a line from boxes: `hero_name + \": \" + str(mana) + \"/\" + str(max_mana) + \" mana\"`.",
+    takeaway="Glue a line from boxes: `hero_name + \": \" + str(mana) + \"/\" + str(max_mana) + \" mana\"`.",
     wrong_answers=[
         dict(why="max mana worked out by hand", code=_status("Oogrish", maxline="max_mana = 18"),
              fails_at=1, message_contains="13"),
@@ -1917,7 +2074,7 @@ STATUS_LINE_EX = dict(
              + 'print(hero_name + ": " + str(mana) + "/26 mana")\n', fails_at=3, message_contains="Zelda"),
         dict(why="twice worked out on a line of its own, kept in no box",
              code=_status("Oogrish", maxline="max_mana = 0\nmagical_affinity * 2"),
-             fails_at=1, message_contains="keeps it nowhere"),
+             fails_at=1, message_contains="no box keeps the answer"),
     ],
     notes=(
         meta(starter_level="S3", path="CC", skills="combine-values,concat-str,reassign", solo="false", dictates="2",
@@ -1946,86 +2103,103 @@ REPEAT_A_MARK = dict(
     id="repeat-a-mark",
     title="Repeat a mark",
     martu=(
-        "`*` also [[stamp|stamps]] text: `\"█\" * 3` stamps three blocks. A mana bar is full blocks for the mana "
-        "you have, then light blocks for the mana used.\n"
-        "`+` glues two texts. `*` stamps one text a number of times."
+        "In math, 3 × 4 means 4 + 4 + 4. Python can [[stamp]] text the same way: `\"█\" * 3` means "
+        "`\"█\" + \"█\" + \"█\"`, so it shows `███`.\n"
+        "A mana bar is full blocks `█` for the mana you have, then empty blocks `░` for the mana used. `+` glues "
+        "the two parts. `*` repeats one text a number of times."
     ),
     names=["full", "empty", "mana", "max_mana", "bar"],
     predict=dict(
-        q="What will this print?",
+        q="What will this line show in the Console?",
         code='print("█" * 3)\n',
         choices=["███", "█3", "an error"],
         answer=0,
         explain=(
-            "`*` stamps the text 3 times. Try it in your head: `\"█\" * 0` stamps nothing at all, "
-            "and `\"█\" * 1` stamps one block."
+            "`*` repeats the text 3 times, the way 3 × 4 means 4 + 4 + 4. In the same way, `\"█\" * 0` shows "
+            "nothing at all, and `\"█\" * 1` shows one block."
         ),
     ),
     starter=BAR_STARTER,
     checkpoints=[
         dict(
             id="full-part",
-            text="Replace the first `0` with `mana`.",
+            text="In the `bar` line, replace the first `0`, in `full * 0`, with `mana`.",
             dictated=True,
             hints=[
-                "Change `full * 0` to `full * `, then the box name.",
-                "Which box says how much mana there is right now?",
-                "`\"*\" * stars` stamps one star for every star in the box `stars`. If `stars = 2`, that is `**`.",
+                "Look at line 5, `bar = full * 0 + empty * 0`. The first `0` is the one in `full * 0`.",
+                "`\"*\" * stars` stamps one star for each point in the box `stars`: if `stars = 2`, that is `**`. "
+                "Which box holds the mana you have now?",
+                "Replace the first `0` on line 5 with `mana`. Line 5 becomes `bar = full * mana + empty * 0`.",
             ],
             checks=[
                 (
                     "full blocks for the mana",
-                    "assert bar.count(full) == mana, 'The bar has ' + str(bar.count(full)) + ' full blocks, but `mana` is ' "
-                    "+ str(mana) + '. Replace the first 0 with `mana`.'",
+                    "assert bar.count(full) == mana, 'Your bar has ' + str(bar.count(full)) + ' full blocks, but `mana` is ' "
+                    "+ str(mana) + '. Replace the first `0` on line 5 with `mana`.'",
                 ),
                 rerun(
                     "the full part follows mana (0)", {"mana": 0, "max_mana": 5}, "_n = _R('bar').count(_R('full'))",
-                    "_n == 0", "'the bar had ' + str(_n) + ' full blocks, but it should have 0. Use `mana`, not a number.'",
+                    "_n == 0", "'the bar should have 0 full blocks, but it had ' + str(_n) + '.'",
+                    "The full part has a typed-in number. Use the box `mana` instead, so the bar changes to match the "
+                    "mana: `full * mana`.",
                 ),
                 rerun(
                     "the full part follows mana (5)", {"mana": 5, "max_mana": 5}, "_n = _R('bar').count(_R('full'))",
-                    "_n == 5", "'the bar had ' + str(_n) + ' full blocks, but it should have 5. Use `mana`, not a number.'",
+                    "_n == 5", "'the bar should have 5 full blocks, but it had ' + str(_n) + '.'",
+                    "The full part has a typed-in number. Use the box `mana` instead, so the bar changes to match the "
+                    "mana: `full * mana`.",
                 ),
             ],
         ),
         dict(
             id="empty-part",
-            text="Replace the second `0` with the mana used: `(max_mana - mana)`, in brackets.",
+            text=(
+                "In the `bar` line, replace the second `0`, in `empty * 0`, with the mana used: `(max_mana - mana)`. "
+                "PEMDAS: Python does the part in parentheses first, then it multiplies."
+            ),
             dictated=True,
             hints=[
-                "Change `empty * 0` to `empty * (`, then the subtraction, then `)`.",
-                "How many light blocks are there when mana is 3 of 5?",
-                "Python does `*` before `-`, so wrap the subtraction: `(a - b)`. "
+                "Look at the second `0` on line 5, in `empty * 0`. How many empty blocks are there when mana is 3 of 5?",
+                "PEMDAS: Python does `*` before `-`, so put parentheses around the subtraction. "
                 "`\"-\" * (8 - 3)` stamps 5 dashes.",
+                "Replace the second `0` on line 5 with `(max_mana - mana)`. Line 5 becomes "
+                "`bar = full * mana + empty * (max_mana - mana)`.",
             ],
             checks=[
                 rerun_line("empty bar at mana 0", {"mana": 0, "max_mana": 5}, "'[░░░░░]'",
-                           "The light part is the mana used: `empty * (max_mana - mana)`."),
+                           "The empty part should be the mana used, in parentheses: `empty * (max_mana - mana)`."),
                 rerun_line("bar at mana 3", {"mana": 3, "max_mana": 5}, "'[███░░]'",
-                           "The light part is the mana used: `empty * (max_mana - mana)`."),
+                           "The empty part should be the mana used, in parentheses: `empty * (max_mana - mana)`."),
                 rerun_line("full bar at mana 5", {"mana": 5, "max_mana": 5}, "'[█████]'",
-                           "The light part is the mana used: `empty * (max_mana - mana)`."),
+                           "The empty part should be the mana used, in parentheses: `empty * (max_mana - mana)`."),
                 rerun_line("bar at mana 2 of 6", {"mana": 2, "max_mana": 6}, "'[██░░░░]'",
-                           "Use the box `max_mana` in the brackets, not the number 5: `(max_mana - mana)`."),
+                           "Use the box `max_mana` inside the parentheses, not the number 5: `(max_mana - mana)`."),
             ],
-            pass_line="Mar'tu: Which part of your line is the mana used? Point at it. Yes. The part in brackets.",
+            pass_line="Mar'tu: Which part of your line is the mana used? Point at it. Yes. The part in parentheses.",
         ),
         dict(
             id="gearshift-bar",
-            text="Change the boxes to show Gearshift's full bar: 20 of 20.",
+            text=(
+                "Gearshift has 20 mana out of a max of 20. Put his numbers in the two boxes, `mana` and `max_mana`."
+            ),
             dictated=False,
             hints=[
-                "Change line 3 to `mana = 20`.",
-                "Two boxes need new numbers: the mana he has, and his max mana.",
-                "A full bar means no mana is used: the mana is the same as the max.",
+                "Look at lines 3 and 4, `mana = 3` and `max_mana = 5`. They are the only lines to change.",
+                "A full bar means no mana is used: the mana is the same as the max. Your `bar` line works out the "
+                "rest from the boxes.",
+                "Change the `3` on line 3 to `20`, and the `5` on line 4 to `20`. Line 3 becomes `mana = 20`, and "
+                "line 4 becomes `max_mana = 20`.",
             ],
             checks=[
-                ("max_mana is 20", "assert max_mana == 20, \"Gearshift's max mana is 20: change `max_mana`.\""),
-                ("mana is 20", "assert mana == 20, 'His bar is full, so `mana` is 20 too.'"),
+                ("max_mana is 20", "assert max_mana == 20, \"`max_mana` is not 20 yet. Gearshift's max mana is 20: "
+                 "change line 4 to `max_mana = 20`.\""),
+                ("mana is 20", "assert mana == 20, '`mana` is not 20 yet. His bar is full, so change line 3 to "
+                 "`mana = 20`.'"),
                 (
                     "a full bar is printed",
                     "assert bar == full * 20 and '[' + full * 20 + ']' in _lines(), "
-                    "'The bar should be 20 full blocks. Keep your `bar` line and the `print` as they are.'",
+                    "'The bar is not 20 full blocks yet. Keep your `bar` line and `print(\"[\" + bar + \"]\")` as they "
+                    "are, and press Run.'",
                 ),
             ],
             pass_line="Gearshift: Barrier's holding. Twenty of twenty.",
@@ -2053,24 +2227,24 @@ REPEAT_A_MARK = dict(
             label="A stamp",
             text=(
                 "A rubber stamp makes the same mark again and again. `full * mana` presses the full stamp mana times. "
-                "`empty * (max_mana - mana)` presses the light stamp once for each point used."
+                "`empty * (max_mana - mana)` presses the empty stamp once for each point used."
             ),
         ),
         dict(
             angle="step-by-step",
             label="What Python does first",
             text=(
-                "For `empty * (max_mana - mana)` with mana 3 of 5:\n1. Brackets first: `5 - 3` is 2.\n"
-                "2. Then `empty * 2` stamps `░░`.\nWithout brackets, Python tries `empty * 5` first, then `\"░░░░░\" - 3`, "
-                "and text minus a number is an error."
+                "For `empty * (max_mana - mana)` with mana 3 of 5:\n1. PEMDAS, parentheses first: `5 - 3` is 2.\n"
+                "2. Then `empty * 2` stamps `░░`.\nWithout parentheses, Python does `empty * 5` first, then "
+                "`\"░░░░░\" - 3`, and text minus a number is an error."
             ),
         ),
         dict(
             angle="why",
-            label="Why brackets?",
-            text="Python does `*` before `-`, just like in math class. Brackets say: do this part first.",
+            label="Why parentheses?",
+            text="Python does `*` before `-`, the same as PEMDAS in math class. Parentheses say: do this part first.",
         ),
-        dict(angle="shorter", text="Full: `full * mana`. Light: `empty * (max_mana - mana)`. Glue them with `+`."),
+        dict(angle="shorter", text="Full: `full * mana`. Empty: `empty * (max_mana - mana)`. Glue them with `+`."),
         dict(
             angle="campaign",
             label="You've seen this",
@@ -2079,23 +2253,32 @@ REPEAT_A_MARK = dict(
                 "`empty = \"░\" * (caster[\"max_mana\"] - caster[\"mana\"])`. Your line is the same bar."
             ),
         ),
+        dict(
+            angle="math class",
+            label="From math class",
+            text=(
+                "A mana bar is a tape diagram. The full part and the empty part make the whole: 3 have + 2 used = 5 "
+                "max. So the empty part is the whole minus the full part, `max_mana - mana`."
+            ),
+        ),
     ],
     bonus=dict(
         by="lucky",
-        title="What's in it for me?",
+        title="Lucky wants numbers",
         text=(
-            "Lucky wants numbers too. Print a second line: the bar with the numbers after it, like `[███░░] 3/5`. "
-            "Use `str()` for each number."
+            "Lucky wants numbers too. Under the last line, add a second `print` line: the bar with the numbers after "
+            "it, like `[███░░] 3/5`. Use `str()` for each number."
         ),
         hints=[
-            "Start like this: `print(\"[\" + bar + \"] \" + str(mana) + `",
+            "Add a new line at the bottom. Start like this: `print(\"[\" + bar + \"] \" + str(mana) + `",
             "After the number comes `\"/\"`, then `str(max_mana)`.",
         ],
         checks=[
             out_line("prints bar and numbers", "'[' + bar + '] ' + str(mana) + '/' + str(max_mana)",
-                     "Print the bar, a space, then `mana/max_mana`, like `[███░░] 3/5`."),
+                     "Show the bar, a space, then the mana, `/` and the max mana, like `[███░░] 3/5`."),
             rerun_line("the numbers follow the boxes", {"mana": 3, "max_mana": 5}, "'[███░░] 3/5'",
-                       "Use `str(mana)` and `str(max_mana)`."),
+                       "Your line has typed-in numbers. Use the box names, not numbers: `str(mana)` and "
+                       "`str(max_mana)`."),
         ],
         solution=_bar(BAR_LINE, 20, 20) + 'print("[" + bar + "] " + str(mana) + "/" + str(max_mana))\n',
     ),
@@ -2104,13 +2287,13 @@ REPEAT_A_MARK = dict(
         part="mana-bars",
         snippet='filled = "█" * caster["mana"]\nempty = "░" * (caster["max_mana"] - caster["mana"])',
         why=(
-            "You have seen these two lines. Replace the first 0, replace the second 0 with the mana used. "
-            "You just did the same steps with shorter labels."
+            "You've seen these two lines. Replace the first 0, then replace the second 0 with the mana used. "
+            "You did the same steps with shorter names."
         ),
     ),
     takeaway=(
-        "`\"█\" * mana` stamps a mark. Brackets first: `empty * (max_mana - mana)`. Why brackets: Python does `*` "
-        "before `-`, so the brackets make the subtraction happen first."
+        "`\"█\" * mana` repeats a mark, the way 3 × 4 means 4 + 4 + 4. PEMDAS: parentheses first, so "
+        "`empty * (max_mana - mana)` subtracts before it multiplies."
     ),
     wrong_answers=[
         dict(why="no brackets around the mana used", code=_bar("bar = full * mana + empty * max_mana - mana"),
@@ -2118,11 +2301,11 @@ REPEAT_A_MARK = dict(
         dict(why="the light part typed as a number", code=_bar("bar = full * mana + empty * 2"),
              fails_at=2, message_contains="mana"),
         dict(why="the full part typed as a number", code=_bar("bar = full * 3 + empty * (max_mana - mana)"),
-             fails_at=1, message_contains="not a number"),
+             fails_at=1, message_contains="Use the box `mana` instead"),
         dict(why="text plus a number", code=_bar('bar = "█" + mana'),
              fails_at=0, message_contains="concatenate"),
         dict(why="Gearshift's bar typed as 20 blocks", code=_bar("bar = full * 20", 20, 20),
-             fails_at=1, message_contains="not a number"),
+             fails_at=1, message_contains="Use the box `mana` instead"),
         dict(why="max mana typed as 5 inside the brackets (passes every rerun at max 5, and the 20/20 bar)",
              code=_bar("bar = full * mana + empty * (5 - mana)", 20, 20), fails_at=2, message_contains="max_mana = 6"),
         dict(why="gaming the message: the 3-of-5 bar typed",
@@ -2174,85 +2357,106 @@ BROKEN_SPELL_1C = dict(
     id="broken-spell-1c",
     title="Broken spell",
     martu=(
-        "Four bugs. Two are loud: they crash, and Python names their line. Mend those first. Two are quiet: they "
-        "hide in the Rope line, which prints the right thing. Mar'tu's checks try other numbers to find them."
+        "This spell has four [[bug|bugs]]: mistakes in code. Two are loud: they make Python stop with an error. Fix "
+        "those first, one at a time. Two are quiet: Python runs, and `Rope: 10 coins` looks right, but for the "
+        "wrong reason.\n"
+        "Check the three rope boxes. My checks try other numbers, and that finds quiet bugs."
     ),
     names=["rope_count", "rope_price", "rope_cost", "mana", "max_mana", "bar", "str"],
     pair_talk=(
-        "Pair talk: you may hunt these bugs together. Talk through each one, then each of you mends it on your "
+        "Pair talk: you may hunt these bugs together. Talk through each one, then each of you fixes it on your "
         "own screen."
     ),
     starter=BROKEN_STARTER,
     checkpoints=[
         dict(
             id="mend-mana-line",
-            text="Mend the `Mana:` line so it prints `Mana: 3`.",
+            text="Mend line 12, `print(\"Mana: \" + mana)`, so it shows `Mana: 3`.",
             dictated=False,
             hints=[
-                "Look at `print(\"Mana: \" + mana)`. The number needs to become text: `str(mana)`.",
-                "Python's message names this line. Text and a number cannot glue.",
-                "`\"Sips: \" + str(5)` works. `\"Sips: \" + 5` does not.",
+                "Press Run and read the box in the Console: first its title, then Python's last line. It gives "
+                "line 12. Look at `mana` there: is it text or a number?",
+                "`+` glues text to text only, so a number has to become text first. `\"Sips: \" + str(5)` works, "
+                "but `\"Sips: \" + 5` makes Python stop.",
+                "Type `str(` right before `mana` on line 12, and `)` right after it. Line 12 becomes "
+                "`print(\"Mana: \" + str(mana))`.",
             ],
             checks=[
-                out_line("prints Mana: 3", "'Mana: ' + str(mana)", "Print `Mana: ` glued to `str(mana)`."),
+                out_line("prints Mana: 3", "'Mana: ' + str(mana)", "Show `Mana: ` glued to `str(mana)`."),
                 rerun_line("the mana line follows the box", {"mana": 4}, "'Mana: 4'",
-                           "Glue the box, not a number: `\"Mana: \" + str(mana)`."),
+                           "Your line has the number typed in. Glue the box instead: `\"Mana: \" + str(mana)`."),
                 rerun_line("the mana line follows the box (1)", {"mana": 1}, "'Mana: 1'",
-                           "Glue the box, not a number: `\"Mana: \" + str(mana)`."),
+                           "Your line has the number typed in. Glue the box instead: `\"Mana: \" + str(mana)`."),
             ],
         ),
         dict(
             id="mend-bar",
-            text="Mend the bar so the light blocks show the mana used.",
+            text="Mend line 13, the `bar` line, so the empty blocks show the mana used.",
             dictated=False,
             hints=[
-                "Look at the `bar` line. Which part should happen first?",
-                "Python does `*` before `-`. Which part needs brackets?",
-                "`\"-\" * (8 - 3)` stamps 5 dashes. Without brackets, Python tries text minus a number.",
+                "Press Run and read the box: its title, then Python's last line. It gives line 13. In the `bar` "
+                "line, which part should Python do first?",
+                "PEMDAS: Python does `*` before `-`, so put parentheses around the part to do first. "
+                "`\"-\" * (8 - 3)` stamps 5 dashes.",
+                "Type `(` right before `max_mana` on line 13, and `)` at the very end. Line 13 becomes "
+                "`bar = \"█\" * mana + \"░\" * (max_mana - mana)`.",
             ],
             checks=[
                 rerun_line("bar at mana 3", {"mana": 3, "max_mana": 5}, "'[███░░]'",
-                           "The light part is the mana used: `\"░\" * (max_mana - mana)`."),
+                           "The empty part should be the mana used, in parentheses: `\"░\" * (max_mana - mana)`."),
                 rerun_line("bar at mana 0", {"mana": 0, "max_mana": 5}, "'[░░░░░]'",
-                           "The light part is the mana used: `\"░\" * (max_mana - mana)`."),
+                           "The empty part should be the mana used, in parentheses: `\"░\" * (max_mana - mana)`."),
                 rerun_line("bar at mana 2 of 6", {"mana": 2, "max_mana": 6}, "'[██░░░░]'",
-                           "Use the box `max_mana` in the brackets, not the number 5: `(max_mana - mana)`."),
+                           "Use the box `max_mana` inside the parentheses, not the number 5: `(max_mana - mana)`."),
             ],
-            pass_line="Mar'tu: Both loud bugs mended. Now the quiet ones.",
+            pass_line="Mar'tu: Both loud bugs fixed. Now the quiet ones.",
         ),
         dict(
             id="mend-rope-cost",
-            text="`rope_cost` prints the right number, but it is typed by hand. Make Python work it out from the rope boxes.",
+            text=(
+                "Mend line 8: `rope_cost = 10` has the answer typed in. Make Python work it out from the rope boxes."
+            ),
             dictated=False,
             hints=[
-                "Start like this: `rope_cost = rope_count * `",
-                "Look at how `lantern_cost` is made, two lines up.",
-                "A cost is how many times the price of one: `c = a * b`.",
+                "Look at line 8, `rope_cost = 10`. Start like this: `rope_cost = rope_count * `",
+                "Look at line 4: `lantern_cost` is worked out from the two lantern boxes, how many times the price "
+                "of one. Do the same with the rope boxes.",
+                "Replace the `10` on line 8 with `rope_count * rope_price`.",
             ],
             checks=[
                 slot("rope_cost is built from the boxes", "rope_cost", "rope_count * rope_price", known=BROKEN_KNOWN,
-                     default="Make `rope_cost` from the two rope boxes, like `lantern_cost`."),
+                     default="Multiply the two rope boxes, the same way line 4 makes `lantern_cost`."),
                 rerun_box("rope_cost follows the rope boxes", {"rope_count": 6, "rope_price": 3}, "rope_cost",
-                          "_R('rope_count') * _R('rope_price')", "Build it from the rope boxes."),
+                          "_R('rope_count') * _R('rope_price')",
+                          "`rope_cost` has the answer typed in. Use the box names, not numbers: "
+                          "`rope_count * rope_price`."),
             ],
-            pass_line="Mar'tu: Right answer, wrong reason, now mended. That one fools everyone once.",
+            pass_line="Mar'tu: Right answer, wrong reason, now fixed. That one fools everyone once.",
         ),
         dict(
             id="mend-rope-boxes",
-            text="Read the rope story note. Put each rope number in the box that means it.",
+            text=(
+                "Mend line 6 and line 7, the rope boxes. Read the rope note on line 5: which number is how many "
+                "coils (rolls of rope), and which is the price of one?"
+            ),
             dictated=False,
             hints=[
-                "Find how many coils Mar'tu needs. That number goes after `rope_count = `.",
-                "The cost came out right, 10, because 2 times 5 is 5 times 2. Ask each number what it means.",
-                "'Candles cost 1 coin each, and I need 3': 3 is how many, 1 is the price of one.",
+                "Read the rope note on line 5. How many coils does Mar'tu need? That number goes on line 6, after "
+                "`rope_count = `.",
+                "The cost came out 10 either way, because 2 × 5 = 5 × 2: in math class, that's the commutative "
+                "property. But the boxes still mean the wrong things. If Mar'tu needs one more coil, which box "
+                "should change?",
+                "Swap the `2` on line 6 and the `5` on line 7. Line 6 becomes `rope_count = 5`, and line 7 becomes "
+                "`rope_price = 2`.",
             ],
             checks=[
                 story_pair("the rope boxes match the story", "rope_count", "rope_price", 5, 2, "coils",
-                           known=BROKEN_KNOWN, wild="The story says Mar'tu needs 5 coils.", price_first=True,
-                           swap_extra=" It still comes out 10, because 2 times 5 is 5 times 2. But if Mar'tu needs one "
+                           known=BROKEN_KNOWN, wild="`rope_count` should be how many coils the note on line 5 says: 5.",
+                           price_first=True,
+                           swap_extra=" The cost still comes out 10, because 2 × 5 = 5 × 2. But if Mar'tu needs one "
                            "more coil, which box changes?"),
             ],
-            pass_line="Mar'tu: Four bugs, four mends. The spell holds, yes?",
+            pass_line="Mar'tu: Four bugs, four fixes. The spell holds, yes?",
         ),
     ],
     solution=_broken(),
@@ -2270,41 +2474,49 @@ BROKEN_SPELL_1C = dict(
             angle="step-by-step",
             label="Which bug first?",
             text=(
-                "1. Run. Python stops at the first crash and names the line. Mend it.\n"
-                "2. Run again. Mend the next crash.\n"
-                "3. When nothing crashes, the checks speak. Read the message under the step."
+                "1. Press Run. Python stops at the first loud bug. Read the box: its title, then Python's last line. "
+                "Fix the line it gives.\n"
+                "2. Press Run again, and fix the next one.\n"
+                "3. When Python no longer stops, read the message under each step."
             ),
         ),
         dict(
             angle="picture",
             label="Two kinds of bug",
             text=(
-                "```text\nloud bugs:\nPython stops, and its\nmessage names the line.\n\n"
-                "quiet bugs:\nthe program runs, but\nthe code is wrong.\n```\n"
+                "```text\nloud bugs:\nPython stops, and its\nmessage gives the line.\n\n"
+                "quiet bugs:\nthe program runs, but\nthe answer is wrong.\n```\n"
                 "The quiet ones only show up when someone tries other numbers."
             ),
         ),
         dict(
             angle="shorter",
-            text="`str(mana)`. `rope_count * rope_price`. Count 5, price 2. Brackets around `max_mana - mana`.",
+            text="`str(mana)`. `rope_count * rope_price`. Count 5, price 2. Parentheses around `max_mana - mana`.",
         ),
     ],
     bonus=dict(
         by="lucky",
-        title="What's in it for me?",
-        text="Make `total_cost` from the two costs, then print `Total: 22 coins`, built from the boxes.",
+        title="Lucky's total",
+        text=(
+            "At the bottom, make `total_cost` from the two cost boxes. Then show `Total: 22 coins`, glued from the "
+            "boxes."
+        ),
         hints=[
-            "Start like this: `total_cost = lantern_cost + rope_cost`",
-            "Then glue: `\"Total: \" + str(total_cost) + \" coins\"`.",
+            "Add the new lines at the bottom. Start like this: `total_cost = lantern_cost + rope_cost`",
+            "Then show it: `print(\"Total: \" + str(total_cost) + \" coins\")`.",
         ],
         checks=[
-            out_line("prints the total", "'Total: 22 coins'", "Print `Total: 22 coins`, built from `total_cost`."),
+            out_line("prints the total", "'Total: 22 coins'", "Show `Total: 22 coins`, glued from `total_cost` with `str()`."),
             rerun_line("the total follows the boxes", {"lantern_count": 7}, "'Total: 38 coins'",
-                       "Build it from the cost boxes, with `str()`."),
+                       "Your total has a typed-in number. Use the box names, not numbers: `lantern_cost + rope_cost`, "
+                       "then `str(total_cost)`."),
         ],
         solution=_broken() + 'total_cost = lantern_cost + rope_cost\nprint("Total: " + str(total_cost) + " coins")\n',
     ),
-    takeaway="Loud bugs crash and name a line. Quiet bugs print the right thing for the wrong reason: try other numbers.",
+    takeaway=(
+        "Loud bugs make Python stop: read the box and fix the line it gives. Quiet bugs show the right thing for "
+        "the wrong reason: test with other numbers."
+    ),
     wrong_answers=[
         dict(why="the starter (two crashes)", code=BROKEN_STARTER, fails_at=0, message_contains="concatenate"),
         dict(why="mana line left alone", code=_broken(mana_line='print("Mana: " + mana)'),
@@ -2345,34 +2557,40 @@ CANDLE_KNOWN = ["candle_count", "candle_price", "candle_cost"]
 SOLO_1C = dict(
     id="solo-1c",
     title="Show Mar'tu",
-    martu="A short problem, just for you. Let the code combine it.",
+    martu=(
+        "A short problem, all yours. Fill in the boxes from the story, then let Python do the math with the box "
+        "names."
+    ),
     solo=True,
     names=["candle_count", "candle_price", "candle_cost"],
     starter=CANDLE_STORY + "candle_count = 0\ncandle_price = 0\ncandle_cost = 0\nprint(candle_cost)\n",
     checkpoints=[
         dict(
             id="candle-boxes",
-            text="Fill in `candle_count` and `candle_price` from the story.",
+            text="On line 2 and line 3, fill in `candle_count` and `candle_price` from the story on line 1.",
             dictated=False,
             hints=[
-                "Start with how many candles: change the 0 after `candle_count = `.",
-                "Ask each number: how many? or how much is one?",
-                "In '2 maps at 6 coins', 2 is how many and 6 is the price of one.",
+                "Look at the story on line 1. How many candles does Mar'tu need? That number replaces the 0 on "
+                "line 2.",
+                "Ask each number its question: how many, or how much is one? In '2 maps at 6 coins', 2 is how many "
+                "and 6 is the price of one.",
+                "Replace the 0 on line 2 with `4`, and the 0 on line 3 with `2`.",
             ],
             checks=[
                 story_pair("the candle boxes match the story", "candle_count", "candle_price", 4, 2, "candles",
                            known=CANDLE_KNOWN + ["lantern_count", "lantern_price"],
-                           wild="The story says 4 candles. Use the story's numbers here."),
+                           wild="`candle_count` should be how many candles the story on line 1 says: 4."),
             ],
         ),
         dict(
             id="candle-cost",
-            text="Make `candle_cost` from the two candle boxes.",
+            text="On line 4, replace the `0` so `candle_cost` is how many candles times the price of one. Use the two candle boxes.",
             dictated=False,
             hints=[
-                "Start like this: `candle_cost = candle_count * `",
-                "A cost is how many times the price of one.",
-                "If `a = 2` and `b = 6`, then `c = a * b` puts 12 in `c`.",
+                "Look at line 4, `candle_cost = 0`. Start like this: `candle_cost = candle_count * `",
+                "A cost is how many times the price of one. If `bags = 4` and `bag_price = 5`, then "
+                "`bags * bag_price` is 20.",
+                "Replace the `0` on line 4 with `candle_count * candle_price`.",
             ],
             checks=[
                 loose_math("the math is kept in a box"),
@@ -2382,14 +2600,16 @@ SOLO_1C = dict(
                          # LINE-TOTAL: `candle_count * 8` multiplies by the line total again.
                          ("_have in (candle_count * candle_count * candle_price, "
                           "candle_price * candle_count * candle_price)",
-                          "8 is already the cost of all 4 candles, so multiplying by it again gives too much. "
-                          "Multiply how many by the price of one: `candle_count * candle_price`."),
+                          "Your line multiplies by 8, which is already the cost of all 4 candles. Multiply how many by "
+                          "the price of one: `candle_count * candle_price`."),
                      ],
-                     default="Make `candle_cost` from the two candle boxes."),
+                     default="Multiply the two candle boxes: how many `*` the price of one."),
                 rerun_box("candle_cost follows the boxes", {"candle_count": 7, "candle_price": 3}, "candle_cost",
-                          "_R('candle_count') * _R('candle_price')", COMBINE_FIX),
+                          "_R('candle_count') * _R('candle_price')",
+                          "`candle_cost` has a typed-in number. Use the box names, not numbers: "
+                          "`candle_count * candle_price`."),
             ],
-            pass_line="Mar'tu: You did that on your own. On your map: ✓ let the code combine your boxes.",
+            pass_line="Mar'tu: You did that on your own. The boxes came from the story, and Python did the math.",
         ),
     ],
     solution=CANDLE_STORY + "candle_count = 4\ncandle_price = 2\ncandle_cost = candle_count * candle_price\nprint(candle_cost)\n",
@@ -2402,7 +2622,7 @@ SOLO_1C = dict(
         dict(angle="step-by-step", text="1. How many candles? 2. How much is one? 3. Cost = how many `*` price of one."),
         dict(angle="shorter", text="Count, price, then `candle_cost = candle_count * candle_price`."),
     ],
-    takeaway="On your own: boxes from the story, then let the code combine them.",
+    takeaway="On your own: fill the boxes from the story, then let Python do the math with the box names.",
     wrong_answers=[
         dict(why="candle numbers swapped",
              code=CANDLE_STORY + "candle_count = 2\ncandle_price = 4\ncandle_cost = candle_count * candle_price\nprint(candle_cost)\n",
@@ -2419,7 +2639,7 @@ SOLO_1C = dict(
              fails_at=1, message_contains="letter for letter"),
         dict(why="the math worked out on a line of its own, kept in no box",
              code=CANDLE_STORY + "candle_count = 4\ncandle_price = 2\ncandle_cost = 0\ncandle_count * candle_price\nprint(candle_cost)\n",
-             fails_at=2, message_contains="keeps it nowhere"),
+             fails_at=2, message_contains="no box keeps the answer"),
         dict(why="the price typed into the cost",
              code=CANDLE_STORY + "candle_count = 4\ncandle_price = 2\ncandle_cost = candle_count * 2\nprint(candle_cost)\n",
              fails_at=2, message_contains="candle_price = 3"),
@@ -2448,7 +2668,7 @@ LESSON_1C = dict(
     id="math-and-glue",
     title="Math and Glue",
     minutes=39,
-    summary="Let Python do the sums, spend mana, glue words with `str()`, and stamp a mana bar.",
+    summary="Let Python do the math with your boxes, spend mana, glue words and numbers with `str()`, and draw a mana bar.",
     notes=(
         "Lesson 1C (CC; 1C-09 SC). Preceded by 1c-remembers. Exactly one SOLO (solo-1c). Non-dictated checkpoints: "
         "1C-02 CP2, 1C-03 CP2-3, 1C-07 CP1/CP3, 1C-08 CP3, 1C-09, 1C-S. 1C-04 (spend-mana) and 1C-06 (glue-words) are "
@@ -2473,14 +2693,14 @@ THE_SHORT_WAY = dict(
     id="the-short-way",
     title="The short way",
     martu=(
-        "`hours_waited += 6` is a short way to write `hours_waited = hours_waited + 6`. "
-        "`mana -= 3` means `mana = mana - 3`.\n"
+        "`hours_waited += 6` is a short way to write `hours_waited = hours_waited + 6`. Read it as *hours waited "
+        "goes up by 6*. `mana -= 3` means `mana = mana - 3`: mana goes down by 3.\n"
         "Same answer, less typing. You never have to use it. Lazy wizards love it."
     ),
     introduces=["node:AugAssign"],
     names=["hours_waited", "mana"],
     predict=dict(
-        q="What will this print?",
+        q="What will this code show in the Console?",
         code="hours_waited = 30\nhours_waited += 6\nmana = 20\nmana -= 3\nprint(hours_waited)\nprint(mana)\n",
         choices=["36\n17", "6\n3", "30\n20"],
         answer=0,
@@ -2490,12 +2710,13 @@ THE_SHORT_WAY = dict(
     checkpoints=[
         dict(
             id="plus-equals",
-            text="Rewrite line 2 the short way: `hours_waited += 6`.",
+            text="Change line 2 to the short way: `hours_waited += 6`.",
             dictated=True,
             hints=[
-                "Change line 2 to start with `hours_waited += `.",
-                "Which box is on both sides of line 2? The short way names it once.",
+                "Look at line 2, `hours_waited = hours_waited + 6`. The box name is on both sides. The short way "
+                "names it once.",
                 "`glow += 2` means `glow = glow + 2`. The `+` comes before the `=`.",
+                "Write `hours_waited += 6` in place of `hours_waited = hours_waited + 6`.",
             ],
             checks=[
                 (
@@ -2510,7 +2731,8 @@ THE_SHORT_WAY = dict(
                     "hours_waited is 36",
                     "assert hours_waited != 66, '`+=` already adds to what is in the box. Write `hours_waited += 6`, "
                     "not `hours_waited += hours_waited + 6`.'\n"
-                    "assert hours_waited == 36, '`hours_waited` should end at 36: 30, then 6 more.'",
+                    "assert hours_waited == 36, '`hours_waited` should end at 36: 30, then 6 more. Write line 2 as "
+                    "`hours_waited += 6`.'",
                 ),
                 (
                     "uses += on hours_waited",
@@ -2523,15 +2745,16 @@ THE_SHORT_WAY = dict(
         ),
         dict(
             id="minus-equals",
-            text="Rewrite line 4 the short way too.",
+            text="Change line 4, `mana = mana - 3`, to the short way too.",
             dictated=False,
             hints=[
-                "Change line 4 to start with `mana -= `.",
-                "Line 4 takes 3 away from `mana`. Which sign goes before the `=`?",
-                "`glow -= 2` means `glow = glow - 2`.",
+                "Look at line 4, `mana = mana - 3`. It takes 3 away from `mana`.",
+                "`glow -= 2` means `glow = glow - 2`. Which sign goes before the `=` this time?",
+                "Write `mana -= 3` in place of `mana = mana - 3`.",
             ],
             checks=[
-                ("mana is 17", "assert mana == 17, '`mana` should end at 17: 20, take away 3.'"),
+                ("mana is 17", "assert mana == 17, '`mana` should end at 17: 20, take away 3. Keep the 3 on line 4, "
+                 "and put the `-` before the `=`.'"),
                 (
                     "uses -= on mana",
                     "import ast as _ast\n"
@@ -2553,7 +2776,7 @@ THE_SHORT_WAY = dict(
         dict(angle="read aloud", label="Say it out loud", text="`hours_waited += 6`: hours waited goes up by 6. `mana -= 3`: mana goes down by 3."),
         dict(angle="shorter", text="`box += n` is `box = box + n`. `box -= n` is `box = box - n`."),
     ],
-    takeaway="`x += 6` is `x = x + 6`. `x -= 3` is `x = x - 3`. Both forms are always fine.",
+    takeaway="`box += 6` is `box = box + 6`. `box -= 3` is `box = box - 3`. Both ways are always fine.",
     wrong_answers=[
         dict(why="=+ instead of +=",
              code="hours_waited = 30\nhours_waited =+ 6\nmana = 20\nmana = mana - 3\nprint(hours_waited)\nprint(mana)\n",
@@ -2586,47 +2809,58 @@ def _supply(total_line):
 
 COMBINE_AGAIN = dict(
     id="combine-again",
-    title="Combine it again",
+    title="One more shop",
     martu=(
-        "Same idea, new shop. Both lines of this story give the price first. "
-        "Ask each number its question, then let the code combine it."
+        "Same idea, new shop. Both lines of the story give the price first. Ask each number its question: how "
+        "many, or how much is one? Then let Python do the math with the box names. A flask is a small bottle."
     ),
     names=["chalk_count", "chalk_price", "oil_count", "oil_price", "supply_total"],
     starter=SUPPLY_STORY + "chalk_count = 0\nchalk_price = 0\noil_count = 0\noil_price = 0\nsupply_total = 0\nprint(supply_total)\n",
     checkpoints=[
         dict(
             id="supply-boxes",
-            text="Fill in the four boxes from the story.",
+            text="Fill in the four boxes under the story, using the two `#` notes at the top.",
             dictated=False,
             hints=[
-                "Start with chalk: how many sticks does Oogrish want? That goes after `chalk_count = `.",
-                "Each line gives the price first. Ask: how many? how much is one?",
-                "'Candles cost 1 coin each, and I need 3': 3 is how many, 1 is the price of one.",
+                "Look at line 1, the chalk story. How many sticks does Oogrish want? That number goes after "
+                "`chalk_count = `.",
+                "Each line gives the price first. 'Candles cost 1 coin each, and I need 3': 3 is how many, and 1 is "
+                "the price of one. Ask the question, not the order.",
+                "Replace the four 0s: `3` on line 3, `5` on line 4, `4` on line 5 and `3` on line 6.",
             ],
             checks=[
                 story_pair("the chalk boxes match the story", "chalk_count", "chalk_price", 3, 5, "sticks",
-                           known=SUPPLY_KNOWN, wild="The story says Oogrish wants 3 sticks.", price_first=True),
+                           known=SUPPLY_KNOWN, wild="`chalk_count` should be how many sticks the story says: 3.",
+                           price_first=True),
                 story_pair("the oil boxes match the story", "oil_count", "oil_price", 4, 3, "flasks",
-                           known=SUPPLY_KNOWN, wild="The story says he needs 4 flasks.", price_first=True),
+                           known=SUPPLY_KNOWN, wild="`oil_count` should be how many flasks the story says: 4.",
+                           price_first=True),
             ],
         ),
         dict(
             id="supply-total",
-            text="Make `supply_total` the cost of everything, built from the boxes.",
+            text=(
+                "Replace the `0` in `supply_total = 0` with the cost of everything. Add the chalk cost and the oil "
+                "cost, and use the box names."
+            ),
             dictated=False,
             hints=[
-                "Start like this: `supply_total = chalk_count * chalk_price + `",
-                "Two costs: chalk, then oil. Each is how many times the price of one.",
-                "If `a = 2`, `b = 6`, `c = 4` and `d = 3`, then `a * b + c * d` is 24. Python does `*` before `+`.",
+                "Look at line 7, `supply_total = 0`. Start like this: `supply_total = chalk_count * chalk_price + `",
+                "Two costs: chalk, then oil. Each is how many times the price of one. PEMDAS: Python multiplies "
+                "before it adds, so you need no parentheses here.",
+                "Replace the `0` on line 7 with `chalk_count * chalk_price + oil_count * oil_price`.",
             ],
             checks=[
                 slot("supply_total adds both costs", "supply_total", SUPPLY_TOTAL, known=SUPPLY_KNOWN,
-                     rules=[("_have == chalk_count + oil_count", "You added how many, not costs. Each cost is how many times the price.")],
-                     default="Make `supply_total` from the boxes: chalk cost plus oil cost."),
+                     rules=[("_have == chalk_count + oil_count", "You added how many, not costs. Each cost is how "
+                             "many times the price of one.")],
+                     default="Add the chalk cost and the oil cost. Each one is how many `*` the price of one."),
                 rerun_box("supply_total follows the chalk", {"chalk_count": 5, "chalk_price": 7}, "supply_total",
-                          "_R('chalk_count') * _R('chalk_price') + _R('oil_count') * _R('oil_price')", COMBINE_FIX),
+                          "_R('chalk_count') * _R('chalk_price') + _R('oil_count') * _R('oil_price')",
+                          "`supply_total` has a typed-in number. Use the box names, not numbers, for chalk and oil."),
                 rerun_box("supply_total follows the oil", {"oil_count": 9, "oil_price": 4}, "supply_total",
-                          "_R('chalk_count') * _R('chalk_price') + _R('oil_count') * _R('oil_price')", COMBINE_FIX),
+                          "_R('chalk_count') * _R('chalk_price') + _R('oil_count') * _R('oil_price')",
+                          "`supply_total` has a typed-in number. Use the box names, not numbers, for chalk and oil."),
             ],
         ),
     ],
@@ -2647,7 +2881,10 @@ COMBINE_AGAIN = dict(
         ),
         dict(angle="shorter", text="`supply_total = chalk_count * chalk_price + oil_count * oil_price`, never 27."),
     ],
-    takeaway="Price first or count first, ask the question. Then combine: count `*` price `+` count `*` price.",
+    takeaway=(
+        "Price first or count first, ask each number its question. Then let Python do the math: count `*` price `+` "
+        "count `*` price."
+    ),
     wrong_answers=[
         dict(why="chalk numbers in reading order (price first)",
              code="chalk_count = 5\nchalk_price = 3\noil_count = 4\noil_price = 3\nsupply_total = 27\nprint(supply_total)\n",
@@ -2691,7 +2928,7 @@ EXTRA_1X_C = dict(
     title="Extra practice: Math",
     optional=True,
     minutes=6,
-    summary="The short way to change a box, and one more shop to combine. For whenever you want it.",
+    summary="The short way to change a box, and one more shop to add up. For whenever you want it.",
     notes="1X-C pool (1C-05, 1C-T). Optional; feeds twins, the spaced queue and early finishers.",
     exercises=[THE_SHORT_WAY, COMBINE_AGAIN],
 )
@@ -2715,53 +2952,59 @@ QUIZ_1 = dict(
             choices=['def ("hero")', '"hero" = "Lucky"', 'hero = "Lucky"', 'hero - "Lucky"'],
             answer=2,
             why_wrong={
-                0: "`def` makes a recipe, not a box.",
-                1: "A box's name never goes in quotes.",
-                3: "`-` subtracts. To make a box, use `=`.",
+                0: "`def` is for something you'll learn in Unit 3. To make a box, write the name, `=`, then the value.",
+                1: "A box's name never goes in quotes. In quotes, `\"hero\"` is only the letters h-e-r-o.",
+                3: "`-` is minus. To make a box, use `=`.",
             },
-            explain="A box is `name = value`: the name with no quotes, `=`, then the text in quotes.",
+            explain="A box is `name = value`: the name with no quotes, `=`, then the text in quotes. Hero gets Lucky.",
             notes="WA evidence: A-02 def; A-04 dash; B-02/B-03 lone value.",
         ),
         dict(
             type="predict",
             id="mana-twice",
-            q="What will this print?",
+            q="What will this code show in the Console?",
             code="mana = 18\nmana = mana - 5\nmana = mana - 5\nprint(mana)\n",
             choices=["8", "13", "18", "28"],
             answer="8",
-            explain="Each line uses what is in the box now: 18, then 13, then 8. The box keeps only its latest value.",
+            explain=(
+                "Each line works out the right side with what is in the box now: 18, then 13, then 8. The box keeps "
+                "only its newest value."
+            ),
         ),
         dict(
             type="bug",
             id="not-a-compass",
-            q="This line should show It is not a compass. Mend it.",
+            q="This line should show It is not a compass. Fix it.",
             code='print("It is not a compass)\n',
             fix='print("It is not a compass")\n',
             expected_output="It is not a compass",
-            explain="Quotes come in pairs. Add the closing `\"` before the `)`.",
+            explain="Quotes come in pairs, like quotation marks in English class. Add the closing `\"` before the `)`.",
         ),
         dict(
             type="predict",
             id="stamp-a-bar",
-            q="What will this print?",
+            q="What will this line show in the Console?",
             code='print("█" * 2 + "░" * 3)\n',
             choices=["██░░░", "█2░3", "█░", "an error"],
             answer="██░░░",
-            explain="`*` stamps each text: two full blocks, then three light blocks, glued with `+`.",
+            explain="`*` repeats each text: two full blocks, then three empty blocks, glued together with `+`.",
         ),
         dict(
             type="fill",
             id="glue-a-number",
-            q="Fill the blank so this prints `Mana: 7`.",
+            q="Fill the blank so this line shows `Mana: 7`.",
             code='print("Mana: " + ___(7))\n',
             answer="str",
             expected_output="Mana: 7",
-            explain="`str(7)` turns the number into text, so it can be glued to `\"Mana: \"`.",
+            explain="`str(7)` turns the number into text, so it can be glued to `\"Mana: \"`. `str` is short for string.",
         ),
         dict(
             type="mc",
             id="which-total-stays-right",
-            q="Mar'tu changes `lantern_count` to 5. Which `total` line stays right?",
+            q=(
+                "Mar'tu had 3 lanterns, and the total was 22. Now he changes `lantern_count` to 5 and presses Run "
+                "again. Which `total` line still gives the right answer, with nobody retyping it?"
+            ),
             code="lantern_count = 5\nlantern_price = 4\nrope_cost = 10\n",
             choices=[
                 "total = 22",
@@ -2771,18 +3014,21 @@ QUIZ_1 = dict(
             ],
             answer=2,
             why_wrong={
-                0: "22 was worked out by hand for 3 lanterns. It does not change when the count does.",
-                1: "12 was the old lantern cost, typed in. It does not follow the box.",
+                0: "22 is a typed-in answer for 3 lanterns. It stays 22 when the count changes.",
+                1: "12 is the old lantern cost, typed in. It doesn't change to match the new count.",
                 3: "3 is the old count, typed in. Use the box `lantern_count`.",
             },
-            explain="Only the line built from the boxes follows when a box changes. Let the code combine it.",
+            explain=(
+                "Only the line with the box names changes to match when a box changes and the code runs again. "
+                "It's a formula, not a typed-in answer."
+            ),
         ),
         dict(
             type="mc",
             id="names-are-exact",
-            q="What happens when this runs?",
+            q="What happens when this code runs?",
             code="Health = 100\nprint(health)\n",
-            choices=["It prints 100.", "It prints health.", "Python stops: `health` is not defined."],
+            choices=["It shows 100.", "It shows the word health.", "Python stops: `health` is not defined."],
             answer=2,
             why_wrong={
                 0: "The box is named `Health`, with a capital H. `health` is a different name.",
@@ -2793,11 +3039,11 @@ QUIZ_1 = dict(
         dict(
             type="predict",
             id="times-before-plus",
-            q="What will this print?",
+            q="What will this code show in the Console?",
             code="rope_count = 5\nrope_price = 2\nprint(rope_count * rope_price + 2)\n",
             choices=["12", "20", "10", "9"],
             answer="12",
-            explain="Python does `*` before `+`: 5 times 2 is 10, then plus 2 is 12.",
+            explain="PEMDAS: Python multiplies before it adds, as in math class. 5 times 2 is 10, then plus 2 is 12.",
         ),
     ],
 )
@@ -2845,7 +3091,6 @@ LEDGER_SOLUTION = LEDGER_AT_37.replace(LEDGER_A1, LEDGER_A1_32)
 LEDGER_KNOWN = ["hours_until_burst", "mana_per_hour", "oil_per_hour", "oil_price", "mana_needed", "oil_needed",
                 "oil_cost", "watch_keeper"]
 OIL_LINE = "'Lantern oil: ' + str(%s) + ' flasks for ' + str(%s) + ' coins'"
-LEDGER_FIX = "Build it from the boxes, so the ledger follows when the hours change."
 
 
 def _ledger(a1=LEDGER_A1, a2=LEDGER_A2, b3=LEDGER_B3, b4=LEDGER_B4, c5=LEDGER_C5, c6=LEDGER_C6, c7=None):
@@ -2865,20 +3110,21 @@ WATCH_KEEPER_CHECK = (
         "    _near = [_m for _m in _made if _m not in _known and _close(_m, 'watch_keeper')]\n"
         "    _newb = [_m for _m in _made if _m not in _known and type(_g.get(_m)).__name__ == 'str' and _g[_m].strip()]\n"
         "    if _near:\n"
-        "        _msg = 'Python matches names letter for letter: you wrote `' + _near[0] + '`, the task needs `watch_keeper`.'\n"
+        "        _msg = 'Your box is named `' + _near[0] + '`, but this task needs `watch_keeper`. Names match letter "
+        "for letter, capitals too.'\n"
         "    elif _bare:\n"
-        "        _msg = 'Line ' + str(_bare[0]) + ' is a value with no box, so Python made it and forgot it. "
-        "Put `watch_keeper = ` in front of it.'\n"
+        "        _msg = 'Line ' + str(_bare[0]) + ' is a value with no name in front, so Python reads it and throws it "
+        "away, like a phone number saved with no contact name. Put `watch_keeper = ` in front of it.'\n"
         "    elif _newb:\n"
         "        _msg = 'Your new box `' + _newb[0] + '` holds the hero, but `watch_keeper` is still empty. "
-        "Put the hero in `watch_keeper`.'\n"
+        "Put the hero in `watch_keeper` instead.'\n"
         "    elif 'watch_keeper' not in _g:\n"
         "        _msg = 'Make a box named `watch_keeper`: start a line with `watch_keeper = `.'\n"
         "    elif type(_have).__name__ != 'str':\n"
         "        _msg = '`watch_keeper` should hold a hero, in quotes.'\n"
         "    else:\n"
-        "        _msg = '`watch_keeper` holds empty quotes. Put any hero between them, or use Mar' + chr(39) + 'tu' + "
-        "chr(39) + 's pick.'\n"
+        "        _msg = '`watch_keeper` holds empty quotes. Put any hero between them, or press the Mar' + chr(39) + "
+        "'tu' + chr(39) + 's pick button, next to Names to use.'\n"
         "assert _ok, _msg\n"
     ),
 )
@@ -2888,17 +3134,22 @@ PROJECT_1P1 = dict(
     id="night-watch-ledger",
     title="The Night Watch Ledger",
     minutes=19,
-    summary="Mar'tu's ledger for the long night: mana for the barrier, oil for the lanterns, and who keeps watch.",
+    summary=(
+        "Mar'tu's ledger, his notebook of costs, for the long night: mana for the barrier, oil for the lanterns, "
+        "and who keeps watch."
+    ),
     intro=(
-        "The barrier must hold until the next burst, 37 hours away. Mar'tu keeps a ledger of what the night will "
-        "cost: mana for the barrier, and flasks of lantern oil.\n"
-        "Three parts, in order: A. what we know, B. let the code combine it, C. write the ledger.\n"
-        "The barrier eats 2 mana an hour. The lanterns burn 1 flask of oil an hour, and a flask costs 3 coins."
+        "A ledger is a notebook where you write down what things cost. Mar'tu keeps one for tonight. The barrier "
+        "must hold until the next burst (a blast from the leylines), 37 hours away.\n"
+        "Three parts, in order: A. what we know, B. let the code combine it (do the math with the box names), "
+        "C. write the ledger.\n"
+        "The barrier eats 2 mana an hour. The lanterns burn 1 flask (a small bottle) of oil an hour, and a flask "
+        "costs 3 coins. *Per hour* is a unit rate, like miles per hour."
     ),
     martu=(
-        "Thirty-seven hours, yes? I do not want to do these sums by hand at 3 in the morning. "
-        "Put what we know in boxes, let the code combine them, then write the ledger lines. "
-        "If the clock changes its mind, the ledger follows."
+        "Thirty-seven hours, yes? I don't want to do this math by hand in the middle of the night. Put what we "
+        "know in boxes, let Python do the math with the box names, then write the ledger lines. If the clock "
+        "changes its mind, change one box and press Run again: every line changes to match."
     ),
     names=["hours_until_burst", "mana_per_hour", "oil_per_hour", "oil_price", "mana_needed", "oil_needed",
            "oil_cost", "watch_keeper", "str"],
@@ -2907,28 +3158,32 @@ PROJECT_1P1 = dict(
     checkpoints=[
         dict(
             id="hours-until-burst",
-            text="A. Make `hours_until_burst` hold 37.",
+            text="A. Under `# A. What we know`, replace the 0 in `hours_until_burst = 0` with 37.",
             dictated=True,
             hints=[
-                "Change the 0 after `hours_until_burst = ` to 37.",
-                "Look under `# A. What we know`, line 2.",
-                "A box gets a number with `name = value`, no quotes: `steps = 12`.",
+                "Look under `# A. What we know`, at line 2: `hours_until_burst = 0`.",
+                "A box gets a number with `name = value`, and a number gets no quotes: `steps = 12`.",
+                "Replace the 0 on line 2 with `37`. Line 2 becomes `hours_until_burst = 37`.",
             ],
             checks=[
                 # 32 is accepted too, so this task stays green after the last task (thirty-two-hours).
                 slot("hours_until_burst is 37", "hours_until_burst",
                      "(32 if globals().get('hours_until_burst') == 32 else 37)", known=LEDGER_KNOWN,
-                     default="The burst is 37 hours away: `hours_until_burst = 37`."),
+                     default="The burst is 37 hours away. Write `hours_until_burst = 37` on line 2."),
             ],
         ),
         dict(
             id="what-we-know",
-            text="A. Fill in the other three boxes from the story: mana per hour, flasks per hour, and the price of one flask.",
+            text=(
+                "A. Fill in the other three boxes under `# A.` from the story at the top of this page: mana per "
+                "hour, flasks per hour, and the price of one flask."
+            ),
             dictated=False,
             hints=[
-                "Start like this: `mana_per_hour = 2`. The other two numbers are in the story too.",
+                "The story is at the top of this page, above Your tasks. Start like this: `mana_per_hour = 2`. The "
+                "other two numbers are in the story too.",
                 "The barrier eats 2 mana an hour. The lanterns burn 1 flask an hour. A flask costs 3 coins.",
-                "Each box gets its own number: how much per hour, or how much is one.",
+                "Replace the 0s: `2` on line 3, `1` on line 4 and `3` on line 5.",
             ],
             checks=[
                 slot("mana_per_hour is 2", "mana_per_hour", "2", known=LEDGER_KNOWN,
@@ -2936,7 +3191,7 @@ PROJECT_1P1 = dict(
                 (
                     "oil boxes are not swapped",
                     "assert not (oil_per_hour == 3 and oil_price == 1), "
-                    "'You swapped them: 1 is how many flasks burn each hour, 3 is the price of one flask.'",
+                    "'You swapped them: 1 is how many flasks burn each hour, and 3 is the price of one flask.'",
                 ),
                 slot("oil_per_hour is 1", "oil_per_hour", "1", known=LEDGER_KNOWN,
                      default="The lanterns burn 1 flask each hour: `oil_per_hour = 1`."),
@@ -2946,12 +3201,17 @@ PROJECT_1P1 = dict(
         ),
         dict(
             id="mana-needed",
-            text="B. Make `mana_needed` from the hours and the mana per hour.",
+            text=(
+                "B. Replace the 0 in `mana_needed = 0` with the hours times the mana per hour: use `*` and the two "
+                "box names."
+            ),
             dictated=False,
             hints=[
-                "Start like this: `mana_needed = hours_until_burst * `",
-                "2 mana for each of 37 hours. Which two boxes hold those?",
-                "If `days = 3` and `meals_per_day = 2`, then `days * meals_per_day` is 6 meals.",
+                "Look under `# B. Let the code combine it`, at line 8. Start like this: "
+                "`mana_needed = hours_until_burst * `",
+                "2 mana for each of 37 hours is 37 × 2. If `days = 3` and `meals_per_day = 2`, then "
+                "`days * meals_per_day` is 6 meals. Which two boxes hold the hours and the mana per hour?",
+                "Replace the 0 on line 8 with `hours_until_burst * mana_per_hour`.",
             ],
             checks=[
                 loose_math("the math is kept in a box"),
@@ -2960,137 +3220,175 @@ PROJECT_1P1 = dict(
                      known=LEDGER_KNOWN, foreign=["days", "meals_per_day"],
                      rules=[
                          ("_have == hours_until_burst + mana_per_hour",
-                          "You added. The barrier needs 2 mana for each hour: multiply with `*`."),
+                          "Your line adds. The barrier needs 2 mana for each hour, so multiply with `*`."),
                          # LINE-TOTAL (no numbers in the message: the hours change in the last task).
                          ("_have in (hours_until_burst * hours_until_burst * mana_per_hour, "
                           "mana_per_hour * hours_until_burst * mana_per_hour)",
-                          "That multiplies by a total that is already worked out. Multiply the hours by the mana for "
-                          "ONE hour: `hours_until_burst * mana_per_hour`."),
+                          "Your line multiplies by a total that is already worked out. Multiply the hours by the mana "
+                          "for one hour: `hours_until_burst * mana_per_hour`."),
                      ],
-                     default="Make `mana_needed` from `hours_until_burst` and `mana_per_hour`."),
+                     default="`mana_needed` is not worked out yet. Multiply `hours_until_burst` by `mana_per_hour`."),
                 rerun_box("mana_needed follows the hours", {"hours_until_burst": 32, "mana_per_hour": 3}, "mana_needed",
-                          "_R('hours_until_burst') * _R('mana_per_hour')", LEDGER_FIX),
+                          "_R('hours_until_burst') * _R('mana_per_hour')",
+                          "`mana_needed` has a typed-in number. Use the box names, not numbers: `hours_until_burst` "
+                          "times `mana_per_hour`."),
             ],
             pass_line="Gearshift: Math checks out.",
         ),
         dict(
             id="oil-needed-and-cost",
-            text="B. Make `oil_needed` from the hours, then `oil_cost` from the flasks and the price.",
+            text=(
+                "B. Two boxes, in order:\n"
+                "1. Make `oil_needed` the hours times the flasks per hour: `hours_until_burst` and `oil_per_hour`.\n"
+                "2. Make `oil_cost` the flasks times the price of one: `oil_needed` and `oil_price`."
+            ),
             dictated=False,
             hints=[
-                "Start like this: `oil_needed = hours_until_burst * `",
-                "Flasks: hours times flasks per hour. Coins: flasks times the price of one.",
-                "If `bags = 4` and `bag_price = 5`, then `bags * bag_price` is 20 coins.",
+                "Look at lines 9 and 10, under `mana_needed`. Start like this: `oil_needed = hours_until_burst * `",
+                "Flasks: hours times flasks per hour. Coins: flasks times the price of one, the way "
+                "`bags * bag_price` is 20 coins when `bags = 4` and `bag_price = 5`.",
+                "Replace the 0 on line 9 with `hours_until_burst * oil_per_hour`, and the 0 on line 10 with "
+                "`oil_needed * oil_price`.",
             ],
             checks=[
                 loose_math("the math is kept in a box"),
                 set_once("each box is set once, at the top", ["hours_until_burst", "oil_per_hour", "oil_price"]),
                 slot("oil_needed multiplies the boxes", "oil_needed", "hours_until_burst * oil_per_hour",
                      known=LEDGER_KNOWN, foreign=["bags", "bag_price"],
-                     default="Make `oil_needed` from `hours_until_burst` and `oil_per_hour`."),
+                     default="`oil_needed` is not worked out yet. Multiply `hours_until_burst` by `oil_per_hour`."),
                 slot("oil_cost multiplies the boxes", "oil_cost", "hours_until_burst * oil_per_hour * oil_price",
                      known=LEDGER_KNOWN, foreign=["bags", "bag_price"],
                      rules=[
                          # LINE-TOTAL: the flasks times the whole oil cost (or the price times it).
                          ("_have in (hours_until_burst * oil_per_hour * hours_until_burst * oil_per_hour * oil_price, "
                           "oil_price * hours_until_burst * oil_per_hour * oil_price)",
-                          "That multiplies by a total that is already worked out. Multiply the flasks by the price of "
-                          "ONE flask: `oil_needed * oil_price`."),
+                          "Your line multiplies by a total that is already worked out. Multiply the flasks by the "
+                          "price of one flask: `oil_needed * oil_price`."),
                      ],
-                     default="Make `oil_cost` from `oil_needed` and `oil_price`."),
+                     default="`oil_cost` is not worked out yet. Multiply `oil_needed` by `oil_price`."),
                 rerun_box("oil_needed follows the boxes", {"hours_until_burst": 32, "oil_per_hour": 2}, "oil_needed",
-                          "_R('hours_until_burst') * _R('oil_per_hour')", LEDGER_FIX),
+                          "_R('hours_until_burst') * _R('oil_per_hour')",
+                          "Use `oil_per_hour` too, not a typed number: multiply `hours_until_burst` by "
+                          "`oil_per_hour`."),
                 rerun_box("oil_cost follows the boxes", {"hours_until_burst": 32, "oil_per_hour": 2, "oil_price": 5}, "oil_cost",
-                          "_R('hours_until_burst') * _R('oil_per_hour') * _R('oil_price')", LEDGER_FIX),
+                          "_R('hours_until_burst') * _R('oil_per_hour') * _R('oil_price')",
+                          "`oil_cost` has a typed-in number or skips a box. Use the box names: multiply `oil_needed` "
+                          "by `oil_price`."),
             ],
         ),
         dict(
             id="mana-line",
-            text="C. Print `Mana for the barrier: 74`, built from the boxes.",
+            text=(
+                "C. Under `# C. Write the ledger`, add a `print` line that shows `Mana for the barrier: ` glued to the "
+                "box `mana_needed`. Don't type 74."
+            ),
             dictated=False,
             hints=[
+                "Click at the end of line 12, `# C. Write the ledger`, and press Enter. "
                 "Start like this: `print(\"Mana for the barrier: \" + `",
-                "The number comes from `mana_needed`. What does a number need before it can be glued?",
-                "`\"Sips: \" + str(sips)` glues text and a box with a number in it.",
+                "The number comes from `mana_needed`. What does a number need before it can be glued? "
+                "`\"Sips: \" + str(sips)` glues text to a box with a number in it.",
+                "Write `print(\"Mana for the barrier: \" + str(mana_needed))` under `# C. Write the ledger`.",
             ],
             checks=[
                 out_line("prints the mana line", "'Mana for the barrier: ' + str(hours_until_burst * mana_per_hour)",
-                         "Print `Mana for the barrier: ` glued to `str(mana_needed)`.", hide=own("watch_keeper")),
+                         "Show `Mana for the barrier: ` glued to `str(mana_needed)`.", hide=own("watch_keeper")),
                 rerun_line("the mana line follows the hours", {"hours_until_burst": 32, "mana_per_hour": 3},
-                           "'Mana for the barrier: ' + str(_R('hours_until_burst') * _R('mana_per_hour'))", LEDGER_FIX,
+                           "'Mana for the barrier: ' + str(_R('hours_until_burst') * _R('mana_per_hour'))",
+                           "Your mana line has a typed-in number. Use the box name, not a number: `str(mana_needed)`.",
                            hide=own("watch_keeper")),
             ],
         ),
         dict(
             id="oil-line",
-            text="C. Print `Lantern oil: 37 flasks for 111 coins`, built from the boxes.",
+            text=(
+                "C. Add a `print` line that shows `Lantern oil: 37 flasks for 111 coins`, glued from the words and "
+                "the boxes `oil_needed` and `oil_cost`. Don't type the numbers."
+            ),
             dictated=False,
             hints=[
-                "Start like this: `print(\"Lantern oil: \" + str(oil_needed) + `",
-                "Two numbers come from boxes: the flasks and the coins. Everything else is fixed words.",
-                "`print(\"Lantern oil: \" + str(___) + \" flasks for \" + str(___) + \" coins\")`",
+                "Add it under your mana line. Start like this: `print(\"Lantern oil: \" + str(oil_needed) + `",
+                "Two numbers come from boxes: the flasks and the coins. Everything else is words in quotes.",
+                "`print(\"Lantern oil: \" + str(___) + \" flasks for \" + str(___) + \" coins\")`. Fill each ___ "
+                "with a box name.",
             ],
             checks=[
                 out_line("prints the oil line",
                          OIL_LINE % ("hours_until_burst * oil_per_hour", "hours_until_burst * oil_per_hour * oil_price"),
-                         "Print the oil line, glued from text, `str(oil_needed)` and `str(oil_cost)`.",
+                         "Show the oil line, glued from words in quotes, `str(oil_needed)` and `str(oil_cost)`.",
                          hide=own("watch_keeper")),
                 rerun_line("the oil line follows the hours", {"hours_until_burst": 32, "oil_per_hour": 2, "oil_price": 5},
                            OIL_LINE % ("_R('hours_until_burst') * _R('oil_per_hour')",
                                        "_R('hours_until_burst') * _R('oil_per_hour') * _R('oil_price')"),
-                           LEDGER_FIX, hide=own("watch_keeper")),
+                           "Your oil line has typed-in numbers. Use the box names, not numbers: `str(oil_needed)` and "
+                           "`str(oil_cost)`.",
+                           hide=own("watch_keeper")),
             ],
         ),
         dict(
             id="watch-keeper",
-            text="C. Make `watch_keeper` hold any hero, in quotes. Print `First watch: ` with the hero after it.",
+            text=(
+                "C. Two moves, in order:\n"
+                "1. On the `watch_keeper = \"\"` line, put any hero between the quotes.\n"
+                "2. Under it, show `First watch: ` glued with `+` to the box `watch_keeper`."
+            ),
             dictated=False,
             hints=[
-                "Put a hero between the quotes after `watch_keeper = `.",
-                "Two lines: the box, then a `print` that glues `\"First watch: \"` to `watch_keeper`.",
-                "`\"Guard: \" + guard` glues fixed words to the text inside the box `guard`.",
+                "Look at the last line, `watch_keeper = \"\"`. Put a hero between its two quotes.",
+                "Two lines: the box, then a `print` that glues `\"First watch: \"` to `watch_keeper`, the way "
+                "`\"Guard: \" + guard` glues words to the text inside the box `guard`.",
+                "Write `print(\"First watch: \" + watch_keeper)` as the last line, after you put a hero in the "
+                "quotes.",
             ],
             checks=[
                 WATCH_KEEPER_CHECK,
                 out_line("prints the watch line", "'First watch: ' + watch_keeper",
-                         "Print `First watch: ` glued to `watch_keeper`. For a hero named Tester, that is "
-                         "`First watch: Tester`.", privacy=True,
+                         "Show `First watch: ` glued to `watch_keeper`. With a made-up name, Tester, it would show "
+                         "`First watch: Tester`. Don't type Tester.", privacy=True,
                          spaces="Check the spaces: one after the colon, like `First watch: Tester`."),
                 rerun_line("the watch line is built from the box", {"watch_keeper": "Tester"}, "'First watch: Tester'",
-                           "Glue `\"First watch: \"` to the box `watch_keeper`.", show=False),
+                           "Your line has the hero typed in. Glue `\"First watch: \"` to the box instead: "
+                           "`\"First watch: \" + watch_keeper`.",
+                           show=False),
                 rerun_line("the watch line follows another hero", {"watch_keeper": "Zelda"}, "'First watch: Zelda'",
-                           "Glue `\"First watch: \"` to the box `watch_keeper`.", show=False),
+                           "Your line has the hero typed in. Glue `\"First watch: \"` to the box instead: "
+                           "`\"First watch: \" + watch_keeper`.",
+                           show=False),
             ],
             pass_line="Mar'tu: Hm. Noted. First watch is theirs, then.",
         ),
         dict(
             id="thirty-two-hours",
             text=(
-                "Bomb Shell studied the chalk wall: thirty-two hours, maybe less. Change only `hours_until_burst` to "
-                "32 and run. Watch every ledger line follow."
+                "Change only `hours_until_burst = 37` to `hours_until_burst = 32`, and press Run. Bomb Shell read the "
+                "chalk wall: thirty-two hours, maybe less. Every ledger line changes to match."
             ),
             dictated=True,
             hints=[
-                "Change line 2 to `hours_until_burst = 32`.",
-                "Which box holds the hours? Change only that one.",
-                "Change a box at the top, and every line built from it follows.",
+                "Look at line 2, `hours_until_burst = 37`. It is the only line to change.",
+                "Every ledger line is worked out from `hours_until_burst`. Change it once and press Run again: "
+                "every line changes to match.",
+                "Change the `37` on line 2 to `32`, and press Run.",
             ],
             checks=[
                 set_once("the hours are set once, at the top", ["hours_until_burst"]),
                 ("hours_until_burst is 32",
-                 "assert hours_until_burst == 32, 'Change line 2 to `hours_until_burst = 32`, then run.'"),
+                 "assert hours_until_burst == 32, '`hours_until_burst` is not 32 yet. Change line 2 to "
+                 "`hours_until_burst = 32`, then press Run.'"),
                 ("the mana line shows 64",
-                 "assert 'Mana for the barrier: 64' in _lines(), 'With 32 hours, your mana line should print "
-                 "`Mana for the barrier: 64`. Change only line 2, and keep the line built from `mana_needed`.'"),
+                 "assert 'Mana for the barrier: 64' in _lines(), 'With 32 hours, your mana line should show "
+                 "`Mana for the barrier: 64`. Change only line 2, and keep the mana line glued from `str(mana_needed)`.'"),
                 # Back to 37 inside the check: a line with 32 typed into it (e.g. `32 * mana_per_hour`) cannot follow.
                 rerun_line("the mana line still follows the hours", {"hours_until_burst": 37},
                            "'Mana for the barrier: ' + str(_R('hours_until_burst') * _R('mana_per_hour'))",
-                           "Change only line 2, and keep every ledger line built from the boxes.",
+                           "A ledger line has 32 typed in. Change only line 2, and keep the box names, not numbers, "
+                           "on every other line.",
                            hide=own("watch_keeper")),
                 rerun_line("the oil line still follows the hours", {"hours_until_burst": 37},
                            OIL_LINE % ("_R('hours_until_burst') * _R('oil_per_hour')",
                                        "_R('hours_until_burst') * _R('oil_per_hour') * _R('oil_price')"),
-                           "Change only line 2, and keep every ledger line built from the boxes.",
+                           "A ledger line has 32 typed in. Change only line 2, and keep the box names, not numbers, "
+                           "on every other line.",
                            hide=own("watch_keeper")),
             ],
             pass_line="Mar'tu: 64 mana, 32 flasks, 96 coins. You changed one box. The ledger did the rest.",
@@ -3130,15 +3428,15 @@ PROJECT_1P1 = dict(
             angle="step-by-step",
             text=(
                 "1. Fill the four boxes in A.\n2. In B, multiply: hours times per hour; flasks times price.\n"
-                "3. In C, glue text and `str()` of each box.\n4. Run after every line."
+                "3. In C, glue words and `str()` of each box.\n4. Press Run after every line."
             ),
         ),
         dict(
             angle="in Tor",
             label="Why a ledger?",
             text=(
-                "The chalk wall says the next burst may come sooner: 32 hours, maybe. "
-                "If you typed the answers, the whole ledger is wrong. If the code combines them, change one box."
+                "The chalk wall says the next burst may come sooner: 32 hours, maybe. If you typed the answers, "
+                "every line of the ledger would be wrong. With box names, you change one box and press Run again."
             ),
         ),
         dict(
@@ -3146,19 +3444,27 @@ PROJECT_1P1 = dict(
             label="You've seen this",
             text=(
                 "In the campaign, the bursts came closer: 48, then 37, then about 32 hours. "
-                "Mar'tu's checks here try 32 hours to see if your ledger follows."
+                "Here, my checks try 32 hours to see if your ledger changes to match."
+            ),
+        ),
+        dict(
+            angle="math class",
+            label="From math class",
+            text=(
+                "*Per hour* is a unit rate, like miles per hour. 37 hours at 2 mana per hour is 37 × 2 = 74 mana, "
+                "the same way 3 hours at 60 miles per hour is 180 miles."
             ),
         ),
     ],
     bonus=dict(
         by="lucky",
-        title="Lucky's side quest",
+        title="Lucky's cut",
         text=(
-            "Lucky wants his cut. Below the ledger:\n"
-            "1. Make `glug_sips = 4`, a `glug_price` of your choice, and `glug_fee` built from them.\n"
-            "2. Print a divider of 24 `~` marks, stamped with `*`.\n"
-            "3. Make `total_coins`, the oil cost plus the glug fee, and print it.\n"
-            "4. Print a reserve bar for `reserve = 4` of `reserve_max = 6`, like `[████░░]`."
+            "Lucky wants his cut. Under your last line:\n"
+            "1. Make `glug_sips = 4`, a `glug_price` of your choice, and `glug_fee` worked out from them with `*`.\n"
+            "2. Show a divider of 24 `~` marks, stamped with `*`.\n"
+            "3. Make `total_coins`, the oil cost plus the glug fee, and show it.\n"
+            "4. Show a reserve bar for `reserve = 4` of `reserve_max = 6`, like `[████░░]`."
         ),
         hints=[
             "Glug: `glug_fee = glug_sips * glug_price`. Divider: `print(\"~\" * 24)`.",
@@ -3168,7 +3474,7 @@ PROJECT_1P1 = dict(
             ("glug fee is built from the boxes", "assert glug_fee == glug_sips * glug_price and glug_sips == 4, "
              "'Make `glug_sips = 4`, any `glug_price`, and `glug_fee = glug_sips * glug_price`.'"),
             rerun_box("glug fee follows the price", {"glug_price": 11}, "glug_fee", "_R('glug_sips') * 11",
-                      "Build it from the boxes."),
+                      "`glug_fee` has a typed-in number. Use the box names, not numbers: `glug_sips * glug_price`."),
             (
                 "divider made with repetition",
                 "import ast as _ast\n"
@@ -3178,16 +3484,16 @@ PROJECT_1P1 = dict(
                 "_typed = [_n for _n in _ast.walk(_tree) if type(_n).__name__ == 'Constant' "
                 "and type(_n.value).__name__ == 'str' and '~~' in _n.value and id(_n) not in _stamped]\n"
                 "assert not _typed, 'Make the divider with repetition: `\"~\" * 24`. Typing the marks is how Lucky loses count.'\n"
-                "assert '~' * 24 in _lines(), 'Print a divider of exactly 24 marks: `print(\"~\" * 24)`.'",
+                "assert '~' * 24 in _lines(), 'Show a divider of exactly 24 marks: `print(\"~\" * 24)`.'",
             ),
             (
                 "total coins",
                 "assert total_coins == oil_cost + glug_fee, 'Make `total_coins = oil_cost + glug_fee`.'\n"
-                "assert any(str(total_coins) in _l for _l in _lines()), 'Print `total_coins`.'",
+                "assert any(str(total_coins) in _l for _l in _lines()), 'Show `total_coins` with `print`.'",
             ),
             rerun_box("total coins follows the hours", {"hours_until_burst": 30}, "total_coins",
                       "_R('hours_until_burst') * _R('oil_per_hour') * _R('oil_price') + _R('glug_fee')",
-                      "Build it from `oil_cost` and `glug_fee`."),
+                      "`total_coins` has a typed-in number. Use the box names, not numbers: `oil_cost + glug_fee`."),
             rerun_line("reserve bar follows its boxes", {"reserve": 1, "reserve_max": 6}, "'[█░░░░░]'",
                        "Stamp `\"█\" * reserve`, then `\"░\" * (reserve_max - reserve)`.", hide=own("watch_keeper")),
         ],
@@ -3201,11 +3507,14 @@ PROJECT_1P1 = dict(
         module="friends-in-low-places",
         part="thirty-two-hours",
         why=(
-            "You have seen this moment: Bomb Shell studied the chalk wall and said thirty-two hours, maybe less. "
-            "A ledger built from boxes is ready for that news. Change one number."
+            "You've seen this moment: Bomb Shell studied the chalk wall and said thirty-two hours, maybe less. "
+            "A ledger written with box names is ready for that news. Change one number."
         ),
     ),
-    takeaway="A ledger built from boxes follows when one box changes: change the hours, every line follows.",
+    takeaway=(
+        "A ledger written with box names changes to match: change the hours, press Run again, and every line "
+        "changes."
+    ),
     wrong_answers=[
         dict(why="mana_needed typed (everyone's 68)", code=_ledger(b3="\nmana_needed = 74\n"),
              fails_at=3, message_contains="32"),
@@ -3225,7 +3534,7 @@ PROJECT_1P1 = dict(
              fails_at=0, message_contains="SyntaxError"),
         dict(why="a lone hero with no box",
              code=_ledger(c7='watch_keeper = ""\n"Bomb Shell"\nprint("First watch: " + watch_keeper)\n'),
-             fails_at=7, message_contains="no box"),
+             fails_at=7, message_contains="no name in front"),
         dict(why="the watch line typed", code=_ledger(c7='watch_keeper = "Bomb Shell"\nprint("First watch: Bomb Shell")\n'),
              fails_at=7, message_contains="Tester"),
         dict(why="the oil line with a missing space",
@@ -3271,7 +3580,7 @@ PROJECT_1P1 = dict(
         dict(why="the last task not done: the hours still 37", code=_ledger(), fails_at=8,
              message_contains="`hours_until_burst = 32`"),
         dict(why="the last task as a new line at the bottom (side-work habit): the ledger never sees 32",
-             code=_ledger() + "hours_until_burst = 32\n", fails_at=3, message_contains="top down"),
+             code=_ledger() + "hours_until_burst = 32\n", fails_at=3, message_contains="top to bottom"),
         dict(why="the last task changes the wrong box (mana_per_hour to 32)",
              code=_ledger(a2="mana_per_hour = 32\noil_per_hour = 1\noil_price = 3\n"), fails_at=2,
              message_contains="2 mana each hour"),

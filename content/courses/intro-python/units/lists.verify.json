@@ -395,7 +395,7 @@
             "print(41)"
           ],
           "failsAt": 2,
-          "messageContains": "Read the newest gap"
+          "messageContains": "typed the newest gap"
         },
         {
           "why": "only the newest, not the one before",
@@ -494,7 +494,7 @@
             "print(chalk_wall[-2])"
           ],
           "failsAt": 1,
-          "messageContains": "colon makes a list"
+          "messageContains": "makes a list of gaps"
         },
         {
           "why": "one print per position, 0 to 6: every gap (and IndexError on a shorter wall)",
@@ -600,7 +600,7 @@
             "print(both_pages)"
           ],
           "failsAt": 1,
-          "messageContains": "forgets it"
+          "messageContains": "throws it away"
         },
         {
           "why": "append stored back: x = x.append(...) leaves None",
@@ -753,7 +753,7 @@
             "print(both_pages)"
           ],
           "failsAt": 2,
-          "messageContains": "typed by hand"
+          "messageContains": "typed in the numbers for `both_pages`"
         },
         {
           "why": "new marks first",
@@ -856,7 +856,7 @@
             "print(both_pages)"
           ],
           "failsAt": 2,
-          "messageContains": "new marks were typed"
+          "messageContains": "numbers from `new_marks`"
         },
         {
           "why": "typing a list's values by hand: old_marks' numbers typed in",
@@ -873,7 +873,7 @@
             "print(both_pages)"
           ],
           "failsAt": 2,
-          "messageContains": "old marks were typed"
+          "messageContains": "numbers from `old_marks`"
         },
         {
           "why": "append used to join: the whole list goes in as one item",
@@ -908,7 +908,7 @@
             "print(both_pages)"
           ],
           "failsAt": 2,
-          "messageContains": "not built from them"
+          "messageContains": "isn't made from"
         },
         {
           "why": "the join typed above the starter's `both_pages = []`, which empties it again",
@@ -997,7 +997,7 @@
             "print(newest_mark([9, 8, 7]))  # This should show 7"
           ],
           "failsAt": 1,
-          "messageContains": "works too, yes"
+          "messageContains": "the short way"
         },
         {
           "why": "a counted position [6]: fits 7 gaps only (re-run on 5 gaps stops with IndexError)",
@@ -1065,7 +1065,7 @@
             "print(newest_mark([9, 8, 7]))  # This should show 7"
           ],
           "failsAt": 1,
-          "messageContains": "Read the gap from the list"
+          "messageContains": "typed the gap instead"
         },
         {
           "why": "the last position printed, not the gap there",
@@ -1082,7 +1082,7 @@
             "print(newest_mark([9, 8, 7]))  # This should show 7"
           ],
           "failsAt": 1,
-          "messageContains": "prints the last position"
+          "messageContains": "shows the last position"
         },
         {
           "why": "the whole list printed",
@@ -1287,7 +1287,7 @@
             "print(newest_mark([9, 8, 7]))  # This should show 7"
           ],
           "failsAt": 2,
-          "messageContains": "That is a position"
+          "messageContains": "a position, not the item"
         },
         {
           "why": "a counted position [6]: the starter's second call, on [9, 8, 7], stops the student's own Run",
@@ -1390,7 +1390,7 @@
             "print(newest_mark([9, 8, 7]))  # This should show 7"
           ],
           "failsAt": 2,
-          "messageContains": "ingredient named `wall`"
+          "messageContains": "The ingredient on the `def` line"
         },
         {
           "why": "the whole list handed back",
@@ -1459,7 +1459,7 @@
             "print(newest_mark([9, 8, 7]))  # This should show 7"
           ],
           "failsAt": 2,
-          "messageContains": "hands back text"
+          "messageContains": "as text"
         },
         {
           "why": "the ingredient and the outside name mixed: stops the student's own Run on [9, 8, 7]",
@@ -1625,7 +1625,7 @@
             "print(chalk_wall)"
           ],
           "failsAt": 1,
-          "messageContains": "Right place"
+          "messageContains": "right position"
         },
         {
           "why": "Lucky's line edited by hand, plus a do-nothing change by position to pass",
@@ -1722,7 +1722,7 @@
             "print(roster[0][1])"
           ],
           "failsAt": 1,
-          "messageContains": "Read the name from `roster`"
+          "messageContains": "reading it from `roster`"
         },
         {
           "why": "asks for row 3 for the third hero: off by one",
@@ -1807,7 +1807,7 @@
             "print(18)"
           ],
           "failsAt": 2,
-          "messageContains": "Read the mana"
+          "messageContains": "typed the mana"
         },
         {
           "why": "row 1 for the first hero: off by one",
@@ -1953,7 +1953,7 @@
             "print(\"Newest gap:\", newest)"
           ],
           "failsAt": 3,
-          "messageContains": "follows the wall"
+          "messageContains": "instead of reading it from the list"
         },
         {
           "why": "item 1 asked for to get the first",
@@ -1977,7 +1977,7 @@
             "print(\"Newest gap:\", newest)"
           ],
           "failsAt": 2,
-          "messageContains": "follows the wall"
+          "messageContains": "instead of reading it from the list"
         },
         {
           "why": "comma mended by dropping a gap",
@@ -2447,7 +2447,7 @@
             "print(last_three)"
           ],
           "failsAt": 1,
-          "messageContains": "That is three gaps"
+          "messageContains": "takes three gaps"
         },
         {
           "why": "first two typed by hand",
@@ -2461,7 +2461,7 @@
             "print(last_three)"
           ],
           "failsAt": 1,
-          "messageContains": "typed by hand"
+          "messageContains": "typed the gaps into `first_two`"
         },
         {
           "why": "a comma for the colon: TypeError",
@@ -2560,7 +2560,7 @@
             "print(last_three)"
           ],
           "failsAt": 2,
-          "messageContains": "typed by hand"
+          "messageContains": "typed the gaps into `last_three`"
         },
         {
           "why": "slice end is not included: [-3:-1] (spec)",
@@ -2788,7 +2788,7 @@
             "print(chalk_wall)"
           ],
           "failsAt": 1,
-          "messageContains": "forgets it"
+          "messageContains": "throws it away"
         },
         {
           "why": "the sorted list typed by hand",
@@ -2801,7 +2801,7 @@
             "print(chalk_wall)"
           ],
           "failsAt": 1,
-          "messageContains": "typed by hand"
+          "messageContains": "typed the sorted gaps"
         },
         {
           "why": "square brackets for sorted's round ones",
@@ -2909,7 +2909,7 @@
             "print(newest_four)"
           ],
           "failsAt": 1,
-          "messageContains": "typed by hand"
+          "messageContains": "typed-in gaps"
         },
         {
           "why": "the window moved instead of the end opened: [-5:-1]",
@@ -2985,7 +2985,7 @@
             "print(times_48)"
           ],
           "failsAt": 1,
-          "messageContains": "starter's `0`"
+          "messageContains": "placeholder `0`"
         },
         {
           "why": "the count typed by hand (print(48) style)",
@@ -2996,7 +2996,7 @@
             "print(chalk_wall.count(chalk_wall[-1]))"
           ],
           "failsAt": 1,
-          "messageContains": "typed by hand"
+          "messageContains": "typed in the answer"
         },
         {
           "why": "48 in quotes",
@@ -3062,7 +3062,7 @@
             "print(1)"
           ],
           "failsAt": 2,
-          "messageContains": "On Mar'tu's other wall it is 2"
+          "messageContains": "on Mar'tu's test wall. It should show 2"
         },
         {
           "why": "the newest gap printed, not its count (the student's own wall answers)",
@@ -3073,7 +3073,7 @@
             "print(chalk_wall[-1])"
           ],
           "failsAt": 2,
-          "messageContains": "On your wall it is 1"
+          "messageContains": "on your wall. It should show 1"
         },
         {
           "why": "the newest gap typed (37)",
@@ -3095,7 +3095,7 @@
             "print(chalk_wall.count(-1))"
           ],
           "failsAt": 2,
-          "messageContains": "just the number -1"
+          "messageContains": "counts the number -1"
         },
         {
           "why": "newest by a position from the start (6): a shorter wall has no 6",
@@ -3141,7 +3141,7 @@
             "print(3)"
           ],
           "failsAt": 2,
-          "messageContains": "typed for each wall"
+          "messageContains": "an answer for each wall"
         },
         {
           "why": "the newest gap in quotes (step 1 stays green)",
@@ -3215,7 +3215,7 @@
             "print(newest_three)"
           ],
           "failsAt": 1,
-          "messageContains": "typed by hand"
+          "messageContains": "typed in the answer"
         },
         {
           "why": "x = x.sort(): the wall itself becomes None",
@@ -3352,7 +3352,7 @@
             "print(newest_three)"
           ],
           "failsAt": 2,
-          "messageContains": "typed by hand"
+          "messageContains": "typed in the three gaps"
         }
       ],
       "notes": "meta: starter_level=S4; path=pool; skills=range-slice-sort,read-traceback; solo=false; dictates=; foreign_names=bells\n3B-05 (pool). Two bugs, one checkpoint each: `chalk_wall.sort()[0]` (TypeError on None: a loud bug) and `[-3:-1]` (a quiet bug, one short). CP1 reruns with [44, 39, 45, 41] (the shortest is not the newest, so `chalk_wall[-1]` fails) and checks the wall keeps its order, so the in-place fix (`.sort()` then `[0]`) is caught where it happens, not later. Also caught at CP1: a second name for the wall (`other = chalk_wall`, then `other.sort()`: not a copy), and `.sort()` followed by the wall typed out again (the reruns replace every `chalk_wall = [...]` line, so that would hide the change). `min()` and a sliced copy sorted in place also pass (`min` is taught in 3C, a later optional lesson). CP2 reruns with a 4-gap and a 9-gap wall, so `[4:7]` fails. The predict shows Python's own message."
@@ -3713,7 +3713,7 @@
             "#    are, with len()."
           ],
           "failsAt": 1,
-          "messageContains": "Round brackets"
+          "messageContains": "parentheses don't make a list"
         },
         {
           "why": "scores in quotes (A-05/A-08 quoting slip, reversed)",
@@ -4348,7 +4348,7 @@
             "#    are, with len()."
           ],
           "failsAt": 3,
-          "messageContains": "On Mar'tu's other log the first score was 11, so it should become 13. Yours became 9."
+          "messageContains": "On Mar'tu's test log, the first score was 11, so it should become 13. Yours became 9."
         },
         {
           "why": "the whole pair replaced by a number",
@@ -4534,7 +4534,7 @@
             "#    are, with len()."
           ],
           "failsAt": 4,
-          "messageContains": "follows the log"
+          "messageContains": "changes to match the log"
         },
         {
           "why": "the recipe reads the outside list, not its ingredient",
@@ -4756,7 +4756,7 @@
             "#    are, with len()."
           ],
           "failsAt": 4,
-          "messageContains": "starter's `return 0`"
+          "messageContains": "placeholder `0`"
         },
         {
           "why": "the last drill typed by hand",
@@ -5179,7 +5179,7 @@
             "#    are, with len()."
           ],
           "failsAt": 5,
-          "messageContains": "typed for each log"
+          "messageContains": "one line for each log"
         },
         {
           "why": "the count typed by hand",
@@ -5220,7 +5220,7 @@
             "print(4)"
           ],
           "failsAt": 6,
-          "messageContains": "typed by hand"
+          "messageContains": "a number you typed in"
         },
         {
           "why": "len of the first pair, not of the log",
@@ -5303,7 +5303,7 @@
             "print(3)"
           ],
           "failsAt": 6,
-          "messageContains": "In your own log it is 4"
+          "messageContains": "in your own log. It should show 4"
         },
         {
           "why": "a count printed only for a log as long as the student's own",
@@ -5345,7 +5345,7 @@
             "    print(\"Drills: 4\")"
           ],
           "failsAt": 6,
-          "messageContains": "On Mar'tu's other log it is 5"
+          "messageContains": "in Mar'tu's test log. It should show 5"
         },
         {
           "why": "the count printed before the append",
@@ -5389,7 +5389,7 @@
           "messageContains": "after the append"
         }
       ],
-      "notes": "meta: starter_level=S2; path=pool; skills=list-make,list-append-len,list-nested,list-index,param-use,return-value; solo=false; dictates=5,6; foreign_names=menu,last,first_price\nProject 3P1 (pool, 25 min). Task comments are in the starter (S2), `log = []` and `return 0` are placeholders, so the program always runs. Tasks: 1 a list of [drill, score] pairs (any drills: the check reads the student's own literal, so lint e holds); 2 append (CMB: Mar'tu's check swaps the log AND the appended pair, `log.append(...)`, `log = log + [...]` or `log += [...]`); 3 `log[0][1] + 2` (CMB with other first scores, so a typed score fails); 4 `last_score(training)` (PAR with three fresh logs, RET, PAR-CONST, and the global `log` inside the recipe: the parameter is named `training`, so the 3A-06 `chalk_wall`-inside slip shows up here too; the spec's `last_score(log)` is the call; the starter's `# This should show 9` call under the def lets the student's own Run catch a slip, so `training[len(training)]` stops it: fails_at 0); 5 the last drill and its score on one line (reruns swap the appended pair, so a typed line fails; a comma print passes, a printed pair with brackets does not), with the score from `last_score(log)` (teacher ruling: a second check runs the program once more with the recipe swapped for `return 70707`, so `log[-1][1]` read straight from the list, or the recipe called and its answer thrown away, fails); 6 `len(log)` (reruns of 5 and 3 drills). Rerun scores are chosen so no two printed numbers collide (11/14/17/19 + 23, 31/37 + 41). Tasks 5-6 also read the student's own run, and the answer must come from the same print line in every run (a line typed per log fails). Task 2 reads the student's own appended pair too, since the reruns swap it out. Scores may be whole or decimal numbers. Messages name whose log a number is for: \"In your own log it is 4\" for the student's own run, \"On Mar'tu's other log it is 5\" for a rerun (teacher ruling). Side quest: did the last score beat the first (`if`, BND: a tie does not print). Partials 1-5 pass tasks 1..k. Pool item (optional); Quiz 3 points to it."
+      "notes": "meta: starter_level=S2; path=pool; skills=list-make,list-append-len,list-nested,list-index,param-use,return-value; solo=false; dictates=5,6; foreign_names=menu,last,first_price\nProject 3P1 (pool, 25 min). Task comments are in the starter (S2), `log = []` and `return 0` are placeholders, so the program always runs. Tasks: 1 a list of [drill, score] pairs (any drills: the check reads the student's own literal, so lint e holds); 2 append (CMB: Mar'tu's check swaps the log AND the appended pair, `log.append(...)`, `log = log + [...]` or `log += [...]`); 3 `log[0][1] + 2` (CMB with other first scores, so a typed score fails); 4 `last_score(training)` (PAR with three fresh logs, RET, PAR-CONST, and the global `log` inside the recipe: the parameter is named `training`, so the 3A-06 `chalk_wall`-inside slip shows up here too; the spec's `last_score(log)` is the call; the starter's `# This should show 9` call under the def lets the student's own Run catch a slip, so `training[len(training)]` stops it: fails_at 0); 5 the last drill and its score on one line (reruns swap the appended pair, so a typed line fails; a comma print passes, a printed pair with brackets does not), with the score from `last_score(log)` (teacher ruling: a second check runs the program once more with the recipe swapped for `return 70707`, so `log[-1][1]` read straight from the list, or the recipe called and its answer thrown away, fails); 6 `len(log)` (reruns of 5 and 3 drills). Rerun scores are chosen so no two printed numbers collide (11/14/17/19 + 23, 31/37 + 41). Tasks 5-6 also read the student's own run, and the answer must come from the same print line in every run (a line typed per log fails). Task 2 reads the student's own appended pair too, since the reruns swap it out. Scores may be whole or decimal numbers. Messages name whose log a number is for: \"in your own log. It should show 4\" for the student's own run, \"in Mar'tu's test log. It should show 5\" for a rerun (teacher ruling). Side quest: did the last score beat the first (`if`, BND: a tie does not print). Partials 1-5 pass tasks 1..k. Pool item (optional); Quiz 3 points to it."
     },
     "more-list-tools/insert-and-pop": {
       "partials": [
@@ -5571,7 +5571,7 @@
             "print(newest)"
           ],
           "failsAt": 2,
-          "messageContains": "Leave the brackets empty"
+          "messageContains": "Leave the parentheses empty"
         },
         {
           "why": "the newest gap removed by its typed value",
@@ -5691,7 +5691,7 @@
             "print(newest)"
           ],
           "failsAt": 2,
-          "messageContains": "typed by hand"
+          "messageContains": "because you typed it in"
         },
         {
           "why": "newest = 37: the newest gap typed by hand, and never popped",
@@ -5708,7 +5708,7 @@
             "print(newest)"
           ],
           "failsAt": 2,
-          "messageContains": "37 is typed by hand, and it is still on the wall. `.pop()` takes it off and hands it back."
+          "messageContains": "You typed in 37, so it is still on the wall. Use `.pop()`: it takes the gap off and hands it back."
         }
       ],
       "notes": "meta: starter_level=S3; path=optional; skills=list-insert-pop,list-index; solo=false; dictates=2; foreign_names=jars,last,x\n3C-01 (O). Intro attr:insert, attr:pop. The starter wall is the real wall with 47 missing. CP1 [ND] goal-first (teacher ruling; the starter's `# 1.` comment names position 2, the last hint holds the line). CP1 CMB: a rerun with [50, 49, 45, 40] must become [50, 49, 47, 45, 40], so a retyped wall fails. The CP1 check accepts the wall with or without its last gap, so it stays true after CP2's pop. CP2 CMB on the same rerun: `newest` is 40 and the wall lost it. Catches: swapped arguments, position 3 (counting from 1), `.append(47)`, `chalk_wall[2] = 47`, a copy changed, `[-1]` (reads, no pop), `.pop(0)`, `.pop` with no `()`, popping twice, and `newest = 37` typed with no pop (its own message: still on the wall). Bonus: pop + index + comparison."
@@ -5748,7 +5748,7 @@
             "print(chalk_wall)"
           ],
           "failsAt": 1,
-          "messageContains": "starter's `False`"
+          "messageContains": "placeholder `False`"
         },
         {
           "why": "the answer typed in (True)",
@@ -5762,7 +5762,7 @@
             "print(chalk_wall)"
           ],
           "failsAt": 1,
-          "messageContains": "follows the wall"
+          "messageContains": "changes to match the wall"
         },
         {
           "why": "only the newest gap asked about",
@@ -5832,7 +5832,7 @@
             "print(chalk_wall)"
           ],
           "failsAt": 1,
-          "messageContains": "yes/no"
+          "messageContains": "yes-or-no"
         },
         {
           "why": "the sides swapped",
@@ -6012,7 +6012,7 @@
             "total_hours = 0"
           ],
           "failsAt": 1,
-          "messageContains": "starter's `0`"
+          "messageContains": "placeholder `0`"
         },
         {
           "why": "typed by hand",
@@ -6023,7 +6023,7 @@
             "total_hours = sum(chalk_wall)"
           ],
           "failsAt": 1,
-          "messageContains": "typed by hand"
+          "messageContains": "typed in the answer"
         },
         {
           "why": "the first gap taken as the longest",
@@ -6208,7 +6208,7 @@
             "print(30)"
           ],
           "failsAt": 3,
-          "messageContains": "typed for each wall"
+          "messageContains": "an answer for each wall"
         },
         {
           "why": "the first gap minus the newest (fits a wall that only shrinks)",
@@ -6220,7 +6220,7 @@
             "print(chalk_wall[0] - chalk_wall[-1])"
           ],
           "failsAt": 3,
-          "messageContains": "On Mar'tu's other wall it is 7"
+          "messageContains": "on Mar'tu's test wall. It should show 7"
         },
         {
           "why": "the longest printed, not the shrink (the student's own wall answers)",
@@ -6232,7 +6232,7 @@
             "print(longest)"
           ],
           "failsAt": 3,
-          "messageContains": "On your wall it is 11"
+          "messageContains": "on your wall. It should show 11"
         }
       ],
       "notes": "meta: starter_level=S4; path=optional; skills=list-max-min-sum; solo=false; dictates=; foreign_names=coins,most,least\n3C-03 (O). Intro call:max, call:min, call:sum. CP1 [ND] goal-first (teacher ruling; the last hint holds the lines). Reruns with [41, 39, 46, 44] (the longest is at position 2, so neither `[0]` nor the count-from-1 `[1]` finds it; the shortest is not newest) and [60, 30, 45]. Catches: typed values, `[0]` / `[1]` / `[-1]` for max / min, swapped tools, `max[chalk_wall]` (square brackets: a crash), `chalk_wall.max()`, `len` for `sum`, a typed sum, positions added one by one (an IndexError on a shorter wall, answered with `sum`), a typed, reversed or per-wall shrink (one print line must answer every wall). Bonus: `//` (1D) + `len` for a whole-hours average."
@@ -6257,7 +6257,7 @@
             "print(\"Longest: \" + str(longest))"
           ],
           "failsAt": 1,
-          "messageContains": "The longest gap was typed"
+          "messageContains": "The longest gap was typed in"
         },
         {
           "why": "the first gap read instead",
@@ -6276,7 +6276,7 @@
             "print(\"Longest: 48\")"
           ],
           "failsAt": 1,
-          "messageContains": "does not follow the wall"
+          "messageContains": "does not change to match the test wall"
         },
         {
           "why": "the first gap read as item 1 (index from 1)",
@@ -6297,7 +6297,7 @@
             "print(52)"
           ],
           "failsAt": 1,
-          "messageContains": "typed for each wall"
+          "messageContains": "typed in for each wall"
         },
         {
           "why": "a dot instead of a call",
@@ -6310,7 +6310,7 @@
           "messageContains": "no attribute"
         }
       ],
-      "notes": "meta: starter_level=S4; path=optional; skills=list-max-min-sum,read-traceback; solo=true; dictates=; foreign_names=coins; seat_b=shortest = min[chalk_wall] (the same TypeError, with min)\nSOLO, one bug: `max[chalk_wall]` (square brackets versus round ones: TypeError 'not subscriptable'). Rung 0 is 'Read Python's last line'; the pass line uses Unit 2's form; explainer='lean' (teacher ruling: every SOLO from Unit 2 on). Added to Lesson 3C so the lesson has its one SOLO (2.12 lint g); the spec lists 3C-01 to 3C-03 only. CMB with [41, 39, 46, 44] and [30, 52]: the longest sits at a different position in each, so `chalk_wall[1]` (counting from 1) fails. One print line must answer every wall (no typed answer per wall)."
+      "notes": "meta: starter_level=S4; path=optional; skills=list-max-min-sum,read-traceback; solo=true; dictates=; foreign_names=coins; seat_b=shortest = min[chalk_wall] (the same TypeError, with min)\nSOLO, one bug: `max[chalk_wall]` (square brackets versus parentheses: TypeError 'not subscriptable'). Rung 0 is the reading routine (the box's title, then Python's last line); the pass line keeps 'You did that on your own.' and has no 'On your map:' (plain-language guide 4.6); explainer='lean' (teacher ruling: every SOLO from Unit 2 on). Added to Lesson 3C so the lesson has its one SOLO (2.12 lint g); the spec lists 3C-01 to 3C-03 only. CMB with [41, 39, 46, 44] and [30, 52]: the longest sits at a different position in each, so `chalk_wall[1]` (counting from 1) fails. One print line must answer every wall (no typed answer per wall)."
     },
     "tuples/cabin-on-the-map": {
       "partials": [
@@ -6439,7 +6439,7 @@
             "print(across, down)"
           ],
           "failsAt": 2,
-          "messageContains": "typed by hand"
+          "messageContains": "typed the numbers in"
         },
         {
           "why": "one name takes the whole tuple",
@@ -6470,7 +6470,7 @@
             "print(across, down)"
           ],
           "failsAt": 2,
-          "messageContains": "other way round"
+          "messageContains": "wrong order"
         },
         {
           "why": "three names for two items",
@@ -6516,7 +6516,7 @@
             "print(12, 5)"
           ],
           "failsAt": 3,
-          "messageContains": "typed by hand"
+          "messageContains": "typed in"
         },
         {
           "why": "the whole tuple printed",
@@ -6580,7 +6580,7 @@
             ""
           ],
           "failsAt": 1,
-          "messageContains": "still the starter"
+          "messageContains": "still the empty list"
         },
         {
           "why": "no list(): a zip object",
@@ -6596,7 +6596,7 @@
             ""
           ],
           "failsAt": 1,
-          "messageContains": "Wrap it in `list()`"
+          "messageContains": "inside `list()`"
         },
         {
           "why": "the two lists side by side",
@@ -6660,7 +6660,7 @@
             ""
           ],
           "failsAt": 1,
-          "messageContains": "typed by hand"
+          "messageContains": "typed the pairs in"
         },
         {
           "why": "the example's names copied",
@@ -6809,7 +6809,7 @@
             "print((\"Lucky\", \"silver\"))"
           ],
           "failsAt": 2,
-          "messageContains": "typed by hand"
+          "messageContains": "typed the pair in"
         },
         {
           "why": "the hero without the color",
@@ -8407,7 +8407,7 @@
             "print(inventory)"
           ],
           "failsAt": 5,
-          "messageContains": "typed by hand"
+          "messageContains": "typed in"
         },
         {
           "why": "one count, not a slice",
@@ -8502,7 +8502,7 @@
             "print(inventory)"
           ],
           "failsAt": 6,
-          "messageContains": "typed by hand"
+          "messageContains": "typed in"
         },
         {
           "why": "0 in quotes",
@@ -8742,7 +8742,7 @@
             "print(inventory)"
           ],
           "failsAt": 7,
-          "messageContains": "Wrap it in `list()`"
+          "messageContains": "inside `list()`"
         },
         {
           "why": "the two lists side by side",
@@ -8886,7 +8886,7 @@
             "print(inventory)"
           ],
           "failsAt": 7,
-          "messageContains": "typed by hand"
+          "messageContains": "typed in"
         },
         {
           "why": "zipped before the insert and pop (top to bottom)",
@@ -9512,7 +9512,7 @@
             "print(\"Shrink:\", newest - oldest)"
           ],
           "failsAt": 1,
-          "messageContains": "wrong way round"
+          "messageContains": "wrong way around"
         },
         {
           "why": "the oldest typed by hand (print(48), not chalk_wall[0])",
@@ -9899,7 +9899,7 @@
             "print(marks[-1])"
           ],
           "failsAt": 3,
-          "messageContains": "does not follow"
+          "messageContains": "whole list was typed again"
         },
         {
           "why": "the fix one position off (index from 1)",
@@ -9996,7 +9996,7 @@
             "print(33)"
           ],
           "failsAt": 4,
-          "messageContains": "typed, not read"
+          "messageContains": "typed in, not read"
         },
         {
           "why": "a position from the start only fits this length",
@@ -10501,7 +10501,7 @@
             "print(ordered)"
           ],
           "failsAt": 1,
-          "messageContains": "typed, not read"
+          "messageContains": "typed in, not read"
         },
         {
           "why": "the inner position still 2 (IndexError)",
@@ -10660,7 +10660,7 @@
           "messageContains": "even with another `roster`"
         }
       ],
-      "notes": "meta: starter_level=S3; path=QC3; form=A; skills=list-nested,list-index,range-slice-sort,read-traceback; solo=true; dictates=; foreign_names=shelf,steps,ups\nQC3 C3, form A. A loud slip, `print(roster[3][2])` (IndexError: the row and the inner position both counted from 1), then a quiet one: `ordered = manas.sort()` prints `None` (nothing came back). CP1 reruns with another roster ((Mar'tu's check tried another roster: Pell 31, Brakka 7, Moss 15, Glug 3, only inside the check.)), so a typed number and the next row fail. CP2 reruns with manas = [12, 30, 8, 21]: `ordered` must be a sorted copy and `manas` unchanged, so the in-place `.sort()` and `ordered = manas` (a second name, not a copy) fail. This is the Quick Check's sort/None evidence (the questions' sort item became `range` + `+`). Lean messages: the slip and the evidence, never the line. explainer='lean'."
+      "notes": "meta: starter_level=S3; path=QC3; form=A; skills=list-nested,list-index,range-slice-sort,read-traceback; solo=true; dictates=; foreign_names=shelf,steps,ups\nQC3 C3, form A. A loud slip, `print(roster[3][2])` (IndexError: the row and the inner position both counted from 1), then a quiet one: `ordered = manas.sort()` prints `None` (nothing came back). CP1 reruns with another roster (Mar'tu tested your code with a test roster of Pell 31, Brakka 7, Moss 15 and Glug 3.), so a typed number and the next row fail. CP2 reruns with manas = [12, 30, 8, 21]: `ordered` must be a sorted copy and `manas` unchanged, so the in-place `.sort()` and `ordered = manas` (a second name, not a copy) fail. This is the Quick Check's sort/None evidence (the questions' sort item became `range` + `+`). Lean messages: the slip and the evidence, never the line. explainer='lean'."
     },
     "qc3-b/make-append-read": {
       "partials": [
@@ -10991,7 +10991,7 @@
             "print(ore_used[-1])"
           ],
           "failsAt": 3,
-          "messageContains": "does not follow"
+          "messageContains": "whole list was typed again"
         },
         {
           "why": "the fix one position off (index from 1)",
@@ -11100,7 +11100,7 @@
             "print(9)"
           ],
           "failsAt": 4,
-          "messageContains": "typed, not read"
+          "messageContains": "typed in, not read"
         },
         {
           "why": "a position from the start only fits this length",
@@ -11657,7 +11657,7 @@
             "print(ordered)"
           ],
           "failsAt": 1,
-          "messageContains": "typed, not read"
+          "messageContains": "typed in, not read"
         },
         {
           "why": "the inner position still 2 (IndexError)",
@@ -11816,7 +11816,7 @@
           "messageContains": "even with another `drills`"
         }
       ],
-      "notes": "meta: starter_level=S3; path=QC3; form=B; skills=list-nested,list-index,range-slice-sort,read-traceback; solo=true; dictates=; foreign_names=shelf,steps,ups\nQC3 C3, form B. A loud slip, `print(drills[2][2])` (IndexError: the row and the inner position both counted from 1), then a quiet one: `ordered = scores.sort()` prints `None` (nothing came back). CP1 reruns with another drills ((Mar'tu's check tried other drills: kick 11, leap 14, block 17, dodge 19, only inside the check.)), so a typed number and the next row fail. CP2 reruns with scores = [12, 4, 15, 10]: `ordered` must be a sorted copy and `scores` unchanged, so the in-place `.sort()` and `ordered = scores` (a second name, not a copy) fail. This is the Quick Check's sort/None evidence (the questions' sort item became `range` + `+`). Lean messages: the slip and the evidence, never the line. explainer='lean'."
+      "notes": "meta: starter_level=S3; path=QC3; form=B; skills=list-nested,list-index,range-slice-sort,read-traceback; solo=true; dictates=; foreign_names=shelf,steps,ups\nQC3 C3, form B. A loud slip, `print(drills[2][2])` (IndexError: the row and the inner position both counted from 1), then a quiet one: `ordered = scores.sort()` prints `None` (nothing came back). CP1 reruns with another drills (Mar'tu tested your code with test drills: kick 11, leap 14, block 17 and dodge 19.), so a typed number and the next row fail. CP2 reruns with scores = [12, 4, 15, 10]: `ordered` must be a sorted copy and `scores` unchanged, so the in-place `.sort()` and `ordered = scores` (a second name, not a copy) fail. This is the Quick Check's sort/None evidence (the questions' sort item became `range` + `+`). Lean messages: the slip and the evidence, never the line. explainer='lean'."
     }
   },
   "questions": {

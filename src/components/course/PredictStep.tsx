@@ -97,7 +97,7 @@ export function PredictStep({
           <code>{target.replace(/\n$/, "")}</code>
         </pre>
       ) : (
-        <p className="ex-muted ex-predict-note">Read the code in the editor. Pick your guess, then press Run to see.</p>
+        <p className="ex-muted ex-predict-note">Read your code. Pick your guess, then press Run to see what really happens.</p>
       )}
       {/* Hidden until the student seed is known (after hydration), so the order never jumps. */}
       <div
@@ -152,7 +152,7 @@ export function PredictStep({
             onAnswer(-1);
             close();
           }}>
-            Skip, just let me run it
+            Skip, let me run it
           </button>
         ) : (
           <button type="button" className="ex-quiet" data-testid="predict-close" onClick={close}>

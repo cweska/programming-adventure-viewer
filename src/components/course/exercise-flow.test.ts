@@ -270,13 +270,13 @@ describe("server render", () => {
     expect(html).toContain('data-testid="help-rung-3"');
     expect(html).toContain('data-kind="teach"');
     expect(html).toContain('data-testid="help-offer"');
-    expect(html).toContain("Read the last line first");
+    expect(html).toContain("Read the title of the box in the Console");
     expect(html).toContain('data-testid="help-show-locked"');
     expect(html).toContain('aria-disabled="true"');
     expect(html).toContain("ex-help is-offered");
     // Right after a crash, Help first names the line to mend (a crash checks no step).
     expect(html).toContain('data-testid="help-crash"');
-    expect(html).toContain("Mend line 2 first.");
+    expect(html).toContain("Fix line 2 first.");
   });
 
   it("after a crash on a line no step names, holds the step's rungs back and names the line", () => {
@@ -304,7 +304,7 @@ describe("server render", () => {
         onInsertStart: () => undefined,
       }),
     );
-    expect(html).toContain("Mend line 5 first.");
+    expect(html).toContain("Fix line 5 first.");
     expect(html).toContain('data-testid="help-crash-wait"');
     expect(html).not.toContain('data-testid="help-button"');
     expect(html).not.toContain('data-testid="help-rung-1"');
@@ -342,7 +342,7 @@ describe("server render", () => {
     expect(html).not.toContain('data-testid="help-rung-1"');
     // No crash: Oogrish does not talk about a last line that is not there.
     expect(html).toContain("Steady, now. Want a nudge?");
-    expect(html).not.toContain("Read the last line first");
+    expect(html).not.toContain("Read the title of the box in the Console");
   });
 
   it("renders Compare with Mar'tu's version side by side without touching the code", () => {

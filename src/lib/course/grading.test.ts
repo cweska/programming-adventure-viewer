@@ -103,7 +103,7 @@ describe("gradeCheckpoints", () => {
     expect(grade.allPassed).toBe(false);
     expect(grade.firstFailing).toBe(0);
     const message =
-      'Python doesn\'t know the name fireball. Did you mean to put quotes around it? Text needs quotes: "fireball"';
+      '`fireball` has no quotes, so Python looks for a name it should already know, and finds none. Words need quotes, the way you quote someone\'s exact words: `"fireball"`';
     expect(grade.checkpoints).toEqual([
       { id: "make-name", passed: false, message },
       { id: "print-name", passed: false, message },
@@ -115,7 +115,7 @@ describe("gradeCheckpoints", () => {
     const grade = gradeCheckpoints(checkpoints, result({ ok: false, timedOut: true }), "while True:\n    pass\n");
     expect(grade.crashed).toBe(true);
     expect(grade.checkpoints[0]?.message).toContain("ran for more than 5 seconds");
-    expect(grade.checkpoints[0]?.message).toContain("while loop");
+    expect(grade.checkpoints[0]?.message).toContain("`while` loop");
   });
 
   it("marks a missing check result as not checked instead of passing it", () => {
@@ -160,13 +160,13 @@ describe("checkMessage", () => {
 
   it("explains a name the check could not find", () => {
     expect(checkMessage("NameError: name 'chalk_wall' is not defined")).toBe(
-      "Can't find `chalk_wall`. Make sure your code makes `chalk_wall`, spelled exactly like that.",
+      "Can't find `chalk_wall`. Your code needs a line that makes `chalk_wall`, spelled exactly like that.",
     );
   });
 
   it("wraps other errors raised while checking", () => {
     expect(checkMessage('TypeError: can only concatenate str (not "int") to str')).toBe(
-      'Checking this step hit a problem: TypeError: can only concatenate str (not "int") to str. Look at the values your code makes.',
+      'Checking this step hit a problem. Python said: TypeError: can only concatenate str (not "int") to str. Look at the values your code makes: a number where a number belongs, and text where text belongs.',
     );
     expect(checkMessage("Plain words.")).toBe("Plain words.");
   });
@@ -198,7 +198,7 @@ describe("grading a real course run", () => {
 
     const missing = 'print("Hi Lucky")\n';
     const missingGrade = gradeCheckpoints(exercise, runCourseChecks(missing, flattenChecks(exercise)), missing);
-    expect(missingGrade.checkpoints[0]?.message).toBe("Can't find `hero`. Make sure your code makes `hero`, spelled exactly like that.");
+    expect(missingGrade.checkpoints[0]?.message).toBe("Can't find `hero`. Your code needs a line that makes `hero`, spelled exactly like that.");
   });
 });
 
@@ -216,7 +216,7 @@ describe("grading: the slips a check alone would hide", () => {
     const result = grade('"Zelda"\n');
     expect(result.crashed).toBe(false);
     expect(result.checkpoints[0]?.message).toBe(
-      'Line 1 is a value on its own: "Zelda". Python reads it, then forgets it, because no variable keeps it. To keep it, put character = in front of it: character = "Zelda"',
+      'Line 1 is a value with no name in front: `"Zelda"`. Python reads it and throws it away, like a phone number saved with no contact name. Put `character = ` in front of it: `character = "Zelda"`',
     );
   });
 
@@ -224,7 +224,7 @@ describe("grading: the slips a check alone would hide", () => {
     const show = [checkpoint("show", [["prints", "assert 'Hello' in _lines(), 'Print Hello.'"]])];
     const code = '"Hello"\n';
     const result = gradeCheckpoints(show, runCourseChecks(code, flattenChecks(show)), code);
-    expect(result.checkpoints[0]?.message).toContain('To show it, put it inside print( ): print("Hello")');
+    expect(result.checkpoints[0]?.message).toContain('To show it instead, put it inside `print( )`: `print("Hello")`');
   });
 
   it("keeps the check's own message when the slip is not what failed", () => {
@@ -237,7 +237,7 @@ describe("grading: the slips a check alone would hide", () => {
     const mana = [checkpoint("mana", [["value", "assert mana == 20, 'Store the number 20 in mana.'"]])];
     const code = "mana = 3\nmana - 20\n";
     const result = gradeCheckpoints(mana, runCourseChecks(code, flattenChecks(mana)), code);
-    expect(result.checkpoints[0]?.message).toBe("Line 2 uses a dash - where = belongs, so nothing is kept. To store the value, write: mana = 20");
+    expect(result.checkpoints[0]?.message).toBe('Line 2 has a dash `-` where `=` belongs, so nothing goes in the box. A dash means minus. To put the value in the box, write: `mana = 20`');
   });
 
   it("names a question on its own line in place of \"Can't find\", and leaves a check's own words alone", () => {
@@ -245,7 +245,7 @@ describe("grading: the slips a check alone would hide", () => {
     const alone = "roll = 14\nneeded = 15\nroll >= needed\n";
     const result = gradeCheckpoints(passed, runCourseChecks(alone, flattenChecks(passed)), alone);
     expect(result.checkpoints[0]?.message).toBe(
-      "Line 3 asks `roll >= needed` and gets True or False, but nothing keeps or shows the answer. To keep it, put a box name and `=` in front: `passed = roll >= needed`. To show it, put it inside print( ).",
+      "Line 3 asks `roll >= needed` and gets True or False, but nothing keeps or shows the answer. To keep it, put a box's name and `=` in front: `passed = roll >= needed`. To show it instead, put it inside `print( )`.",
     );
     // The box is there (made with ==, from the starter): the check's own message is the right one.
     const kept = "roll = 16\nneeded = 15\npassed = False\npassed == roll >= needed\n";
@@ -256,11 +256,11 @@ describe("grading: the slips a check alone would hide", () => {
 
   it("says when the code made a name with other capital letters, or the example's name", () => {
     expect(grade('Character = "Zelda"\nprint(Character)\n').checkpoints[0]?.message).toBe(
-      "Can't find `character`. Your code made `Character`, but capital letters matter: use `character`.",
+      "Can't find `character`. Your code made `Character`, but capitals count, like in a password: use `character`.",
     );
     const example = 'hero = "Link"\nprint(hero)\n';
     expect(grade('hero = "Zelda"\nprint(hero)\n', { example, names: ["character"] }).checkpoints[0]?.message).toBe(
-      "Can't find `character`. Your code made `hero`, the name from the example. This task uses `character`.",
+      "Can't find `character`. Your code made `hero`, a name from the Example. Your task uses `character`.",
     );
   });
 
@@ -271,10 +271,10 @@ describe("grading: the slips a check alone would hide", () => {
       gradeCheckpoints(called, runCourseChecks(code, flattenChecks(called)), code, context).checkpoints[0]?.message;
     // Unit 3: printing the recipe would show the recipe itself, so the advice is to call it.
     expect(gradeIt({ unitOrder: 3 })).toBe("Line 4 is only the name `say_steady`, with no `()`, so the recipe never runs. To call it, write `say_steady()`");
-    expect(gradeIt({ unitOrder: 2 })).toContain("write print(say_steady)");
+    expect(gradeIt({ unitOrder: 2 })).toContain('write `print(say_steady)`');
     // A lean exercise (SOLO, Quick Check) names the slip and its line, never the fix, like its explainer.
     const lean = gradeIt({ unitOrder: 3, explainer: "lean" });
-    expect(lean).toBe("The slip is on line 4: a name on its own. Mend it yourself, then Run again.");
+    expect(lean).toBe('The mistake is on line 4: a name on its own. Fix it yourself, then press Run again.');
     expect(lean).not.toContain("say_steady()");
   });
 
@@ -283,6 +283,6 @@ describe("grading: the slips a check alone would hide", () => {
     const code = 'character = "Zelda"\nprint(traveler)\n';
     const result = grade(code, { example, names: ["character"] });
     expect(result.crashed).toBe(true);
-    expect(result.checkpoints[0]?.message).toBe("traveler is the name from the example. This task uses character, so write character here.");
+    expect(result.checkpoints[0]?.message).toBe("`traveler` is a name from the Example, not from your task. Your task's name is `character`: write `character` here.");
   });
 });
