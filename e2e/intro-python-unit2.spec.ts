@@ -41,7 +41,7 @@ test.describe("Intro to Python, Unit 2: Control Flow", () => {
     await expect(explainer).toHaveAttribute("data-explainer", "lean");
     await expect(explainer).toHaveAttribute("data-kind", "sign-backwards");
     await expect(explainer.locator(".ex-explainer-title")).toHaveText("Sign typed backwards");
-    await expect(page.getByTestId("explainer-hint")).toContainText("The slip is on line 3: a sign typed backwards.");
+    await expect(page.getByTestId("explainer-hint")).toContainText("The mistake is on line 3: a sign typed backwards.");
     await expect(page.getByTestId("explainer-hint")).not.toContainText(">=");
     await expect(page.getByTestId("python-last-line")).toContainText("SyntaxError: invalid syntax");
   });
@@ -66,7 +66,7 @@ test.describe("Intro to Python, Unit 2: Control Flow", () => {
     // Line 3 mended: Python now stops on the same line for another reason (the text "15").
     await setCode(page, starter.replace("roll => needed", "roll >= needed"));
     await runAndWait(page, 2);
-    await expect(page.getByTestId("got-further")).toHaveText(/Python got further: that slip is mended\./);
+    await expect(page.getByTestId("got-further")).toHaveText(/Python got further: you fixed that mistake\./);
     await expect(page.getByTestId("explainer")).toHaveAttribute("data-kind", "compare-number-text");
     await expect(page.getByTestId("explainer-hint")).not.toContainText("One fixed");
     // Help moves on with the student: step 2's rungs (the text "15"), not step 1's (the sign just mended).
@@ -111,7 +111,7 @@ test.describe("Intro to Python, Unit 2: Control Flow", () => {
     await runAndWait(page, 1);
     await expect(page.getByTestId("task-line")).toHaveAttribute("data-switch-off", "true");
     await expect(page.getByTestId("task-line")).toContainText("Python stopped on line 4.");
-    await expect(page.getByTestId("task-line")).not.toContainText("First, mend");
+    await expect(page.getByTestId("task-line")).not.toContainText("First, fix");
     await expect(page.getByTestId("explainer-hint")).toContainText("Line 3 makes spell_cost");
     await expect(page.getByTestId("explainer-hint")).not.toContainText("bad_line");
     await expect(page.getByTestId("explainer-hint")).not.toContainText("quotes");
@@ -126,7 +126,7 @@ test.describe("Intro to Python, Unit 2: Control Flow", () => {
     await expect(page.getByTestId("help-button")).toContainText("Where to look");
     await page.getByTestId("help-button").click();
     await expect(page.getByTestId("help-rung-1")).toBeVisible();
-    await expect(page.getByTestId("help-locked")).toHaveText("More help opens after you press Run once.");
+    await expect(page.getByTestId("help-locked")).toHaveText("More help opens after you press Run once. Running code that isn't finished yet is fine.");
     await expect(page.getByTestId("help-button")).toHaveCount(0);
     await runAndWait(page, 1);
     await expect(page.getByTestId("help-locked")).toHaveCount(0);

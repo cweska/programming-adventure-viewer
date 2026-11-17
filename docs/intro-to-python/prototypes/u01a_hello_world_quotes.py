@@ -26,16 +26,16 @@ UNIT = dict(
         "Hi. It is me, Mar'tu. Before we continue on our adventure, we go back to the first words, yes?\n"
         "A lot of that campaign code felt like a wall, yes? We will take the wall apart, one stone at a time.\n"
         "Every spell begins as words. Python is fussy about words. More fussy than Lucky is about glug, yes?\n"
-        "Tonight: how to say something, how to keep something in a box, and how to let Python do the sums."
+        "Tonight: how to say something, how to keep something in a box, and how to let Python do the math."
     ),
     goals=[
-        "Show words on the screen with `print()`, in matching quotes",
-        "Write `#` notes for humans, and switch a line off",
-        "Make a box (variable) with `name = value`, using the exact name the task asks for",
-        "Put a new value in a box, like `mana = mana - cost`",
-        "Do math with `+`, `-`, `*` and `/`, and let the code combine your boxes",
-        "Glue text together with `+` and `str()`, and draw a bar with `\"█\" * mana`",
-        "Read Python's message and mend the slips everyone makes",
+        "Make Python show words on the screen",
+        "Write notes that Python skips",
+        "Keep words or a number in a named box (a variable)",
+        "Change what is in a box",
+        "Let Python do the math with your boxes",
+        "Join words and numbers into one line, and draw a mana bar from blocks",
+        "Read Python's error messages and fix small mistakes",
     ],
     campaign_links=["leylines-awaken", "friends-in-low-places"],
 )
@@ -44,49 +44,64 @@ GLOSSARY = [
     dict(
         term="string",
         aliases=["strings", "text"],
-        plain="Words inside quotes. Python shows them exactly as you typed them.",
+        plain="Text inside quotes: letters, digits, spaces or marks, strung together like beads on a string. "
+        "Python shows it exactly as you typed it.",
         example='"Shield up."',
     ),
     dict(
         term="quotes",
         aliases=["quote", "quote mark", "quote marks"],
-        plain="The marks around words: `\"` or `'`. They come in pairs, one before the words and one after.",
+        plain="The marks `\"` or `'` around text. They come in pairs, one before and one after, like quotation "
+        "marks around someone's exact words in English class.",
         example='"Steady, now."',
     ),
     dict(
-        term="brackets",
-        aliases=["bracket"],
-        plain="The marks `(` and `)`. They come in pairs too. `print` keeps what it shows between them.",
+        term="parentheses",
+        aliases=["parenthesis", "brackets", "bracket", "round brackets"],
+        plain="The marks `(` and `)`, the same marks you use in math class. They come in pairs: `print` keeps "
+        "what it shows between them.",
         example='print("Hi")',
     ),
     dict(
         term="print",
         aliases=["print()"],
-        plain="The Python command that shows words on the screen, in the console.",
+        plain="Shows something on the screen, in the Console under your code. In Python, print means show on "
+        "the screen, not print on paper.",
         example='print("Barrier\'s holding.")',
     ),
     dict(
         term="run",
         aliases=["runs", "Run button"],
-        plain="Tell Python to do your lines, from top to bottom. Press Run as often as you like. It costs nothing.",
+        plain="Tell Python to do your code, from the top line down. Press ▶ Run, just above your code, as often "
+        "as you like: running unfinished code is fine.",
     ),
     dict(
         term="console",
         aliases=["the console"],
-        plain="The space under the editor. Your printed lines and Python's messages show up there.",
+        plain="The space under your code where Python's answers appear: what `print` shows, and Python's "
+        "error messages.",
     ),
     dict(
         term="error message",
         aliases=["error messages", "message from Python"],
-        plain="Python's note that it could not finish your code. It is information, not a mark. "
-        "Read the last line first, then look at the line it names.",
+        plain="Python's note that it stopped at a line it couldn't run, like a teacher's note in the margin: it "
+        "points to the spot, and it isn't a grade. Read the box's title, then Python's last line, then fix the "
+        "line with that number.",
         example="SyntaxError: unterminated string literal",
     ),
     dict(
         term="comment",
         aliases=["comments"],
-        plain="A line that starts with `#`. Python skips it. It is a note for people.",
+        plain="A note for people: a line that starts with `#` (Shift+3). Python skips it, the way actors skip "
+        "saying the stage directions in a play script.",
         example="# Lucky's lines for tonight",
+    ),
+    dict(
+        term="mend",
+        aliases=["mends", "mended", "slip", "slips"],
+        plain="To fix a small mistake in your code, the way you mend a small tear in a sleeve. A slip is a "
+        "small mistake.",
+        example='print("Hi)   becomes   print("Hi")',
     ),
 ]
 
@@ -99,8 +114,8 @@ BARE_WORDS = (
     "import ast as _ast\n"
     "_bare = [n.lineno for n in _ast.parse(_source).body if isinstance(n, _ast.Expr) "
     "and isinstance(n.value, _ast.Constant) and isinstance(n.value.value, str)]\n"
-    "assert not _bare, 'Line %d is words with no `print`, so Python made them and forgot them. "
-    "Write `print(` before them and `)` after.' % (_bare[0] if _bare else 0)"
+    "assert not _bare, 'Line %d has words in quotes but no `print`, so nothing shows. "
+    "Put `print(` before the quotes and `)` after.' % (_bare[0] if _bare else 0)"
 )
 
 # Every # note in the student's code, as (line number, text). Tokenizing ignores a # inside quotes.
@@ -126,7 +141,8 @@ def shows(text, where, extra_ok=(".",), starts_ok=False):
     """
     bare = text.rstrip(".!?")
     options = [bare] + [bare + mark for mark in extra_ok]
-    head = "The task needs `" + text + "`, and your line shows `"
+    head = "Your line shows `"
+    should = "`, but it should show `" + text + "`: "
     longer = ("`, which has more than `" + text + "` in it. Show `" + text + "` on a line of its own.")
     missing = "`" + text + "` is not showing yet. " + where
     return (
@@ -147,16 +163,16 @@ def shows(text, where, extra_ok=(".",), starts_ok=False):
         "    _l = _close[0] if _close else ''\n"
         "    _longer = [l for l in _lines() if _key(_want[0]) in _key(l)]\n"
         "    if _bare:\n"
-        "        _msg = ('Line ' + str(_bare[0]) + ' has the words in quotes, but no `print`, so Python made them '\n"
-        "                'and forgot them. Write `print(` before the quotes and `)` after.')\n"
+        "        _msg = ('Line ' + str(_bare[0]) + ' has the words in quotes but no `print`, so nothing shows. '\n"
+        "                'Put `print(` before the quotes and `)` after.')\n"
         "    elif _l and _fix(_l).lower().rstrip('.!?') == _want[0].lower() and _fix(_l).rstrip('.!?') != _want[0]:\n"
-        f"        _msg = {head!r} + _l + '`. Capitals count: Python shows exactly what is inside the quotes.'\n"
+        f"        _msg = {head!r} + _l + {should!r} + 'capitals count. Python shows exactly what is inside the quotes.'\n"
         "    elif _l and _key(_l) == _key(_want[0]):\n"
-        f"        _msg = {head!r} + _l + '`. Spaces, marks and capitals all count: Python shows exactly what is inside the quotes.'\n"
+        f"        _msg = {head!r} + _l + {should!r} + 'spaces, marks and capitals all count. Python shows exactly what is inside the quotes.'\n"
         "    elif _longer:\n"
         f"        _msg = 'Your line shows `' + _longer[0] + {longer!r}\n"
         "    elif _l and _sim(_l) >= 0.75:\n"
-        f"        _msg = {head!r} + _l + '`. Check it letter by letter: Python shows exactly what is inside the quotes.'\n"
+        f"        _msg = {head!r} + _l + {should!r} + 'check it letter by letter. Python shows exactly what is inside the quotes.'\n"
         "    else:\n"
         f"        _msg = {missing!r}\n"
         "assert not _msg, _msg"
@@ -172,14 +188,14 @@ HOW_MARTU_TEACHES = dict(
     id="how-martu-teaches",
     title="How Mar'tu Teaches",
     minutes=1,
-    summary="One minute: how Run, Help and the checkpoints work.",
+    summary="One minute: how ▶ Run, 💡 Help and Your steps work.",
     body=(
-        "Write a line. Press [[run|Run]]. Python answers below.\n"
-        "Pressing Run on unfinished code is allowed and costs nothing. "
-        "A message from Python is information, not a mark.\n"
-        "Stuck? Press Help. You can always ask for a starting line or more structure.\n"
-        "Checkpoints: ✓ done · ● now · ○ next.\n"
-        "Nothing here is timed. Your hints are private."
+        "Press ▶ [[run|Run]], above your code. Python answers in the [[console|Console]], under your code.\n"
+        "Running unfinished code is fine. An error is not a grade: it says what Python couldn't read.\n"
+        "Your steps: ✓ done, ● the step you're on, ○ still to come.\n"
+        "Stuck? Press 💡 Help, under the Console. Each press gives more, up to the line itself. "
+        "Your hints are private.\n"
+        "Nothing here is timed."
     ),
     notes=(
         "meta: path=CC; kind=card; words<=60. Draft text from the curriculum (49 words) plus the checkpoint "
@@ -200,40 +216,48 @@ WHAT_AN_ERROR_LOOKS_LIKE = dict(
     id="what-an-error-looks-like",
     title="What an error looks like",
     martu=(
-        "Press Run first. Then you will break it on purpose and read Python's [[error message|message]]. "
-        "A message is not a mark against you: it says what Python could not read. "
-        "Read the last line first: the message under your code shows it as *Python's last line*. "
-        "Then look at the line it names."
+        "`print` means show on the screen, not on paper: this line shows `Shield up.` in the "
+        "[[console|Console]], the box under your code. Press ▶ Run, just above your code. Then you'll break it "
+        "on purpose, and Python will show an [[error message]]. That's not a grade. It's like a teacher's note "
+        "in the margin: it points to the spot."
     ),
     introduces=["call:print", "const:str"],
     starter='print("Shield up.")\n',
     checkpoints=[
         dict(
             id="press-run",
-            text="Press Run.",
+            text="Press the ▶ Run button, just above your code. You should see `Shield up.` in the Console.",
             dictated=True,
             hints=[
-                "You don't need to type anything. Just press Run.",
-                "Run is the button above the editor.",
-                'Run sends your line to Python. What `print` holds appears below: `print("Fine.")` shows `Fine.`',
+                "You don't need to type anything yet. Find the ▶ Run button, just above your code.",
+                "▶ Run sends your code to Python. Python does each line, and what `print` shows appears in the "
+                "Console, under your code.",
+                'Press ▶ Run. Line 1 shows `Shield up.` in the Console: the text between the quotes of '
+                '`print("Shield up.")`.',
             ],
             checks=[
-                ("shows a line", "assert _lines(), 'Press Run to see the line.'"),
+                ("shows a line", "assert _lines(), 'Nothing showed in the Console. Press Reset code to get "
+                 "`print(\"Shield up.\")` back, then press Run.'"),
             ],
-            pass_line="Mar'tu: Shield up. Now we break it, on purpose. That is safe, yes?",
+            pass_line="Mar'tu: Shield up. Next, you break it on purpose. That is safe, yes?",
         ),
         dict(
             id="close-the-quote",
             text=(
-                'Break it on purpose: delete the last `"` and Run. Read *Python\'s last line* in the message. '
-                'Then put the `"` back, change the `.` to `!`, and Run.'
+                "Three moves, in order:\n"
+                '1. Delete the `"` right after `Shield up.` and press Run. An error appears. That\'s the plan.\n'
+                "2. Read the box in the Console. Its title says what went wrong.\n"
+                '3. Put the `"` back, change the `.` to `!`, and press Run. You should see `Shield up!`.'
             ),
             dictated=True,
             hints=[
-                'Click just after `Shield up."` and press Backspace once. Then Run.',
-                "*Unterminated* means the words never ended: the closing quote is missing. "
-                "Put it back after the words.",
-                'Quotes come in pairs. `print("Fine.")` has one `"` before the words and one after.',
+                'Look at the `"` right after `Shield up.` on line 1.\n'
+                'To break the line: click right after that `"` and press Backspace once.\n'
+                'Already broken? Type the `"` back in the same spot (Shift and the `\'` key).',
+                "The box's title says a quote is missing. Python's last line says *unterminated*, which means "
+                'never ended: the text has no closing `"`.',
+                'Type `"` right after `Shield up.`, then change the `.` to `!`. Line 1 becomes '
+                '`print("Shield up!")`. Press Run.',
             ],
             checks=[
                 (
@@ -247,28 +271,27 @@ WHAT_AN_ERROR_LOOKS_LIKE = dict(
                     "_msg = ''\n"
                     "if 'Shield up!' not in _l:\n"
                     "    if _bare:\n"
-                    "        _msg = ('Line ' + str(_bare[0]) + ' has the words in quotes, but no `print`, so Python '\n"
-                    "                'made them and forgot them. Write `print(` before the quotes and `)` after.')\n"
+                    "        _msg = ('Line ' + str(_bare[0]) + ' has the words in quotes but no `print`, so nothing '\n"
+                    "                'shows. Put `print(` before the quotes and `)` after.')\n"
                     "    elif 'Shield up.' in _l:\n"
                     "        _msg = ('Your line still shows `Shield up.`, with a `.` at the end. If you have not broken it '\n"
-                    "                'yet: delete the last `\"`, Run, and read the last line of the message. '\n"
-                    "                'Then put the `\"` back, change the `.` to `!`, and Run.')\n"
+                    "                'yet, do move 1 first. Then put the `\"` back, change the `.` to `!`, and press Run.')\n"
                     "    elif _near and _near[0].rstrip('.!?') != 'Shield up' and _near[0].rstrip('.!?').lower() == 'shield up':\n"
                     "        _msg = ('Your line shows `' + _near[0] + '`. Capitals count: Python shows exactly what is '\n"
                     "                'inside the quotes. Make it `Shield up!`, with a capital S.')\n"
                     "    elif _near and _near[0].rstrip('.!?') == 'Shield up':\n"
-                    "        _msg = ('Your line shows `' + _near[0] + '`. The task needs `!` at the end: '\n"
-                    "                'make it `Shield up!`, then Run.')\n"
+                    "        _msg = ('Your line shows `' + _near[0] + '`. Step 2 needs a `!` at the end: '\n"
+                    "                'make it `Shield up!` and press Run.')\n"
                     "    elif _near:\n"
-                    "        _msg = ('Your line shows `' + _near[0] + '`. Spaces, marks and capitals all count: '\n"
-                    "                'make it `Shield up!`, then Run.')\n"
+                    "        _msg = ('Your line shows `' + _near[0] + '`. Spaces, marks and capitals all count. '\n"
+                    "                'Make it `Shield up!` and press Run.')\n"
                     "    else:\n"
-                    "        _msg = ('`Shield up!` is not showing yet. Press Reset code to get `print(\"Shield up.\")` back. '\n"
-                    "                'Then change the `.` to `!`, and Run.')\n"
+                    "        _msg = ('`Shield up!` is not showing yet. Press Reset code, next to Run, to get '\n"
+                    "                '`print(\"Shield up.\")` back. Then change the `.` to `!` and press Run.')\n"
                     "assert not _msg, _msg",
                 ),
             ],
-            pass_line="Mar'tu: You read the message. Good. That is the whole trick.",
+            pass_line="Mar'tu: You broke it, read the box, and fixed it. That is the whole trick.",
         ),
     ],
     solution='print("Shield up!")\n',
@@ -277,15 +300,17 @@ WHAT_AN_ERROR_LOOKS_LIKE = dict(
         dict(
             angle="picture",
             text=(
-                "Python's full message, short:\n"
+                "Press *Show Python's full message* in the box, and you see this:\n"
                 "```text\n"
                 'File "main.py", line 1\n'
                 '  print("Shield up.)\n'
                 "        ^\n"
                 "SyntaxError: unterminated ...\n"
                 "```\n"
-                "1. Read the last line first. *Unterminated* means the words never ended: the closing quote is missing.\n"
-                "2. Then the top line: it names the line to mend, line 1."
+                "1. Read the last line first. *Syntax* is how a line is put together, as in English class, so a "
+                "*SyntaxError* is a line Python can't read.\n"
+                "2. *Unterminated* means never ended: the text has no closing quote.\n"
+                "3. The top line gives the line number, line 1. Fix that line."
             ),
         ),
         dict(
@@ -299,7 +324,8 @@ WHAT_AN_ERROR_LOOKS_LIKE = dict(
         dict(
             angle="shorter",
             label="Say it shorter",
-            text='Delete the last `"`. Run. Read. Put the `"` back, make the `.` a `!`, and Run.',
+            text='Delete the `"` after `Shield up.` and press Run. Read the box. Put the `"` back, make the `.` '
+                 'a `!`, and press Run.',
         ),
     ],
     wrong_answers=[
@@ -325,7 +351,8 @@ WHAT_AN_ERROR_LOOKS_LIKE = dict(
         dict(why="check-breaker: line replaced with other words", code='print("Ready.")\n', fails_at=2,
              message_contains="Reset code"),
     ],
-    takeaway="Read the last line of Python's message first. Then look at the line it names.",
+    takeaway="When Python stops, read the box's title, then Python's last line. Fix the line it gives and press "
+             "Run again.",
     notes=(
         "meta: starter_level=S4; path=CC; contingent=show-me-more (K); skills=print-text,read-traceback; "
         "solo=false; dictates=1,2; foreign_names=. "
@@ -353,13 +380,14 @@ KEYBOARD_SYMBOLS = dict(
     id="keyboard-symbols",
     title="Where the symbols live",
     martu=(
-        "Look at the top right of your keyboard:\n"
+        "`-` is minus, as in math. `_` is the underscore (Shift and `-`): it stands in for a space, as in "
+        "`max_mana`. `=` is the equals key, but in Python it won't mean equals. More in Boxes With Labels. "
+        "Top right of your keyboard:\n"
         "```text\n"
         "with Shift:   (   )   _   +\n"
         "no Shift:     9   0   -   =\n"
         "```\n"
-        "`-`, `_` and `=` sit side by side. They mean different things. "
-        "`-` subtracts, `_` joins words in a name, `=` puts a value in a box."
+        "`print` means show on the screen, not on paper. `#` is Shift+3."
     ),
     example='print("( ) #")\n',
     example_output="( ) #",
@@ -369,21 +397,27 @@ KEYBOARD_SYMBOLS = dict(
     checkpoints=[
         dict(
             id="print-the-symbols",
-            text="Print a line that has `_`, `-` and `=` in it.",
+            text=(
+                "Show `_`, `-` and `=` on the screen, all on one line. On line 2, copy the Example's shape and "
+                "put the three marks inside its quotes."
+            ),
             dictated=False,
             hints=[
+                "Click at the end of line 1 and press Enter. Line 1 starts with `#`, so Python skips it. "
                 'Start a new line with `print("` and add the symbols after it.',
-                "Put the symbols inside quotes, so Python shows them as they are.",
-                'Anything inside quotes is shown as it is: `print("( )")` shows `( )`.',
+                "Quotes mean *show these exact marks*. Python shows whatever is between them, as it is: "
+                '`print("( )")` shows `( )`.',
+                'Type `print("_ - = are side by side.")` on line 2. Anything inside the quotes shows as it is.',
             ],
             checks=[
-                ("prints something", "assert _lines(), 'Nothing printed yet. Write a `print` line with the symbols inside quotes.'"),
+                ("prints something", "assert _lines(), 'Nothing shows in the Console yet. Line 1 starts with `#`, "
+                 "so Python skips it. On line 2, write a `print` line with the three marks inside quotes.'"),
                 (
                     "one line has all three symbols",
                     "_best = max(_lines(), key=lambda line: sum(s in line for s in '_-='))\n"
                     "_missing = [s for s in '_-=' if s not in _best]\n"
                     "assert not _missing, 'Your line is missing ' + ' and '.join('`' + s + '`' for s in _missing) "
-                    "+ '. Put all three inside one pair of quotes, in one `print` line.'",
+                    "+ '. Put all three marks inside one pair of quotes, on one `print` line.'",
                 ),
             ],
             pass_line="Mar'tu: Now you know where they live.",
@@ -411,7 +445,8 @@ KEYBOARD_SYMBOLS = dict(
                 "1. `-` is the key right after `0`.\n"
                 "2. `_` is the same key with Shift held down.\n"
                 "3. `=` is the next key to the right.\n"
-                '4. `"` is Shift with the `\'` key, next to Enter.'
+                '4. `"` is Shift with the `\'` key, next to Enter.\n'
+                "5. `#` is Shift with the `3` key."
             ),
         ),
         dict(
@@ -422,13 +457,14 @@ KEYBOARD_SYMBOLS = dict(
     ],
     wrong_answers=[
         dict(why="starter unchanged: only the note, nothing printed", code="# Print a line that has _ and - and = in it.\n",
-             fails_at=1, message_contains="Nothing printed"),
+             fails_at=1, message_contains="Nothing shows"),
         dict(why="symbols with no quotes", code="print(_ - =)\n", fails_at=0, message_contains="invalid syntax"),
         dict(why="leaves one symbol out", code='print("_ -")\n', fails_at=1, message_contains="missing `=`"),
         dict(why="check-breaker: each symbol on its own line, not one line with all three",
              code='print("_")\nprint("-")\nprint("=")\n', fails_at=1, message_contains="missing"),
     ],
-    takeaway="`-` subtracts, `_` joins words in a name, `=` puts a value in a box.",
+    takeaway="`-` is minus. `_` (Shift and `-`) stands in for a space. `=` is not math's equals: its job comes "
+             "in Boxes With Labels.",
     notes=(
         "meta: starter_level=S2; path=CC; contingent=show-me-more (K); skills=print-text; solo=false; "
         "dictates=; foreign_names=. G1 R30 (dash for =: A-04 `chicken_sandwich - \"Fireball`). Any line with "
@@ -444,35 +480,40 @@ PRESS_RUN = dict(
     id="press-run",
     title="Press Run",
     martu=(
-        "Python reads your instructions and does them. `print` shows words on the screen. "
-        "Guess what the [[console]] will show, then press [[run|Run]]."
+        "In Python, *print* means show on the screen, not on paper. `print` shows text in the "
+        "[[console|Console]], the box under your code where Python's answers appear. Think of a play script: "
+        "your code is the script, ▶ [[run|Run]] is \"Action!\", and the Console is the stage. Guess what will "
+        "show, then press Run."
     ),
     introduces=["call:print", "const:str"],
     starter='print("Hi. It is me, Mar\'tu.")\n',
     predict=dict(
-        q="What will this print?",
+        q="Before you press Run: what will this line show in the Console?",
         choices=["Hi. It is me, Mar'tu.", '"Hi. It is me, Mar\'tu."', "An error message"],
         answer=0,
         explain=(
-            "`print` shows the words inside the quotes. The quotes stay in the code; "
-            "they only mark where the words start and stop. Words in quotes are called a [[string]]."
+            "`print` shows what is inside the quotes, but not the quotes. They only mark where the text starts "
+            "and stops, like quotation marks in English class. Text in quotes is called a [[string]]: letters "
+            "strung together like beads on a string. This course mostly says *text*."
         ),
     ),
     checkpoints=[
         dict(
             id="press-run",
-            text="Press Run.",
+            text="Press the ▶ Run button, just above your code. You should see Mar'tu's line in the Console.",
             dictated=True,
             hints=[
-                "You don't need to type anything. Just press Run.",
-                "Run is the button above the editor.",
-                'Run sends your lines to Python. What `print` holds appears below: `print("Fine.")` shows `Fine.`',
+                "You don't need to type anything. Find the ▶ Run button, just above your code.",
+                "▶ Run sends your code to Python. Python does each line, and what `print` shows appears in the "
+                "Console, under your code.",
+                "Press ▶ Run. Line 1 shows `Hi. It is me, Mar'tu.` in the Console: the text between the quotes "
+                "of `print(\"Hi. It is me, Mar'tu.\")`.",
             ],
             checks=[
                 (
                     "shows Mar'tu's line",
                     "assert \"Hi. It is me, Mar'tu.\" in _lines(), "
-                    "'Press Run to see the line. If the editor is empty, press Reset code to get the line back.'",
+                    "\"Mar'tu's line is not showing in the Console. Press Reset code to get it back, then press Run.\"",
                 ),
             ],
             pass_line="Mar'tu: Yes. That is me.",
@@ -485,11 +526,11 @@ PRESS_RUN = dict(
             angle="picture",
             text=(
                 "```text\n"
-                "editor:\n"
+                "your code:\n"
                 'print("Hi. It is me, Mar\'tu.")\n'
-                "   |  press Run\n"
+                "   |  press ▶ Run\n"
                 "   v\n"
-                "console:\n"
+                "Console:\n"
                 "Hi. It is me, Mar'tu.\n"
                 "```"
             ),
@@ -502,13 +543,13 @@ PRESS_RUN = dict(
         dict(
             angle="shorter",
             label="Say it shorter",
-            text="Press Run. Read below.",
+            text="Press Run. Read the Console.",
         ),
     ],
     wrong_answers=[
         dict(why="empty editor, nothing to show", code="", fails_at=1, message_contains="Run"),
     ],
-    takeaway="`print` shows the words inside the quotes in the console.",
+    takeaway="`print` shows the text inside the quotes in the Console, under your code. The quotes don't show.",
     notes=(
         "meta: starter_level=S4; path=CC; skills=print-text; solo=false; dictates=1; foreign_names=; "
         "stages=P,R. Starter passes on purpose: the first press of Run is a win (G1: a success in the first "
@@ -520,9 +561,12 @@ YOUR_OWN_WORDS = dict(
     id="your-own-words",
     title="Your own words",
     martu=(
-        "The words inside the [[quotes]] are yours. Python shows them exactly. "
-        "Change them to something Oogrish might say. Stuck for words? Delete the words between the quotes, "
-        "click there, and press Mar'tu's pick."
+        "The words inside the [[quotes]] are yours to choose. Python shows them exactly, like a quotation in "
+        "English class. Change them to something Oogrish might say.\n"
+        "Stuck for words? Three moves:\n"
+        "1. Delete the words between the quotes. Keep both quotes.\n"
+        "2. Click between the two quotes.\n"
+        "3. Press the *Can't decide? Mar'tu's pick* button, under Your steps."
     ),
     example='print("Shield up.")\n',
     example_output="Shield up.",
@@ -531,18 +575,24 @@ YOUR_OWN_WORDS = dict(
     checkpoints=[
         dict(
             id="oogrish-speaks",
-            text="Change the words to a line Oogrish might say to calm the party.",
+            text=(
+                "On line 1, change `Write Oogrish's words here` to a line Oogrish might say to calm the party. "
+                "Keep both quotes and both parentheses."
+            ),
             dictated=False,
             hints=[
-                "Delete the words between the two quotes. Keep the quotes and the brackets.",
-                "Change only the words between the quotes.",
-                'Any words work, as long as they sit inside the quotes: `print("Fine.")` shows `Fine.`',
+                'Look between the two `"` on line 1. Those are the words to change. Keep the quotes and the '
+                "parentheses `( )`.",
+                "Quotes mean *show these exact words*. Anything between them shows in the Console: "
+                '`print("Fine.")` shows `Fine.`',
+                'Make line 1 `print("Steady, now. We go together.")`, or any calm words inside the quotes.',
             ],
             checks=[
                 ("words are printed, not left bare", BARE_WORDS),
                 (
                     "prints a line",
-                    "assert _lines(), 'Nothing printed yet. Keep `print(\"...\")` and put the words inside the quotes.'",
+                    "assert _lines(), 'Nothing shows in the Console yet. Keep `print(\"...\")` and put Oogrish\\'s "
+                    "words inside the quotes.'",
                 ),
                 (
                     "the words are in quotes",
@@ -550,20 +600,21 @@ YOUR_OWN_WORDS = dict(
                     "_quoted = [n for n in _ast.walk(_ast.parse(_source)) if isinstance(n, _ast.Call) "
                     "and getattr(n.func, 'id', '') == 'print' and any(isinstance(c, _ast.Constant) "
                     "and isinstance(c.value, str) and c.value.strip() for a in n.args for c in _ast.walk(a))]\n"
-                    "assert _quoted, 'Your line shows `' + (_lines() or [''])[0] + '`, but with no quotes. "
-                    "Oogrish\\'s words go inside quotes: `print(\"...\")`.'",
+                    "assert _quoted, 'Your line shows `' + (_lines() or [''])[0] + '` with no quotes around it. "
+                    "Put Oogrish\\'s words inside quotes: `print(\"...\")`.'",
                 ),
                 (
                     "not the placeholder",
                     "_ph = [l for l in _lines() if any(p in l.lower().replace('\\u2019', \"'\") "
                     "for p in ('words here', 'write oogrish', \"oogrish's words\", 'oogrishs words'))]\n"
-                    "assert not _ph, 'Your line `' + (_ph or [''])[0] + '` still has the starter\\'s words. "
-                    "Change the words between the quotes to something Oogrish would say.'",
+                    "assert not _ph, 'Your line still says `' + (_ph or [''])[0] + '`. Delete those words, keep the "
+                    "two quotes, and type a line Oogrish would say between them.'",
                 ),
                 (
                     "not the example's line",
                     "assert ''.join(c for c in _lines()[0].lower() if c.isalnum()) != 'shieldup', "
-                    "\"That's the example's line, so write your own words, or use Mar'tu's pick: `Steady, now.`\"",
+                    "\"That's the Example's line. Write your own words between the quotes. Can't decide? Use "
+                    "Mar'tu's pick: `Steady, now.`\"",
                 ),
             ],
             pass_line="Mar'tu: Hm. He would say that.",
@@ -576,18 +627,19 @@ YOUR_OWN_WORDS = dict(
     ),
     bonus=dict(
         by="lucky",
-        title="What's in it for me?",
+        title="Lucky answers back",
         text=(
-            "Print Lucky's reply on the next line, so the two read like a conversation. "
-            "Two `print` lines: Oogrish first, then Lucky."
+            "Add a second `print` line under line 1, with Lucky's reply. Then the Console shows a conversation: "
+            "Oogrish first, then Lucky."
         ),
         hints=[
-            "Add a second `print` line under the first one.",
+            "Click at the end of line 1 and press Enter. Type the new `print` line there.",
             'Lucky might say `print("Fine. But I\'m keeping track.")`',
         ],
         checks=[
             ("two lines, two speakers", "assert len(_lines()) >= 2 and _lines()[1] != _lines()[0], "
-             "'Add a second `print` line under Oogrish\\'s, with Lucky\\'s reply.'"),
+             "'The Console needs a second, different line. Add a `print` line under line 1, with Lucky\\'s "
+             "own reply in quotes.'"),
         ],
         solution='print("Steady, now. We go together.")\nprint("Fine. But I\'m keeping track.")\n',
     ),
@@ -596,8 +648,8 @@ YOUR_OWN_WORDS = dict(
         part="program-dialogue-prompt",
         snippet='dialogue_input = "Write what Mar\'tu asks here"',
         why=(
-            "You have done this before, yes? In Mar'tu's dialogue line you changed the words between the quotes. "
-            "Same move here: the quotes stay, the words become yours."
+            "You've done this before, yes? In the campaign, you changed the words between the quotes in Mar'tu's "
+            "dialogue line. Same move here: the quotes stay, and the words become yours."
         ),
     ),
     another_way=[
@@ -625,23 +677,23 @@ YOUR_OWN_WORDS = dict(
     ],
     wrong_answers=[
         dict(why="placeholder unchanged", code='print("Write Oogrish\'s words here")\n', fails_at=1,
-             message_contains="Change"),
+             message_contains="still says"),
         dict(why="copies the example's line", code='print("Shield up.")\n', fails_at=1, message_contains="example"),
         dict(why="words left on their own, with no print (a bare value)", code='"Steady, now."\n', fails_at=1,
              message_contains="no `print`"),
         dict(why="new words with no quotes", code="print(Steady, now)\n", fails_at=0, message_contains="not defined"),
         dict(why="quote never closed", code='print("Steady, now.)\n', fails_at=0, message_contains="unterminated"),
         dict(why="check-breaker: deletes only part of the placeholder", code='print("Write words here")\n', fails_at=1,
-             message_contains="starter's words"),
+             message_contains="still says `Write words here`"),
         dict(why="check-breaker: own line added, placeholder line still printing",
              code='print("Steady, now.")\nprint("Write Oogrish\'s words here")\n', fails_at=1,
-             message_contains="starter's words"),
+             message_contains="still says"),
         dict(why="check-breaker: the example's line with another final mark", code='print("Shield up?")\n', fails_at=1,
              message_contains="example"),
         dict(why="check-breaker: a number with no quotes still prints", code="print(42)\n", fails_at=1,
              message_contains="no quotes"),
     ],
-    takeaway="The words inside the quotes are yours. Python shows them exactly.",
+    takeaway="The text inside the quotes is yours to choose. Python shows it exactly.",
     notes=(
         "meta: starter_level=S4; path=CC; skills=print-text,quote-text; solo=false; dictates=; "
         "foreign_names=; echo=true. "
@@ -659,44 +711,51 @@ YOUR_OWN_WORDS = dict(
 
 CLOSE_THE_QUOTE = dict(
     id="close-the-quote",
-    title="Quotes and brackets come in pairs",
+    title="Quotes and parentheses come in pairs",
     martu=(
-        "[[quotes|Quotes]] come in pairs: one before the words, one after. [[brackets|Brackets]] come in pairs too. "
-        "This line is missing one. Run it, read the message, then mend it."
+        "[[quotes|Quotes]] come in pairs, like quotation marks in English class. [[parentheses|Parentheses]] "
+        "`( )` come in pairs too, as in math: 3 × (2 + 4). Line 1 needs a closing quote, and line 2 needs a "
+        "`)`. To [[mend]] a line means to fix it, and a *slip* is a small mistake. Press Run, read the box, and "
+        "mend one line at a time."
     ),
     example='print("Two quotes, two brackets.")\n',
     example_output="Two quotes, two brackets.",
     starter='print("It is not a compass)\nprint("Shield up."\n',
     pair_talk=(
-        "Pair talk: read Python's message out loud to your partner. Which line does it name? "
-        "Then each of you mends your own code."
+        "Pair talk: read the title of the box in the Console out loud to your partner. Which line number does "
+        "it give? Then each of you fixes your own code."
     ),
     checkpoints=[
         dict(
             id="mend-line-1",
-            text="Mend line 1 so it runs.",
+            text=(
+                'Mend line 1: it needs a closing `"` right after the word `compass`. Then press Run, and '
+                "Python moves on to line 2."
+            ),
             dictated=True,
             hints=[
-                "Put your cursor right after the word `compass` on line 1.",
-                "Count the quote marks on line 1. How many are there?",
-                'Each mark that opens needs one that closes: `print("Hi")` has two quotes and two brackets.',
+                'Look at the end of line 1, right after the word `compass`. Is there a `"` to close the words?',
+                'Count the `"` marks on line 1. There is only one. Quotes come in pairs, so the text never '
+                "ends: Python calls that *unterminated*.",
+                'Type `"` right after `compass`. Line 1 becomes `print("It is not a compass")`.',
             ],
             checks=[
-                ("line 1 shows its words", shows("It is not a compass", "Mend line 1 by closing its quote, and keep its words.")),
+                ("line 1 shows its words", shows("It is not a compass", 'Type a `"` right after `compass` on line 1, '
+                                                 "and keep its words.")),
             ],
             pass_line="Lucky: Fine. It's a clock.",
         ),
         dict(
             id="mend-line-2",
-            text="Line 2 is missing something too. Mend it.",
+            text="Mend line 2: one of its marks has no partner. Count its `(` and `)`.",
             dictated=False,
             hints=[
-                "Go to the very end of line 2.",
-                "Count the brackets on line 2.",
-                'A `(` opens and a `)` closes: `print("Go.")` has one of each.',
+                "Look at the very end of line 2. Which mark opened, but never closed?",
+                "Count the parentheses on line 2. A `(` opens and a `)` closes, the same as in math: (2 + 4).",
+                'Type `)` at the very end of line 2. Line 2 becomes `print("Shield up.")`.',
             ],
             checks=[
-                ("line 2 shows its words", shows("Shield up.", "Keep line 2 and mend it so it shows its words.")),
+                ("line 2 shows its words", shows("Shield up.", "Keep line 2, and fix it so its `(` has a partner.")),
             ],
             pass_line="Bomb Shell: Shield up.",
         ),
@@ -709,18 +768,20 @@ CLOSE_THE_QUOTE = dict(
     ),
     bonus=dict(
         by="lucky",
-        title="What's in it for me?",
+        title="Gearshift's nightly line",
         text=(
-            "Gearshift says this every night. Print `Barrier's holding.` exactly, on a new line. "
-            "Why does the `'` inside the `\"` quotes not break anything?"
+            "Gearshift says this every night. Add a new `print` line, under line 2, that shows `Barrier's holding.` "
+            "exactly. The `'` won't break it: Python ends the text only at the same mark it opened with, `\"`. "
+            "In English, an apostrophe inside a quotation is fine too."
         ),
         hints=[
-            'Use `"` quotes around the words, so the `\'` is just a letter.',
-            'Python only looks for the same mark it opened with: `print("It\'s late.")` works.',
+            'Put `"` quotes around the words. Then the `\'` inside is only a mark, like an apostrophe in English.',
+            'Type `print("Barrier\'s holding.")` under line 2. Python ends the text only at the same mark it '
+            "opened with.",
         ],
         checks=[
-            ("prints Gearshift's line", shows("Barrier's holding.", "Add a new `print` line with Gearshift's words, "
-                                              "inside `\"` quotes.")),
+            ("prints Gearshift's line", shows("Barrier's holding.", "Add a new `print` line under line 2, with "
+                                              "Gearshift's words inside `\"` quotes.")),
         ],
         solution='print("It is not a compass")\nprint("Shield up.")\nprint("Barrier\'s holding.")\n',
     ),
@@ -730,7 +791,7 @@ CLOSE_THE_QUOTE = dict(
         snippet='party.move("left")',
         why=(
             "At the cabin door you wrote this line. Count the marks: two quotes around the word, "
-            "two brackets around the quotes. That is why it worked."
+            "two parentheses around the quotes. That is why it worked."
         ),
     ),
     another_way=[
@@ -744,7 +805,7 @@ CLOSE_THE_QUOTE = dict(
                 "   ( and \"           \" and )\n"
                 "    open               close\n"
                 "```\n"
-                "The bracket opens first and closes last, around the quotes."
+                "The `(` opens first and the `)` closes last, around the quotes, like (2 + 4) in math."
             ),
         ),
         dict(
@@ -757,7 +818,8 @@ CLOSE_THE_QUOTE = dict(
             text=(
                 "1. Python finds the first quote and starts reading words.\n"
                 "2. It looks for the next quote, to know where the words stop.\n"
-                "3. It never comes. Python reaches the end of the line and stops: *unterminated*."
+                "3. It never comes. Python reaches the end of the line and stops: *unterminated*, which means "
+                "never ended."
             ),
         ),
         dict(
@@ -780,7 +842,7 @@ CLOSE_THE_QUOTE = dict(
         dict(why="check-breaker: both lines squeezed into one print",
              code='print("It is not a compass", "Shield up.")\n', fails_at=1, message_contains="line of its own"),
     ],
-    takeaway="Quotes come in pairs, and brackets come in pairs.",
+    takeaway="Quotes come in pairs, and parentheses come in pairs. To mend a line means to fix it.",
     notes=(
         "meta: starter_level=S4; path=CC; skills=quote-text; solo=false; dictates=1; foreign_names=; "
         "stages=D,I. Explainer rows proven here (2.6): unterminated (starter), mixed quotes (WA), two "
@@ -797,46 +859,51 @@ WORDS_NEED_QUOTES = dict(
     id="words-need-quotes",
     title="Words need quotes",
     martu=(
-        "Words you want to show need [[quotes]]. Without quotes, Python thinks you mean the name of something "
-        "saved earlier, and it finds nothing."
+        "Text you want to show needs [[quotes]], like someone's exact words in English class. Without quotes, "
+        "Python thinks the word is a name it should already know, and looks it up. (You'll make names like that "
+        "in Boxes With Labels.) Here it finds nothing, so it stops and says *not defined*."
     ),
     example='print("Lantern")\n',
     example_output="Lantern",
     starter="print(Fireball)\n",
     names=["print"],
     predict=dict(
-        q="What will this print?",
+        q="Before you press Run: what will line 1 show in the Console?",
         choices=["Fireball", "ERROR: name 'Fireball' is not defined", "An empty line"],
         answer=1,
         explain=(
-            "No quotes, so Python looked for something saved earlier called `Fireball`. It found nothing, "
-            "so it says *not defined*. It is not about spelling, and the word is not too long."
+            "No quotes, so Python looked for a name `Fireball` that it should already know. Nothing has that "
+            "name yet, so it says *not defined*. It isn't about spelling, and the word isn't too long."
         ),
     ),
     checkpoints=[
         dict(
             id="quote-fireball",
-            text="Make line 1 show the word `Fireball`.",
+            text='Put a `"` on each side of `Fireball` on line 1. You should see the word `Fireball` in the Console.',
             dictated=True,
             hints=[
-                'Put a `"` just before `Fireball` and another just after it.',
-                "Which word do you want to see on the screen? It needs quotes.",
-                "Words you want to show need quotes. Without quotes, Python looks for something saved earlier "
-                'with that name. `print("Lantern")` shows `Lantern`.',
+                "Look at `Fireball` on line 1. Does it have quotes around it?",
+                "Quotes mean *show these exact letters*. Without them, Python looks for a name instead: "
+                '`print("Lantern")` shows `Lantern`.',
+                'Type `"` right before `Fireball` and another `"` right after it. Line 1 becomes '
+                '`print("Fireball")`.',
             ],
             checks=[
-                ("shows Fireball", shows("Fireball", "Put quotes around it on line 1.", extra_ok=(".", "!"))),
+                ("shows Fireball", shows("Fireball", 'Put a `"` on each side of `Fireball` on line 1.',
+                                         extra_ok=(".", "!"))),
             ],
             pass_line="Mar'tu: Words in quotes. Good.",
         ),
         dict(
             id="get-inside",
-            text="Add a second line that shows the words `Get inside`.",
+            text="Make a new line 2 that shows the words `Get inside` in the Console.",
             dictated=False,
             hints=[
+                "Click at the end of line 1 and press Enter to make line 2. "
                 'Start a new line with `print("`.',
-                "Both words go inside one pair of quotes.",
-                'Two words still need just one pair of quotes: `print("Good night")` shows `Good night`.',
+                "Two words still need only one pair of quotes, with the space inside: "
+                '`print("Good night")` shows `Good night`.',
+                'Type `print("Get inside")` on line 2.',
             ],
             checks=[
                 ("words are printed, not left bare", BARE_WORDS),
@@ -845,8 +912,8 @@ WORDS_NEED_QUOTES = dict(
                     "assert 'Getinside' not in _lines(), "
                     "'Your line shows `Getinside`. Put both words inside one pair of quotes, with the space between them.'",
                 ),
-                ("shows Get inside", shows("Get inside", "Add a new line under line 1 that shows them.", extra_ok=(".", "!"),
-                                           starts_ok=True)),
+                ("shows Get inside", shows("Get inside", "Make a new line 2 that shows those two words, inside "
+                                           "one pair of quotes.", extra_ok=(".", "!"), starts_ok=True)),
             ],
             pass_line="Oogrish: Steady, now. Everyone inside.",
         ),
@@ -859,15 +926,15 @@ WORDS_NEED_QUOTES = dict(
     ),
     bonus=dict(
         by="lucky",
-        title="What's in it for me?",
-        text="Announce Lucky's spell exactly: `Lucky's Fire Ball!`",
+        title="Announce Lucky's spell",
+        text="Add a line 3 that shows `Lucky's Fire Ball!` exactly, capitals and all.",
         hints=[
             "Three words, one apostrophe, one `!`. All of it goes inside one pair of `\"` quotes.",
-            'Like this shape: `print("Bob\'s Big Day!")`',
+            'Type `print("Lucky\'s Fire Ball!")` on line 3.',
         ],
         checks=[
             ("announces the spell", "assert \"Lucky's Fire Ball!\" in [l.replace('\\u2019', \"'\") for l in _lines()], "
-             "'Print it exactly, capitals and all: Lucky\\'s Fire Ball!'"),
+             "'Lucky\\'s spell is not showing yet. Add a line 3 that shows `Lucky\\'s Fire Ball!`, capitals and all.'"),
         ],
         solution='print("Fireball")\nprint("Get inside")\nprint("Lucky\'s Fire Ball!")\n',
     ),
@@ -877,7 +944,7 @@ WORDS_NEED_QUOTES = dict(
         snippet='speak_dialogue("option 1")',
         why=(
             "The dialogue part said to keep the quotes around `\"option 1\"`. Now you know why: "
-            "with quotes, Python reads words. Without them, it looks for a name."
+            "with quotes, Python reads those exact letters. Without them, it looks for a name."
         ),
     ),
     another_way=[
@@ -885,18 +952,18 @@ WORDS_NEED_QUOTES = dict(
             angle="step-by-step",
             text=(
                 "What Python tries with `print(Fireball)`:\n"
-                "1. No quotes, so this is not words.\n"
-                "2. Then it must be the name of something saved earlier.\n"
-                "3. Python looks for `Fireball`. Nothing is saved with that name.\n"
+                "1. No quotes, so this is not text to show.\n"
+                "2. Then it must be a name Python should already know.\n"
+                "3. Python looks for the name `Fireball`. Nothing has that name yet.\n"
                 "4. It stops and says *not defined*."
             ),
         ),
         dict(
             angle="everyday",
-            label="Something everyday",
+            label="From English class",
             text=(
-                "\"Say Lucky\" means call Lucky over. \"Say 'Lucky'\" means say the word. "
-                "Quotes turn a name into words."
+                "In English, quotes can show you mean the word itself: *'Lucky' has five letters.* Without "
+                "quotes, *Lucky* means the hero. Python works the same way: quotes mean the word itself."
             ),
         ),
         dict(
@@ -944,7 +1011,7 @@ WORDS_NEED_QUOTES = dict(
         dict(why="check-breaker: both in one line", code='print("Fireball Get inside")\n', fails_at=1,
              message_contains="line of its own"),
     ],
-    takeaway="Words you want to show need quotes. Without quotes, Python looks for a saved name.",
+    takeaway="Text you want to show needs quotes. Without quotes, Python looks for a name it should already know.",
     notes=(
         "meta: starter_level=S4; path=CC; skills=quote-text; solo=false; dictates=1; foreign_names=; "
         "stages=P,D,I,M. "
@@ -964,7 +1031,10 @@ WORDS_NEED_QUOTES = dict(
 TOP_TO_BOTTOM = dict(
     id="top-to-bottom",
     title="Top to bottom",
-    martu="Python runs your lines from top to bottom, one at a time. An empty `print()` shows a blank line.",
+    martu=(
+        "Python reads your code like a page in a book: the top line first, then down, one line at a time. "
+        "An empty `print()`, with nothing between the parentheses, shows an empty line in the Console."
+    ),
     example='print("Line one.")\nprint()\nprint("Line three.")\n',
     example_output="Line one.\n\nLine three.",
     starter=(
@@ -978,7 +1048,7 @@ TOP_TO_BOTTOM = dict(
         "Then each of you runs it on your own device. Who was right?"
     ),
     predict=dict(
-        q="What will this print?",
+        q="Before you press Run: what will the Console show?",
         choices=[
             "Get inside, yes?\nMar'tu checks the clock.\nThe hand is near the arc.",
             "The hand is near the arc.\nMar'tu checks the clock.\nGet inside, yes?",
@@ -986,56 +1056,67 @@ TOP_TO_BOTTOM = dict(
         ],
         answer=0,
         explain=(
-            "Python starts at line 1 and goes down. So the warning comes first, even though it should "
-            "come last. You will fix that next."
+            "Python starts at line 1 and goes down, like reading a page. So `Get inside, yes?` shows first, "
+            "but it should come last. You'll fix that next."
         ),
     ),
     checkpoints=[
         dict(
             id="warning-last",
-            text="Move the line `Get inside, yes?` so it prints last.",
+            text='Move line 1, `print("Get inside, yes?")`, from the top of your code to the bottom.',
             dictated=True,
             hints=[
-                "Select the whole first line, `print(\"Get inside, yes?\")`, and cut it.",
-                "Which line runs first? The one at the top.",
-                "Line 1 runs, then line 2, then line 3. The line at the bottom prints last: "
-                '`print("A")` then `print("B")` shows A, then B.',
+                "Move it in four moves:\n"
+                "1. Drag across all of line 1 to select it.\n"
+                "2. Press Ctrl+X (Cmd+X on a Mac) to cut it.\n"
+                "3. Click at the end of the last line and press Enter.\n"
+                "4. Press Ctrl+V (Cmd+V) to paste it there.",
+                "Python runs the top line first. So the line you want to show last has to be at the bottom.",
+                'Put `print("Get inside, yes?")` on the line after `print("The hand is near the arc.")`, '
+                "at the bottom of your code.",
             ],
             checks=[
                 (
                     "the warning still prints",
                     "assert 'Get inside, yes?' in _lines(), "
-                    "'I can\\'t find the line `Get inside, yes?`. Keep its words the same and move it to the end.'",
+                    "'`Get inside, yes?` is not showing anymore. Keep its words exactly the same, and move its "
+                    "line to the bottom of your code.'",
                 ),
                 (
                     "the other lines still print",
                     "assert \"Mar'tu checks the clock.\" in _lines() and 'The hand is near the arc.' in _lines(), "
-                    "'Keep all three lines. Only move `Get inside, yes?`.'",
+                    "'A line is missing from the Console. Keep all three lines, and move only `Get inside, yes?`.'",
                 ),
                 (
                     "the warning prints once",
                     "assert _lines().count('Get inside, yes?') == 1, "
-                    "'`Get inside, yes?` prints twice now. Move the line instead of copying it: "
-                    "take it away from the top, so it prints once, at the end.'",
+                    "'`Get inside, yes?` shows twice now, so it was copied. Delete the copy at the top, "
+                    "so it shows once, at the bottom.'",
                 ),
                 (
                     "the warning comes after them",
                     "_l = _lines()\n"
                     "assert _l.index('Get inside, yes?') > _l.index(\"Mar'tu checks the clock.\") "
                     "and _l.index('Get inside, yes?') > _l.index('The hand is near the arc.'), "
-                    "'`Get inside, yes?` still prints first. Move its whole line to the bottom.'",
+                    "'`Get inside, yes?` still shows before one of the other lines. Move its whole line to the "
+                    "very bottom of your code.'",
                 ),
             ],
-            pass_line="Mar'tu: The warning comes last, yes? Good.",
+            pass_line="Mar'tu: `Get inside, yes?` comes last now. Good.",
         ),
         dict(
             id="blank-line",
-            text="Add `print()` just before it, for a blank line.",
+            text=(
+                'Make a new line right above `print("Get inside, yes?")` and type `print()` on it. You should '
+                "see an empty line above `Get inside, yes?` in the Console."
+            ),
             dictated=True,
             hints=[
-                "Click at the start of the `Get inside, yes?` line and press Enter.",
-                "Where should the blank line go? Right above the warning.",
-                "`print()` with nothing inside shows an empty line.",
+                'Click at the very start of the line `print("Get inside, yes?")` and press Enter. That makes a '
+                "new empty line right above it. Click on that empty line.",
+                "`print()` with nothing between the parentheses shows an empty line. An empty line in your code "
+                "shows nothing: it needs `print()` on it.",
+                'Type `print()` above `print("Get inside, yes?")`.',
             ],
             checks=[
                 (
@@ -1046,11 +1127,11 @@ TOP_TO_BOTTOM = dict(
                     "_lone = [n.lineno for n in _ast.parse(_source).body if isinstance(n, _ast.Expr) "
                     "and isinstance(n.value, _ast.Name) and n.value.id == 'print']\n"
                     "assert (_i > 0 and _raw[_i - 1] == '') or not _lone, "
-                    "'Line ' + str((_lone or [0])[0]) + ' says `print` with no brackets, so it does nothing. "
-                    "Write `print()`, brackets and all.'\n"
+                    "'Line ' + str((_lone or [0])[0]) + ' says `print` with no parentheses, so it does nothing. "
+                    "Write `print()`, parentheses and all.'\n"
                     "assert _i > 0 and _raw[_i - 1] == '', "
-                    "'No blank line shows just above the warning yet. An empty line in your code shows nothing: "
-                    "write `print()` on the line just above the warning.'",
+                    "'No empty line shows above `Get inside, yes?` yet. An empty line in your code shows nothing. "
+                    "Type `print()` on the line right above `print(\"Get inside, yes?\")`.'",
                 ),
             ],
             pass_line="Mar'tu: A breath before the warning. Better.",
@@ -1078,8 +1159,8 @@ TOP_TO_BOTTOM = dict(
     ),
     bonus=dict(
         by="lucky",
-        title="What's in it for me?",
-        text="Add Lucky's reply after the warning, with a blank line between.",
+        title="Lucky gets the last word",
+        text="Add Lucky's reply at the bottom, under `Get inside, yes?`, with an empty line between them.",
         hints=[
             "Two more lines at the bottom: `print()`, then Lucky's words.",
             'Lucky might say `print("Fine. But I\'m keeping track.")`',
@@ -1090,7 +1171,8 @@ TOP_TO_BOTTOM = dict(
                 "_raw = [s.strip() for s in _captured_stdout.splitlines()]\n"
                 "_i = _raw.index('Get inside, yes?') if 'Get inside, yes?' in _raw else len(_raw)\n"
                 "assert len(_raw) > _i + 2 and _raw[_i + 1] == '' and any(_raw[_i + 2:]), "
-                "'After the warning: `print()` first, then a `print` line with Lucky\\'s reply.'",
+                "'Lucky\\'s reply is not under `Get inside, yes?` yet. Add `print()` first, then a `print` line "
+                "with Lucky\\'s reply.'",
             ),
         ],
         solution=(
@@ -1106,7 +1188,7 @@ TOP_TO_BOTTOM = dict(
         dict(
             angle="picture",
             text=(
-                "Read the code like a ladder, top rung first:\n"
+                "Python reads your code like a page in a book, top line first:\n"
                 "```text\n"
                 "line 1  ->  printed first\n"
                 "line 2  ->  printed second\n"
@@ -1136,7 +1218,7 @@ TOP_TO_BOTTOM = dict(
             'print("Get inside, yes?")\n'
             'print("Mar\'tu checks the clock.")\n'
             'print("The hand is near the arc.")\n'
-        ), fails_at=1, message_contains="still prints first"),
+        ), fails_at=1, message_contains="still shows before"),
         dict(why="moved, but no blank line", code=(
             'print("Mar\'tu checks the clock.")\n'
             'print("The hand is near the arc.")\n'
@@ -1147,7 +1229,7 @@ TOP_TO_BOTTOM = dict(
             'print("Mar\'tu checks the clock.")\n'
             'print("The hand is near the arc.")\n'
             'print("Get inside, yes?")\n'
-        ), fails_at=2, message_contains="just above"),
+        ), fails_at=2, message_contains="right above"),
         dict(why="deletes a line instead of moving one", code=(
             'print("The hand is near the arc.")\n'
             'print("Get inside, yes?")\n'
@@ -1158,7 +1240,7 @@ TOP_TO_BOTTOM = dict(
             'print("The hand is near the arc.")\n'
             "print()\n"
             'print("Get inside, yes?")\n'
-        ), fails_at=1, message_contains="prints twice"),
+        ), fails_at=1, message_contains="shows twice"),
         dict(why="check-breaker: an empty line in the code instead of print()", code=(
             'print("Mar\'tu checks the clock.")\n'
             'print("The hand is near the arc.")\n'
@@ -1170,9 +1252,9 @@ TOP_TO_BOTTOM = dict(
             'print("The hand is near the arc.")\n'
             "print\n"
             'print("Get inside, yes?")\n'
-        ), fails_at=2, message_contains="no brackets"),
+        ), fails_at=2, message_contains="no parentheses"),
     ],
-    takeaway="Python runs lines from top to bottom. `print()` shows a blank line.",
+    takeaway="Python reads your code like a page: top line first, then down. `print()` shows an empty line.",
     notes=(
         "meta: starter_level=S4; path=CC; skills=print-text; solo=false; dictates=1,2; foreign_names=; "
         "stages=P,R,M; trace=static step table (another_way). "
@@ -1186,8 +1268,9 @@ NOTES_FOR_HUMANS = dict(
     id="notes-for-humans",
     title="Notes for humans",
     martu=(
-        "A line that starts with `#` is a [[comment|note for humans]]. Python skips it. "
-        "Put `#` in front of a line to switch it off."
+        "A line that starts with the `#` sign (Shift+3) is a [[comment|note for people]]: Python skips it. It's "
+        "like the stage directions in a play script: the actors read them but never say them out loud. Put `#` "
+        "at the very start of a line to switch that line off: `# print(\"Hi\")` shows nothing."
     ),
     example='# This note is for humans.\nprint("Python reads this.")\n# print("Python skips this.")\n',
     example_output="Python reads this.",
@@ -1200,12 +1283,13 @@ NOTES_FOR_HUMANS = dict(
     checkpoints=[
         dict(
             id="switch-off-the-glug",
-            text="Line 2 is Lucky's secret. Put `#` at the very start of line 2.",
+            text="Put `#` at the very start of line 2, before `print`. Line 2 is Lucky's secret, so it shouldn't show.",
             dictated=True,
             hints=[
-                "Click at the very start of line 2.",
-                "Line 2 is the one about his canteen.",
-                'Python skips a line that starts with `#`. So `# print("Hi")` shows nothing.',
+                'Look at line 2, `print("I am keeping the glug.")`. Click at its very start, before the `p` of '
+                "`print`.",
+                "Python skips a line that starts with `#`. The line stays in your code, but nothing from it shows.",
+                'Type `#` at the very start of line 2. Line 2 becomes `# print("I am keeping the glug.")`.',
             ],
             checks=[
                 (
@@ -1213,36 +1297,42 @@ NOTES_FOR_HUMANS = dict(
                     "_g = [l for l in _lines() if 'keeping the glug' in l]\n"
                     "assert not any(l.startswith('#') for l in _g), "
                     "'The `#` is inside the quotes, so Python showed it. Put `#` at the very start of the line, before `print`.'\n"
-                    "assert not _g, 'Lucky\\'s glug line still prints. Put `#` at the very start of that line.'",
+                    "assert not _g, 'Lucky\\'s line, `I am keeping the glug.`, still shows. Put `#` at the very "
+                    "start of that line.'",
                 ),
                 (
                     "the line is kept as a note",
                     NOTES + "assert any('keeping the glug' in text and 'print' in text.lower() for _, text in _notes), "
-                    "'Keep the whole glug line in your code, `print` and all, and switch it off with `#` at the "
-                    "very start.'",
+                    "'Your code no longer has the whole glug line, `print` and all. Put it back, and switch it off "
+                    "with `#` at its very start.'",
                 ),
                 (
                     "the other lines still print",
                     "assert 'Steady, now. Rest while you can.' in _lines() and 'I will take first watch.' in _lines(), "
-                    "'Only switch off the glug line. The other two lines should still print.'",
+                    "'One of the other lines stopped showing. Switch off only the glug line: "
+                    "`Steady, now. Rest while you can.` and `I will take first watch.` should still show.'",
                 ),
             ],
             pass_line="Lucky: I said nothing. You heard nothing.",
         ),
         dict(
             id="your-own-note",
-            text="Add a note of your own above the code.",
+            text=(
+                "Click at the very start of line 1 and press Enter. Then click on the new empty line 1 and type "
+                "`#` and any words."
+            ),
             dictated=False,
             hints=[
-                "Make a new first line that starts with `#`.",
+                'Look at the very top of your code. Your note goes on a new line 1, above `print("Steady, now. '
+                'Rest while you can.")`.',
                 "A note starts with `#`. After it, write anything you like.",
-                "`# The cabin, at night` is a note. Python skips it, and the code runs the same.",
+                'Type `# Night watch at the cabin.` above `print("Steady, now. Rest while you can.")`.',
             ],
             checks=[
                 (
                     "a new note",
                     NOTES + "assert any('keeping the glug' not in text and text.strip('# ') for _, text in _notes), "
-                    "'Add a note of your own: a new line that starts with `#`, then any words.'",
+                    "'Your code has no note of your own yet. On a new line 1, type `#` and then any words.'",
                 ),
             ],
             pass_line="Mar'tu: Notes for humans. Python does not mind.",
@@ -1270,8 +1360,11 @@ NOTES_FOR_HUMANS = dict(
     ),
     bonus=dict(
         by="lucky",
-        title="What's in it for me?",
-        text="Above each line that prints, write a note that says which hero speaks it.",
+        title="Who says each line?",
+        text=(
+            "Above each `print` line that isn't switched off, add a `#` note that names the hero who says it. "
+            "Any hero is fine."
+        ),
         hints=[
             "Put a `#` note on the line just above each `print` line.",
             "Like this: `# Oogrish` on one line, then his `print` line under it.",
@@ -1283,7 +1376,8 @@ NOTES_FOR_HUMANS = dict(
                 "_rows = _source.splitlines()\n"
                 "_prints = [i + 1 for i, row in enumerate(_rows) if row.strip().startswith('print(')]\n"
                 "assert _prints and all(n - 1 in _note_lines for n in _prints), "
-                "'Put a `#` note on the line just above each `print` line.'",
+                "'A `print` line has no note right above it. Put a `#` note with a hero\\'s name on the line "
+                "just above each `print` line.'",
             ),
         ],
         solution=(
@@ -1306,10 +1400,10 @@ NOTES_FOR_HUMANS = dict(
     another_way=[
         dict(
             angle="everyday",
-            label="Something everyday",
+            label="From English class",
             text=(
-                "A play script has stage directions, like *(Lucky hides the canteen)*. The actors don't say "
-                "them out loud. A `#` line is a stage direction for Python: it reads past it."
+                "A note in the margin of your own essay helps you, but it isn't part of the essay. A `#` note "
+                "is like that: it helps the people who read your code, and Python skips it."
             ),
         ),
         dict(
@@ -1332,7 +1426,7 @@ NOTES_FOR_HUMANS = dict(
             angle="campaign",
             label="You've seen this in the campaign",
             text=(
-                "In the mana bars part, the starter said `# Replace pass with those two lines.` "
+                "In the mana bars part, the code that was already there said `# Replace pass with those two lines.` "
                 "That `#` line was a note for you. Python never ran it."
             ),
         ),
@@ -1351,7 +1445,7 @@ NOTES_FOR_HUMANS = dict(
             '# print("Steady, now. Rest while you can.")\n'
             'print("I am keeping the glug.")\n'
             'print("I will take first watch.")\n'
-        ), fails_at=1, message_contains="still prints"),
+        ), fails_at=1, message_contains="still shows"),
         dict(why="puts the # inside the quotes", code=(
             'print("Steady, now. Rest while you can.")\n'
             'print("# I am keeping the glug.")\n'
@@ -1380,7 +1474,7 @@ NOTES_FOR_HUMANS = dict(
             'print("I will take first watch.")\n'
         ), fails_at=1, message_contains="`print` and all"),
     ],
-    takeaway="`#` starts a note for humans. Python skips it. Put `#` in front of a line to switch it off.",
+    takeaway="`#` (Shift+3) starts a note for people. Python skips it. Put `#` at the start of a line to switch it off.",
     notes=(
         "meta: starter_level=S4; path=SC; skills=print-text; solo=false; dictates=1; foreign_names=; "
         "stages=I,M. SC inside a CC lesson (deferrable by the teacher's switch). Notes are found with the "
@@ -1392,7 +1486,11 @@ NOTES_FOR_HUMANS = dict(
 BROKEN_SPELL_1A = dict(
     id="broken-spell-1a",
     title="Broken spell: three slips",
-    martu="Three lines. Three small slips. Run, read the message, mend one line, run again.",
+    martu=(
+        "Three lines, three small mistakes, one on each line. Press Run. Read the title of the box, then "
+        "Python's last line. Fix the line it gives, then press Run again. Python stops at the first mistake it "
+        "meets, so each fixed line lets it get further."
+    ),
     starter=(
         'print("Shield up.)\n'
         'Print("Barrier\'s holding.")\n'
@@ -1400,50 +1498,56 @@ BROKEN_SPELL_1A = dict(
     ),
     names=["print"],
     pair_talk=(
-        "Pair talk: before you mend anything, tell your partner which line Python names first. "
-        "Then each of you mends your own code."
+        "Pair talk: before you fix anything, tell your partner which line number the box gives first. "
+        "Then each of you fixes your own code."
     ),
     checkpoints=[
         dict(
             id="mend-line-1",
-            text="Mend line 1 so it shows `Shield up.`",
+            text="Mend line 1 so it shows `Shield up.` in the Console.",
             dictated=True,
             hints=[
-                "Put your cursor right after `Shield up.` on line 1.",
-                "Line 1. Count its quote marks.",
-                'Quotes come in pairs: `print("Go.")` has one before the words and one after.',
+                "Read the title of the box in the Console, then Python's last line. Both point at line 1: look "
+                "right after `Shield up.`",
+                'Count the `"` marks on line 1. Quotes come in pairs, and line 1 has only one.',
+                'Type `"` right after `Shield up.` on line 1. Line 1 becomes `print("Shield up.")`.',
             ],
             checks=[
-                ("line 1 shows Shield up", shows("Shield up.", "Mend line 1 so it prints.")),
+                ("line 1 shows Shield up", shows("Shield up.", 'Fix line 1: its words need a `"` on each side.')),
             ],
             pass_line="Bomb Shell: Shield up.",
         ),
         dict(
             id="mend-line-2",
-            text="Mend line 2 so it shows `Barrier's holding.`",
+            text="Mend line 2 so it shows `Barrier's holding.` in the Console.",
             dictated=True,
             hints=[
-                "Look at the first letter of line 2.",
-                "Line 2. Compare its first word with `print` on line 1.",
-                "Python's commands are lower case. `Print` and `print` are different names to Python.",
+                "Read the box's title and Python's last line. Then look at the first letter of line 2.",
+                "Compare the first word of line 2 with `print` on line 1. Python's words are all small letters, "
+                "so `Print` and `print` are different names to Python.",
+                "Change the capital `P` at the start of line 2 to a small `p`. Line 2 becomes "
+                "`print(\"Barrier's holding.\")`.",
             ],
             checks=[
-                ("line 2 shows Barrier's holding", shows("Barrier's holding.", "Mend line 2 so it prints.")),
+                ("line 2 shows Barrier's holding", shows("Barrier's holding.", "Fix line 2: `print` starts with a "
+                                                         "small `p`.")),
             ],
             pass_line="Gearshift: Barrier's holding.",
         ),
         dict(
             id="mend-line-3",
-            text="Mend line 3 so it shows `Steady`.",
+            text="Mend line 3 so it shows `Steady` in the Console.",
             dictated=True,
             hints=[
-                'Put a `"` just before `Steady` and another just after it.',
-                "Line 3. Is `Steady` a word to show, or a name Python should look up?",
-                "Words you want to show need quotes. Without quotes, Python looks for something saved earlier "
-                "with that name.",
+                "Look at `Steady` on line 3. Does it have quotes around it?",
+                "Is `Steady` a word to show, or a name Python should look up? Text to show needs quotes. "
+                "Without quotes, Python looks for a name it should already know.",
+                'Type `"` right before `Steady` and another `"` right after it. Line 3 becomes '
+                '`print("Steady")`.',
             ],
             checks=[
-                ("line 3 shows Steady", shows("Steady", "Mend line 3 so it prints.", extra_ok=(".", "!"))),
+                ("line 3 shows Steady", shows("Steady", "Fix line 3: put quotes around `Steady`.",
+                                              extra_ok=(".", "!"))),
             ],
             pass_line="Bomb Shell: Works.",
         ),
@@ -1462,26 +1566,26 @@ BROKEN_SPELL_1A = dict(
         part="program-dialogue-prompt",
         snippet="print_prompt(dialogue)",
         why=(
-            "`print_prompt` from Mar'tu's dialogue line is all lower case too. "
-            "Python's commands are lower case, every time."
+            "`print_prompt` from Mar'tu's dialogue line is all small letters too. "
+            "Python's own words are small letters, every time."
         ),
     ),
     another_way=[
         dict(
             angle="step-by-step",
             text=(
-                "Each time you run:\n"
-                "1. Read the last line of Python's message first.\n"
-                "2. Then look at the line it names.\n"
-                "3. Mend that one line. Run again.\n"
-                "Each mended line shows up in the console before the next message."
+                "Each time you press Run:\n"
+                "1. Read the title of the box in the Console. It says what went wrong.\n"
+                "2. Read Python's last line. It says the same thing in Python's words.\n"
+                "3. Find the line number and fix that line. Press Run again.\n"
+                "Each fixed line shows in the Console before the next error."
             ),
         ),
         dict(
             angle="in Tor",
             label="In Tor",
             text=(
-                "Bomb Shell mends one latch at a time. He does not rip the whole door off. "
+                "Bomb Shell fixes one latch at a time. He does not rip the whole door off. "
                 "One line, one run, then the next."
             ),
         ),
@@ -1538,7 +1642,7 @@ BROKEN_SPELL_1A = dict(
             '"Steady"\n'
         ), fails_at=3, message_contains="no `print`"),
     ],
-    takeaway="Run, read the last line first, mend one line, run again.",
+    takeaway="Press Run, read the box's title and Python's last line, fix that one line, and press Run again.",
     notes=(
         "meta: starter_level=S4; path=CC; skills=quote-text,read-traceback; solo=false; dictates=1,2,3; "
         "foreign_names=. "
@@ -1557,22 +1661,23 @@ BROKEN_SPELL_1A = dict(
 SOLO_1A = dict(
     id="solo-1a",
     title="Show Mar'tu",
-    martu="One line, one slip. Your turn to show off.",
+    martu="One line, one mistake. Find it and fix it on your own. Your turn to show off.",
     starter='print("The lantern is lit.)\n',
     solo=True,
     checkpoints=[
         dict(
             id="mend-the-lantern",
-            text="Mend the line so it shows `The lantern is lit.`",
+            text="Mend line 1 so it shows `The lantern is lit.` in the Console.",
             dictated=False,
             hints=[
-                "Read the last line of Python's message first. Then look at the line it names.",
-                "Count the quote marks.",
+                "Read the title of the box in the Console, then Python's last line. Then look at the line "
+                "with that number.",
+                'Count the `"` marks on line 1. Quotes come in pairs.',
             ],
             checks=[
-                ("shows the lantern line", shows("The lantern is lit.", "Mend the line so it prints.")),
+                ("shows the lantern line", shows("The lantern is lit.", "Fix line 1 so it shows its words.")),
             ],
-            pass_line="Mar'tu: You did that on your own. On your map: ✓ words in matching quotes.",
+            pass_line="Mar'tu: You did that on your own. Every quote has its partner.",
         ),
     ],
     solution='print("The lantern is lit.")\n',
@@ -1589,7 +1694,7 @@ SOLO_1A = dict(
         dict(why="check-breaker: retyped with a spelling slip", code='print("The lanturn is lit.")\n', fails_at=1,
              message_contains="letter by letter"),
     ],
-    takeaway="You can find and mend a missing quote on your own.",
+    takeaway="You can find and fix a missing quote on your own.",
     notes=(
         "meta: starter_level=S4; path=CC; skills=quote-text,read-traceback; solo=true; dictates=; "
         "foreign_names=; one-bug SOLO (C6). Two hints only (schema minimum); using one records the pass "
@@ -1619,7 +1724,7 @@ ITEMS = [
         id="words-in-quotes",
         title="Words in Quotes",
         minutes=19,
-        summary="Show words with print, close every quote and bracket, read Python's message, and switch lines off with #.",
+        summary="Show text with print, close every quote and parenthesis, read the error box, and switch lines off with #.",
         exercises=[
             PRESS_RUN,
             YOUR_OWN_WORDS,

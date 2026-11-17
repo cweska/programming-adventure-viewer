@@ -277,10 +277,10 @@ export function helpOffer(input: {
 export function helpOfferLine(offer: HelpOffer, crashed = false): string {
   if (offer === "misses") {
     return crashed
-      ? "Oogrish: \u201cSteady, now. Read the last line first. Want a nudge?\u201d"
+      ? "Oogrish: \u201cSteady, now. Read the title of the box in the Console, then Python\u2019s last line. Want a nudge?\u201d"
       : "Oogrish: \u201cSteady, now. Want a nudge?\u201d";
   }
-  if (offer === "time") return "This one is taking a while. That is normal. Want a nudge?";
+  if (offer === "time") return "This one is taking a while. That's normal. Want a nudge?";
   return "Still thinking? A nudge is one click away.";
 }
 
@@ -468,7 +468,7 @@ export function namesALine(text: string, line?: number): boolean {
 /**
  * A debugging exercise (curriculum §2.1 step 6, the Broken spell; also the Quick Check "mend" tasks): one of its
  * steps says "Mend ..." ("Mend line 3 so it shows `Steady`."). There a run that gets further than the last one
- * shows "Python got further: that slip is mended." on a line of its own (FORMAT.md, checkpoint `text`).
+ * shows "Python got further: you fixed that mistake." on a line of its own (FORMAT.md, checkpoint `text`).
  */
 export function isDebugExercise(exercise: { checkpoints: readonly Pick<Checkpoint, "text">[] }): boolean {
   return exercise.checkpoints.some((checkpoint) => /\bmend\b/i.test(checkpoint.text ?? ""));
@@ -476,7 +476,7 @@ export function isDebugExercise(exercise: { checkpoints: readonly Pick<Checkpoin
 
 /**
  * After a crash on `crashLine`: the step whose text names that line (broken spells: "Mend line 3 ..."), or -1.
- * Help aims there, so it never talks about line 1 under "Mend line 3 first."
+ * Help aims there, so it never talks about line 1 under "Fix line 3 first."
  */
 export function crashTarget(checkpoints: readonly Pick<Checkpoint, "text">[], crashLine: number | null): number {
   if (crashLine === null) return -1;
@@ -485,7 +485,7 @@ export function crashTarget(checkpoints: readonly Pick<Checkpoint, "text">[], cr
 
 /**
  * The crash is part of the task: Mar'tu's version keeps the line Python stopped on, switched off with `#`
- * (Anatomy of a fizzle: read the message, write it down, then switch line 4 off). "First, mend line 4" would
+ * (Anatomy of a fizzle: read the message, write it down, then switch line 4 off). "First, fix line 4" would
  * contradict the task there, so the player says to read the message first. False for an empty line or no solution.
  */
 export function crashLineSwitchedOff(code: string, crashLine: number | null, solution: string | undefined): boolean {

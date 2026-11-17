@@ -113,7 +113,7 @@ test.describe("Intro to Python, Unit 5: Dictionaries", () => {
     await expect(equals).toHaveAttribute("data-explainer", "full");
     await expect(equals).toHaveAttribute("data-kind", "equals-in-sheet");
     const hint = page.getByTestId("explainer-hint");
-    await expect(hint).toContainText('Inside a dictionary { }, a colon goes between a key and its value: "name": "Gearshift",. The key keeps its quotes.');
+    await expect(hint).toContainText('Inside a dictionary { }, a colon goes between a key and its value, like a word and its meaning in a glossary: "name": "Gearshift",. The key keeps its quotes.');
     // Never the box advice that sent students the wrong way ("Take the quotes off name").
     await expect(hint).not.toContainText("Take the quotes off");
     await expect(page.getByTestId("python-last-line")).toContainText("cannot assign to literal");
@@ -164,7 +164,7 @@ test.describe("Intro to Python, Unit 5: Dictionaries", () => {
     await open(page, "sheets-inside-sheets", "spell-book-of-spells");
     const stored = await runWrong(page, "sheets-inside-sheets/spell-book-of-spells", "CP2 round brackets", 1);
     await expect(stored).toHaveAttribute("data-kind", "list-needs-square-brackets");
-    await expect(hint).toContainText("Store in a dictionary with square brackets: spell_book[spell_name] = spell");
+    await expect(hint).toContainText("Store in a dictionary with square brackets [ ]: spell_book[spell_name] = spell");
     // Never Unit 3's "a recipe starts with def" or the == row.
     await expect(hint).not.toContainText("def");
     await expect(hint).not.toContainText("==");
@@ -176,7 +176,7 @@ test.describe("Intro to Python, Unit 5: Dictionaries", () => {
     await expect(solo).toHaveAttribute("data-explainer", "lean");
     await expect(solo).toHaveAttribute("data-kind", "dot-on-a-sheet");
     const hint = page.getByTestId("explainer-hint");
-    await expect(hint).toContainText("The slip is on line 9: a dot where a sheet needs square brackets.");
+    await expect(hint).toContainText("The mistake is on line 9: a dot where a sheet needs square brackets.");
     await expect(hint).not.toContainText('oogrish["mana"]');
     await expect(page.getByTestId("python-last-line")).toContainText("'dict' object has no attribute 'mana'");
 
@@ -185,7 +185,7 @@ test.describe("Intro to Python, Unit 5: Dictionaries", () => {
     const equals = await runWrong(page, "qc4-a/make-the-sheet", "= for : inside the sheet (the box habit)", 1);
     await expect(equals).toHaveAttribute("data-explainer", "lean");
     await expect(equals).toHaveAttribute("data-kind", "equals-in-sheet");
-    await expect(hint).toContainText("The slip is on line 4: an = inside a sheet.");
+    await expect(hint).toContainText("The mistake is on line 4: an = inside a sheet.");
     await expect(hint).not.toContainText('"name": "Lucky"');
     // A check message in the Quick Check names the slip and the evidence, never the fix.
     await setCode(page, wrongAnswer("qc4-a/make-the-sheet", "values only, in curly brackets"));
@@ -209,21 +209,21 @@ test.describe("Intro to Python, Unit 5: Dictionaries", () => {
     await expect(page.getByTestId("explainer")).toHaveAttribute("data-explainer", "lean");
     await expect(page.getByTestId("explainer")).toHaveAttribute("data-kind", "whole-card-compared");
     // The card was read on line 12 (`skill = caster["abilities"]`): the slip is there, not on the comparison Python stopped on.
-    await expect(page.getByTestId("explainer-hint")).toContainText("The slip is on line 12: a whole card read where one value is meant.");
-    await expect(page.getByTestId("task-line")).toContainText("First, mend line 12. Python stopped on line 13, so it could not check your steps yet.");
+    await expect(page.getByTestId("explainer-hint")).toContainText("The mistake is on line 12: a whole card read where one value is meant.");
+    await expect(page.getByTestId("task-line")).toContainText("First, fix line 12. Python stopped on line 13, so it couldn't check your steps yet.");
     await expect(page.getByTestId("explainer-hint")).not.toContainText("magical_affinity");
 
     await open(page, "sheets-inside-sheets", "solo-4b");
     await runWrong(page, "sheets-inside-sheets/solo-4b", "both keys, inner first", 1);
     await expect(page.getByTestId("explainer")).toHaveAttribute("data-explainer", "lean");
-    await expect(page.getByTestId("explainer-hint")).toContainText("The slip is on line 8: the keys the other way round.");
+    await expect(page.getByTestId("explainer-hint")).toContainText("The mistake is on line 8: the keys the wrong way around.");
 
     await open(page, "sheets-inside-sheets", "abilities-inside");
     await page.getByTestId("predict-skip").click();
     await runWrong(page, "sheets-inside-sheets/abilities-inside", "both keys in one bracket", 1);
     await expect(page.getByTestId("explainer")).toHaveAttribute("data-explainer", "full");
     await expect(page.getByTestId("explainer")).toHaveAttribute("data-kind", "comma-in-brackets");
-    await expect(page.getByTestId("explainer-hint")).toContainText('One key per pair of brackets: bomb_shell["abilities"]["wisdom"]');
+    await expect(page.getByTestId("explainer-hint")).toContainText('One key per pair of square brackets: bomb_shell["abilities"]["wisdom"]');
   });
 
   test("the play-through's slips: = on a later key, the spell's own reads, <= caught on its own step, the card in Keep it short", async ({ page }) => {
@@ -232,7 +232,7 @@ test.describe("Intro to Python, Unit 5: Dictionaries", () => {
     const later = await runWrong(page, "stat-sheets/make-a-sheet", "= for : on a later line of the sheet", 1);
     await expect(later).toHaveAttribute("data-kind", "equals-in-sheet");
     const hint = page.getByTestId("explainer-hint");
-    await expect(hint).toContainText('Line 3 has = inside a sheet. Inside a dictionary { }, a colon goes between a key and its value: "magical_affinity": 10,');
+    await expect(hint).toContainText('Line 3 has = inside a sheet. Inside a dictionary { }, a colon goes between a key and its value, like a word and its meaning in a glossary: "magical_affinity": 10,');
     await expect(hint).not.toContainText(": =");
     const quote = await runWrong(page, "stat-sheets/make-a-sheet", "the key's closing quote left off", 2);
     await expect(quote).toHaveAttribute("data-kind", "missing-quote");

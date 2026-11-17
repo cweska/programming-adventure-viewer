@@ -200,7 +200,7 @@ export type CourseExplanation = Explanation & {
   /** The line the slip is on, when Python names the line after it (a sheet's missing comma): the lean explainer says this one. */
   slipLine?: number;
   /**
-   * What the lean explainer says in place of "The slip is on line N: <the slip's name>." when the row has words of its
+   * What the lean explainer says in place of "The mistake is on line N: <the slip's name>." when the row has words of its
    * own for the slip and the evidence (Unit 6: "Line 8 asks a list for a key, like `roster["name"]`. A list has
    * positions, not keys."). Never the fix.
    */
@@ -208,10 +208,10 @@ export type CourseExplanation = Explanation & {
 };
 
 /** The line a debugging exercise shows when a run gets further than the one before (ExercisePlayer). */
-export const GOT_FURTHER_LINE = "Python got further: that slip is mended.";
+export const GOT_FURTHER_LINE = "Python got further: you fixed that mistake.";
 
 /** The prefix an ordinary exercise's explanation gets when a run gets further than the one before. */
-export const ONE_FIXED_PREFIX = "One fixed! Python found the next one.";
+export const ONE_FIXED_PREFIX = "One fixed! Python found the next mistake.";
 
 /** Unit 3 ("First Recipes") teaches `def`: before it, the explainer never says "make it with def". */
 export const FUNCTIONS_UNIT_ORDER = 3;
@@ -247,7 +247,7 @@ export type ExplainContext = {
   names?: readonly string[];
   /**
    * The previous run's traceback, when that run crashed too. A later error after it (or a line that now
-   * parses) reads "One fixed! Python found the next one." (Python stops at the first error, so fixes come
+   * parses) reads "One fixed! Python found the next mistake." (Python stops at the first error, so fixes come
    * one at a time.)
    */
   previous?: string;
@@ -365,6 +365,27 @@ function onLine(line: number | null): string {
 function lineWord(line: number | null): string {
   return line ? `Line ${line}` : "This line";
 }
+
+/** Names as code, joined for a sentence: "`a`", "`a` and `b`", "`a`, `b` and `c`". */
+function codeList(names: readonly string[]): string {
+  const shown = names.map((name) => `\`${name}\``);
+  return shown.length <= 1 ? (shown[0] ?? "") : `${shown.slice(0, -1).join(", ")} and ${shown.at(-1)}`;
+}
+
+/** How each comparison sign is said out loud, so a sign typed backwards can be typed the way it is said. */
+const SAID_ALOUD: Record<string, string> = { ">=": "greater than or equal to", "<=": "less than or equal to", "!=": "not equal to" };
+
+/** What each kind of opening mark is called (the plain-language guide's words). */
+const PAIR_NAMES: Record<string, string> = { "(": "parentheses", "[": "square brackets", "{": "curly braces" };
+
+/** Math signs from a book or a word processor that Python can't read, with the key Python uses instead. */
+const TYPED_SIGNS: Record<string, [string, string]> = {
+  "×": ["*", "times"],
+  "÷": ["/", "divided by"],
+  "−": ["-", "minus"],
+  "–": ["-", "minus"],
+  "—": ["-", "minus"],
+};
 
 function escapeRegExp(text: string): string {
   return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -671,20 +692,20 @@ function nameAgainstTask(
   const kind = sameLetters ? "capital-letters" : "spelling";
   const title = sameLetters ? "Capital letters matter" : "Check the spelling";
   const differ = sameLetters
-    ? "Python sees them as two different names, because the capital letters differ."
-    : "Python sees them as two different names.";
+    ? "To Python those are two different names: capitals count, like in a password."
+    : "To Python those are two different names.";
   const here = line ? `line ${line}` : "this line";
   if (task.includes(name) && !task.includes(close)) {
     const madeText = codePart(sourceLine(code, made.line)).trim();
     const renamed = madeText.replace(new RegExp(`^${escapeRegExp(close)}(?![\\w])`), name);
-    const fix = renamed !== madeText ? `Rename it on line ${made.line}: \`${renamed}\`` : `Rename it to \`${name}\` on line ${made.line}.`;
-    return explain(kind, title, `Line ${made.line} makes \`${close}\`, but this task's box is \`${name}\`. ${differ} ${fix}`, raw);
+    const fix = renamed !== madeText ? `Change line ${made.line} to \`${renamed}\`` : `Rename it to \`${name}\` on line ${made.line}.`;
+    return explain(kind, title, `Line ${made.line} makes \`${close}\`, but your step's box is \`${name}\`. ${differ} ${fix}`, raw);
   }
   if (task.includes(close) && !task.includes(name)) {
     return explain(
       kind,
       title,
-      `${here[0].toUpperCase()}${here.slice(1)} uses \`${name}\`, but this task's box is \`${close}\`. ${differ} Write \`${close}\` on ${here}, spelled exactly the same.`,
+      `${here[0].toUpperCase()}${here.slice(1)} uses \`${name}\`, but your step's box is \`${close}\`. ${differ} On ${here}, write \`${close}\`, letter for letter.`,
       raw,
     );
   }
@@ -692,7 +713,7 @@ function nameAgainstTask(
   return explain(
     kind,
     title,
-    `Line ${made.line} makes \`${close}\` and ${here} uses \`${name}\`. Python sees them as two different names. Make both lines match, with the same capital letters every time.`,
+    `Line ${made.line} makes \`${close}\`, but ${here} uses \`${name}\`. ${differ} Make both lines match, letter for letter.`,
     raw,
   );
 }
@@ -772,9 +793,10 @@ function taskNamesInstead(code: string, line: number | null, context: ExplainCon
 
 /** "`traveler` is the name from the example. This task uses `name` ..." */
 function exampleNameHint(name: string, use: string[]): string {
-  if (use.length === 1) return `${name} is the name from the example. This task uses ${use[0]}, so write ${use[0]} here.`;
-  if (use.length > 1) return `${name} is the name from the example. This task uses its own names: ${use.join(", ")}.`;
-  return `${name} is the name from the example. Make your own variable first, with the name the task asks for.`;
+  const from = `\`${name}\` is a name from the Example, not from your task.`;
+  if (use.length === 1) return `${from} Your task's name is \`${use[0]}\`: write \`${use[0]}\` here.`;
+  if (use.length > 1) return `${from} Your task's names are ${codeList(use)}.`;
+  return `${from} First make your own box, with the name your step asks for.`;
 }
 
 /* ---------------------------------------------------------------------------------------------- */
@@ -808,14 +830,14 @@ function explainNameShape(text: string, line: number | null, raw: string): Cours
     return explain(
       "dash-in-name",
       "No dashes in names",
-      `A name can't have a dash -${onLine(line)}. Python reads - as minus. Join the words with _ instead: ${fixed}`,
+      `${lineWord(line)} has a dash \`-\` in a name. Python reads \`-\` as minus, like in math. Join the words with an underscore \`_\` instead: \`${fixed}\``,
       raw,
     );
   }
   return explain(
     "space-in-name",
     "No spaces in names",
-    `A name can't have spaces${onLine(line)}. Python reads ${words.join(" and ")} as separate names. Join the words with _ instead: ${fixed}`,
+    `${lineWord(line)} has a space in a name, so Python reads ${codeList(words)} as separate names. A name can't have spaces, like a username. Join the words with an underscore \`_\`: \`${fixed}\``,
     raw,
   );
 }
@@ -874,7 +896,7 @@ function quotesProblem(text: string, line: number | null, raw: string, code = ""
     return explain(
       "missing-quote",
       "Missing quote",
-      `The text${onLine(line)} is missing its closing quote, so Python reads the rest of the line as text too. Close the text before you join it: ${joined}`,
+      `The text${onLine(line)} is missing its closing quote, so Python reads the rest of the line as text too. Close the quote where the words end, before you glue on the next part: \`${joined}\``,
       raw,
     );
   }
@@ -890,7 +912,7 @@ function quotesProblem(text: string, line: number | null, raw: string, code = ""
       return explain(
         "apostrophe",
         "Apostrophe in text",
-        `The ' inside your text${onLine(line)} ends the text too early. Put double quotes around text that has an apostrophe, like "${words || "It's fun"}".`,
+        `The apostrophe ' in your text${onLine(line)} ends the text too early, because Python reads it as the closing quote. Put double quotes around text that has an apostrophe: \`"${words || "It's fun"}"\``,
         raw,
       );
     }
@@ -904,7 +926,7 @@ function quotesProblem(text: string, line: number | null, raw: string, code = ""
       return explain(
         "quotes-dont-match",
         "Quotes don't match",
-        `The text${onLine(line)} starts with ${quote} but ends with ${other}. Use the same kind of quote at both ends, like ${quote}${words}${quote}.`,
+        `The text${onLine(line)} starts with \`${quote}\` but ends with \`${other}\`. Quotes come in matching pairs: use the same kind at both ends, like \`${quote}${words}${quote}\`.`,
         raw,
       );
     }
@@ -915,7 +937,7 @@ function quotesProblem(text: string, line: number | null, raw: string, code = ""
       return explain(
         "missing-quote",
         "Missing quote",
-        `The text${onLine(line)} is missing its opening quote. Text needs a quote at the start and at the end, like this: ${fixed}`,
+        `The text${onLine(line)} is missing its opening quote. Like quotation marks in English, text needs a quote at the start and at the end: \`${fixed}\``,
         raw,
       );
     }
@@ -927,15 +949,15 @@ function quotesProblem(text: string, line: number | null, raw: string, code = ""
         return explain(
           "def-for-variable",
           "def makes recipes",
-          `\`def\` makes recipes (functions), not boxes. To make a box, write the name, an equals sign, then the value, with no \`def\`. Text needs a quote at both ends too: \`${defFix}\``,
+          `\`def\` makes recipes (functions), not boxes. A box is its name, then \`=\`, then the value, with no \`def\`. The text needs a quote at both ends too: \`${defFix}\``,
           raw,
         );
       }
       if (defFix) {
         return explain(
           "def-for-variable",
-          "def makes functions",
-          `def is for making functions, not variables. To make a variable, write the name, an equals sign, then the value, with no def. Text needs a quote at both ends too: ${defFix}`,
+          "No def for a box",
+          `A box doesn't need \`def\`. A box is its name, then \`=\`, then the value. The text needs a quote at both ends too: \`${defFix}\``,
           raw,
         );
       }
@@ -945,7 +967,7 @@ function quotesProblem(text: string, line: number | null, raw: string, code = ""
         return explain(
           "dash-and-quote",
           "Two fixes on one line",
-          `${lineWord(line)} needs two fixes: the text needs its closing quote, and the dash - should be an equals sign =. Write: ${dash}`,
+          `${lineWord(line)} needs two fixes: the text needs its closing quote, and the dash \`-\` should be \`=\`. Write: \`${dash}\``,
           raw,
         );
       }
@@ -953,14 +975,14 @@ function quotesProblem(text: string, line: number | null, raw: string, code = ""
         return explain(
           "missing-quote",
           "Missing quote",
-          `The text${onLine(line)} is missing its closing quote, and the line is missing its closing ${added}. Quotes and brackets come in pairs. Write: ${fixed}`,
+          `The text${onLine(line)} is missing its closing quote, and the line is missing its closing \`${added}\`. Quotes and parentheses come in pairs. Write: \`${fixed}\``,
           raw,
         );
       }
       return explain(
         "missing-quote",
         "Missing quote",
-        `The text${onLine(line)} is missing its closing quote. Text needs a quote at the start and at the end, like this: ${fixed}`,
+        `The text${onLine(line)} is missing its closing quote. Like quotation marks in English, text needs a quote at the start and at the end: \`${fixed}\``,
         raw,
       );
     }
@@ -968,7 +990,7 @@ function quotesProblem(text: string, line: number | null, raw: string, code = ""
   return explain(
     "missing-quote",
     "Missing quote",
-    `Some text${onLine(line)} is missing its closing quote. Text needs a quote at the start and at the end, like "Hello".`,
+    `Some text${onLine(line)} is missing its closing quote. Like quotation marks in English, text needs a quote at the start and at the end: \`"Hello"\`.`,
     raw,
   );
 }
@@ -1014,7 +1036,7 @@ function defInPrintTask(text: string, raw: string, closed = false): CourseExplan
   return explain(
     "def-for-variable",
     "No def needed",
-    `\`def\` is not needed here: this task only shows words.${quote} To show them, write \`${printFix(text)}\``,
+    `This step only shows words, so it doesn't need \`def\`.${quote} To show words in the Console, write \`${printFix(text)}\``,
     raw,
   );
 }
@@ -1031,7 +1053,7 @@ function dashInPrintTask(
   return explain(
     kind,
     "Show it with print",
-    `${lineWord(line)} has a name and a dash -, but this task only shows words.${quote} To show them, write \`${printFix(text)}\``,
+    `${lineWord(line)} has a word and a dash \`-\`, but this step only shows words.${quote} To show words in the Console, write \`${printFix(text)}\``,
     raw,
   );
 }
@@ -1158,14 +1180,14 @@ function explainUnquoted(text: string, code: string, line: number | null, raw: s
     return explain(
       "missing-comma",
       "Missing comma",
-      `${lineWord(line)} has values side by side with nothing between them. Put a comma between them, like this: ${found.fixed}`,
+      `${lineWord(line)} has values side by side with nothing between them. Put a comma between them: \`${found.fixed}\``,
       raw,
     );
   }
   return explain(
     "unquoted-words",
     "Missing quotes",
-    `${lineWord(line)} has words with no quotes around them, so Python tries to read them as code. Text needs quotes at the start and the end, like this: ${found.fixed}`,
+    `${lineWord(line)} has words with no quotes around them, so Python tries to read them as code. Put quotes around the words, the way you quote someone's exact words in English: \`${found.fixed}\``,
     raw,
   );
 }
@@ -1192,7 +1214,7 @@ function explainStuckNumber(text: string, code: string, line: number | null, raw
     return explain(
       "number-stuck-to-name",
       "Number stuck to letters",
-      `${lineWord(line)} has a number with letters stuck to it. A name can't start with a number, and to multiply you write 5 * x, not 5x.`,
+      `${lineWord(line)} has a number with letters stuck to it. A name can't start with a number. To multiply, Python needs the \`*\` sign for times: \`5 * x\`, not \`5x\` like in algebra.`,
       raw,
     );
   }
@@ -1205,19 +1227,21 @@ function explainStuckNumber(text: string, code: string, line: number | null, raw
     return explain(
       "name-starts-with-number",
       "Name starts with a number",
-      `A variable name can't start with a number. Start it with a letter instead, like ${better}.`,
+      `A box's name can't start with a number. Start it with a letter instead, like \`${better}\`.`,
       raw,
     );
   }
   const known = namesBefore(code, line).filter((name) => name !== body.match(/^\s*([A-Za-z_]\w*)\s*=/)?.[1]);
   const times = `${number} * ${word}`;
-  const ownNames = known.length >= 2 ? ` If you already made variables for these numbers, use them instead, like ${known.slice(-2).join(" and ")}.` : "";
+  const algebra = `Python can't read \`${token}\`. In algebra, ${token} means ${number} times ${word}, but Python needs the \`*\` sign for times`;
   return explain(
     "number-stuck-to-name",
     "Number stuck to letters",
     known.includes(word)
-      ? `Python can't read ${token}: a number can't have letters stuck to it. To multiply, put * between them: ${times}`
-      : `Python can't read ${token}: a number can't have letters stuck to it, and ${token} doesn't mean "${number} times ${word}". To multiply, put * between a number and a variable, like ${times} (${word} must be a variable you made).${ownNames}`,
+      ? `${algebra}: \`${times}\``
+      : known.length >= 2
+        ? `${algebra}, and only names of boxes you made. You already made boxes for these numbers: use them, like ${codeList(known.slice(-2))}.`
+        : `${algebra}: \`${times}\`. \`${word}\` must also be a box you made first.`,
     raw,
   );
 }
@@ -1236,7 +1260,7 @@ function blankLeft(blank: string, line: number | null, raw: string): CourseExpla
   return explain(
     "blank-left",
     "Fill in the blank",
-    `${lineWord(line)} still has the blank \`${blank}\` from the starter. Python reads it as a name and finds nothing. Replace the \`${blank}\` with your own code: the step says what goes there.`,
+    `${lineWord(line)} still has the blank \`${blank}\`, like a blank left on a worksheet. Python reads it as a name and finds nothing. Replace \`${blank}\` with your own code: your step says what goes there.`,
     raw,
   );
 }
@@ -1249,10 +1273,11 @@ function explainBackwardsSign(text: string, line: number | null, raw: string): C
   let fixed = text;
   for (const { at, typed } of [...signs].reverse()) fixed = `${fixed.slice(0, at)}${BACKWARDS[typed]}${fixed.slice(at + 2)}`;
   const typed = [...new Set(signs.map((sign) => sign.typed))];
+  const said = SAID_ALOUD[BACKWARDS[typed[0]]];
   return explain(
     "sign-backwards",
     "Sign typed backwards",
-    `${lineWord(line)} has ${typed.map((sign) => `\`${sign}\``).join(" and ")}, a sign typed backwards. In Python the \`=\` always comes second: ${typed.map((sign) => `\`${BACKWARDS[sign]}\``).join(" and ")}. Write: \`${codePart(fixed).trim()}\``,
+    `${lineWord(line)} has ${typed.map((sign) => `\`${sign}\``).join(" and ")}, a sign typed backwards. Type it in the order you say it, "${said}": the \`=\` comes second, ${typed.map((sign) => `\`${BACKWARDS[sign]}\``).join(" and ")}. Write: \`${codePart(fixed).trim()}\``,
     raw,
   );
 }
@@ -1330,7 +1355,7 @@ function explainUnquotedOption(text: string, line: number | null, raw: string): 
   return explain(
     "unquoted-option",
     "Text needs quotes",
-    `${lineWord(line)} compares with ${quoted.words}, words with no quotes, so Python tries to read them as code. Text in a comparison needs quotes too, like this: \`${quoted.fixed}\``,
+    `${lineWord(line)} compares with \`${quoted.words}\`, words with no quotes, so Python tries to read them as code. Words you compare need quotes too: \`${quoted.fixed}\``,
     raw,
   );
 }
@@ -1362,8 +1387,8 @@ function explainChain(code: string, text: string, line: number | null, raw: stri
       "else-not-last",
       "else comes last",
       word === "elif"
-        ? `Line ${line} has \`elif\` after the \`else\` on line ${before.line}. In a chain, \`else\` always comes last: it catches whatever is left. Move the \`elif\` and its lines up, above the \`else\`.`
-        : `Line ${line} is a second \`else\`, after the one on line ${before.line}. A chain has only one \`else\`, and it comes last. Make the first one an \`elif\` with a question, or take one away.`,
+        ? `Line ${line} has \`elif\` after the \`else\` on line ${before.line}. \`else\` means "otherwise", so it always comes last and catches whatever is left. Move the \`elif\` and its indented lines up, above the \`else\`.`
+        : `Line ${line} is a second \`else\`, after the one on line ${before.line}. An \`if\` with its \`elif\`s gets only one \`else\`, and it comes last. Make the first one an \`elif\` with a question.`,
       raw,
     );
   }
@@ -1376,14 +1401,14 @@ function explainChain(code: string, text: string, line: number | null, raw: stri
     return explain(
       "else-not-lined-up",
       "Line it up with its if",
-      `Line ${line}'s \`${word}\` has more spaces in front than its \`if\` on line ${ifAbove.at}, so Python reads it as part of the block above, where an \`${word}\` can't go. Give line ${line} exactly the same spaces in front as line ${ifAbove.at}.`,
+      `Line ${line}'s \`${word}\` has more spaces in front than its \`if\` on line ${ifAbove.at}, so Python reads it as one of the indented lines above, where an \`${word}\` can't go. Give line ${line} exactly the same spaces in front as line ${ifAbove.at}.`,
       raw,
     );
   }
   return explain(
     "elif-without-if",
     `${word} needs an if`,
-    `Line ${line} starts with \`${word}\`, but no \`if\` comes just before it at the same indent, so Python can't tell which question it belongs to. Every chain starts with \`if\`: put this line straight after the \`if\` and its indented lines, lined up with the \`if\`${word === "elif" ? ", or make it an `if`" : ""}.`,
+    `Line ${line} starts with \`${word}\`, but no \`if\` comes right before it, lined up the same, so Python can't tell which question it belongs to. Put this line right after the \`if\` and its indented lines, lined up with the \`if\`${word === "elif" ? ", or make it an `if`" : ""}.`,
     raw,
   );
 }
@@ -1405,7 +1430,7 @@ function explainNumberAndText(op: string, code: string, text: string, line: numb
     return explain(
       "compare-number-text",
       title,
-      `${lineWord(line)} compares a number with text: \`${quoted[0]}\` has quotes, so it is text, and Python can't say which is bigger. Numbers have no quotes: \`${fixed}\``,
+      `${lineWord(line)} compares a number with text: \`${quoted[0]}\` has quotes, so it is text, and Python can't say which is bigger. A number you compare gets no quotes: \`${fixed}\``,
       raw,
     );
   }
@@ -1415,7 +1440,7 @@ function explainNumberAndText(op: string, code: string, text: string, line: numb
     return explain(
       "compare-number-text",
       title,
-      `${fromInput} came from input(), and input() always gives back text, so ${lineWord(line).toLowerCase()} compares text with a number. Turn it into a number first: int(${fromInput})`,
+      `\`${fromInput}\` came from \`input()\`, and \`input()\` always hands back text, like writing on a paper form. So ${lineWord(line).toLowerCase()} compares text with a number. Turn it into a number first: \`int(${fromInput})\``,
       raw,
     );
   }
@@ -1436,7 +1461,7 @@ function explainNumberAndText(op: string, code: string, text: string, line: numb
   return explain(
     "compare-number-text",
     title,
-    `${lineWord(line)} compares a number with text using \`${op}\`. Text is not a number, even "15", so Python can't say which is bigger. Make both sides numbers: take the quotes off the number, or turn the text into a number with int().`,
+    `${lineWord(line)} compares a number with text using \`${op}\`. Text is not a number, even \`"15"\`, so Python can't say which is bigger. Make both sides numbers: a number gets no quotes, and \`int()\` turns text into a number.`,
     raw,
   );
 }
@@ -1465,7 +1490,7 @@ function explainEqualsInPrint(name: string, text: string, line: number | null, r
     return explain(
       "equals-in-print",
       "= makes a box, print shows it",
-      `${lineWord(line)} has an \`=\` inside print( ). print only shows things: it can't make a box. Make the box on its own line first${value ? `, \`${name} = ${value}\`` : ""}, then show it: \`print(${name})\``,
+      `${lineWord(line)} has an \`=\` inside \`print( )\`. \`print\` only shows things in the Console: it can't make a box. Make the box on its own line first${value ? `, \`${name} = ${value}\`` : ""}, then show it: \`print(${name})\``,
       raw,
     );
   }
@@ -1477,14 +1502,14 @@ function explainEqualsInPrint(name: string, text: string, line: number | null, r
     return explain(
       "equals-in-print",
       "= makes a box",
-      `${lineWord(line)} has one \`=\` inside print( ). One \`=\` puts a value in a box, and print can't do that. To show the answer to a question, use a comparison sign, such as \`==\` (is the same as) or \`!=\` (is not the same as).`,
+      `${lineWord(line)} has one \`=\` inside \`print( )\`. One \`=\` puts a value in a box, and \`print\` can't do that. To show the answer to a question, use a comparison sign, like \`==\` for "is the same as" or \`!=\` for "is not the same as".`,
       raw,
     );
   }
   return explain(
     "equals-in-print",
     "Use == to ask",
-    `${lineWord(line)} has one \`=\` inside print( ). One \`=\` puts a value in a box, and print can't do that. To show whether they are the same, use \`==\`${fixed ? `: \`${fixed}\`` : "."}`,
+    `${lineWord(line)} has one \`=\` inside \`print( )\`. One \`=\` puts a value in a box, and \`print\` can't do that. To ask "is it the same as?", use \`==\`${fixed ? `: \`${fixed}\`` : "."}`,
     raw,
   );
 }
@@ -1496,7 +1521,7 @@ function explainAssert(message: string, text: string, line: number | null, raw: 
   return explain(
     "assert-failed",
     "Your assert caught something",
-    `The \`assert\` on ${line ? `line ${line}` : "this line"} asked ${what} and got False, so Python stopped there.${message ? ` Its note says: ${/[.!?]$/.test(message) ? message : `${message}.`}` : ""} That is the seal doing its job: the code above it does not do what the assert expects. Print the values it checks to see why, then mend the code (or the assert, if it asks the wrong question).`,
+    `The \`assert\` on ${line ? `line ${line}` : "this line"} asked ${what} and got False, so Python stopped there.${message ? ` Its note says: ${/[.!?]$/.test(message) ? message : `${message}.`}` : ""} That's the seal doing its job: the code above it doesn't do what the \`assert\` expects. Print the values it checks to see why, then fix that code.`,
     raw,
   );
 }
@@ -1526,7 +1551,7 @@ function elseWithQuestion(text: string, line: number | null, raw: string): Cours
   return explain(
     "else-has-question",
     "else asks nothing",
-    `${lineWord(line)} gives \`else\` a question${question ? `, \`${question}\`` : ""}. \`else\` has no question of its own: it runs when every question above it was False. Write just \`else:\`. (A new question goes after \`elif\` instead.)`,
+    `${lineWord(line)} gives \`else\` a question${question ? `, \`${question}\`` : ""}. \`else\` has no question of its own: it runs when every question above it was False. Write \`else:\` with nothing between \`else\` and the colon. A new question goes after \`elif\` instead.`,
     raw,
   );
 }
@@ -1558,7 +1583,7 @@ function explainKeywordShape(text: string, line: number | null, raw: string): Co
     return explain(
       "keyword-capital",
       "Small letters",
-      `${lineWord(line)} starts with \`${first}\`. Python's own words are all small letters: \`${small}\`, not \`${first}\`. Write: \`${fixed}\``,
+      `${lineWord(line)} starts with \`${first}\`. Python's own words, like \`print\` and \`${small}\`, are all small letters, even at the start of a line. Write: \`${fixed}\``,
       raw,
     );
   }
@@ -1567,7 +1592,7 @@ function explainKeywordShape(text: string, line: number | null, raw: string): Co
     return explain(
       "no-question",
       `${bare} needs a question`,
-      `${lineWord(line)} has \`${bare}:\` with no question. \`${bare}\` asks a question, so the question goes between \`${bare}\` and the colon. If this branch should run when nothing above it was True, write \`else:\` instead.`,
+      `${lineWord(line)} has \`${bare}:\` with no question. \`${bare}\` asks a question, so the question goes between \`${bare}\` and the colon. If the lines under it should run when every question above was False, write \`else:\` instead.`,
       raw,
     );
   }
@@ -1594,14 +1619,14 @@ function explainMissingColon(code: string, text: string, line: number | null, ra
     return explain(
       "missing-colon",
       "Missing colon",
-      `${lineWord(line)} starts with \`${word}\`, so it ends with a colon \`:\`${semicolon ? ", not a semicolon `;`" : ""}. The colon says "the indented lines below belong to me". Write: \`${fixed}\``,
+      `${lineWord(line)} starts with \`${word}\`, so it ends with a colon \`:\`${semicolon ? ", not a semicolon `;`" : ""}. Like a colon before a list in English, it says "here come my steps": the indented lines below. Write: \`${fixed}\``,
       raw,
     );
   }
   return explain(
     "missing-colon",
     "Missing colon",
-    `${lineWord(line)} needs a colon : at the end. Lines that start with if, elif, else, for, while or def always end with :`,
+    `${lineWord(line)} needs a colon \`:\` at the end. A line that starts with a word like \`if\`, \`else\` or \`def\` always ends with \`:\`, like a colon before a list in English.`,
     raw,
   );
 }
@@ -1696,7 +1721,7 @@ function recipeShape(recipe: TaskRecipe, value?: string): string {
   const header = `\`def ${recipe.name}(${recipe.ingredients.join(", ")}):\``;
   const right = value?.trim();
   const steps = !recipe.returns ? "then its steps, indented under it" : right ? `then an indented \`return ${right}\`` : "then an indented `return` with the answer";
-  return `\`${recipe.name}\` is a recipe in this task: ${header}, ${steps}.`;
+  return `\`${recipe.name}\` is a recipe in your task: ${header}, ${steps}.`;
 }
 
 /**
@@ -1731,7 +1756,7 @@ function explainRecipeLikeMath(message: string, text: string, line: number | nul
   return explain(
     "recipe-like-math",
     "A recipe starts with def",
-    `${lineWord(line)} is math's way to write it. In Python a recipe (function) starts with \`def\`: \`def ${call[1]}(${ingredients.join(", ")}):\`, then an indented ${back}.`,
+    `${lineWord(line)} writes the recipe the way math writes f(x) = 2x. In Python a recipe (function) starts with \`def\`: \`def ${call[1]}(${ingredients.join(", ")}):\`, then an indented ${back}.`,
     raw,
   );
 }
@@ -1787,7 +1812,7 @@ function explainDefLikeMath(text: string, line: number | null, raw: string): Cou
   return explain(
     "recipe-like-math",
     "Steps go below the def line",
-    `${lineWord(line)} puts \`=\` after the brackets, the way math writes it. In Python the colon goes right after the brackets, and the steps go below: \`def ${header[1]}(${ingredients.join(", ")}):\`, then an indented \`return ${header[3]}\`.`,
+    `${lineWord(line)} puts \`=\` after the parentheses, the way math writes f(x) = 2x. In Python the colon goes right after the parentheses, and the steps go below: \`def ${header[1]}(${ingredients.join(", ")}):\`, then an indented \`return ${header[3]}\`.`,
     raw,
   );
 }
@@ -1824,7 +1849,7 @@ function explainRecipeMadeAsBox(
   return explain(
     "quoted-recipe-name",
     "No quotes on a recipe's name",
-    `${lineWord(line)} has the recipe's name in quotes. A recipe's name has no quotes: it goes right after \`def\`, then ( ) and a colon: ${header}, with its steps indented under it.`,
+    `${lineWord(line)} has the recipe's name in quotes. A recipe's name has no quotes: it goes right after \`def\`, then parentheses ( ) and a colon: ${header}, with its steps indented under it.`,
     raw,
   );
 }
@@ -1853,7 +1878,7 @@ function explainValueCount(message: string, code: string, line: number | null, r
           raw,
         );
       }
-      const listed = ingredients.map((ingredient) => `\`${ingredient}\``).join(", ");
+      const listed = codeList(ingredients);
       const has = ingredients.length === 1 ? "1 ingredient" : `${ingredients.length} ingredients`;
       // Unit 6: one piece of text handed over in parts, with commas, as print takes them (the ley board).
       const called = line ? sourceLine(code, line) : "";
@@ -1863,14 +1888,14 @@ function explainValueCount(message: string, code: string, line: number | null, r
         return explain(
           "wrong-number-of-values",
           "Wrong number of values",
-          `\`${name}\` has ${has} (${listed}). ${call} hands over ${handedText(handed)}. \`${name}\` takes one piece of text. Glue the parts into one with \`+\`, with \`str()\` around a number.`,
+          `\`${name}\` has ${has}, ${listed}, but ${call.charAt(0).toLowerCase()}${call.slice(1)} hands over ${handedText(handed)}. \`${name}\` takes one piece of text: glue the parts into one with \`+\`, and put \`str()\` around a number.`,
           raw,
         );
       }
       return explain(
         "wrong-number-of-values",
         "Wrong number of values",
-        `\`${name}\` has ${has} (${listed}). ${call} hands over ${handedText(handed)}. Hand over one value per ingredient.`,
+        `\`${name}\` has ${has}, ${listed}, but ${call.charAt(0).toLowerCase()}${call.slice(1)} hands over ${handedText(handed)}. Hand over one value per ingredient, the way each blank in a Mad Lib gets one word.`,
         raw,
       );
     }
@@ -1890,7 +1915,7 @@ function explainValueCount(message: string, code: string, line: number | null, r
   return explain(
     "wrong-number-of-values",
     "Wrong number of values",
-    `The function call${onLine(line)} has the wrong number of values inside its ( ).`,
+    name ? `\`${name}( )\`${onLine(line)} got the wrong number of values inside its parentheses.` : `Something${onLine(line)} got the wrong number of values inside its parentheses ( ).`,
     raw,
   );
 }
@@ -1921,7 +1946,7 @@ function explainRandintBackwards(text: string, line: number | null, raw: string)
   return explain(
     "randint-backwards",
     "Smallest number first",
-    `${lineWord(line)} rolls with the numbers the wrong way round. Smallest number first: \`${fixed}\``,
+    `${lineWord(line)} rolls with the numbers the wrong way around. Like a die that goes from 1 to 6, the smallest number goes first: \`${fixed}\``,
     raw,
   );
 }
@@ -1947,7 +1972,7 @@ function explainRecursion(code: string, raw: string): CourseExplanation {
   return explain(
     "never-ending-calls",
     "Never-ending calls",
-    "A function keeps calling itself and never stops. Make sure it has a way to finish with a return that does not call it again.",
+    "A recipe (function) keeps calling itself and never stops. Make sure it can finish with a `return` that doesn't call it again.",
     raw,
   );
 }
@@ -1991,7 +2016,7 @@ function explainRecipeName(
     return explain(
       "recipe-called-too-early",
       "Called too early",
-      `Line ${line} calls \`${name}\`, but its \`def\` is only on line ${own.start}. Python runs from top to bottom, so move the recipe above the line that calls it.`,
+      `Line ${line} calls \`${name}\`, but its \`def\` is only on line ${own.start}. Python reads your code like a page, from top to bottom, so move the recipe above the line that calls it.`,
       raw,
     );
   }
@@ -1999,7 +2024,7 @@ function explainRecipeName(
     return explain(
       "recipe-not-made-yet",
       "Recipe not made yet",
-      `\`${name}\` is one of this task's recipes, but no \`def\` line makes it yet. Write it with \`def\`${line ? ` above line ${line}, the line that calls it` : ""}.`,
+      `\`${name}\` is one of your task's recipes, but no \`def\` line makes it yet. Write it with \`def\`${line ? ` above line ${line}, the line that calls it` : ""}.`,
       raw,
     );
   }
@@ -2029,7 +2054,7 @@ function explainRecipeName(
       return explain(
         "store-backwards",
         "Store it the other way",
-        `${lineWord(line)} puts \`${name}\` into \`${reversed[1]}\`, the wrong way round, so Python looks for a box \`${name}\` that no line makes. The new box goes on the left of \`=\`, the call on the right: ${needs.length === 0 ? `\`${name} = ${reversed[1]}()\`` : `\`${name} = ${reversed[1]}(...)\`, with one value per ingredient`}`,
+        `${lineWord(line)} puts \`${name}\` into \`${reversed[1]}\`, the wrong way around, so Python looks for a box \`${name}\` that no line makes. The new box goes on the left of \`=\`, the call on the right: ${needs.length === 0 ? `\`${name} = ${reversed[1]}()\`` : `\`${name} = ${reversed[1]}(...)\`, with one value per ingredient`}`,
         raw,
       );
     }
@@ -2046,7 +2071,7 @@ function explainRecipeName(
       // One or two letters off one of the recipe's own names: a spelling slip, which keeps its own row.
       if (!fromExample && closeName(name, [...boxes, ...ingredients])) return null;
       const lead = fromExample
-        ? `\`${name}\` comes from Mar'tu's example.`
+        ? `\`${name}\` comes from the Example, not from your task.`
         : `${lineWord(line)} hands back \`${name}\`, but no line in \`${inside.recipe}\` makes a box by that name.`;
       if (boxes.length > 0) {
         return explain(
@@ -2079,7 +2104,7 @@ function explainRecipeName(
     const hereBoxes = [
       ...new Set(defined.filter((entry) => entry.line > here.start && entry.line < line).map((entry) => entry.name)),
     ].filter((box) => !hereIngredients.includes(box));
-    const belongs = `\`${name}\` belongs to \`${home.recipe}\`${ingredient ? " (it is one of its ingredients)" : ""}, so only that recipe can use it.`;
+    const belongs = `\`${name}\` belongs to \`${home.recipe}\`${ingredient ? " as one of its ingredients" : ""}, so only that recipe can use it.`;
     const instead = /^return\b/.test(body) && hereBoxes.length > 0
       ? `Inside \`${here.recipe}\`, hand back its own box, \`${hereBoxes.at(-1)}\`.`
       : hereIngredients.length > 0
@@ -2142,7 +2167,7 @@ function explainSyntax(
     return explain(
       "unclosed-triple-quote",
       "Missing quotes",
-      `A block of text that starts with three quotes${onLine(line)} never ends. Add the same three quotes where the text should stop.`,
+      `Text over many lines that starts with three quotes${onLine(line)} never ends. Like a poem's opening and closing marks, it needs the same three quotes where the text should stop.`,
       raw,
     );
   }
@@ -2158,7 +2183,7 @@ function explainSyntax(
     return explain(
       "curly-quote",
       "Curly quotes",
-      `${lineWord(line)} has a curly quote ${curly[1]} that Python can't read. Python only understands straight quotes: " or '. Delete it and type the quote again in the editor.`,
+      `${lineWord(line)} has a curly quote ${curly[1]}, the kind Google Docs and phones make. Python only reads straight quotes, \`"\` or \`'\`. Delete it and type the quote again in your code.`,
       raw,
     );
   }
@@ -2166,16 +2191,19 @@ function explainSyntax(
     return explain(
       "hidden-character",
       "Hidden character",
-      `${lineWord(line)} has a hidden character Python can't read, often from copy and paste. Delete the spaces on that line and type them again.`,
+      `${lineWord(line)} has a hidden mark Python can't read, often from copy and paste. Delete the spaces on that line and type them again.`,
       raw,
     );
   }
   const odd = message.match(/invalid character '(.)'/);
   if (odd) {
+    const sign = TYPED_SIGNS[odd[1]];
     return explain(
       "odd-character",
       "Odd character",
-      `${lineWord(line)} has a character Python can't read: ${odd[1]}. If you copied this code, type that part again yourself.`,
+      sign
+        ? `${lineWord(line)} has ${odd[1]}, which Python can't read. The keyboard has no ${odd[1]} key, so for ${sign[1]} Python uses \`${sign[0]}\`.`
+        : `${lineWord(line)} has ${odd[1]} outside of quotes, where Python can't read it. To show a mark like ${odd[1]}, put it inside quotes as text: \`"${odd[1]}"\`.`,
       raw,
     );
   }
@@ -2214,15 +2242,15 @@ function explainSyntax(
     return explain(
       "def-for-variable",
       "def makes recipes",
-      `\`def\` makes recipes (functions), not boxes. To make a box, write the name, an equals sign, then the value, with no \`def\`: \`${defFix}\``,
+      `\`def\` makes recipes (functions), not boxes. A box is its name, then \`=\`, then the value, with no \`def\`: \`${defFix}\``,
       raw,
     );
   }
   if (defFix) {
     return explain(
       "def-for-variable",
-      "def makes functions",
-      `def is for making functions, not variables. To make a variable, write the name, an equals sign, then the value, with no def: ${defFix}`,
+      "No def for a box",
+      `A box doesn't need \`def\`. A box is its name, then \`=\`, then the value: \`${defFix}\``,
       raw,
     );
   }
@@ -2255,7 +2283,7 @@ function explainSyntax(
       return explain(
         "compare-with-double-equals",
         "Use == to compare",
-        `${lineWord(line)} has one \`=\` where a question needs two. One \`=\` puts a value in a box; \`==\` asks "is it the same?". Write: \`${asked}\``,
+        `${lineWord(line)} has one \`=\` where a question needs two. One \`=\` puts a value in a box: read it as "gets". Two, \`==\`, ask "is it the same as?". Write: \`${asked}\``,
         raw,
       );
     }
@@ -2269,7 +2297,7 @@ function explainSyntax(
       return explain(
         "quoted-name",
         "No quotes on a name",
-        `A box's name has no quotes${onLine(line)}. Take the quotes off ${quotedName[2]}: \`${quotedName[2]} = ${right}\``,
+        `${lineWord(line)} has quotes around a box's name. Quotes mean these exact letters, so a name never gets them. Take the quotes off \`${quotedName[2]}\`: \`${quotedName[2]} = ${right}\``,
         raw,
       );
     }
@@ -2279,7 +2307,7 @@ function explainSyntax(
     return explain(
       "name-goes-first",
       "Name goes first",
-      `The name goes on the left of = and the value goes on the right, like this: ${example}`,
+      `In Python, \`=\` works one way: the box's name goes on the left, and the value goes on the right. Unlike math, you can't flip the sides: \`${example}\``,
       raw,
     );
   }
@@ -2288,7 +2316,7 @@ function explainSyntax(
     return explain(
       "print-needs-brackets",
       "print needs ( )",
-      `print needs brackets ( ) around what it shows${onLine(line)}, like this: print(${inside ?? '"Hello"'})`,
+      `\`print\` needs parentheses ( ) around what it shows${onLine(line)}, the same marks you use in math class: \`print(${inside ?? '"Hello"'})\``,
       raw,
     );
   }
@@ -2298,8 +2326,8 @@ function explainSyntax(
       "compare-with-double-equals",
       "Use == to compare",
       fixed
-        ? `To check if two things are equal${onLine(line)}, use two equals signs: ==. One = is only for making a variable. Write: \`${fixed}\``
-        : `To check if two things are equal${onLine(line)}, use two equals signs: ==. One = is only for making a variable.`,
+        ? `To ask whether two things are the same${onLine(line)}, use two \`=\` signs: \`==\`. One \`=\` only puts a value in a box. Write: \`${fixed}\``
+        : `To ask whether two things are the same${onLine(line)}, use two \`=\` signs: \`==\`. One \`=\` only puts a value in a box.`,
       raw,
     );
   }
@@ -2308,7 +2336,7 @@ function explainSyntax(
     return explain(
       "two-single-quotes",
       "Two ' are not one \"",
-      `${lineWord(line)} has two ' marks side by side. Python reads '' as empty text, not as a " mark. Use one " at each end of the text: ${codePart(text).replace(/''/g, '"').trim()}`,
+      `${lineWord(line)} has two ' marks side by side. Python reads \`''\` as empty text, not as one \`"\` mark. Use one \`"\` at each end of the text: \`${codePart(text).replace(/''/g, '"').trim()}\``,
       raw,
     );
   }
@@ -2323,11 +2351,11 @@ function explainSyntax(
     const open = openBefore(code, line);
     const body = codePart(text);
     if (open.length > 0 && body.trim() && !/[,([{]$/.test(body)) {
-      const what = { "{": "a dictionary { }", "[": "a list [ ]", "(": "( )" }[open[open.length - 1]] ?? "( )";
+      const what = { "{": "a dictionary { }", "[": "a list [ ]", "(": "parentheses ( )" }[open[open.length - 1]] ?? "parentheses ( )";
       return explain(
         "missing-comma-in-list",
         "Missing comma",
-        `Inside ${what}, every item except the last needs a comma after it. Add a comma at the end of line ${line}: ${body.trim()},`,
+        `Inside ${what}, every item except the last needs a comma after it, like items in a list in English. Add a comma at the end of line ${line}: \`${body.trim()},\``,
         raw,
       );
     }
@@ -2345,12 +2373,12 @@ function explainSyntax(
     const callee = codePart(text).trim().match(/^(?:[A-Za-z_]\w*\s*=(?!=)\s*)?([A-Za-z_][\w.]*)\s*\(/)?.[1];
     const several = callee !== undefined && callee !== "print" && (inside ?? "").includes(",");
     if (inside && !several && /^[A-Za-z0-9][A-Za-z0-9 ,!?.']*[A-Za-z0-9!?.]$/.test(inside) && /[A-Za-z]/.test(inside) && inside.includes(" ")) {
-      return explain("unquoted-words", "Missing quotes?", `If ${inside} is text, put quotes around it: "${inside}". Text needs quotes.`, raw);
+      return explain("unquoted-words", "Missing quotes?", `If \`${inside}\` is words, put quotes around them, the way you quote someone's exact words: \`"${inside}"\`.`, raw);
     }
     return explain(
       "missing-comma",
-      "Missing comma or +",
-      `${lineWord(line)} has two values side by side with nothing between them. Put a comma between them, or + to join text.`,
+      "Missing comma",
+      `${lineWord(line)} has two values side by side with nothing between them. Put a comma between them.`,
       raw,
     );
   }
@@ -2366,7 +2394,7 @@ function explainSyntax(
       return explain(
         "never-closed",
         `Missing ${closing}`,
-        `The ${inside[2]}${onLine(line)} is inside the quotes, so Python reads it as part of the text. Move it after the closing quote: ${inside[1]}${inside[3]}${inside[2]}`.trim(),
+        `The \`${inside[2]}\`${onLine(line)} is inside the quotes, so Python reads it as part of the text. Move it after the closing quote: \`${`${inside[1]}${inside[3]}${inside[2]}`.trim()}\``,
         raw,
       );
     }
@@ -2375,7 +2403,7 @@ function explainSyntax(
       return explain(
         "never-closed",
         `Missing ${closing}`,
-        `A ${opener}${onLine(line)} opens but never closes. Brackets come in pairs, like quotes. Add ${closing} at the end of the line: ${fixed.trim()}`,
+        `A \`${opener}\`${onLine(line)} opens but never closes. Like quotes, ${PAIR_NAMES[opener]} come in pairs. Add \`${closing}\` at the end of the line: \`${fixed.trim()}\``,
         raw,
       );
     }
@@ -2383,14 +2411,14 @@ function explainSyntax(
       return explain(
         "never-closed",
         `Missing ${closing}`,
-        `The ${opener}${onLine(line)} opens, but its ${closing} never comes. Add ${closing} on its own line after the last item.`,
+        `The \`${opener}\`${onLine(line)} opens, but its \`${closing}\` never comes. Add \`${closing}\` on its own line after the last item.`,
         raw,
       );
     }
     return explain(
       "never-closed",
       `Missing ${closing}`,
-      `A ${opener}${onLine(line)} never gets its closing ${closing}. Brackets come in pairs: add ${closing} where it should end.`,
+      `A \`${opener}\`${onLine(line)} never gets its closing \`${closing}\`. Like quotes, ${PAIR_NAMES[opener]} come in pairs: add \`${closing}\` where it should end.`,
       raw,
     );
   }
@@ -2399,24 +2427,24 @@ function explainSyntax(
     return explain(
       "extra-bracket",
       `Extra ${unmatched[1]}`,
-      `${lineWord(line)} has an extra ${unmatched[1]}. Remove it, or add the opening bracket it belongs to.`,
+      `${lineWord(line)} has an extra \`${unmatched[1]}\` with no \`${OPENER[unmatched[1]]}\` to match it. Delete the extra one.`,
       raw,
     );
   }
   if (/closing parenthesis '.' does not match opening parenthesis/.test(lower)) {
     return explain(
       "brackets-dont-match",
-      "Brackets don't match",
-      `The brackets${onLine(line)} don't match. ( closes with ), [ closes with ], and { closes with }.`,
+      "Marks don't match",
+      `The marks${onLine(line)} don't pair up. Each kind closes with its own partner: \`(\` with \`)\`, \`[\` with \`]\`, and \`{\` with \`}\`.`,
       raw,
     );
   }
   if (/expected '\('/.test(lower) && /^\s*def\b/.test(text)) {
     const recipe = unitAtLeast(context, FUNCTIONS_UNIT_ORDER) ? codePart(text).match(/^\s*def\s+([A-Za-z_]\w*)\s*:?\s*$/)?.[1] : undefined;
     if (recipe) {
-      return explain("def-needs-brackets", "def needs ( )", `A \`def\` line needs ( ) after the recipe's name, then a colon: \`def ${recipe}():\``, raw);
+      return explain("def-needs-brackets", "def needs ( )", `A \`def\` line needs parentheses ( ) after the recipe's name, then a colon: \`def ${recipe}():\``, raw);
     }
-    return explain("def-needs-brackets", "def needs ( )", `A def line needs ( ) after the function's name, then a colon, like this: def greet():`, raw);
+    return explain("def-needs-brackets", "def needs ( )", `A \`def\` line needs parentheses ( ) after the name, then a colon: \`def greet():\``, raw);
   }
   if (/expected ':'/.test(lower)) {
     return explainMissingColon(code, text, line, raw);
@@ -2445,7 +2473,7 @@ function explainSyntax(
       return explain(
         "unquoted-words",
         "Words with no quotes",
-        `${lineWord(line)} is plain words, so Python tries to read them as code. To make it a note, start the line with #: \`# ${body}\`. To show the words, put them in quotes inside print( ): \`print("${body}")\``,
+        `${lineWord(line)} is plain words, so Python tries to read them as code. A note for people starts with \`#\`, like a stage direction: \`# ${body}\`. Words to show go in quotes inside \`print( )\`: \`print("${body}")\``,
         raw,
       );
     }
@@ -2455,7 +2483,7 @@ function explainSyntax(
       return explain(
         "unquoted-words",
         "Missing quotes?",
-        `${lineWord(line)} has no quotes inside print( ), so Python tries to read ${inside} as code. To show it as it is, put it in quotes: \`print("${inside}")\``,
+        `${lineWord(line)} has no quotes inside \`print( )\`, so Python tries to read ${inside} as code. Quotes mean these exact marks: \`print("${inside}")\``,
         raw,
       );
     }
@@ -2465,7 +2493,7 @@ function explainSyntax(
   return explain(
     "cant-read-line",
     "Python can't read this",
-    `Python could not read line ${line ?? "?"}. Look for a missing quote${colons ? ", a missing bracket ( ), or a missing colon :." : " or a missing bracket ( )."}`,
+    `Python could not read line ${line ?? "?"}, like a sentence with a missing word. Look for a missing quote${colons ? ", a missing parenthesis ( ), or a missing colon :." : " or a missing parenthesis ( )."}`,
     raw,
   );
 }
@@ -2481,23 +2509,23 @@ function explainIndent(message: string, line: number | null, raw: string, code =
   if (recipe && between.length > 0 && between.every((row) => codePart(row).trim() === "")) {
     // A note indented under the def line is the recipe's only "step" (a note above the next def is not).
     const indent = indentOf(sourceLine(code, header ?? 0));
-    const note = between.some((row) => row.trim().startsWith("#") && indentOf(row) > indent) ? ": a note with # doesn't count" : "";
+    const note = between.some((row) => row.trim().startsWith("#") && indentOf(row) > indent) ? " A note with `#` doesn't count." : "";
     return explain(
       "indent",
       "A recipe needs a step",
-      `\`${recipe}\` has no steps yet, and a recipe needs at least one step inside${note}. Write its step under the def line, four spaces in (or put \`pass\` back while you think).`,
+      `\`${recipe}\` has no steps yet, and a recipe needs at least one step inside it.${note} Write its step under the \`def\` line, four spaces in. While you think, \`pass\` can hold the spot, like a blank recipe card.`,
       raw,
     );
   }
   if (after) {
     const what = after[1]
-      .replace(/^'(\w+)' statement$/, "the $1")
-      .replace(/^function definition$/, "the def")
-      .replace(/^class definition$/, "the class");
-    return explain("indent", "Indent this line", `The line after line ${after[2]} belongs inside ${what}, so it needs 4 spaces at the start.`, raw);
+      .replace(/^'(\w+)' statement$/, "the `$1`")
+      .replace(/^function definition$/, "the `def`")
+      .replace(/^class definition$/, "the `class`");
+    return explain("indent", "Indent this line", `The line after line ${after[2]} belongs inside ${what}, so it needs 4 spaces at the start, like a sub-point in an outline.`, raw);
   }
   if (/expected an indented block/.test(message)) {
-    return explain("indent", "Indent this line", `${lineWord(line)} needs 4 spaces at the start, because it belongs inside the block above it.`, raw);
+    return explain("indent", "Indent this line", `${lineWord(line)} needs 4 spaces at the start, because it belongs to the line above it that ends with \`:\`.`, raw);
   }
   if (/unexpected indent/.test(message)) {
     return explain(
@@ -2513,14 +2541,14 @@ function explainIndent(message: string, line: number | null, raw: string, code =
     return explain(
       "indent",
       "Spaces don't line up",
-      `${lineWord(line)} is indented a different amount than the lines around it. Line it up exactly with its block, using 4 spaces per level.`,
+      `${lineWord(line)} has a different number of spaces in front than the lines around it. Line it up exactly with the lines it belongs with, using 4 spaces for each level, like an outline.`,
       raw,
     );
   }
   if (/tabs and spaces/.test(message)) {
     return explain("indent", "Tabs and spaces", `${lineWord(line)} mixes tabs and spaces. Delete the indent and use 4 spaces instead.`, raw);
   }
-  return explain("indent", "Spaces at the start", `The spaces at the start of line ${line ?? "?"} don't fit. Use 4 spaces for each level inside a block.`, raw);
+  return explain("indent", "Spaces at the start", `The spaces at the start of line ${line ?? "?"} don't fit. Use 4 spaces for each level, like the sub-points in an outline.`, raw);
 }
 
 function explainName(
@@ -2533,7 +2561,7 @@ function explainName(
 ): CourseExplanation {
   const name = message.match(/name '([^']+)' is not defined/)?.[1];
   if (!name) {
-    return explain("unknown-name", "Unknown name", "Python does not know one of the names on this line. Make it first, or check the spelling.", raw);
+    return explain("unknown-name", "Unknown name", "Python doesn't know one of the names on this line. Check its spelling, letter for letter, and check that a line above makes it.", raw);
   }
 
   // `if ___:`: the starter's blank, still there. Python reads it as a name.
@@ -2541,7 +2569,7 @@ function explainName(
 
   const forgotImport = message.match(/Did you forget to import '([^']+)'/)?.[1];
   if (forgotImport) {
-    return explain("missing-import", "Missing import", `To use ${forgotImport}, add this line at the top of your code: import ${forgotImport}`, raw);
+    return explain("missing-import", "Missing import", `To use \`${forgotImport}\`, Python has to bring it in first, once, at the top. Add this line at the top of your code: \`import ${forgotImport}\``, raw);
   }
 
   // Unit 5: a key or a text value with no quotes, in a sheet (before the capital-letter and near-name rows).
@@ -2558,8 +2586,8 @@ function explainName(
       "randint-needs-random",
       "randint lives in random",
       imported
-        ? `${lineWord(line)} calls \`randint\` on its own, but it lives inside \`random\`. Put \`random.\` in front of it: \`${fixed}\``
-        : `${lineWord(line)} calls \`randint\` on its own, but it lives inside \`random\`, and this code never brings \`random\` in. Add \`import random\` as the first line, then write: \`${fixed}\``,
+        ? `${lineWord(line)} uses \`randint\` on its own, but it lives inside \`random\`. Put \`random.\` in front of it: \`${fixed}\``
+        : `${lineWord(line)} uses \`randint\` on its own, but it lives inside \`random\`, and this code never brings \`random\` in. Add \`import random\` as the first line, then write: \`${fixed}\``,
       raw,
     );
   }
@@ -2574,7 +2602,7 @@ function explainName(
     return explain(
       "method-as-function",
       `${name} goes after a dot`,
-      `${lineWord(line)} uses \`${name}\` like a function on its own, but it belongs to the text, after a dot: the text first, then \`.${name}()\`. Write: \`${fixed}\``,
+      `${lineWord(line)} puts the text inside \`${name}( )\`, but \`${name}\` goes after the text, with a dot: the text first, then \`.${name}()\`. Write: \`${fixed}\``,
       raw,
     );
   }
@@ -2585,7 +2613,7 @@ function explainName(
     return explain(
       "comparison-alone",
       "== asks, = makes",
-      `${lineWord(line)} uses \`==\`, which only asks "is it the same?". It makes nothing, so \`${name}\` was never made. To put a value in a box, use one \`=\`: \`${name} = ${alone.right}\``,
+      `${lineWord(line)} uses \`==\`, which only asks "is it the same as?". It makes nothing, so \`${name}\` was never made. To put a value in a box, use one \`=\`: \`${name} = ${alone.right}\``,
       raw,
     );
   }
@@ -2596,7 +2624,7 @@ function explainName(
     return explain(
       "dash-for-equals",
       "Dash or equals?",
-      `${lineWord(line)} uses a dash - where Python needs an equals sign =. To make a variable, write: ${dash}`,
+      `${lineWord(line)} has a dash \`-\` where Python needs \`=\`. A dash means minus. To make a box, write: \`${dash}\``,
       raw,
     );
   }
@@ -2609,7 +2637,7 @@ function explainName(
     return explain(
       "colon-for-equals",
       "Colon or equals?",
-      `It looks like you made ${name} with a colon. Use an equals sign to make a variable: ${name} = ${value}`,
+      `It looks like you made \`${name}\` with a colon \`:\`. A box is made with \`=\`: \`${name} = ${value}\``,
       raw,
     );
   }
@@ -2646,7 +2674,7 @@ function explainName(
       return explain(
         "lone-name",
         "A name on its own",
-        `${lineWord(line)} is only the word ${name}. Did you mean print? To show words, write print("your words").`,
+        `${lineWord(line)} is only the word \`${name}\`. Did you mean \`print\`? To show words in the Console, write \`print("your words")\`.`,
         raw,
       );
     }
@@ -2654,7 +2682,7 @@ function explainName(
       return explain(
         "lone-name",
         "A name on its own",
-        `${lineWord(line)} is only a name on its own: ${name}. Did you mean ${close}? To show what ${close} holds, write print(${close}).`,
+        `${lineWord(line)} is only the name \`${name}\`. Did you mean \`${close}\`? To show what \`${close}\` holds, write \`print(${close})\`.`,
         raw,
       );
     }
@@ -2662,14 +2690,14 @@ function explainName(
       return explain(
         "lone-name",
         "Words with no quotes",
-        `${lineWord(line)} is only the word ${name}, with no quotes and no print, so Python reads it as a name it does not know. To show it, write \`print("${name}")\``,
+        `${lineWord(line)} is only the word \`${name}\`, with no quotes and no \`print\`, so Python looks for a name it should already know, and finds none. To show it, write \`print("${name}")\``,
         raw,
       );
     }
     return explain(
       "lone-name",
       "A name on its own",
-      `${lineWord(line)} is only a name on its own, so Python looked for a variable called ${name} and found none. To make one, write ${name} = and then a value. To show words, write print("your words").`,
+      `${lineWord(line)} is only the word \`${name}\`. With no quotes, Python looks for a box named \`${name}\`, and no line makes one. If \`${name}\` is text, it needs quotes: \`"${name}"\``,
       raw,
     );
   }
@@ -2688,7 +2716,7 @@ function explainName(
       return explain(
         "example-name",
         "Name from the example",
-        `\`${name}\` comes from Mar'tu's example. This task's recipe is \`${theirs.name}\`: call that one, letter for letter.`,
+        `\`${name}\` comes from the Example, not from your task. Your task's recipe is \`${theirs.name}\`: call that one, letter for letter.`,
         raw,
       );
     }
@@ -2708,12 +2736,12 @@ function explainName(
     return explain(
       "capital-letters",
       "Capital letters matter",
-      `Python sees ${name} and ${close} as different names. Use ${close}, with the same capital letters every time.`,
+      `To Python, \`${name}\` and \`${close}\` are different names: capitals count, like in a password. Use \`${close}\`, with the same capital letters every time.`,
       raw,
     );
   }
   if (close) {
-    return explain("spelling", "Check the spelling", `Python doesn't know ${name}. Did you mean ${close}? A name must be spelled the same way every time.`, raw);
+    return explain("spelling", "Check the spelling", `Python doesn't know \`${name}\`. Did you mean \`${close}\`? Python never guesses a close name, so spell it the same way every time.`, raw);
   }
 
   const grow = text.match(new RegExp(`^\\s*${escapeRegExp(name)}\\s*([-+*/%]|//|\\*\\*)=`));
@@ -2721,7 +2749,7 @@ function explainName(
     return explain(
       "make-it-first",
       "Make it first",
-      `${lineWord(line)} changes ${name}, but ${name} has no value yet. Give it a starting value first, like ${name} = 0`,
+      `${lineWord(line)} changes \`${name}\`, but \`${name}\` has no value yet. Give it a starting value on a line above, like \`${name} = 0\``,
       raw,
     );
   }
@@ -2731,7 +2759,7 @@ function explainName(
     return explain(
       "used-too-early",
       "Used too early",
-      `Line ${line} uses ${name}, but ${name} is only made on line ${later.line}. Python runs from top to bottom, so make ${name} first.`,
+      `Line ${line} uses \`${name}\`, but \`${name}\` is only made on line ${later.line}. Python reads your code like a page, from top to bottom, so make \`${name}\` above line ${line}.`,
       raw,
     );
   }
@@ -2744,14 +2772,14 @@ function explainName(
       return explain(
         "not-made-yet",
         "Not made yet",
-        `${name} is one of this task's boxes, but no line makes it yet. Line ${bare.line} has the value ${value} on its own: put \`${name} = \` in front of it, \`${name} = ${value}\``,
+        `\`${name}\` is one of your step's boxes, but no line makes it yet. Line ${bare.line} has the value \`${value}\` on its own: put \`${name} = \` in front of it, so it reads \`${name} = ${value}\``,
         raw,
       );
     }
     return explain(
       "not-made-yet",
       "Not made yet",
-      `${name} is one of this task's boxes, but no line makes it yet. Make it ${line ? `above line ${line}` : "first"}, starting the line with \`${name} = \``,
+      `\`${name}\` is one of your step's boxes, but no line makes it yet. Make it ${line ? `above line ${line}` : "first"}, on a line that starts with \`${name} = \``,
       raw,
     );
   }
@@ -2775,12 +2803,12 @@ function explainName(
     const beforeFunctions = context?.unitOrder !== undefined && context.unitOrder < FUNCTIONS_UNIT_ORDER;
     return explain(
       "unknown-function",
-      "Unknown function",
+      beforeFunctions ? "Check the spelling" : "Unknown function",
       beforeFunctions
-        ? `Python doesn't know a function called ${name}. Check the spelling against the task, letter for letter: Python's own functions, like print(), are all small letters.`
+        ? `Python doesn't know \`${name}\`. Check the spelling against your step, letter for letter: Python's own words, like \`print\`, are all small letters.`
         : unitAtLeast(context, FUNCTIONS_UNIT_ORDER)
-          ? `Python doesn't know a recipe (function) called ${name}. Check the spelling, or make it with def before you use it.`
-          : `Python doesn't know a function called ${name}. Check the spelling, or make it with def before you use it.`,
+          ? `Python doesn't know a recipe (function) called \`${name}\`. Check the spelling, or write the recipe with \`def\` above the line that calls it.`
+          : `Python doesn't know a function called \`${name}\`. Check the spelling, or make it with \`def\` before you use it.`,
       raw,
     );
   }
@@ -2805,7 +2833,7 @@ function explainName(
   const earlier = taskNamesInstead(code, line, context, [name, ...(assignedHere ? [assignedHere] : [])]);
   if (/^[a-z][a-z0-9_]*$/.test(name) && earlier.length > 0) {
     // `mana - mana_cost`: a number is wanted there, so quotes (text) would only lead to the next crash.
-    const quotes = inMath(text, name) ? "" : ` If it's text, put quotes around it: "${name}"`;
+    const quotes = inMath(text, name) ? "" : ` If it's text, put quotes around it: \`"${name}"\``;
     // Only names a letter or two away are worth offering as "use this one": a list of unrelated task names
     // (bad_line, error_type ...) sends the student after the wrong thing.
     const nearTask = (context?.names ?? []).filter((task) => task !== name && editDistance(task.toLowerCase(), name.toLowerCase()) <= 2);
@@ -2813,7 +2841,7 @@ function explainName(
       return explain(
         "unknown-name",
         "Unknown name",
-        `Python doesn't know ${name}. If it's a variable, use this task's name: ${nearTask.slice(0, 2).join(" or ")} (spelled exactly).${quotes}`,
+        `Python doesn't know \`${name}\`. If it's a box, use your step's name, letter for letter: ${nearTask.slice(0, 2).map((task) => `\`${task}\``).join(" or ")}.${quotes}`,
         raw,
       );
     }
@@ -2835,16 +2863,25 @@ function explainName(
       return explain(
         "unknown-name",
         "Unknown name",
-        `Python doesn't know ${name}: no line in your code makes it. Line ${similar.line} makes \`${similar.name}\`, which has a similar name.${quotes}`,
+        `Python doesn't know \`${name}\`: no line in your code makes it. Line ${similar.line} makes \`${similar.name}\`, which has a similar name.${quotes}`,
         raw,
       );
     }
-    const shown = earlier.slice(-3).join(", ");
-    const whose = context?.names?.length ? "this task's names" : "one your code made";
+    const shown = earlier.slice(-3).map((entry) => `\`${entry}\``).join(" or ");
+    const whose = context?.names?.length ? "one of your step's names" : "one of the boxes your code made";
+    // A task that only shows words (Lesson 1A) has no boxes: its only name is `print`, so the fix is the quotes.
+    if (printOnlyTask(context)) {
+      return explain(
+        "unknown-name",
+        "Unknown name",
+        `\`${name}\` has no quotes, so Python looks for a name it should already know, and finds none. Words to show need quotes: \`${loneArgument(text, name) ? quoteLoneArgument(text, name) : `"${name}"`}\``,
+        raw,
+      );
+    }
     return explain(
       "unknown-name",
       "Unknown name",
-      `Python doesn't know ${name}. If it's a variable, use ${whose}: ${shown} (spelled exactly).${quotes}`,
+      `Python doesn't know \`${name}\`. If it's a box, use ${whose}, letter for letter: ${shown}.${quotes}`,
       raw,
     );
   }
@@ -2852,11 +2889,11 @@ function explainName(
     return explain(
       "unquoted-word",
       "Missing quotes?",
-      `Python doesn't know the name ${name}. Did you mean to put quotes around it? Text needs quotes: "${name}"`,
+      `\`${name}\` has no quotes, so Python looks for a name it should already know, and finds none. Words need quotes, the way you quote someone's exact words: \`"${name}"\``,
       raw,
     );
   }
-  return explain("unknown-name", "Unknown name", `Python doesn't know ${name} yet${onLine(line)}. Make it first (${name} = ...), or check the spelling.`, raw);
+  return explain("unknown-name", "Unknown name", `Python doesn't know \`${name}\` yet${onLine(line)}. Check the spelling, or make it on a line above with \`${name} = \`.`, raw);
 }
 
 /** `name` is one whole value inside a call's brackets on this line: `scout.step(north)`, `heal(hero, 5)`. */
@@ -2926,7 +2963,7 @@ function inputNames(code: string): string[] {
  * `def hero(): "Lucky"` (the student followed Python's "expected '('"), then `print(hero + " is ready.")`: a
  * TypeError about a 'function'. The slip is the def line, so it gets the def-for-variable advice.
  */
-function explainRecipeUsedAsBox(message: string, code: string, text: string, raw: string): CourseExplanation | null {
+function explainRecipeUsedAsBox(message: string, code: string, text: string, raw: string, context?: ExplainContext): CourseExplanation | null {
   if (!/'function'/.test(message)) return null;
   const used = namesOnLine(text);
   const lines = (code ?? "").split("\n");
@@ -2936,10 +2973,19 @@ function explainRecipeUsedAsBox(message: string, code: string, text: string, raw
     const value = header[2].trim() || lines.slice(at + 1).map((row) => codePart(row).trim()).find(Boolean) || "";
     const shown = value.replace(/^return\s+/, "");
     const fix = shown && !/^(pass|print\b)/.test(shown) ? `${header[1]} = ${shown}` : `${header[1]} = "your value"`;
+    // Before Unit 3 the class has not met recipes: the words say only what a box needs.
+    if (!unitAtLeast(context, FUNCTIONS_UNIT_ORDER) && context?.unitOrder !== undefined) {
+      return explain(
+        "def-for-variable",
+        "No def for a box",
+        `Line ${at + 1} uses \`def\`, so \`${header[1]}\` is not a box, and line ${errorLine(raw) ?? "?"} can't use it as a value. A box needs only its name, \`=\` and a value, with no \`def\` and no parentheses: \`${fix}\``,
+        raw,
+      );
+    }
     return explain(
       "def-for-variable",
       "def makes recipes",
-      `Line ${at + 1} uses \`def\`, so \`${header[1]}\` is a recipe, not a box, and line ${errorLine(raw) ?? "?"} can't use it as a value. \`def\` makes recipes, not boxes. A box needs only a name, \`=\` and a value, with no \`def\` and no brackets: \`${fix}\``,
+      `Line ${at + 1} uses \`def\`, so \`${header[1]}\` is a recipe, not a box, and line ${errorLine(raw) ?? "?"} can't use it as a value. \`def\` makes recipes, not boxes. A box needs only its name, \`=\` and a value, with no \`def\` and no parentheses: \`${fix}\``,
       raw,
     );
   }
@@ -3036,7 +3082,7 @@ function explainListAssignedWithCall(message: string, code: string, text: string
   return explain(
     "list-needs-square-brackets",
     "Square brackets for a list",
-    `${lineWord(line)} puts ( ) after \`${name}\`. To change one item, use square brackets: \`${swapped.line}\``,
+    `${lineWord(line)} puts parentheses ( ) after \`${name}\`. To change one item of a list, use square brackets [ ]: \`${swapped.line}\``,
     raw,
   );
 }
@@ -3057,7 +3103,7 @@ function explainListCalled(code: string, text: string, line: number | null, raw:
   return explain(
     "list-needs-square-brackets",
     "Square brackets for a list",
-    `${lineWord(line)} puts ( ) after \`${name}\`, so Python tries to call it like a recipe (function). \`${name}\` is a list. Read a list with square brackets: \`${swapped.fixed}\``,
+    `${lineWord(line)} puts parentheses ( ) after \`${name}\`, so Python tries to run it like a recipe (function). \`${name}\` is a list. Read a list with square brackets [ ]: \`${swapped.fixed}\``,
     raw,
   );
 }
@@ -3088,8 +3134,8 @@ function explainToolWithSquareBrackets(
     const fixed = `${found[1]}(${body.slice(open + 1, close)})`;
     return explain(
       "call-needs-round-brackets",
-      "Round brackets for a call",
-      `${lineWord(line)} puts square brackets after \`${tool}\`, but \`${tool}\` is a tool you call, like \`print\`. Call it with round brackets: \`${fixed}\``,
+      "Parentheses for a call",
+      `${lineWord(line)} puts square brackets [ ] after \`${tool}\`, but \`${tool}\` is a tool you call, like \`print\`. Call it with parentheses ( ): \`${fixed}\``,
       raw,
     );
   }
@@ -3120,8 +3166,8 @@ function explainCommaInBrackets(message: string, code: string, text: string, lin
       "comma-in-brackets",
       "One position per [ ]",
       nested
-        ? `${start} Row then item takes two pairs of brackets: ${rows}. A run of items takes a colon: \`[0:2]\`.`
-        : `${start} A run of items takes a colon: ${run}. In a list of lists, row then item takes two pairs of brackets, like \`[2][0]\`.`,
+        ? `${start} For row then item, use two pairs of square brackets, like the row and seat on a theater ticket: ${rows}. A run of items takes a colon: \`[0:2]\`.`
+        : `${start} A run of items takes a colon: ${run}. In a list of lists, row then item takes two pairs of square brackets, like \`[2][0]\`.`,
       raw,
     );
   }
@@ -3162,7 +3208,7 @@ function explainListToolValues(message: string, text: string, line: number | nul
     return explain(
       "wrong-number-of-values",
       "One value inside ( )",
-      `\`.${name}()\`${onLine(line)} needs one value inside its round brackets: the value to ${name === "count" ? "count" : "use"}.`,
+      `\`.${name}()\`${onLine(line)} needs one value inside its parentheses: the value to ${name === "count" ? "count" : "use"}.`,
       raw,
     );
   }
@@ -3284,7 +3330,7 @@ function explainUnquotedInList(code: string, text: string, line: number | null, 
       if (words.length < 2 || !words.every((word) => /^[A-Za-z][A-Za-z'-]*$/.test(word))) continue;
       if (words.some((word) => KEYWORDS.has(word) || names.includes(word))) continue;
       const phrase = words.join(" ");
-      return explain("unquoted-words", "Missing quotes?", `If ${phrase} is text, put quotes around it: "${phrase}". Text needs quotes.`, raw);
+      return explain("unquoted-words", "Missing quotes?", `If \`${phrase}\` is words, put quotes around them, the way you quote someone's exact words: \`"${phrase}"\`.`, raw);
     }
   }
   return null;
@@ -3505,13 +3551,13 @@ function explainOutOfRange(message: string, code: string, text: string, line: nu
     return explain(
       "nothing-at-position",
       "One past the end",
-      `${lineWord(line)} uses \`len(${name})\` as a position. \`len(${name})\` counts the items, so it is one past the last position. Use \`len(${name}) - 1\`, or \`[-1]\`.`,
+      `${lineWord(line)} uses \`len(${name})\` as a position. \`len(${name})\` counts the items, but positions start at 0, like a ruler, so the count is one past the last position. Use \`len(${name}) - 1\`, or \`[-1]\`.`,
       raw,
     );
   }
   const reads = [...mask.matchAll(/(?<![\w.\]])([A-Za-z_]\w*)\s*\[/g)].map((match) => match[1]).filter((name) => !KEYWORDS.has(name));
   const name = reads[0];
-  const last = "Positions start at 0, so the last position is one less than the number of items. `[-1]` is always the last one.";
+  const last = "Positions start at 0, like a ruler, so the last position is one less than the number of items. `[-1]` is always the last one.";
   if (name && recipeParamsAt(code, line).includes(name)) {
     return explain(
       "nothing-at-position",
@@ -3562,7 +3608,7 @@ function explainNumbersSideBySide(text: string, line: number | null, raw: string
   return explain(
     "missing-comma",
     "Numbers side by side",
-    `${lineWord(line)} has numbers side by side with nothing between them. Numbers side by side need commas, inside square brackets: ${fix}. Or give each number a box of its own.`,
+    `${lineWord(line)} has numbers side by side with nothing between them. To keep many numbers under one name, make a list: commas between the numbers, inside square brackets, ${fix}.`,
     raw,
   );
 }
@@ -3577,8 +3623,8 @@ function explainEmptySquareCall(code: string, text: string, line: number | null,
     if (!found[1].includes(".") && !recipes.has(tool) && !COMMON_BUILTINS.includes(tool)) continue;
     return explain(
       "call-needs-round-brackets",
-      "Round brackets for a call",
-      `${lineWord(line)} puts square brackets after \`${tool}\`, but \`${tool}\` is a tool you call, like \`print\`. Call it with round brackets: \`${found[1]}()\``,
+      "Parentheses for a call",
+      `${lineWord(line)} puts square brackets [ ] after \`${tool}\`, but \`${tool}\` is a tool you call, like \`print\`. Call it with parentheses ( ): \`${found[1]}()\``,
       raw,
     );
   }
@@ -3956,7 +4002,7 @@ function explainSheetName(name: string, code: string, text: string, line: number
     const keyRule = `A key is text, so it needs quotes: \`"${name}"\`. Without quotes, Python looks for a variable called \`${name}\`.`;
     // `{name: "Lucky"}`: a key, before its colon.
     if (inside?.bracket === "{" && after.startsWith(":") && !typo) {
-      return explain("unquoted-key", "Keys need quotes", `${keyRule} ${lineWord(line)} with quotes: \`${quote(at)}\``, raw);
+      return explain("unquoted-key", "Keys need quotes", `${keyRule} ${lineWord(line)}, with the quotes put in: \`${quote(at)}\``, raw);
     }
     // `lucky[name]`, `roster[1][name]`: a key inside a sheet's square brackets.
     if (inside?.bracket === "[" && inside.at > 0 && !typo) {
@@ -3972,12 +4018,12 @@ function explainSheetName(name: string, code: string, text: string, line: number
             if (close > read.at) fixed = `${fixed.slice(0, read.at)}["${read.name}"]${fixed.slice(close + 1)}`;
           }
         }
-        return explain("unquoted-key", "Keys need quotes", `${keyRule} ${lineWord(line)} with quotes: \`${fixed.trim()}\``, raw);
+        return explain("unquoted-key", "Keys need quotes", `${keyRule} ${lineWord(line)}, with the quotes put in: \`${fixed.trim()}\``, raw);
       }
     }
     // `lucky.get(glug, 0)`: the key `.get()` looks for.
     if (inside?.bracket === "(" && inside.at > 0 && /\.\s*get\s*$/.test(mask.slice(0, inside.at)) && !typo) {
-      return explain("unquoted-key", "Keys need quotes", `${keyRule} ${lineWord(line)} with quotes: \`${quote(at)}\``, raw);
+      return explain("unquoted-key", "Keys need quotes", `${keyRule} ${lineWord(line)}, with the quotes put in: \`${quote(at)}\``, raw);
     }
     // `"name": Gearshift,` inside a sheet, or `gearshift["fuel"] = starlode`: text with no quotes, as a value.
     const value = (inside?.bracket === "{" && before.endsWith(":")) ||
@@ -4161,7 +4207,7 @@ function explainSheetSyntax(message: string, code: string, text: string, line: n
     return explain(
       "equals-in-sheet",
       "A colon in a sheet",
-      `${lineWord(line)} has \`=\` inside a sheet. Inside a dictionary \`{ }\`, a colon goes between a key and its value: \`${fixed}\`. The key keeps its quotes.`,
+      `${lineWord(line)} has \`=\` inside a sheet. Inside a dictionary \`{ }\`, a colon goes between a key and its value, like a word and its meaning in a glossary: \`${fixed}\`. The key keeps its quotes.`,
       raw,
     );
   }
@@ -4196,10 +4242,10 @@ function explainSheetSyntax(message: string, code: string, text: string, line: n
           ...explain(
             "list-needs-square-brackets",
             "Square brackets for a sheet",
-            `${lineWord(line)} puts ( ) after \`${name}\`, a dictionary. Store in a dictionary with square brackets: \`${mended}\``,
+            `${lineWord(line)} puts parentheses ( ) after \`${name}\`, a dictionary. Store in a dictionary with square brackets [ ]: \`${mended}\``,
             raw,
           ),
-          slip: "round brackets where a sheet needs square ones",
+          slip: "parentheses where a sheet needs square brackets",
         };
       }
     }
@@ -4347,10 +4393,10 @@ function explainSheetCalled(code: string, text: string, line: number | null, raw
     ...explain(
       "list-needs-square-brackets",
       "Square brackets for a sheet",
-      `${lineWord(line)} puts ( ) after \`${name}\`, so Python tries to call it like a recipe. \`${name}\` is a dictionary. Read a dictionary with square brackets, not round ones: \`${swapped.fixed}\``,
+      `${lineWord(line)} puts parentheses ( ) after \`${name}\`, so Python tries to run it like a recipe. \`${name}\` is a dictionary. Read a dictionary with square brackets [ ], not parentheses: \`${swapped.fixed}\``,
       raw,
     ),
-    slip: "round brackets where a sheet needs square ones",
+    slip: "parentheses where a sheet needs square brackets",
   };
 }
 
@@ -4439,7 +4485,7 @@ function explainPositionAndKey(message: string, code: string, text: string, line
       ...explain(
         "comma-in-brackets",
         "Position, then key",
-        `\`${name}\` is a list of sheets. Position first, then the key, each in its own brackets: \`${fixed}\``,
+        `\`${name}\` is a list of sheets. Position first, then the key, each in its own square brackets: \`${fixed}\``,
         raw,
       ),
       slip: "a position and a key in one [ ]",
@@ -4604,7 +4650,7 @@ function explainNoneMath(message: string, code: string, raw: string): CourseExpl
     "math-with-none",
     "Math with None",
     silent.length === 1
-      ? `Something handed back \`None\`: nothing came back. \`${silent[0].recipe}\` (its \`def\` is on line ${silent[0].start}) has no \`return\`, so it hands back \`None\`. Does your recipe have a \`return\`?`
+      ? `Something handed back \`None\`: nothing came back. \`${silent[0].recipe}\`, made on line ${silent[0].start}, has no \`return\`, so it hands back \`None\`. Give it a \`return\` with its answer.`
       : "Something handed back `None`: nothing came back. Does your recipe have a `return`?",
     raw,
   );
@@ -4736,7 +4782,7 @@ function explainKeyError(message: string, code: string, text: string, line: numb
         };
       }
       return {
-        ...explain("comma-in-brackets", "One key per [ ]", `Inside [ ], a comma asks for two keys at once. One key per pair of brackets: \`${prefix}${parts.map((part) => `[${part}]`).join("")}\``, raw),
+        ...explain("comma-in-brackets", "One key per [ ]", `Inside [ ], a comma asks for two keys at once. One key per pair of square brackets: \`${prefix}${parts.map((part) => `[${part}]`).join("")}\``, raw),
         slip,
       };
     }
@@ -4790,7 +4836,7 @@ function explainKeyError(message: string, code: string, text: string, line: numb
       if (nextKey !== undefined && skipped.length === 1 && nextKey === skipped[0]) {
         return {
           ...explain("missing-key", "Outer key first", `\`"${key}"\` is inside \`"${skipped[0]}"\`: the outer key comes first: \`${chainCode(head, [...walked, skipped[0], key])}\``, raw),
-          slip: "the keys the other way round",
+          slip: "the keys the wrong way around",
         };
       }
       return {
@@ -5067,7 +5113,7 @@ function explainLoopOverNumber(message: string, text: string, line: number | nul
 
 /**
  * Unit 6: "'builtin_function_or_method' object is not iterable" on a `for` line (`for name, cost in spell_book.items:`):
- * the tool named without its round brackets, so the loop gets the tool itself, not what it hands back.
+ * the tool named without its parentheses, so the loop gets the tool itself, not what it hands back.
  */
 function explainLoopToolNotCalled(message: string, text: string, line: number | null, raw: string): CourseExplanation | null {
   if (!/^'(builtin_function_or_method|method)' object is not iterable/.test(message)) return null;
@@ -5078,11 +5124,11 @@ function explainLoopToolNotCalled(message: string, text: string, line: number | 
   return {
     ...explain(
       "call-needs-round-brackets",
-      "Round brackets for a call",
-      `${lineWord(line)} hands the loop \`${tool[1]}.${tool[2]}\` with no \`( )\`, so the loop gets the tool itself, not what it hands back. Call it: \`${fixed}\``,
+      "Parentheses for a call",
+      `${lineWord(line)} hands the loop \`${tool[1]}.${tool[2]}\` with no parentheses ( ), so the loop gets the tool itself, not what it hands back. Call it: \`${fixed}\``,
       raw,
     ),
-    slip: "a tool named without its ( )",
+    slip: "a tool named without its parentheses",
   };
 }
 
@@ -5228,7 +5274,7 @@ function explainType(
     return explain(
       "input-is-text",
       "input() gives text",
-      `${fromInput} came from input(), and input() always gives back text. To do math with it, turn it into a number first: int(${fromInput})`,
+      `\`${fromInput}\` came from \`input()\`, and \`input()\` always hands back text, like the writing on a paper form. To do math with it, turn it into a number first: \`int(${fromInput})\``,
       raw,
     );
   }
@@ -5240,7 +5286,7 @@ function explainType(
     return explain(
       "text-plus-number",
       "Text + number",
-      `${lineWord(line)} joins text and a number with +. Turn the number into text first with str(), like ${example}.`,
+      `${lineWord(line)} glues text to a number with \`+\`, but \`+\` only glues text to text. Turn the number into text first with \`str()\`: \`${example}\``,
       raw,
     );
   }
@@ -5250,12 +5296,12 @@ function explainType(
     return explain(
       "number-plus-text",
       "Number + text",
-      `${lineWord(line)} adds a number and text. To join them as text, turn the number into text first, like ${example}.`,
+      `${lineWord(line)} puts \`+\` between a number and text, and Python can't add those. To glue them as text, turn the number into text first: \`${example}\``,
       raw,
     );
   }
   // `def hero(): "Lucky"` then `hero + " is ready."`: Python's own hint led to a recipe, not a box.
-  const recipe = explainRecipeUsedAsBox(message, code, text, raw);
+  const recipe = explainRecipeUsedAsBox(message, code, text, raw, context);
   if (recipe) return recipe;
   // Unit 6: inside a loop over a list of sheets, a key asked of the list or a sheet used as a position; a `for` loop over
   // one number; a whole sheet or a whole list added to a number. Before the Unit 5 rows, which do not know the loop.
@@ -5297,7 +5343,7 @@ function explainType(
     return explain(
       "dash-for-equals",
       "Dash or equals?",
-      `${lineWord(line)} uses a dash - where Python needs an equals sign =. To make a variable, write: ${dash}`,
+      `${lineWord(line)} has a dash \`-\` where Python needs \`=\`. A dash means minus. To make a box, write: \`${dash}\``,
       raw,
     );
   }
@@ -5305,8 +5351,8 @@ function explainType(
   if (bar) {
     return explain(
       "bar-needs-brackets",
-      "Brackets for the gap",
-      `Python does * before -${onLine(line)}. So it stamps the text first, then tries to take a number away from text. Put brackets around the subtraction so it happens first: ${bar}`,
+      "Parentheses for the gap",
+      `Python does \`*\` before \`-\`${onLine(line)}, like PEMDAS in math. So it stamps the text first, then tries to take a number away from text. Put parentheses around the subtraction so it happens first: \`${bar}\``,
       raw,
     );
   }
@@ -5319,7 +5365,7 @@ function explainType(
     return explain(
       "number-in-quotes",
       "Math with text",
-      `${quote}${digits}${quote}${onLine(line)} has quotes, so Python treats it as text, not a number. Numbers have no quotes: write ${digits}.`,
+      `\`${quote}${digits}${quote}\`${onLine(line)} has quotes, so Python treats it as text, like the number on a jersey, not a number you can do math with. A number gets no quotes: write \`${digits}\`.`,
       raw,
     );
   }
@@ -5334,7 +5380,7 @@ function explainType(
     return explain(
       "math-with-text",
       "Math with text",
-      `${lineWord(line)} does math with text. Text in quotes is not a number, even "5". Use int() to turn text into a number.`,
+      `${lineWord(line)} does math with text. Text in quotes is not a number, even \`"5"\`. To turn text into a number, use \`int()\`.`,
       raw,
     );
   }
@@ -5354,7 +5400,7 @@ function explainType(
       return explain(
         "name-taken",
         "Name already taken",
-        `Line ${shadowed.line} uses ${shadowed.name} as a variable name, so ${shadowed.name}() stops working. Pick a different name for your variable.`,
+        `Line ${shadowed.line} uses \`${shadowed.name}\` as a box's name, so \`${shadowed.name}()\` stops working. Pick a different name for your box.`,
         raw,
       );
     }
@@ -5384,7 +5430,7 @@ function explainType(
       return explain(
         "not-a-function",
         "A box, not a recipe",
-        `${lineWord(line)} calls \`${boxCalled.name}\` with ( ), but ${made}. Only a recipe made with \`def\` can be called.${notCallable[1] === "int" || notCallable[1] === "float" ? " To multiply by it, write * between them." : ""}`,
+        `${lineWord(line)} calls \`${boxCalled.name}\` with parentheses ( ), but ${made}. Only a recipe made with \`def\` can be called.${notCallable[1] === "int" || notCallable[1] === "float" ? " To multiply by it, write `*` between them." : ""}`,
         raw,
       );
     }
@@ -5392,21 +5438,21 @@ function explainType(
       return explain(
         "use-star-to-multiply",
         "Use * to multiply",
-        `${lineWord(line)} puts ( ) right after a number. To multiply, write * between them, like 2 * (3 + 4).`,
+        `${lineWord(line)} puts parentheses right after a number. In math, 2(3 + 4) means times, but Python needs the \`*\` sign: \`2 * (3 + 4)\`.`,
         raw,
       );
     }
     return explain(
       "not-a-function",
-      "Not a function",
-      `${lineWord(line)} puts ( ) after something that is not a function. Only functions like print() can be called with ( ).`,
+      "Can't use ( ) here",
+      `${lineWord(line)} puts parentheses ( ) after a value, as if it were \`print\`. Only tools like \`print\`${unitAtLeast(context, FUNCTIONS_UNIT_ORDER) ? ", and recipes made with `def`," : ""} take parentheses after their name.`,
       raw,
     );
   }
   if (/takes \d+ positional arguments? but \d+ (were|was) given|missing \d+ required positional argument/.test(message)) {
     return explainValueCount(message, code, line, raw, context);
   }
-  return explain("wrong-kind-of-value", "Wrong kind of value", `${lineWord(line)} mixes kinds of values that don't go together: ${message}.`, raw);
+  return explain("wrong-kind-of-value", "Wrong kind of value", `${lineWord(line)} mixes kinds of values that don't go together, like adding 5 meters to 3 seconds. Python's last line names the two kinds it found.`, raw);
 }
 
 const BLOCKED_MODULES = new Set([
@@ -5439,14 +5485,14 @@ function explainParsed(parsed: Parsed, raw: string, code: string, context?: Expl
       return explain(
         "divide-by-zero",
         "Divided by zero",
-        `${lineWord(line)} divides by zero, and no one can do that, not even Mar'tu. Check the number after the /.`,
+        `${lineWord(line)} divides by zero, and no one can do that, not even Mar'tu. Check the number after the \`/\`.`,
         raw,
       );
     case "EOFError":
       return explain(
         "out-of-answers",
         "Too many questions",
-        "Your code asked for input() more times than this exercise has answers for. Check that you only ask the questions the task asks for.",
+        "Your code asks with `input()` more times than this exercise has answers for. Ask only the questions your step asks for.",
         raw,
       );
     case "TimeoutError":
@@ -5455,7 +5501,7 @@ function explainParsed(parsed: Parsed, raw: string, code: string, context?: Expl
       return explain(
         "too-much-output",
         "Printing forever?",
-        "Your code printed a huge amount, so it was stopped. A loop may be running forever: make sure it has a way to end.",
+        "Your code printed so much that it was stopped. Look for a part of your code that repeats and never ends.",
         raw,
       );
     case "ValueError": {
@@ -5465,7 +5511,7 @@ function explainParsed(parsed: Parsed, raw: string, code: string, context?: Expl
         return explain(
           "not-a-number",
           "Not a number",
-          `int() and float() can only turn text made of digits, like "12", into a number. This got ${got}.`,
+          `\`int()\` and \`float()\` can only turn text made of digits, like \`"12"\`, into a number. This one got ${got}.`,
           raw,
         );
       }
@@ -5498,7 +5544,7 @@ function explainParsed(parsed: Parsed, raw: string, code: string, context?: Expl
         return explain(
           "nothing-at-position",
           "Nothing at that position",
-          `${lineWord(line)} asks for a position the ${what} doesn't have. Positions start at 0, so 3 items have positions 0, 1 and 2.`,
+          `${lineWord(line)} asks for a position the ${what} doesn't have. Positions start at 0, like a ruler, so 3 items have positions 0, 1 and 2.`,
           raw,
         );
       }
@@ -5526,7 +5572,16 @@ function explainParsed(parsed: Parsed, raw: string, code: string, context?: Expl
         if (front) return front;
       }
       if (meant && attribute) {
-        return explain("attribute-spelling", "Check the spelling", `There is no ${attribute} here. Did you mean ${meant}?`, raw);
+        return explain("attribute-spelling", "Check the spelling", `There is no \`${attribute}\` here. Did you mean \`${meant}\`? Python never guesses a close name.`, raw);
+      }
+      // The campaign's words here ("no attribute ... the object before the dot") are programmer words: the same kind, plain words.
+      if (attribute) {
+        return explain(
+          "other",
+          "Nothing by that name after the dot",
+          `${lineWord(line)} asks for \`${attribute}\` after a dot, but the value before the dot has nothing called \`${attribute}\`. Check the spelling after the dot, and check the name before it.`,
+          raw,
+        );
       }
       break;
     }
@@ -5536,7 +5591,7 @@ function explainParsed(parsed: Parsed, raw: string, code: string, context?: Expl
         return explain(
           "no-such-module",
           "No module with that name",
-          `Python has no module called ${moduleName}. Check the spelling, like import random or import math.`,
+          `Python has no module called \`${moduleName}\`. Check the spelling, like \`import random\`.`,
           raw,
         );
       }
@@ -5550,7 +5605,7 @@ function explainParsed(parsed: Parsed, raw: string, code: string, context?: Expl
       return explain(
         "variable-in-function",
         "A box inside a recipe",
-        `Inside a recipe (function), ${variable} is changed before it has a value there. Hand it over as an ingredient, or hand the new value back with return.`,
+        `Inside a recipe (function), \`${variable}\` is changed before it has a value there. Hand it over as an ingredient, or hand the new value back with \`return\`.`,
         raw,
       );
     }
@@ -5563,7 +5618,7 @@ function explainParsed(parsed: Parsed, raw: string, code: string, context?: Expl
     return explain(
       "other",
       base.title,
-      `Python stopped with ${type}${onLine(line)}. Read the last line of the error: it says what went wrong.`,
+      `Python stopped with ${/^[AEIOU]/.test(type) ? "an" : "a"} ${type}${onLine(line)}. Python's last line, in the box, says what went wrong. Fix that line, then press Run again.`,
       raw,
     );
   }
@@ -5586,7 +5641,7 @@ export function explainCourseError(traceback: string, code: string, context?: Ex
     return explain(
       "other",
       "Python error",
-      "Read the last line of the error: it names the problem, and the line number shows where to look.",
+      "Python's last line, in the box, names the problem, and its line number shows where to look. Fix that line, then press Run again.",
       raw,
     );
   }
@@ -5601,7 +5656,7 @@ export function explainCourseError(traceback: string, code: string, context?: Ex
     return explain(
       "other",
       "Python stopped",
-      `Python stopped with ${parsed.type}${onLine(line)}${parsed.message ? `: ${parsed.message}` : ""}. Read the last line of the error: it says what went wrong.`,
+      `Python stopped with ${/^[AEIOU]/.test(parsed.type) ? "an" : "a"} ${parsed.type}${onLine(line)}. Python's last line, in the box, says what went wrong. Fix that line, then press Run again.`,
       raw,
     );
   }
@@ -5613,7 +5668,7 @@ const PARSE_ERRORS = new Set(["SyntaxError", "IndentationError", "TabError"]);
 const STILL_UNQUOTED = new Set<CourseErrorKind>(["unquoted-word", "unquoted-words", "missing-quote", "unknown-name", "lone-name"]);
 
 /**
- * "One fixed! Python found the next one.": only when something really was fixed. The error moved to a later
+ * "One fixed! Python found the next mistake.": only when something really was fixed. The error moved to a later
  * line, or the same line now parses (a SyntaxError became a run-time error) and the new error is not the same
  * slip again (`companion = Bomb Shell` -> `companion = kratos` still has no quotes), or the same line now fails
  * another way at run time (a NameError mended, and now a TypeError). Never for a new error on the same line that
@@ -5678,16 +5733,16 @@ const SLIP_NAMES: Record<CourseErrorKind, string> = {
   "make-it-first": "a box changed before it is made",
   "not-made-yet": "a box that is not made yet",
   "used-too-early": "a box used before it is made",
-  "unknown-function": "a function Python doesn't know",
+  "unknown-function": "a tool Python doesn't know",
   "unknown-name": "a name Python doesn't know",
   "missing-import": "a missing import",
-  "never-closed": "a bracket that never closes",
-  "extra-bracket": "an extra bracket",
-  "brackets-dont-match": "brackets that don't match",
+  "never-closed": "a ( or [ that never closes",
+  "extra-bracket": "an extra closing mark",
+  "brackets-dont-match": "marks that don't pair up",
   "missing-comma": "two values side by side",
   "two-single-quotes": "two ' marks used as a quote",
   "missing-comma-in-list": "a missing comma in a list",
-  "print-needs-brackets": "print without brackets",
+  "print-needs-brackets": "print without parentheses",
   "compare-with-double-equals": "one `=` where a question needs two",
   "def-needs-brackets": "a def line without ( )",
   "missing-colon": "a missing colon",
@@ -5706,7 +5761,7 @@ const SLIP_NAMES: Record<CourseErrorKind, string> = {
   "keyword-capital": "a capital letter in one of Python's words",
   "compare-number-text": "a number compared with text",
   "equals-in-print": "one `=` inside print",
-  "method-as-function": "a text method used without a dot",
+  "method-as-function": "a text tool used without a dot",
   "randint-needs-random": "`randint` used on its own",
   "assert-failed": "an assert that came out False",
   "recipe-like-math": "a recipe written like math",
@@ -5716,10 +5771,10 @@ const SLIP_NAMES: Record<CourseErrorKind, string> = {
   "recipe-called-too-early": "a recipe called before its `def`",
   "made-inside-recipe": "a name that only lives inside a recipe",
   "not-in-recipe": "a name this recipe never makes",
-  "store-backwards": "a store the wrong way round",
+  "store-backwards": "a box filled the wrong way around",
   "quoted-recipe-name": "quotes around a recipe's name",
-  "list-needs-square-brackets": "round brackets where a list needs square ones",
-  "call-needs-round-brackets": "square brackets where a call needs round ones",
+  "list-needs-square-brackets": "parentheses where a list needs square brackets",
+  "call-needs-round-brackets": "square brackets where a call needs parentheses",
   "comma-in-brackets": "a comma inside [ ] where one position goes",
   "list-plus-item": "one item joined to a list with `+`",
   "tool-after-dot": "a tool written after a dot",
@@ -5742,8 +5797,8 @@ const SLIP_NAMES: Record<CourseErrorKind, string> = {
   "number-in-quotes": "a number in quotes",
   "bar-needs-brackets": "math in the wrong order",
   "name-taken": "a name Python already uses",
-  "use-star-to-multiply": "brackets right after a number",
-  "not-a-function": "( ) after something that is not a function",
+  "use-star-to-multiply": "parentheses right after a number",
+  "not-a-function": "parentheses after something that can't use them",
   "wrong-number-of-values": "the wrong number of values handed over",
   "wrong-kind-of-value": "values of kinds that don't go together",
   "divide-by-zero": "a divide by zero",
@@ -5753,14 +5808,14 @@ const SLIP_NAMES: Record<CourseErrorKind, string> = {
   "missing-key": "a missing key",
   "attribute-spelling": "a misspelled name after a dot",
   "no-such-module": "a module name Python doesn't know",
-  "never-ending-calls": "a function that never stops calling itself",
-  "variable-in-function": "a box changed inside a function",
+  "never-ending-calls": "a recipe that never stops calling itself",
+  "variable-in-function": "a box changed inside a recipe",
   timeout: "a program that ran too long",
   "too-much-output": "a program that printed too much",
   "bare-value": "a value on its own",
   "bare-name": "a name on its own",
   "dash-no-effect": "a dash that keeps nothing",
-  "print-without-brackets": "print without brackets",
+  "print-without-brackets": "print without parentheses",
   "player-message": "a problem loading Python",
   other: "an error Python names in its last line",
 };
@@ -5784,21 +5839,21 @@ export function leanExplanation(full: CourseExplanation, raw = full.raw): Course
   // Titles are plain text (no code marks). A name that starts with a code word (or a sign, `=`) keeps its small letters.
   const plain = name.replace(/`/g, "").replace(/^(a|an|the) /, "");
   const title = /^(def|else|elif|if|print|randint|input|for|while|break)\b|^[^A-Za-z]/.test(plain)
-    ? `Slip: ${name.replace(/`/g, "")}`
+    ? `Mistake: ${name.replace(/`/g, "")}`
     : `${plain.charAt(0).toUpperCase()}${plain.slice(1)}`;
-  const slip = full.lean ?? `The slip is ${line ? `on line ${line}` : "in your code"}: ${name}.`;
+  const mistake = full.lean ?? `The mistake is ${line ? `on line ${line}` : "in your code"}: ${name}.`;
   return {
     ...full,
     explainer: "lean",
     title,
-    hint: `${slip} Python's last line, below, says what it found. Mend it yourself, then Run again.`,
+    hint: `${mistake} Python's last line, below, says what it found. Fix it yourself, then press Run again.`,
   };
 }
 
 function explainTimeout(code: string, raw: string): CourseExplanation {
   const loop = /^\s*while\b/m.test(code ?? "")
-    ? "A while loop may never end: make sure its condition can become False."
-    : "Look for a loop that never ends.";
+    ? "A `while` loop may never end: make sure its question can become False."
+    : "Look for a part of your code that repeats and never ends.";
   return explain("timeout", "Ran too long", `Your code ran for more than 5 seconds, so it was stopped. ${loop}`, raw);
 }
 
@@ -5875,13 +5930,27 @@ function findQuietSlip(code: string, options: { missingName?: string; context?: 
     const raw = "";
 
     if (STRING_LITERAL.test(body) || NUMBER_LITERAL.test(body) || body === "True" || body === "False") {
-      const keep = missing ?? taskName ?? (STRING_LITERAL.test(body) ? "character" : "number");
+      // The box to name: the one a check looked for, else the box Mar'tu's version fills with this same value, else the
+      // only one of the task's boxes the code has not made yet (or the task's only box). With none of those, no box is
+      // named (never another step's box).
+      const sameValue = solution
+        .split("\n")
+        .map((row) => codePart(row).match(/^\s*([A-Za-z_]\w*)\s*=(?!=)\s*(.+?)\s*$/))
+        .find((made) => made !== null && made[2] === body)?.[1];
+      const boxes = (options.context?.names ?? []).filter((name) => !COMMON_BUILTINS.includes(name));
+      const unmade = boxes.filter((name) => !defined.has(name));
+      const keep = missing ?? sameValue ?? (unmade.length === 1 ? unmade[0] : boxes.length === 1 ? boxes[0] : undefined) ?? (taskName ? undefined : null);
+      const lost = `${where} is a value with no name in front: \`${body}\`. Python reads it and throws it away, like a phone number saved with no contact name.`;
       // A print-only task (Lesson 1A): boxes are not taught yet, so the only fix is print.
       const hint = missing
-        ? `${where} is a value on its own: ${body}. Python reads it, then forgets it, because no variable keeps it. To keep it, put ${keep} = in front of it: ${keep} = ${body}`
+        ? `${lost} Put \`${keep} = \` in front of it: \`${keep} = ${body}\``
         : printOnly
-          ? `${where} is ${STRING_LITERAL.test(body) ? "words in quotes" : "a value"} with no print, so Python reads it, then forgets it. To show it, write \`print(${body})\``
-          : `${where} is a value on its own: ${body}. Python reads it, then forgets it. To show it, put it inside print( ): print(${body}). To keep it, put a name and = in front, like ${keep} = ${body}`;
+          ? `${where} is ${STRING_LITERAL.test(body) ? "words in quotes" : "a value"} with no \`print\`, so Python reads it and throws it away. To show it in the Console, write \`print(${body})\``
+          : keep
+            ? `${lost} Put \`${keep} = \` in front of it: \`${keep} = ${body}\``
+            : keep === undefined
+              ? `${lost} To keep it, put the box's name from your step and \`=\` in front of it.`
+              : `${lost} To keep it, put a box's name and \`=\` in front of it. To show it instead, put it inside \`print( )\`: \`print(${body})\``;
       return {
         ...explain("bare-value", "A value with no name", hint, raw),
         kind: "bare-value",
@@ -5893,7 +5962,7 @@ function findQuietSlip(code: string, options: { missingName?: string; context?: 
         ...explain(
           "print-without-brackets",
           "print needs ( )",
-          `${where} says print with no brackets, so nothing is shown. Put what to show inside brackets: print("your words")`,
+          `${where} says \`print\` with no parentheses, so nothing shows in the Console. Put what to show inside parentheses: \`print("your words")\``,
           raw,
         ),
         kind: "print-without-brackets",
@@ -5909,7 +5978,7 @@ function findQuietSlip(code: string, options: { missingName?: string; context?: 
           "A name on its own",
           recipe
             ? `${where} is only the name \`${body}\`, with no \`()\`, so the recipe never runs. To call it, write \`${body}()\``
-            : `${where} is only the name ${body}, so Python looks inside it and does nothing else. To show what ${body} holds, write print(${body}).`,
+            : `${where} is only the name \`${body}\`, so Python looks inside the box and does nothing else. To show what \`${body}\` holds, write \`print(${body})\`.`,
           raw,
         ),
         kind: "bare-name",
@@ -5927,10 +5996,10 @@ function findQuietSlip(code: string, options: { missingName?: string; context?: 
       const spendsInSolution = new RegExp(`^\\s*${escapeRegExp(left)}\\s*(=\\s*${escapeRegExp(left)}\\s*-|-=)`, "m").test(solution);
       const keepAnswer = defined.has(left) && !STRING_LITERAL.test(right) && (spendsBox || spendsInSolution);
       const hint = keepAnswer
-        ? `${where} works out ${left} - ${right}, but nothing keeps the answer, so ${left} does not change. To keep it, put \`${left} =\` in front: \`${left} = ${left} - ${right}\``
+        ? `${where} works out \`${left} - ${right}\`, but nothing keeps the answer, so \`${left}\` doesn't change. Put \`${left} =\` in front, so the answer goes back in the box: \`${left} = ${left} - ${right}\``
         : printOnly
-          ? `${where} has a name and a dash -, but this task only shows words. To show them, write \`${printFix(right)}\``
-          : `${where} uses a dash - where = belongs, so nothing is kept. To store the value, write: ${left} = ${right}`;
+          ? `${where} has a word and a dash \`-\`, but this step only shows words. To show words in the Console, write \`${printFix(right)}\``
+          : `${where} has a dash \`-\` where \`=\` belongs, so nothing goes in the box. A dash means minus. To put the value in the box, write: \`${left} = ${right}\``;
       return {
         ...explain("dash-no-effect", "Dash or equals?", hint, raw),
         kind: "dash-no-effect",
@@ -5947,12 +6016,13 @@ function findQuietSlip(code: string, options: { missingName?: string; context?: 
       if (asked.op === "==" && left) {
         const box = `${left} = ${asked.right}`;
         // `passed == roll >= needed` is a box being made with the wrong sign: showing it makes no sense.
-        const show = COMPARE_ANYWHERE.test(maskStrings(asked.right)) ? "" : ` To show the answer, put it inside print( ): \`print(${question})\``;
-        hint = `${where} uses \`==\`, which only asks "is it the same?". Python works out True or False, then forgets it, so nothing changes and nothing shows. To put a new value in the box, use one \`=\`: \`${box}\`.${show}`;
+        const show = COMPARE_ANYWHERE.test(maskStrings(asked.right)) ? "" : ` To show the answer instead, write \`print(${question})\``;
+        hint = `${where} uses \`==\`, which only asks "is it the same as?". Python works out True or False, then throws the answer away, so nothing changes and nothing shows. To put a new value in the box, use one \`=\`: \`${box}\`.${show}`;
       } else {
-        const notMade = (options.context?.names ?? []).find((name) => !defined.has(name) && !COMMON_BUILTINS.includes(name));
+        // A tool's name in the task's names (`append`) is never a box to keep the answer in.
+        const notMade = (options.context?.names ?? []).find((name) => !defined.has(name) && !COMMON_BUILTINS.includes(name) && !CALLED_TOOLS.has(name));
         const keep = missing ?? notMade ?? "answer";
-        hint = `${where} asks \`${question}\` and gets True or False, but nothing keeps or shows the answer. To keep it, put a box name and \`=\` in front: \`${keep} = ${question}\`. To show it, put it inside print( ).`;
+        hint = `${where} asks \`${question}\` and gets True or False, but nothing keeps or shows the answer. To keep it, put a box's name and \`=\` in front: \`${keep} = ${question}\`. To show it instead, put it inside \`print( )\`.`;
       }
       return {
         ...explain("comparison-alone", "A question on its own", hint, raw),

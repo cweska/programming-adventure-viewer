@@ -100,7 +100,7 @@ export function CompareView({
       </h3>
       {retyping ? (
         <p className="ex-compare-note" data-testid="compare-retype-note">
-          Now type it yourself in the editor, then press Run. You can look again any time.
+          Now type it yourself in your code, then press Run. You can look again any time.
         </p>
       ) : (
         <>
@@ -121,7 +121,7 @@ export function CompareView({
           data-testid="compare-copy-confirm"
           ref={confirmRef}
           role="group"
-          aria-label="Copy Mar'tu's version into your editor?"
+          aria-label="Copy Mar'tu's version into your code?"
           onKeyDown={onConfirmKeyDown}
         >
           <p>Copy Mar&apos;tu&apos;s version over your code? You learn more by typing it yourself.</p>
@@ -160,7 +160,7 @@ export function CompareView({
             aria-expanded={confirmCopy}
             onClick={() => setConfirmCopy(true)}
           >
-            Copy into my editor
+            Copy into my code
           </button>
         )}
         <button type="button" className="ex-quiet" data-testid="compare-close" onClick={onClose}>

@@ -73,7 +73,7 @@ test.describe("Intro to Python, Unit 1: Hello World", () => {
       await pythonReady(page);
       await setCode(page, 'print("Shield up.")\nprint("Barrier\'s holding.")\nprint(Steady)\n');
       await runAndWait(page, 1);
-      await expect(page.getByTestId("help-crash")).toContainText("Mend line 3 first.");
+      await expect(page.getByTestId("help-crash")).toContainText("Fix line 3 first.");
       await expect(page.getByTestId("help-crash")).not.toContainText("its last line");
       // Help is for step 3 ("Mend line 3 ..."), not step 1, whose line is already right.
       await expect(page.getByTestId("help")).toHaveAttribute("data-step", "mend-line-3");
@@ -91,7 +91,7 @@ test.describe("Intro to Python, Unit 1: Hello World", () => {
       await expect(page.getByTestId("got-further")).toHaveCount(0);
       await setCode(page, 'print("Shield up.")\nPrint("Barrier\'s holding.")\nprint(Steady)\n');
       await runAndWait(page, 2);
-      await expect(page.getByTestId("got-further")).toHaveText(/Python got further: that slip is mended\./);
+      await expect(page.getByTestId("got-further")).toHaveText(/Python got further: you fixed that mistake\./);
       await expect(page.getByTestId("explainer-hint")).not.toContainText("One fixed");
     });
 
@@ -101,10 +101,10 @@ test.describe("Intro to Python, Unit 1: Hello World", () => {
       await pythonReady(page);
       await setCode(page, 'weapon = "Telegun"\ncompanion = "Gearshift"\nglug_sips = 3\n"Lucky"\nprint(hero)\nprint(weapon)\n');
       await runAndWait(page, 1);
-      await expect(page.getByTestId("help-crash")).toContainText("Mend line 5 first.");
+      await expect(page.getByTestId("help-crash")).toContainText("Fix line 5 first.");
       await expect(page.getByTestId("help")).toHaveAttribute("data-crash-only", "true");
       await expect(page.getByTestId("help-button")).toHaveCount(0);
-      await expect(page.getByTestId("explainer-hint")).toContainText("hero is one of this task's boxes");
+      await expect(page.getByTestId("explainer-hint")).toContainText("hero is one of your step's boxes");
       await expect(page.getByTestId("explainer-hint")).toContainText('hero = "Lucky"');
     });
 

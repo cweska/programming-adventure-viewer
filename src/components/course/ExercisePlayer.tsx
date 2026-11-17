@@ -266,7 +266,7 @@ function WorkedExample({ example }: { example: NonNullable<Playable["example"]> 
       <figcaption className="ex-example-label">
         <span className="ex-example-tag">Example</span> not your task
       </figcaption>
-      <p className="ex-example-note">Read it and see what it prints. Your task is in the steps below.</p>
+      <p className="ex-example-note">Read it and see what it prints. Your task is in Your steps, below.</p>
       <pre className="ex-example-code" aria-label="Example code" data-testid="example-code">
         <code>{example.code.replace(/\n$/, "")}</code>
       </pre>
@@ -337,9 +337,7 @@ function CampaignLink({ link, glossary }: { link: NonNullable<Playable["campaign
     <details className="ex-campaign" data-testid="campaign-link">
       <summary>
         <img className="ex-cameo" src={publicPath("/sprites/lucky.svg")} alt="" aria-hidden="true" />
-        <span>
-          <span className="ex-cameo-name">Lucky:</span> &ldquo;What&apos;s in it for me?&rdquo;
-        </span>
+        <span>Where you saw this in the game</span>
       </summary>
       <div className="ex-campaign-body">
         <Prose text={link.why} glossary={glossary} />
@@ -409,8 +407,8 @@ type CheckpointState = "passed" | "active" | "pending";
 
 const STATE_MARK: Record<CheckpointState, { icon: string; words: string }> = {
   passed: { icon: "✓", words: "Done" },
-  active: { icon: "●", words: "Up next" },
-  pending: { icon: "○", words: "Not done yet" },
+  active: { icon: "●", words: "The step you're on" },
+  pending: { icon: "○", words: "Still to come" },
 };
 
 /** A step that passed before but fails on the latest run (its pass stays recorded). */
@@ -639,7 +637,7 @@ export function ExercisePlayer({
       : [];
   /** Done before, but the latest run is not right now: the done panel stays, softer, without the celebration. */
   const slippedSinceDone = done && view?.grade != null && !view.grade.allPassed && !view.revealPass;
-  // While a crash stands, Help aims at the line Python stopped on, never at step 1 under "Mend line 3 first.":
+  // While a crash stands, Help aims at the line Python stopped on, never at step 1 under "Fix line 3 first.":
   // a step that names that line ("Mend line 3 ...") gets the Help. When the steps name other lines and none
   // names this one, their Help would talk about a different line, so it waits until the code runs. In a
   // debugging exercise, a crash that got further than the last one aims past the slip just mended (crashAim).
@@ -785,7 +783,7 @@ export function ExercisePlayer({
     }
     setInsertNote(
       copied
-        ? `Click in your code where Mar'tu's pick should go. Then press the pick again. (It is also copied, ready to paste: ${ready})`
+        ? `Click in your code where Mar'tu's pick should go. Then press the pick again. It's also copied, ready to paste: ${ready}`
         : `Click in your code where Mar'tu's pick should go. Then press the pick again. Mar'tu's pick is ${ready}`,
     );
   }
@@ -815,7 +813,7 @@ export function ExercisePlayer({
         engine: exercise.engine,
       });
       // What the messages may mention: the example's names, the task's names, and the last crash (for
-      // "One fixed! Python found the next one."), passed only when the last run crashed too. The unit's order
+      // "One fixed! Python found the next mistake."), passed only when the last run crashed too. The unit's order
       // keeps advice to what the class has met; a debugging exercise shows its own progress line; a lean
       // exercise names the slip and the line, not the fix.
       const context: ExplainContext = {
@@ -899,7 +897,7 @@ export function ExercisePlayer({
         // Past the last crash: the error moved on (or is a new slip), or the code runs now and a step is next.
         const lastCrash = previous?.grade?.crashed === true ? previous.explanation : null;
         // The code runs now, but the step that crash was about still fails (`=>` mended to a lone `=`, which
-        // runs): the slip is not mended, so no "that slip is mended" line.
+        // runs): the slip is not mended, so no "you fixed that mistake" line.
         const crashStepStillFails =
           typeof previous?.crashStep === "number" && grade.firstFailing !== null && grade.firstFailing <= previous.crashStep;
         const gotFurther =
@@ -1167,21 +1165,21 @@ export function ExercisePlayer({
             // The crash is part of the task (Anatomy of a fizzle): read the message first, then switch the line off.
             <p className="ex-task-line" data-testid="task-line" data-crash="true" data-switch-off="true">
               <span className="ex-task-label">{`Python stopped on line ${crashAt}.`}</span>{" "}
-              {`Read its message under your code first: your ${noun.toLowerCase()}s come from it. Then put # at the start of line ${crashAt} and Run again.`}
+              {`That's part of this ${noun.toLowerCase()}. First read the box in the Console: your ${noun.toLowerCase()}s come from it. Then put # at the start of line ${crashAt} and press Run again.`}
             </p>
           ) : activeCheckpoint && !done && endless ? (
             // A run that never ended checks nothing either, but the line it was stopped on is no slip: the loop is.
             <p className="ex-task-line" data-testid="task-line" data-crash="true" data-endless="true">
               <span className="ex-task-label">First, make the loop end.</span>{" "}
-              {`Python stopped your program before it could check your ${noun.toLowerCase()}s. The message under your code says why.`}
+              {`Python stopped your program before it could check your ${noun.toLowerCase()}s. The box in the Console says why.`}
             </p>
           ) : activeCheckpoint && !done && crashed ? (
             // A crash checks nothing, so "step 1" may already be right: the line Python stopped at comes first.
             <p className="ex-task-line" data-testid="task-line" data-crash="true">
-              <span className="ex-task-label">{`First, mend ${slipAt ? `line ${slipAt}` : crashAt ? `line ${crashAt}` : "the error"}.`}</span>{" "}
-              {`${slipAt && crashAt ? `Python stopped on line ${crashAt}` : "Python stopped there"}, so it could not check your ${noun.toLowerCase()}s yet. ${
+              <span className="ex-task-label">{`First, fix ${slipAt ? `line ${slipAt}` : crashAt ? `line ${crashAt}` : "the error"}.`}</span>{" "}
+              {`${slipAt && crashAt ? `Python stopped on line ${crashAt}` : "Python stopped there"}, so it couldn't check your ${noun.toLowerCase()}s yet. ${
                 // A lean explainer names the slip, not the fix: the line promises only what the message gives.
-                exercise.explainer === "lean" ? "The message under your code names the slip." : "The message under your code says how."
+                exercise.explainer === "lean" ? "The box in the Console names the mistake." : "The box in the Console says how to fix it."
               }`}
             </p>
           ) : activeCheckpoint && !done ? (
@@ -1331,7 +1329,7 @@ export function ExercisePlayer({
               {stepBoard ? (
                 <>
                   <p className="ex-muted" data-testid="assemble-step-note">
-                    Build {noun.toLowerCase()} {stepBoard.step + 1} from pieces. The rest of Mar&rsquo;tu&rsquo;s program stays where it is. Then press &ldquo;Put it in the editor&rdquo; and Run it.
+                    Build {noun.toLowerCase()} {stepBoard.step + 1} from pieces. The rest of Mar&rsquo;tu&rsquo;s program stays where it is. Then press &ldquo;Put it in my code&rdquo; and press Run.
                   </p>
                   <pre className="ex-assemble-context" data-testid="assemble-context" aria-label="The program around your lines">
                     {stepBoard.context.map((entry, index) =>
@@ -1350,19 +1348,19 @@ export function ExercisePlayer({
                   </pre>
                 </>
               ) : (
-                <p className="ex-muted">Build the program from pieces. Then press &ldquo;Put it in the editor&rdquo; and Run it.</p>
+                <p className="ex-muted">Build the program from pieces. Then press &ldquo;Put it in my code&rdquo; and press Run.</p>
               )}
               {isBlankOrStarter(code, exercise.starter) ? null : (
                 <p className="ex-muted" data-testid="assemble-replaces">
                   {stepBoard
-                    ? "Putting it in the editor replaces the code there now with Mar\u2019tu\u2019s program and your pieces."
-                    : "Putting it in the editor replaces the code there now."}
+                    ? "Putting it in your code replaces the code that\u2019s there now with Mar\u2019tu\u2019s program and your pieces."
+                    : "Putting it in your code replaces the code that\u2019s there now."}
                 </p>
               )}
               <ParsonsBoard blocks={pieces} value={assembled} onChange={setAssembled} idPrefix="assemble" />
               <div className="ex-assemble-actions">
                 <button type="button" data-testid="assemble-insert" onClick={insertAssembled} disabled={assembled.length === 0}>
-                  Put it in the editor
+                  Put it in my code
                 </button>
                 <button
                   type="button"
@@ -1397,7 +1395,7 @@ export function ExercisePlayer({
             </span>{" "}
             <span className="ex-shortcut">Tip: Ctrl+Enter runs your code.</span>
             <span className="ex-editor-keys" id={`${inputId}-editor-keys`} data-testid="editor-keys">
-              Tab moves past the editor until you type in it. Once you type, Tab adds spaces: press Esc, then Tab to move on.
+              Tab moves past your code until you type in it. Once you type, Tab adds spaces: press Esc, then Tab, to move on.
             </span>
           </p>
 
@@ -1420,7 +1418,7 @@ export function ExercisePlayer({
               />
               {answersChanged ? (
                 <p className="ex-stdin-note" data-testid="stdin-note">
-                  The steps are checked with Mar&apos;tu&apos;s answers ({exercise.stdin?.join(", ") || "none"}). Put them back to pass.{" "}
+                  Your steps are checked with Mar&apos;tu&apos;s answers: {exercise.stdin?.join(", ") || "none"}. Put them back to pass.{" "}
                   <button type="button" className="ex-quiet" data-testid="stdin-reset" onClick={() => setStdinText(stdinBoxText(exercise.stdin))}>
                     Use Mar&apos;tu&apos;s answers
                   </button>
@@ -1491,8 +1489,8 @@ export function ExercisePlayer({
                 text={
                   slippedSinceDone
                     ? view?.grade?.crashed
-                      ? "This one is still done, yes? But your last run stopped at an error. Mend it, then Run again."
-                      : "This one is still done, yes? But your last run has a step that is not right now. Check it again."
+                      ? "This one is still done, yes? But your last run stopped at an error. Fix it, then press Run again."
+                      : "This one is still done, yes? But in your last run, one step isn't right anymore. Check it again."
                     : // "You did that alone" only when it is true: no Help past Where to look, no Mar'tu's version.
                       justFinished && exercise.solo && mode !== "testout" && soloUnaided(saved)
                       ? "You did that alone. I saw."
@@ -1570,7 +1568,7 @@ function ExerciseConsole({
       <h3>Console</h3>
       {view === null ? (
         <pre className="program-output ex-placeholder" data-testid="stdout">
-          Press Run to see what your code prints.
+          Press ▶ Run, and what your code prints shows up here.
         </pre>
       ) : view.failure ? null : (
         <pre className="program-output" data-testid="stdout">
@@ -1612,7 +1610,7 @@ function ExerciseConsole({
             {view.sameError ? (
               <p className="ex-same-error" data-testid="same-error">
                 Same error as last time.{" "}
-                {crashLine(view.explanation.raw) ? `Look closely at line ${crashLine(view.explanation.raw)}.` : "Look closely at the line it names."}
+                {crashLine(view.explanation.raw) ? `Look closely at line ${crashLine(view.explanation.raw)}.` : "Look closely at the line number in Python's last line."}
               </p>
             ) : null}
             <p className="ex-explainer-title">{view.explanation.title}</p>
@@ -1649,7 +1647,7 @@ function ExerciseConsole({
         ) : null}
         {view?.revealPass ? (
           <p className="ex-result is-reveal" data-testid="reveal-passed">
-            <span aria-hidden="true">✓</span> Mar&apos;tu&apos;s version works. Now write it yourself: the button is just below.
+            <span aria-hidden="true">✓</span> Mar&apos;tu&apos;s version works. Now write it yourself: the button is right below.
           </p>
         ) : view?.allPassed ? (
           <p className="ex-result is-all" data-testid="all-passed">

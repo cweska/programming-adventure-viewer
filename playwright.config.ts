@@ -3,6 +3,9 @@ import { defineConfig, devices } from "@playwright/test";
 /** The course parity spec: one independent page per test, so it runs several at a time. */
 const COURSE_PARITY = /intro-python-units\.spec\.ts$/;
 
+/** E2E_PORT lets two checkouts (git worktrees) run their suites at the same time without sharing a server. */
+const PORT = Number(process.env.E2E_PORT || 3000);
+
 export default defineConfig({
   testDir: "e2e",
   timeout: 180_000,
@@ -15,7 +18,7 @@ export default defineConfig({
   retries: 0,
   reporter: "list",
   use: {
-    baseURL: "http://127.0.0.1:3000",
+    baseURL: `http://127.0.0.1:${PORT}`,
     trace: "retain-on-failure",
     ...devices["Desktop Chrome"],
     // Local runs on a machine whose preinstalled Chromium does not match this Playwright version can point
@@ -28,8 +31,8 @@ export default defineConfig({
     { name: "course-parity", testMatch: COURSE_PARITY, fullyParallel: true, workers: 3 },
   ],
   webServer: {
-    command: "npm run start",
-    url: "http://127.0.0.1:3000",
+    command: `npm run start -- -p ${PORT}`,
+    url: `http://127.0.0.1:${PORT}`,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
   },

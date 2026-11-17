@@ -14,7 +14,8 @@ Help ladder as fields (FORMAT.md, the order the site shows them): hints[0] Where
 (a tiny example with other names), the last hint Show me how: the step's own line in backticks (``Write `x = 1`.``),
 whose start up to its first `(` or `=` becomes Start me off. another_way, assemble (More structure), then Compare.
 Start me off is the line's left side (`passed =`, `print(`), so it never makes the step's decision. In the debug
-steps (2A-05, 2A-S) hints[0] is "Read Python's last line" (or, for a quiet bug, the last line the program printed).
+steps (2A-05) hints[0] is the reading routine, "read the box in the Console: first its title, then Python's last
+line" (or, for a quiet bug, the last line in the Console); the SOLO (2A-S) starts from what the Console shows.
 The SOLO sets `explainer="lean"`: the crash explainer names the
 kind of slip and the line, not the fix (not applied back to the live Unit 1).
 Terminology (2.9): "box (variable)" in Units 1-2; `=` is read "gets", `==` is read "is the same as".
@@ -39,11 +40,12 @@ Check builders below (plain string templates; messages never repeat a student's 
                 that ends in its answer
   print_check() PRINT (from Unit 1): print(name), not the value typed by hand, and AFTER the box's last `=` line
                 (read from the code: True and False appear on other lines, so the console cannot tell)
-Rerun messages (teacher ruling on the Unit 2 reviews): the fix comes first, and the evidence goes in brackets at
-the end, "(Mar'tu's check tried `dex = 16`, only inside the check: ...)", about 35 words or fewer in all. So the
-student reads what to do before why, and the rerun still reads as fair, not as a trick. A box the starter makes
-that has gone missing gets "Keep the box `x` from the starter" (STARTER_BOXES, and `kept=True` in bool_box); a
-box the student makes gets "Make a box named `x`". A box still holding the starter's placeholder says so.
+Rerun messages (teacher ruling on the Unit 2 reviews, reworded by the plain-language pass, guide 4.3): the fix
+comes first, then the labelled evidence with no brackets, "Mar'tu tested your code with a test number, `dex = 16`:
+...", then "Don't type the test number.", about 35 words in all. So the student reads what to do before why, and
+the rerun still reads as fair, not as a trick. A box the starter makes that has gone missing gets "Your code needs
+the box `x` it started with" (STARTER_BOXES, and `kept=True` in bool_box); a box the student makes gets "Make a
+box named `x`". A box still holding the starter's placeholder says so.
 
 Verify:
     PROTOTYPE_DIR=<staging dir> python3 docs/intro-to-python/prototypes/harness.py u02a
@@ -91,11 +93,11 @@ _RERUN_DEF = (
     f"_KEPT = {STARTER_BOXES!r}\n"
     "def _gone(_k):\n"
     "    if _k in _KEPT:\n"
-    "        return 'Keep the box `' + _k + '` from the starter: a line that starts `' + _k + ' = `.'\n"
+    "        return 'Your code needs the box `' + _k + '` it started with. Keep a line that starts `' + _k + ' = `.'\n"
     "    return 'Make a box named `' + _k + '`: start a line with `' + _k + ' = `.'\n"
     "def _keepline(_k, _kind):\n"
-    "    return ('Keep the line that sets `' + _k + '` as `' + _k + \" = value`. Mar'tu's check changes that line \"\n"
-    "            'to try other ' + _kind + '.')\n"
+    "    return ('Keep `' + _k + ' = ` on a line of its own, with a value after it. Mar' + chr(39) + 'tu tests your '\n"
+    "            'code by changing that line to other ' + _kind + '.')\n"
     "import ast as _ast, io as _io, sys as _sys\n"
     "def _rerun(_changes):\n"
     "    _tree = _ast.parse(_source)\n"
@@ -139,25 +141,42 @@ def _kind(changes):
     return "numbers" if all(type(v) is int for v in changes.values()) else "values"
 
 
+def _test_words(changes):
+    """How a rerun's made-up values are named (plain-language guide 4.3.3): ("a test number", "Don't type the test
+    number."), or "test values" and so on for text and for more than one change."""
+    noun = "number" if all(type(v) is int for v in changes.values()) else "value"
+    if len(changes) > 1:
+        return "test %ss" % noun, "Don't type the test %ss." % noun
+    return "a test %s" % noun, "Don't type the test %s." % noun
+
+
+def _with_txt(changes):
+    """`a test number, `dex = 16``: the labelled made-up values, for the evidence and crash messages."""
+    return _test_words(changes)[0] + ", " + _with_text(changes)
+
+
 def _ev(changes):
-    """The evidence bracket's opening, for fixed changes: `(Mar'tu's check tried `dex = 16`, only inside the check`."""
-    return "(Mar'tu's check tried %s, only inside the check" % _with_text(changes)
+    """The evidence's opening, for fixed changes: "Mar'tu tested your code with a test number, `dex = 16`"."""
+    return "Mar'tu tested your code with " + _with_txt(changes)
 
 
-# The rerun crashed: the fix (work for other values too) first, Python's own words, then the evidence.
+# The rerun crashed: what happened (with Python's own words in the middle, never at the end), then the one thing to
+# try. Needs `_with_txt` and `_kd` in the check.
 _CRASH = (
-    "'Make your code work for other ' + _kd + ' too. With them, Python stopped: ' + _e + ' ' + _ev_txt + '.)'"
+    "\"Your code stopped when Mar'tu tested it with \" + _with_txt + '. Python said: ' + _e + "
+    "'. Use the box names on every line, so your code works for other ' + _kd + ' too.'"
 )
 
 
 def _rerun_pre(changes):
     """Run the rerun and stop early (with a kind message) when it cannot be done or crashes. Sets `_ev_txt`, the
-    evidence bracket's opening, for the message that follows."""
+    evidence's opening, for the message that follows."""
     return _RERUN_DEF + (
         f"_r, _p, _f, _e = _rerun({changes!r})\n"
         "_R = _r.get\n"
         "_g0 = globals()\n"
         f"_kd = {_kind(changes)!r}\n"
+        f"_with_txt = {_with_txt(changes)!r}\n"
         f"_ev_txt = {_ev(changes)!r}\n"
         f"_miss = [_k for _k in {list(changes)!r} if _k not in _f]\n"
         "assert not _miss or _miss[0] in _g0, _gone(_miss[0] if _miss else '')\n"
@@ -177,8 +196,8 @@ def flip(label, changes, before, after, fix, rel=None):
     `rel` = {name: (other_box, offset)}: try `name = <the student's own other_box> + offset` instead of the fixed
     number in `changes`, so a student who changed the numbers still gets a fair test (the fixed number is used
     when the other box does not hold a whole number).
-    Message: the fix, then "(Mar'tu's check tried `dex = 16`, only inside the check: the answer should turn
-    `False`, but it stayed the same.)"."""
+    Message: the fix, then "Mar'tu tested your code with a test number, `dex = 16`: the answer should turn
+    `False`, but it stayed `True`. Don't type the test number."."""
     if not rel:
         pre = _rerun_pre(changes)
     else:
@@ -191,15 +210,17 @@ def flip(label, changes, before, after, fix, rel=None):
             "_r, _p, _f, _e = _rerun(_ch)\n"
             f"_kd = {_kind(changes)!r}\n"
             "_with = ' and '.join('`' + _k + ' = ' + str(_v) + '`' for _k, _v in _ch.items())\n"
-            "_ev_txt = \"(Mar'tu's check tried \" + _with + ', only inside the check'\n"
+            f"_with_txt = {_test_words(changes)[0] + ', '!r} + _with\n"
+            "_ev_txt = \"Mar'tu tested your code with \" + _with_txt\n"
             "_miss = [_k for _k in _ch if _k not in _f]\n"
             "assert not _miss or _miss[0] in _g0, _gone(_miss[0] if _miss else '')\n"
             "assert not _miss, _keepline(_miss[0] if _miss else '', _kd)\n"
             f"assert not _e, {_CRASH}\n"
         )
+    tail = " " + _test_words(changes)[1]
     turn = ": the answer should turn `" + after + "`, but "
-    same = "it stayed the same.)"
-    other = "no line changed from `" + before + "` to `" + after + "`.)"
+    same = "it stayed `" + before + "`." + tail
+    other = "no line changed from `" + before + "` to `" + after + "`." + tail
     code = pre + _END_DEF + (
         "_old = _lines()\n"
         f"_at = [_i for _i, _l in enumerate(_p) if _end(_l) == {after!r} and _i < len(_old) and _end(_old[_i]) == {before!r}]\n"
@@ -213,8 +234,8 @@ def no_is(label, names, msg=None):
     even come out right here, but `is` does not ask whether two values match, so it fails on typed answers later.
     Scoped to the step's own boxes, so a slip in another step stays there."""
     msg = msg or (
-        "`is` asks a different question in Python, and it can say False even when two values match. Use `==` "
-        "for *is the same as*, and `!=` for *is not the same as*."
+        "uses `is`. It reads like English, but in Python `is` asks a different question, and it can say False even "
+        "when two values match. Use `==`, which asks *is the same as*."
     )
     code = (
         "import ast as _ast\n"
@@ -222,29 +243,30 @@ def no_is(label, names, msg=None):
         "and any(type(_o).__name__ in ('Is', 'IsNot') for _o in _n.ops) "
         "and any(type(_x).__name__ == 'Name' and _x.id in " + repr(list(names)) + " "
         "for _c in [_n.left] + list(_n.comparators) for _x in _ast.walk(_c))]\n"
-        f"assert not _bad, 'Line ' + str(_bad[0] if _bad else 0) + ': ' + {msg!r}\n"
+        f"assert not _bad, 'Line ' + str(_bad[0] if _bad else 0) + ' ' + {msg!r}\n"
     )
     return (label, code)
 
 
 def rerun_bool(label, changes, target, want, fix):
     """CMB on one box: after the rerun, `target` must hold `want` (an expression over _R, the rerun's names).
-    Message: the fix, then "(Mar'tu's check tried `hero = "Lucky"`, only inside the check: `is_lucky` stayed
-    False, but it should be True.)". When the tried values are the ones already in the code (the starter's
-    `answer = "YES"`), the bracket says so instead of claiming a change: "(With `answer = "YES"`, as in your code
-    now, `said_yes` is False, but it should be True.)"."""
-    asnow = "(With " + _with_text(changes) + ", as in your code now, `" + target + "` is "
+    Message: the fix, then "Mar'tu tested your code with a test value, `hero = "Lucky"`: `is_lucky` stayed
+    False, but it should be True. Don't type the test value.". When the tried values are the ones already in the
+    code (the starter's `answer = "YES"`), it says so instead of claiming a change: "With `answer = "YES"`, as in
+    your code now, `said_yes` is False, but it should be True."."""
+    asnow = "With " + _with_text(changes) + ", as in your code now, `" + target + "` is "
+    tail = " " + _test_words(changes)[1]
     code = _rerun_pre(changes) + (
         f"_want = {want}\n"
         f"_got = _R({target!r})\n"
         f"_was = _g0.get({target!r})\n"
         "_isb = type(_got).__name__ == 'bool'\n"
-        "_should = str(_got) + ', but it should be ' + str(_want) + '.)'\n"
+        "_should = str(_got) + ', but it should be ' + str(_want) + '.'\n"
         f"if all(_g0.get(_k) == _v for _k, _v in {changes!r}.items()):\n"
-        f"    _said = {asnow!r} + (_should if _isb else 'not True or False.)')\n"
+        f"    _said = {asnow!r} + (_should if _isb else 'not True or False.')\n"
         "else:\n"
         f"    _said = _ev_txt + ': `' + {target!r} + '` ' + ((('stayed ' if _got == _was else 'became ') + _should) "
-        "if _isb else 'held something that is not True or False.)')\n"
+        f"if _isb else 'held something that is not True or False.') + {tail!r}\n"
         f"assert _isb and _got == _want, {fix + ' '!r} + _said\n"
     )
     return (label, code)
@@ -255,18 +277,19 @@ def bnd(label, target, left, right, verb, *, short_fix, exact_fix, over_fix, shi
     so any chosen difficulty passes. Reruns: one short (False), exactly enough (True), one over (True), then
     `right` moved up by 3 with `left` exactly on it (True) and one short of it (False): that last pair catches a
     typed number such as `roll >= 15` (its fix is `shift_fix`). The first wrong case is the message: the fix, then
-    "(Mar'tu's check tried `roll = 14` and `needed = 15`, only inside the check: `passed` was True, so one short
-    passed.)". `verb` is "pass" or "cast". `lt_note` follows the one-short fix only when the student's code uses
+    "Mar'tu tested your code with test numbers, `roll = 14` and `needed = 15`: `passed` was True, so one short
+    passed. Don't type the test numbers.". `verb` is "pass" or "cast". `lt_note` follows the one-short fix only when the student's code uses
     `<` (the campaign's *not enough* test). When the sign faces the wrong way (`roll <= needed` or
     `needed >= roll`: *at most*, the class's mirror slip), `rev_fix` takes the one-short fix's place."""
     if rev_fix is None:
-        rev_fix = "Your sign faces the wrong way: it asks *at most*. *At least* is `>=`."
+        rev_fix = "Your sign faces the wrong way: it asks *at most*, but *at least* is `>=`."
     did, did_not = {"pass": ("passed", "did not pass"), "cast": ("could cast", "could not cast")}[verb]
     fixes = {"short": short_fix, "exact": exact_fix, "over": over_fix, "shift": shift_fix}
+    tail = " Don't type the test numbers."
     said = {
-        "short": "was True, so one short " + did + ".)",
-        "exact": "was False, so exactly enough " + did_not + ".)",
-        "over": "was False, so more than enough " + did_not + ".)",
+        "short": "was True, so one short " + did + "." + tail,
+        "exact": "was False, so exactly enough " + did_not + "." + tail,
+        "over": "was False, so more than enough " + did_not + "." + tail,
     }
     code = _RERUN_DEF + (
         "_g0 = globals()\n"
@@ -283,7 +306,7 @@ def bnd(label, target, left, right, verb, *, short_fix, exact_fix, over_fix, shi
         "if _Rt not in _g0:\n"
         "    _msg = _gone(_Rt)\n"
         "elif type(_base).__name__ != 'int':\n"
-        "    _msg = '`' + _Rt + '` should hold a whole number, with no quotes. Numbers don' + chr(39) + 't need quotes.'\n"
+        "    _msg = '`' + _Rt + '` should hold a whole number, with no quotes. Numbers don' + chr(39) + 't get quotes.'\n"
         "else:\n"
         # (changes, wanted answer, which case the bracket names, which fix leads)
         "    _cases = [({_L: _base - 1}, False, 'short', 'short'), ({_L: _base}, True, 'exact', 'exact'),\n"
@@ -291,8 +314,9 @@ def bnd(label, target, left, right, verb, *, short_fix, exact_fix, over_fix, shi
         "              ({_Rt: _base + 3, _L: _base + 2}, False, 'short', 'shift')]\n"
         "    for _ch, _want, _case, _fx in _cases:\n"
         "        _r, _p, _f, _e = _rerun(_ch)\n"
-        "        _ev_txt = (\"(Mar'tu's check tried `\" + _L + ' = ' + str(_ch[_L]) + '` and `' + _Rt + ' = ' + "
-        "str(_ch.get(_Rt, _base)) + '`, only inside the check')\n"
+        "        _with_txt = ('test numbers, `' + _L + ' = ' + str(_ch[_L]) + '` and `' + _Rt + ' = ' + "
+        "str(_ch.get(_Rt, _base)) + '`')\n"
+        "        _ev_txt = \"Mar'tu tested your code with \" + _with_txt\n"
         "        _miss = [_k for _k in _ch if _k not in _f]\n"
         "        _got = _r.get(_T)\n"
         "        if _miss:\n"
@@ -301,8 +325,8 @@ def bnd(label, target, left, right, verb, *, short_fix, exact_fix, over_fix, shi
         "            _kd = 'numbers'\n"
         f"            _msg = {_CRASH}\n"
         "        elif type(_got).__name__ != 'bool':\n"
-        "            _msg = ('Make `' + _T + '` hold a yes/no answer, `True` or `False`. ' + _ev_txt + ': `' + _T + "
-        "'` held something else.)')\n"
+        "            _msg = ('Make `' + _T + '` hold a yes-or-no answer, `True` or `False`. ' + _ev_txt + ': `' + _T + "
+        "'` held something else.')\n"
         "        elif _got != _want:\n"
         "            _lead = (_rev or _fixes[_fx] + _lt) if _fx == 'short' else _fixes[_fx]\n"
         "            _msg = _lead + ' ' + _ev_txt + ': `' + _T + '` ' + _said[_case]\n"
@@ -316,14 +340,14 @@ def bnd(label, target, left, right, verb, *, short_fix, exact_fix, over_fix, shi
 def _gone_text(name, kept):
     """The missing-box message (the same words as `_gone` inside the rerun checks)."""
     if kept:
-        return "Keep the box `" + name + "` from the starter: a line that starts `" + name + " = `."
+        return "Your code needs the box `" + name + "` it started with. Keep a line that starts `" + name + " = `."
     return "Make a box named `" + name + "`: start a line with `" + name + " = `."
 
 
 def chain_text(ask="=="):
     """Two `=` signs in one line (`passed = roll = needed`). `ask` is the sign the step wants: a step that asks
     *at least* says `>=`, never a `==` that the next run would turn down."""
-    return (" has two `=` signs, so it puts the same value in two boxes. This box should hold a yes/no answer, "
+    return (" has two `=` signs, so it puts the same value in two boxes. This box should hold a yes-or-no answer, "
             f"`True` or `False`: ask the question with `{ask}`.")
 
 
@@ -338,12 +362,12 @@ def bool_box(label, name, *, known, foreign=(), rules=(), text_msg=None, kept=Fa
     box (BARE), or the plain message: "Keep the box `x` from the starter" when the starter makes it (`kept=True`),
     else "Make a box named `x`"."""
     text_msg = text_msg or (
-        "`" + name + "` holds text, because of the quotes. It should hold a yes/no answer, `True` or `False`."
+        "`" + name + "` holds text, because of the quotes. It should hold a yes-or-no answer, `True` or `False`."
     )
     rule_code = "".join(f"    if not _msg and ({cond}):\n        _msg = {message!r}\n" for cond, message in rules)
     cmp_on = (
-        " asks whether `" + name + "` is the same as something, with `==`. That does not change the box. "
-        "To put a value in, use one `=`."
+        " uses `==`, which only asks whether `" + name + "` is the same as something. It doesn't change the box. "
+        "To put a value in the box, use one `=`."
     )
     code = _NAMES_PRE + (
         f"_name = {name!r}\n"
@@ -368,20 +392,20 @@ def bool_box(label, name, *, known, foreign=(), rules=(), text_msg=None, kept=Fa
         "    if not _msg and type(_have).__name__ == 'str':\n"
         f"        _msg = {text_msg!r}\n"
         "    if not _msg and type(_have).__name__ in ('int', 'float'):\n"
-        f"        _msg = {'`' + name + '` holds a number. It should hold a yes/no answer, `True` or `False`.'!r}\n"
+        f"        _msg = {'`' + name + '` holds a number. It should hold a yes-or-no answer, `True` or `False`.'!r}\n"
         "    if not _msg:\n"
-        f"        _msg = {'`' + name + '` should hold a yes/no answer, `True` or `False`.'!r}\n"
+        f"        _msg = {'`' + name + '` should hold a yes-or-no answer, `True` or `False`.'!r}\n"
         "if _name not in _g:\n"
         "    _near = [_m for _m in _made if _m != _name and _m not in _known and _m not in _foreign and _close(_m, _name)]\n"
         "    _left = [_m for _m in _made if _m in _foreign]\n"
         "    if _ann:\n"
         f"        _msg = 'Line ' + str(_ann[0]) + {' uses `:` after `' + name + '`. To put a value in a box, use `=`.'!r}\n"
         "    elif _near:\n"
-        f"        _msg = 'Python matches names letter for letter: you wrote `' + _near[0] + {'`, the task needs `' + name + '`.'!r}\n"
+        f"        _msg = 'Your box is named `' + _near[0] + {'`, but this step needs `' + name + '`. Names match letter for letter, capitals too.'!r}\n"
         "    elif _left:\n"
-        f"        _msg = '`' + _left[0] + {'` is a name from the example or a hint. This task' + chr(39) + 's box is `' + name + '`.'!r}\n"
+        f"        _msg = '`' + _left[0] + {'` is a name from the Example or a hint. This step needs the box `' + name + '`: use that name instead.'!r}\n"
         "    elif _cmp:\n"
-        f"        _msg = 'Line ' + str(_cmp[0]) + {' asks a question, but keeps the answer nowhere. Put `' + name + ' = ` in front of it.'!r}\n"
+        f"        _msg = 'Line ' + str(_cmp[0]) + {' asks a question, but no box keeps the answer, so Python throws it away. Put `' + name + ' = ` in front of it.'!r}\n"
         "    else:\n"
         f"        _msg = {_gone_text(name, kept)!r}\n"
         "assert not _msg, _msg\n"
@@ -396,7 +420,8 @@ def strexact(label, want, ops=None):
     there (a stray space is still caught)."""
     op_test = f" and any(type(_o).__name__ in {tuple(ops)!r} for _o in _n.ops)" if ops else ""
     head = '`"'
-    tail = '"` and `"' + want + '"` are different text to Python: every letter, space and capital counts.'
+    tail = ('"` and `"' + want + '"` are different text to Python: every letter, space and capital counts. '
+            'Write `"' + want + '"` exactly.')
     code = (
         "import ast as _ast\n"
         f"_want = {want!r}\n"
@@ -423,7 +448,7 @@ def quoted_name(label, names):
         "_q = [_c.value for _n in _ast.walk(_ast.parse(_source)) if type(_n).__name__ == 'Compare' "
         "for _c in [_n.left] + list(_n.comparators) if type(_c).__name__ == 'Constant' "
         f"and _c.value in {list(names)!r}]\n"
-        "assert not _q, '`\"' + (_q[0] if _q else '') + '\"` in quotes is just that word, not the box. ' + "
+        "assert not _q, '`\"' + (_q[0] if _q else '') + '\"` in quotes is only a word, not the box. Take the quotes off. ' + "
         f"{QUOTES_RULE!r}\n"
     )
     return (label, code)
@@ -432,7 +457,8 @@ def quoted_name(label, names):
 def no_quoted_question(label, words, signs):
     """A printed line that shows the question itself: the question was in quotes, so Python showed the letters.
     A line that ends in the answer (`dex < needed: True`, a label plus the question) is fine."""
-    msg = "That printed the letters, because of the quotes. Take the quotes off so Python works out the question. " + QUOTES_RULE
+    msg = ("Your line shows the question as letters, because it is in quotes. Take the quotes off so Python works "
+           "it out. " + QUOTES_RULE)
     code = _END_DEF + (
         f"_bad = [_l for _l in _lines() if any(_w in _l for _w in {list(words)!r}) and any(_s in _l for _s in {list(signs)!r}) "
         "and _end(_l) not in ('True', 'False')]\n"
@@ -446,7 +472,7 @@ def print_check(name, missing=None):
     The box may be glued or labelled (`print("Barrier:", barrier_up)`, `str(barrier_up)`). Order is read from
     the code, not the console: True and False show up from other lines too, so a `print(barrier_up)` that runs
     while the box still holds 0 must not pass because another line printed True."""
-    missing = missing or f"Add a line that prints the box: `print({name})`."
+    missing = missing or f"Nothing shows the box `{name}` yet. Add a line that shows it in the Console: `print({name})`."
     code = (
         "import ast as _ast\n"
         "_tree = _ast.parse(_source)\n"
@@ -462,13 +488,14 @@ def print_check(name, missing=None):
         f"and any(getattr(_t, 'id', '') == '{name}' for _t in (_n.targets if type(_n).__name__ == 'Assign' else [_n.target]))]\n"
         "_after = [_n for _n in _pcalls if any(_inside(_a) for _a in _n.args) "
         "and (not _sets or (_n.lineno, _n.col_offset) > max(_sets))]\n"
-        f"assert _named or not _typed, 'That `print` shows a value typed by hand. Print the box instead: "
-        f"`print({name})`, so Python opens it and shows what is inside.'\n"
-        f"assert _named or not _quoted, 'That prints the word \"{name}\". Take the quotes off so Python opens the box.'\n"
+        f"assert _named or not _typed, 'Your `print` shows a typed-in value, not the box. Print the box instead: "
+        f"`print({name})`. Then Python looks inside the box and shows what it holds.'\n"
+        f"assert _named or not _quoted, 'Your line shows the word {name}, because of the quotes. Take the quotes "
+        f"off. ' + {QUOTES_RULE!r}\n"
         f"assert _named, {missing!r}\n"
         f"assert _after and any(str({name}).strip() in _l for _l in _lines()), "
-        f"'Your `print({name})` runs before `{name}` gets its last value. "
-        f"Move it below the line that puts the value in.'"
+        f"'Your `print({name})` runs before `{name}` gets its last value, because Python reads top to bottom. "
+        f"Move the `print` line below the last line that starts `{name} = `.'"
     )
     return (f"prints the box {name}", code)
 
@@ -513,8 +540,8 @@ GLOSSARY = [
         term="True and False",
         aliases=["True", "False", "True or False", "bool", "bools", "boolean", "booleans", "yes/no answer"],
         plain=(
-            "Python's yes and no. They have capital letters and no quotes. A question like `6 > 15` gives back "
-            "one of them."
+            "Python's words for yes and no. They start with a capital letter and have no quotes. Python answers a "
+            "question like `6 > 15` with one of them."
         ),
         example="print(18 > 12)",
     ),
@@ -522,28 +549,28 @@ GLOSSARY = [
         term="comparison",
         aliases=["comparisons", "compare", "comparison sign", "comparison signs"],
         plain=(
-            "A yes/no question about two values, like `dex < needed`. The signs are `<` `>` `<=` `>=` `==` `!=`. "
-            "Python answers `True` or `False`."
+            "A yes-or-no question about two values, like `owls > wolves`. The signs are `<` `>` `<=` `>=` `==` "
+            "`!=`, much like the signs in math class. Python answers `True` or `False`."
         ),
-        example="dex < needed",
+        example="owls > wolves",
     ),
     dict(
         term="is the same as",
         aliases=["==", "double equals", "is not the same as", "!="],
         plain=(
-            "`==` asks whether two values are the same. `!=` asks whether they are different. One `=` does "
-            "something else: it puts a value in a box (read it as *gets*)."
+            "`==` asks whether two values are the same. `!=` asks whether they are different, like ≠ in math. "
+            "One `=` does something else: it puts a value in a box. Read one `=` as *gets*."
         ),
-        example='clock_color == "red"',
+        example='pet == "cat"',
     ),
     dict(
         term="at least",
         aliases=[">=", "at most", "<=", "exactly enough", "boundary"],
         plain=(
-            "`>=` means *at least*: exactly the number still counts. `<=` means *at most*. `>` and `<` leave the "
-            "number itself out."
+            "`>=` means *at least*, like ≥ in math class: the number itself counts. `<=` means *at most*, like ≤. "
+            "`>` and `<` leave the number itself out."
         ),
-        example="roll >= needed",
+        example="coins >= price",
     ),
     dict(
         term=".lower()",
@@ -563,10 +590,10 @@ GLOSSARY = [
 REMEMBERS_2A = dict(
     kind="quiz",
     id="2a-remembers",
-    title="Mar'tu remembers…",
+    title="Quick review: 2 questions (not scored)",
     optional=True,
     minutes=1,
-    summary="Two quick questions from Unit 1. Nothing is scored.",
+    summary="Two quick questions from Unit 1, to warm up. Nothing is scored.",
     notes=(
         "meta: path=CC; unscored warm-up shown inline before Lesson 2A; recall from 1C (a stamped bar; how many "
         "versus the price of one). A miss shows the answer and a one-line why, with no red X."
@@ -575,23 +602,26 @@ REMEMBERS_2A = dict(
         dict(
             type="predict",
             id="stamp-a-bar",
-            q="What will this print?",
+            q="What will this line show in the Console?",
             code='print("█" * 2 + "░" * 3)\n',
             answer="██░░░",
             choices=["██░░░", "█░█░█", "█░", "█2░3"],
             explain=(
-                "`*` stamps a mark: `\"█\" * 2` is `██` and `\"░\" * 3` is `░░░`. Then `+` glues them, with no "
-                "space between."
+                "`*` repeats text, like a stamp pressed again and again: `\"█\" * 2` is `██`, and `\"░\" * 3` is "
+                "`░░░`. Then `+` glues the two together, with no space between."
             ),
         ),
         dict(
             type="mc",
             id="which-is-how-many",
-            q="In `rope_count * rope_price`, which one is *how many*?",
+            q="Rope is sold by the coil (one roll of rope). In `rope_count * rope_price`, which box is *how many* coils?",
             choices=["rope_count", "rope_price"],
             answer=0,
-            why_wrong={1: "`rope_price` is how much one coil costs. `rope_count` is how many coils."},
-            explain="A cost is how many times the price of one: `rope_count` is how many, `rope_price` is the price of one.",
+            why_wrong={1: "`rope_price` is how much one coil costs. `rope_count` is how many coils you buy."},
+            explain=(
+                "Cost = how many × the price of one, like unit price in math class. `rope_count` is how many, and "
+                "`rope_price` is the price of one."
+            ),
         ),
     ],
 )
@@ -615,38 +645,48 @@ TRUE_OR_FALSE = dict(
     id="true-or-false",
     title="True or False",
     martu=(
-        "A [[comparison]] is a yes/no question. Python answers [[True and False|True or False]], with no quotes.\n"
-        "`>` asks: is it more than? `<` asks: is it less than? The wide side of the sign faces the bigger number.\n"
-        "Guess first, then press Run."
+        "A [[comparison]] is a yes-or-no question about two values. Python works it out and answers "
+        "[[True and False|True or False]]. In math class, you decide if 9 > 4 is true or false. Python does the "
+        "same: `print(9 > 4)` shows `True`.\n"
+        "`>` means *more than*, and `<` means *less than*, as in math. The open side of the sign faces the bigger "
+        "number.\n"
+        "`True` and `False` start with a capital letter and have no quotes. They are Python's own yes and no, not "
+        "text.\n"
+        "In the code, `dex` is Bomb Shell's DEX: how quick her hands are. The latch needs 15. Guess first, then "
+        "press ▶ Run, just above your code."
     ),
     introduces=["const:bool", "op:Gt", "op:Lt"],
     example="owls = 9\nwolves = 4\nprint(owls > wolves)\n",
     example_output="True",
     names=["dex", "needed", "barrier_up"],
     predict=dict(
-        q="Bomb Shell's DEX is 6. The latch needs 15. What will these two lines print?",
+        q="Bomb Shell's DEX (how quick her hands are) is 6. The latch needs 15. What will these two lines show in the Console?",
         code="print(18 > 12)\nprint(6 > 15)\n",
         choices=["True\nFalse", "True\nTrue", "18 > 12\n6 > 15", "Yes\nNo"],
         answer=0,
         explain=(
-            "Python works out each question and prints the answer: `True` for yes, `False` for no. "
+            "Python works out each question and shows only the answer: `True` for yes, `False` for no. "
             "6 is not more than 15, so Bomb Shell's hands lose to the latch. *That latch hates me.*"
         ),
     ),
     pair_talk=(
-        "Pair talk: each of you guesses the two lines before you run. Compare guesses. Then each of you runs your "
-        "own code and checks."
+        "Pair talk: each of you guesses what the two lines will show, before you press Run. Compare guesses. Then "
+        "each of you runs your own code and checks."
     ),
     starter=DEX_STARTER,
     checkpoints=[
         dict(
             id="less-than",
-            text="Change the `print` to show whether `dex` is *less than* `needed`.",
+            text=(
+                "On line 3, change the `>` to `<`, so the line asks whether `dex` is *less than* `needed`. You "
+                "should see `True` in the Console, under your code."
+            ),
             dictated=True,
             hints=[
-                "Look at the sign between `dex` and `needed`. Which way should it face?",
-                "`<` means *less than*. `3 < 5` is True; `5 < 3` is False.",
-                "Change line 3 to `print(dex < needed)`.",
+                "Look at line 3, `print(dex > needed)`. Which way does the sign face? Does it ask *more than* or "
+                "*less than*?",
+                "`<` means *less than*, as in math class. `3 < 5` is True. `5 < 3` is False.",
+                "Write `print(dex < needed)` in place of `print(dex > needed)`.",
             ],
             checks=[
                 no_quoted_question("no quotes around the question", ["dex", "needed"], ["<", ">"]),
@@ -665,7 +705,7 @@ TRUE_OR_FALSE = dict(
                     "            _less += _o in ('Gt', 'GtE')\n"
                     "            _more += _o in ('Lt', 'LtE')\n"
                     "assert _less or not _more, ('Your line still asks whether `dex` is *more than* `needed`. '\n"
-                    "    'Change the sign so it asks *less than*: the wide side faces the bigger number.')",
+                    "    'Turn the sign around so it asks *less than*: `dex < needed`.')",
                 ),
                 (
                     "prints True",
@@ -674,45 +714,55 @@ TRUE_OR_FALSE = dict(
                     "_lone = [_n.lineno for _n in _ast.parse(_source).body if type(_n).__name__ == 'Expr' "
                     "and type(_n.value).__name__ == 'Compare' and ({getattr(_n.value.left, 'id', '')} | "
                     "{getattr(_c, 'id', '') for _c in _n.value.comparators}) & {'dex', 'needed'}]\n"
-                    "assert not _lone, ('Line ' + str(_lone[0]) + ' asks a question, but shows the answer nowhere. '\n"
-                    "    'Put it inside `print( )`.' if _lone else '')\n"
+                    "assert not _lone, ('Line ' + str(_lone[0]) + ' asks the question, but nothing shows the answer, '\n"
+                    "    'so Python throws it away. Put the question inside `print( )`.' if _lone else '')\n"
                     + _END_DEF
                     + "_ends = [_end(_l) for _l in _lines()]\n"
-                    "assert 'True' in _ends, ('Your line prints `False`. `dex` is less than `needed`, so the answer '\n"
-                    "    'should be `True`. Change the sign so it asks *less than*.' if 'False' in _ends else "
-                    "'Nothing prints `True` yet. Change the `print` so it asks whether `dex` is less than `needed`.')",
+                    "assert 'True' in _ends, ('Your line shows `False`, but `dex` is less than `needed`, so it should '\n"
+                    "    'show `True`. Check the sign: `<` asks *less than*.' if 'False' in _ends else "
+                    "'Nothing in the Console shows `True` yet. On line 3, change the `print` so it asks whether `dex` is "
+                    "less than `needed`.')",
                 ),
                 # dex one more than the student's own needed (16 for the starter's 15), needed one less than dex (5).
                 flip("the answer follows dex", {"dex": 16}, "True", "False",
-                     "Print the question itself, with the boxes, so Python works out the answer each time.",
+                     "Use both boxes and `<` in your line: `print(dex < needed)`.",
                      rel={"dex": ("needed", 1)}),
                 flip("the answer follows needed", {"needed": 5}, "True", "False",
-                     "Use the box `needed` too, not a number you typed.", rel={"needed": ("dex", -1)}),
+                     "Use the box `needed`, not a typed-in number.", rel={"needed": ("dex", -1)}),
                 # The mirror boundary slip: `<=` (or `dex < needed + 1`) also says True when the two are the same.
                 flip("the same number is not less", {"dex": 15}, "True", "False",
-                     "Use `<`, which leaves the number itself out: a number is not less than itself.",
+                     "Use `<`, which leaves the number itself out.",
                      rel={"dex": ("needed", 0)}),
             ],
             pass_line="Bomb Shell: Hands too slow. Noted.",
         ),
         dict(
             id="barrier-up",
-            text="Make `barrier_up` hold `True`, with no quotes, and print it.",
+            text=(
+                "Two moves, in order:\n"
+                "1. On line 4, replace the `0` with `True`, with no quotes.\n"
+                "2. On a new line under line 4, type `print(barrier_up)`. You should see a second `True` in the "
+                "Console."
+            ),
             dictated=True,
             hints=[
-                "Line 4 still holds the starter's 0. `True` and `False` need no quotes: quotes would make them "
-                "text. Then a new line prints the box.",
-                "Python's yes is `True` and its no is `False`, each with a capital letter: `door_open = False`.",
-                "Write `barrier_up = True` on line 4, then `print(barrier_up)` on a new line under it.",
+                "Look at line 4. `barrier_up` still holds `0`, a placeholder from the code that was already there. "
+                "Python's yes goes in its place.",
+                "Python's yes is `True` and its no is `False`. Each starts with a capital letter and has no quotes: "
+                "`door_open = False`. With quotes, `\"False\"` would be text.",
+                "Write `barrier_up = True` in place of `barrier_up = 0`. Then, on a new line under it, write "
+                "`print(barrier_up)`.",
             ],
             checks=[
                 bool_box(
                     "barrier_up holds True or False", "barrier_up", known=DEX_KNOWN, foreign=DEX_FOREIGN, kept=True,
                     rules=[
                         ("type(_have).__name__ == 'str' and _have.strip().lower() == 'true'",
-                         "`\"True\"` is text, because of the quotes. `True` with no quotes is Python's yes."),
+                         "`\"True\"` is text, because of the quotes. Take the quotes off: `True` with no quotes is "
+                         "Python's yes."),
                         ("type(_have).__name__ == 'int' and _have == 0",
-                         "`barrier_up` still holds the starter's placeholder 0. Replace the 0 with `True`, with no quotes."),
+                         "`barrier_up` still holds the placeholder 0. On line 4, replace the 0 with `True`, with no "
+                         "quotes."),
                         ("type(_have).__name__ == 'int' and _have == 1",
                          "`barrier_up` holds the number 1. Python's yes is the word `True`, with a capital T and no quotes."),
                     ],
@@ -735,13 +785,13 @@ TRUE_OR_FALSE = dict(
             angle="picture",
             label="A light switch",
             text=(
-                "A yes/no answer is a light switch: on or off, nothing in between.\n"
+                "A yes-or-no answer is like a light switch: on or off, nothing in between.\n"
                 "```text\n6 < 15   ->  [ON ]  True\n6 > 15   ->  [OFF]  False\n```"
             ),
         ),
         dict(
             angle="everyday",
-            label="A yes/no question",
+            label="A yes-or-no question",
             text=(
                 "\"Are you taller than the door?\" has only two answers: yes or no. A comparison is that kind of "
                 "question. Python says `True` for yes and `False` for no."
@@ -753,16 +803,16 @@ TRUE_OR_FALSE = dict(
                 "`print(dex < needed)`:\n"
                 "1. Python looks inside the boxes: `6 < 15`.\n"
                 "2. It works out the question: is 6 less than 15? Yes.\n"
-                "3. It prints the answer: `True`."
+                "3. It shows the answer in the Console: `True`."
             ),
         ),
-        dict(angle="shorter", text="A comparison is a question. Python answers `True` or `False`."),
+        dict(angle="shorter", text="A comparison is a yes-or-no question. Python answers `True` or `False`."),
         dict(
             angle="why",
             label="Why does this work? No quotes",
             text=(
-                "`True` has no quotes. It is not a word to show; it is Python's own yes. "
-                "`\"True\"` with quotes is just four letters of text, like `\"glug\"`."
+                "`True` has no quotes. It is not a word to show. It is Python's own yes. "
+                "`\"True\"` with quotes is only four letters of text, like `\"glug\"`."
             ),
         ),
     ],
@@ -770,18 +820,18 @@ TRUE_OR_FALSE = dict(
         by="gearshift",
         title="Steady hands",
         text=(
-            "Gearshift steadies Bomb Shell's hands: +10 DEX. On a new line, print whether `dex + 10` is more than "
-            "`needed`."
+            "Gearshift steadies Bomb Shell's hands, so her DEX goes up by 10. At the bottom of your code, show "
+            "whether `dex + 10` is more than `needed`."
         ),
         hints=[
-            "Python does the `+` first, then the `>`.",
-            "Write `print(dex + 10 > needed)` on a new line.",
+            "Python does the math first, then asks the question. So it works out `dex + 10` before the `>`.",
+            "Write `print(dex + 10 > needed)` under `print(barrier_up)`.",
         ],
         checks=[
             flip("the steady roll follows dex", {"dex": 4}, "True", "False",
-                 "Print the question with the boxes: `dex + 10`, then `>`, then `needed`."),
+                 "Use the boxes in your line: `dex + 10`, then `>`, then `needed`."),
             flip("the steady roll follows needed", {"needed": 20}, "True", "False",
-                 "Use the box `needed`, not a number you typed."),
+                 "Use the box `needed`, not a typed-in number."),
         ],
         solution=_dex() + "print(dex + 10 > needed)\n",
     ),
@@ -790,16 +840,16 @@ TRUE_OR_FALSE = dict(
         part="hold-the-barrier",
         snippet='caster["mana"] < spell["mana_cost"]',
         why=(
-            "You have seen `<` in `cast_spell`. It asked: is the caster's mana less than the spell's cost? "
+            "You saw `<` in the game, in `cast_spell`. It asked: is the caster's mana less than the spell's cost? "
             "Python answered `True` or `False`, and the spell used that answer."
         ),
     ),
-    takeaway="A comparison is a yes/no question: `print(dex < needed)` shows `True` or `False`, with no quotes.",
+    takeaway="A comparison is a yes-or-no question: `print(dex < needed)` shows `True` or `False`, with no quotes.",
     wrong_answers=[
         dict(why="starter unchanged: still asks more than", code=DEX_STARTER, fails_at=1, message_contains="less than"),
         dict(why="the print replaced by the question alone (the class's slip: it shows nothing)",
              code=_dex(line="dex < needed", barrier="barrier_up = 0"), fails_at=1,
-             message_contains="Line 3 asks a question, but shows the answer nowhere"),
+             message_contains="Line 3 asks the question, but nothing shows the answer"),
         dict(why="the answer typed in (CP1 'True' check passes, the rerun does not)",
              code=_dex(line="print(True)"), fails_at=1, message_contains="16"),
         dict(why="the answer typed in as text", code=_dex(line='print("True")'), fails_at=1, message_contains="16"),
@@ -827,11 +877,11 @@ TRUE_OR_FALSE = dict(
              code=_dex(barrier="barrier_up = 0\nbarrier_up == True\nprint(barrier_up)"), fails_at=2,
              message_contains="use one `=`"),
         dict(why="the placeholder left, only a print added", code=_dex(barrier="barrier_up = 0\nprint(barrier_up)"),
-             fails_at=2, message_contains="starter's placeholder 0"),
+             fails_at=2, message_contains="still holds the placeholder 0"),
         dict(why="1 for yes", code=_dex(barrier="barrier_up = 1\nprint(barrier_up)"), fails_at=2,
              message_contains="number 1"),
         dict(why="True printed by hand, not the box", code=_dex(barrier="barrier_up = True\nprint(True)"), fails_at=2,
-             message_contains="typed by hand"),
+             message_contains="typed-in value"),
         dict(why="print(barrier_up) runs while the box still holds 0 (CP1's True line used to hide it)",
              code=_dex(barrier="barrier_up = 0\nprint(barrier_up)\nbarrier_up = True"), fails_at=2,
              message_contains="runs before"),
@@ -842,9 +892,9 @@ TRUE_OR_FALSE = dict(
              fails_at=2, message_contains="word"),
         dict(why="a starter box renamed everywhere (Dex): the rerun has no dex to change",
              code="Dex = 6\nneeded = 15\nprint(Dex < needed)\nbarrier_up = True\nprint(barrier_up)\n", fails_at=1,
-             message_contains="Keep the box `dex` from the starter"),
+             message_contains="Your code needs the box `dex` it started with"),
         dict(why="the starter's barrier_up line replaced by print(True)", code=_dex(barrier="print(True)"), fails_at=2,
-             message_contains="Keep the box `barrier_up` from the starter"),
+             message_contains="Your code needs the box `barrier_up` it started with"),
     ],
     notes=(
         meta(starter_level="S4", path="CC", skills="compare", solo="false", dictates="1,2",
@@ -889,22 +939,24 @@ ASK_WITH_DOUBLE_EQUALS = dict(
     id="ask-with-double-equals",
     title="Asking with ==",
     martu=(
-        "`=` puts a value in a box: read it as *gets*. `==` asks a question: read it as [[is the same as]].\n"
-        "So `clock_is_red = (clock_color == \"red\")` reads: `clock_is_red` gets the answer to *is* `clock_color` "
-        "*the same as red?*\n"
-        "Python works out the question in brackets first. Then the answer goes in the box."
+        "In Python, one `=` puts a value in a box: read it as *gets*. To ask whether two values are the same, "
+        "Python uses two: `==`. Read it as [[is the same as]]. In math class, `=` says both sides are equal. `==` "
+        "asks that as a question: `\"owl\" == \"owl\"` is `True`.\n"
+        "`!=` asks the opposite, *is not the same as*, like ≠ in math. `\"owl\" != \"cat\"` is `True`.\n"
+        "Line 2 reads: `clock_is_red` gets the answer to the question, is `clock_color` the same as `\"red\"`? "
+        "Python works out the part in parentheses first. Then the answer goes in the box."
     ),
     introduces=["op:Eq", "op:NotEq"],
     example='door = "open"\ndoor_is_shut = (door == "shut")\nprint(door_is_shut)\n',
     example_output="False",
     names=["clock_color", "clock_is_red", "hero", "is_lucky"],
     predict=dict(
-        q="What will this print?",
+        q="What will the code that's already there show in the Console?",
         choices=["False", "True", "red", "blue"],
         answer=0,
         explain=(
             "`clock_color` holds blue. Blue is not the same as red, so the answer is `False`, and `clock_is_red` "
-            "gets it. The brackets hold the question."
+            "gets it. The parentheses hold the question, and Python works it out first."
         ),
     ),
     starter=CLOCK_STARTER,
@@ -912,14 +964,17 @@ ASK_WITH_DOUBLE_EQUALS = dict(
         dict(
             id="try-red",
             text=(
-                "Change `clock_color` to `\"red\"` and run. Then change it to `\"Red\"`, with a capital R, and run "
-                "again."
+                "Two runs, in order:\n"
+                "1. On line 1, change `blue` to `red` and press Run. Watch what the Console shows.\n"
+                "2. Change `red` to `Red`, with a capital R, and press Run again."
             ),
             dictated=True,
             hints=[
-                "Line 1 holds the color. Change only the text inside its quotes.",
-                "Python compares text letter for letter: `\"owl\" == \"Owl\"` is False.",
-                "Write `clock_color = \"red\"` on line 1 and run. Then `clock_color = \"Red\"`, and run again.",
+                "Look at line 1, `clock_color = \"blue\"`. Change only the word inside the quotes.",
+                "Python compares text letter for letter. Capitals count too, as in a password: `\"owl\" == \"Owl\"` "
+                "is False.",
+                "Write `clock_color = \"red\"` in place of `clock_color = \"blue\"` and press Run. Then change `red` to "
+                "`Red` and press Run again.",
             ],
             checks=[
                 (
@@ -929,14 +984,15 @@ ASK_WITH_DOUBLE_EQUALS = dict(
                     "_k = ''.join(_x for _x in str(_c).lower() if not _x.isspace())\n"
                     "_msg = ''\n"
                     "if _c == 'blue':\n"
-                    "    _msg = 'Change line 1 to `clock_color = \"red\"` and run. Watch what `clock_is_red` says.'\n"
+                    "    _msg = ('Line 1 still says blue. Change `blue` to `red` and press Run, so line 1 is '\n"
+                    "            '`clock_color = \"red\"`. Then watch what the Console shows.')\n"
                     "elif _c == 'red':\n"
-                    "    _msg = ('`clock_is_red` says True now: red is the same as red. Next, make it `\"Red\"`, with a '\n"
-                    "            'capital R, and run again.')\n"
+                    "    _msg = ('The Console shows True now: red is the same as red. Next, change `red` to `Red`, '\n"
+                    "            'with a capital R, and press Run again.')\n"
                     "elif _c != 'Red' and _k == 'red':\n"
-                    "    _msg = 'Make it exactly `\"Red\"`: a capital R, then small letters, no spaces.'\n"
+                    "    _msg = 'Line 1 should say exactly `\"Red\"`: a capital R, then small letters, and no spaces.'\n"
                     "elif _c != 'Red':\n"
-                    "    _msg = 'Set `clock_color` to `\"Red\"`, with a capital R, and run.'\n"
+                    "    _msg = 'Change the color on line 1 to `\"Red\"`, with a capital R, and press Run.'\n"
                     "assert not _msg, _msg",
                 ),
                 (
@@ -955,38 +1011,50 @@ ASK_WITH_DOUBLE_EQUALS = dict(
         ),
         dict(
             id="not-red",
-            text="Add a line that prints whether `clock_color` is *not* `\"red\"`, using `!=`.",
+            text=(
+                "Add a new line under line 3 that shows whether `clock_color` is *not* the same as `\"red\"`, "
+                "using `!=`. It should show `True`, because Red is not red."
+            ),
             dictated=True,
             hints=[
-                "Look at line 2. Your new line asks the opposite question, with `!=`.",
-                "`!=` means *is not the same as*. `\"owl\" != \"cat\"` is True.",
-                "Write `print(clock_color != \"red\")` on a new line.",
+                "Look at line 2: it asks with `==`. Your new line asks the opposite question, with `!=`, inside "
+                "`print( )`.",
+                "`!=` means *is not the same as*, like ≠ in math class. `\"owl\" != \"cat\"` is True.",
+                "Write `print(clock_color != \"red\")` on the line after `print(clock_is_red)`.",
             ],
             checks=[
                 no_quoted_question("no quotes around the question", ["clock_color"], ["!=", "=="]),
-                no_is("not-red asks with !=, not is not", ["clock_color"]),
-                ("uses !=", "assert _uses('op:NotEq'), 'Use `!=`. It asks: is it *not* the same as?'"),
+                no_is("not-red asks with !=, not is not", ["clock_color"],
+                      msg="uses `is`. It reads like English, but in Python `is` and `is not` ask a different question, "
+                          "so they can give the wrong answer. Use `!=`, which asks *is not the same as*."),
+                ("uses !=", "assert _uses('op:NotEq'), 'Your new line needs `!=`, which asks *is not the same as*.'"),
                 strexact("not-red compares with red exactly", "red", ops=("NotEq",)),
                 flip("the answer follows clock_color", {"clock_color": "red"}, "True", "False",
-                     "Print the question itself, `clock_color != \"red\"`, so Python works it out."),
+                     "Show the question itself: `print(clock_color != \"red\")`."),
             ],
             pass_line="Gearshift: Not red. Good. We wait.",
         ),
         dict(
             id="is-lucky",
-            text="Make `is_lucky` hold whether `hero` is the same as `\"Lucky\"`.",
+            text=(
+                "At the bottom of your code, make a box named `is_lucky`. It holds the answer to this question: is "
+                "`hero` the same as `\"Lucky\"`?"
+            ),
             dictated=False,
             hints=[
-                "This line has a *gets* and an *is the same as*. Which goes first?",
-                "Ask a question, keep the answer: `same = (a == b)`. The `=` gets; the `==` asks.",
-                "Write `is_lucky = (hero == \"Lucky\")`.",
+                "Your new line needs one `=` (gets) and one `==` (is the same as). Line 2 has both. Which one comes "
+                "first?",
+                "Ask a question and keep the answer: `same = (pet == \"cat\")`. The `=` gets. The `==` asks *is the "
+                "same as*.",
+                "Write `is_lucky = (hero == \"Lucky\")` on the line after `hero = \"Bomb Shell\"`.",
             ],
             checks=[
                 bool_box(
                     "is_lucky holds True or False", "is_lucky", known=CLOCK_KNOWN, foreign=CLOCK_FOREIGN,
                     rules=[
                         ("_have == 'Lucky'",
-                         "That puts the text in the box. Ask with `==`: is `hero` the same as `\"Lucky\"`?"),
+                         "`is_lucky` holds the text Lucky, not a yes-or-no answer. Ask with `==`: is `hero` the same "
+                         "as `\"Lucky\"`?"),
                         ("type(_have).__name__ == 'str' and _have == _g.get('hero')",
                          "`is_lucky` holds a copy of what is in `hero`. Ask a question instead: is `hero` the same as "
                          "`\"Lucky\"`? That needs `==`."),
@@ -996,9 +1064,9 @@ ASK_WITH_DOUBLE_EQUALS = dict(
                 quoted_name("hero is the box, not the word", ["hero"]),
                 strexact("Lucky is spelled exactly", "Lucky"),
                 rerun_bool("is_lucky follows hero (Lucky)", {"hero": "Lucky"}, "is_lucky", "True",
-                           "Ask the question with the box `hero`, so the answer follows it."),
+                           "Ask the question with the box `hero`, so the answer changes with it."),
                 rerun_bool("is_lucky follows hero (Oogrish)", {"hero": "Oogrish"}, "is_lucky", "False",
-                           "Ask the question with the box `hero`, so the answer follows it."),
+                           "Ask the question with the box `hero`, so the answer changes with it."),
             ],
             pass_line="Lucky: True only when it's me. As it should be.",
         ),
@@ -1026,6 +1094,15 @@ ASK_WITH_DOUBLE_EQUALS = dict(
             ),
         ),
         dict(
+            angle="math class",
+            label="From math class",
+            text=(
+                "In math class, `=` says both sides are equal. Python already uses one `=` for *gets*, so asking "
+                "needs a new sign: `==`. The keyboard has no ≠ key either, so Python types it `!=`. Read `!` as "
+                "*not*."
+            ),
+        ),
+        dict(
             angle="everyday",
             label="Name tag or question",
             text=(
@@ -1043,18 +1120,20 @@ ASK_WITH_DOUBLE_EQUALS = dict(
                 "3. Then `is_lucky` gets that answer."
             ),
         ),
-        dict(angle="shorter", text="`=` puts; `==` asks."),
+        dict(angle="shorter", text="One `=` puts a value in. Two, `==`, ask a question."),
     ],
     bonus=dict(
         by="lucky",
-        title="What's in it for me?",
+        title="Same color?",
         text=(
-            "Mar'tu's spells glow violet. Lucky's glow silver. Make `martu_color` and `lucky_color` hold those colors. "
-            "Then make `same_color` say whether they are the same, and print it."
+            "Mar'tu's spells glow violet. Lucky's glow silver. At the bottom of your code, three moves:\n"
+            "1. Make `martu_color` hold `\"violet\"` and `lucky_color` hold `\"silver\"`.\n"
+            "2. Make `same_color` hold whether the two colors are the same.\n"
+            "3. Show `same_color` in the Console."
         ),
         hints=[
             "Two boxes, one `==` between them, and the answer goes in `same_color`.",
-            "Write `same_color = (martu_color == lucky_color)`, under the two color boxes.",
+            "Write `same_color = (martu_color == lucky_color)` under the two color boxes, then `print(same_color)`.",
         ],
         checks=[
             bool_box("same_color holds True or False", "same_color", known=CLOCK_KNOWN + ["martu_color", "lucky_color"]),
@@ -1072,11 +1151,12 @@ ASK_WITH_DOUBLE_EQUALS = dict(
         part="program-dialogue-options",
         snippet='if (user.clicked() == "option 1"):',
         why=(
-            "You have seen `==` in the dialogue part. `user.clicked() == \"option 1\"` asked: is the box they clicked "
-            "the same as option 1? The answer was `True` or `False`. Next lesson, `if` uses that answer."
+            "You saw `==` in the game, in the dialogue part. `user.clicked() == \"option 1\"` asked: is the option the "
+            "player clicked the same as option 1? The answer was `True` or `False`. Next lesson, `if` uses that "
+            "answer."
         ),
     ),
-    takeaway="`=` gets a value; `==` asks *is the same as*; `!=` asks *is not the same as*. Text must match exactly.",
+    takeaway="One `=` gets a value. `==` asks *is the same as*, and `!=` asks *is not the same as*. Text must match exactly.",
     wrong_answers=[
         dict(why="starter unchanged", code=CLOCK_STARTER, fails_at=1, message_contains='clock_color = "red"'),
         dict(why="investigate stopped at red", code=_clock(color='"red"'), fails_at=1, message_contains="capital R"),
@@ -1119,7 +1199,7 @@ ASK_WITH_DOUBLE_EQUALS = dict(
         dict(why="a capital I", code=_clock(lucky='Is_lucky = (hero == "Lucky")'), fails_at=3,
              message_contains="letter for letter"),
         dict(why="the question kept nowhere", code=_clock(lucky='hero == "Lucky"'), fails_at=3,
-             message_contains="keeps the answer nowhere"),
+             message_contains="no box keeps the answer"),
         dict(why="`is` for == (reads like English, and even comes out right for these two literals)",
              code=_clock(lucky='is_lucky = hero is "Lucky"'), fails_at=3, message_contains="different question"),
         dict(why="the box copied, no question", code=_clock(lucky="is_lucky = hero"), fails_at=3,
@@ -1130,7 +1210,7 @@ ASK_WITH_DOUBLE_EQUALS = dict(
              message_contains="not defined"),
         dict(why="the starter box hero renamed (name): the rerun has no hero to change",
              code=_clock(lucky='is_lucky = (name == "Lucky")').replace('hero = "Bomb Shell"', 'name = "Bomb Shell"'),
-             fails_at=3, message_contains="Keep the box `hero` from the starter"),
+             fails_at=3, message_contains="Your code needs the box `hero` it started with"),
     ],
     notes=(
         meta(starter_level="S4", path="CC", skills="compare,gets-vs-same", solo="false", dictates="1,2",
@@ -1184,30 +1264,32 @@ def _pass(passed="passed = roll >= needed", can_cast="can_cast = mana >= cost", 
 
 
 NUM_IS = (
-    "`is` asks a different question in Python, and it can say False even when two numbers match. Compare "
-    "numbers with a comparison sign instead."
+    "uses `is`. It reads like English, but in Python `is` asks a different question, and it can say False even "
+    "when two numbers match. Compare numbers with a comparison sign instead."
 )
+# The same, for a step that asks *at least*: the fix names its sign.
+NUM_IS_GTE = NUM_IS.replace("Compare numbers with a comparison sign instead.", "Use `>=`, which asks *at least*.")
 
 ROLL_FIX = dict(
-    short_fix="Ask: is `roll` at least `needed`? *At least* is `>=`.",
+    short_fix="Ask whether `roll` is at least `needed`, with `>=`.",
     exact_fix="Use `>=`, which means *at least*: the number itself counts.",
-    over_fix="Ask: is `roll` at least `needed`? *At least* is `>=`.",
-    shift_fix="Use both boxes, `roll` and `needed`, not a number you typed.",
+    over_fix="Ask whether `roll` is at least `needed`, with `>=`.",
+    shift_fix="Use both box names, `roll` and `needed`, not a typed-in number.",
 )
 MANA_FIX = dict(
-    short_fix="Ask: is `mana` at least `cost`? *At least* is `>=`.",
+    short_fix="Ask whether `mana` is at least `cost`, with `>=`.",
     exact_fix="Use `>=`, which means *at least*: exactly enough mana still casts.",
-    over_fix="Ask: is `mana` at least `cost`? *At least* is `>=`.",
-    shift_fix="Use both boxes, `mana` and `cost`, not a number you typed.",
-    lt_note=" `mana < cost` asks *not enough?*",
+    over_fix="Ask whether `mana` is at least `cost`, with `>=`.",
+    shift_fix="Use both box names, `mana` and `cost`, not a typed-in number.",
+    lt_note=" `mana < cost` asks the opposite: *not enough?*",
 )
 # The SOLO's messages say what went wrong but never name the sign: a solo pass stays the student's own.
 SOLO_FIX = dict(
-    short_fix="Ask whether `mana` is at least `cost`.",
+    short_fix="`can_cast` should be True when `mana` is at least `cost`.",
     exact_fix="Which sign counts the number itself?",
-    over_fix="Ask whether `mana` is at least `cost`.",
-    shift_fix="Use both boxes, `mana` and `cost`, not a number you typed.",
-    lt_note=" `mana < cost` asks *not enough?*",
+    over_fix="`can_cast` should be True when `mana` is more than `cost`, too.",
+    shift_fix="Your line has a typed-in number where a box name should be.",
+    lt_note=" `mana < cost` asks the opposite: *not enough?*",
     rev_fix="Your sign faces the wrong way: it asks *at most*.",
 )
 
@@ -1215,18 +1297,21 @@ ENOUGH_TO_PASS = dict(
     id="enough-to-pass",
     title="Enough to pass",
     martu=(
-        "`>=` means [[at least]]. A roll of exactly the number needed still passes. "
-        "`<=` means *at most*.\n"
-        "`>` is stricter: it leaves the number itself out. So `15 > 15` is False, but `15 >= 15` is True.\n"
-        "From here on, no brackets: `can_buy = coins >= price` works the same. Python asks the question first, "
-        "then fills the box."
+        "`>=` means [[at least]]: more than, or exactly the same. It is the ≥ sign from math class, typed as two "
+        "keys, `>` then `=`. On a number line it is the filled dot: the number itself counts. So `9 >= 9` is "
+        "`True`.\n"
+        "`>` is the open dot: it leaves the number itself out, so `9 > 9` is `False`. `<=` means *at most*, like ≤.\n"
+        "From here on, no parentheses around the question: `can_buy = coins >= price` works the same. Python asks "
+        "the question first, then puts the answer in the box.\n"
+        "A *roll* is the number a die lands on, as in the game's trap-door skill checks. `mana` is a hero's magic "
+        "power, and `cost` is what a spell uses."
     ),
     introduces=["op:GtE", "op:LtE"],
     example="coins = 10\nprice = 10\ncan_buy = coins >= price\nprint(can_buy)\nprint(coins <= price)\n",
     example_output="True\nTrue",
     names=["roll", "needed", "passed", "mana", "cost", "can_cast"],
     predict=dict(
-        q="The latch needs 15. Which rolls pass? What will this print?",
+        q="The latch needs a roll of 15. What will these three lines show in the Console?",
         code="needed = 15\nprint(14 >= needed)\nprint(15 >= needed)\nprint(16 >= needed)\n",
         choices=["False\nTrue\nTrue", "False\nFalse\nTrue", "True\nTrue\nTrue", "False\nTrue\nFalse"],
         answer=0,
@@ -1243,32 +1328,41 @@ ENOUGH_TO_PASS = dict(
     checkpoints=[
         dict(
             id="passed",
-            text="Make `passed` say whether `roll` reaches `needed`. Exactly enough counts.",
+            text=(
+                "Under the `# passed:` note, make a box named `passed` that holds whether `roll` reaches "
+                "`needed`. Exactly enough counts."
+            ),
             dictated=False,
             hints=[
-                "Should a 15 pass when 15 is needed? Pick the sign that says yes.",
-                "`>` leaves out the boundary; `>=` includes it. `9 > 9` is False, but `9 >= 9` is True.",
+                "Look at lines 1 and 2: `roll` is 15 and `needed` is 15. Should a 15 pass when 15 is needed? Pick "
+                "the sign that says yes.",
+                "`>` leaves the number itself out, like an open dot on a number line. `>=` counts it, like a filled "
+                "dot. `9 > 9` is False, but `9 >= 9` is True.",
                 "Write `passed = roll >= needed` under the `# passed:` note.",
             ],
             checks=[
                 bool_box("passed holds True or False", "passed", known=PASS_KNOWN, foreign=PASS_FOREIGN, ask=">="),
-                no_is("passed compares with a sign, not is", ["roll", "needed"], msg=NUM_IS + " *At least* is `>=`."),
+                no_is("passed compares with a sign, not is", ["roll", "needed"], msg=NUM_IS_GTE),
                 bnd("passed: one short fails, exactly enough passes", "passed", "roll", "needed", "pass", **ROLL_FIX),
             ],
             pass_line="Mar'tu: Which sign makes exactly enough pass? Point at it. Yes: the `=` in `>=`.",
         ),
         dict(
             id="can-cast",
-            text="Make `can_cast` say whether `mana` covers `cost`. Exactly enough mana still casts.",
+            text=(
+                "Under the `# can_cast:` note, make a box named `can_cast` that holds whether `mana` is enough "
+                "for `cost`. Exactly enough mana still casts."
+            ),
             dictated=False,
             hints=[
-                "Mana 6, cost 6: should the spell cast? Then the sign must include the boundary.",
+                "Look at the two lines above the `# can_cast:` note: `mana` is 6 and `cost` is 6. Should the spell "
+                "cast? Then the sign has to count the number itself.",
                 "*At least* is `>=`: `coins >= price` is True when the coins are exactly enough.",
                 "Write `can_cast = mana >= cost` under the `# can_cast:` note.",
             ],
             checks=[
                 bool_box("can_cast holds True or False", "can_cast", known=PASS_KNOWN, foreign=PASS_FOREIGN, ask=">="),
-                no_is("can_cast compares with a sign, not is", ["mana", "cost"], msg=NUM_IS + " *At least* is `>=`."),
+                no_is("can_cast compares with a sign, not is", ["mana", "cost"], msg=NUM_IS_GTE),
                 bnd("can_cast: exactly enough mana casts", "can_cast", "mana", "cost", "cast", **MANA_FIX),
             ],
             pass_line="Oogrish: Exactly enough is enough. Steady, now.",
@@ -1285,7 +1379,8 @@ ENOUGH_TO_PASS = dict(
             angle="picture",
             label="A number line",
             text=(
-                "The filled dot is the number needed. `>=` starts on the dot. `>` starts just after it.\n"
+                "A number line, as in math class. `>=` is the filled dot: 15 counts, so the line starts on it. `>` "
+                "is the open dot: 15 is left out, so the line starts right after it.\n"
                 "```text\n          13   14   15   16   17\n"
                 "roll >= 15            ●=========>\n"
                 "roll > 15             o====>\n```"
@@ -1299,33 +1394,36 @@ ENOUGH_TO_PASS = dict(
                 " 14  |  False    |  False\n"
                 " 15  |  False    |  True\n"
                 " 16  |  True     |  True\n```\n"
-                "Only the 15 row is different. That row is the boundary."
+                "Only the 15 row is different. That row is exactly enough."
             ),
         ),
         dict(
             angle="in Tor",
             text="A 15 opens a latch that needs 15. Bomb Shell does not need 16. Exactly enough is enough.",
         ),
-        dict(angle="shorter", text="Exactly enough counts? Use `>=`."),
+        dict(angle="shorter", text="Should exactly enough count? Use `>=`."),
         dict(
             angle="campaign",
             label="You've seen this",
             text=(
-                "In `cast_spell` the steps said: use `<` and not `<=`, because a caster with exactly enough mana can "
-                "still cast. `mana < cost` asked *not enough?* Here you ask the other side, *enough?*: `mana >= cost`."
+                "In the game, the `cast_spell` steps said: use `<` and not `<=`, because a caster with exactly enough "
+                "mana can still cast. `mana < cost` asked *not enough?* Here you ask the other side, *enough?*: "
+                "`mana >= cost`."
             ),
         ),
     ],
     bonus=dict(
         by="lucky",
-        title="What's in it for me?",
+        title="A close call",
         text=(
-            "Lucky likes a close call. Make `close_call` True only when the roll is exactly `needed`. "
-            "Then print both `passed` and `close_call`."
+            "Lucky likes a close call: a roll of exactly the number needed. At the bottom of your code, two moves:\n"
+            "1. Make a box named `close_call` that is True only when `roll` is exactly `needed`.\n"
+            "2. Show `passed`, then `close_call`, each on its own line with `print`."
         ),
         hints=[
             "Exactly the same number? That is `==`. Then two `print` lines.",
-            "Write `close_call = roll == needed`.",
+            "Write `close_call = roll == needed` at the bottom of your code. Then add `print(passed)` and "
+            "`print(close_call)`.",
         ],
         checks=[
             bool_box("close_call holds True or False", "close_call", known=PASS_KNOWN + ["close_call"]),
@@ -1345,8 +1443,8 @@ ENOUGH_TO_PASS = dict(
         part="skill-checks",
         snippet="return roll >= required_roll",
         why=(
-            "You have seen this line at the trap door. `roll >= required_roll` asked: is the roll at least the "
-            "number needed? It handed back `True` or `False`. A roll of exactly 15 opened a latch that needed 15."
+            "You saw this line in the game, at the trap door. `roll >= required_roll` asked: is the roll at least "
+            "the number needed? Its answer was `True` or `False`. A roll of exactly 15 opened a latch that needed 15."
         ),
     ),
     takeaway="`>=` means *at least*: exactly enough still passes. `>` leaves the number itself out.",
@@ -1367,7 +1465,7 @@ ENOUGH_TO_PASS = dict(
              code=_pass(passed="passed = False\npassed == roll >= needed"), fails_at=1, message_contains="use one `=`"),
         dict(why="two = signs: passed = roll = needed (the message names the step's sign, >=, not ==)",
              code=_pass(passed="passed = roll = needed"), fails_at=1,
-             message_contains="two `=` signs, so it puts the same value in two boxes. This box should hold a yes/no "
+             message_contains="two `=` signs, so it puts the same value in two boxes. This box should hold a yes-or-no "
                               "answer, `True` or `False`: ask the question with `>=`"),
         dict(why="== instead of >=", code=_pass(passed="passed = roll == needed"), fails_at=1,
              message_contains="more than enough"),
@@ -1376,7 +1474,7 @@ ENOUGH_TO_PASS = dict(
         dict(why="the starter comment's : copied instead of =", code=_pass(passed="passed: roll >= needed"),
              fails_at=1, message_contains="uses `:`"),
         dict(why="the question kept nowhere", code=_pass(passed="roll >= needed"), fails_at=1,
-             message_contains="keeps the answer nowhere"),
+             message_contains="no box keeps the answer"),
         dict(why="the question in quotes", code=_pass(passed='passed = "roll >= needed"'), fails_at=1,
              message_contains="holds text"),
         dict(why="a capital P", code=_pass(passed="Passed = roll >= needed"), fails_at=1, message_contains="letter for letter"),
@@ -1399,9 +1497,9 @@ ENOUGH_TO_PASS = dict(
              fails_at=2, message_contains="exactly enough mana"),
         dict(why="the starter box needed renamed (need)",
              code=_pass(passed="passed = roll >= need").replace("needed = 15", "need = 15"), fails_at=1,
-             message_contains="Keep the box `needed` from the starter"),
+             message_contains="Your code needs the box `needed` it started with"),
         dict(why="roll set in a chained line the rerun cannot change", code=_pass(roll="roll = needed = 15"), fails_at=1,
-             message_contains="Keep the line that sets `roll`"),
+             message_contains="Keep `roll = ` on a line of its own"),
     ],
     notes=(
         meta(starter_level="S4", path="CC", skills="compare,boundary", solo="false", dictates="",
@@ -1445,8 +1543,8 @@ LOWER_CHECKS = [
         "_called = [id(_n.func) for _n in _ast.walk(_tree) if type(_n).__name__ == 'Call']\n"
         "_raw = [_n.lineno for _n in _ast.walk(_tree) if type(_n).__name__ == 'Attribute' and _n.attr == 'lower' "
         "and id(_n) not in _called]\n"
-        "assert not _raw, 'Line ' + str(_raw[0] if _raw else 0) + ': `.lower` without `()` doesn' + chr(39) + "
-        "'t run. Add `()`: `answer.lower()`.'",
+        "assert not _raw, 'Line ' + str(_raw[0] if _raw else 0) + ' has `.lower` with no `()`, so it doesn' + chr(39) + "
+        "'t run. Add `()` right after `lower`: `answer.lower()`.'",
     ),
     (
         "the copy is used, not forgotten",
@@ -1454,8 +1552,8 @@ LOWER_CHECKS = [
         "_lone = [_n.lineno for _n in _ast.parse(_source).body if type(_n).__name__ == 'Expr' "
         "and type(_n.value).__name__ == 'Call' and type(_n.value.func).__name__ == 'Attribute' "
         "and _n.value.func.attr == 'lower']\n"
-        "assert not _lone, 'Line ' + str(_lone[0] if _lone else 0) + ' makes a lower-case copy, then forgets it. "
-        "`answer` itself does not change. Use the copy right inside the question.'",
+        "assert not _lone, 'Line ' + str(_lone[0] if _lone else 0) + ' makes a small-letter copy, but no box keeps "
+        "it, so Python throws it away. `answer` itself does not change. Use `answer.lower()` right inside the question.'",
     ),
     (
         "lower is asked of answer",
@@ -1465,9 +1563,9 @@ LOWER_CHECKS = [
         "_on_text = [_v for _v in _calls if type(_v).__name__ == 'Constant']\n"
         "_on_box = [_v for _v in _calls if type(_v).__name__ != 'Constant']\n"
         "assert not (_on_text and not _on_box and any(_v.value == 'answer' for _v in _on_text)), "
-        "'`\"answer\"` in quotes is just that word, not the box. Take the quotes off: `answer.lower()`.'\n"
-        "assert not (_on_text and not _on_box), '`.lower()` is on the wrong text: `\"yes\"` is small already. "
-        "Ask `answer` for the copy: `answer.lower()`.'",
+        "'`\"answer\"` in quotes is only the word, not the box. Take the quotes off: `answer.lower()`.'\n"
+        "assert not (_on_text and not _on_box), '`.lower()` is on the wrong text: `\"yes\"` is in small letters "
+        "already. Put it on `answer` instead: `answer.lower()`.'",
     ),
 ]
 
@@ -1475,17 +1573,18 @@ ANY_CASE_ANSWER = dict(
     id="any-case-answer",
     title="Any case, same answer",
     martu=(
-        "`\"YES\" == \"yes\"` is False: every letter, space and capital counts.\n"
-        "The dot means: ask this text to do something. `answer.lower()` gives a [[.lower()|lower-case copy]] of "
-        "`answer`. The `()` at the end makes it run.\n"
-        "The copy is new. The text in `answer` does not change."
+        "To Python, `\"YES\" == \"yes\"` is `False`: every letter and capital counts. `.lower()` fixes that. In "
+        "English, you can speak to someone by name: *Lucky, pass the rope.* The dot works the same way: "
+        "`answer.lower()` asks `answer` for a [[.lower()|small-letter copy]]. So `\"YES\".lower()` gives `\"yes\"`.\n"
+        "The dot means: ask this text to do something. The `()` at the end makes it run.\n"
+        "The copy is new. The text in `answer` does not change, the way a photocopy leaves the page alone."
     ),
     introduces=["attr:lower"],
     example='shout = "HELLO"\nprint(shout.lower())\nprint(shout)\n',
     example_output="hello\nHELLO",
     names=["answer", "said_yes", "lower"],
     predict=dict(
-        q="A traveler shouts YES. What will this print?",
+        q="A traveler shouts YES. What will the code that's already there show in the Console?",
         choices=["False", "True", "yes", "YES"],
         answer=0,
         explain=(
@@ -1497,19 +1596,23 @@ ANY_CASE_ANSWER = dict(
     checkpoints=[
         dict(
             id="any-capitals",
-            text="Make `said_yes` True for any capitals: use `answer.lower()`.",
+            text=(
+                "On line 2, change `answer` to `answer.lower()`, so `said_yes` is True however the traveler uses "
+                "capitals. You should see `True` in the Console."
+            ),
             dictated=True,
             hints=[
-                "Which part changes the capitals? Put it on the left of the `==`.",
+                "Look at line 2, `said_yes = answer == \"yes\"`. The `answer` on the left of `==` is the part that "
+                "needs a small-letter copy.",
                 "`\"HI\".lower()` gives `\"hi\"`. Then `\"hi\" == \"hi\"` is True.",
-                "Write `said_yes = answer.lower() == \"yes\"`.",
+                "Write `said_yes = answer.lower() == \"yes\"` in place of `said_yes = answer == \"yes\"`.",
             ],
             checks=LOWER_CHECKS + [
                 bool_box(
                     "said_yes holds True or False", "said_yes", known=ANSWER_KNOWN, foreign=ANSWER_FOREIGN, kept=True,
                     text_msg=(
-                        "`said_yes` holds the lower-case copy itself. Ask with `==` whether that copy is the same as "
-                        "`\"yes\"`."
+                        "`said_yes` holds the small-letter copy itself, not a yes-or-no answer. Ask with `==` whether "
+                        "that copy is the same as `\"yes\"`."
                     ),
                 ),
                 (
@@ -1518,8 +1621,8 @@ ANY_CASE_ANSWER = dict(
                     "_big = [_c.value for _n in _ast.walk(_ast.parse(_source)) if type(_n).__name__ == 'Compare' "
                     "for _c in [_n.left] + list(_n.comparators) if type(_c).__name__ == 'Constant' "
                     "and type(_c.value).__name__ == 'str' and _c.value != _c.value.lower()]\n"
-                    "assert not _big or not _uses('attr:upper'), '`.upper()` works the other way round, and that "
-                    "would work too. This step practices `.lower()`, though: `answer.lower() == \"yes\"`.'\n"
+                    "assert not _big or not _uses('attr:upper'), '`.upper()` makes capital letters, and that works "
+                    "too. This step practices `.lower()`, though: `answer.lower() == \"yes\"`.'\n"
                     "assert not _big, '`answer.lower()` gives small letters, so compare it with small letters: "
                     "`\"yes\"`. Every capital counts.'",
                 ),
@@ -1532,14 +1635,14 @@ ANY_CASE_ANSWER = dict(
                 rerun_bool("YeS counts", {"answer": "YeS"}, "said_yes", "True",
                            "Use `answer.lower()` in the question, so every way of writing yes counts."),
                 rerun_bool("no is not yes", {"answer": "no"}, "said_yes", "False",
-                           "Ask the question with `answer.lower()`, so the answer follows what the traveler typed."),
+                           "Ask the question with `answer.lower()`, so the answer changes with what the traveler typed."),
                 # `answer != "no"` says yes to YES, yes, YeS and no to no, so a shouted NO must still be a no.
                 rerun_bool("NO is not yes", {"answer": "NO"}, "said_yes", "False",
                            "Ask whether the copy is the same as `\"yes\"`: `answer.lower() == \"yes\"`."),
                 (
                     "uses lower",
                     "assert _uses('attr:lower'), ('This step practices `.lower()`: `answer.lower() == \"yes\"`. '\n"
-                    "    \"Then every way of writing yes counts, even ones Mar'tu's check did not try.\")",
+                    "    \"Then every way of writing yes counts, even ones Mar'tu did not test.\")",
                 ),
             ],
             pass_line="Mar'tu: YES, yes, YeS. All the same now. Python only needed to be asked properly, yes?",
@@ -1565,8 +1668,8 @@ ANY_CASE_ANSWER = dict(
             angle="everyday",
             label="A kind librarian",
             text=(
-                "A librarian who ignores capitals finds your book whether you write HARRY or harry. `.lower()` makes "
-                "Python that kind of librarian: it compares small letters with small letters."
+                "Picture a librarian who doesn't care about capitals. You write HARRY or harry, and she finds the "
+                "same book. `.lower()` makes Python work like that: it compares small letters with small letters."
             ),
         ),
         dict(
@@ -1583,21 +1686,23 @@ ANY_CASE_ANSWER = dict(
             angle="campaign",
             label="You've seen this",
             text=(
-                "In Module 1, Mar'tu's dialogue line went through `.lower()` and then `.capitalize()` before it was "
-                "shown. That tidied any capitals the player typed. Same dot, same idea."
+                "In the game, in Module 1, Mar'tu's dialogue line went through `.lower()` and then `.capitalize()` "
+                "before it was shown. That tidied any capitals the player typed. Same dot, same idea."
             ),
         ),
     ],
     bonus=dict(
         by="lucky",
-        title="What's in it for me?",
+        title="Glug, any way",
         text=(
-            "Lucky asks for glug two ways. Make `first = \"Glug\"` and `second = \"GLUG\"`. Then make `same` say "
-            "whether they match, whatever their capitals, and print it."
+            "Lucky asks for glug, his drink, two ways. At the bottom of your code, three moves:\n"
+            "1. Make `first = \"Glug\"` and `second = \"GLUG\"`.\n"
+            "2. Make a box named `same` that holds whether the two match, whatever their capitals.\n"
+            "3. Show `same` in the Console."
         ),
         hints=[
-            "Both sides need `.lower()`, so both are small letters.",
-            "Write `same = first.lower() == second.lower()`.",
+            "Both sides need `.lower()`, so both are in small letters.",
+            "Write `same = first.lower() == second.lower()` at the bottom of your code, then `print(same)`.",
         ],
         checks=[
             bool_box("same holds True or False", "same", known=ANSWER_KNOWN + ["first", "second", "same"]),
@@ -1616,14 +1721,14 @@ ANY_CASE_ANSWER = dict(
         part="program-dialogue-prompt",
         snippet="dialogue_input = dialogue_input.lower()",
         why=(
-            "You have seen this in Mar'tu's dialogue line. `.lower()` made a lower-case copy, and "
+            "You saw this in the game, in Mar'tu's dialogue line. `.lower()` made a small-letter copy, and "
             "`dialogue_input = ` put that copy back in the box. The dot asked the text to do something."
         ),
     ),
     takeaway="Text must match exactly. `answer.lower() == \"yes\"` ignores capitals: the dot asks the text for a copy.",
     wrong_answers=[
         dict(why="starter unchanged: the bracket says the tried value is the code's own, not a change",
-             code=ANSWER_STARTER, fails_at=1, message_contains='(With `answer = "YES"`, as in your code now'),
+             code=ANSWER_STARTER, fails_at=1, message_contains='With `answer = "YES"`, as in your code now'),
         dict(why=".lower without () (spec)", code=_answer(line='said_yes = answer.lower == "yes"'), fails_at=1,
              message_contains="`()`"),
         dict(why="the answer typed in (spec)", code=_answer(line="said_yes = True"), fails_at=1,
@@ -1631,10 +1736,10 @@ ANY_CASE_ANSWER = dict(
         dict(why="STREXACT: compares the copy with capitals (spec)", code=_answer(line='said_yes = answer.lower() == "YES"'),
              fails_at=1, message_contains="small letters"),
         dict(why="the copy put in the box, no question", code=_answer(line="said_yes = answer.lower()"), fails_at=1,
-             message_contains="lower-case copy itself"),
+             message_contains="small-letter copy itself"),
         dict(why="a lower-case copy made and forgotten (strings do not change)",
              code='answer = "YES"\nanswer.lower()\nsaid_yes = answer == "yes"\nprint(said_yes)\n', fails_at=1,
-             message_contains="forgets it"),
+             message_contains="no box keeps it, so Python throws it away"),
         dict(why=".lower() on the wrong side", code=_answer(line='said_yes = answer == "yes".lower()'), fails_at=1,
              message_contains="wrong text"),
         dict(why="lower used like print", code=_answer(line='said_yes = lower(answer) == "yes"'), fails_at=0,
@@ -1660,9 +1765,9 @@ ANY_CASE_ANSWER = dict(
         dict(why="`is` for ==", code=_answer(line='said_yes = answer.lower() is "yes"'), fails_at=1,
              message_contains="different question"),
         dict(why="the box's name in quotes", code=_answer(line='said_yes = "answer".lower() == "yes"'), fails_at=1,
-             message_contains="just that word"),
+             message_contains="only the word"),
         dict(why="the starter box said_yes renamed (said)", code='answer = "YES"\nsaid = answer.lower() == "yes"\nprint(said)\n',
-             fails_at=1, message_contains="Keep the box `said_yes` from the starter"),
+             fails_at=1, message_contains="Your code needs the box `said_yes` it started with"),
     ],
     notes=(
         meta(starter_level="S4", path="CC", skills="compare,chain-methods-prereq", solo="false", dictates="1",
@@ -1715,30 +1820,41 @@ BROKEN_SPELL_2A = dict(
     id="broken-spell-2a",
     title="Broken spell",
     martu=(
-        "Three bugs. Two are loud: Python stops and names a line. One is quiet: the code runs, but a box holds the "
-        "wrong kind of thing.\n"
-        "Read the last line of Python's message first. Then look at the line it names. Mend it, run again, and see "
-        "what Python finds next."
+        "This spell has three [[bug|bugs]], three mistakes in the code. Two are loud: Python stops and shows an "
+        "error box in the Console. One is quiet: the code runs, but a box holds the wrong kind of thing. Each step "
+        "says *Mend*, which means fix.\n"
+        "When Python stops, read the box in the Console in this order:\n"
+        "1. The title at the top says what went wrong.\n"
+        "2. *Python's last line* says the same thing in Python's words.\n"
+        "3. Find the line number. Fix that line, then press Run again.\n"
+        "A new error means Python got further. That's good news. Fix the next one the same way."
     ),
     names=["roll", "needed", "passed", "clock_color", "clock_is_red"],
     pair_talk=(
-        "Pair talk: you may hunt these bugs together. One of you reads the last line of Python's message out loud; "
-        "the other points at the line it names. Each of you mends it on your own screen."
+        "Pair talk: you may hunt these bugs together. One of you reads the error box out loud, title first. The "
+        "other points at the line number it gives. Then each of you fixes the line on your own screen."
     ),
     starter=BROKEN_STARTER,
     checkpoints=[
         dict(
             id="mend-the-sign",
-            text="Mend the sign on line 3 so `passed` asks whether `roll` is at least `needed`.",
+            text=(
+                "Mend the sign on line 3, between `roll` and `needed`, so `passed` asks whether `roll` is *at least* "
+                "`needed`."
+            ),
             dictated=False,
             hints=[
-                "Read Python's last line: `SyntaxError: invalid syntax`. Python could not read line 3, so nothing ran.",
-                "Python's message names line 3. Look at the two marks between `roll` and `needed`.",
-                "*At least* is written `>=`: the `>` first, then the `=`. `=>` is not a sign Python knows.",
+                "Press Run and read the box in the Console: first its title, then Python's last line, "
+                "`SyntaxError: invalid syntax`. Both point at line 3. Look at the two marks between `roll` and "
+                "`needed`.",
+                "*Syntax* means how a line is put together, like grammar in English class. Type a two-key sign in "
+                "the order you say it: *greater than or equal to* is `>`, then `=`, as in `coins >= price`.",
+                "On line 3, type `>=` instead of `=>`: the `>` first, then the `=`. Line 3 becomes "
+                "`passed = roll >= needed`.",
             ],
             checks=[
                 bool_box("passed holds True or False", "passed", known=BROKEN_KNOWN, kept=True, ask=">="),
-                no_is("passed compares with a sign, not is", ["roll", "needed"], msg=NUM_IS + " *At least* is `>=`."),
+                no_is("passed compares with a sign, not is", ["roll", "needed"], msg=NUM_IS_GTE),
                 (
                     "passed uses >=",
                     "assert _uses('op:GtE') or _uses('op:LtE'), ('`>` leaves out exactly enough. Use `>=`, with the `=` '\n"
@@ -1756,55 +1872,65 @@ BROKEN_SPELL_2A = dict(
         ),
         dict(
             id="mend-needed",
-            text="Line 3 compares a number with text. Mend the line that makes `needed`, so it holds a number.",
+            text=(
+                "Mend line 2, `needed = \"15\"`, so `needed` holds a number. Python stops on line 3, where it "
+                "compares a number with text."
+            ),
             dictated=False,
             hints=[
-                "Read Python's last line: a `TypeError`. `>=` can't compare an `int` (a whole number) with a `str` "
-                "(text).",
-                "Python's message names line 3, but the text comes from line 2. Look at the quotes there.",
-                "Quotes make text. `\"7\" > 3` crashes, but `7 > 3` is True. Numbers don't need quotes.",
+                "Press Run and read the box: its title says TypeError, and Python's last line points at line 3, "
+                "where a number meets text. Which box holds text? Look at line 2.",
+                "Python's last line names `int` and `str`. `int` means a whole number, and `str` means text. Quotes "
+                "make text: `\"7\" > 3` makes Python stop, but `7 > 3` is True.",
+                "Delete the two `\"` marks around 15 on line 2. Line 2 becomes `needed = 15`.",
             ],
             checks=[
                 (
                     "needed holds a number",
                     f"assert 'needed' in globals(), {_gone_text('needed', True)!r}\n"
-                    "assert needed != '15', ('Take the quotes off on line 2: numbers don' + chr(39) + 't need quotes. '\n"
-                    "    '`needed` still holds the starter' + chr(39) + 's `\"15\"`, which is text because of the quotes.')\n"
-                    "assert type(needed).__name__ != 'str', ('Take the quotes off on line 2: numbers don' + chr(39) + 't '\n"
-                    "    'need quotes. `needed` holds text, because of the quotes.')\n"
+                    "assert needed != '15', ('`needed` still holds `\"15\"`, which is text because of the quotes. '\n"
+                    "    'Take the quotes off on line 2: numbers don' + chr(39) + 't get quotes.')\n"
+                    "assert type(needed).__name__ != 'str', ('`needed` holds text, because of the quotes. Take the '\n"
+                    "    'quotes off on line 2: numbers don' + chr(39) + 't get quotes.')\n"
                     "assert type(needed).__name__ == 'int', '`needed` should hold a whole number, like `15`.'",
                 ),
                 bnd("passed: exactly enough passes", "passed", "roll", "needed", "pass", **ROLL_FIX),
             ],
-            pass_line="Mar'tu: Both loud bugs mended. Now the quiet one.",
+            pass_line="Mar'tu: Both loud bugs fixed. Now the quiet one.",
         ),
         dict(
             id="mend-clock",
-            text="`clock_is_red` prints `red`, not a yes/no answer. Make it ask whether `clock_color` is the same as `\"red\"`.",
+            text=(
+                "Mend line 6, `clock_is_red = \"red\"`, so it asks whether `clock_color` is the same as `\"red\"`. "
+                "Right now the Console shows `red`, not `True` or `False`."
+            ),
             dictated=False,
             hints=[
-                "Read the last line Python printed: `red`. A yes/no answer would be `True` or `False`.",
-                "Line 6 has one `=`. It puts the word red in the box instead of asking.",
-                "`=` gets; `==` asks *is the same as*: `door_is_shut = door == \"shut\"`.",
+                "No error box this time: the bug is quiet. Look at the last line in the Console: `red`. A yes-or-no "
+                "answer would be `True` or `False`. Which line puts red in `clock_is_red`?",
+                "One `=` puts a value in a box. `==` asks *is the same as*. In `door_is_shut = door == \"shut\"`, "
+                "the box gets the answer to a question.",
+                "Type `clock_color == ` right before `\"red\"` on line 6. Line 6 becomes "
+                "`clock_is_red = clock_color == \"red\"`.",
             ],
             checks=[
                 bool_box(
                     "clock_is_red holds True or False", "clock_is_red", known=BROKEN_KNOWN, foreign=["door", "door_is_shut"],
                     kept=True,
                     text_msg=(
-                        "`clock_is_red` holds text, so it is not a yes/no answer (`True` or `False`). One `=` puts a "
-                        "value in; `==` asks."
+                        "`clock_is_red` holds text, so it is not a yes-or-no answer, `True` or `False`. One `=` puts a "
+                        "value in the box. `==` asks a question."
                     ),
                 ),
                 no_is("clock_is_red asks with ==, not is", ["clock_color"]),
                 quoted_name("clock_color is the box, not the word", ["clock_color"]),
                 strexact("red is spelled exactly", "red"),
                 rerun_bool("clock_is_red follows the color (red)", {"clock_color": "red"}, "clock_is_red", "True",
-                           "Ask the question with the box `clock_color`, so the answer follows it."),
+                           "Ask the question with the box `clock_color`, so the answer changes with it."),
                 rerun_bool("clock_is_red follows the color (violet)", {"clock_color": "violet"}, "clock_is_red", "False",
-                           "Ask the question with the box `clock_color`, so the answer follows it."),
+                           "Ask the question with the box `clock_color`, so the answer changes with it."),
             ],
-            pass_line="Mar'tu: Three bugs, three mends. Two loud, one quiet. The quiet ones are sneaky, yes?",
+            pass_line="Mar'tu: Three bugs, three fixes. Two loud, one quiet. The quiet ones hide well, yes?",
         ),
     ],
     solution=_broken(),
@@ -1818,17 +1944,26 @@ BROKEN_SPELL_2A = dict(
             angle="step-by-step",
             label="Which bug first?",
             text=(
-                "1. Run. Python stops at the first loud bug and names the line. Mend it.\n"
-                "2. Run again. A new message is good news: Python got further.\n"
-                "3. When nothing stops, the checks speak. Read the message under the step."
+                "1. Press Run. Python stops at the first loud bug. Its error box gives the line number. Fix that line.\n"
+                "2. Press Run again. A new error is good news: Python got further.\n"
+                "3. When nothing stops, read the message under the step in Your steps."
             ),
         ),
         dict(
             angle="picture",
             label="Two kinds of bug",
             text=(
-                "```text\nloud bug:\n  Python stops and\n  names the line.\n\n"
+                "```text\nloud bug:\n  Python stops and\n  shows an error box.\n\n"
                 "quiet bug:\n  the code runs, but a\n  box holds the wrong\n  kind of thing.\n```"
+            ),
+        ),
+        dict(
+            angle="english class",
+            label="From English class",
+            text=(
+                "An error box is like a teacher's note in the margin of your draft. It points to the spot, and it "
+                "isn't a grade. *Syntax* is how a sentence is put together, so a SyntaxError is a line Python can't "
+                "read, like a sentence with its words in the wrong order."
             ),
         ),
         dict(
@@ -1836,14 +1971,14 @@ BROKEN_SPELL_2A = dict(
             text="`>=`, not `=>`. `15`, not `\"15\"`. `==` to ask, not `=`.",
         ),
     ],
-    takeaway="`=>` is not a sign: write `>=`. Numbers have no quotes. One `=` puts a value in; `==` asks.",
+    takeaway="`=>` is not a sign: write `>=`. Numbers get no quotes. One `=` puts a value in, and `==` asks.",
     wrong_answers=[
         dict(why="the starter: => is not a sign (SyntaxError first)", code=BROKEN_STARTER, fails_at=0,
              message_contains="invalid syntax"),
         dict(why="sign mended, needed still text (TypeError)", code=_broken(needed='needed = "15"'), fails_at=0,
              message_contains="not supported between"),
         dict(why="loud bugs mended, clock_is_red still fills with text (not a bool)", code=_broken(clock='clock_is_red = "red"'),
-             fails_at=3, message_contains="not a yes/no answer"),
+             fails_at=3, message_contains="not a yes-or-no answer"),
         dict(why="mended to > instead of >=", code=_broken(passed="passed = roll > needed"), fails_at=1,
              message_contains="leaves out exactly enough"),
         dict(why="mended to <=: no error, but the sign faces the wrong way (used to pass CP1)",
@@ -1856,7 +1991,7 @@ BROKEN_SPELL_2A = dict(
              message_contains="invalid syntax"),
         dict(why="text turned into a number inside the question, line 2 left", code=_broken(
             needed='needed = "15"', passed="passed = roll >= int(needed)"), fails_at=2,
-             message_contains="still holds the starter's"),
+             message_contains='still holds `"15"`'),
         dict(why="quotes kept but the number changed, mended inside the question", code=_broken(
             needed='needed = "16"', passed="passed = roll >= int(needed)"), fails_at=2,
              message_contains="`needed` holds text"),
@@ -1881,10 +2016,10 @@ BROKEN_SPELL_2A = dict(
              fails_at=0, message_contains="not defined"),
         dict(why="the starter box passed renamed (passed_roll)",
              code=_broken(passed="passed_roll = roll >= needed").replace("print(passed)", "print(passed_roll)"),
-             fails_at=1, message_contains="Keep the box `passed` from the starter"),
+             fails_at=1, message_contains="Your code needs the box `passed` it started with"),
         dict(why="the starter box needed renamed (need)",
              code=_broken(needed="need = 15", passed="passed = roll >= need"), fails_at=2,
-             message_contains="Keep the box `needed` from the starter"),
+             message_contains="Your code needs the box `needed` it started with"),
     ],
     notes=(
         meta(starter_level="S4", path="SC", skills="compare,boundary,gets-vs-same,read-traceback", solo="false",
@@ -1917,7 +2052,10 @@ def _solo(line="can_cast = mana >= cost", cost="cost = 9"):
 SOLO_2A = dict(
     id="solo-2a",
     title="Show Mar'tu",
-    martu="One bug, just for you. Exactly enough mana still casts, yes?",
+    martu=(
+        "One bug, and you fix this one on your own. It's quiet: the code runs, but the answer is wrong. Exactly "
+        "enough mana should still cast the spell, yes?"
+    ),
     solo=True,
     # Teacher ruling on the Unit 2 reviews: in Unit 2 SOLO items (and every QC2 exercise) the crash explainer
     # names the kind of slip and the line, but not the fix. Python's own text stays visible.
@@ -1927,12 +2065,14 @@ SOLO_2A = dict(
     checkpoints=[
         dict(
             id="can-cast-right",
-            text="Make `can_cast` right. Exactly enough mana still casts.",
+            text="Fix line 3, the `can_cast` line, so exactly enough mana still casts the spell.",
             dictated=False,
             hints=[
-                "Read the last line Python printed: `False`. Mana 9, cost 9: should the spell cast?",
-                "Look at the sign in `can_cast = mana > cost`. Which sign includes the boundary?",
-                "`>` leaves out the boundary; `>=` includes it: `4 >= 4` is True.",
+                "Look at the Console: it shows `False`. `mana` is 9 and `cost` is 9. Is that enough mana to cast "
+                "the spell?",
+                "Look at the sign on line 3, in `can_cast = mana > cost`. Does it count the number itself, like a "
+                "filled dot on a number line?",
+                "Type `>=` where line 3 has `>`. Line 3 becomes `can_cast = mana >= cost`.",
             ],
             checks=[
                 bool_box("can_cast holds True or False", "can_cast", known=["mana", "cost", "can_cast"],
@@ -1940,7 +2080,7 @@ SOLO_2A = dict(
                 no_is("can_cast compares with a sign, not is", ["mana", "cost"], msg=NUM_IS),
                 bnd("can_cast: exactly enough mana casts", "can_cast", "mana", "cost", "cast", **SOLO_FIX),
             ],
-            pass_line="Mar'tu: You did that on your own. On your map: ✓ exactly enough still passes.",
+            pass_line="Mar'tu: You did that on your own. Exactly enough mana, and the spell casts.",
         ),
     ],
     solution=_solo(),
@@ -1949,10 +2089,16 @@ SOLO_2A = dict(
         distractors=["can_cast = mana > cost", "can_cast = True", "can_cast = mana <= cost"],
     ),
     another_way=[
-        dict(angle="step-by-step", text="Try mana 8, 9 and 10 against a cost of 9: only 8 should fail."),
-        dict(angle="shorter", text="Exactly enough counts? `>=`."),
+        dict(
+            angle="step-by-step",
+            text=(
+                "Picture `mana` as 8, then 9, then 10, with a cost of 9. Only 8 is not enough. 9 is exactly enough, "
+                "so it should cast."
+            ),
+        ),
+        dict(angle="shorter", text="Should exactly enough count? Then the sign needs its `=`."),
     ],
-    takeaway="On your own: `>=` when exactly enough should still pass.",
+    takeaway="Use `>=` when exactly enough should still pass.",
     wrong_answers=[
         dict(why="starter unchanged: the boundary bug", code=SOLO_STARTER, fails_at=1,
              message_contains="Which sign counts the number itself?"),
@@ -1975,7 +2121,7 @@ SOLO_2A = dict(
              message_contains="different question"),
         dict(why="the starter box can_cast dropped, the question printed instead",
              code="mana = 9\ncost = 9\nprint(mana >= cost)\n", fails_at=1,
-             message_contains="Keep the box `can_cast` from the starter"),
+             message_contains="Your code needs the box `can_cast` it started with"),
     ],
     notes=(
         meta(starter_level="S4", path="CC", skills="boundary", solo="true", dictates="",
@@ -1998,7 +2144,7 @@ LESSON_2A = dict(
     id="true-or-false-yes",
     title="True or False, Yes?",
     minutes=20,
-    summary="Ask Python yes/no questions with `<`, `>`, `==`, `!=` and `>=`, and ignore capitals with `.lower()`.",
+    summary="Ask Python yes-or-no questions with `<`, `>`, `==`, `!=` and `>=`, and ignore capitals with `.lower()`.",
     notes=(
         "Lesson 2A (CC; 2A-05 SC). Preceded by 2a-remembers. Exactly one SOLO (solo-2a). Non-dictated checkpoints: "
         "2A-02 CP3, 2A-03 CP1-2, 2A-05 CP1-3, 2A-S. No `if` yet (2B). Campaign links are 'you have seen this': "

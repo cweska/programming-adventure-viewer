@@ -14,7 +14,7 @@
       "notes": "3X pool (6A-T1 cheer-on, 6A-T2 double-cost, 6A-T3 glug-left). Optional; every twin is goal-only (ND). Feeds twins, the spaced queue and early finishers (G1 R19)."
     },
     "qc-r1-a": {
-      "notes": "Quick Check Recipes I, form A (code tasks, in order C1, C5, C2, C3, C4: C5 sits second so C4 stays last). Pass = every code task plus 3 of the 4 questions in qc-r1-a-questions; a retake draws form B. The site gates on both (questions_to_pass=3, as Unit 2's QC2). The code tasks still cover the unit on their own (teacher ruling on the Unit 3 reviews: C5 added, so nobody tests out without tracing). Framing (G4 R25): it shows Mar'tu where to start. Messages are lean, like the explainer: the slip and the evidence in brackets, never the fix, the finished line or the recipe body (u03b `_leaned`; no `def` line, no `>=`, no `randint` line), so a task can't be passed by following them. Coverage (lint d): param-use -> C1 (WA `base + bonus` PNM, `return 13` PAR-CONST, typed `10 + 3`) and Q3 (numbers in ink); return-value -> C1 (WA print, no return), C3 (WA print, if with no else), C4 (WA rolled not returned), Q2 (None); return-right-name -> C1 (WA return result, a typo of its own box); trace-call -> C5 (WA the 15-type constants, the 7-type raw inputs, the dropped + 10); replace-pass -> C2 CP1 (WA unquoted, the Example's direction, unindented); def-call -> C2 (WA no `()` on the helper), C1 (WA def below the call, def used for a box) and Q1; store-then-pass -> C2 CP2 (WA no store, typed line, printed or returned instead of passed); return-comparison, boundary -> C3 (WA `>`, `return True`, `==`, a typed number); randint-param -> C4 (WA randint(1, 20), from 0, top left out, biggest first); chain-methods -> Q4 and C2's finished helper. C4's pass line recaps this form's own tasks and offers the stretch. support='none' and explainer='lean' everywhere: no hints, tracer or compare; glossary and read-aloud stay on. 12 minutes (was 9)."
+      "notes": "Quick Check Recipes I, form A (code tasks, in order C1, C5, C2, C3, C4: C5 sits second so C4 stays last). Pass = every code task plus 3 of the 4 questions in qc-r1-a-questions; a retake draws form B. The site gates on both (questions_to_pass=3, as Unit 2's QC2). The code tasks still cover the unit on their own (teacher ruling on the Unit 3 reviews: C5 added, so nobody tests out without tracing). Framing (G4 R25): it shows Mar'tu where to start. Messages are lean, like the explainer: the slip, then the labelled evidence, never the fix, the finished line or the recipe body (u03b `_leaned`; no `def` line, no `>=`, no `randint` line), so a task can't be passed by following them. Coverage (lint d): param-use -> C1 (WA `base + bonus` PNM, `return 13` PAR-CONST, typed `10 + 3`) and Q3 (numbers in ink); return-value -> C1 (WA print, no return), C3 (WA print, if with no else), C4 (WA rolled not returned), Q2 (None); return-right-name -> C1 (WA return result, a typo of its own box); trace-call -> C5 (WA the 15-type constants, the 7-type raw inputs, the dropped + 10); replace-pass -> C2 CP1 (WA unquoted, the Example's direction, unindented); def-call -> C2 (WA no `()` on the helper), C1 (WA def below the call, def used for a box) and Q1; store-then-pass -> C2 CP2 (WA no store, typed line, printed or returned instead of passed); return-comparison, boundary -> C3 (WA `>`, `return True`, `==`, a typed number); randint-param -> C4 (WA randint(1, 20), from 0, top left out, biggest first); chain-methods -> Q4 and C2's finished helper. C4's pass line recaps this form's own tasks and offers the stretch. support='none' and explainer='lean' everywhere: no hints, tracer or compare; glossary and read-aloud stay on. 12 minutes (was 9)."
     },
     "qc-r1-a-questions": {
       "notes": "Quick Check Recipes I, form A questions (scored with qc-r1-a: every code task plus 3 of the 4 questions, questions_to_pass=3 on the form, as Unit 2's QC2). The best score counts, so a retake can lift it. Q3 was follow-the-call; it moved into C5 and numbers-in-ink took its place. No hints; read-aloud and glossary stay on."
@@ -2391,7 +2391,7 @@
             "present_greeting()"
           ],
           "failsAt": 3,
-          "messageContains": "function"
+          "messageContains": "recipe itself"
         },
         {
           "why": "stored but never passed",
@@ -2560,7 +2560,7 @@
             "print(strength_check(15))"
           ],
           "failsAt": 1,
-          "messageContains": "starter"
+          "messageContains": "placeholder"
         },
         {
           "why": "needed in quotes (the try line stops with a TypeError; the explainer's text-vs-number row)",
@@ -3049,7 +3049,7 @@
             "print(\"Hours left: \" + str(hours_left))"
           ],
           "failsAt": 3,
-          "messageContains": "Keep the line"
+          "messageContains": "is gone"
         },
         {
           "why": "return 26 (PAR-CONST)",
@@ -3752,7 +3752,7 @@
             "cheer_on(\"Gearshift\", \"On it.\")"
           ],
           "failsAt": 1,
-          "messageContains": "Keep the `def` line"
+          "messageContains": "Put the line back as it was"
         },
         {
           "why": "no () on the third call",
@@ -3853,7 +3853,7 @@
             "cheer_on(\"Gearshift\", \"On it.\")"
           ],
           "failsAt": 2,
-          "messageContains": "Keep the starter's calls"
+          "messageContains": "Keep the calls that were already there"
         },
         {
           "why": "def used to make a box",
@@ -4173,7 +4173,7 @@
             "# should show: 30"
           ],
           "failsAt": 1,
-          "messageContains": "Keep the `def` line"
+          "messageContains": "Put the line back as it was"
         },
         {
           "why": "the recipe called with no value",
@@ -4297,7 +4297,7 @@
             "# Then print sips_left."
           ],
           "failsAt": 1,
-          "messageContains": "ingredients, `sips_now` and `sips_drunk`, letter for letter"
+          "messageContains": "Use `sips_now` and `sips_drunk`, letter for letter"
         },
         {
           "why": "return result after left = ... (A-01 return reslt)",
@@ -4659,7 +4659,7 @@
             "print(total_cost)"
           ],
           "failsAt": 1,
-          "messageContains": "Make a recipe named `item_cost`"
+          "messageContains": "No line makes a recipe named `item_cost` yet"
         },
         {
           "why": "item_cost hands back a typed 3 * 4 (A-06 test values)",
@@ -4750,7 +4750,7 @@
             "print(total_cost)"
           ],
           "failsAt": 1,
-          "messageContains": "Use this recipe's ingredients, `count` and `price`"
+          "messageContains": "Use `count` and `price`, letter for letter"
         },
         {
           "why": "the ingredients named differently",
@@ -4822,7 +4822,7 @@
             "print(total_cost)"
           ],
           "failsAt": 2,
-          "messageContains": "not a number worked out by hand"
+          "messageContains": "does not use `item_cost`"
         },
         {
           "why": "no () on a call (the box holds the recipe)",
@@ -4969,7 +4969,7 @@
           "messageContains": "expected '('"
         }
       ],
-      "notes": "meta: starter_level=S2; path=challenge; skills=param-use,return-value,store-then-pass; solo=false; dictates=; foreign_names=area,width,height,rug,mat,floor,result; par=(6,3),(11,2)\nTeacher ruling on the Unit 3 reviews (RTS-9): an optional advanced challenge for the stretch group, offered by the Quick Check's last pass line. Units 1-3 ideas only (`def`, `return`, boxes, `*`, `+`, `print`). CP1 is RET + PAR-CONST with fresh values (6, 3) -> 18 and (11, 2) -> 22, never 12, 14 or 10 (lint b). CP2 and CP3 are CMB: the check reruns the program with `item_cost` swapped for a stand-in (count * price + count + price), so a typed `12`, the old `3 * 4` lines, a typed 36 and `12 + 14 + 10` all fail ('did not change'), and other numbers that make the same cost fail too (A-08). The two numbers in either order pass. Evidence in brackets names Mar'tu's swap, never the student's numbers. All steps goal-only (ND)."
+      "notes": "meta: starter_level=S2; path=challenge; skills=param-use,return-value,store-then-pass; solo=false; dictates=; foreign_names=area,width,height,rug,mat,floor,result; par=(6,3),(11,2)\nTeacher ruling on the Unit 3 reviews (RTS-9): an optional advanced challenge for the stretch group, offered by the Quick Check's last pass line. Units 1-3 ideas only (`def`, `return`, boxes, `*`, `+`, `print`). CP1 is RET + PAR-CONST with fresh values (6, 3) -> 18 and (11, 2) -> 22, never 12, 14 or 10 (lint b). CP2 and CP3 are CMB: the check reruns the program with `item_cost` swapped for a stand-in (count * price + count + price), so a typed `12`, the old `3 * 4` lines, a typed 36 and `12 + 14 + 10` all fail ('did not change'), and other numbers that make the same cost fail too (A-08). The two numbers in either order pass. The labelled evidence names Mar'tu's stand-in, never the student's numbers. All steps goal-only (ND)."
     },
     "qc-r1-a/write-a-recipe": {
       "wrongAnswers": [
@@ -5303,7 +5303,7 @@
             ""
           ],
           "failsAt": 1,
-          "messageContains": "is not a box in this recipe, letter for letter"
+          "messageContains": "No box in this recipe is spelled `totl`"
         },
         {
           "why": "handed back as text",
@@ -5334,7 +5334,7 @@
             "# should show: 13"
           ],
           "failsAt": 1,
-          "messageContains": "hands back a word in quotes, not a box"
+          "messageContains": "hands back a word in quotes"
         },
         {
           "why": "the ingredients in the other order",
@@ -5408,7 +5408,7 @@
             ""
           ],
           "failsAt": 1,
-          "messageContains": "2 ingredients, but its brackets hold 1"
+          "messageContains": "2 ingredients, but its parentheses hold 1"
         },
         {
           "why": "lean: a box name the recipe never makes, no call",
@@ -5420,7 +5420,7 @@
             ""
           ],
           "failsAt": 1,
-          "messageContains": "No box named `power` is made in the recipe"
+          "messageContains": "No box named `power` is made in this recipe"
         },
         {
           "why": "lean: a later line puts a value in the recipe's name",
@@ -5434,10 +5434,10 @@
             "armor_total = 13"
           ],
           "failsAt": 1,
-          "messageContains": "A later line put a value in"
+          "messageContains": "A later line puts a value in"
         }
       ],
-      "notes": "meta: starter_level=S1; path=QC-R1; form=A; skills=param-use,return-value,return-right-name; solo=true; dictates=; foreign_names=coins_left,coins,spent,result,add,a,b\nQC-R1 C1, form A. Goal only (S1: the task names the signature; the starter has a comment and the call, no def). The Example is on screen and uses `result` (the class's slip: A-01 `return reslt`, copied from the worksheet example). Fresh calls (7, 5) -> 12 and (20, 4) -> 24 never give 13 (lint b). With the starter's call in place, `return result` and `base + bonus` crash first and the explainer's rules 3 and 2 answer (RNM, PNM); without the call, the check's own RNM/PNM messages answer (both proven). The ingredient names are required exactly (the task names them). Teacher ruling on the Unit 3 reviews: lean messages, the slip and the evidence, never the fix. recipe_check(qc=True) never shows the `def` line ('`armor_total` is a box, made with `=`, not a recipe.'; 'No line makes a recipe named ... yet.'), and returns_check(lean=True) names the slip ('It does not hand back the two ingredients added together.', 'The recipe has no `return` line.'), never the line. support='none', explainer='lean'."
+      "notes": "meta: starter_level=S1; path=QC-R1; form=A; skills=param-use,return-value,return-right-name; solo=true; dictates=; foreign_names=coins_left,coins,spent,result,add,a,b\nQC-R1 C1, form A. Goal only (S1: the task names the signature; the starter has a comment and the call, no def). The Example is on screen and uses `result` (the class's slip: A-01 `return reslt`, copied from the worksheet example). Fresh calls (7, 5) -> 12 and (20, 4) -> 24 never give 13 (lint b). With the starter's call in place, `return result` and `base + bonus` crash first and the explainer's rules 3 and 2 answer (RNM, PNM); without the call, the check's own RNM/PNM messages answer (both proven). The ingredient names are required exactly (the task names them). Teacher ruling on the Unit 3 reviews: lean messages, the slip and the evidence, never the fix. recipe_check(qc=True) never shows the `def` line ('`armor_total` is a box, made with `=`, not a recipe.'; 'No line makes a recipe named ... yet.'), and returns_check(lean=True) names the slip ('The recipe does not hand back the two ingredients added together.', 'The recipe has no `return` line.'), never the line. support='none', explainer='lean'."
     },
     "qc-r1-a/trace-the-call": {
       "partials": [
@@ -5456,7 +5456,7 @@
             "printed_row = 0"
           ],
           "failsAt": 1,
-          "messageContains": "still holds the starter's 0"
+          "messageContains": "still holds the 0 it started with"
         },
         {
           "why": "handed back = 15: the numbers written in the recipe (the 15-type answer, A-03/A-04)",
@@ -5564,7 +5564,7 @@
             "printed_row = 0"
           ],
           "failsAt": 2,
-          "messageContains": "still holds the starter's 0"
+          "messageContains": "still holds the 0 it started with"
         },
         {
           "why": "a print added to check the rows (the guard: no print in the editor)",
@@ -6098,7 +6098,7 @@
             "present_warning()"
           ],
           "failsAt": 2,
-          "messageContains": "nothing reached the ley board"
+          "messageContains": "nothing reached the Ley board"
         },
         {
           "why": "the variable's name in quotes",
@@ -6537,7 +6537,7 @@
             "print(latch_check(20))"
           ],
           "failsAt": 1,
-          "messageContains": "still holds the starter's `0`"
+          "messageContains": "still holds the `0` it started with"
         },
         {
           "why": "return True (always passes)",
@@ -6693,7 +6693,7 @@
             "print(latch_check(20))"
           ],
           "failsAt": 2,
-          "messageContains": "does not follow the box"
+          "messageContains": "does not change to match the box"
         },
         {
           "why": "the campaign's box name (required_roll)",
@@ -6943,7 +6943,7 @@
             "print(latch_check(20))"
           ],
           "failsAt": 2,
-          "messageContains": "does not follow the box"
+          "messageContains": "does not change to match the box"
         },
         {
           "why": "the roll ingredient renamed",
@@ -6962,7 +6962,7 @@
             "print(latch_check(20))"
           ],
           "failsAt": 1,
-          "messageContains": "ingredients changed from the starter"
+          "messageContains": "ingredients on the `def` line changed"
         }
       ],
       "notes": "meta: starter_level=S2; path=QC-R1; form=A; skills=return-comparison,boundary; solo=true; dictates=; foreign_names=score,target,required_roll\nQC-R1 C3, form A. `needed` is read from the student's own recipe (any 2-20 passes, lint e). BND calls the recipe with needed, needed - 1, needed + 1, 20 and 1, then rebuilds the recipe with `needed` moved by 3 and tries again, so a typed number fails. Returns must be True or False (print, an `if` with no `else`, text, the roll itself). The if/else form passes: the assemble lines use it and the harness runs them. `required_roll` (the campaign's name) gets its own message. Lean messages: no message names the sign or the fix (teacher ruling): 'Exactly enough does not pass.', and an `if` with no `else` gets 'This roll gets no answer: no `return` line runs for it.' support='none', explainer='lean'."
@@ -7186,7 +7186,7 @@
             "print(roll_die(20))"
           ],
           "failsAt": 1,
-          "messageContains": "does not follow `die_size`"
+          "messageContains": "does not change to match `die_size`"
         },
         {
           "why": "the def line changed (another ingredient)",
@@ -7203,7 +7203,7 @@
             "print(roll_die(20))"
           ],
           "failsAt": 1,
-          "messageContains": "ingredients changed from the starter"
+          "messageContains": "ingredients on the `def` line changed"
         },
         {
           "why": "approximate ingredient name (size for die_size)",
@@ -7253,7 +7253,7 @@
             ""
           ],
           "failsAt": 1,
-          "messageContains": "`def` line is gone, or its name changed"
+          "messageContains": "is gone, or its name changed"
         }
       ],
       "notes": "meta: starter_level=S3; path=QC-R1; form=A; skills=randint-param; solo=true; dictates=; foreign_names=\nQC-R1 C4, form A. RND: `random.randint` is swapped for a scripted die that records its arguments (and a bare `randint` from `from random import randint` too). The check rolls sizes [6, 20, 4]; the starter's visible call is roll_die(20), so typing its size (A-06's test values) fails on the other size. Deterministic: the scripted die returns fixed values. Lean messages: no message shows the `randint` line or the fix (teacher ruling): the starter's `return 1` gets 'The recipe does not roll.', and `randint(die_size, 1)` without the call gets 'The numbers in the roll are in the wrong order.' `random.randint(die_size, 1)` stops on the shown call with Python's 'empty range in randrange(...)'. The pass line is the Quick Check's last: a recap of this form's own tasks, then the stretch (Lucky's side quests, the supply-run challenge). support='none', explainer='lean'."
@@ -7590,7 +7590,7 @@
             ""
           ],
           "failsAt": 1,
-          "messageContains": "is not a box in this recipe, letter for letter"
+          "messageContains": "No box in this recipe is spelled `totl`"
         },
         {
           "why": "handed back as text",
@@ -7621,7 +7621,7 @@
             "# should show: 10"
           ],
           "failsAt": 1,
-          "messageContains": "hands back a word in quotes, not a box"
+          "messageContains": "hands back a word in quotes"
         },
         {
           "why": "the ingredients in the other order",
@@ -7695,7 +7695,7 @@
             ""
           ],
           "failsAt": 1,
-          "messageContains": "2 ingredients, but its brackets hold 1"
+          "messageContains": "2 ingredients, but its parentheses hold 1"
         },
         {
           "why": "lean: a box name the recipe never makes, no call",
@@ -7707,7 +7707,7 @@
             ""
           ],
           "failsAt": 1,
-          "messageContains": "No box named `power` is made in the recipe"
+          "messageContains": "No box named `power` is made in this recipe"
         },
         {
           "why": "lean: a later line puts a value in the recipe's name",
@@ -7721,10 +7721,10 @@
             "shield_total = 10"
           ],
           "failsAt": 1,
-          "messageContains": "A later line put a value in"
+          "messageContains": "A later line puts a value in"
         }
       ],
-      "notes": "meta: starter_level=S1; path=QC-R1; form=B; skills=param-use,return-value,return-right-name; solo=true; dictates=; foreign_names=hours_left,hours,gone,result,add,a,b\nQC-R1 C1, form B. Goal only (S1: the task names the signature; the starter has a comment and the call, no def). The Example is on screen and uses `result` (the class's slip: A-01 `return reslt`, copied from the worksheet example). Fresh calls (9, 2) -> 11 and (15, 4) -> 19 never give 10 (lint b). With the starter's call in place, `return result` and `base + bonus` crash first and the explainer's rules 3 and 2 answer (RNM, PNM); without the call, the check's own RNM/PNM messages answer (both proven). The ingredient names are required exactly (the task names them). Teacher ruling on the Unit 3 reviews: lean messages, the slip and the evidence, never the fix. recipe_check(qc=True) never shows the `def` line ('`armor_total` is a box, made with `=`, not a recipe.'; 'No line makes a recipe named ... yet.'), and returns_check(lean=True) names the slip ('It does not hand back the two ingredients added together.', 'The recipe has no `return` line.'), never the line. support='none', explainer='lean'."
+      "notes": "meta: starter_level=S1; path=QC-R1; form=B; skills=param-use,return-value,return-right-name; solo=true; dictates=; foreign_names=hours_left,hours,gone,result,add,a,b\nQC-R1 C1, form B. Goal only (S1: the task names the signature; the starter has a comment and the call, no def). The Example is on screen and uses `result` (the class's slip: A-01 `return reslt`, copied from the worksheet example). Fresh calls (9, 2) -> 11 and (15, 4) -> 19 never give 10 (lint b). With the starter's call in place, `return result` and `base + bonus` crash first and the explainer's rules 3 and 2 answer (RNM, PNM); without the call, the check's own RNM/PNM messages answer (both proven). The ingredient names are required exactly (the task names them). Teacher ruling on the Unit 3 reviews: lean messages, the slip and the evidence, never the fix. recipe_check(qc=True) never shows the `def` line ('`armor_total` is a box, made with `=`, not a recipe.'; 'No line makes a recipe named ... yet.'), and returns_check(lean=True) names the slip ('The recipe does not hand back the two ingredients added together.', 'The recipe has no `return` line.'), never the line. support='none', explainer='lean'."
     },
     "qc-r1-b/trace-the-call": {
       "partials": [
@@ -7743,7 +7743,7 @@
             "printed_row = 0"
           ],
           "failsAt": 1,
-          "messageContains": "still holds the starter's 0"
+          "messageContains": "still holds the 0 it started with"
         },
         {
           "why": "handed back = 7: the numbers written in the recipe (the 15-type answer, A-03/A-04)",
@@ -7851,7 +7851,7 @@
             "printed_row = 0"
           ],
           "failsAt": 2,
-          "messageContains": "still holds the starter's 0"
+          "messageContains": "still holds the 0 it started with"
         },
         {
           "why": "a print added to check the rows (the guard: no print in the editor)",
@@ -8385,7 +8385,7 @@
             "present_farewell()"
           ],
           "failsAt": 2,
-          "messageContains": "nothing reached the ley board"
+          "messageContains": "nothing reached the Ley board"
         },
         {
           "why": "the variable's name in quotes",
@@ -8824,7 +8824,7 @@
             "print(dodge_check(20))"
           ],
           "failsAt": 1,
-          "messageContains": "still holds the starter's `0`"
+          "messageContains": "still holds the `0` it started with"
         },
         {
           "why": "return True (always passes)",
@@ -8980,7 +8980,7 @@
             "print(dodge_check(20))"
           ],
           "failsAt": 2,
-          "messageContains": "does not follow the box"
+          "messageContains": "does not change to match the box"
         },
         {
           "why": "the campaign's box name (required_roll)",
@@ -9230,7 +9230,7 @@
             "print(dodge_check(20))"
           ],
           "failsAt": 2,
-          "messageContains": "does not follow the box"
+          "messageContains": "does not change to match the box"
         },
         {
           "why": "the roll ingredient renamed",
@@ -9249,7 +9249,7 @@
             "print(dodge_check(20))"
           ],
           "failsAt": 1,
-          "messageContains": "ingredients changed from the starter"
+          "messageContains": "ingredients on the `def` line changed"
         }
       ],
       "notes": "meta: starter_level=S2; path=QC-R1; form=B; skills=return-comparison,boundary; solo=true; dictates=; foreign_names=score,target,required_roll\nQC-R1 C3, form B. `needed` is read from the student's own recipe (any 2-20 passes, lint e). BND calls the recipe with needed, needed - 1, needed + 1, 20 and 1, then rebuilds the recipe with `needed` moved by 3 and tries again, so a typed number fails. Returns must be True or False (print, an `if` with no `else`, text, the roll itself). The if/else form passes: the assemble lines use it and the harness runs them. `required_roll` (the campaign's name) gets its own message. Lean messages: no message names the sign or the fix (teacher ruling): 'Exactly enough does not pass.', and an `if` with no `else` gets 'This roll gets no answer: no `return` line runs for it.' support='none', explainer='lean'."
@@ -9473,7 +9473,7 @@
             "print(roll_die(6))"
           ],
           "failsAt": 1,
-          "messageContains": "does not follow `die_size`"
+          "messageContains": "does not change to match `die_size`"
         },
         {
           "why": "the def line changed (another ingredient)",
@@ -9490,7 +9490,7 @@
             "print(roll_die(6))"
           ],
           "failsAt": 1,
-          "messageContains": "ingredients changed from the starter"
+          "messageContains": "ingredients on the `def` line changed"
         },
         {
           "why": "approximate ingredient name (size for die_size)",
@@ -9540,7 +9540,7 @@
             ""
           ],
           "failsAt": 1,
-          "messageContains": "`def` line is gone, or its name changed"
+          "messageContains": "is gone, or its name changed"
         }
       ],
       "notes": "meta: starter_level=S3; path=QC-R1; form=B; skills=randint-param; solo=true; dictates=; foreign_names=\nQC-R1 C4, form B. RND: `random.randint` is swapped for a scripted die that records its arguments (and a bare `randint` from `from random import randint` too). The check rolls sizes [12, 6, 8]; the starter's visible call is roll_die(6), so typing its size (A-06's test values) fails on the other size. Deterministic: the scripted die returns fixed values. Lean messages: no message shows the `randint` line or the fix (teacher ruling): the starter's `return 1` gets 'The recipe does not roll.', and `randint(die_size, 1)` without the call gets 'The numbers in the roll are in the wrong order.' `random.randint(die_size, 1)` stops on the shown call with Python's 'empty range in randrange(...)'. The pass line is the Quick Check's last: a recap of this form's own tasks, then the stretch (Lucky's side quests, the supply-run challenge). support='none', explainer='lean'."

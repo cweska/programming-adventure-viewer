@@ -149,7 +149,7 @@ test.describe("Intro to Python", () => {
       if (n < 4) await run();
       if (n === 3) {
         // Three misses in a row on the step: Help is highlighted with Oogrish's one line (no popup).
-        await expect(page.getByTestId("help-offer")).toContainText("Read the last line first");
+        await expect(page.getByTestId("help-offer")).toContainText("Read the title of the box in the Console");
         await expect(help).toHaveClass(/is-offered/);
       }
     }
@@ -300,8 +300,8 @@ test.describe("Intro to Python", () => {
     // After a crash, Help names the line to mend first; Start me off is not offered for a line that is there.
     await runCode(page, 'caster = "Gearshift"\nmana = 20\nprint(caster + " has " + mana + " mana.")\n');
     await expect(page.getByTestId("explainer")).toBeVisible();
-    await expect(page.getByTestId("task-line")).toContainText("First, mend line 3.");
-    await expect(page.getByTestId("help-crash")).toContainText("Mend line 3 first.");
+    await expect(page.getByTestId("task-line")).toContainText("First, fix line 3.");
+    await expect(page.getByTestId("help-crash")).toContainText("Fix line 3 first.");
     await expect(page.getByTestId("help-button")).not.toContainText("Start me off");
   });
 

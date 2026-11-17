@@ -36,7 +36,7 @@ describe("explainCourseError: the class's real slips", () => {
     const result = explainRun('print("Hello)\n');
     expect(result.title).toBe("Missing quote");
     expect(result.hint).toBe(
-      'The text on line 1 is missing its closing quote. Text needs a quote at the start and at the end, like this: print("Hello")',
+      'The text on line 1 is missing its closing quote. Like quotation marks in English, text needs a quote at the start and at the end: `print("Hello")`',
     );
   });
 
@@ -44,7 +44,7 @@ describe("explainCourseError: the class's real slips", () => {
     const result = explainRun("print(\"fireball')\n");
     expect(result.title).toBe("Quotes don't match");
     expect(result.hint).toBe(
-      `The text on line 1 starts with " but ends with '. Use the same kind of quote at both ends, like "fireball".`,
+      'The text on line 1 starts with `"` but ends with `\'`. Quotes come in matching pairs: use the same kind at both ends, like `"fireball"`.',
     );
   });
 
@@ -53,24 +53,24 @@ describe("explainCourseError: the class's real slips", () => {
     const result = explainRun('print("Hi. It is me, Mar\'tu.)\n');
     expect(result.title).toBe("Missing quote");
     expect(result.hint).toBe(
-      'The text on line 1 is missing its closing quote. Text needs a quote at the start and at the end, like this: print("Hi. It is me, Mar\'tu.")',
+      'The text on line 1 is missing its closing quote. Like quotation marks in English, text needs a quote at the start and at the end: `print("Hi. It is me, Mar\'tu.")`',
     );
     expect(explainRun('print("The guards\' post is cold)\n').hint).toContain('print("The guards\' post is cold")');
     // A real mismatch with an apostrophe earlier in the text is still a mismatch.
     const mismatch = explainRun("print(\"Barrier's holding.')\n");
     expect(mismatch.title).toBe("Quotes don't match");
-    expect(mismatch.hint).toContain(`like "Barrier's holding."`);
+    expect(mismatch.hint).toContain('`"Barrier\'s holding."`');
   });
 
   it("explains Unit 1's name slips: a space or a dash in a name", () => {
     const space = explainRun("Max_Mana = 18\nmagical affinity = 9\nprint(magical_affinity)\n");
     expect(space.kind).toBe("space-in-name");
     expect(space.hint).toBe(
-      "A name can't have spaces on line 2. Python reads magical and affinity as separate names. Join the words with _ instead: magical_affinity = 9",
+      "Line 2 has a space in a name, so Python reads `magical` and `affinity` as separate names. A name can't have spaces, like a username. Join the words with an underscore `_`: `magical_affinity = 9`",
     );
     const dash = explainRun("magical-affinity = 9\n");
     expect(dash.kind).toBe("dash-in-name");
-    expect(dash.hint).toContain("Python reads - as minus. Join the words with _ instead: magical_affinity = 9");
+    expect(dash.hint).toContain('Python reads `-` as minus, like in math. Join the words with an underscore `_` instead: `magical_affinity = 9`');
     // Other slips keep their own advice.
     expect(explainRun("mana = 5\nif mana = 5:\n    print(mana)\n").kind).toBe("compare-with-double-equals");
     expect(explainRun('def companion = "Gearshift"\n').kind).toBe("def-for-variable");
@@ -79,12 +79,12 @@ describe("explainCourseError: the class's real slips", () => {
   it("explains Unit 1's math slips: brackets for the gap, and a number in quotes", () => {
     const bar = explainRun('full = "█"\nempty = "░"\nmana = 3\nmax_mana = 5\nbar = full * mana + empty * max_mana - mana\n');
     expect(bar.kind).toBe("bar-needs-brackets");
-    expect(bar.hint).toContain("Put brackets around the subtraction so it happens first: bar = full * mana + empty * (max_mana - mana)");
+    expect(bar.hint).toContain('Put parentheses around the subtraction so it happens first: `bar = full * mana + empty * (max_mana - mana)`');
     expect(explainRun('mana = 3\nprint("░" * 5 - mana)\n').hint).toContain('print("░" * (5 - mana))');
     expect(explainRun('mana = 3\nprint(5 - mana * "░")\n').hint).toContain('print((5 - mana) * "░")');
     const quoted = explainRun('stamina = 15\nstamina = stamina - "4"\n');
     expect(quoted.kind).toBe("number-in-quotes");
-    expect(quoted.hint).toBe('"4" on line 2 has quotes, so Python treats it as text, not a number. Numbers have no quotes: write 4.');
+    expect(quoted.hint).toBe('`"4"` on line 2 has quotes, so Python treats it as text, like the number on a jersey, not a number you can do math with. A number gets no quotes: write `4`.');
     // Text that is really text still gets the general advice.
     expect(explainRun('print("Mana" - 3)\n').kind).toBe("math-with-text");
   });
@@ -92,11 +92,11 @@ describe("explainCourseError: the class's real slips", () => {
   it("explains two apostrophes typed for a double quote, and a ) typed inside the quotes", () => {
     const twice = explainRun("print(''Shield up'')\n");
     expect(twice.kind).toBe("two-single-quotes");
-    expect(twice.hint).toContain('Use one " at each end of the text: print("Shield up")');
+    expect(twice.hint).toContain('Use one `"` at each end of the text: `print("Shield up")`');
     const inside = explainRun('print("Shield up!)"\n');
     expect(inside.kind).toBe("never-closed");
     expect(inside.hint).toBe(
-      'The ) on line 1 is inside the quotes, so Python reads it as part of the text. Move it after the closing quote: print("Shield up!")',
+      'The `)` on line 1 is inside the quotes, so Python reads it as part of the text. Move it after the closing quote: `print("Shield up!")`',
     );
   });
 
@@ -104,7 +104,7 @@ describe("explainCourseError: the class's real slips", () => {
     const result = explainRun('print(Fireball")\n');
     expect(result.title).toBe("Missing quote");
     expect(result.hint).toBe(
-      'The text on line 1 is missing its opening quote. Text needs a quote at the start and at the end, like this: print("Fireball")',
+      'The text on line 1 is missing its opening quote. Like quotation marks in English, text needs a quote at the start and at the end: `print("Fireball")`',
     );
     expect(explainRun('hero = Bomb Shell"\n').hint).toContain('hero = "Bomb Shell"');
   });
@@ -112,14 +112,14 @@ describe("explainCourseError: the class's real slips", () => {
   it("explains an apostrophe inside single quotes", () => {
     const result = explainRun("print('It's fun')\n");
     expect(result.title).toBe("Apostrophe in text");
-    expect(result.hint).toContain(`like "It's fun"`);
+    expect(result.hint).toContain('`"It\'s fun"`');
   });
 
   it("asks whether an unknown word should have been text", () => {
     const result = explainRun("spell = fireball\nprint(spell)\n");
     expect(result.title).toBe("Missing quotes?");
     expect(result.hint).toBe(
-      'Python doesn\'t know the name fireball. Did you mean to put quotes around it? Text needs quotes: "fireball"',
+      '`fireball` has no quotes, so Python looks for a name it should already know, and finds none. Words need quotes, the way you quote someone\'s exact words: `"fireball"`',
     );
   });
 
@@ -127,7 +127,7 @@ describe("explainCourseError: the class's real slips", () => {
     const result = explainRun("print(Hello world)\n");
     expect(result.title).toBe("Missing quotes");
     expect(result.hint).toBe(
-      'Line 1 has words with no quotes around them, so Python tries to read them as code. Text needs quotes at the start and the end, like this: print("Hello world")',
+      'Line 1 has words with no quotes around them, so Python tries to read them as code. Put quotes around the words, the way you quote someone\'s exact words in English: `print("Hello world")`',
     );
   });
 
@@ -144,14 +144,14 @@ describe("explainCourseError: the class's real slips", () => {
       const result = explainRun(code);
       expect(result.title, code).toBe("Missing quotes");
       expect(result.hint, code).toMatch(/has words with no quotes around them/);
-      expect(result.hint.endsWith(`like this: ${fixed}`), `${code} -> ${result.hint}`).toBe(true);
+      expect(result.hint.endsWith(`\`${fixed}\``), `${code} -> ${result.hint}`).toBe(true);
     }
   });
 
   it("asks for a comma between two variables side by side", () => {
     const result = explainRun('caster = "Gearshift"\nmana = 20\nprint(caster mana)\n');
     expect(result.title).toBe("Missing comma");
-    expect(result.hint).toBe("Line 3 has values side by side with nothing between them. Put a comma between them, like this: print(caster, mana)");
+    expect(result.hint).toBe('Line 3 has values side by side with nothing between them. Put a comma between them: `print(caster, mana)`');
   });
 
   it("closes forgotten quotes before a + or a comma, not after the whole line", () => {
@@ -163,15 +163,15 @@ describe("explainCourseError: the class's real slips", () => {
     expect(mana.hint).toContain('print(caster + " has " + str(mana) + " mana.")');
     expect(explainRun('strength = 5\nprint("Strength:, strength)\n').hint).toContain('print("Strength:", strength)');
     // Real text with a comma or a plus sign keeps the plain advice.
-    expect(explainRun('print("Hello, world)\n').hint).toContain('like this: print("Hello, world")');
-    expect(explainRun('print("2 + 2 = 4)\n').hint).toContain('like this: print("2 + 2 = 4")');
+    expect(explainRun('print("Hello, world)\n').hint).toContain('`print("Hello, world")`');
+    expect(explainRun('print("2 + 2 = 4)\n').hint).toContain('`print("2 + 2 = 4")`');
   });
 
   it("offers the code's own variables when a lowercase name is unknown (a name copied from the example)", () => {
     const result = explainRun('name = input("Who goes there? ")\nprint("Hello, " + traveler)\n', ["Lucky"]);
     expect(result.title).toBe("Unknown name");
     expect(result.hint).toBe(
-      'Python doesn\'t know traveler. If it\'s a variable, use one your code made: name (spelled exactly). If it\'s text, put quotes around it: "traveler"',
+      'Python doesn\'t know `traveler`. If it\'s a box, use one of the boxes your code made, letter for letter: `name`. If it\'s text, put quotes around it: `"traveler"`',
     );
     // A capitalized word is most likely text (a name like Gearshift).
     expect(explainRun('mana = 20\nprint(Gearshift)\n').title).toBe("Missing quotes?");
@@ -182,8 +182,8 @@ describe("explainCourseError: the class's real slips", () => {
   it("explains def used to make a variable", () => {
     for (const code of ['def ("character")\n', 'def character = "Kratos"\n', 'def character("Kratos")\n']) {
       const result = explainRun(code);
-      expect(result.title, code).toBe("def makes functions");
-      expect(result.hint, code).toMatch(/^def is for making functions, not variables\. To make a variable/);
+      expect(result.title, code).toBe('No def for a box');
+      expect(result.hint, code).toMatch(/^A box doesn't need `def`\. A box is its name, then `=`, then the value/);
     }
     expect(explainRun('def character = "Kratos"\n').hint).toContain('character = "Kratos"');
   });
@@ -197,7 +197,7 @@ describe("explainCourseError: the class's real slips", () => {
     const result = explainRun('character - "Kratos"\nprint(character)\n');
     expect(result.title).toBe("Dash or equals?");
     expect(result.hint).toBe(
-      'Line 1 uses a dash - where Python needs an equals sign =. To make a variable, write: character = "Kratos"',
+      'Line 1 has a dash `-` where Python needs `=`. A dash means minus. To make a box, write: `character = "Kratos"`',
     );
     const defined = explainRun('character = ""\ncharacter - "Kratos"\n');
     expect(defined.title).toBe("Dash or equals?");
@@ -213,21 +213,21 @@ describe("explainCourseError: the class's real slips", () => {
   it("points out capital letters, using the name the code made", () => {
     const result = explainRun('Spell = "fire"\nprint(spell)\n');
     expect(result.title).toBe("Capital letters matter");
-    expect(result.hint).toBe("Python sees spell and Spell as different names. Use Spell, with the same capital letters every time.");
-    expect(explainRun('Print("hi")\n').hint).toContain("Use print");
+    expect(result.hint).toBe('To Python, `spell` and `Spell` are different names: capitals count, like in a password. Use `Spell`, with the same capital letters every time.');
+    expect(explainRun('Print("hi")\n').hint).toContain('Use `print`');
   });
 
   it("suggests a close spelling from the code", () => {
     const result = explainRun("mana_cost = 5\nprint(mana_cots)\n");
     expect(result.title).toBe("Check the spelling");
-    expect(result.hint).toContain("Did you mean mana_cost?");
+    expect(result.hint).toContain('Did you mean `mana_cost`?');
   });
 
   it("never suggests the hidden course helpers", () => {
     const result = explainRun("count += 1\n");
     expect(result.hint).not.toContain("_count");
     expect(result.title).toBe("Make it first");
-    expect(result.hint).toBe("Line 1 changes count, but count has no value yet. Give it a starting value first, like count = 0");
+    expect(result.hint).toBe('Line 1 changes `count`, but `count` has no value yet. Give it a starting value on a line above, like `count = 0`');
     expect(explainRun("print(count)\n").hint).not.toMatch(/\bround\b/);
   });
 
@@ -235,25 +235,25 @@ describe("explainCourseError: the class's real slips", () => {
     const result = explainRun("print(total_cost)\ntotal_cost = 68\n");
     expect(result.title).toBe("Used too early");
     expect(result.hint).toBe(
-      "Line 1 uses total_cost, but total_cost is only made on line 2. Python runs from top to bottom, so make total_cost first.",
+      'Line 1 uses `total_cost`, but `total_cost` is only made on line 2. Python reads your code like a page, from top to bottom, so make `total_cost` above line 1.',
     );
   });
 
   it("explains IndentationError cases", () => {
     expect(explainRun('if True:\nprint("x")\n').hint).toBe(
-      "The line after line 1 belongs inside the if, so it needs 4 spaces at the start.",
+      'The line after line 1 belongs inside the `if`, so it needs 4 spaces at the start, like a sub-point in an outline.',
     );
     expect(explainRun('  print("x")\n').title).toBe("Extra spaces");
     expect(explainRun('  print("x")\n').hint).not.toContain("line above");
     expect(explainRun('print("a")\n  print("x")\n').hint).toContain("line above");
     expect(explainRun('if True:\n        print("a")\n    print("b")\n').title).toBe("Spaces don't line up");
-    expect(explainRun("def greet():\nreturn 1\n").hint).toContain("inside the def");
+    expect(explainRun("def greet():\nreturn 1\n").hint).toContain('inside the `def`');
   });
 
   it("explains joining text and a number, and suggests str()", () => {
     const result = explainRun('score = 5\nprint("Score: " + score)\n');
     expect(result.title).toBe("Text + number");
-    expect(result.hint).toBe("Line 2 joins text and a number with +. Turn the number into text first with str(), like str(score).");
+    expect(result.hint).toBe('Line 2 glues text to a number with `+`, but `+` only glues text to text. Turn the number into text first with `str()`: `str(score)`');
     expect(explainRun('score = 5\nprint(score + " points")\n').hint).toContain("str(score)");
   });
 
@@ -275,7 +275,7 @@ describe("explainCourseError: the class's real slips", () => {
   });
 
   it("explains other common beginner errors", () => {
-    expect(explainRun('print "hi"\n').hint).toBe('print needs brackets ( ) around what it shows on line 1, like this: print("hi")');
+    expect(explainRun('print "hi"\n').hint).toBe('`print` needs parentheses ( ) around what it shows on line 1, the same marks you use in math class: `print("hi")`');
     expect(explainRun("x = 5\nif x = 5:\n    print(x)\n").title).toBe("Use == to compare");
     expect(explainRun('print("hi"\n').title).toBe("Missing )");
     expect(explainRun('print("hi"))\n').title).toBe("Extra )");
@@ -286,7 +286,7 @@ describe("explainCourseError: the class's real slips", () => {
     expect(explainRun("items = [1, 2]\nprint(items[5])\n").title).toBe("Nothing at that position");
     expect(explainRun('print = "hi"\nprint("x")\n').title).toBe("Name already taken");
     expect(explainRun("import ranodm\n").title).toBe("No module with that name");
-    expect(explainRun("import random\nprint(random.randnt(1, 6))\n").hint).toContain("Did you mean randint?");
+    expect(explainRun("import random\nprint(random.randnt(1, 6))\n").hint).toContain('Did you mean `randint`?');
     expect(explainRun('print("5" - 2)\n').title).toBe("Math with text");
     expect(explainRun("print(2(3 + 4))\n").title).toBe("Use * to multiply");
     expect(explainRun("def f(a):\n    return a\nf()\n").title).toBe("Wrong number of values");
@@ -302,7 +302,7 @@ describe("explainCourseError: the class's real slips", () => {
   it("explains timeouts and endless printing", () => {
     const timeout = explainCourseError("TimeoutError: The program ran too long and was stopped.", "while True:\n    x = 1\n");
     expect(timeout.title).toBe("Ran too long");
-    expect(timeout.hint).toContain("while loop");
+    expect(timeout.hint).toContain('`while` loop');
     expect(explainCourseError("The program ran too long and was stopped.", "").title).toBe("Ran too long");
     const flood = explainRun('while True:\n    print("again")\n');
     expect(flood.title).toBe("Printing forever?");
@@ -317,7 +317,7 @@ describe("explainCourseError: the class's real slips", () => {
     ].join("\n");
     const result = explainCourseError(raw, 'a = 1\nb = 2\nprint(fireball)\n');
     expect(result.title).toBe("Unknown name");
-    expect(result.hint).toContain("use one your code made: a, b");
+    expect(result.hint).toContain('use one of the boxes your code made, letter for letter: `a` or `b`');
     expect(result.raw).toBe(raw);
     expect(explainCourseError(raw, "print(fireball)\n").title).toBe("Missing quotes?");
   });
@@ -380,23 +380,23 @@ describe("explainCourseError: starting-from-zero slips", () => {
   it("explains 5P + 2S (invalid decimal literal) with the student's own token", () => {
     const result = explainRun("total_cost = 5P + 2S\n");
     expect(result.kind).toBe("number-stuck-to-name");
-    expect(result.hint).toContain("Python can't read 5P");
-    expect(result.hint).toContain('doesn\'t mean "5 times P"');
+    expect(result.hint).toContain("Python can't read `5P`");
+    expect(result.hint).toContain('In algebra, 5P means 5 times P');
     expect(result.hint).toContain("5 * P");
     // With variables already made, it points at them.
     const own = explainRun("pizza_cost = 4\nsoda_cost = 2\ntotal_cost = 5P + 2S\n");
-    expect(own.hint).toContain("use them instead, like pizza_cost and soda_cost");
+    expect(own.hint).toContain('use them, like `pizza_cost` and `soda_cost`');
     // A real variable after the number: just put * in.
     const times = explainRun("pizzas = 4\ntotal_cost = 5pizzas\n");
-    expect(times.hint).toBe("Python can't read 5pizzas: a number can't have letters stuck to it. To multiply, put * between them: 5 * pizzas");
+    expect(times.hint).toBe("Python can't read `5pizzas`. In algebra, 5pizzas means 5 times pizzas, but Python needs the `*` sign for times: `5 * pizzas`");
     expect(explainRun("x = 3L + 5R\n").hint).toContain("3L");
   });
 
   it("explains a variable name that starts with a number", () => {
     const first = explainRun('1st_place = "Lucky"\n');
     expect(first.kind).toBe("name-starts-with-number");
-    expect(first.hint).toBe("A variable name can't start with a number. Start it with a letter instead, like first_place.");
-    expect(explainRun('1player = "Lucky"\n').hint).toContain("like player1");
+    expect(first.hint).toBe("A box's name can't start with a number. Start it with a letter instead, like `first_place`.");
+    expect(explainRun('1player = "Lucky"\n').hint).toContain('like `player1`');
   });
 
   it("explains a lone name on a line with no = and no print (NameError)", () => {
@@ -404,12 +404,12 @@ describe("explainCourseError: starting-from-zero slips", () => {
     expect(result.kind).toBe("lone-name");
     expect(result.title).toBe("A name on its own");
     expect(result.hint).toBe(
-      'Line 1 is only a name on its own, so Python looked for a variable called canes_women and found none. To make one, write canes_women = and then a value. To show words, write print("your words").',
+      'Line 1 is only the word `canes_women`. With no quotes, Python looks for a box named `canes_women`, and no line makes one. If `canes_women` is text, it needs quotes: `"canes_women"`',
     );
     const close = explainRun('caster = "Gearshift"\nCaster\n');
     expect(close.kind).toBe("lone-name");
-    expect(close.hint).toContain("Did you mean caster? To show what caster holds, write print(caster).");
-    expect(explainRun("Print\n").hint).toContain('Did you mean print? To show words, write print("your words").');
+    expect(close.hint).toContain('Did you mean `caster`? To show what `caster` holds, write `print(caster)`.');
+    expect(explainRun("Print\n").hint).toContain('Did you mean `print`? To show words in the Console, write `print("your words")`.');
     // A lone name with a comment after it is still alone.
     expect(explainRun("canes_women  # the order\n").kind).toBe("lone-name");
   });
@@ -418,12 +418,12 @@ describe("explainCourseError: starting-from-zero slips", () => {
     const colon = explainRun('def: Power_up= ("Fire Ball")\n');
     expect(colon.kind).toBe("def-for-variable");
     expect(colon.hint).toBe(
-      'def is for making functions, not variables. To make a variable, write the name, an equals sign, then the value, with no def: Power_up = "Fire Ball"',
+      'A box doesn\'t need `def`. A box is its name, then `=`, then the value: `Power_up = "Fire Ball"`',
     );
     // The sheet's real line also forgot the quote: one message fixes both.
     const both = explainRun('def: Power_up= ("Fire Ball\n');
     expect(both.kind).toBe("def-for-variable");
-    expect(both.hint).toContain('Text needs a quote at both ends too: Power_up = "Fire Ball"');
+    expect(both.hint).toContain('The text needs a quote at both ends too: `Power_up = "Fire Ball"`');
     expect(explainRun('def ("character")\n').kind).toBe("def-for-variable");
     expect(explainRun('def character: "Kratos"\n').hint).toContain('character = "Kratos"');
   });
@@ -433,21 +433,21 @@ describe("explainCourseError: starting-from-zero slips", () => {
     expect(result.kind).toBe("never-closed");
     expect(result.title).toBe("Missing )");
     expect(result.hint).toBe(
-      'A ( on line 1 opens but never closes. Brackets come in pairs, like quotes. Add ) at the end of the line: Power_up = ("Fire Ball")',
+      'A `(` on line 1 opens but never closes. Like quotes, parentheses come in pairs. Add `)` at the end of the line: `Power_up = ("Fire Ball")`',
     );
     // Python reports the line where the ( opened, even when the next line is fine.
     expect(explainRun('print("Fire Ball"\nprint("ready")\n').hint).toContain('print("Fire Ball")');
     // A list or dictionary over several lines: the closing bracket goes after the last item.
     const dict = explainRun('stats = {\n    "hp": 10,\n    "mana": 5\n');
     expect(dict.title).toBe("Missing }");
-    expect(dict.hint).toContain("Add } on its own line after the last item.");
+    expect(dict.hint).toContain('Add `}` on its own line after the last item.');
   });
 
   it("fixes a missing quote and a missing ) together, so the second error never comes", () => {
     const result = explainRun('Power_up = ("Fire Ball\n');
     expect(result.kind).toBe("missing-quote");
     expect(result.hint).toBe(
-      'The text on line 1 is missing its closing quote, and the line is missing its closing ). Quotes and brackets come in pairs. Write: Power_up = ("Fire Ball")',
+      'The text on line 1 is missing its closing quote, and the line is missing its closing `)`. Quotes and parentheses come in pairs. Write: `Power_up = ("Fire Ball")`',
     );
   });
 
@@ -456,7 +456,7 @@ describe("explainCourseError: starting-from-zero slips", () => {
     const both = explainRun('chicken_sandwich - "Fireball\n');
     expect(both.kind).toBe("dash-and-quote");
     expect(both.hint).toBe(
-      'Line 1 needs two fixes: the text needs its closing quote, and the dash - should be an equals sign =. Write: chicken_sandwich = "Fireball"',
+      'Line 1 needs two fixes: the text needs its closing quote, and the dash `-` should be `=`. Write: `chicken_sandwich = "Fireball"`',
     );
   });
 
@@ -464,7 +464,7 @@ describe("explainCourseError: starting-from-zero slips", () => {
     const previous = tracebackOf('chicken_sandwich - "Fireball\n');
     const result = explainRun('chicken_sandwich - "Fireball"\n', [], { previous });
     expect(result.kind).toBe("dash-for-equals");
-    expect(result.hint).toMatch(/^One fixed! Python found the next one\. Line 1 uses a dash/);
+    expect(result.hint).toMatch(/^One fixed! Python found the next mistake\. Line 1 has a dash/);
     // The same error again, or an error earlier in the code, gets no "One fixed".
     expect(explainRun('chicken_sandwich - "Fireball\n', [], { previous }).hint).not.toContain("One fixed");
     const later = tracebackOf('print("ok")\nprint(oops)\n');
@@ -477,7 +477,7 @@ describe("explainCourseError: starting-from-zero slips", () => {
   it("asks for the comma at the end of a dictionary line", () => {
     const result = explainRun('stats = {\n    "hp": 10\n    "mana": 5\n}\n');
     expect(result.kind).toBe("missing-comma-in-list");
-    expect(result.hint).toBe('Inside a dictionary { }, every item except the last needs a comma after it. Add a comma at the end of line 2: "hp": 10,');
+    expect(result.hint).toBe('Inside a dictionary { }, every item except the last needs a comma after it, like items in a list in English. Add a comma at the end of line 2: `"hp": 10,`');
     expect(explainRun("scores = [\n    10\n    20\n]\n").hint).toContain("Inside a list [ ]");
   });
 });
@@ -486,9 +486,9 @@ describe("explainCourseError: the reviewer's findings", () => {
   it("quotes multi-word text even when the line already has quoted text", () => {
     const named = explainRun('print("Name:", spartan rage)\n');
     expect(named.kind).toBe("unquoted-words");
-    expect(named.hint).toContain('like this: print("Name:", "spartan rage")');
+    expect(named.hint).toContain('`print("Name:", "spartan rage")`');
     const joined = explainRun('caster = "The " + spartan rage in barsed hamah\n');
-    expect(joined.hint).toContain('like this: caster = "The " + "spartan rage in barsed hamah"');
+    expect(joined.hint).toContain('`caster = "The " + "spartan rage in barsed hamah"`');
     expect(explainRun("caster = spartan rage in barsed hamah\n").hint).toContain('caster = "spartan rage in barsed hamah"');
     expect(explainRun("print(spartan rage in barsed hamah)\n").hint).toContain('print("spartan rage in barsed hamah")');
   });
@@ -498,11 +498,11 @@ describe("explainCourseError: the reviewer's findings", () => {
     const result = explainRun('name = input("Who goes there? ")\nprint("Hello, " + traveler)\n', ["Lucky"], context);
     expect(result.kind).toBe("example-name");
     expect(result.title).toBe("Name from the example");
-    expect(result.hint).toBe("traveler is the name from the example. This task uses name, so write name here.");
+    expect(result.hint).toBe("`traveler` is a name from the Example, not from your task. Your task's name is `name`: write `name` here.");
     expect(result.hint).not.toContain("quotes");
     // Without the task's names, the code's own variables are offered.
     const own = explainRun('name = input("Who goes there? ")\nprint("Hello, " + traveler)\n', ["Lucky"], { example: context.example });
-    expect(own.hint).toBe("traveler is the name from the example. This task uses name, so write name here.");
+    expect(own.hint).toBe("`traveler` is a name from the Example, not from your task. Your task's name is `name`: write `name` here.");
     // A name the task shares with the example is not "from the example".
     expect(explainRun("print(name)\n", [], { example: context.example, names: ["traveler"] }).kind).not.toBe("example-name");
   });
@@ -510,13 +510,13 @@ describe("explainCourseError: the reviewer's findings", () => {
   it("builds the missing-quote fix from the unclosed text, not from everything after the first quote", () => {
     const end = explainRun('name = "Lucky"\nprint("Welcome, " + name + "!)\n');
     expect(end.kind).toBe("missing-quote");
-    expect(end.hint).toContain('like this: print("Welcome, " + name + "!")');
+    expect(end.hint).toContain('`print("Welcome, " + name + "!")`');
     expect(explainRun('print(str("Hi))\n').hint).toContain('print(str("Hi"))');
     const join = explainRun('name = "Lucky"\nprint("Welcome, + name)\n');
     expect(join.hint).toContain('print("Welcome, " + name)');
     // The apostrophe and mismatched cases keep their own advice.
     expect(explainRun("print('It's fun')\n").kind).toBe("apostrophe");
-    expect(explainRun("print(\"It's fun')\n").hint).toContain('like "It\'s fun"');
+    expect(explainRun("print(\"It's fun')\n").hint).toContain('`"It\'s fun"`');
   });
 });
 
@@ -525,36 +525,36 @@ describe("explainCourseError: Unit 1 play-through findings", () => {
     const character = explainRun('Character = "Kratos"\nprint(character)\n', [], { names: ["character"] });
     expect(character.kind).toBe("capital-letters");
     expect(character.hint).toBe(
-      "Line 1 makes `Character`, but this task's box is `character`. Python sees them as two different names, because the capital letters differ. Rename it on line 1: `character = \"Kratos\"`",
+      'Line 1 makes `Character`, but your step\'s box is `character`. To Python those are two different names: capitals count, like in a password. Change line 1 to `character = "Kratos"`',
     );
-    expect(character.hint).not.toContain("Use Character");
+    expect(character.hint).not.toContain("Use `Character`");
     const mana = explainRun("Max_Mana = 18\nprint(max_mana)\n", [], { names: ["magical_affinity", "max_mana"] });
-    expect(mana.hint).toContain("this task's box is `max_mana`");
-    expect(mana.hint).toContain("Rename it on line 1: `max_mana = 18`");
+    expect(mana.hint).toContain("your step's box is `max_mana`");
+    expect(mana.hint).toContain('Change line 1 to `max_mana = 18`');
     const stamina = explainRun(
       'print("The fire is low.")\nstamina = 15\nstamina = stamina - 4\nMax_Stamina = 16\nprint(max_stamina)\n',
       [],
       { names: ["stamina", "max_stamina"] },
     );
-    expect(stamina.hint).toContain("Line 4 makes `Max_Stamina`, but this task's box is `max_stamina`");
+    expect(stamina.hint).toContain("Line 4 makes `Max_Stamina`, but your step's box is `max_stamina`");
     expect(stamina.hint).toContain("`max_stamina = 16`");
     // The box made right and used wrong: write the task's name where it is used.
     const used = explainRun('character = "Kratos"\nprint(Character)\n', [], { names: ["character"] });
-    expect(used.hint).toContain("Line 2 uses `Character`, but this task's box is `character`");
-    expect(used.hint).toContain("Write `character` on line 2");
+    expect(used.hint).toContain("Line 2 uses `Character`, but your step's box is `character`");
+    expect(used.hint).toContain('On line 2, write `character`');
     // Neither spelling is the task's: make both lines match, without picking one.
     const neither = explainRun('Spell = "fire"\nprint(spell)\n', [], { names: ["mana"] });
     expect(neither.hint).toContain("Make both lines match");
-    expect(neither.hint).not.toContain("Use Spell");
+    expect(neither.hint).not.toContain("Use `Spell`");
     // A builtin with a capital keeps its own advice.
-    expect(explainRun('Print("hi")\n', [], { names: ["print"] }).hint).toContain("Use print");
+    expect(explainRun('Print("hi")\n', [], { names: ["print"] }).hint).toContain("Use `print`");
   });
 
   it("says `mana = mana - spell_cost` for a subtraction that keeps nothing (spend-mana, Quick Check status line)", () => {
     const spend = explainQuietSlip("mana = 26\nspell_cost = 3\nmana = mana - spell_cost\nmana - spell_cost\nprint(mana)\n");
     expect(spend?.kind).toBe("dash-no-effect");
     expect(spend?.hint).toBe(
-      "Line 4 works out mana - spell_cost, but nothing keeps the answer, so mana does not change. To keep it, put `mana =` in front: `mana = mana - spell_cost`",
+      "Line 4 works out `mana - spell_cost`, but nothing keeps the answer, so `mana` doesn't change. Put `mana =` in front, so the answer goes back in the box: `mana = mana - spell_cost`",
     );
     expect(spend?.hint).not.toContain("mana = spell_cost");
     // A number: Mar'tu's version says whether it is a spend (mana = mana - 3) or a new value (mana = 14).
@@ -563,7 +563,7 @@ describe("explainCourseError: Unit 1 play-through findings", () => {
     const newValue = explainQuietSlip("mana = 26\nmana = 21\nmana - 14\nprint(mana)\n", {
       context: { names: ["mana"], solution: "mana = 26\nmana = 21\nmana = 14\nprint(mana)\n" },
     });
-    expect(newValue?.hint).toContain("write: mana = 14");
+    expect(newValue?.hint).toContain('write: `mana = 14`');
     // Graded like the site: the step message is the slip, not "mana = spell_cost".
     const checkpoints = [{ id: "spend", text: "Spend one spell.", hints: ["a", "b"], checks: [{ name: "spent", code: "assert mana == 14, 'mana did not change'" }] }];
     const code = "mana = 20\nspell_cost = 6\nmana - spell_cost\nprint(mana)\n";
@@ -575,7 +575,7 @@ describe("explainCourseError: Unit 1 play-through findings", () => {
     const printOnly = { names: ["print"], solution: 'print("_ - = are side by side.")\n' };
     const def = explainRun('# Type the symbols\ndef ("symbols")\n', [], printOnly);
     expect(def.kind).toBe("def-for-variable");
-    expect(def.hint).toBe('`def` is not needed here: this task only shows words. To show them, write `print("symbols")`');
+    expect(def.hint).toBe('This step only shows words, so it doesn\'t need `def`. To show words in the Console, write `print("symbols")`');
     const words = { solution: 'print("Steady, now. We go together.")\n' };
     expect(explainRun('def ("Steady now")\n', [], words).hint).toContain('`print("Steady now")`');
     const dash = explainRun('oogrish - "Steady now"\n', [], words);
@@ -584,7 +584,7 @@ describe("explainCourseError: Unit 1 play-through findings", () => {
     expect(dash.hint).not.toMatch(/variable|oogrish =/);
     const bare = explainQuietSlip('"_ - ="\n', { context: printOnly });
     expect(bare?.kind).toBe("bare-value");
-    expect(bare?.hint).toBe('Line 1 is words in quotes with no print, so Python reads it, then forgets it. To show it, write `print("_ - =")`');
+    expect(bare?.hint).toBe('Line 1 is words in quotes with no `print`, so Python reads it and throws it away. To show it in the Console, write `print("_ - =")`');
     expect(explainRun("Steady\n", [], words).hint).toContain('`print("Steady")`');
     // Once the task makes boxes, the variable advice is right again.
     expect(explainRun('def ("character")\n', [], { names: ["character"], solution: 'character = "Kratos"\nprint(character)\n' }).hint).toContain(
@@ -595,7 +595,7 @@ describe("explainCourseError: Unit 1 play-through findings", () => {
   it("reads a quoted box name as quotes on a name, and keeps Name goes first for a real swap", () => {
     const quoted = explainRun('"weapon" = "Telegun"\n', [], { names: ["weapon", "companion", "glug_sips", "hero"] });
     expect(quoted.kind).toBe("quoted-name");
-    expect(quoted.hint).toBe('A box\'s name has no quotes on line 1. Take the quotes off weapon: `weapon = "Telegun"`');
+    expect(quoted.hint).toBe('Line 1 has quotes around a box\'s name. Quotes mean these exact letters, so a name never gets them. Take the quotes off `weapon`: `weapon = "Telegun"`');
     expect(quoted.hint).not.toContain("Kratos");
     const swap = explainRun('"Lucky" = hero\n');
     expect(swap.kind).toBe("name-goes-first");
@@ -618,7 +618,7 @@ describe("explainCourseError: Unit 1 play-through findings", () => {
     const lucky = explainRun('weapon = "Telegun"\ncompanion = "Gearshift"\nglug_sips = 3\n"Lucky"\nprint(hero)\nprint(weapon)\n', [], names);
     expect(lucky.kind).toBe("not-made-yet");
     expect(lucky.hint).toBe(
-      'hero is one of this task\'s boxes, but no line makes it yet. Line 4 has the value "Lucky" on its own: put `hero = ` in front of it, `hero = "Lucky"`',
+      '`hero` is one of your step\'s boxes, but no line makes it yet. Line 4 has the value `"Lucky"` on its own: put `hero = ` in front of it, so it reads `hero = "Lucky"`',
     );
     const none = explainRun('weapon = "Telegun"\nprint(hero)\n', [], names);
     expect(none.hint).toContain("Make it above line 2");
@@ -639,7 +639,7 @@ describe("explainCourseError: Unit 1 play-through findings", () => {
   it("explains plain words on a line, and symbols with no quotes, without a colon Unit 1 never taught", () => {
     const note = explainRun('Night watch\nprint("Steady, now.")\n');
     expect(note.kind).toBe("unquoted-words");
-    expect(note.hint).toContain("start the line with #: `# Night watch`");
+    expect(note.hint).toContain('A note for people starts with `#`, like a stage direction: `# Night watch`');
     expect(note.hint).toContain('`print("Night watch")`');
     expect(note.hint).not.toContain("colon");
     const symbols = explainRun("print(_ - =)\n");
@@ -655,7 +655,7 @@ describe("explainCourseError: Unit 2's slips (questions, if / elif / else, rando
     const ge = explainRun("roll = 14\nneeded = 15\npassed = roll => needed\n", [], unit2);
     expect(ge.kind).toBe("sign-backwards");
     expect(ge.hint).toBe(
-      "Line 3 has `=>`, a sign typed backwards. In Python the `=` always comes second: `>=`. Write: `passed = roll >= needed`",
+      'Line 3 has `=>`, a sign typed backwards. Type it in the order you say it, "greater than or equal to": the `=` comes second, `>=`. Write: `passed = roll >= needed`',
     );
     expect(explainRun("roll = 5\nif roll =< 3:\n    print(roll)\n", [], unit2).hint).toContain("Write: `if roll <= 3:`");
     expect(explainRun('color = "red"\nprint(color =! "red")\n', [], unit2).hint).toContain('Write: `print(color != "red")`');
@@ -676,7 +676,7 @@ describe("explainCourseError: Unit 2's slips (questions, if / elif / else, rando
     const made = explainRun('hero == "Lucky"\nprint(hero)\n', [], unit2);
     expect(made.kind).toBe("comparison-alone");
     expect(made.hint).toBe(
-      'Line 1 uses `==`, which only asks "is it the same?". It makes nothing, so `hero` was never made. To put a value in a box, use one `=`: `hero = "Lucky"`',
+      'Line 1 uses `==`, which only asks "is it the same as?". It makes nothing, so `hero` was never made. To put a value in a box, use one `=`: `hero = "Lucky"`',
     );
     // With no error at all, it is a quiet slip: a check that cannot find the box says why.
     const quiet = explainQuietSlip("roll = 14\nneeded = 15\nroll >= needed\n", { missingName: "passed" });
@@ -695,7 +695,7 @@ describe("explainCourseError: Unit 2's slips (questions, if / elif / else, rando
     const words = explainRun('choice = "option 2"\nif choice == "option 1":\n    print(1)\nelif choice == option 2:\n    print(2)\n', [], unit2);
     expect(words.kind).toBe("unquoted-option");
     expect(words.hint).toBe(
-      'Line 4 compares with option 2, words with no quotes, so Python tries to read them as code. Text in a comparison needs quotes too, like this: `elif choice == "option 2":`',
+      'Line 4 compares with `option 2`, words with no quotes, so Python tries to read them as code. Words you compare need quotes too: `elif choice == "option 2":`',
     );
     const word = explainRun('hero = "Lucky"\nprint(hero == Lucky)\n', [], unit2);
     expect(word.kind).toBe("unquoted-option");
@@ -730,7 +730,7 @@ describe("explainCourseError: Unit 2's slips (questions, if / elif / else, rando
     expect(made.hint).toBe(
       'Line 2 makes `needed` with quotes: `needed = "15"`. Quotes make text, even when it looks like a number, so line 3 can\'t compare it with a number. Take the quotes off on line 2: `needed = 15`',
     );
-    expect(explainRun('mana = 9\ncan_cast = mana >= "9"\n', [], unit2).hint).toContain("Numbers have no quotes: `can_cast = mana >= 9`");
+    expect(explainRun('mana = 9\ncan_cast = mana >= "9"\n', [], unit2).hint).toContain('A number you compare gets no quotes: `can_cast = mana >= 9`');
     expect(explainRun('age = input("Age? ")\nprint(age > 12)\n', ["13"], unit2).hint).toContain("int(age)");
   });
 
@@ -784,12 +784,12 @@ describe("explainCourseError: Unit 2's slips (questions, if / elif / else, rando
     expect(explainRun("passed = True\nassert passed = False\n", [], unit2).kind).toBe("compare-with-double-equals");
   });
 
-  it("never says 'make it with def' before the Functions unit", () => {
+  it("never says 'write the recipe with `def`' before the Functions unit", () => {
     expect(explainRun('shout("hi")\n', [], { unitOrder: 1 }).hint).not.toContain("def");
     expect(explainRun('shout("hi")\n', [], { unitOrder: 2 }).hint).not.toContain("def");
-    expect(explainRun('shout("hi")\n', [], { unitOrder: 3 }).hint).toContain("make it with def");
+    expect(explainRun('shout("hi")\n', [], { unitOrder: 3 }).hint).toContain("write the recipe with `def`");
     // Without a unit (an old caller), the advice is unchanged.
-    expect(explainRun('shout("hi")\n').hint).toContain("make it with def");
+    expect(explainRun('shout("hi")\n').hint).toContain('make it with `def`');
   });
 });
 
@@ -801,7 +801,7 @@ describe("explainCourseError: the lean explainer (explainer: \"lean\")", () => {
     expect(lean.explainer).toBe("lean");
     expect(lean.title).toBe("Sign typed backwards");
     expect(lean.hint).toBe(
-      "The slip is on line 3: a sign typed backwards. Python's last line, below, says what it found. Mend it yourself, then Run again.",
+      "The mistake is on line 3: a sign typed backwards. Python's last line, below, says what it found. Fix it yourself, then press Run again.",
     );
     expect(lean.hint).not.toContain(">=");
     // Python's own message is kept whole, for the player to show.
@@ -835,7 +835,7 @@ describe("explainCourseError: the lean explainer (explainer: \"lean\")", () => {
       explainer: "lean",
     });
     expect(timeout.kind).toBe("timeout");
-    expect(timeout.hint).toContain("while loop");
+    expect(timeout.hint).toContain("`while` loop");
     expect(leanExplanation(timeout)).toBe(timeout);
   });
 });
@@ -849,11 +849,11 @@ describe("explainCourseError: a run that got further", () => {
     const result = explainRun(second, [], { previous, debugging: true });
     expect(result.gotFurther).toBe(true);
     expect(result.hint).not.toContain("One fixed");
-    expect(GOT_FURTHER_LINE).toBe("Python got further: that slip is mended.");
+    expect(GOT_FURTHER_LINE).toBe('Python got further: you fixed that mistake.');
     // Elsewhere the hint keeps its "One fixed!" start, as before.
     const ordinary = explainRun(second, [], { previous });
     expect(ordinary.gotFurther).toBe(true);
-    expect(ordinary.hint).toMatch(/^One fixed! Python found the next one\./);
+    expect(ordinary.hint).toMatch(/^One fixed! Python found the next mistake\./);
   });
 
   it("counts a different run-time slip on the same line as progress, but never the same error again", () => {
@@ -868,7 +868,7 @@ describe("explainCourseError: a run that got further", () => {
     const previous = tracebackOf(first);
     const lean = explainRun(second, [], { previous, explainer: "lean" });
     expect(lean.gotFurther).toBe(true);
-    expect(lean.hint).toMatch(/^One fixed! Python found the next one\. The slip is on line 2/);
+    expect(lean.hint).toMatch(/^One fixed! Python found the next mistake\. The mistake is on line 2/);
   });
 });
 
@@ -901,10 +901,10 @@ describe("explainQuietSlip: lines that run with no error and do nothing", () => 
     const slip = explainQuietSlip('"chick-fa-le_women"\n');
     expect(slip?.kind).toBe("bare-value");
     expect(slip?.line).toBe(1);
-    expect(slip?.hint).toContain('To show it, put it inside print( ): print("chick-fa-le_women")');
+    expect(slip?.hint).toContain('To show it instead, put it inside `print( )`: `print("chick-fa-le_women")`');
     const named = explainQuietSlip('"chick-fa-le_women"\n', { missingName: "character" });
     expect(named?.hint).toBe(
-      'Line 1 is a value on its own: "chick-fa-le_women". Python reads it, then forgets it, because no variable keeps it. To keep it, put character = in front of it: character = "chick-fa-le_women"',
+      'Line 1 is a value with no name in front: `"chick-fa-le_women"`. Python reads it and throws it away, like a phone number saved with no contact name. Put `character = ` in front of it: `character = "chick-fa-le_women"`',
     );
     expect(explainQuietSlip("# a note\n20\n")?.line).toBe(2);
   });
@@ -914,7 +914,7 @@ describe("explainQuietSlip: lines that run with no error and do nothing", () => 
     expect(explainQuietSlip("print\n")?.kind).toBe("print-without-brackets");
     const dash = explainQuietSlip("mana = 3\nmana - 20\n");
     expect(dash).toMatchObject({ kind: "dash-no-effect", line: 2, name: "mana" });
-    expect(dash?.hint).toContain("write: mana = 20");
+    expect(dash?.hint).toContain('write: `mana = 20`');
   });
 
   it("leaves real code alone: lists over several lines, docstrings, indented lines, calls", () => {
@@ -977,12 +977,12 @@ describe("explainCourseError: Unit 2 play-through findings", () => {
     const code = "strength_roll = 14\nstrength_needed = 12\nif strength_roll >= strength_needed:\n    print(\"The latch pops open.\")\nelse strength_roll < strength_needed:\n    print(\"That latch hates me.\")\n";
     const full = explainRun(code);
     expect(full.kind).toBe("else-has-question");
-    expect(full.hint).toContain("Write just `else:`");
+    expect(full.hint).toContain("Write `else:` with nothing between `else` and the colon.");
     expect(full.hint).not.toMatch(/needs a colon/);
     const noColon = explainRun(code.replace("strength_needed:\n    print(\"That", "strength_needed\n    print(\"That"));
     expect(noColon.kind).toBe("else-has-question");
     const lean = explainRun(code, [], { explainer: "lean" });
-    expect(lean.hint).toBe("The slip is on line 5: a question after `else`. Python's last line, below, says what it found. Mend it yourself, then Run again.");
+    expect(lean.hint).toBe("The mistake is on line 5: a question after `else`. Python's last line, below, says what it found. Fix it yourself, then press Run again.");
     // `else:` itself and `else if` keep their own words.
     expect(explainRun("x = 1\nif x > 2:\n    print(1)\nelse if x > 0:\n    print(2)\n").kind).toBe("elif-spelling");
   });
@@ -990,7 +990,7 @@ describe("explainCourseError: Unit 2 play-through findings", () => {
   it("reads a capital on one of Python's words, and an elif with no question", () => {
     const big = explainRun("hours_left = 2\nIf hours_left < 3:\n    print(\"Get inside!\")\n");
     expect(big.kind).toBe("keyword-capital");
-    expect(big.hint).toBe("Line 2 starts with `If`. Python's own words are all small letters: `if`, not `If`. Write: `if hours_left < 3:`");
+    expect(big.hint).toBe("Line 2 starts with `If`. Python's own words, like `print` and `if`, are all small letters, even at the start of a line. Write: `if hours_left < 3:`");
     const otherwise = explainRun("x = 1\nif x < 3:\n    print(1)\nElse:\n    print(2)\n");
     expect(otherwise.kind).toBe("keyword-capital");
     expect(otherwise.hint).toContain("Write: `else:`");
@@ -1012,12 +1012,12 @@ describe("explainCourseError: Unit 2 play-through findings", () => {
       'hero = "Bomb Shell"\nmana = 12\nspell_cost = 5\nprint("Mana left: " + str(mana - mana_cost))\nprint(hero + " casts Shield.")\n\nbad_line = 0\nerror_type = ""\nmissing_name = ""\n';
     const result = explainRun(starter, [], { names: ["bad_line", "error_type", "missing_name"] });
     expect(result.kind).toBe("unknown-name");
-    expect(result.hint).toBe("Python doesn't know mana_cost: no line in your code makes it. Line 3 makes `spell_cost`, which has a similar name.");
+    expect(result.hint).toBe("Python doesn't know `mana_cost`: no line in your code makes it. Line 3 makes `spell_cost`, which has a similar name.");
     expect(result.hint).not.toContain("bad_line");
     expect(result.hint).not.toContain("quotes");
     // A task name a letter or two away is still offered, with the quotes when text could go there.
     const near = explainRun('hero = "Lucky"\nprint(heroes_name)\n', [], { names: ["hero", "heros_name"] });
-    expect(near.hint).toContain("use this task's name: heros_name");
+    expect(near.hint).toContain("use your step's name, letter for letter: `heros_name`");
   });
 
   it("counts any run that now reads after a SyntaxError as further (Broken spell 2B's import on line 1)", () => {
@@ -1037,7 +1037,7 @@ describe("explainCourseError: Unit 2 play-through findings", () => {
     const solution = 'clock_color = "Red"\nclock_is_red = (clock_color == "red")\nprint(clock_is_red)\nprint(clock_color != "red")\n';
     const result = explainRun('clock_color = "red"\nprint(clock_color = "red")\n', [], { solution, unitOrder: 2 });
     expect(result.kind).toBe("equals-in-print");
-    expect(result.hint).toContain("such as `==` (is the same as) or `!=`");
+    expect(result.hint).toContain('like `==` for "is the same as" or `!=`');
     expect(result.hint).not.toContain('print(clock_color == "red")');
     // With == in Mar'tu's version (or no version at hand), the line is written as before.
     expect(explainRun('clock_color = "red"\nprint(clock_color = "red")\n', [], { unitOrder: 2 }).hint).toContain('print(clock_color == "red")');
@@ -1115,7 +1115,7 @@ describe("explainCourseError: Unit 3's slips (recipes), from the unit's own wron
   const rows: [string, string, string, string, string][] = [
     // recipe-like-math (SFZ-2): f(x) = 5x, before compare-with-double-equals.
     ["recipes-with-names/send-it-back", "written like maths", "cannot assign to function call", "recipe-like-math",
-      "Line 8 is math's way to write it. In Python a recipe (function) starts with `def`: `def max_fuel_for(cells):`, then an indented `return cells * 5`."],
+      'Line 8 writes the recipe the way math writes f(x) = 2x. In Python a recipe (function) starts with `def`: `def max_fuel_for(cells):`, then an indented `return cells * 5`.'],
     ["extra-recipe-twins/double-cost", "(a call on the left)", "cannot assign to function call", "recipe-like-math",
       "`def double_cost(price):`, then an indented `return price * 2`."],
     ["extra-recipe-twins/double-cost", "(=, then a colon)", "invalid syntax", "recipe-like-math",
@@ -1125,28 +1125,28 @@ describe("explainCourseError: Unit 3's slips (recipes), from the unit's own wron
       "Line 8 has an ingredient in quotes. Ingredient names have no quotes: `def max_fuel_for(cells):`"],
     // wrong-number-of-values (SFZ-6): the ingredients read from the student's own def line.
     ["recipes-with-names/ingredients", "hands over nothing", "missing 1 required positional argument", "wrong-number-of-values",
-      "`warn` has 1 ingredient (`hero_name`). The call on line 6 hands over nothing. Hand over one value per ingredient."],
+      '`warn` has 1 ingredient, `hero_name`, but the call on line 6 hands over nothing. Hand over one value per ingredient, the way each blank in a Mad Lib gets one word.'],
     ["recipes-with-names/ingredients", "hands over two values", "takes 1 positional argument", "wrong-number-of-values",
-      "`warn` has 1 ingredient (`hero_name`). The call on line 6 hands over 2. Hand over one value per ingredient."],
+      '`warn` has 1 ingredient, `hero_name`, but the call on line 6 hands over 2. Hand over one value per ingredient, the way each blank in a Mad Lib gets one word.'],
     ["recipes-with-names/use-the-ingredients", "third call hands over one number", "missing 1 required positional argument",
-      "wrong-number-of-values", "`show_hit` has 2 ingredients (`base_damage`, `bonus`). The call on line 6 hands over 1. Hand over one value per ingredient."],
+      "wrong-number-of-values", '`show_hit` has 2 ingredients, `base_damage` and `bonus`, but the call on line 6 hands over 1. Hand over one value per ingredient, the way each blank in a Mad Lib gets one word.'],
     ["recipes-with-names/send-it-back", "no value handed over", "missing 1 required positional argument", "wrong-number-of-values",
-      "`max_mana_for` has 1 ingredient (`affinity`). The call on line 5 hands over nothing."],
+      '`max_mana_for` has 1 ingredient, `affinity`, but the call on line 5 hands over nothing. Hand over one value per ingredient, the way each blank in a Mad Lib gets one word.'],
     ["extra-recipe-twins/cheer-on", "wrong number of arguments (one value)", "missing 1 required positional argument",
-      "wrong-number-of-values", "`cheer_on` has 2 ingredients (`hero_name`, `words`). The call on line 10 hands over 1."],
+      "wrong-number-of-values", '`cheer_on` has 2 ingredients, `hero_name` and `words`, but the call on line 10 hands over 1. Hand over one value per ingredient, the way each blank in a Mad Lib gets one word.'],
     ["supply-run", "wrong number of arguments (one value)", "missing 1 required positional argument: 'price'", "wrong-number-of-values",
-      "`item_cost` has 2 ingredients (`count`, `price`). The call on line 7 hands over 1."],
+      '`item_cost` has 2 ingredients, `count` and `price`, but the call on line 7 hands over 1. Hand over one value per ingredient, the way each blank in a Mad Lib gets one word.'],
     // randint-backwards (SFZ-11): the student's own two values, swapped.
     ["recipes-with-names/roll-recipe", "randint(die_size, 1)", "empty range in randrange(20, 2)", "randint-backwards",
-      "Line 5 rolls with the numbers the wrong way round. Smallest number first: `random.randint(1, die_size)`"],
+      'Line 5 rolls with the numbers the wrong way around. Like a die that goes from 1 to 6, the smallest number goes first: `random.randint(1, die_size)`'],
     // Split on commas (RSWM-2): only the bare run of words is quoted; numbers and quoted values stay.
     ["extra-recipe-twins/cheer-on", "split-on-commas", "invalid syntax. Perhaps you forgot a comma?", "unquoted-words",
-      'like this: cheer_on("Captain Glug", "Go now")'],
+      '`cheer_on("Captain Glug", "Go now")`'],
     ["recipes-with-names/ingredients", "two-word hero and no quotes", "invalid syntax. Perhaps you forgot a comma?", "unquoted-words",
-      'like this: warn_hours("Captain Glug", 2)'],
+      '`warn_hours("Captain Glug", 2)`'],
     // The unit's names, where they do not exist: a recipe not made yet, called too early, or a name from its kitchen.
     ["recipes-with-names/send-it-back", "try line uncommented", "name 'max_fuel_for' is not defined", "recipe-not-made-yet",
-      "`max_fuel_for` is one of this task's recipes, but no `def` line makes it yet. Write it with `def` above line 8, the line that calls it."],
+      "`max_fuel_for` is one of your task's recipes, but no `def` line makes it yet. Write it with `def` above line 8, the line that calls it."],
     ["recipes-with-names/box-or-recipe", "called before it is defined", "name 'say_steady' is not defined", "recipe-called-too-early",
       "Line 1 calls `say_steady`, but its `def` is only on line 6."],
     ["recipes-with-names/ingredients", "used outside the recipe", "name 'hero_name' is not defined", "made-inside-recipe",
@@ -1160,39 +1160,39 @@ describe("explainCourseError: Unit 3's slips (recipes), from the unit's own wron
       "Line 3 hands back `cost`, but `double_cost` has no box or ingredient by that name. Its ingredient is `price`: work the answer out from that."],
     // The store written the wrong way round: the new box on the left, the call on the right.
     ["recipes-with-names/store-then-pass", "store reversed", "name 'greeting' is not defined", "store-backwards",
-      "Line 12 puts `greeting` into `get_greeting`, the wrong way round, so Python looks for a box `greeting` that no line makes. The new box goes on the left of `=`, the call on the right: `greeting = get_greeting()`"],
+      'Line 12 puts `greeting` into `get_greeting`, the wrong way around, so Python looks for a box `greeting` that no line makes. The new box goes on the left of `=`, the call on the right: `greeting = get_greeting()`'],
     ["recipes-with-names/send-it-back", "return not indented", "'return' outside function", "indent",
       "Line 3's `return` has no spaces in front, so it is outside the recipe `max_mana_for`."],
     ["recipes-with-names/broken-spell-6a", "def still makes the box", "expected '('", "def-for-variable",
-      "`def` makes recipes (functions), not boxes. To make a box, write the name, an equals sign, then the value, with no `def`: `hours_left = 37`"],
+      '`def` makes recipes (functions), not boxes. A box is its name, then `=`, then the value, with no `def`: `hours_left = 37`'],
     // The Unit 3 play-through: `return result` after `fuel = ...` with the try line on (the crash path) ends the
     // ping-pong too, and a box from another recipe's kitchen gets this recipe's own box.
     ["recipes-with-names/send-it-back", "with the try line on (the crash path", "name 'result' is not defined", "not-in-recipe",
-      "`result` comes from Mar'tu's example. This recipe's box is `fuel`: hand that back."],
+      "`result` comes from the Example, not from your task. This recipe's box is `fuel`: hand that back."],
     ["recipes-with-names/send-it-back", "kitchen, with the try line on", "name 'total' is not defined", "made-inside-recipe",
       "`total` belongs to `max_mana_for`, so only that recipe can use it. Inside `max_fuel_for`, hand back its own box, `fuel`."],
     // def and = mixed up inside a recipe task: every form answers with the recipe's def line, never "make a box".
     ["recipes-with-names/send-it-back", "worked out from its ingredient (`max_fuel_for", "name 'cells' is not defined", "recipe-like-math",
-      "Line 8 makes `max_fuel_for` with `=`, the way a box is made. `max_fuel_for` is a recipe in this task: `def max_fuel_for(cells):`, then an indented `return cells * 5`."],
+      'Line 8 makes `max_fuel_for` with `=`, the way a box is made. `max_fuel_for` is a recipe in your task: `def max_fuel_for(cells):`, then an indented `return cells * 5`.'],
     ["recipes-with-names/send-it-back", "worked out from its ingredient, with the try line on", "name 'cells' is not defined", "recipe-like-math",
-      "`max_fuel_for` is a recipe in this task: `def max_fuel_for(cells):`, then an indented `return cells * 5`."],
+      'Line 8 makes `max_fuel_for` with `=`, the way a box is made. `max_fuel_for` is a recipe in your task: `def max_fuel_for(cells):`, then an indented `return cells * 5`.'],
     ["recipes-with-names/send-it-back", "is made, with the try line on (the box called)", "'int' object is not callable", "recipe-like-math",
-      "Line 11 calls `max_fuel_for`, but line 9 makes `max_fuel_for` with `=`, so it is a box, not a recipe (function). `max_fuel_for` is a recipe in this task: `def max_fuel_for(cells):`, then an indented `return cells * 5`."],
+      'Line 11 calls `max_fuel_for`, but line 9 makes `max_fuel_for` with `=`, so it is a box, not a recipe (function). `max_fuel_for` is a recipe in your task: `def max_fuel_for(cells):`, then an indented `return cells * 5`.'],
     ["recipes-with-names/send-it-back", "def mixed with =", "expected '('", "recipe-like-math",
-      "Line 8 mixes `def` with `=`. `max_fuel_for` is a recipe in this task: `def max_fuel_for(cells):`, then an indented `return cells * 5`."],
+      'Line 8 mixes `def` with `=`. `max_fuel_for` is a recipe in your task: `def max_fuel_for(cells):`, then an indented `return cells * 5`.'],
     ["recipes-with-names/send-it-back", "with def in front (`def max_fuel_for(cells) = cells * 5`)", "expected ':'", "recipe-like-math",
-      "Line 8 puts `=` after the brackets, the way math writes it. In Python the colon goes right after the brackets, and the steps go below: `def max_fuel_for(cells):`, then an indented `return cells * 5`."],
+      'Line 8 puts `=` after the parentheses, the way math writes f(x) = 2x. In Python the colon goes right after the parentheses, and the steps go below: `def max_fuel_for(cells):`, then an indented `return cells * 5`.'],
     ["recipes-with-names/send-it-back", "and a colon at the end", "expected ':'", "recipe-like-math",
-      "In Python the colon goes right after the brackets, and the steps go below: `def max_fuel_for(cells):`"],
+      'Line 8 puts `=` after the parentheses, the way math writes f(x) = 2x. In Python the colon goes right after the parentheses, and the steps go below: `def max_fuel_for(cells):`, then an indented `return cells * 5`.'],
     ["recipes-with-names/box-or-recipe", "the recipe's name in quotes after def", "invalid syntax", "quoted-recipe-name",
-      "Line 5 has the recipe's name in quotes. A recipe's name has no quotes: it goes right after `def`, then ( ) and a colon: `def say_steady():`, with its steps indented under it."],
+      "Line 5 has the recipe's name in quotes. A recipe's name has no quotes: it goes right after `def`, then parentheses ( ) and a colon: `def say_steady():`, with its steps indented under it."],
     ["recipes-with-names/box-or-recipe", "= used to make the recipe, then called", "'str' object is not callable", "recipe-like-math",
-      "Line 3 calls `say_steady`, but line 2 makes `say_steady` with `=`, so it is a box, not a recipe (function). `say_steady` is a recipe in this task: `def say_steady():`, then its steps, indented under it."],
+      'Line 3 calls `say_steady`, but line 2 makes `say_steady` with `=`, so it is a box, not a recipe (function). `say_steady` is a recipe in your task: `def say_steady():`, then its steps, indented under it.'],
     // A recipe with no step (its `pass` deleted, or only a note): the rule, never "indent the next line".
     ["recipes-with-names/replace-pass", "pass deleted and nothing written yet", "expected an indented block after function definition on line 2", "indent",
-      "`step_north` has no steps yet, and a recipe needs at least one step inside. Write its step under the def line, four spaces in (or put `pass` back while you think)."],
+      '`step_north` has no steps yet, and a recipe needs at least one step inside it. Write its step under the `def` line, four spaces in. While you think, `pass` can hold the spot, like a blank recipe card.'],
     ["recipes-with-names/replace-pass", "only a note left in the recipe", "expected an indented block after function definition on line 2", "indent",
-      "`step_north` has no steps yet, and a recipe needs at least one step inside: a note with # doesn't count."],
+      "`step_north` has no steps yet, and a recipe needs at least one step inside it. A note with `#` doesn't count. Write its step under the `def` line, four spaces in. While you think, `pass` can hold the spot, like a blank recipe card."],
     // An ingredient-like name inside the recipe: the ingredient, letter for letter, never quotes.
     ["recipes-with-names/ingredients", "an approximate parameter name", "name 'hero' is not defined", "unknown-name",
       "`hero` is not an ingredient of `warn`. Its ingredient is `hero_name`: use it letter for letter."],
@@ -1203,7 +1203,7 @@ describe("explainCourseError: Unit 3's slips (recipes), from the unit's own wron
       "Line 7 is outside the recipe: move this line inside `warn`, in place of `pass`, four spaces in."],
     // A name from a Teach me hint, called: the task's own recipe.
     ["recipes-with-names/store-then-pass", "the Teach me hint's names copied", "name 'get_note' is not defined", "example-name",
-      "`get_note` comes from Mar'tu's example. This task's recipe is `get_greeting`: call that one, letter for letter."],
+      "`get_note` comes from the Example, not from your task. Your task's recipe is `get_greeting`: call that one, letter for letter."],
   ];
 
   it.each(rows)("%s, %s: Python says %s, the explainer names %s", (key, why, python, kind, hint) => {
@@ -1221,16 +1221,16 @@ describe("explainCourseError: Unit 3's slips (recipes), from the unit's own wron
 
   it("names the slip, never the fix, in a lean exercise (SOLO and Quick Check), for every new kind", () => {
     const lean: [string, string, string, string][] = [
-      ["qc-r1-a/write-a-recipe", "= used to make a recipe (a call on the left)", "recipe-like-math", "The slip is on line 1: a recipe written like math."],
-      ["recipes-with-names/send-it-back", "ingredient name in quotes", "quoted-ingredient", "The slip is on line 8: an ingredient name in quotes."],
-      ["recipes-with-names/solo-6a", "third call hands over one value", "wrong-number-of-values", "The slip is on line 6: the wrong number of values handed over."],
-      ["qc-r1-a/roll-a-die", "one value handed to randint", "wrong-number-of-values", "The slip is on line 7: the wrong number of values handed over."],
-      ["qc-r1-b/roll-a-die", "biggest number first", "randint-backwards", "The slip is on line 7: the numbers in the wrong order."],
-      ["recipes-with-names/solo-6a", "two words with no quotes", "unquoted-words", "The slip is on line 6: words with no quotes."],
-      ["qc-r1-a/write-a-recipe", "the starter (no recipe yet", "recipe-not-made-yet", "The slip is on line 5: a recipe that is not made yet."],
-      ["qc-r1-b/write-a-recipe", "called before it is defined", "recipe-called-too-early", "The slip is on line 5: a recipe called before its `def`."],
-      ["recipes-with-names/solo-6a", "a name the recipe never makes", "not-in-recipe", "The slip is on line 9: a name this recipe never makes."],
-      ["recipes-with-names/solo-6a", "an ingredient printed outside its recipe", "made-inside-recipe", "The slip is on line 7: a name that only lives inside a recipe."],
+      ["qc-r1-a/write-a-recipe", "= used to make a recipe (a call on the left)", "recipe-like-math", 'The mistake is on line 1: a recipe written like math.'],
+      ["recipes-with-names/send-it-back", "ingredient name in quotes", "quoted-ingredient", 'The mistake is on line 8: an ingredient name in quotes.'],
+      ["recipes-with-names/solo-6a", "third call hands over one value", "wrong-number-of-values", 'The mistake is on line 6: the wrong number of values handed over.'],
+      ["qc-r1-a/roll-a-die", "one value handed to randint", "wrong-number-of-values", 'The mistake is on line 7: the wrong number of values handed over.'],
+      ["qc-r1-b/roll-a-die", "biggest number first", "randint-backwards", 'The mistake is on line 7: the numbers in the wrong order.'],
+      ["recipes-with-names/solo-6a", "two words with no quotes", "unquoted-words", 'The mistake is on line 6: words with no quotes.'],
+      ["qc-r1-a/write-a-recipe", "the starter (no recipe yet", "recipe-not-made-yet", 'The mistake is on line 5: a recipe that is not made yet.'],
+      ["qc-r1-b/write-a-recipe", "called before it is defined", "recipe-called-too-early", 'The mistake is on line 5: a recipe called before its `def`.'],
+      ["recipes-with-names/solo-6a", "a name the recipe never makes", "not-in-recipe", 'The mistake is on line 9: a name this recipe never makes.'],
+      ["recipes-with-names/solo-6a", "an ingredient printed outside its recipe", "made-inside-recipe", 'The mistake is on line 7: a name that only lives inside a recipe.'],
     ];
     for (const [key, why, kind, hint] of lean) {
       const { code, context } = unit3(key, why);
@@ -1248,7 +1248,7 @@ describe("explainCourseError: Unit 3's slips (recipes), from the unit's own wron
     }
     // The SOLO's unquoted two-word hero, in full: only the words get quotes, the number stays.
     const { code, context } = unit3("recipes-with-names/solo-6a", "two words with no quotes");
-    expect(explainRun(code, [], { ...context, explainer: "full" }).hint).toContain('like this: heal("Moth Queen", 5)');
+    expect(explainRun(code, [], { ...context, explainer: "full" }).hint).toContain('`heal("Moth Queen", 5)`');
   });
 
   it("puts each new row before the old one that gave wrong advice", () => {
@@ -1283,7 +1283,7 @@ describe("explainCourseError: Unit 3's slips (recipes), from the unit's own wron
     for (const context of [undefined, { unitOrder: 1 }, unit3Context]) {
       const heal = explainRun("def heal(hero_name, amount):\n    pass\nheal(Moth Queen, 5)\n", [], context);
       expect(heal.kind).toBe("unquoted-words");
-      expect(heal.hint).toContain('like this: heal("Moth Queen", 5)');
+      expect(heal.hint).toContain('`heal("Moth Queen", 5)`');
       expect(heal.hint).not.toContain('"Moth Queen, 5"');
       const cheer = explainRun('def cheer_on(a, b):\n    pass\ncheer_on("Captain Glug", Go now)\n', [], context);
       expect(cheer.kind).not.toBe("missing-comma");
@@ -1303,7 +1303,7 @@ describe("explainCourseError: Unit 3's slips (recipes), from the unit's own wron
     // the example-name row listed the task's names, with the recipe's box nowhere first).
     const copied = explainRun(rightBox, [], { ...unit3Context, example: "def f(a):\n    result = a\n    return result\n" });
     expect(copied.kind).toBe("not-in-recipe");
-    expect(copied.hint).toBe("`result` comes from Mar'tu's example. This recipe's box is `total`: hand that back.");
+    expect(copied.hint).toBe("`result` comes from the Example, not from your task. This recipe's box is `total`: hand that back.");
     const twoBoxes = "def gold_for(gems):\n    coins = gems * 2\n    bonus = coins + 1\n    return answer\n\nprint(gold_for(1))\n";
     expect(explainRun(twoBoxes, [], unit3Context).hint).toContain(
       "This recipe's boxes are `coins` and `bonus`: hand back the one that holds the answer.",
@@ -1330,7 +1330,7 @@ describe("explainCourseError: Unit 3's slips (recipes), from the unit's own wron
     );
     // Before Unit 3 (or with no unit) a call's count gets the plain words, never Python's.
     const count = explainRun("def f(a):\n    return a\nf()\n", [], { unitOrder: 2 });
-    expect(count.hint).toBe("The function call on line 3 has the wrong number of values inside its ( ).");
+    expect(count.hint).toBe('`f( )` on line 3 got the wrong number of values inside its parentheses.');
     expect(explainRun("def f(a):\n    return a\nf()\n").hint).not.toContain("positional");
     // The recipe rows need Unit 3: a Unit 2 name keeps its Unit 2 words.
     expect(explainRun("print(max_fuel_for(4))\n", [], { unitOrder: 2, names: ["max_fuel_for"] }).kind).not.toBe("recipe-not-made-yet");
@@ -1339,12 +1339,12 @@ describe("explainCourseError: Unit 3's slips (recipes), from the unit's own wron
   it("speaks the unit's words from Unit 3 on: recipes, not functions; boxes, not variables", () => {
     const unit3Context: ExplainContext = { unitOrder: 3 };
     expect(explainRun('shout("hi")\n', [], unit3Context).hint).toBe(
-      "Python doesn't know a recipe (function) called shout. Check the spelling, or make it with def before you use it.",
+      "Python doesn't know a recipe (function) called `shout`. Check the spelling, or write the recipe with `def` above the line that calls it.",
     );
     expect(explainRun('def say_ready:\n    print("Ready.")\n', [], unit3Context).hint).toBe(
-      "A `def` line needs ( ) after the recipe's name, then a colon: `def say_ready():`",
+      "A `def` line needs parentheses ( ) after the recipe's name, then a colon: `def say_ready():`",
     );
-    expect(explainRun('def say_ready:\n    print("Ready.")\n', [], { unitOrder: 2 }).hint).toContain("after the function's name");
+    expect(explainRun('def say_ready:\n    print("Ready.")\n', [], { unitOrder: 2 }).hint).toContain('after the name');
     expect(explainRun('def steadying_words = "Steady, now.\n', [], unit3Context).hint).toContain(
       "`def` makes recipes (functions), not boxes.",
     );
@@ -1372,7 +1372,7 @@ describe("explainCourseError: the Unit 3 play-through (a reviewer who played the
     const called = explainRun("mana = 5\nprint(mana(2))\n", [], unit3Context);
     expect(called.kind).toBe("not-a-function");
     expect(called.hint).toBe(
-      "Line 2 calls `mana` with ( ), but line 1 makes `mana` with `=`, so it is a box, not a recipe (function). Only a recipe made with `def` can be called. To multiply by it, write * between them.",
+      'Line 2 calls `mana` with parentheses ( ), but line 1 makes `mana` with `=`, so it is a box, not a recipe (function). Only a recipe made with `def` can be called. To multiply by it, write `*` between them.',
     );
     expect(explainRun("mana = 5\nprint(mana(2))\n", [], { unitOrder: 2 }).kind).toBe("use-star-to-multiply");
     expect(explainRun("print(2(3 + 4))\n", [], unit3Context).kind).toBe("use-star-to-multiply");
@@ -1393,15 +1393,15 @@ describe("explainCourseError: the Unit 3 play-through (a reviewer who played the
 
   it("asks for a step in an empty recipe, and keeps the indent row when the step is there but not indented", () => {
     expect(explainRun("def warn(hero_name):\n\nwarn(\"Pip\")\n", [], unit3Context).hint).toBe(
-      "`warn` has no steps yet, and a recipe needs at least one step inside. Write its step under the def line, four spaces in (or put `pass` back while you think).",
+      '`warn` has no steps yet, and a recipe needs at least one step inside it. Write its step under the `def` line, four spaces in. While you think, `pass` can hold the spot, like a blank recipe card.',
     );
     expect(explainRun('def warn(hero_name):\nprint(hero_name)\n', [], unit3Context).hint).toBe(
-      "The line after line 1 belongs inside the def, so it needs 4 spaces at the start.",
+      'The line after line 1 belongs inside the `def`, so it needs 4 spaces at the start, like a sub-point in an outline.',
     );
     // An `if` with nothing under it keeps its own words, and before Unit 3 (def is a slip there) nothing changes.
-    expect(explainRun("roll = 3\nif roll > 2:\n\nprint(roll)\n", [], unit3Context).hint).toContain("belongs inside the if");
+    expect(explainRun("roll = 3\nif roll > 2:\n\nprint(roll)\n", [], unit3Context).hint).toContain('belongs inside the `if`');
     expect(explainRun("def hero():\n\nprint(1)\n", [], { unitOrder: 1 }).hint).toBe(
-      "The line after line 1 belongs inside the def, so it needs 4 spaces at the start.",
+      "The line after line 1 belongs inside the `def`, so it needs 4 spaces at the start, like a sub-point in an outline.",
     );
   });
 
@@ -1437,7 +1437,7 @@ describe("explainCourseError: the Unit 3 play-through (a reviewer who played the
     const code = "def get_greeting():\n    return 'Hi'\n\ndef present():\n    note = get_note()\n\npresent()\n";
     const context: ExplainContext = { unitOrder: 3, names: ["get_greeting", "present"], solution: "def get_greeting():\n    return 'Hi'\n", foreign };
     expect(explainRun(code, [], context).hint).toBe(
-      "`get_note` comes from Mar'tu's example. This task's recipe is `get_greeting`: call that one, letter for letter.",
+      "`get_note` comes from the Example, not from your task. Your task's recipe is `get_greeting`: call that one, letter for letter.",
     );
     expect(explainRun(code, [], { ...context, unitOrder: 2 }).kind).toBe("unknown-function");
   });
@@ -1446,7 +1446,7 @@ describe("explainCourseError: the Unit 3 play-through (a reviewer who played the
     const code = '# A recipe holds steps.\ndef ("say_steady"):\n    print("Steady, now.")\n\nsay_steady()\n';
     const lean = explainRun(code, [], { ...unit3Context, explainer: "lean" });
     expect(lean.kind).toBe("quoted-recipe-name");
-    expect(lean.hint).toContain("The slip is on line 2: quotes around a recipe's name.");
+    expect(lean.hint).toContain("The mistake is on line 2: quotes around a recipe's name.");
     expect(lean.hint).not.toContain("def say_steady():");
   });
 });
@@ -1499,11 +1499,11 @@ describe("explainCourseError: Unit 4's slips (lists), from the unit's own wrong 
   const rows: [string, string, string, string, string][] = [
     // (1) `chalk_wall(2) = 47`: round brackets after a list's name, on the left of `=` (never the `==` row).
     ["many-values-one-name/fix-a-mark", "round brackets: assigning to a call", "cannot assign to function call", "list-needs-square-brackets",
-      "Line 5 puts ( ) after `chalk_wall`. To change one item, use square brackets: `chalk_wall[2] = 47`"],
+      'Line 5 puts parentheses ( ) after `chalk_wall`. To change one item of a list, use square brackets [ ]: `chalk_wall[2] = 47`'],
     // (2) a comma between two positions: the half that fits first.
     ["many-values-one-name/lists-inside-lists", "a comma between the positions", "list indices must be integers or slices, not tuple",
       "comma-in-brackets",
-      "Inside [ ], a comma asks for two positions at once. Row then item takes two pairs of brackets: `roster[2][0]`. A run of items takes a colon: `[0:2]`."],
+      'Inside [ ], a comma asks for two positions at once. For row then item, use two pairs of square brackets, like the row and seat on a theater ticket: `roster[2][0]`. A run of items takes a colon: `[0:2]`.'],
     ["reading-the-wall-closely/slice-the-wall", "a comma for the colon", "list indices must be integers or slices, not tuple",
       "comma-in-brackets", "Inside [ ], a comma asks for two positions at once. A run of items takes a colon: `chalk_wall[0:2]`."],
     // (3) one number joined to a list with `+`.
@@ -1513,19 +1513,19 @@ describe("explainCourseError: Unit 4's slips (lists), from the unit's own wrong 
       "To add one item, use `.append()`: `marks.append(33)`"],
     // (4) square brackets after a tool that is called: a method, a builtin, a type.
     ["many-values-one-name/new-chalk-mark", "square brackets for append's round ones", "'builtin_function_or_method' object is not subscriptable",
-      "call-needs-round-brackets", "Call it with round brackets: `chalk_wall.append(33)`"],
+      "call-needs-round-brackets", 'Call it with parentheses ( ): `chalk_wall.append(33)`'],
     ["reading-the-wall-closely/sorted-or-sort", "square brackets for sorted's round ones", "'builtin_function_or_method' object is not subscriptable",
-      "call-needs-round-brackets", "Call it with round brackets: `sorted(chalk_wall)`"],
+      "call-needs-round-brackets", 'Call it with parentheses ( ): `sorted(chalk_wall)`'],
     ["more-list-tools/biggest-and-smallest", "square brackets after max", "'builtin_function_or_method' object is not subscriptable",
-      "call-needs-round-brackets", "Call it with round brackets: `max(chalk_wall)`"],
+      "call-needs-round-brackets", 'Call it with parentheses ( ): `max(chalk_wall)`'],
     ["reading-the-wall-closely/range-of-marks", "square brackets for range's round ones", "type 'range' is not subscriptable",
-      "call-needs-round-brackets", "Call it with round brackets: `range(1, 9)`"],
+      "call-needs-round-brackets", 'Call it with parentheses ( ): `range(1, 9)`'],
     ["zip/spell-colors", "square brackets for zip's round ones", "type 'zip' is not subscriptable", "call-needs-round-brackets",
-      "Call it with round brackets: `zip(heroes, colors)`"],
+      'Call it with parentheses ( ): `zip(heroes, colors)`'],
     ["extra-reading-the-wall/how-many-times", "square brackets instead of round ones", "'builtin_function_or_method' object is not subscriptable",
-      "call-needs-round-brackets", "Call it with round brackets: `chalk_wall.count(48)`"],
+      "call-needs-round-brackets", 'Call it with parentheses ( ): `chalk_wall.count(48)`'],
     ["more-list-tools/remove-and-in", "square brackets after remove", "'builtin_function_or_method' object is not subscriptable",
-      "call-needs-round-brackets", "Call it with round brackets: `chalk_wall.remove(99)`"],
+      "call-needs-round-brackets", 'Call it with parentheses ( ): `chalk_wall.remove(99)`'],
     // A position read from `None` (`.sort()` hands back nothing): the unit's "nothing came back", never "wrong kind".
     ["extra-reading-the-wall/broken-spell-3b", "the starter: .sort() hands back None", "'NoneType' object is not subscriptable",
       "read-from-none",
@@ -1534,9 +1534,9 @@ describe("explainCourseError: Unit 4's slips (lists), from the unit's own wrong 
       "read-from-none", "and `chalk_wall` holds `None`: nothing came back. `.sort()` on line 2 sorts the list itself"],
     // Positions past the end, in the unit's words: `len(wall)` is one past the last position (the class's slip).
     ["many-values-one-name/how-long", "len(list) used as an index (spec)", "list index out of range", "nothing-at-position",
-      "Line 4 uses `len(chalk_wall)` as a position. `len(chalk_wall)` counts the items, so it is one past the last position. Use `len(chalk_wall) - 1`, or `[-1]`."],
+      'Line 4 uses `len(chalk_wall)` as a position. `len(chalk_wall)` counts the items, but positions start at 0, like a ruler, so the count is one past the last position. Use `len(chalk_wall) - 1`, or `[-1]`.'],
     ["many-values-one-name/broken-spell-3a", "len(list) used as the position", "list index out of range", "nothing-at-position",
-      "`len(chalk_wall)` counts the items, so it is one past the last position."],
+      '`len(chalk_wall)` counts the items, but positions start at 0, like a ruler, so the count is one past the last position.'],
     ["many-values-one-name/first-is-zero", "position 7 for the newest", "list index out of range", "nothing-at-position",
       "Line 5 asks for a position `chalk_wall` doesn't have. `chalk_wall` holds 7 items, so its positions are 0 to 6."],
     ["many-values-one-name/how-long", "a counted position [6]: the starter's second call", "list index out of range", "nothing-at-position",
@@ -1553,16 +1553,16 @@ describe("explainCourseError: Unit 4's slips (lists), from the unit's own wrong 
       "`log[0]` is a whole row of `log`: a list, not a number. Add the inner position of the number in it too: `log[0][1] = log[0][1] + 2`"],
     // The wall's row copied as it looks: commas inside square brackets, or one box each (never "a missing quote").
     ["many-values-one-name/how-would-you-store-it", "the row copied as shown", "invalid syntax", "missing-comma",
-      "Numbers side by side need commas, inside square brackets: `hours = [48, 48, 47, 46, 44, 41, 37]`. Or give each number a box of its own."],
+      'make a list: commas between the numbers, inside square brackets, `hours = [48, 48, 47, 46, 44, 41, 37]`.'],
     // (5) "'list' object is not callable": read a list with square brackets (after the shadowed-name row).
     ["many-values-one-name/first-is-zero", "round brackets: the list called like a recipe", "'list' object is not callable",
-      "list-needs-square-brackets", "`chalk_wall` is a list. Read a list with square brackets: `chalk_wall[0]`"],
+      "list-needs-square-brackets", '`chalk_wall` is a list. Read a list with square brackets [ ]: `chalk_wall[0]`'],
     ["many-values-one-name/how-long", "round brackets: the list called like a recipe (inside", "'list' object is not callable",
-      "list-needs-square-brackets", "`wall` is a list. Read a list with square brackets: `wall[len(wall) - 1]`"],
+      "list-needs-square-brackets", '`wall` is a list. Read a list with square brackets [ ]: `wall[len(wall) - 1]`'],
     ["reading-the-wall-closely/slice-the-wall", "square brackets vs parentheses: the list called", "'list' object is not callable",
-      "list-needs-square-brackets", "Read a list with square brackets: `chalk_wall[0:2]`"],
+      "list-needs-square-brackets", 'Read a list with square brackets [ ]: `chalk_wall[0:2]`'],
     ["many-values-one-name/broken-spell-3a", "commas mended, the list still called with ()", "'list' object is not callable",
-      "list-needs-square-brackets", "Read a list with square brackets: `chalk_wall[0]`"],
+      "list-needs-square-brackets", 'Read a list with square brackets [ ]: `chalk_wall[0]`'],
     // (6) `sorted` (and `max`) after a dot: it goes in front (Python's "Did you mean 'sort'" would sort the wall).
     ["reading-the-wall-closely/sorted-or-sort", "sorted used as a list method", "has no attribute 'sorted'. Did you mean: 'sort'?",
       "tool-after-dot", "`sorted` goes in front: `sorted(chalk_wall)`. It hands back a sorted copy."],
@@ -1570,11 +1570,11 @@ describe("explainCourseError: Unit 4's slips (lists), from the unit's own wrong 
       "`max` goes in front: `max(chalk_wall)`. It hands back the biggest item."],
     // (7) bare words inside [ ]: quotes, before the missing-comma rows.
     ["oogrishs-training-log", "a drill with no quotes, on one line", "invalid syntax. Perhaps you forgot a comma?", "unquoted-words",
-      'If storm kick is text, put quotes around it: "storm kick".'],
+      'If `storm kick` is words, put quotes around them, the way you quote someone\'s exact words: `"storm kick"`.'],
     ["oogrishs-training-log", "one row of a list over several lines", "invalid syntax. Perhaps you forgot a comma?", "unquoted-words",
-      'If shield wall is text, put quotes around it: "shield wall".'],
+      'If `shield wall` is words, put quotes around them, the way you quote someone\'s exact words: `"shield wall"`.'],
     ["the-basement-inventory", "a part with no quotes, one item of a list over several lines", "invalid syntax. Perhaps you forgot a comma?",
-      "unquoted-words", 'If tuning fork is text, put quotes around it: "tuning fork".'],
+      "unquoted-words", 'If `tuning fork` is words, put quotes around them, the way you quote someone\'s exact words: `"tuning fork"`.'],
     // (8) `.remove()` handed a value the list does not hold.
     ["more-list-tools/remove-and-in", "remove by position (3), not value", "list.remove(x): x not in list", "not-on-the-list",
       "`.remove()` on line 6 looks for a value, not a position. There is no 3 on the list. Ask first with `in`."],
@@ -1587,7 +1587,7 @@ describe("explainCourseError: Unit 4's slips (lists), from the unit's own wrong 
     ["oogrishs-training-log", "append with two things, not one pair", "list.append() takes exactly one argument (2 given)",
       "wrong-number-of-values", 'put them in their own square brackets: `log.append(["roll and rise", 6])`'],
     ["extra-reading-the-wall/how-many-times", "nothing in the brackets", "list.count() takes exactly one argument (0 given)",
-      "wrong-number-of-values", "`.count()` on line 2 needs one value inside its round brackets: the value to count."],
+      "wrong-number-of-values", '`.count()` on line 2 needs one value inside its parentheses: the value to count.'],
     ["more-list-tools/remove-and-in", "the sides swapped", "argument of type 'int' is not iterable", "wrong-kind-of-value",
       "so the value goes first and the list after it on line 3: `has_32 = 32 in chalk_wall`"],
     ["tuples/cabin-on-the-map", "three names for two items", "not enough values to unpack (expected 3, got 2)", "wrong-number-of-values",
@@ -1617,17 +1617,17 @@ describe("explainCourseError: Unit 4's slips (lists), from the unit's own wrong 
   it("names the slip, never the fix, in a lean exercise (SOLO and Quick Check), for every new kind", () => {
     const lean: [string, string, string, string][] = [
       ["many-values-one-name/solo-3a", "round brackets: the list called like a recipe", "list-needs-square-brackets",
-        "The slip is on line 3: round brackets where a list needs square ones."],
+        'The mistake is on line 3: parentheses where a list needs square brackets.'],
       ["more-list-tools/solo-3c", "the starter (square brackets after max)", "call-needs-round-brackets",
-        "The slip is on line 2: square brackets where a call needs round ones."],
-      ["more-list-tools/solo-3c", "a dot instead of a call", "tool-after-dot", "The slip is on line 2: a tool written after a dot."],
-      ["qc3-a/make-append-read", "+ a number, not a list", "list-plus-item", "The slip is on line 4: one item joined to a list with `+`."],
+        'The mistake is on line 2: square brackets where a call needs parentheses.'],
+      ["more-list-tools/solo-3c", "a dot instead of a call", "tool-after-dot", 'The mistake is on line 2: a tool written after a dot.'],
+      ["qc3-a/make-append-read", "+ a number, not a list", "list-plus-item", 'The mistake is on line 4: one item joined to a list with `+`.'],
       ["qc3-b/make-append-read", "square brackets for append's round ones", "call-needs-round-brackets",
-        "The slip is on line 6: square brackets where a call needs round ones."],
-      ["qc3-a/make-append-read", "missing commas", "missing-comma-in-list", "The slip is on line 2: a missing comma in a list."],
+        'The mistake is on line 6: square brackets where a call needs parentheses.'],
+      ["qc3-a/make-append-read", "missing commas", "missing-comma-in-list", 'The mistake is on line 2: a missing comma in a list.'],
       ["qc3-a/mend-the-reads", "sorted with square brackets", "call-needs-round-brackets",
-        "The slip is on line 11: square brackets where a call needs round ones."],
-      ["reading-the-wall-closely/solo-3b", "seat B's bug", "read-from-none", "The slip is on line 3: a position read from `None`."],
+        'The mistake is on line 11: square brackets where a call needs parentheses.'],
+      ["reading-the-wall-closely/solo-3b", "seat B's bug", "read-from-none", 'The mistake is on line 3: a position read from `None`.'],
     ];
     for (const [key, why, kind, hint] of lean) {
       const { code, context } = unit4(key, why);
@@ -1703,7 +1703,7 @@ describe("explainCourseError: Unit 4's slips (lists), from the unit's own wrong 
     // `.pop[]` (a SyntaxError): round brackets for the call, never "a missing quote".
     const pop = explainRun("chalk_wall = [48, 47]\nnewest = chalk_wall.pop[]\n", [], unit4Context);
     expect(pop.kind).toBe("call-needs-round-brackets");
-    expect(pop.hint).toContain("Call it with round brackets: `chalk_wall.pop()`");
+    expect(pop.hint).toContain('Call it with parentheses ( ): `chalk_wall.pop()`');
     // A one-item list beside the rest is rebuilt as one pair, never `[["roll and rise"], 6]`.
     const pair = explainRun('log = []\nlog.append(["roll and rise"], 6)\n', [], unit4Context);
     expect(pair.hint).toContain('`log.append(["roll and rise", 6])`');
@@ -1807,11 +1807,11 @@ describe("explainCourseError: Unit 5's slips (dictionaries), from the unit's own
   const rows: [string, string, string, string, string][] = [
     // (0) `=` inside a sheet: a colon, and the key keeps its quotes (never "take the quotes off").
     ["stat-sheets/make-a-sheet", "= for : inside the sheet (the box habit)", "cannot assign to literal", "equals-in-sheet",
-      'Line 2 has `=` inside a sheet. Inside a dictionary `{ }`, a colon goes between a key and its value: `"name": "Gearshift",`. The key keeps its quotes.'],
+      'Line 2 has `=` inside a sheet. Inside a dictionary `{ }`, a colon goes between a key and its value, like a word and its meaning in a glossary: `"name": "Gearshift",`. The key keeps its quotes.'],
     ["stat-sheets/broken-spell-4a", "the starter: = for : inside the sheet first", "cannot assign to literal", "equals-in-sheet",
       '`"name": "Lucky",`. The key keeps its quotes.'],
     ["stat-sheets/broken-spell-4a", "the colon slip 'mended' by taking the key's quotes off", "Maybe you meant '==' or ':='", "equals-in-sheet",
-      'a colon goes between a key and its value: `"name": "Lucky",`'],
+      'a colon goes between a key and its value, like a word and its meaning in a glossary: `"name": "Lucky",`'],
     ["sheets-inside-sheets/spell-book-of-spells", "= in place of : inside the dictionary", "cannot assign to literal", "equals-in-sheet",
       '`"mana_cost": cost,`'],
     // (1) a text value with no quotes: never "capital letters" or a near name.
@@ -1829,7 +1829,7 @@ describe("explainCourseError: Unit 5's slips (dictionaries), from the unit's own
     ["stat-sheets/read-by-key", "the key with no quotes (a box name)", "name 'name' is not defined", "unquoted-key",
       '`print(gearshift["name"] + ": " + str(gearshift["mana"]) + " mana")`'],
     ["stat-sheets/broken-spell-4a", "colon mended; the key with no quotes", "name 'name' is not defined", "unquoted-key",
-      'Line 5 with quotes: `print(lucky["name"])`'],
+      'Line 5, with the quotes put in: `print(lucky["name"])`'],
     ["keys-and-get/lucky-canteen", "the key with no quotes", "name 'glug' is not defined", "unquoted-key",
       '`print(lucky.get("glug", 0))`'],
     ["sheets-inside-sheets/spell-book-of-spells", "a key without quotes (a box name", "name 'mana_cost' is not defined", "unquoted-key",
@@ -1860,12 +1860,12 @@ describe("explainCourseError: Unit 5's slips (dictionaries), from the unit's own
       "`lucky` is at position 1, `roster[1]`"],
     // (6) a sheet read with round brackets: the list kind, in a sheet's words.
     ["stat-sheets/read-by-key", "round brackets", "'dict' object is not callable", "list-needs-square-brackets",
-      'Read a dictionary with square brackets, not round ones: `gearshift["name"]`'],
+      'Read a dictionary with square brackets [ ], not parentheses: `gearshift["name"]`'],
     ["sheets-inside-sheets/abilities-inside", "round brackets (bomb_shell(\"abilities\"))", "'dict' object is not callable",
       "list-needs-square-brackets", '`bomb_shell["abilities"]`'],
     // (7) a sheet called on the left of `=`: never "a recipe starts with def" or "use ==".
     ["sheets-inside-sheets/spell-book-of-spells", "CP2 round brackets", "cannot assign to function call", "list-needs-square-brackets",
-      "Store in a dictionary with square brackets: `spell_book[spell_name] = spell`"],
+      'Store in a dictionary with square brackets [ ]: `spell_book[spell_name] = spell`'],
     // (8) a name where a list needs a position: the position, from the list's sheets.
     ["sheets-inside-sheets/the-roster", "a name as the position: roster[\"Lucky\"]", "not str", "name-as-position",
       '`roster` is a list: it takes a position number in `[ ]`, not a name. Lucky is at position 3: `roster[3]["name"]`. Positions count from 0.'],
@@ -1893,7 +1893,7 @@ describe("explainCourseError: Unit 5's slips (dictionaries), from the unit's own
       'A dictionary has keys, not positions: use a key like `"name"`.'],
     ["sheets-inside-sheets/the-roster", "a dict read by position: roster[3][0]", "KeyError: 0", "missing-key", 'use a key like `"name"`'],
     ["sheets-inside-sheets/abilities-inside", "both keys in one bracket", "KeyError: ('abilities', 'wisdom')", "comma-in-brackets",
-      'Inside [ ], a comma asks for two keys at once. One key per pair of brackets: `bomb_shell["abilities"]["wisdom"]`'],
+      'Inside [ ], a comma asks for two keys at once. One key per pair of square brackets: `bomb_shell["abilities"]["wisdom"]`'],
     ["keys-and-get/lucky-canteen", "the default typed into the read", "KeyError: ('glug', 0)", "comma-in-brackets",
       'use `.get()`: `lucky.get("glug", 0)`'],
     ["stat-sheets/key-from-a-box", "the variable's name in quotes (spec)", "KeyError: 'spell_name'", "quoted-name",
@@ -1918,7 +1918,7 @@ describe("explainCourseError: Unit 5's slips (dictionaries), from the unit's own
       '`"ward_cost"` in quotes means those exact letters: text, not the number in `ward_cost`. Without quotes, Python looks inside the box: `oogrish["mana"] = oogrish["mana"] - ward_cost`'],
     // (10) text + number: the line's own number read.
     ["stat-sheets/read-by-key", "no str(): a number glued to text", "can only concatenate str", "text-plus-number",
-      'like str(gearshift["mana"]).'],
+      '`str(gearshift["mana"])`'],
     // (11) a whole sheet where its name goes.
     ["sheets-inside-sheets/spell-book-of-spells", "CP3 the guard asks about the spell itself", "unhashable type: 'dict'",
       "whole-sheet-as-key", "`not in` asks about a key, like the spell's name. `spell` is a whole dictionary: ask `spell_name not in spell_book`."],
@@ -1932,13 +1932,13 @@ describe("explainCourseError: Unit 5's slips (dictionaries), from the unit's own
       'That compares a whole card with a number. Line 12 reads `caster["abilities"]`, the whole card. Add the inner key, like `caster["abilities"]["magical_affinity"]`.'],
     // (13) math with `None`: a recipe with no `return`.
     ["martus-ledger-of-heroes", "the recipe with no return", "'NoneType' and 'int'", "math-with-none",
-      "Something handed back `None`: nothing came back. `max_mana_for` (its `def` is on line 51) has no `return`, so it hands back `None`. Does your recipe have a `return`?"],
+      'Something handed back `None`: nothing came back. `max_mana_for`, made on line 51, has no `return`, so it hands back `None`. Give it a `return` with its answer.'],
     // (14) the Unit 5 play-through: `=` on a later key is still `=` (3.13 says "':' expected" there), never a colon
     // added in front of the `=`.
     ["stat-sheets/make-a-sheet", "= for : on a later line of the sheet", "':' expected after dictionary key", "equals-in-sheet",
-      'Line 3 has `=` inside a sheet. Inside a dictionary `{ }`, a colon goes between a key and its value: `"magical_affinity": 10,`. The key keeps its quotes.'],
+      'Line 3 has `=` inside a sheet. Inside a dictionary `{ }`, a colon goes between a key and its value, like a word and its meaning in a glossary: `"magical_affinity": 10,`. The key keeps its quotes.'],
     ["sheets-inside-sheets/spell-book-of-spells", "= in place of : on the second key", "':' expected after dictionary key", "equals-in-sheet",
-      'Line 14 has `=` inside a sheet. Inside a dictionary `{ }`, a colon goes between a key and its value: `"required_affinity": needed,`.'],
+      'Line 14 has `=` inside a sheet. Inside a dictionary `{ }`, a colon goes between a key and its value, like a word and its meaning in a glossary: `"required_affinity": needed,`. The key keeps its quotes.'],
     ["qc4-a/make-the-sheet", "= for : on a later key", "':' expected after dictionary key", "equals-in-sheet", '`"max_mana": 26,`. The key keeps its quotes.'],
     // (15) an unclosed quote on a sheet's line: closed before the colon or the comma, never at the end of the line.
     ["stat-sheets/make-a-sheet", "the key's closing quote left off", "unterminated string literal", "missing-quote",
@@ -1955,10 +1955,10 @@ describe("explainCourseError: Unit 5's slips (dictionaries), from the unit's own
       '`fire_bolt_cost` is its own variable, not a key on the sheet: `gearshift["mana"] = gearshift["mana"] - fire_bolt_cost`'],
     // (18) round brackets on both sides of a store: both mended.
     ["stat-sheets/write-by-key", "round brackets on both sides of the store", "cannot assign to function call", "list-needs-square-brackets",
-      'Store in a dictionary with square brackets: `gearshift["mana"] = gearshift["mana"] - fire_bolt_cost`'],
+      'Store in a dictionary with square brackets [ ]: `gearshift["mana"] = gearshift["mana"] - fire_bolt_cost`'],
     // (19) a list of sheets: a position and a key in one [ ], and a whole sheet as the position.
     ["sheets-inside-sheets/the-roster", "a position and a key in one [ ]", "not tuple", "comma-in-brackets",
-      '`roster` is a list of sheets. Position first, then the key, each in its own brackets: `print(roster[3]["name"])`'],
+      '`roster` is a list of sheets. Position first, then the key, each in its own square brackets: `print(roster[3]["name"])`'],
     ["sheets-inside-sheets/the-roster", "the sheet's variable as the position", "not dict", "name-as-position",
       '`lucky` is a whole sheet. A list takes its position: Lucky is at position 3, `roster[3]["name"]`. Positions count from 0.'],
     // (20) can-they-cast: `spell` holds the Lantern Ward page, so its reads are right as they are.
@@ -1985,25 +1985,25 @@ describe("explainCourseError: Unit 5's slips (dictionaries), from the unit's own
 
   it("names the slip, never the fix, in a lean exercise (SOLO and Quick Check), for every new kind", () => {
     const lean: [string, string, string, string][] = [
-      ["stat-sheets/solo-4a", "the starter: capital M", "missing-key", "The slip is on line 9: a key spelled another way."],
-      ["stat-sheets/solo-4a", "seat B's slip, dot access", "dot-on-a-sheet", "The slip is on line 9: a dot where a sheet needs square brackets."],
-      ["sheets-inside-sheets/solo-4b", "the starter (a skipped level", "missing-key", "The slip is on line 8: a skipped level."],
-      ["sheets-inside-sheets/solo-4b", "both keys, inner first", "missing-key", "The slip is on line 8: the keys the other way round."],
-      ["qc4-a/make-the-sheet", "= for : inside the sheet", "equals-in-sheet", "The slip is on line 4: an `=` inside a sheet."],
-      ["qc4-a/make-the-sheet", "a key with no quotes (box names", "unquoted-key", "The slip is on line 4: a key with no quotes."],
-      ["qc4-a/make-the-sheet", "a missing comma after a text value", "missing-comma-in-list", "The slip is on line 4: a missing comma in a list."],
-      ["qc4-a/make-the-sheet", "a missing colon on a later key", "missing-colon", "The slip is on line 6: a missing colon."],
-      ["qc4-a/make-the-sheet", "= for : on a later key", "equals-in-sheet", "The slip is on line 6: an `=` inside a sheet."],
-      ["qc4-b/make-the-sheet", "= for : on a later key", "equals-in-sheet", "The slip is on line 6: an `=` inside a sheet."],
-      ["qc4-a/read-inside", "round brackets", "list-needs-square-brackets", "The slip is on line 12: round brackets where a sheet needs square ones."],
-      ["qc4-a/read-inside", "a dict read by position", "missing-key", "The slip is on line 12: a position where a sheet needs a key."],
-      ["qc4-a/read-inside", "the inner key with a capital", "missing-key", "The slip is on line 12: a key spelled another way."],
-      ["qc4-a/store-the-spell", "CP2 the guard asks about the spell itself", "whole-sheet-as-key", "The slip is on line 23: a whole sheet used as a key."],
-      ["qc4-a/store-the-spell", "CP2 round brackets to store", "list-needs-square-brackets", "round brackets where a sheet needs square ones."],
-      ["qc4-a/mend-the-read", "only the outer key", "whole-card-compared", "The slip is on line 12: a whole card read where one value is meant."],
-      ["qc4-a/mend-the-read", "CP2 the mana read inside the card", "missing-key", "The slip is on line 15: a read one level too deep."],
+      ["stat-sheets/solo-4a", "the starter: capital M", "missing-key", 'The mistake is on line 9: a key spelled another way.'],
+      ["stat-sheets/solo-4a", "seat B's slip, dot access", "dot-on-a-sheet", 'The mistake is on line 9: a dot where a sheet needs square brackets.'],
+      ["sheets-inside-sheets/solo-4b", "the starter (a skipped level", "missing-key", 'The mistake is on line 8: a skipped level.'],
+      ["sheets-inside-sheets/solo-4b", "both keys, inner first", "missing-key", 'The mistake is on line 8: the keys the wrong way around.'],
+      ["qc4-a/make-the-sheet", "= for : inside the sheet", "equals-in-sheet", 'The mistake is on line 4: an `=` inside a sheet.'],
+      ["qc4-a/make-the-sheet", "a key with no quotes (box names", "unquoted-key", 'The mistake is on line 4: a key with no quotes.'],
+      ["qc4-a/make-the-sheet", "a missing comma after a text value", "missing-comma-in-list", 'The mistake is on line 4: a missing comma in a list.'],
+      ["qc4-a/make-the-sheet", "a missing colon on a later key", "missing-colon", 'The mistake is on line 6: a missing colon.'],
+      ["qc4-a/make-the-sheet", "= for : on a later key", "equals-in-sheet", "The mistake is on line 6: an `=` inside a sheet."],
+      ["qc4-b/make-the-sheet", "= for : on a later key", "equals-in-sheet", 'The mistake is on line 6: an `=` inside a sheet.'],
+      ["qc4-a/read-inside", "round brackets", "list-needs-square-brackets", 'The mistake is on line 12: parentheses where a sheet needs square brackets.'],
+      ["qc4-a/read-inside", "a dict read by position", "missing-key", 'The mistake is on line 12: a position where a sheet needs a key.'],
+      ["qc4-a/read-inside", "the inner key with a capital", "missing-key", 'The mistake is on line 12: a key spelled another way.'],
+      ["qc4-a/store-the-spell", "CP2 the guard asks about the spell itself", "whole-sheet-as-key", 'The mistake is on line 23: a whole sheet used as a key.'],
+      ["qc4-a/store-the-spell", "CP2 round brackets to store", "list-needs-square-brackets", 'parentheses where a sheet needs square brackets.'],
+      ["qc4-a/mend-the-read", "only the outer key", "whole-card-compared", 'The mistake is on line 12: a whole card read where one value is meant.'],
+      ["qc4-a/mend-the-read", "CP2 the mana read inside the card", "missing-key", 'The mistake is on line 15: a read one level too deep.'],
       ["qc4-a/spend-through-the-roster", "a name as the position: roster[\"Gearshift\"]", "name-as-position",
-        "The slip is on line 27: a name where a list needs a position."],
+        'The mistake is on line 27: a name where a list needs a position.'],
     ];
     for (const [key, why, kind, hint] of lean) {
       const found = unit5.find(key, why);
@@ -2026,7 +2026,7 @@ describe("explainCourseError: Unit 5's slips (dictionaries), from the unit's own
     expect(new Set(names).size, "each new kind has its own lean name").toBe(added.length);
     for (const name of names) expect(name).toMatch(/^(a|an|math) /);
     // The kinds this unit extends keep their earlier lean names (Units 1-4 say exactly what they said).
-    expect(slipName("list-needs-square-brackets")).toBe("round brackets where a list needs square ones");
+    expect(slipName("list-needs-square-brackets")).toBe('parentheses where a list needs square brackets');
     expect(slipName("comma-in-brackets")).toBe("a comma inside [ ] where one position goes");
     expect(slipName("missing-key")).toBe("a missing key");
     expect(slipName("unquoted-words")).toBe("words with no quotes");
@@ -2073,7 +2073,7 @@ describe("explainCourseError: Unit 5's slips (dictionaries), from the unit's own
     expect(explainCourseError(crashOf(counted), counted.code, { ...counted.context, unitOrder: 4 }).hint).toContain("In a list of lists");
     // `str()` on a sheet's read only from Unit 5: Unit 4 keeps `str(name)`.
     const glued = unit5.find("stat-sheets/read-by-key", "no str(): a number glued to text");
-    expect(explainCourseError(crashOf(glued), glued.code, { ...glued.context, unitOrder: 4 }).hint).toContain("like str(gearshift).");
+    expect(explainCourseError(crashOf(glued), glued.code, { ...glued.context, unitOrder: 4 }).hint).toContain('`str(gearshift)`');
   });
 
   it("keeps every Unit 1-4 explanation exactly as it was before Unit 5 (kind, title and hint)", async () => {
@@ -2126,10 +2126,10 @@ describe("explainCourseError: Unit 5's slips (dictionaries), from the unit's own
 
   it("gives the KeyError rows for a key the sheet does not have a lean name of their own", () => {
     const lean: [string, string, string][] = [
-      ["stat-sheets/write-by-key", "== for = (reads a key that is not there yet)", "The slip is on line 11: `==` where one `=` stores a key."],
-      ["stat-sheets/is-it-in", "reading the missing key to test it", "The slip is on line 9: a key read to test whether it is there."],
-      ["keys-and-get/lucky-canteen", "starter unchanged", "The slip is on line 2: a key the sheet does not have."],
-      ["extra-sheets-and-books/write-by-key-again", "the variable in quotes (text)", "The slip is on line 9: quotes around a box's name."],
+      ["stat-sheets/write-by-key", "== for = (reads a key that is not there yet)", 'The mistake is on line 11: `==` where one `=` stores a key.'],
+      ["stat-sheets/is-it-in", "reading the missing key to test it", 'The mistake is on line 9: a key read to test whether it is there.'],
+      ["keys-and-get/lucky-canteen", "starter unchanged", 'The mistake is on line 2: a key the sheet does not have.'],
+      ["extra-sheets-and-books/write-by-key-again", "the variable in quotes (text)", "The mistake is on line 9: quotes around a box's name."],
     ];
     for (const [key, why, hint] of lean) {
       const found = unit5.find(key, why);
@@ -2247,7 +2247,7 @@ describe("explainCourseError: Unit 5's slips (dictionaries), from the unit's own
     const raw = crashOf(found);
     expect(raw).toContain('line 5');
     const lean = explainCourseError(raw, found.code, found.context);
-    expect(lean.hint).toContain("The slip is on line 4: a missing comma in a list.");
+    expect(lean.hint).toContain("The mistake is on line 4: a missing comma in a list.");
   });
 });
 
@@ -2317,17 +2317,17 @@ describe("explainCourseError: Unit 6's slips (loops), from the unit's own wrong 
       "Take the quotes off `roster`."],
     // (6) A one-ingredient recipe handed its pieces with a comma, as print takes them.
     ["for-each-yes/each-member", "a comma, as in print: the ley board takes one text (TypeError)", "takes 1 positional argument but 2 were given", "wrong-number-of-values",
-      "`show_on_ley_board` has 1 ingredient (`text`). The call on line 7 hands over 2. `show_on_ley_board` takes one piece of text. Glue the parts into one with `+`, with `str()` around a number."],
+      "`show_on_ley_board` has 1 ingredient, `text`, but the call on line 7 hands over 2. `show_on_ley_board` takes one piece of text: glue the parts into one with `+`, and put `str()` around a number."],
     // (7) The article's loop over a dictionary: `.items` with no ( ), and two names for one key a pass.
     ["looping-over-a-dictionary/spell-costs", ".items without brackets", "'builtin_function_or_method' object is not iterable", "call-needs-round-brackets",
-      "Line 7 hands the loop `spell_book.items` with no `( )`, so the loop gets the tool itself, not what it hands back. Call it: `for name, cost in spell_book.items():`"],
+      "Line 7 hands the loop `spell_book.items` with no parentheses ( ), so the loop gets the tool itself, not what it hands back. Call it: `for name, cost in spell_book.items():`"],
     ["looping-over-a-dictionary/spell-costs", "two names with no .items()", "too many values to unpack", "wrong-number-of-values",
       "Line 7 gives the loop 2 names, but a loop over `spell_book` hands over one key a pass. For each key with its value, walk `spell_book.items()`: `for name, cost in spell_book.items():`"],
     // (8) A key with no quotes, read from the loop variable (it holds one sheet).
     ["for-each-yes/solo-5a", "the key without quotes (NameError)", "'name' is not defined", "unquoted-key",
-      'A key is text, so it needs quotes: `"name"`. Without quotes, Python looks for a variable called `name`. Line 8 with quotes: `print(member["name"] + " keeps watch.")`'],
+      'A key is text, so it needs quotes: `"name"`. Without quotes, Python looks for a variable called `name`. Line 8, with the quotes put in: `print(member["name"] + " keeps watch.")`'],
     ["qc5-b/a-helper-for-each", "the key without quotes (NameError)", "'mana' is not defined", "unquoted-key",
-      'Line 8 with quotes: `draw_bar(member["mana"])`'],
+      'Line 8, with the quotes put in: `draw_bar(member["mana"])`'],
   ];
 
   it.each(rows)("%s, %s: Python says %s, the explainer names %s", (key, why, python, kind, hint) => {
@@ -2351,17 +2351,17 @@ describe("explainCourseError: Unit 6's slips (loops), from the unit's own wrong 
         "Line 8 uses a whole sheet as a position, like `roster[member]`. Python's last line, below, says what it found."],
       ["for-each-yes/solo-5a", 'roster["name"] for member["name"] (TypeError)', "name-as-position",
         'Line 8 asks a list for a key, like `roster["name"]`. A list has positions, not keys. Python\'s last line, below, says what it found.'],
-      ["for-each-yes/solo-5a", "the sheet glued to text (TypeError)", "whole-card-compared", "The slip is on line 8: a whole sheet glued to text."],
-      ["for-each-yes/solo-5a", "the key without quotes (NameError)", "unquoted-key", "The slip is on line 8: a key with no quotes."],
+      ["for-each-yes/solo-5a", "the sheet glued to text (TypeError)", "whole-card-compared", "The mistake is on line 8: a whole sheet glued to text."],
+      ["for-each-yes/solo-5a", "the key without quotes (NameError)", "unquoted-key", "The mistake is on line 8: a key with no quotes."],
       ["qc5-a/a-helper-for-each", "a loop over a number: for i in 4", "loop-over-number",
         "Line 7 asks a `for` loop to walk one number. A `for` loop needs a list or `range(...)`, not one number. Python's last line"],
       ["qc5-a/a-helper-for-each", "len without range: for i in len(roster)", "loop-over-number", "Line 7 asks a `for` loop to walk one number."],
       ["qc5-a/a-helper-for-each", "the item used as an index (roster[member])", "name-as-position", "Line 8 uses a whole sheet as a position, like `roster[member]`. Python's"],
       ["qc5-a/a-helper-for-each", "the helper's own word read as a promise: light_lantern(name)", "made-inside-recipe",
-        "The slip is on line 8: a name that only lives inside a recipe."],
+        "The mistake is on line 8: a name that only lives inside a recipe."],
       ["qc5-b/a-helper-for-each", "the helper's own word read as a promise: draw_bar(mana)", "made-inside-recipe",
-        "The slip is on line 8: a name that only lives inside a recipe."],
-      ["qc5-a/total-and-tired", "the whole sheet added (TypeError)", "whole-card-compared", "The slip is on line 12: a whole sheet added where one value is meant."],
+        "The mistake is on line 8: a name that only lives inside a recipe."],
+      ["qc5-a/total-and-tired", "the whole sheet added (TypeError)", "whole-card-compared", "The mistake is on line 12: a whole sheet added where one value is meant."],
       ["qc5-b/total-and-tired", 'roster["mana"] for member["mana"] (TypeError)', "name-as-position", 'Line 12 asks a list for a key, like `roster["mana"]`.'],
     ];
     for (const [key, why, kind, hint] of lean) {
@@ -2372,7 +2372,7 @@ describe("explainCourseError: Unit 6's slips (loops), from the unit's own wrong 
       expect(result.kind, `${key}: ${why}`).toBe(kind);
       expect(result.explainer).toBe("lean");
       expect(result.hint.startsWith(hint), `${key}: ${why}: ${result.hint}`).toBe(true);
-      expect(result.hint).toContain("Mend it yourself, then Run again.");
+      expect(result.hint).toContain("Fix it yourself, then press Run again.");
       expect(result.title, `${key}: ${why}`).not.toContain("`");
       // The full version's fix (its last code span) never shows in the lean one.
       const full = explainCourseError(raw, found.code, { ...found.context, explainer: "full" });
@@ -2407,7 +2407,7 @@ describe("explainCourseError: Unit 6's slips (loops), from the unit's own wrong 
     const silent = "oil = 4\nwhile oil > 0:\n    oil + 1\nprint(\"The lamp goes out.\")\n";
     const timeout = explainCourseError("TimeoutError: The program ran too long and was stopped.", silent, { ...solo.context });
     expect(timeout.kind).toBe("timeout");
-    expect(timeout.hint).toBe("Your code ran for more than 5 seconds, so it was stopped. A while loop may never end: make sure its condition can become False.");
+    expect(timeout.hint).toBe("Your code ran for more than 5 seconds, so it was stopped. A `while` loop may never end: make sure its question can become False.");
   });
 
   it("opens only from Unit 6 on: Units 1 to 5 keep their older advice for the same code", () => {
@@ -2438,7 +2438,7 @@ describe("explainCourseError: Unit 6's slips (loops), from the unit's own wrong 
     // The ley board's count reads the setup's `def` only from Unit 6: Unit 5 keeps the general words.
     const board = unit6.find("for-each-yes/each-member", "a comma, as in print: the ley board takes one text (TypeError)");
     expect(explainCourseError(crashOf(board), board.code, { ...board.context, unitOrder: 5 }).hint).toBe(
-      "The function call on line 7 has the wrong number of values inside its ( ).",
+      "`show_on_ley_board( )` on line 7 got the wrong number of values inside its parentheses.",
     );
     // Unit 3's ingredient words stay below Unit 6.
     const bar = unit6.find("for-each-yes/bars-for-everyone", "the recipe's ingredient name used in the loop's call, with the name (NameError)");

@@ -18,7 +18,7 @@ export type RevealResult = "opened" | "paced" | "locked" | "none";
  * off, Another way and More structure sit under "More options" (curriculum §2.3). Right after a crash, Help
  * first says which line to mend (a crash checks no step), and Start me off waits. The player aims Help at the
  * step that names the crash line; when no step does but the steps name other lines, `crashOnly` holds every
- * rung back until the code runs, so Help never contradicts "Mend line 3 first."
+ * rung back until the code runs, so Help never contradicts "Fix line 3 first."
  *
  * testids: help, help-button, help-rung-<n> (n from 1, in order), help-offer, help-offer-dismiss,
  * help-paced, help-show-locked, help-another-next, help-start-code, help-start-insert, help-start-done,
@@ -159,7 +159,7 @@ export function HelpStack({
         return (
           <div className="ex-help-start">
             <p data-testid="help-start-done">
-              Your code already starts this line (<code className="inline-code">{rung.start}</code>). Finish it yourself.
+              Your code already starts this line with <code className="inline-code">{rung.start}</code>. Finish the rest yourself.
             </p>
           </div>
         );
@@ -180,7 +180,7 @@ export function HelpStack({
     if (rung.kind === "structure") {
       return (
         <div>
-          <p>Build it from pieces instead of typing it all. Put the lines in order, then put them in the editor.</p>
+          <p>Build it from pieces instead of typing it all. Put the lines in order, then put them in your code.</p>
           <button type="button" className="ex-quiet" data-testid="assemble-open" onClick={onOpenAssemble}>
             Assemble it
           </button>
@@ -190,7 +190,7 @@ export function HelpStack({
     if (rung.kind === "show") {
       return (
         <div>
-          <p>Mar&apos;tu&apos;s version is next to your code, with the different lines marked. Then type it yourself.</p>
+          <p>Mar&apos;tu&apos;s version is next to your code, and the lines that differ are marked. Look, then type the changes yourself.</p>
           {compareOpen ? null : (
             <button type="button" className="ex-quiet" data-testid="compare-open" onClick={onOpenCompare}>
               Compare with Mar&apos;tu&apos;s version again
@@ -210,14 +210,14 @@ export function HelpStack({
 
   const crashNote = crashed && crashIsTask && crashLine ? (
     <p className="ex-help-crash" data-testid="help-crash" data-switch-off="true">
-      <strong>{`Python stopped on line ${crashLine}.`}</strong> Read its message under your code: your{" "}
-      {noun.toLowerCase()}s come from it.
+      <strong>{`Python stopped on line ${crashLine}.`}</strong> That&apos;s part of this {noun.toLowerCase()}. Read the box in the
+      Console: your {noun.toLowerCase()}s come from it.
     </p>
   ) : crashed ? (
     <p className="ex-help-crash" data-testid="help-crash">
-      <strong>{`Mend ${slipLine ? `line ${slipLine}` : crashLine ? `line ${crashLine}` : "the error"} first.`}</strong>{" "}
-      {slipLine && crashLine ? `Python stopped on line ${crashLine}` : "Python stopped there"}, so it could not check your steps
-      yet. Read the message under your code.
+      <strong>{`Fix ${slipLine ? `line ${slipLine}` : crashLine ? `line ${crashLine}` : "the error"} first.`}</strong>{" "}
+      {slipLine && crashLine ? `Python stopped on line ${crashLine}` : "Python stopped there"}, so it couldn&apos;t check your steps
+      yet. The box in the Console says what&apos;s wrong. Fix it, then press Run again.
     </p>
   ) : null;
 
@@ -232,7 +232,7 @@ export function HelpStack({
       >
         {crashNote}
         <p className="ex-help-note ex-muted" data-testid="help-crash-wait">
-          Help for the {noun.toLowerCase()}s comes back once your code runs.
+          Help for your {noun.toLowerCase()}s comes back once your code runs without stopping.
         </p>
       </section>
     );
@@ -340,7 +340,7 @@ export function HelpStack({
       ) : null}
       {moreAfterRun && !next ? (
         <p className="ex-help-note ex-muted" data-testid="help-locked">
-          More help opens after you press Run once.
+          More help opens after you press Run once. Running code that isn&apos;t finished yet is fine.
         </p>
       ) : null}
       {state.opened === 0 && !offer && !crashed ? (
@@ -354,7 +354,7 @@ export function HelpStack({
 export function HelpLocked() {
   return (
     <p className="ex-help-note ex-muted" data-testid="help-locked">
-      Help opens after you press Run once.
+      Help opens after you press Run once. Running code that isn&apos;t finished yet is fine.
     </p>
   );
 }

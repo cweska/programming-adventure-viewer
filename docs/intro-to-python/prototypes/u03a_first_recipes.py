@@ -67,8 +67,8 @@ prints kept private (sys.stdout swapped and put back), so nothing a check does s
   _RND             6A-10: random.randint is scripted and records its arguments; roll_die(6), (20), (12).
   _GREETING / _STORE / _PASS_ON  6A-08: TEXT that differs from the starter with both tidy lines kept; STO inside
                    present_greeting(); CALL plus CMB (get_greeting is swapped for another line, only inside the check).
-Messages: the fix first, then what happened, then the evidence in brackets, "(Mar'tu's check called
-`warn("Tester")`, only inside the check: ...)", as in Unit 2. Invented values only; a student's own text is never
+Messages (plain-language guide 4.3): what happened, then the one thing to try, then the labelled evidence, "Mar'tu
+tested your recipe with a test call, `warn("Tester")`: ...", as in Unit 2. Invented values only; a student's own text is never
 repeated back (2.11), and no student's written value from the worksheets appears in student-facing text (T10).
 No lesson codes ("2B", "6A-04") in student-facing text: units are named ("Unit 2").
 
@@ -141,7 +141,7 @@ def _ct(_name, _args):
 
 
 def _ev(_name, _args, _what):
-    return " (Mar'tu's check called " + _ct(_name, _args) + ', only inside the check: ' + _what + '.)'
+    return " Mar'tu tested your recipe with a test call, " + _ct(_name, _args) + ': ' + _what + '.'
 
 
 def _whole(_v):
@@ -226,8 +226,8 @@ def _resets(_name):
         if (type(_n).__name__ == 'Assign' and type(_n.value).__name__ == 'Constant'
                 and any(type(_t).__name__ == 'Name' and _t.id in _ps for _t in _n.targets)):
             _p = [_t.id for _t in _n.targets if type(_t).__name__ == 'Name' and _t.id in _ps][0]
-            return ('Line ' + str(_n.lineno) + ' puts a typed value in `' + _p + '`, so what each call hands over '
-                    'is thrown away. Delete that line: the call fills `' + _p + '` for you.')
+            return ('Line ' + str(_n.lineno) + ' puts a typed-in value in `' + _p + '`, so the value each call hands '
+                    'over is thrown away. Delete that line: each call fills `' + _p + '` for you.')
     return ''
 
 
@@ -244,9 +244,8 @@ def _gamed(_name, _vals):
         _names = [_s.id for _s in _sides if type(_s).__name__ == 'Name' and _s.id in _ps]
         _consts = [_s.value for _s in _sides if type(_s).__name__ == 'Constant']
         if _names and any(_c == _x and type(_c) == type(_x) for _c in _consts for _x in _vals):
-            return ('Line ' + str(_n.lineno) + " looks for one of the values Mar'tu's check hands over. "
-                    "A recipe can't know which call comes next: work the answer out from "
-                    + _names_of(_ps) + ', so every call works.')
+            return ('Line ' + str(_n.lineno) + " looks for the exact values Mar'tu's check hands over. A recipe "
+                    "can't know which call comes next, so work the answer out from " + _names_of(_ps) + '.')
     return ''
 
 
@@ -320,24 +319,27 @@ def _find(_name, _kept=False):
     if type(_v).__name__ == 'function':
         return _v, ''
     if _name in _g:
-        return None, ('`' + _name + '` is a box, made with `=`. A recipe is made with `def`: a line that starts `def '
-                      + _name + '(`, with its steps indented under it.')
+        return None, ('`' + _name + '` is a box, because `=` made it. A recipe is made with `def`: start a line with '
+                      '`def ' + _name + '(`, and indent its steps under it.')
     _near = sorted(_k for _k, _x in list(_g.items()) if type(_x).__name__ == 'function' and not _k.startswith('_')
                    and _close(_k, _name, False))
     if _near:
-        return None, 'Python matches names letter for letter: you wrote `' + _near[0] + '`, the task needs `' + _name + '`.'
+        return None, ('Your recipe is named `' + _near[0] + '`, but the task needs `' + _name + '`. Python matches '
+                      'names letter for letter.')
     if _kept:
-        return None, 'Keep the recipe `' + _name + '` from the starter, with its `def` line.'
-    return None, 'Make a recipe named `' + _name + '`: a line that starts `def ' + _name + '(`.'
+        return None, ("Python can't find the recipe `" + _name + '`. Put its `def` line back the way it was at the '
+                      'start.')
+    return None, "Python can't find a recipe named `" + _name + '`. Make one: start a line with `def ' + _name + '(`.'
 
 
 def _sig_msg(_name, _want, _have, _kept):
     _line = '`def ' + _name + '(' + ', '.join(_want) + '):`'
     if len(_have) != len(_want):
         _n = 'one ingredient' if len(_want) == 1 else str(len(_want)) + ' ingredients'
-        return ('`' + _name + '` takes ' + _n + ': ' + _names(_want) + '. ' + ('Keep' if _kept else 'Write')
-                + ' its first line as ' + _line + '.')
-    return (('Keep the ingredient names from the starter: ' if _kept else 'Name the ingredients as the task says: ')
+        return ('`' + _name + '` should take ' + _n + ': ' + _names(_want) + '. '
+                + ('Put its `def` line back the way it was: ' if _kept else 'Make its `def` line ') + _line + '.')
+    return (('The ingredient names on the `def` line have changed. Put the line back the way it was: ' if _kept else
+             "The ingredient names on the `def` line don't match the task. Write it as ")
             + _line + '. Python matches names letter for letter.')
 
 
@@ -382,9 +384,11 @@ def _why(_f, _name, _args, _err, _foreign=(), _box=''):
             _m = _re.search(r"'(\w+)'", _s)
             _x = _m.group(1) if _m else ''
         if _x and set(_x) == {'_'}:
-            return 'Fill in each blank `___` with an ingredient name from the `def` line. ' + _ing
+            return ('A blank `___` is still in the recipe. Fill each one with an ingredient name from the `def` line. '
+                    + _ing)
         if _x == 'random':
-            return 'Keep `import random` at the top, so Python knows where `random` comes from.' + _stop
+            return ("Python doesn't know `random`, because the line `import random` is missing. Put `import random` "
+                    'back at the top of your code.' + _stop)
         # The boxes this recipe makes (not its ingredients), worked out first: a name from an example on a `return`
         # line is answered with this recipe's own box, so `return result` after `fuel = ...` points at `fuel`.
         _d = _defs().get(_name)
@@ -395,25 +399,29 @@ def _why(_f, _name, _args, _err, _foreign=(), _box=''):
         if _fo:
             _here = ("This recipe's box is `" + _own[-1] + '`: hand that back.') if (_own and _back) else _ing
             return ('`' + _x + '` ' + ('comes from' if _fo[0] == _x else 'looks like `' + _fo[0] + '` from')
-                    + " Mar'tu's example. " + _here)
+                    + " Mar'tu's example, not from your task. " + _here)
         if [_p for _p in _ps if _close(_x, _p)]:
-            return _ing + ' You wrote `' + _x + '`. Python matches names letter for letter.'
+            return 'You wrote `' + _x + '`. ' + _ing + ' Python matches names letter for letter.'
         _other = [_k for _k, _n in _defs().items() if _k != _name and _x in _made(_n)]
         _kitchen = ('`' + _x + '` is a box inside `' + _other[0] + '`, another recipe. It stays there. ') if _other else ''
         if not _box and _own and _back:
             _box = 'Hand back a box this recipe makes: ' + _names_of(_own) + '.'
-        return ('Inside `' + _name + '`, Python found a name it does not know: `' + _x + '`. ' + _kitchen
+        return ('Inside `' + _name + "`, Python found a name it doesn't know: `" + _x + '`. ' + _kitchen
                 + (_box or _ing) + _stop)
     if _k == 'TypeError' and 'concatenate' in _s:
-        return 'Glue a number to text with `str()`, like `str(' + (_ps[-1] if _ps else 'amount') + ')`.' + _stop
+        return ("Python can't glue a number to text. Make the number text first with `str()`, like `str("
+                + (_ps[-1] if _ps else 'amount') + ')`.' + _stop)
     if _k == 'TypeError' and 'positional argument' in _s:
-        return 'A call inside `' + _name + '` hands over the wrong number of values. Count them against its `def` line.' + _stop
+        return ('A call inside `' + _name + '` hands over the wrong number of values. Hand over one value for each '
+                'ingredient on its `def` line.' + _stop)
     if _k == 'RecursionError':
-        return ('The recipe calls itself, again and again. Take the spaces off that call, so it sits at the bottom, '
-                'outside the recipe.')
+        return ('The recipe calls itself, again and again, so Python stopped. Take the spaces off the front of that '
+                'call, so it sits at the bottom, outside the recipe.')
     if _k == 'AttributeError':
-        return 'Python stopped: ' + _s + '. Check the name after the dot.' + _stop
-    return 'Mend this, then Run again: ' + _k + ': ' + _s + _stop
+        return ("Python doesn't know the name after a dot. It said: " + _s + '. Check the spelling of the name after '
+                'the dot.' + _stop)
+    return ('Python stopped inside `' + _name + '`. It said: ' + _k + ': ' + _s + '. Fix that line, then press Run '
+            'again.' + _stop)
 '''.replace("__QUOTES__", repr(QUOTES_RULE))
 
 
@@ -444,28 +452,28 @@ if _bad:
     _rs = _resets(_name)
     assert not _rs, _rs
     _quiet = [_i for _i, _r in enumerate(_runs) if not _r and _gave[_i] is not None]
-    assert not _quiet, ('Show the line with `print(...)` inside the recipe. `return` hands it back to the call '
-                        'without showing it.' + _ev(_name, _cases[_quiet[0]][0], 'it printed nothing'))
+    assert not _quiet, ('Your recipe hands the line back with `return`, so nothing shows in the Console. Show it '
+                        'with `print(...)` inside the recipe instead.' + _ev(_name, _cases[_quiet[0]][0], 'it printed nothing'))
     # A quoted ingredient name shows as the word itself, unless the wanted line has that word too ("hours left.").
     _words = [_p for _p in _ps if any(_re.search(r'\b' + _p + r'\b', _r) for _r in _bad[0][2])
               and not _re.search(r'\b' + _p + r'\b', str(_bad[0][1]))]
-    assert not _words, ('Take the quotes off `' + _words[0] + '`: with quotes, Python prints the word itself. '
-                        + _QUOTES)
+    assert not _words, ('`' + _words[0] + '` is in quotes, so Python prints the word itself. Take the quotes off `'
+                        + _words[0] + '`. ' + _QUOTES)
     if len(_runs) > 1 and _runs[0] and all(_r == _runs[0] for _r in _runs):
         _one = _runs[0][0]
         _said = ('both printed ' + _one if _re.fullmatch(r'-?\d+', _one) else
                  ('both printed `' + _one + '`') if _one in _safe else 'both printed the same line')
-        assert False, (_cfix + " (Mar'tu's check called " + ' and '.join(_ct(_name, _a) for _a, _w in _cases)
-                       + ', only inside the check: ' + _said + '.)')
+        assert False, (_cfix + " Mar'tu tested your recipe with " + ('two' if len(_cases) == 2 else str(len(_cases)))
+                       + ' test calls, ' + ' and '.join(_ct(_name, _a) for _a, _w in _cases) + ': ' + _said + '.')
     _a, _w, _r = _bad[0]
     assert _r, _fix + _ev(_name, _a, 'it printed nothing')
     _near = [_x.replace('’', "'") for _x in _r if all(str(_y) in _x for _y in _a)]
     if _mode == 'line' and _near:
         # Fix first: the first difference from the wanted line, in Mar'tu's values only, then the evidence.
         _say, _kind, _ch = _gap(min(_near, key=lambda _t: _edits(_t, _w)), _w)
-        _lead = ('A comma inside `print(...)` adds a space. Glue with `+` instead. '
+        _lead = (' A comma inside `print(...)` adds a space. Glue with `+` instead.'
                  if _kind == 'extra' and _ch == ' ' and _spread(_name) else '')
-        assert False, _lead + _say + _ev(_name, _a, 'it should print `' + _w + '`')
+        assert False, _say + _lead + _ev(_name, _a, 'it should print `' + _w + '`')
     _num =[_x for _x in _r if _re.fullmatch(r'-?\d+', _x)]
     assert False, _fix + _ev(_name, _a, ('it printed ' + _num[0] + ', but the answer is ' + str(_w)) if _num
                              else ('it did not print `' + str(_w) + '`'))
@@ -478,7 +486,8 @@ def prints_check(label, name, params, cases, *, fix, const_fix=None, mode="line"
     (lint b). mode "line": some printed line is exactly `want`; "number": a printed line shows `want` as a whole
     number. `safe` = printed lines a message may repeat (the task's own lines); any other line is described, never
     repeated (2.11). `foreign` = Mar'tu's example and Teach names (LEFT/RNM)."""
-    const_fix = const_fix or ("A recipe gets its values when it is called: use " + _names_py(params) + ", not typed values.")
+    const_fix = const_fix or ("Your recipe uses typed-in values, so every call shows the same thing. Use "
+                              + _names_py(params) + " instead.")
     code = _FN + (
         f"_name, _want_ps, _cases = {name!r}, {list(params)!r}, {[(tuple(a), w) for a, w in cases]!r}\n"
         f"_fix, _cfix, _mode = {fix!r}, {const_fix!r}, {mode!r}\n"
@@ -512,36 +521,39 @@ for _args, _want in _cases:
     assert not (_rs and not (_val == _want and type(_val) == type(_want))), _rs
     if _val is None:
         _num = [_x for _x in _rows if _re.fullmatch(r'-?\d+', _x)]
-        assert not _rows, ('Hand the answer back with `return`. `print` only shows it on the screen.'
+        assert not _rows, ("Your recipe shows the answer with `print`, but doesn't hand it back. Hand it back with "
+                           '`return` instead.'
                            + _ev(_name, _args, ('it printed ' + _num[0] if _num else 'it printed a line')
-                                 + ' but handed back `None`'))
+                                 + ' and handed back `None`'))
         _dd = _defs().get(_name)
         _blank = _dd is not None and any(type(_n).__name__ == 'Return' and _n.value is None for _n in _ast.walk(_dd))
-        assert not _blank, ('`return` on its own hands back nothing. Put the answer after it.'
-                            + _ev(_name, _args, 'it handed back `None`'))
+        assert not _blank, ('Your `return` is on its own, so it hands back nothing. Put the answer after `return`, '
+                            'on the same line.' + _ev(_name, _args, 'it handed back `None`'))
         assert False, _nfix + _ev(_name, _args, 'it handed back `None`')
     _vals.append(_val)
 # `return "total"`: a box's name in quotes hands back the word itself (the quoted-name habit), not hard-coding.
 _dq = _defs().get(_name)
 _mine = set(_ps) | set(_made(_dq) if _dq is not None else [])
 _qw = [(_a, _v) for (_a, _w), _v in zip(_cases, _vals) if type(_v).__name__ == 'str' and _v in _mine and _v != _w]
-assert not _qw, ('Take the quotes off `' + str(_qw[0][1]) + '`: with quotes, the recipe hands back the word itself. '
-                 'Quotes mean these exact letters.' + _ev(_name, _qw[0][0], 'it handed back the word `'
-                                                           + str(_qw[0][1]) + '`'))
+assert not _qw, ('`' + str(_qw[0][1]) + '` is in quotes, so the recipe hands back the word itself. Take the quotes '
+                 'off `' + str(_qw[0][1]) + '`. Quotes mean these exact letters.'
+                 + _ev(_name, _qw[0][0], 'it handed back the word `' + str(_qw[0][1]) + '`'))
 if len(_vals) > 1 and all(_v == _vals[0] and type(_v) == type(_vals[0]) for _v in _vals):
-    assert False, (_cfix + " (Mar'tu's check called " + ' and '.join(_ct(_name, _a) for _a, _w in _cases)
-                   + ', only inside the check: both gave back ' + _safe_show(_vals[0]) + '.)')
+    assert False, (_cfix + " Mar'tu tested your recipe with " + ('two' if len(_cases) == 2 else str(len(_cases)))
+                   + ' test calls, ' + ' and '.join(_ct(_name, _a) for _a, _w in _cases)
+                   + ': both gave back ' + _safe_show(_vals[0]) + '.')
 for (_args, _want), _val in zip(_cases, _vals):
     if _val == _want and type(_val) == type(_want):
         continue
     _got = _ev(_name, _args, 'it handed back ' + _safe_show(_val) + ', but the answer is ' + str(_want))
     assert not (type(_val).__name__ == 'str' and _val.strip() == str(_want)), (
-        'Hand back the number itself, with no quotes and no `str()`.' + _got)
+        'Your recipe hands back the number as text. Hand back the number itself, with no quotes and no `str()`.'
+        + _got)
     for _test, _msg in _rules:
         assert not _test(_args, _val), _msg + _got
     _same = [_i for _i, _x in enumerate(_args) if _x == _val and type(_x) == type(_val)]
-    assert not _same, ('Hand back the box the recipe works out, not `' + _ps[_same[0]] + '` as it came in.'
-                       + _ev(_name, _args, 'it handed back ' + _safe_show(_val)))
+    assert not _same, ('Your recipe hands back `' + _ps[_same[0]] + '` as it came in. Hand back the box the recipe '
+                       'works out instead.' + _ev(_name, _args, 'it handed back ' + _safe_show(_val)))
     assert False, _fix + _got
 '''
 
@@ -551,9 +563,9 @@ def returns_check(label, name, params, cases, *, fix, const_fix=None, none_fix=N
     """RET / RET-PARAM / PAR-CONST / PNM / RNM on what a recipe hands back. cases = [(args, want), ...] with fresh
     arguments (lint b). rules = [(python test over _a (the args) and _v (the value), message), ...] for targeted
     slips, checked before the general `fix`. `box` = "This recipe's box is `total`." for the RNM message."""
-    const_fix = const_fix or ("A recipe gets its numbers when it is called: work the answer out from "
+    const_fix = const_fix or ("Your recipe hands back the same answer for every call. Work the answer out from "
                               + _names_py(params) + ".")
-    none_fix = none_fix or "End the recipe with a `return` line that hands back the answer."
+    none_fix = none_fix or "Your recipe hands back nothing yet. End it with a `return` line that hands back the answer."
     rules_code = "[" + ", ".join(f"(lambda _a, _v: ({test}), {msg!r})" for test, msg in rules) + "]"
     code = _FN + (
         f"_name, _want_ps, _cases = {name!r}, {list(params)!r}, {[(tuple(a), w) for a, w in cases]!r}\n"
@@ -574,24 +586,23 @@ def calls_check(label, name, at_least, *, fix, example=None, kept=True):
         "assert _f, _m\n"
         f"_n = len(_calls_in(_top(), {name!r}))\n"
         f"_b = _bare({name!r})\n"
-        f"assert not _b, ('Line ' + str(_b[0]) + ' says `' + {name!r} + '` with no `()`. No `()` means it is not called: '\n"
-        f"                'write `' + {example!r} + '`.')\n"
+        f"assert not _b, ('Line ' + str(_b[0]) + ' says `' + {name!r} + '` with no `()`, so the recipe does not run. '\n"
+        f"                'Write `' + {example!r} + '`.')\n"
         f"_w = _wrapped({name!r})\n"
-        f"assert not _w, ('Line ' + str(_w[0]) + ' puts the call inside `print(...)`. `' + {name!r} + '` prints by itself, '\n"
-        f"                'so write the call on its own: `' + {example!r} + '`. The extra `print` only adds `None`, '\n"
-        "                'Python' + chr(39) + 's word for nothing.')\n"
+        f"assert not _w, ('Line ' + str(_w[0]) + ' puts the call inside `print(...)`, so an extra `None` shows: Python' + chr(39) + 's '\n"
+        f"                'word for nothing. `' + {name!r} + '` prints by itself. Write the call on its own: `' + {example!r} + '`.')\n"
         f"_d = _defs().get({name!r})\n"
         f"_in = [_c.lineno for _c in _calls_in([_d], {name!r})] if _d else []\n"
-        f"assert _n >= {at_least} or not _in, ('Line ' + str(_in[0]) + ' is indented, so it sits inside the recipe as a '\n"
-        "                                    'step, and nothing runs it. Take the spaces off, so the call is on its own '\n"
-        "                                    'at the bottom.')\n"
+        f"assert _n >= {at_least} or not _in, ('Line ' + str(_in[0]) + ' is indented, so it is a step inside the recipe, '\n"
+        "                                    'and nothing runs it. Take the spaces off the front, so the call sits at '\n"
+        "                                    'the bottom, outside the recipe.')\n"
         f"assert _n >= {at_least}, {fix!r}\n"
     )
     return (label, code)
 
 
-LEDGER_ONLY = ("The ledger holds only your rows. Trace the program in your head or on paper, then type each "
-               "number.")
+LEDGER_ONLY = ("The ledger holds only your rows. Your code also has a `def`, a call or a `print`: delete those "
+               "lines. Trace the program in your head or on paper, then type each number.")
 
 
 def paste_stop(fn):
@@ -625,16 +636,17 @@ def row_check(label, name, want, rules, default):
         "        or (type(_n).__name__ == 'Call' and type(_n.func).__name__ == 'Name'\n"
         "            and _n.func.id in ('ward_strength', 'print'))]\n"
         f"assert not _ran, {LEDGER_ONLY!r}\n"
-        f"assert {name!r} in globals(), 'Keep the line `{name} = 0` from the starter, and change the 0.'\n"
+        f"assert {name!r} in globals(), \"Python can't find `{name}`. Put the line `{name} = 0` back, then change "
+        "the 0.\"\n"
         f"_v = globals()[{name!r}]\n"
-        "assert type(_v).__name__ != 'str', ('Numbers don' + chr(39) + 't need quotes: write the number on its own, '\n"
-        "                                    'like `" + name + " = 12`.')\n"
+        "assert type(_v).__name__ != 'str', ('`" + name + "` holds text, because of the quotes. Numbers get no '\n"
+        "                                    'quotes: take them off.')\n"
         f"_rules = {dict(rules)!r}\n"
         "_msg = ''\n"
         f"if not (_v == {want!r} and type(_v).__name__ == 'int'):\n"
         "    _msg = _rules.get(_v, '') if type(_v).__name__ == 'int' else ''\n"
         "    if not _msg and _v == 0:\n"
-        f"        _msg = '`{name}` still holds the starter' + chr(39) + 's 0. ' + {default!r}\n"
+        f"        _msg = '`{name}` still holds the placeholder 0. ' + {default!r}\n"
         f"    _msg = _msg or {default!r}\n"
         "assert not _msg, _msg\n"
     )
@@ -676,25 +688,25 @@ GLOSSARY = [
         term="recipe",
         aliases=["recipes", "function", "functions"],
         plain=(
-            "A named set of steps, made with `def`. Making a recipe does not run it. Calling its name with `()` runs "
-            "the steps. Python calls a recipe a function."
+            "A set of steps with a name, made with `def`. Python calls it a function. Making it runs nothing: "
+            "calling its name with `()` runs the steps."
         ),
-        example='def say_steady():\n    print("Steady, now.")\n\nsay_steady()',
+        example='def say_hi():\n    print("Hi.")\n\nsay_hi()',
     ),
     dict(
         term="def",
         aliases=["def line"],
         plain=(
-            "The word that makes a recipe: `def`, the recipe's name, brackets, and a colon. The steps go under it, "
-            "indented. `def` never makes a box."
+            "The word that starts a recipe: `def`, the recipe's name, parentheses `( )` and a colon. The steps go "
+            "under it, indented. `def` never makes a box."
         ),
-        example="def barrier_report():",
+        example="def say_hi():",
     ),
     dict(
         term="call",
         aliases=["calls", "calling", "called", "call it"],
-        plain="Running a recipe: its name, then brackets. `say_steady()` runs the steps once. No brackets, no run.",
-        example="say_steady()",
+        plain="To run a recipe, write its name, then `()`. `say_hi()` runs its steps once. With no `()`, nothing runs.",
+        example="say_hi()",
     ),
     dict(
         term="pass",
@@ -702,37 +714,37 @@ GLOSSARY = [
             "A line that does nothing. A recipe needs at least one line inside it, so `pass` holds the spot, like a "
             "blank recipe card, until you write a real step."
         ),
-        example="def step_north():\n    pass",
+        example="def tidy_up():\n    pass",
     ),
     dict(
         term="parameter",
         aliases=["parameters", "ingredient", "ingredients"],
         plain=(
-            "An ingredient's name on the recipe card, in the brackets on the `def` line. It is a box that gets "
-            "filled each time the recipe is called."
+            "An ingredient: a named blank in the parentheses on the `def` line, like the x in f(x). Each call fills "
+            "it with a value."
         ),
-        example="def warn(hero_name):",
+        example="def wave(friend):",
     ),
     dict(
         term="argument",
         aliases=["arguments", "what you hand over"],
-        plain="The value you hand over when you call a recipe. In `warn(\"Lucky\")`, the argument is `\"Lucky\"`.",
-        example='warn("Lucky")',
+        plain="What you hand over when you call a recipe. In `wave(\"Pip\")`, the argument is `\"Pip\"`.",
+        example='wave("Pip")',
     ),
     dict(
         term="return",
         aliases=["returns", "hands back", "hand back", "handed back", "return value"],
         plain=(
-            "Hands a value back to the line that called the recipe, and ends the recipe. Catch it in a box, or it "
-            "is gone: `lucky_max = max_mana_for(13)`."
+            "Hands a value back to the line that called the recipe, and ends the recipe. Catch it in a box, or it's "
+            "gone: `six = double(3)`."
         ),
-        example="def max_mana_for(affinity):\n    total = affinity * 2\n    return total",
+        example="def double(n):\n    return n * 2",
     ),
     dict(
         term="None",
         aliases=["NoneType"],
-        plain="Python's word for nothing. A recipe with no `return` line hands back `None`.",
-        example="print(lucky_max)   # None",
+        plain="Python's word for nothing. It is not 0. A recipe with no `return` line hands back `None`.",
+        example="print(answer)   # None",
     ),
     dict(
         term=".capitalize()",
@@ -749,10 +761,10 @@ GLOSSARY = [
 REMEMBERS_6A = dict(
     kind="quiz",
     id="6a-remembers",
-    title="Mar'tu remembers…",
+    title="Quick review: 2 questions, not scored",
     optional=True,
     minutes=1,
-    summary="Two quick questions from earlier lessons. Nothing is scored.",
+    summary="Two questions from Units 1 and 2, before you start recipes. Nothing is scored.",
     notes=(
         "meta: path=CC; unscored warm-up shown inline before Lesson 6A; recall from 2A (= versus ==) and 1C "
         "(mana = mana - 3). A miss shows the answer and a one-line why, with no red X."
@@ -761,11 +773,14 @@ REMEMBERS_6A = dict(
         dict(
             type="mc",
             id="which-line-asks",
-            q="Which line asks whether `roll` is 20?",
+            q="Which line asks a yes-or-no question: is `roll` the same as 20?",
             choices=["roll = 20", "roll == 20"],
             answer=1,
-            why_wrong={0: "`=` puts 20 in the box. Read it as gets: roll gets 20. It asks nothing."},
-            explain="`==` asks: is the same as? `roll == 20` gives `True` or `False`. `=` puts a value in a box.",
+            why_wrong={0: "`roll = 20` puts 20 in the box `roll`. Read `=` as *gets*: roll gets 20. It asks nothing."},
+            explain=(
+                "Read `==` as *is the same as*. `roll == 20` asks the question, and Python answers `True` or `False`. "
+                "A single `=` puts a value in a box."
+            ),
         ),
         dict(
             type="predict",
@@ -775,8 +790,8 @@ REMEMBERS_6A = dict(
             choices=["23", "26", "mana - 3", "an error"],
             answer="23",
             explain=(
-                "Python works out the right side first: 26 - 3 is 23. Then `mana` gets 23. The box now holds the "
-                "new value."
+                "Python works out the right side first, with what's in the box now: 26 − 3 is 23. Then 23 goes back "
+                "in the box. In math, x = x − 3 has no answer, but in Python `=` means *gets*: mana gets mana minus 3."
             ),
         ),
     ],
@@ -805,29 +820,34 @@ _f, _m = _find('say_steady', True)
 assert _f, _m
 _v, _rows, _err, _c = _run(_f, ())
 assert not _err, _why(_f, 'say_steady', (), _err)
-assert 'Steady, now.' in _rows, 'Keep the step inside the recipe as it is: `print("Steady, now.")`.'
-assert 'Steady, now.' in _lines(), 'Call the recipe at the bottom, below the `def` block: `say_steady()`.'
+assert 'Steady, now.' in _rows, ('The recipe does not show `Steady, now.` any more. Put its step back the way it '
+                                 'was: `print("Steady, now.")`.')
+assert 'Steady, now.' in _lines(), ('`Steady, now.` does not show in the Console yet. Call the recipe at the bottom, '
+                                    'below its indented step: `say_steady()`.')
 '''
 
 _SAY_IT_TWICE = r'''
 _d = _defs().get('say_steady')
 _inside = len(_calls_in([_d], 'print'))
 _outside = sorted(set(_c.lineno for _c in _calls_in(_top(), 'print')))
-assert _inside <= 1 and not _outside, ('Keep one `print`, inside the recipe, and call `say_steady()` twice instead. '
-                                       'The recipe is the steps; each call runs them again.')
-assert _lines().count('Steady, now.') >= 2, 'Call the recipe twice: two `say_steady()` lines at the bottom.'
+assert _inside <= 1 and not _outside, ('Your code has an extra `print` line. Delete it, and call `say_steady()` '
+                                       'twice instead: each call runs the step again.')
+assert _lines().count('Steady, now.') >= 2, ('`Steady, now.` shows only once. Call the recipe twice: two '
+                                             '`say_steady()` lines at the bottom.')
 '''
 
 BOX_OR_RECIPE = dict(
     id="box-or-recipe",
     title="A box or a recipe?",
     martu=(
-        "A [[variable|box]] holds a value. A [[recipe]] holds steps.\n"
-        "`=` makes a box. [[def]] makes a recipe: `def`, a name, `()` and a colon. The steps go under it, "
-        "indented.\n"
-        "Making a recipe does not run it. Python reads it and remembers it. To run it, you [[call]] it: its name, "
-        "then `()`.\n"
-        "You have seen this at the cabin door, yes? `def move_left():` waited for the arrow key. Now you know why."
+        "A [[recipe]] is a set of steps with a name. Python calls it a *function*. [[def]] makes one: "
+        "`def say_steady():`, with its steps indented under it. Making a recipe runs nothing. In math, f(x) = 2x "
+        "is a rule, but nothing is worked out until you write f(13).\n"
+        "To run the steps, you [[call]] the recipe: its name, then `()`, on a line of its own. `say_steady()` "
+        "runs it once.\n"
+        "`=` makes a box (a [[variable]]) that holds one value. `def` makes a recipe that holds steps.\n"
+        "At the cabin door, `def move_left():` did nothing until the game called `move_left()`. Now you know why, "
+        "yes?"
     ),
     introduces=["node:FunctionDef"],
     example='def hum():\n    print("Hmm.")\n\nhum()\n',
@@ -839,48 +859,55 @@ BOX_OR_RECIPE = dict(
         choices=["Oogrish waits.", "Steady, now.\nOogrish waits.", "Steady, now.", "an error"],
         answer=0,
         explain=(
-            "Only `Oogrish waits.` The `def` block makes the recipe, and Python remembers it. Nothing inside runs, "
-            "because no line calls `say_steady()`.\n"
-            "Run the starter: it prints nothing at all, for the same reason."
+            "Only `Oogrish waits.` shows. The `def` lines make the recipe, and Python remembers it. The step inside "
+            "doesn't run, because no line calls `say_steady()`.\n"
+            "If you press Run on your code now, it shows nothing at all, for the same reason."
         ),
     ),
     starter=STEADY_STARTER,
     checkpoints=[
         dict(
             id="call-the-recipe",
-            text="Call the recipe: add `say_steady()` at the bottom.",
+            text=(
+                "Add `say_steady()` on a new line at the bottom of your code, with no spaces in front. That line "
+                "calls the recipe. You should see `Steady, now.` in the Console."
+            ),
             dictated=True,
             hints=[
-                "Nothing calls the recipe yet, so its step never runs. Where does a recipe get called? Below its "
-                "`def` block, on a line of its own.",
-                "A name with `()` after it runs that recipe. If `def hum():` makes a recipe, then `hum()` on its "
-                "own line runs it.",
-                "Write `say_steady()` on a new line at the bottom, with no spaces in front.",
+                "Look at the bottom of your code, under `print(\"Steady, now.\")`. Is there a line that calls "
+                "`say_steady`?",
+                "A recipe's name with `()` after it calls the recipe, and Python runs its steps. In the Example, "
+                "`def hum():` makes a recipe, and `hum()` on its own line runs it.",
+                "Write `say_steady()` on a new line at the bottom, with no spaces in front. To make a new line, click "
+                "at the end of the last line and press Enter.",
             ],
             checks=[
                 calls_check("the recipe is called", "say_steady", 1,
-                            fix="Call the recipe: add `say_steady()` at the bottom, with no spaces in front. Nothing "
-                                "calls it yet, so its step never runs."),
+                            fix="Nothing calls the recipe yet, so its step never runs. Call the recipe: add "
+                                "`say_steady()` on a new line at the bottom, with no spaces in front."),
                 ("the call prints Steady, now.", _FN + _SAY_STEADY_CALLED),
             ],
-            pass_line="Oogrish: Steady, now.",
+            pass_line="You called the recipe, and its step ran. Oogrish: Steady, now.",
         ),
         dict(
             id="say-it-twice",
-            text="Make it say it twice, using two calls, not two `print`s.",
+            text=(
+                "Add a second `say_steady()` line under your first one. Two calls run the step twice, so don't add "
+                "another `print`."
+            ),
             dictated=True,
             hints=[
-                "The recipe already holds the step. You only need to run it again.",
-                "Each call runs the whole recipe again:\n```python\nhum()\nhum()\n```\nprints `Hmm.` twice, from one "
-                "`print`.",
+                "Look at your call at the bottom. What happens if the recipe is called one more time?",
+                "Each call runs all of the recipe's steps again. These two calls show `Hmm.` twice, from one "
+                "`print`:\n```python\nhum()\nhum()\n```",
                 "Write a second `say_steady()` on the line under your first call.",
             ],
             checks=[
                 ("one print, inside the recipe", _FN + _SAY_IT_TWICE),
                 calls_check("the recipe is called twice", "say_steady", 2,
-                            fix="Call the recipe twice: a second `say_steady()` line at the bottom."),
+                            fix="The recipe is called only once. Add a second `say_steady()` line at the bottom."),
             ],
-            pass_line="Oogrish: Steady, now. Steady, now. Yes, I heard myself.",
+            pass_line="Two calls, one `print`, two lines. Oogrish: Yes, I heard myself.",
         ),
     ],
     solution=STEADY_STARTER + "\nsay_steady()\nsay_steady()\n",
@@ -903,8 +930,8 @@ BOX_OR_RECIPE = dict(
             angle="everyday",
             label="A jar and a recipe card",
             text=(
-                "A jar holds one thing: sugar. A recipe card holds steps: mix, stir, bake. Writing the card bakes "
-                "nothing. You bake when you follow the card. `say_steady()` is following the card."
+                "A jar holds one thing, like sugar. A recipe card holds steps: mix, stir, bake. Writing the card bakes "
+                "nothing. You bake when you follow the card. Calling `say_steady()` is following the card."
             ),
         ),
         dict(
@@ -913,8 +940,8 @@ BOX_OR_RECIPE = dict(
             text=(
                 "1. `steadying_words = ...`: Python makes the box.\n"
                 "2. `def say_steady():`: Python reads the recipe and remembers it. It runs nothing.\n"
-                "3. The end of the file. Nothing called the recipe, so nothing printed.\n"
-                "4. Add `say_steady()`: now Python runs the recipe's step, and `Steady, now.` prints."
+                "3. The end of your code. Nothing called the recipe, so nothing shows in the Console.\n"
+                "4. Add `say_steady()`: now Python runs the recipe's step, and `Steady, now.` shows."
             ),
         ),
         dict(
@@ -940,16 +967,25 @@ BOX_OR_RECIPE = dict(
                 "does anything happen."
             ),
         ),
+        dict(
+            angle="math class",
+            label="From math class",
+            text=(
+                "In math, f(x) = 2x is a rule. Writing the rule works nothing out. f(13) uses it, and you get 26. "
+                "`def` writes the rule, and `say_steady()` uses it. One difference: a `def` line has no `=`, so "
+                "`def double(n) = n * 2` is an error."
+            ),
+        ),
     ],
     bonus=dict(
         by="lucky",
-        title="What's in it for me?",
+        title="A recipe that calls a recipe",
         text=(
-            "Recipes can call recipes. Write `say_ready()`: it prints a line of its own, then calls `say_steady()`. "
-            "Call `say_ready()` at the bottom."
+            "A recipe can call another recipe. Make `say_ready()` with two steps: a `print` line of your own, then "
+            "`say_steady()`. Then call `say_ready()` at the bottom."
         ),
         hints=[
-            "Two indented steps: a `print` line, then `say_steady()`.",
+            "Under the `def say_ready():` line, indent two steps: a `print` line, then `say_steady()`.",
             "Write `def say_ready():`, then the two indented steps under it. Call `say_ready()` at the bottom.",
         ],
         checks=[
@@ -959,12 +995,12 @@ BOX_OR_RECIPE = dict(
 _f, _m = _find('say_ready')
 assert _f, _m
 assert _calls_in([_defs().get('say_ready')], 'say_steady'), (
-    'Inside `say_ready`, call `say_steady()` after its own `print` line.')
+    '`say_ready` does not call `say_steady()` yet. Add `say_steady()` inside it, after its own `print` line.')
 _v, _rows, _err, _c = _run(_f, ())
 assert not _err, _why(_f, 'say_ready', (), _err)
 assert len(_rows) >= 2 and _rows[-1] == 'Steady, now.', (
-    'Make `say_ready()` print its own line first, then call `say_steady()`, so `Steady, now.` comes last.')
-assert _calls_in(_top(), 'say_ready'), 'Call it at the bottom: `say_ready()`.'
+    '`Steady, now.` should come last. Make `say_ready()` print its own line first, then call `say_steady()`.')
+assert _calls_in(_top(), 'say_ready'), 'Nothing calls `say_ready` yet. Call it at the bottom: `say_ready()`.'
 ''',
             ),
         ],
@@ -980,11 +1016,11 @@ assert _calls_in(_top(), 'say_ready'), 'Call it at the bottom: `say_ready()`.'
         part="program-movement",
         snippet='def move_left():\n    pass',
         why=(
-            "You have seen this at the cabin door. Each `def` line made a recipe. The game called `move_left()` "
-            "when you pressed the left arrow. Making the recipe never moved the party: only the call did."
+            "You saw this at the cabin door. Each `def` line made a recipe. The game called `move_left()` when you "
+            "pressed the left arrow. Making the recipe never moved the party: only the call did."
         ),
     ),
-    takeaway="`=` makes a box. `def` makes a recipe. Making it runs nothing; `name()` calls it.",
+    takeaway="`=` makes a box. `def` makes a recipe. Making a recipe runs nothing: its name with `()` calls it.",
     wrong_answers=[
         dict(why="the name with no () (A-02's shape-without-meaning; nothing runs)",
              code=STEADY_STARTER + "\nsay_steady\n", fails_at=1, message_contains="`()`"),
@@ -1053,8 +1089,9 @@ _v, _rows, _err, _c = _run(_f, ())
 # A top-level print is the slip only while the recipe itself still prints fewer than two lines; a `print` wrapped
 # around the call is left to the call check, which says so.
 _out = sorted(set(_c.lineno for _c in _calls_in(_top(), 'print') if not _calls_in([_c], 'barrier_report')))
-assert not (_out and len(_rows) < 2), ('Line ' + str(_out[0]) + ' runs on its own, outside the recipe. Indent it '
-                                       'four spaces, under `def barrier_report():`, so it belongs to the recipe.')
+assert not (_out and len(_rows) < 2), ('Line ' + str(_out[0]) + ' has no spaces in front, so it runs on its own, '
+                                       'outside the recipe. Put four spaces in front of it, so it belongs to the '
+                                       'recipe.')
 '''
 
 _REPORT_LINES = r'''
@@ -1062,19 +1099,23 @@ _f, _m = _find('barrier_report', True)
 assert _f, _m
 _v, _rows, _err, _c = _run(_f, ())
 assert not _err, _why(_f, 'barrier_report', (), _err)
-assert len(_rows) >= 2, ('Add a second `print` line inside the recipe, indented like the first.'
-                         + _ev('barrier_report', (), 'it printed ' + str(len(_rows)) + ' line'))
-assert all(_r in _lines() for _r in _rows), 'Call the recipe at the bottom, so its lines print: `barrier_report()`.'
+assert len(_rows) >= 2, ('The recipe shows only ' + str(len(_rows)) + ' line' + ('' if len(_rows) == 1 else 's')
+                         + '. Add a second `print` line inside it, with four spaces in front, like the first.'
+                         + _ev('barrier_report', (), 'it printed ' + str(len(_rows)) + ' line'
+                               + ('' if len(_rows) == 1 else 's')))
+assert all(_r in _lines() for _r in _rows), ('The recipe' + chr(39) + 's lines do not show in the Console yet. Call '
+                                             'the recipe at the bottom: `barrier_report()`.')
 '''
 
 CALL_IT = dict(
     id="call-it",
     title="Call it",
     martu=(
-        "The lines [[indent|indented]] under `def` are the recipe's steps. They belong to it. They run only when "
-        "the recipe is called, and they run together, top to bottom.\n"
-        "Give Gearshift's report a second line. Then call it.\n"
-        "A recipe needs at least one step inside. An empty one makes Python stop."
+        "The lines [[indent|indented]] under a `def` line are the recipe's steps. They belong to it, like the "
+        "indented lines under an `if` in Unit 2, or the sub-points under a main point in an outline. One call runs "
+        "all of them, top to bottom.\n"
+        "Give Gearshift's `barrier_report` a second step. Then call it.\n"
+        "A recipe needs at least one step. With no indented line under the `def` line, Python stops with an error."
     ),
     example='def tidy():\n    print("Sweep.")\n    print("Dust.")\n\ntidy()\n',
     example_output="Sweep.\nDust.",
@@ -1086,31 +1127,38 @@ CALL_IT = dict(
         choices=["Report done.", "Barrier's holding.\nReport done.", "an error"],
         answer=0,
         explain=(
-            "Only `Report done.` Line 4 names the recipe but has no `()`, so it does not call it. No `()`, no run, "
-            "and no error either: Python just looks at the name and moves on."
+            "Only `Report done.` shows. Line 4 names the recipe but has no `()`, so it doesn't call it. No `()`, no "
+            "run. There's no error either: Python reads the name and moves on."
         ),
     ),
     starter=REPORT_STARTER,
     checkpoints=[
         dict(
             id="second-line-and-call",
-            text="Add a second line inside the recipe, then call it.",
+            text=(
+                "Two moves, in order:\n"
+                "1. Replace the note `# add a second line here` with a second `print` line, with any words. Keep "
+                "the four spaces in front.\n"
+                "2. Replace the note `# call barrier_report here` with a call to `barrier_report`, with no spaces "
+                "in front. You should see two lines in the Console."
+            ),
             dictated=False,
             hints=[
-                "Two jobs: a second indented line inside `def barrier_report():`, then a call at the bottom with no "
-                "spaces in front.",
-                "Indented lines belong to the recipe:\n```python\ndef tidy():\n    print(\"Sweep.\")\n"
-                "    print(\"Dust.\")\n\ntidy()\n```\nOne call runs both lines.",
-                "Write a second `print(...)` line under the first one, four spaces in. Then write "
+                "Look for the two notes that start with `#`. Each one marks a spot. What goes at each spot?",
+                "Indented lines belong to the recipe, like sub-points under a main point. One call runs them all. "
+                "Here is the Example:\n```python\ndef tidy():\n    print(\"Sweep.\")\n"
+                "    print(\"Dust.\")\n\ntidy()\n```",
+                "Write a second `print(...)` line under the first one, four spaces in, with any words. Then write "
                 "`barrier_report()` at the bottom, with no spaces in front.",
             ],
             checks=[
                 ("every print is inside the recipe", _FN + _REPORT),
                 calls_check("the recipe is called", "barrier_report", 1,
-                            fix="Now call the recipe: add `barrier_report()` at the bottom, with no spaces in front."),
+                            fix="Nothing calls the recipe yet, so its steps never run. Add `barrier_report()` at the "
+                                "bottom, with no spaces in front."),
                 ("one call prints two lines", _FN + _REPORT_LINES),
             ],
-            pass_line="Gearshift: Report sent. Barrier's holding.",
+            pass_line="One call, two steps. Gearshift: Report sent. Barrier's holding.",
         ),
     ],
     solution=REPORT_SOLUTION,
@@ -1126,8 +1174,8 @@ CALL_IT = dict(
             text=(
                 "1. `def barrier_report():` starts the recipe.\n"
                 "2. Every line under it with four spaces in front is a step of that recipe.\n"
-                "3. The first line with no spaces ends the recipe.\n"
-                "4. `barrier_report()` with no spaces runs all the steps, top to bottom."
+                "3. The first line with no spaces in front ends the recipe.\n"
+                "4. `barrier_report()`, with no spaces in front, runs all the steps, top to bottom."
             ),
         ),
         dict(
@@ -1140,15 +1188,24 @@ CALL_IT = dict(
         ),
         dict(
             angle="shorter",
-            text="Steps: indented under `def`. The call: no spaces, with `()`.",
+            text="Steps: indented under `def`. The call: no spaces in front, with `()`.",
+        ),
+        dict(
+            angle="English class",
+            label="From English class",
+            text=(
+                "An outline puts each sub-point under its main point, pushed in:\n"
+                "```text\nI. Barrier report\n   A. Barrier's holding.\n   B. Visor dims.\n```\n"
+                "A recipe works the same way. The `def` line is the main point, and the indented lines are its steps."
+            ),
         ),
     ],
     bonus=dict(
         by="lucky",
-        title="What's in it for me?",
+        title="Put a number in the report",
         text=(
-            "Lucky wants numbers. Make a box `hours_left = 37` above the recipe. Then add a step that prints the "
-            "hours left, glued in with `str()`."
+            "Lucky wants numbers. Make a box `hours_left = 37` above the recipe. Then add a step inside the recipe "
+            "that shows the hours left, glued on with `str()`."
         ),
         hints=[
             "Make the box first, above the `def` line. Then add one more `print` inside the recipe.",
@@ -1162,7 +1219,8 @@ CALL_IT = dict(
 _f, _m = _find('barrier_report', True)
 assert _f, _m
 _G = _f.__globals__
-assert type(_G.get('hours_left')).__name__ == 'int', 'Make a box above the recipe: `hours_left = 37`.'
+assert type(_G.get('hours_left')).__name__ == 'int', (
+    "Python can't find a box `hours_left` that holds a number. Make it above the recipe: `hours_left = 37`.")
 _old = _G['hours_left']
 _G['hours_left'] = 99
 try:
@@ -1171,8 +1229,8 @@ finally:
     _G['hours_left'] = _old
 assert not _err, _why(_f, 'barrier_report', (), _err)
 assert any(_re.search(_whole(99), _r) for _r in _rows), (
-    'Inside the recipe, print the hours from the box: glue `str(hours_left)` to some words. '
-    "(Mar'tu's check set `hours_left = 99`, only inside the check: the report did not show 99.)")
+    'The report does not show the hours from the box. Inside the recipe, glue `str(hours_left)` to some words and '
+    "print them. Mar'tu tested it with a test number, `hours_left = 99`: the report did not show 99.")
 ''',
             ),
         ],
@@ -1185,7 +1243,7 @@ assert any(_re.search(_whole(99), _r) for _r in _rows), (
             "\nbarrier_report()\n"
         ),
     ),
-    takeaway="Indented lines are the recipe's steps. `name()` at the bottom runs them all.",
+    takeaway="Indented lines are the recipe's steps. Its name with `()` at the bottom runs them all.",
     wrong_answers=[
         dict(why="an empty body: the starter's print deleted, only a comment left",
              code="def barrier_report():\n    # add a second line here\n\nbarrier_report()\n",
@@ -1266,18 +1324,21 @@ _sc = _f.__globals__['scout']
 _at = len(_sc.steps)
 _v, _rows, _err, _c = _run(_f, ())
 if _err and type(_err).__name__ == 'NameError':
-    assert False, ('Put the direction in quotes: `scout.step("' + _d + '")`. ' + _QUOTES)
+    assert False, ('The direction has no quotes, so Python looks for a box with that name. Put it in quotes: '
+                   '`scout.step("' + _d + '")`. ' + _QUOTES)
 assert not (_err and type(_err).__name__ == 'AttributeError'), (
-    'The scout moves with `scout.step(...)`. Write `scout.step("' + _d + '")`.')
+    'The scout does not know that command. It moves with `scout.step(...)`. Write `scout.step("' + _d + '")`.')
 assert not _err, _why(_f, _name, (), _err)
 _new = _sc.steps[_at:]
-assert _new, ('Replace `pass` in `' + _name + '` with `scout.step("' + _d + '")`, indented under the `def` line.'
-              + _ev(_name, (), 'the scout did not move'))
-assert len(_new) == 1, 'One step per call: `' + _name + '` should hold one `scout.step("' + _d + '")` line.'
+assert _new, ('`' + _name + '` still does nothing. Replace its `pass` with `scout.step("' + _d + '")`, four spaces '
+              'in.' + _ev(_name, (), 'the scout did not move'))
+assert len(_new) == 1, ('`' + _name + '` moves the scout more than once. Keep one `scout.step("' + _d + '")` line in '
+                        'it.')
 _s = _new[0]
 assert not (type(_s).__name__ == 'str' and _s != _d and _s.lower() == _d), (
-    'Capitals count: write `"' + _d + '"`, all small letters. ' + _QUOTES)
-assert _s == _d, ('Use the direction in the recipe' + chr(39) + 's name: `scout.step("' + _d + '")`.'
+    'The direction has a capital letter. Capitals count: write `"' + _d + '"`, all small letters.')
+assert _s == _d, ('The scout went the wrong way. Use the direction in the recipe' + chr(39) + 's name: `scout.step("'
+                  + _d + '")`.'
                   + _ev(_name, (), 'the scout stepped ' + (_s if _s in ('north', 'south', 'east', 'west') else 'somewhere else')))
 '''
 
@@ -1289,26 +1350,29 @@ def scout_check(direction):
 def _scout_cp(direction, index):
     # CP1 is dictated with the example; CP2-3 are terse ("the same way"); CP4 is the student's own (G3-12). All four
     # tick on one Run, so the fast group loses no time.
-    teach = ("`pass` is a blank recipe card. Replace it with one real step, four spaces in, where `pass` was. "
-             + QUOTES_RULE + " The direction is a word, so it gets quotes.")
+    teach = ("`pass` holds an empty spot. Put one real step there instead, with the same four spaces in front. "
+             "The direction is a word, not a box, so it gets quotes. " + QUOTES_RULE)
     if direction == "north":
-        text = 'Replace `pass` in `step_north` with a command that moves the scout north, like `scout.step("north")`.'
+        text = ('Under `def step_north():`, replace `pass` with `scout.step("north")`. Keep the four spaces in '
+                'front. When you press Run, the Console should show `The scout steps north.`')
         hints = [
-            "Which word in the recipe's name says where to go? Put that word in quotes inside the brackets.",
+            "Look at `def step_north():`. Which word in the recipe's name says where to go?",
             teach,
             "Write `scout.step(\"north\")` in place of `pass`, four spaces in.",
         ]
     elif direction == "west":
-        text = "Now `step_west`, on your own."
+        text = ("Under `def step_west():`, replace `pass` with a step that moves the scout west. Try this one on "
+                "your own.")
         hints = [
-            "Read the recipe's name: `step_west`. Its last word says which way the scout goes.",
+            "Look at `def step_west():`. The last word of the recipe's name says which way the scout goes.",
             teach,
             "Write `scout.step(\"west\")` in place of `pass`, four spaces in.",
         ]
     else:
-        text = f"Now `step_{direction}`: replace its `pass` the same way."
+        text = (f"Under `def step_{direction}():`, replace `pass` with `scout.step(\"{direction}\")`. Keep the four "
+                "spaces in front.")
         hints = [
-            "Which word in the recipe's name says where to go? Put that word in quotes inside the brackets.",
+            f"Look at `def step_{direction}():`. Which word in the recipe's name says where to go?",
             teach,
             f"Write `scout.step(\"{direction}\")` in place of `pass`, four spaces in.",
         ]
@@ -1318,8 +1382,10 @@ def _scout_cp(direction, index):
         dictated=direction != "west",
         hints=hints,
         checks=[scout_check(direction)],
-        pass_line={"north": "Bomb Shell: Scout's moving.", "south": "Bomb Shell: South. Good.",
-                   "east": "Bomb Shell: East. Clear.", "west": "Lucky: Finally. Can we go home now?"}[direction],
+        pass_line={"north": "The map called your recipe, and the scout stepped north. Bomb Shell: Scout's moving.",
+                   "south": "Your second recipe works. Bomb Shell: South. Good.",
+                   "east": "Three recipes have steps now. Bomb Shell: East. Clear.",
+                   "west": "All four recipes have steps. Lucky: Finally. Can we go home now?"}[direction],
     )
 
 
@@ -1327,12 +1393,13 @@ REPLACE_PASS = dict(
     id="replace-pass",
     title="Replace pass",
     martu=(
-        "Each `def` line makes a recipe: a named set of steps. [[pass]] means do nothing. It is a blank recipe "
-        "card.\n"
-        "The scout moves with `scout.step(\"north\")`. Replace each `pass` with the step its name asks for, four "
-        "spaces in, where `pass` was.\n"
-        "My map calls your four recipes at the bottom, like the arrow keys did. Follow the numbered comments, one "
-        "per step."
+        "[[pass]] means *do nothing*. It holds a spot, like a blank card in a recipe box: the card has a name, "
+        "`step_north`, but no steps yet. Python needs at least one line under a `def` line, so `pass` keeps the "
+        "spot.\n"
+        "Replace each `pass` with the step its recipe's name asks for. The scout moves with "
+        "`scout.step(\"north\")`. Keep the four spaces in front.\n"
+        "The last four lines of your code call your recipes, like the arrow keys did. Follow the numbered notes, "
+        "one per step."
     ),
     introduces=["node:Pass"],
     setup=SCOUT_SETUP,
@@ -1369,7 +1436,7 @@ REPLACE_PASS = dict(
                 "1. Find `pass` under `def step_north():`.\n"
                 "2. Delete the word `pass`, and keep the four spaces.\n"
                 "3. Type `scout.step(\"north\")` there.\n"
-                "4. Run. The map calls the recipe, and the scout steps north. Then do the next one."
+                "4. Press Run. The last lines call the recipe, and the scout steps north. Then do the next one."
             ),
         ),
         dict(
@@ -1383,10 +1450,13 @@ REPLACE_PASS = dict(
     ],
     bonus=dict(
         by="lucky",
-        title="What's in it for me?",
-        text="Lucky hates walking. Add `step_twice_north()`, a recipe that calls `step_north()` twice. Call it at the bottom.",
+        title="Two steps north in one call",
+        text=(
+            "Lucky hates walking. Make a recipe `step_twice_north()` that calls `step_north()` twice. Then call it "
+            "at the bottom."
+        ),
         hints=[
-            "Two indented steps, each one `step_north()`.",
+            "Under its `def` line, indent two steps, each one `step_north()`.",
             "Write `def step_twice_north():` with two indented `step_north()` lines under it. Then call "
             "`step_twice_north()` at the bottom.",
         ],
@@ -1397,12 +1467,14 @@ REPLACE_PASS = dict(
 _f, _m = _find('step_twice_north')
 assert _f, _m
 assert len(_calls_in([_defs().get('step_twice_north')], 'step_north')) >= 2, (
-    'Inside `step_twice_north`, call your recipe `step_north()` twice, one line each.')
+    '`step_twice_north` does not call `step_north()` twice yet. Put two `step_north()` lines inside it, one under '
+    'the other.')
 _sc = _f.__globals__['scout']
 _at = len(_sc.steps)
 _v, _rows, _err, _c = _run(_f, ())
 assert not _err, _why(_f, 'step_twice_north', (), _err)
-assert _sc.steps[_at:] == ['north', 'north'], 'Make `step_twice_north()` move the scout north, then north again.'
+assert _sc.steps[_at:] == ['north', 'north'], ('The scout should step north, then north again. Make '
+                                               '`step_twice_north()` call `step_north()` twice.')
 ''',
             ),
         ],
@@ -1413,11 +1485,11 @@ assert _sc.steps[_at:] == ['north', 'north'], 'Make `step_twice_north()` move th
         part="program-movement",
         snippet='def move_left():\n    party.move("left")',
         why=(
-            "You have seen this at the cabin door. `move_left()` was a recipe with `pass` inside, and the arrow key "
-            "called it. You replaced `pass` with `party.move(\"left\")`. Same move today, with the scout."
+            "You saw this at the cabin door. `move_left()` was a recipe with `pass` inside, and the arrow key called "
+            "it. You replaced `pass` with `party.move(\"left\")`. Today is the same move, with the scout."
         ),
     ),
-    takeaway="`pass` holds the spot. Replace it with a real step, indented where `pass` was.",
+    takeaway="`pass` holds an empty spot. Replace it with a real step, with the same four spaces in front.",
     wrong_answers=[
         dict(why="the direction unquoted: scout.step(north) (a NameError when the map calls it)",
              code=_scout_code(done=DIRS, body={"north": "scout.step(north)"}), fails_at=0, message_contains="'north'"),
@@ -1484,20 +1556,21 @@ def _warn(line=WARN_LINE, calls=WARN_CALLS, extra='warn("Captain Glug")\n'):
 
 _THIRD_WARN = r'''
 _ends = [_l for _l in _lines() if _l.endswith(', get inside!')]
-assert len(_ends) >= 3, ('Each call should show its hero with `, get inside!`. Keep the two calls, and add yours '
-                         'below them.')
+assert len(_ends) >= 3, ('Fewer than three warnings show in the Console. Keep the two calls, and add yours below '
+                         'them.')
 '''
 
 INGREDIENTS = dict(
     id="ingredients",
     title="Ingredients",
     martu=(
-        "Some recipes need an ingredient. Its name goes in the brackets on the `def` line: a [[parameter]].\n"
-        "When you call the recipe, you hand over a real value: an [[argument]]. For that one call, Python puts it "
-        "in the parameter, like a box.\n"
-        "The Example hands over two names, one per call. Same recipe, a different hero each time.\n"
-        "My check also calls `warn` with heroes you never wrote, like `warn(\"Tester\")`. One line inside must work "
-        "for every hero."
+        "Some recipes need an ingredient: a named blank that each call fills in. It's like a sentence frame in "
+        "English class: \"____, get inside!\" In `def warn(hero_name):`, the blank is named `hero_name`. Python "
+        "calls it a [[parameter]].\n"
+        "When you call `warn(\"Lucky\")`, you hand over `\"Lucky\"`. Python calls that an "
+        "[[argument|argument (what you hand over)]]. For that call, `hero_name` holds Lucky.\n"
+        "Inside the recipe, use the name `hero_name`, never one hero. I test your recipe with heroes you never "
+        "wrote, like `warn(\"Tester\")`, so one line must work for every hero."
     ),
     example='def cheer(name):\n    print(name + " is ready.")\n\ncheer("Oogrish")\ncheer("Gearshift")\n',
     example_output="Oogrish is ready.\nGearshift is ready.",
@@ -1510,7 +1583,7 @@ INGREDIENTS = dict(
         answer=0,
         explain=(
             "`Lucky`. The call `warn(\"Lucky\")` hands over `\"Lucky\"`, and Python puts it in `hero_name` for this "
-            "call. `print(hero_name)` has no quotes, so it looks inside the box."
+            "call. `print(hero_name)` has no quotes, so Python looks inside the box."
         ),
     ),
     pair_talk=(
@@ -1521,40 +1594,48 @@ INGREDIENTS = dict(
     checkpoints=[
         dict(
             id="both-heroes",
-            text="Finish `warn` so both calls show their own hero.",
+            text=(
+                "Replace `pass` with a `print` line that shows the hero, then `, get inside!`. Use the ingredient "
+                "`hero_name`, so each call shows its own hero."
+            ),
             dictated=False,
             hints=[
-                "What did each call hand over? Inside the recipe, that value lives in `hero_name`.",
+                "Look at the `def` line, `def warn(hero_name):`. What does each call put in `hero_name`?",
                 "In the Example, `cheer(\"Oogrish\")` puts `\"Oogrish\"` in `name`. Then `name + \" is ready.\"` glues "
-                "the name to the words.",
-                QUOTES_RULE + " So `hero_name` has no quotes, and `\", get inside!\"` has them.",
+                "the name to the words, like a compound word.",
+                QUOTES_RULE + " So `hero_name` gets no quotes, and `\", get inside!\"` does.",
                 "Write `print(hero_name + \", get inside!\")` in place of `pass`, four spaces in.",
             ],
             checks=[
                 prints_check("each call shows its own hero", "warn", ["hero_name"],
                              [(("Tester",), "Tester, get inside!"), (("Moth",), "Moth, get inside!")],
-                             fix="Use the ingredient `hero_name` in the `print` line, so each call shows its own hero.",
-                             const_fix="A recipe gets its hero when it is called: use `hero_name`, not a typed name.",
+                             fix="Each call should show its own hero. Use the ingredient `hero_name` in the `print` "
+                                 "line.",
+                             const_fix="Your `print` line has a typed-in hero, so every call shows the same one. Use "
+                                       "the ingredient `hero_name` instead.",
                              foreign=["cheer", "name", "greet", "guest"], safe=WARN_SAFE),
             ],
-            pass_line="Lucky: Fine. I'm getting inside. But I'm keeping track.",
+            pass_line="Your recipe works for any hero. Lucky: Fine. I'm getting inside. But I'm keeping track.",
         ),
         dict(
             id="your-own-hero",
-            text="Add a third call for your own hero.",
+            text=(
+                "Add a third call at the bottom, under `warn(\"Bomb Shell\")`, with a hero of your own in quotes."
+            ),
             dictated=False,
             hints=[
-                "Copy the shape of the two calls above. Put your hero in quotes.",
-                "Every call hands over one value: `cheer(\"Pip\")` would show `Pip is ready.`",
+                "Look at the two calls at the bottom. What is the same in both, and what changes?",
+                "Each call hands over one value, inside the parentheses: `cheer(\"Pip\")` would show `Pip is ready.`",
                 "Write `warn(\"Captain Glug\")` on a new line at the bottom, or any hero of your own, in quotes.",
             ],
             checks=[
                 calls_check("warn is called three times", "warn", 3,
-                            fix="Add a third call at the bottom for your own hero: `warn(`, a name in quotes, then `)`.",
+                            fix="There are only two calls. Add a third call at the bottom for your own hero: `warn(`, "
+                                "a name in quotes, then `)`.",
                             example='warn("...")'),
                 ("three warnings print", _FN + _THIRD_WARN),
             ],
-            pass_line="Lucky: Another one inside? Fine. Budge up.",
+            pass_line="Three calls, one recipe. Lucky: Another one inside? Fine. Budge up.",
         ),
     ],
     solution=WARN_SOLUTION,
@@ -1571,7 +1652,7 @@ INGREDIENTS = dict(
             text=(
                 "```text\ncall                hero_name\nwarn(\"Lucky\")       \"Lucky\"\n"
                 "warn(\"Bomb Shell\")  \"Bomb Shell\"\n```\n"
-                "One recipe. Each call fills `hero_name` with something new."
+                "One recipe. Each call fills `hero_name` with a new value."
             ),
         ),
         dict(
@@ -1586,8 +1667,8 @@ INGREDIENTS = dict(
             angle="from what you know",
             label="It is a box",
             text=(
-                "`hero_name` is a box, like the boxes from Unit 1. The call fills it. `warn(\"Lucky\")` works like "
-                "`hero_name = \"Lucky\"`, just before the recipe's steps run."
+                "`hero_name` is a box, like the boxes from Unit 1, and each call fills it. `warn(\"Lucky\")` works "
+                "like writing `hero_name = \"Lucky\"` right before the recipe's steps run."
             ),
         ),
         dict(
@@ -1605,17 +1686,26 @@ INGREDIENTS = dict(
                 "is a recipe with one ingredient."
             ),
         ),
+        dict(
+            angle="math class",
+            label="From math class",
+            text=(
+                "In math, f(x) = x + 3 has a blank named x. f(5) fills it with 5, and f(10) fills it with 10. "
+                "`hero_name` is the x of `warn`: `warn(\"Lucky\")` fills it with Lucky. The recipe's line uses the "
+                "blank's name, never one call's value."
+            ),
+        ),
     ],
     bonus=dict(
         by="lucky",
-        title="What's in it for me?",
+        title="A warning with the hours",
         text=(
-            "Lucky wants the hours too. Write a second recipe, `warn_hours(hero_name, hours)`, that prints a line "
+            "Lucky wants the hours too. Make a second recipe, `warn_hours(hero_name, hours)`, that shows a line "
             "like `Lucky, get inside! 2 hours left.` Call it once."
         ),
         hints=[
-            "Two ingredients on the `def` line, then one `print` that uses both. Glue the number in with "
-            "`str(hours)`, and mind the spaces.",
+            "Put two ingredients on the `def` line, then one `print` line that uses both. Glue the number on with "
+            "`str(hours)`, and put the spaces inside the quotes.",
             "Write `def warn_hours(hero_name, hours):`, then "
             "`print(hero_name + \", get inside! \" + str(hours) + \" hours left.\")` under it, four spaces in. "
             "Call it once, like `warn_hours(\"Lucky\", 2)`.",
@@ -1624,7 +1714,8 @@ INGREDIENTS = dict(
             prints_check("warn_hours shows the hero and the hours", "warn_hours", ["hero_name", "hours"],
                          [(("Tester", 5), "Tester, get inside! 5 hours left."),
                           (("Moth", 12), "Moth, get inside! 12 hours left.")],
-                         fix="Use both ingredients in the line: `hero_name`, then the hours glued in with `str(hours)`.",
+                         fix="The line should use both ingredients. Use `hero_name`, then the hours glued on with "
+                             "`str(hours)`.",
                          kept=False),
         ],
         solution=WARN_SOLUTION + (
@@ -1638,11 +1729,14 @@ INGREDIENTS = dict(
         part="skill-checks",
         snippet="def perform_roll(die_size):",
         why=(
-            "You have seen an ingredient at the trap door: `die_size`. Each call handed over a different die, and "
-            "the same recipe rolled it. Same idea as `hero_name` today."
+            "You saw an ingredient at the trap door: `die_size`. Each call handed over a different die, and the same "
+            "recipe rolled it. `hero_name` works the same way."
         ),
     ),
-    takeaway="The ingredient's name (parameter) holds what each call hands over (argument). Use the name inside.",
+    takeaway=(
+        "An ingredient (parameter) is a named blank. Each call fills it with what you hand over (argument). Use its "
+        "name inside the recipe."
+    ),
     wrong_answers=[
         dict(why="one call's line typed in (PAR-CONST; 7 of 11 used one call's values, sheets A-06, A-07, B-02)",
              code=_warn(line='    print("Lucky, get inside!")\n'), fails_at=1, message_contains="Tester"),
@@ -1727,30 +1821,38 @@ FILL_THE_INGREDIENTS = dict(
     id="fill-the-ingredients",
     title="Fill the ingredients",
     martu=(
-        "Before you write a line like this yourself, fill two blanks.\n"
-        "The ingredient names are on the `def` line. Each `___` needs one of them. Then every call adds its own two "
-        "numbers."
+        "This line has two blanks, `___`, like a fill-in-the-blank worksheet. Fill each one with an ingredient "
+        "name from the `def` line: `base_damage` or `bonus`.\n"
+        "Then every call adds its own two numbers. `show_hit(4, 3)` puts 4 in `base_damage` and 3 in `bonus`, so "
+        "it shows 7."
     ),
     names=["show_hit", "base_damage", "bonus"],
     starter=FILL_STARTER,
     checkpoints=[
         dict(
             id="fill-each-blank",
-            text="Fill each `___` with an ingredient's name.",
+            text=(
+                "In `print(___ + ___)`, replace the first `___` with `base_damage` and the second with `bonus`. You "
+                "should see 7 in the Console."
+            ),
             dictated=True,
             hints=[
-                "The ingredient names are inside the brackets on the `def` line.",
-                "If `def mix(water, oil):`, then `print(water + oil)` adds whatever each call hands over.",
+                "Look at the `def` line, `def show_hit(base_damage, bonus):`. Which two names are inside its "
+                "parentheses?",
+                "In a recipe made with `def mix(water, oil):`, the line `print(water + oil)` adds whatever each call "
+                "hands over.",
                 "Make line 2 read `print(base_damage + bonus)`: `base_damage` in the first blank, `bonus` in the "
                 "second.",
             ],
             checks=[
                 prints_check("show_hit adds its ingredients", "show_hit", ["base_damage", "bonus"], HIT_CASES,
-                             fix="Use both ingredient names, `base_damage` and `bonus`, one in each blank.",
-                             const_fix="A recipe gets its numbers when it is called: use `base_damage` and `bonus`.",
+                             fix="The total is wrong for some calls. Use both ingredient names, `base_damage` and "
+                                 "`bonus`, one in each blank.",
+                             const_fix="Your line has typed-in numbers, so every call shows the same total. Use "
+                                       "`base_damage` and `bonus` instead.",
                              mode="number", foreign=["mix", "water", "oil"]),
             ],
-            pass_line="Gearshift: 4 plus 3. Seven. Checks out.",
+            pass_line="Both blanks hold ingredient names now. Gearshift: 4 plus 3. Seven. Checks out.",
         ),
     ],
     solution="def show_hit(base_damage, bonus):\n    print(base_damage + bonus)\n\nshow_hit(4, 3)  # should show: 7\n",
@@ -1780,7 +1882,7 @@ FILL_THE_INGREDIENTS = dict(
             text="Blanks take the names on the `def` line, never the numbers.",
         ),
     ],
-    takeaway="Inside a recipe, use the ingredient names. The call brings the numbers.",
+    takeaway="Inside a recipe, use the ingredient names. Each call brings the numbers.",
     wrong_answers=[
         dict(why="a blank left (explainer rule 1, the ___ row)",
              code="def show_hit(base_damage, bonus):\n    print(base_damage + ___)\n\nshow_hit(4, 3)\n",
@@ -1827,18 +1929,20 @@ def _hit(line=HIT_LINE, extra="show_hit(5, 9)\n"):
 _THIRD_HIT = r'''
 _c = _calls_in(_top(), 'show_hit')
 _s = [_a for _x in _c for _a in _x.args if type(_a).__name__ == 'Constant' and type(_a.value).__name__ == 'str']
-assert not _s, ('Hand over numbers, with no quotes. With quotes they are text, and `+` glues text instead of adding.')
+assert not _s, ('Your third call hands over text, because of the quotes, and `+` glues text instead of adding. Hand '
+                'over numbers, with no quotes.')
 '''
 
 USE_THE_INGREDIENTS = dict(
     id="use-the-ingredients",
     title="Use the ingredients",
     martu=(
-        "Inside the recipe, use the ingredient names, never the numbers from one call. The numbers arrive when the "
-        "recipe is called.\n"
-        "Remember the chalk math in Unit 1? Show your working with boxes, not the answer. Same here: "
-        "`base_damage` and `bonus` are the boxes.\n"
-        "Two calls are written for you. One line inside the recipe must work for both."
+        "Inside the recipe, use the ingredient names, never the numbers from one call. The numbers arrive only "
+        "when the recipe is called. It's a formula, like area = length × width: the formula works for any "
+        "rectangle, but the answer 12 works for only one.\n"
+        "In Unit 1 you showed your work with box names, not the answer. Same here: `base_damage + bonus` works for "
+        "every call.\n"
+        "Two calls are written for you. One line inside the recipe must work for both, and for my test calls too."
     ),
     names=["show_hit", "base_damage", "bonus"],
     predict=dict(
@@ -1846,45 +1950,57 @@ USE_THE_INGREDIENTS = dict(
         code="def show_hit(base_damage, bonus):\n    print(4 + 3)\n\nshow_hit(4, 3)\nshow_hit(8, 2)\n",
         choices=["7\n10", "7\n7", "an error"],
         answer=1,
-        explain="`4 + 3` is written in ink: every call shows 7. `base_damage + bonus` would show 7, then 10.",
+        explain=(
+            "`4 + 3` is typed into the recipe, so every call shows 7. `base_damage + bonus` would show 7, then 10."
+        ),
     ),
-    pair_talk="Pair talk: tell your partner why `4 + 3` inside the recipe breaks the second call. Then each of you writes the line.",
+    pair_talk=(
+        "Pair talk: tell your partner why `4 + 3` inside the recipe gives the wrong answer for the second call. Then "
+        "each of you writes the line."
+    ),
     starter=HIT_STARTER,
     checkpoints=[
         dict(
             id="both-totals",
-            text="Finish `show_hit` so both calls show the right total.",
+            text=(
+                "Replace `pass` with a `print` line that adds the two ingredients, `base_damage` and `bonus`. Both "
+                "calls should show the right total: 7, then 10."
+            ),
             dictated=False,
             hints=[
-                "Which names are written inside the brackets on the `def` line? Those are the ingredients.",
-                "If `def add(a, b):`, then `print(a + b)` works for any call: `add(2, 3)` shows 5, and "
-                "`add(10, 1)` shows 11.",
+                "Look at the `def` line. Which names are inside its parentheses? Those are the ingredients.",
+                "In a recipe made with `def add(a, b):`, the line `print(a + b)` works for any call: `add(2, 3)` "
+                "shows 5, and `add(10, 1)` shows 11.",
                 "Write `print(base_damage + bonus)` in place of `pass`, four spaces in.",
             ],
             checks=[
                 prints_check("show_hit adds its ingredients", "show_hit", ["base_damage", "bonus"], HIT_CASES,
-                             fix="Add the two ingredients, `base_damage` and `bonus`, inside the `print`.",
-                             const_fix="A recipe gets its numbers when it is called: use `base_damage` and `bonus`.",
+                             fix="The total is wrong. Add the two ingredients, `base_damage` and `bonus`, inside the "
+                                 "`print`.",
+                             const_fix="Your line has typed-in numbers, so every call shows the same total. Use "
+                                       "`base_damage` and `bonus` instead.",
                              mode="number", foreign=["add", "a", "b", "mix", "water", "oil"]),
             ],
-            pass_line="Gearshift: Seven. Ten. Both check out.",
+            pass_line="One line works for every call. Gearshift: Seven. Ten. Both check out.",
         ),
         dict(
             id="your-own-numbers",
-            text="Add a third call with your own numbers.",
+            text="Add a third call at the bottom, under `show_hit(8, 2)`, with two whole numbers of your own.",
             dictated=False,
             hints=[
-                "Two whole numbers, with a comma between them and no quotes.",
-                "`add(2, 3)` hands over 2 and 3. Any two whole numbers work.",
+                "Look at the two calls at the bottom. How many numbers does each one hand over, and what is between "
+                "them?",
+                "`add(2, 3)` hands over 2 and 3. Any two whole numbers work, with a comma between them and no quotes.",
                 "Write `show_hit(5, 9)` on a new line at the bottom, or any two whole numbers of your own.",
             ],
             checks=[
                 calls_check("show_hit is called three times", "show_hit", 3,
-                            fix="Add a third call at the bottom: `show_hit(`, two numbers of your own, then `)`.",
+                            fix="There are only two calls. Add a third call at the bottom: `show_hit(`, two numbers "
+                                "of your own, then `)`.",
                             example="show_hit(5, 9)"),
                 ("the numbers are numbers", _FN + _THIRD_HIT),
             ],
-            pass_line="Gearshift: New numbers. Visor still checks out.",
+            pass_line="Your own numbers work too. Gearshift: Visor still checks out.",
         ),
     ],
     solution=_hit(),
@@ -1908,7 +2024,7 @@ USE_THE_INGREDIENTS = dict(
             angle="why",
             label="Why does this work? The recipe can't know the numbers yet",
             text=(
-                "When Python reads the `def` line, nobody has called the recipe. There are no numbers yet. "
+                "When Python reads the `def` line, nobody has called the recipe yet, so there are no numbers. "
                 "`show_hit(4, 3)` brings 4 and 3. `show_hit(8, 2)` brings 8 and 2. Type `4 + 3` inside, and the "
                 "second call still shows 7."
             ),
@@ -1917,8 +2033,8 @@ USE_THE_INGREDIENTS = dict(
             angle="everyday",
             label="A fill-in card",
             text=(
-                "The card says: add ____ and ____. You fill the blanks each time you read it. Write 4 and 3 on the "
-                "card in ink, and every reading says 7."
+                "The card says: add ____ and ____. You fill in the blanks each time you read it. Write 4 and 3 on "
+                "the card in pen, and every reading says 7."
             ),
         ),
         dict(
@@ -1931,25 +2047,26 @@ USE_THE_INGREDIENTS = dict(
         ),
         dict(
             angle="from what you know",
-            label="Show your working",
+            label="Show your work",
             text=(
-                "In Unit 1 you wrote `total_cost = lantern_cost + rope_cost`, not 22. A recipe is the same: "
+                "In Unit 1 you wrote `total_cost = lantern_cost + rope_cost`, not 22. A recipe is the same: write "
                 "`base_damage + bonus`, never the answer."
             ),
         ),
         dict(
             angle="in Tor",
             text=(
-                "Gearshift's visor sums every hit the same way: the weapon's damage plus the bonus. It never "
+                "Gearshift's visor adds up every hit the same way: the weapon's damage plus the bonus. It never "
                 "remembers one fight's numbers. It reads the new ones each time."
             ),
         ),
     ],
     bonus=dict(
         by="lucky",
-        title="What's in it for me?",
+        title="Does the hit get past Lucky's armor?",
         text=(
-            "Lucky's armor is 13. Inside `show_hit`, also print whether the total hit reaches it: `True` or `False`."
+            "Lucky's armor is 13. Inside `show_hit`, add a second `print` line that shows whether the total hit "
+            "reaches 13: `True` or `False`."
         ),
         hints=[
             "Reaches means at least 13, so exactly 13 counts. Which sign means at least?",
@@ -1965,7 +2082,7 @@ for _args, _want in (((6, 5), 'False'), ((10, 3), 'True'), ((20, 1), 'True')):
     _v, _rows, _err, _c = _run(_f, _args)
     assert not _err, _why(_f, 'show_hit', _args, _err)
     assert any(_r.split()[-1:] == [_want] for _r in _rows), (
-        'Inside `show_hit`, also print whether the total reaches 13: `True` or `False`.'
+        'No line from `show_hit` ends in `True` or `False` yet. Inside it, also print whether the total reaches 13.'
         + _ev('show_hit', _args, 'no line ended in ' + _want))
 ''',
             ),
@@ -2056,38 +2173,44 @@ _lone = [_n.lineno for _n in _tree.body if type(_n).__name__ == 'Expr' and type(
          and type(_n.value.func).__name__ == 'Name' and _n.value.func.id == 'max_mana_for']
 assert _tops or not _lone, ('Line ' + str(_lone[0]) + ' calls the recipe, but nothing catches what it hands back, so '
                             'it is gone. Put `lucky_max = ` in front of it.')
-assert _tops, 'Store the answer in a box: `lucky_max = max_mana_for(13)`.'
+assert _tops, "Python can't find the box `lucky_max`. Store the answer in it: `lucky_max = max_mana_for(13)`."
 _v = _tops[-1].value
 assert not (type(_v).__name__ == 'Name' and _v.id == 'max_mana_for'), (
-    'Add `()` with Lucky' + chr(39) + 's 13 inside: `lucky_max = max_mana_for(13)`. With no `()`, `lucky_max` holds '
-    'the recipe itself, not what it hands back.')
+    '`lucky_max` holds the recipe itself, because the call has no `()`. Add `()` with Lucky' + chr(39) + 's 13 '
+    'inside: `lucky_max = max_mana_for(13)`.')
 assert type(_v).__name__ == 'Call' and type(_v.func).__name__ == 'Name' and _v.func.id == 'max_mana_for', (
-    'Store what the recipe hands back: `lucky_max = max_mana_for(13)`, not a typed number. Let the recipe do the math.')
+    '`lucky_max` holds a typed-in number, not what the recipe hands back. Store the call instead: '
+    '`lucky_max = max_mana_for(13)`. Let the recipe do the math.')
 _arg = _v.args[0] if len(_v.args) == 1 else None
 assert not (type(_arg).__name__ == 'Constant' and type(_arg.value).__name__ == 'str'), (
-    'Hand over the number 13, with no quotes: `lucky_max = max_mana_for(13)`. With quotes it is text.')
+    'The 13 is in quotes, so the call hands over text. Hand over the number 13, with no quotes: '
+    '`lucky_max = max_mana_for(13)`.')
 # A box that holds 13 (`affinity = 13`, then `max_mana_for(affinity)`) is fine too: what matters is what comes back.
 assert _arg is not None and ((type(_arg).__name__ == 'Constant' and _arg.value == 13)
                              or (type(lucky_max).__name__ == 'int' and lucky_max == 26)), (
-    'Hand over Lucky' + chr(39) + 's affinity, 13: `lucky_max = max_mana_for(13)`.')
-assert lucky_max is not None, ('`lucky_max` holds `None`: `max_mana_for` hands nothing back yet. Keep `return total` '
-                               'at the end of the recipe.')
+    'The call hands over the wrong value. Hand over Lucky' + chr(39) + 's affinity, 13: '
+    '`lucky_max = max_mana_for(13)`.')
+assert lucky_max is not None, ('`lucky_max` holds `None`, because `max_mana_for` hands nothing back. Put '
+                               '`return total` back at the end of the recipe.')
 _pr = [_c for _c in _calls_in(_top(), 'print') if any(type(_x).__name__ == 'Name' and _x.id == 'lucky_max'
                                                       for _x in _ast.walk(_c))]
-assert _pr, 'Then print the box: `print(lucky_max)`.'
-assert any(_re.search(_whole(26), _l) for _l in _lines()), 'Print the box below the line that fills it: `print(lucky_max)`.'
+assert _pr, '`lucky_max` is not printed yet. Show it in the Console: `print(lucky_max)`.'
+assert any(_re.search(_whole(26), _l) for _l in _lines()), (
+    '26 does not show in the Console yet. Print the box below the line that fills it: `print(lucky_max)`.')
 '''
 
 SEND_IT_BACK = dict(
     id="send-it-back",
     title="Send it back",
     martu=(
-        "`print` says the answer out loud to the room. [[return]] writes it on a note and hands it back to the line "
-        "that called.\n"
-        "Catch the note in a box: `lucky_max = max_mana_for(13)`. If nothing catches it, it is gone.\n"
-        "A recipe with no `return` hands back [[None]], Python's word for nothing.\n"
-        "Try it after step 2: delete `return total`, run, and see what `lucky_max` holds. Then put it back. Your "
-        "ticks come back when you do."
+        "[[return]] hands a value back to the line that called the recipe. Think of class: `print` is saying the "
+        "answer out loud, and `return` is writing it on the answer sheet. `return total` hands back what's in "
+        "`total`.\n"
+        "Catch it in a box: `lucky_max = max_mana_for(13)`. The call is replaced by what comes back, the way f(13) "
+        "is replaced by 26 in math. If nothing catches it, it's gone.\n"
+        "A recipe with no `return` hands back [[None]], Python's word for nothing. It is not 0.\n"
+        "Try it if you like, after Step 2 (it's not a step): delete `return total`, press Run, and see what "
+        "`lucky_max` holds. Then put it back, and your ✓ marks come back too."
     ),
     introduces=["node:Return"],
     example="def triple(n):\n    result = n * 3\n    return result\n\nprint(triple(4))\n",
@@ -2108,10 +2231,10 @@ SEND_IT_BACK = dict(
     checkpoints=[
         dict(
             id="hand-back-total",
-            text="Hand back `total` with `return total`.",
+            text="Replace the note `# 1. hand back total` with `return total`. Keep the four spaces in front.",
             dictated=True,
             hints=[
-                "The comment `# 1. hand back total` marks the spot. Which word hands a value back?",
+                "Look at the note `# 1. hand back total`, inside the recipe. Which word hands a value back?",
                 "`return` hands a value back to the line that called:\n```python\ndef double(n):\n"
                 "    return n * 2\n```\n`double(4)` hands back 8.",
                 "Write `return total` on the line after `total = affinity * 2`, four spaces in.",
@@ -2119,47 +2242,62 @@ SEND_IT_BACK = dict(
             checks=[
                 returns_check("max_mana_for hands back the total", "max_mana_for", ["affinity"],
                               [((9,), 18), ((12,), 24)],
-                              fix="Hand back `total`, the box the recipe works out: `return total`.",
-                              const_fix="A recipe gets its numbers when it is called: hand back `total`, worked out "
-                                        "from `affinity`.",
-                              none_fix="Add `return total` as the last line inside the recipe, four spaces in.",
+                              fix="The recipe hands back the wrong value. Hand back `total`, the box it works out: "
+                                  "`return total`.",
+                              const_fix="Your recipe hands back the same number for every call. Hand back `total`, "
+                                        "which is worked out from `affinity`.",
+                              none_fix="Your recipe hands back nothing yet. Add `return total` as its last line, four "
+                                       "spaces in.",
                               foreign=["triple", "n", "result", "double"], box="This recipe's box is `total`."),
             ],
-            pass_line="Mar'tu: The note comes back. Good.",
+            pass_line="Your recipe hands back `total` now. Mar'tu: Good. The answer comes back.",
         ),
         dict(
             id="catch-it",
-            text="Store `max_mana_for(13)` in `lucky_max`, then print `lucky_max`.",
+            text=(
+                "Two moves, at the bottom of your code:\n"
+                "1. Replace the note `# 2. lucky_max = ...` with `lucky_max = max_mana_for(13)`.\n"
+                "2. On the next line, write `print(lucky_max)`. You should see 26 in the Console."
+            ),
             dictated=True,
             hints=[
-                "The call goes on the right of `=`, so the box catches what comes back. Then print the box.",
-                "`x = triple(4)` catches what `triple` hands back: `x` holds 12. Then `print(x)` shows it.",
+                "Look at the note `# 2. lucky_max = ...`. Which side of `=` does the call go on, so the box catches "
+                "what comes back?",
+                "`answer = triple(4)` catches what `triple` hands back, so `answer` holds 12. Then "
+                "`print(answer)` shows it.",
                 "Write `lucky_max = max_mana_for(13)` on a new line at the bottom, then `print(lucky_max)`.",
             ],
             checks=[("lucky_max catches the note", _FN + _LUCKY_MAX)],
-            pass_line="Lucky: 26. That's more than Gearshift. Write that down.",
+            pass_line="The box caught what the recipe handed back. Lucky: 26. That's more than Gearshift.",
         ),
         dict(
             id="max-fuel",
-            text="Write a recipe `max_fuel_for(cells)` that hands back the fuel. Gearshift gets 5 fuel per cell.",
+            text=(
+                "Under the notes that start with `# 3.`, make a recipe named `max_fuel_for` with one ingredient, "
+                "`cells`. It works out the fuel, 5 for each cell, and hands it back with `return`."
+            ),
             dictated=False,
             hints=[
-                "Three lines, like `max_mana_for` above: the `def` line with `cells` and a colon, a line that works "
-                "out the fuel from `cells`, then `return` that box.",
-                "How much fuel for one cell? For `cells` cells?",
+                "Look at `max_mana_for` above. It has three lines: a `def` line, a line that works out a box, and a "
+                "`return` line. Your recipe needs the same three.",
+                "How much fuel does one cell give? Then how much do `cells` cells give? It's a unit rate, like miles "
+                "per hour: 1 cell gives 5 fuel, so 2 cells give 2 times 5.",
                 "`def double(n):` with `return n * 2` inside hands back twice whatever came in.",
                 "Write `def max_fuel_for(cells):` at the `# 3.` mark. Under it, four spaces in, "
                 "`fuel = cells * 5`, then `return fuel`.",
             ],
             checks=[
                 returns_check("max_fuel_for hands back 5 per cell", "max_fuel_for", ["cells"], [((3,), 15), ((7,), 35)],
-                              fix="Gearshift gets 5 fuel per cell: multiply `cells` by 5, and hand that back.",
-                              const_fix="A recipe gets its numbers when it is called: work the fuel out from `cells`.",
+                              fix="The fuel is wrong. Gearshift gets 5 fuel for each cell: multiply `cells` by 5, "
+                                  "and hand that back.",
+                              const_fix="Your recipe hands back the same fuel for every call. Work the fuel out from "
+                                        "`cells`.",
                               foreign=["triple", "n", "result", "double"],
-                              rules=[("_v == _a[0] * 2", "Gearshift gets 5 fuel per cell, not 2: multiply `cells` by 5.")],
+                              rules=[("_v == _a[0] * 2", "Your recipe multiplies by 2. Gearshift gets 5 fuel per "
+                                                         "cell: multiply `cells` by 5.")],
                               kept=False),
             ],
-            pass_line="Gearshift: Fuel math checks out. Visor dims.",
+            pass_line="You wrote a whole recipe that hands back an answer. Gearshift: Fuel math checks out.",
         ),
     ],
     solution=_mana() + FUEL_TRY,
@@ -2177,7 +2315,7 @@ SEND_IT_BACK = dict(
             text=(
                 "```text\nlucky_max = max_mana_for(13)\n    ^             |\n    |    affinity = 13\n"
                 "    |    total = 26\n    +--- return total\n```\n"
-                "The note comes back to the call, and the box on the left catches it."
+                "The answer comes back to the call, and the box on the left catches it."
             ),
         ),
         dict(
@@ -2203,7 +2341,7 @@ SEND_IT_BACK = dict(
             angle="why",
             label="Why does this work? `return` ends the recipe",
             text=(
-                "`return` hands the note back, and the recipe stops there. A line under it, inside the recipe, "
+                "`return` hands the answer back, and the recipe stops there. A line under it, inside the recipe, "
                 "never runs:\n"
                 "```python\ndef double(n):\n    return n * 2\n    print(\"Never shown.\")\n```\n"
                 "`double(4)` hands back 8 and prints nothing."
@@ -2220,14 +2358,23 @@ SEND_IT_BACK = dict(
         dict(
             angle="in Tor",
             text=(
-                "At the Institute, apprentices wrote answers on slips and passed them up. A shouted answer helped "
-                "nobody at the back. A slip could be kept."
+                "At the Institute, apprentices wrote answers on notes and passed them up. A shouted answer helped "
+                "nobody at the back. A note could be kept."
+            ),
+        ),
+        dict(
+            angle="math class",
+            label="From math class",
+            text=(
+                "Think of a function machine. 13 goes in, the rule doubles it, and 26 comes out. `return` is the "
+                "side where the answer comes out. In `lucky_max = max_mana_for(13)`, the call is replaced by 26, "
+                "the way f(13) is replaced by 26."
             ),
         ),
     ],
     bonus=dict(
         by="lucky",
-        title="What's in it for me?",
+        title="A status line for Lucky",
         text=(
             "Lucky wants a status line. Print `Lucky's max mana: ` with `max_mana_for(13)` glued on, using `str()`, "
             "all on one line."
@@ -2241,9 +2388,9 @@ SEND_IT_BACK = dict(
                 "a status line with the call inside str()",
                 _FN + r'''
 assert [_c for _c in _calls_in(_top(), 'str') if _calls_in([_c], 'max_mana_for')], (
-    'Put the call inside `str()`: `str(max_mana_for(13))`, glued to the words with `+`.')
+    'The call is not inside `str()` yet. Put it there, `str(max_mana_for(13))`, and glue it to the words with `+`.')
 assert any('Lucky' in _l and _re.search(_whole(26), _l) for _l in _lines()), (
-    'Print one line with Lucky and his max mana in it, like `Lucky' + chr(39) + 's max mana: 26`.')
+    'No line shows Lucky and his max mana yet. Print one line with both, like `Lucky' + chr(39) + 's max mana: 26`.')
 ''',
             ),
         ],
@@ -2254,11 +2401,14 @@ assert any('Lucky' in _l and _re.search(_whole(26), _l) for _l in _lines()), (
         part="mana-bars",
         snippet="def show_mana(caster):\n    mana_bar = get_mana_bar(caster)",
         why=(
-            "You have seen a box catch a recipe's note. `get_mana_bar(caster)` handed back the bar with `return`, "
-            "and `mana_bar` caught it. Same shape as `lucky_max = max_mana_for(13)`."
+            "You saw a box catch what a recipe handed back. `get_mana_bar(caster)` handed back the bar with "
+            "`return`, and `mana_bar` caught it. It's the same shape as `lucky_max = max_mana_for(13)`."
         ),
     ),
-    takeaway="`return` hands a value back. Catch it: `box = recipe(...)`. No `return` means `None`.",
+    takeaway=(
+        "`return` hands a value back. Catch it in a box: `box = recipe(...)`. A recipe with no `return` hands back "
+        "`None`."
+    ),
     wrong_answers=[
         dict(why="print instead of return (RET; A-07)",
              code=_mana(mana_def="def max_mana_for(affinity):\n    total = affinity * 2\n    print(total)\n"),
@@ -2412,59 +2562,64 @@ NOT_ADDED = "`print(barrier)` shows only what is in `barrier`. It does not add u
 LEDGER_CPS = [
     dict(
         id="lanterns-row",
-        text="Set `lanterns_row` to the number `lanterns` holds in this call.",
+        text=(
+            "Change the 0 in `lanterns_row = 0` to the number that `lanterns` holds during the call "
+            "`ward_strength(3, 4)`."
+        ),
         hints=[
-            "`ward_strength(3, 4)` hands over two numbers. The first one goes in the first ingredient.",
-            "Ingredients fill in order: `mix(2, 9)` puts 2 in the first ingredient and 9 in the second.",
+            "Look at the call `ward_strength(3, 4)` and at the `def` line above it. Which ingredient comes first?",
+            "Ingredients fill in order. `mix(2, 9)` puts 2 in the first one and 9 in the second.",
             "Write `lanterns_row = ` and then the first number inside `ward_strength(3, 4)`.",
         ],
         checks=[row_check("lanterns_row is 3", "lanterns_row", 3, {4: (
-            "The first number handed over fills the first ingredient: `ward_strength(3, 4)` puts 3 in `lanterns`.")},
-            "`ward_strength(3, 4)` hands over 3 first. The first ingredient, `lanterns`, holds it.")],
+            "4 is the second number in `ward_strength(3, 4)`. Ingredients fill in order: the first number goes in "
+            "the first ingredient, `lanterns`.")},
+            "Look at `ward_strength(3, 4)`: the first number handed over goes in the first ingredient, `lanterns`.")],
     ),
     dict(
         id="runes-row",
-        text="Set `runes_row` to the number `runes` holds.",
+        text="Change the 0 in `runes_row = 0` to the number that `runes` holds.",
         hints=[
-            "Which number in `ward_strength(3, 4)` is second?",
-            "Ingredients fill in order: `mix(2, 9)` puts 9 in the second ingredient.",
+            "Look at the call `ward_strength(3, 4)` again. Which number is second, and which ingredient is second?",
+            "Ingredients fill in order. `mix(2, 9)` puts 9 in the second one.",
             "Write `runes_row = ` and then the second number inside `ward_strength(3, 4)`.",
         ],
         checks=[row_check("runes_row is 4", "runes_row", 4, {3: (
-            "The second number fills the second ingredient: `ward_strength(3, 4)` puts 4 in `runes`.")},
-            "`runes` is the second ingredient, so it holds the second number handed over: 4.")],
+            "3 is the first number handed over. The second number goes in the second ingredient, `runes`.")},
+            "`runes` is the second ingredient, so it holds the second number in `ward_strength(3, 4)`.")],
     ),
     dict(
         id="light-row",
-        text="Set `light_row` to the number `light` holds.",
+        text="Change the 0 in `light_row = 0` to the number that `light` holds.",
         hints=[
-            "`light = lanterns * 10`. What is in `lanterns` right now?",
-            "Work out a line from what is IN the boxes: if `cups` holds 2, then `cups * 10` is 20.",
+            "Look at the line `light = lanterns * 10`. What is in `lanterns` during this call?",
+            "Work out a line from what is IN the boxes: if `cups` holds 8, then `cups * 10` is 80.",
             "Write `light_row = ` and then what `lanterns * 10` makes, with your `lanterns_row` number in `lanterns`.",
         ],
         checks=[row_check("light_row is 30", "light_row", 30, {
-            10: "10 is the number written in the recipe. `light` is `lanterns * 10`, and `lanterns` holds 3.",
-            13: "`*` multiplies: `lanterns * 10` is 3 times 10.",
-            3: "`light` is `lanterns * 10`: 3 times 10.",
+            10: "10 is the number written in the recipe. `light` is `lanterns * 10`, so multiply what is in "
+                "`lanterns` by 10.",
+            13: "13 is 3 plus 10. `*` means times, so `lanterns * 10` is 3 times 10.",
+            3: "3 is what `lanterns` holds. `light` is `lanterns * 10`: 3 times 10.",
         }, "Work out `lanterns * 10`, with `lanterns` holding 3.")],
     ),
     dict(
         id="glow-row",
-        text="Set `glow_row` to the number `glow` holds.",
+        text="Change the 0 in `glow_row = 0` to the number that `glow` holds.",
         hints=[
-            "`glow = runes * 5`. What is in `runes` right now?",
-            "If `jars` holds 4, then `jars * 5` is 20.",
+            "Look at the line `glow = runes * 5`. What is in `runes` during this call?",
+            "Work it out from what is IN the box: if `jars` holds 7, then `jars * 5` is 35.",
             "Write `glow_row = ` and then what `runes * 5` makes, with your `runes_row` number in `runes`.",
         ],
         checks=[row_check("glow_row is 20", "glow_row", 20, {
-            5: "5 is the number written in the recipe. `glow` is `runes * 5`, and `runes` holds 4.",
-            9: "`*` multiplies: `runes * 5` is 4 times 5.",
-            15: "`glow` uses `runes`, which holds 4: 4 times 5.",
+            5: "5 is the number written in the recipe. `glow` is `runes * 5`, so multiply what is in `runes` by 5.",
+            9: "9 is 4 plus 5. `*` means times, so `runes * 5` is 4 times 5.",
+            15: "15 is 3 times 5, but `glow` uses `runes`, which holds 4.",
         }, "Work out `runes * 5`, with `runes` holding 4.")],
     ),
     dict(
         id="handed-back-row",
-        text="Set `handed_back_row` to the number the recipe hands back.",
+        text="Change the 0 in `handed_back_row = 0` to the number the recipe hands back.",
         hints=[
             "Look at the `return` line. What is in `light` and `glow` when it runs?",
             "`return light + glow` adds what is IN the two boxes. Your two rows above hold those numbers.",
@@ -2479,32 +2634,32 @@ LEDGER_CPS = [
     ),
     dict(
         id="barrier-row",
-        text="Set `barrier_row` to the number `barrier` holds.",
+        text="Change the 0 in `barrier_row = 0` to the number that `barrier` holds.",
         hints=[
-            "`barrier = ward_strength(3, 4) + 10`. The call part becomes what the recipe handed back.",
-            "If a recipe hands back 8, then `x = recipe() + 1` puts 9 in `x`.",
+            "Look at the line `barrier = ward_strength(3, 4) + 10`. What does the call part become?",
+            "If a recipe hands back 8, then `score = bake() + 1` puts 9 in `score`.",
             "Write `barrier_row = ` and then your `handed_back_row` number plus 10.",
         ],
         checks=[row_check("barrier_row is 60", "barrier_row", 60, {
-            40: "The `barrier` line starts from what the recipe handed back (50), not from `light` or `glow`.",
-            30: "The `barrier` line starts from what the recipe handed back (50), not from `light` or `glow`.",
-            50: "Then add the 10 on the `barrier` line: `ward_strength(3, 4) + 10`.",
+            40: "That starts from `light` or `glow`. The `barrier` line starts from what the recipe handed back, 50.",
+            30: "That starts from `light` or `glow`. The `barrier` line starts from what the recipe handed back, 50.",
+            50: "50 is what the recipe handed back. Then the `barrier` line adds 10: `ward_strength(3, 4) + 10`.",
             25: "Start from what the recipe handed back, 50, then add 10.",
             17: "Start from what the recipe handed back, 50, then add 10.",
         }, "Start from what the recipe handed back, then add the 10 on the `barrier` line.")],
     ),
     dict(
         id="printed-row",
-        text="Set `printed_row` to the number `print(barrier)` shows.",
+        text="Change the 0 in `printed_row = 0` to the number that `print(barrier)` shows.",
         hints=[
-            "`print(barrier)` shows one box. What did you write for `barrier`?",
-            "`print(x)` shows only what is in `x`, nothing more.",
+            "Look at `print(barrier)`. It shows one box. What did you write for `barrier`?",
+            "`print(score)` shows only what is in `score`. It doesn't add up the lines above it.",
             "Write `printed_row = ` and then the same number as your `barrier_row`.",
         ],
         checks=[row_check("printed_row is 60", "printed_row", 60, {
             55: NOT_ADDED, 45: NOT_ADDED, 110: NOT_ADDED, 160: NOT_ADDED, 50: NOT_ADDED + " Use your `barrier` row.",
         }, NOT_ADDED + " Use your `barrier` row.")],
-        pass_line="Mar'tu: Sixty. Python prints exactly that. You traced it before it ran.",
+        pass_line="You traced the whole call before it ran. Mar'tu: Sixty. Python prints exactly that.",
     ),
 ]
 for _cp in LEDGER_CPS:
@@ -2514,12 +2669,13 @@ BE_THE_LEDGER = dict(
     id="be-the-ledger",
     title="Be the ledger",
     martu=(
-        "Be the ledger, yes? Read this spell. You run it in your head, not on the screen.\n"
+        "A *ledger* is a notebook where you write down numbers. Here it is a trace table. Run this program in your "
+        "head, one line at a time, like showing your work in math. Then write down what each box holds:\n"
         "```python\ndef ward_strength(lanterns, runes):\n    light = lanterns * 10\n    glow = runes * 5\n"
         "    return light + glow\n\nbarrier = ward_strength(3, 4) + 10\nprint(barrier)\n```\n"
-        "Fill one row at a time: what each box holds when it runs. Use what is IN the boxes, not the numbers "
-        "written in the recipe.\n"
-        "Fill every row before you look anything up."
+        "Each row in your code is one box. Use what is IN the boxes at that moment, not the numbers written in the "
+        "recipe.\n"
+        "Fill every row before you look anything up. Then press Run to check your rows."
     ),
     names=[name for name, _ in LEDGER_ROWS],
     pair_talk=(
@@ -2558,14 +2714,22 @@ BE_THE_LEDGER = dict(
         ),
         dict(
             angle="everyday",
-            label="A shop till",
+            label="A store receipt",
             text=(
-                "A receipt shows what is in each line, not the price list on the wall. Each row of your ledger is a "
-                "line of the receipt: what that box holds right now."
+                "A receipt shows what each line costs right now, not the price list on the wall. Each row of your "
+                "ledger is a line of the receipt: what that box holds right now."
+            ),
+        ),
+        dict(
+            angle="math class",
+            label="From math class",
+            text=(
+                "It's like showing your work in math: one line per step, and each line uses the answers from the "
+                "lines before it. `light` uses `lanterns`, and the `return` line uses `light` and `glow`."
             ),
         ),
     ],
-    takeaway="Trace a call with what is IN the boxes. What the recipe hands back lands where the call was.",
+    takeaway="Trace a call with what is IN the boxes. What the recipe hands back takes the place of the call.",
     wrong_answers=[
         dict(why="handed back = 15: the constants written in the recipe (A-03, A-04)",
              code=_ledger([3, 4, 30, 20, 15, 0, 0]), fails_at=5, message_contains="10 + 5"),
@@ -2626,52 +2790,66 @@ RIGHT_BOX = dict(
     id="return-the-right-box",
     title="Return the right box",
     martu=(
-        "Two recipes, two slips: one crashes, one is quiet. Read Python's last line first, then mend them one at a "
-        "time."
+        "A recipe can hand back only a box it makes itself. `armor_total` makes `total`, so it hands back `total` "
+        "with `return total`. A box made inside one recipe stays there, like a bowl that belongs to one kitchen.\n"
+        "This code has two [[bug|bugs]]. A loud one makes Python stop with an error. A quiet one runs, but "
+        "`Shield:` shows `None`. Fix them one at a time.\n"
+        "When Python stops, read the box in the Console: its title says what went wrong. Then read *Python's last "
+        "line*, and go to the line number it gives."
     ),
     names=["armor_total", "shield_total", "total"],
     starter=BOXES_STARTER,
     checkpoints=[
         dict(
             id="armor-hands-back-total",
-            text="Fix `armor_total` so it hands back the box it computed.",
+            text=(
+                "In `armor_total`, change `return result` to `return total`, so it hands back the box it makes. You "
+                "should see `Lucky: 13` in the Console."
+            ),
             dictated=True,
             hints=[
-                "Read Python's last line first. Which name does it not know?",
-                "Which box does `armor_total` make on the line above `return`?",
-                "A recipe hands back a box it made:\n```python\ndef trip(n):\n    steps = n * 3\n    return steps\n```",
+                "Read the box in the Console. Its title says what went wrong. Then read Python's last line: which "
+                "name doesn't Python know?",
+                "Look at the line above `return result`. Which box does `armor_total` make there?",
+                "A recipe hands back a box it made. This one makes `steps`, so it hands back `steps`:\n"
+                "```python\ndef trip(n):\n    steps = n * 3\n    return steps\n```",
                 "Write `return total` in place of `return result`, four spaces in.",
             ],
             checks=[
                 returns_check("armor_total hands back its total", "armor_total", ["base", "bonus"],
                               [((6, 5), 11), ((20, 1), 21)],
-                              fix="Hand back the box the recipe made: `return total`.",
-                              const_fix="A recipe gets its numbers when it is called: hand back `total`, worked out "
-                                        "from `base` and `bonus`.",
+                              fix="The recipe hands back the wrong value. Hand back the box it made: `return total`.",
+                              const_fix="Your recipe hands back the same number for every call. Hand back `total`, "
+                                        "which is worked out from `base` and `bonus`.",
                               foreign=["result", "triple", "n", "trip", "steps"], box="This recipe's box is `total`."),
-                ("Lucky: 13 prints", "assert 'Lucky: 13' in _lines(), 'Keep the line that prints `Lucky: 13` at the bottom.'"),
+                ("Lucky: 13 prints", "assert 'Lucky: 13' in _lines(), '`Lucky: 13` does not show in the Console. Keep "
+                                     "the line at the bottom that prints it.'"),
             ],
-            pass_line="Lucky: Thirteen. Shiny.",
+            pass_line="You fixed the loud bug: `armor_total` hands back `total`. Lucky: Thirteen. Shiny.",
         ),
         dict(
             id="shield-hands-back",
-            text="`Shield:` shows `None`. Make `shield_total` hand back its total.",
+            text=(
+                "Make `shield_total` hand back its total. Right now `Shield:` shows `None`, because the recipe has no "
+                "`return` line."
+            ),
             dictated=False,
             hints=[
-                "`shield_total` works out `total`, then stops. Nothing hands it back.",
+                "Look at `shield_total`. It works out `total`. Which line would hand it back?",
                 "No `return` line means the recipe hands back `None`. One line fixes it.",
                 "Write `return total` as the last line of `shield_total`, four spaces in.",
             ],
             checks=[
                 returns_check("shield_total hands back its total", "shield_total", ["base", "bonus"],
                               [((6, 5), 11), ((20, 1), 21)],
-                              fix="Hand back the box the recipe made: `return total`.",
-                              none_fix="`shield_total` has no `return` line, so it hands back `None`. Hand back its "
-                                       "total.",
+                              fix="The recipe hands back the wrong value. Hand back the box it made: `return total`.",
+                              none_fix="`shield_total` has no `return` line, so it hands back `None`. Add a line that "
+                                       "hands back its total.",
                               foreign=["result", "triple", "n", "trip", "steps"], box="This recipe's box is `total`."),
-                ("Shield: 3 prints", "assert 'Shield: 3' in _lines(), 'Keep the line that prints `Shield: 3` at the bottom.'"),
+                ("Shield: 3 prints", "assert 'Shield: 3' in _lines(), '`Shield: 3` does not show in the Console. Keep "
+                                     "the line at the bottom that prints it.'"),
             ],
-            pass_line="Bomb Shell: Shield up. Three.",
+            pass_line="You fixed the quiet bug too. Bomb Shell: Shield up. Three.",
         ),
     ],
     solution=BOXES_SOLUTION,
@@ -2701,23 +2879,24 @@ RIGHT_BOX = dict(
             label="The wrong bowl",
             text=(
                 "You cook soup in the blue bowl, then hand over the red bowl from yesterday's kitchen. It isn't here. "
-                "Hand over the bowl you just filled."
+                "Hand over the bowl you filled."
             ),
         ),
         dict(
             angle="step-by-step",
             text=(
-                "1. Read the message: `name 'result' is not defined`.\n"
+                "1. Read the box in the Console. Python's last line, `name 'result' is not defined`, says Python "
+                "doesn't know `result`.\n"
                 "2. Find the box the recipe makes: `total = base + bonus`.\n"
                 "3. Hand that one back: `return total`.\n"
-                "4. Run. `Shield: None` means the second recipe has no `return`. Add one."
+                "4. Press Run. `Shield: None` means the second recipe has no `return`. Add one."
             ),
         ),
         dict(angle="shorter", text="Hand back the box you made. No `return` means `None`."),
     ],
     bonus=dict(
         by="lucky",
-        title="What's in it for me?",
+        title="Is Lucky's armor better than 12?",
         text="Is Lucky's armor better than 12? Print the answer, `True` or `False`, using `armor_total(10, 3)`.",
         hints=[
             "A comparison gives `True` or `False`: `>` means more than.",
@@ -2728,8 +2907,9 @@ RIGHT_BOX = dict(
                 "prints whether the armor beats 12",
                 _FN + r'''
 _cmp = [_n for _n in _ast.walk(_tree) if type(_n).__name__ == 'Compare' and _calls_in([_n], 'armor_total')]
-assert _cmp, 'Compare the total with 12: `armor_total(10, 3) > 12`, inside a `print`.'
-assert any(_l.split()[-1:] == ['True'] for _l in _lines()), 'Print the answer: `print(armor_total(10, 3) > 12)`.'
+assert _cmp, 'No line compares the total with 12 yet. Write `armor_total(10, 3) > 12` inside a `print`.'
+assert any(_l.split()[-1:] == ['True'] for _l in _lines()), (
+    '`True` does not show in the Console yet. Print the answer: `print(armor_total(10, 3) > 12)`.')
 ''',
             ),
         ],
@@ -2813,15 +2993,17 @@ _attrs = set(_n.attr for _n in _ast.walk(_defs()['get_greeting']) if type(_n).__
 _v, _rows, _err, _c = _run(_f, ())
 assert not _err, _why(_f, 'get_greeting', (), _err)
 assert not (type(_v).__name__ == 'str' and not _v.strip()), (
-    'Put some words between the quotes on the `line = ` line: a greeting for Lucky. Any words work.')
+    'The quotes on the `line = ` line are empty. Put a greeting for Lucky between the quotes. Any words work.')
 assert type(_v).__name__ == 'str', (
-    'Keep `return line` at the end of `get_greeting()`, so it hands back the greeting as text.')
+    '`get_greeting()` does not hand back text. Keep `return line` at the end of it.')
 assert _v.strip().rstrip('.!?').lower() != 'welcome to the cabin', (
-    'Change the words inside the quotes on the `line = ` line to a greeting of your own for Lucky. Any words work.')
+    'The greeting is still the one from the start. Change the words inside the quotes on the `line = ` line. Any '
+    'words work.')
 assert 'lower' in _attrs and 'capitalize' in _attrs, (
-    'Keep the two tidy lines: `line = line.lower()`, then `line = line.capitalize()`.')
+    'A tidy line is missing. Keep both: `line = line.lower()`, then `line = line.capitalize()`.')
 assert _v == _v.lower().capitalize(), (
-    'Keep the tidy lines in order, each stored back in `line`: `.lower()` first, then `.capitalize()`.')
+    'The greeting is not tidied. Keep the tidy lines in order, each one stored back in `line`: `.lower()` first, '
+    'then `.capitalize()`.')
 '''
 
 _STORED = r'''
@@ -2845,31 +3027,33 @@ _direct = [_c for _c in _calls_in([_d], 'show_on_ley_board') if any(_helper(_a) 
 _only_pass = all(type(_s).__name__ in ('Pass', 'Expr') and (type(_s).__name__ == 'Pass' or
                  type(_s.value).__name__ == 'Constant') for _s in _d.body)
 if not _stored:
-    assert not _outside, 'Put the store line inside `present_greeting()`, indented four spaces, where `pass` was.'
-    assert not _direct, ('Store the line in a variable first, as the campaign asks: `greeting = get_greeting()`. '
-                         'Then pass that variable on.')
+    assert not _outside, ('Your store line is outside the recipe, with no spaces in front. Put it inside '
+                          '`present_greeting()`, four spaces in, where `pass` was.')
+    assert not _direct, ('Your code hands `get_greeting()` straight to the board, with no box in between. Store it in '
+                         'a variable first: `greeting = get_greeting()`.')
     assert not _only_pass, ('`present_greeting()` still only says `pass`. Replace it with a line that stores the result '
                             'of `get_greeting()` in a variable.')
-    assert False, 'Inside `present_greeting()`, store the result of `get_greeting()` in a variable: `greeting = get_greeting()`.'
+    assert False, ('Nothing inside `present_greeting()` stores the greeting yet. Store the result of `get_greeting()` '
+                   'in a variable: `greeting = get_greeting()`.')
 '''
 
 _PASS_ON = _STORED + r'''
 _G = _fs.__globals__
 _board = _G['_board']
-_evp = " (Mar'tu's check called `present_greeting()`, only inside the check: "
+_evp = " Mar'tu tested your recipe with a test call, `present_greeting()`: "
 _at = len(_board)
 _v, _rows, _err, _c = _run(_fs, ())
 assert not _err, _why(_fs, 'present_greeting', (), _err)
 _shown = _board[_at:]
-assert _shown, ('Pass that variable to the board: `show_on_ley_board(greeting)`, indented under the store line.'
-                + _evp + 'the board showed nothing.)')
-assert type(_shown[0]).__name__ != 'function', ('The board showed a recipe, not its words: add `()` to call it, '
-                                                '`get_greeting()`.' + _evp + 'the board showed the function '
-                                                '`get_greeting` itself.)')
+assert _shown, ('Nothing shows on the board yet. Pass the variable to it: `show_on_ley_board(greeting)`, four spaces '
+                'in, under the store line.' + _evp + 'the board showed nothing.')
+assert type(_shown[0]).__name__ != 'function', ('The board shows the recipe itself, not its words, because '
+                                                '`get_greeting` has no `()`. Add `()` to call it: `get_greeting()`.'
+                                                + _evp + 'the board showed the recipe itself.')
 _real = _G['get_greeting']
 _want, _r2, _e2, _c2 = _run(_real, ())
-assert _shown[0] == _want, ('Pass the variable that holds the greeting, so the board shows what `get_greeting()` '
-                            'hands back.' + _evp + 'the board showed other words.)')
+assert _shown[0] == _want, ('The board shows words that are not your greeting. Pass the variable that holds it: '
+                            '`show_on_ley_board(greeting)`.' + _evp + 'the board showed other words.')
 _G['get_greeting'] = lambda: 'A grumpy moth says hello.'
 try:
     _at2 = len(_board)
@@ -2878,26 +3062,28 @@ finally:
     _G['get_greeting'] = _real
 _shown2 = _board[_at2:]
 assert _shown2 and _shown2[0] == 'A grumpy moth says hello.', (
-    "Pass the variable, not typed words, so the board shows whatever `get_greeting()` hands back. (Mar'tu's check "
-    'made `get_greeting()` hand back another line, only inside the check: the board did not show it.)')
+    "Your board line has typed-in words, so it can't change. Pass the variable instead. Mar'tu tested it by making "
+    "`get_greeting()` hand back another line, and the board did not show it.")
 _args = [_a for _c in _calls_in([_d], 'show_on_ley_board') for _a in _c.args]
 _late = [_a for _a in _args if type(_a).__name__ == 'Call' and type(_a.func).__name__ == 'Name' and _a.func.id in _stored]
-assert not _late, ('Store what `get_greeting()` hands back, with `()` on the store line: `greeting = get_greeting()`. '
-                   'Then pass the variable as it is: `show_on_ley_board(greeting)`.')
+assert not _late, ('`greeting` holds the recipe itself, because the store line has no `()`. Store what it hands back, '
+                   'with `()` on the store line: `greeting = get_greeting()`. Then pass `greeting` as it is.')
 assert any(type(_a).__name__ == 'Name' and _a.id in _stored for _a in _args), (
-    'Pass the variable itself: `show_on_ley_board(greeting)`. Your line calls `get_greeting()` again instead.')
+    'Your board line calls `get_greeting()` again, instead of using the variable. Pass the variable itself: '
+    '`show_on_ley_board(greeting)`.')
 '''
 
 STORE_THEN_PASS = dict(
     id="store-then-pass",
     title="Store, then pass it on",
     martu=(
-        "`get_greeting()` hands back a line. Look how it tidies the line: `.lower()` makes every letter small, then "
-        "[[.capitalize()]] makes the first letter big.\n"
-        "`present_greeting()` must store that line in a variable (a box), then pass the variable on to the Ley "
-        "board.\n"
-        "Three moves: call the helper, store what it hands back, pass it on. You did this in Module 1, yes? Now you "
-        "see why it works."
+        "You can store what one recipe hands back in a box (a variable), then hand that box to another recipe. "
+        "It's like a note in class: you catch it, then pass it on. `greeting = get_greeting()` catches the line, "
+        "and `show_on_ley_board(greeting)` passes it on.\n"
+        "`get_greeting()` also tidies its line. `.lower()` makes every letter small, then [[.capitalize()]] makes "
+        "only the first letter big, like Format, then Capitalization, in Google Docs.\n"
+        "You did these three moves in Module 1, yes? Call the helper, store what it hands back, pass it on. Now "
+        "you'll see why they work."
     ),
     introduces=["attr:capitalize"],
     setup=BOARD_SETUP,
@@ -2925,10 +3111,13 @@ STORE_THEN_PASS = dict(
     checkpoints=[
         dict(
             id="your-greeting",
-            text="Change the words inside the quotes to a greeting Mar'tu gives Lucky.",
+            text=(
+                "In `get_greeting()`, change the words between the quotes to a greeting for Lucky. Any words work. "
+                "Keep the quotes."
+            ),
             dictated=False,
             hints=[
-                "Look at the first line inside `get_greeting()`: the words in quotes are the greeting. The next two "
+                "Look at the first line inside `get_greeting()`. The words in quotes are the greeting. The next two "
                 "lines tidy them.",
                 "Any words work, even shouting. `.lower()` then `.capitalize()` would turn `\"SIT DOWN, LUCKY.\"` "
                 "into `Sit down, lucky.`",
@@ -2936,14 +3125,17 @@ STORE_THEN_PASS = dict(
                 "`line = \"WELCOME BACK, LUCKY. WIPE YOUR BOOTS.\"`, or words of your own.",
             ],
             checks=[("get_greeting hands back your tidy greeting", _FN + _GREETING)],
-            pass_line="Mar'tu: Lucky pretends he didn't like that.",
+            pass_line="Your greeting comes back tidy. Mar'tu: Lucky pretends he didn't like that.",
         ),
         dict(
             id="store-the-greeting",
-            text="Finish `present_greeting()`: store the result of `get_greeting()` in a variable.",
+            text=(
+                "In `present_greeting()`, replace `pass` with `greeting = get_greeting()`. This stores the result of "
+                "`get_greeting()` in a variable named `greeting`."
+            ),
             dictated=True,
             hints=[
-                "Which recipe hands back the line? Call it on the right of `=`, with `()`.",
+                "Look at `pass` inside `present_greeting()`. Which recipe hands back the greeting?",
                 "`note = get_note()` catches what `get_note` hands back, and keeps it in `note`.",
                 "Write `greeting = get_greeting()` in place of `pass`, four spaces in.",
             ],
@@ -2951,15 +3143,18 @@ STORE_THEN_PASS = dict(
         ),
         dict(
             id="pass-it-on",
-            text="Pass that variable to `show_on_ley_board()`.",
+            text=(
+                "Under `greeting = get_greeting()`, write `show_on_ley_board(greeting)`, four spaces in. This passes "
+                "the variable to the Ley board, so the Console shows `[Ley board]` and your greeting."
+            ),
             dictated=True,
             hints=[
-                "Which box holds the greeting now? Hand that box to the board.",
+                "Look at your store line. Which box holds the greeting now?",
                 "A box can be handed to a recipe: `read_aloud(note)` hands over what `note` holds.",
                 "Write `show_on_ley_board(greeting)` under the store line, four spaces in.",
             ],
             checks=[("the board shows the stored greeting", _FN + _PASS_ON)],
-            pass_line="Lucky: I'm on a board. Finally, some respect.",
+            pass_line="Stored, then passed on, like the dialogue line in Module 1. Lucky: I'm on a board. Finally.",
         ),
     ],
     solution=GREET_SOLUTION,
@@ -2998,16 +3193,16 @@ STORE_THEN_PASS = dict(
         ),
         dict(
             angle="everyday",
-            label="Collect a parcel",
+            label="Pick up a package",
             text=(
-                "Collect the parcel at the door and hold it. Then hand it to the person who needs it. You don't "
+                "Pick up the package at the door and hold it. Then hand it to the person who needs it. You don't "
                 "hand them the door."
             ),
         ),
     ],
     bonus=dict(
         by="lucky",
-        title="What's in it for me?",
+        title="Add a goodbye",
         text=(
             "Lucky wants a goodbye too. Add `get_farewell()` with its own tidied line. Make `present_greeting()` "
             "show the greeting first, then the farewell."
@@ -3026,18 +3221,19 @@ assert _ff, _m
 _fv, _r, _e, _c = _run(_ff, ())
 assert not _e, _why(_ff, 'get_farewell', (), _e)
 assert type(_fv).__name__ == 'str' and _fv.strip() and _fv == _fv.lower().capitalize(), (
-    'Make `get_farewell()` hand back a tidied line, like `get_greeting()`: `.lower()`, then `.capitalize()`.')
+    '`get_farewell()` does not hand back a tidy line yet. Tidy it like `get_greeting()`: `.lower()`, then '
+    '`.capitalize()`.')
 _fs, _m = _find('present_greeting', True)
 assert _fs, _m
 _gv, _r, _e, _c = _run(_fs.__globals__['get_greeting'], ())
-assert _fv != _gv, 'Give the farewell its own words, different from the greeting.'
+assert _fv != _gv, 'The farewell has the same words as the greeting. Give it words of its own.'
 _board = _fs.__globals__['_board']
 _at = len(_board)
 _v, _rows, _err, _c = _run(_fs, ())
 assert not _err, _why(_fs, 'present_greeting', (), _err)
 assert _board[_at:] == [_gv, _fv], (
-    'Make `present_greeting()` show the greeting first, then the farewell: store each one, then pass each to '
-    '`show_on_ley_board()`.')
+    'The board should show the greeting first, then the farewell. In `present_greeting()`, store each one, then '
+    'pass each one to `show_on_ley_board()`.')
 ''',
             ),
         ],
@@ -3056,9 +3252,9 @@ assert _board[_at:] == [_gv, _fv], (
         part="program-dialogue-prompt",
         snippet="def present_dialogue_option():\n    dialogue = get_dialogue_prompt_string()\n    print_prompt(dialogue)",
         why=(
-            "You have seen this in Module 1. `get_dialogue_prompt_string()` handed back Mar'tu's line. "
+            "You saw this in Module 1. `get_dialogue_prompt_string()` handed back Mar'tu's line. "
             "`present_dialogue_option()` stored it in a variable, then passed that variable to `print_prompt()`. "
-            "Same three moves today."
+            "Today you make the same three moves."
         ),
     ),
     takeaway="Call the helper, store what it hands back, pass the variable on. `.lower()` then `.capitalize()` tidies text.",
@@ -3084,7 +3280,7 @@ assert _board[_at:] == [_gv, _fv], (
              fails_at=3, message_contains="another line"),
         dict(why="no () on the helper: the recipe itself stored and passed (CALL)",
              code=_greet(words=GREETING_PICK, present="    greeting = get_greeting\n" + PASS_ON), fails_at=3,
-             message_contains="function"),
+             message_contains="recipe itself"),
         dict(why="stored but never passed", code=_greet(words=GREETING_PICK, present=STORE), fails_at=3,
              message_contains="nothing"),
         dict(why="stored, then the helper called again in the board call (the variable not passed)",
@@ -3140,18 +3336,22 @@ _asg = [_n for _n in _ast.walk(_fn) if type(_n).__name__ == 'Assign' and len(_n.
         and type(_n.targets[0]).__name__ == 'Name' and _n.targets[0].id == 'needed']
 _outer = [_n for _n in _tree.body if type(_n).__name__ == 'Assign' and any(type(_t).__name__ == 'Name'
           and _t.id == 'needed' for _t in _n.targets)]
-assert _asg or not _outer, ('Set `needed` inside `' + __NAME__ + '`, indented under its `def` line, where the '
-                            'starter has it.')
-assert _asg, 'Keep the line `needed = 0` inside `' + __NAME__ + '`, and change the 0.'
+assert _asg or not _outer, ('Your `needed` line is outside the recipe. Put it back inside `' + __NAME__ + '`, four '
+                            'spaces in, where it was at the start.')
+assert _asg, ("Python can't find the line `needed = ...` inside `" + __NAME__ + '`. Put `needed = 0` back inside it, '
+              'then change the 0.')
 _val = _asg[-1].value
-assert type(_val).__name__ == 'Constant', 'Set `needed` to a plain number from 2 to 20, like `needed = 12`.'
+assert type(_val).__name__ == 'Constant', ('`needed` should hold one plain number. Change it to a whole number from '
+                                           '2 to 20, like `needed = 12`.')
 _N = _val.value
-assert type(_N).__name__ != 'str', 'Numbers don' + chr(39) + 't need quotes: `needed = 12`, not `needed = "12"`.'
-assert type(_N).__name__ == 'int', 'Set `needed` to a whole number from 2 to 20.'
-assert _N != 0, ('`needed` still holds the starter' + chr(39) + 's `0`. Pick how hard prying the door is: a number '
-                 'from 2 to 20.')
-assert 2 <= _N <= 20, ('A d20 rolls 1 to 20, so pick `needed` from 2 to 20. '
-                       + ('Above 20 could never pass.' if _N > 20 else 'Below 2 always passes.'))
+assert type(_N).__name__ != 'str', ('`needed` holds text, because of the quotes. Numbers get no quotes: write '
+                                    '`needed = 12`, not `needed = "12"`.')
+assert type(_N).__name__ == 'int', '`needed` is not a whole number. Change it to a whole number from 2 to 20.'
+assert _N != 0, ('`needed` still holds the placeholder `0`, the number that was there at the start. Pick how hard '
+                 'prying the door is: a number from 2 to 20.')
+assert 2 <= _N <= 20, ('`needed` is ' + ('above 20, so no roll could ever pass.' if _N > 20 else
+                                         'below 2, so every roll would pass.')
+                       + ' A d20 rolls 1 to 20: pick `needed` from 2 to 20.')
 '''
 
 _BND = r'''
@@ -3163,36 +3363,38 @@ _asg = [_n for _n in _ast.walk(_fn) if type(_n).__name__ == 'Assign' and len(_n.
         and type(_n.targets[0]).__name__ == 'Name' and _n.targets[0].id == 'needed'] if _fn else []
 _N = _asg[-1].value.value if _asg and type(_asg[-1].value).__name__ == 'Constant' else None
 assert type(_N).__name__ == 'int' and 2 <= _N <= 20, (
-    'First set `needed` inside `' + _name + '` to a whole number from 2 to 20.')
-assert len(_params(_f)) == 1, '`' + _name + '` takes one ingredient, `roll`: keep `def ' + _name + '(roll):`.'
+    '`needed` is not set yet. First set `needed` inside `' + _name + '` to a whole number from 2 to 20.')
+assert len(_params(_f)) == 1, ('`' + _name + '` should take one ingredient, `roll`. Make its `def` line `def ' + _name
+                               + '(roll):`.')
 _rev = [1 for _n in _ast.walk(_fn) if type(_n).__name__ == 'Compare' and len(_n.ops) == 1
         and (getattr(_n.left, 'id', ''), type(_n.ops[0]).__name__, getattr(_n.comparators[0], 'id', ''))
         in (('needed', 'GtE', 'roll'), ('roll', 'LtE', 'needed'))]
 _msg = ''
 for _r in [_x for _x in (_N - 1, _N, _N + 1, 1, 20) if 1 <= _x <= 20]:
     _v, _rows, _err, _c = _run(_f, (_r,))
-    _with = (" (Mar'tu's check called `" + _name + '(' + str(_r) + ')` with `needed = ' + str(_N)
-             + '`, only inside the check: ')
+    _with = (" Mar'tu tested it with a test roll, `" + _name + '(' + str(_r) + ')`, and `needed = ' + str(_N)
+             + '`: ')
     if _err:
         _msg = _why(_f, _name, (_r,), _err)
     elif _v is None:
-        _msg = (('Hand the answer back with `return`. `print` only shows it on the screen.' + _with
-                 + 'it printed a line but handed back `None`.)') if _rows else
-                ('End the recipe with a `return` line that hands back `True` or `False`.' + _with
-                 + 'it handed back `None`.)'))
+        _msg = (("Your recipe shows the answer with `print`, but doesn't hand it back. Hand it back with `return` "
+                 'instead.' + _with + 'it printed a line and handed back `None`.') if _rows else
+                ('Your recipe hands back nothing for this roll. End it with a `return` line that hands back `True` '
+                 'or `False`.' + _with + 'it handed back `None`.'))
     elif type(_v).__name__ != 'bool':
-        _msg = ('Hand back `True` or `False`: return the comparison itself, `roll >= needed`.' + _with
-                + 'it handed back something that is not True or False.)')
+        _msg = ('Your recipe hands back something that is not `True` or `False`. Hand back the comparison itself: '
+                '`roll >= needed`.' + _with + 'it handed back something that is not True or False.')
     elif _v != (_r >= _N):
         if _rev:
-            _msg = 'Your sign faces the wrong way: it asks *at most*. *At least* is `roll >= needed`.'
+            _msg = 'Your sign faces the wrong way, so it asks *at most*. Use *at least*: `roll >= needed`.'
         elif _r == _N:
-            _msg = 'Exactly enough should pass: use `>=`, at least.'
+            _msg = 'A roll of exactly `needed` fails, but exactly enough should pass. Use `>=`, which means at least.'
         elif _r < _N:
-            _msg = 'One short should fail. Make the answer depend on the roll: `roll >= needed`.'
+            _msg = ('A roll one short of `needed` passes, but it should fail. Make the answer depend on the roll: '
+                    '`roll >= needed`.')
         else:
-            _msg = 'A roll above `needed` should pass: `roll >= needed`.'
-        _msg += _with + 'it handed back `' + str(_v) + '`.)'
+            _msg = 'A roll above `needed` fails, but it should pass. Use `roll >= needed`.'
+        _msg += _with + 'it handed back `' + str(_v) + '`.'
     if _msg:
         break
 if not _msg:
@@ -3213,11 +3415,13 @@ if not _msg:
     for _r, _want in ((_M - 1, False), (_M, True), (_M + 1, True)):
         _v, _rows, _err, _c = _run(_ns2[_name], (_r,))
         if _err or _v != _want:
-            _lead = ('A roll above `needed` should pass too: use `>=`, at least.' if _r == _M + 1 and not _err
-                     else 'Compare with the box: `roll >= needed`, not a typed number.')
-            _msg = (_lead + " (Mar'tu's check changed "
-                    '`needed` to ' + str(_M) + ' and called `' + _name + '(' + str(_r) + ')`, only inside the check: '
-                    'it handed back ' + ('an error' if _err else '`' + str(_v) + '`') + '.)')
+            _lead = ('A roll above `needed` fails, but it should pass too. Use `>=`, which means at least.'
+                     if _r == _M + 1 and not _err else
+                     'Your comparison uses a typed-in number, so it does not change when `needed` changes. Compare '
+                     'with the box: `roll >= needed`.')
+            _msg = (_lead + " Mar'tu tested it with a test number, `needed = " + str(_M) + '`, and a test roll, `'
+                    + _name + '(' + str(_r) + ')`: it handed back ' + ('an error' if _err else '`' + str(_v) + '`')
+                    + '.')
             break
 _rs = _resets(_name)
 assert not (_msg and _rs), _rs
@@ -3253,11 +3457,12 @@ RETURN_A_COMPARISON = dict(
     id="return-a-comparison",
     title="Return a comparison",
     martu=(
-        "A skill check hands back `True` or `False`. The Example shows two ways to write one: an `if` that returns "
-        "`True` or `False`, and one short line.\n"
-        "`roll >= needed` is already a question with a True or False answer. So you can hand back the answer "
-        "itself: `return roll >= needed`.\n"
-        "Follow the numbered comments, one per step."
+        "A comparison like `roll >= needed` is a yes-or-no question, and Python answers it with `True` or `False`. "
+        "So a recipe can hand back the answer itself: `return roll >= needed`. It's like checking an inequality in "
+        "math: is 15 ≥ 12? True. `>=` means *at least*, like a filled dot on a number line.\n"
+        "The Example shows two ways to write a skill check: an `if` that hands back `True` or `False`, and one "
+        "short line. They give the same answer.\n"
+        "Follow the numbered notes in your code, one per step."
     ),
     example=SPOT_EXAMPLE,
     example_output="True\nTrue",
@@ -3284,28 +3489,36 @@ RETURN_A_COMPARISON = dict(
     checkpoints=[
         dict(
             id="set-needed",
-            text="Set `needed` to how hard prying the door should be, from 2 to 20.",
+            text=(
+                "Change the 0 in `needed = 0` to how hard prying the door open should be: any whole number from 2 "
+                "to 20."
+            ),
             dictated=True,
             hints=[
-                "A d20 rolls 1 to 20. Easy is low, hard is high. Any number from 2 to 20 works.",
+                "Look at the line `needed = 0`, under the note `# 1.`. A d20 (a die with 20 sides) rolls 1 to 20. A "
+                "low number lets more rolls pass. A high number lets fewer pass.",
                 "A box gets a number with `name = value`, no quotes: `target = 14`.",
                 "Write `needed = 12` in place of `needed = 0`, or any number from 2 to 20.",
             ],
             checks=[needed_check()],
-            pass_line="Bomb Shell: That latch hates me.",
+            pass_line="`needed` is set. Bomb Shell: That latch hates me.",
         ),
         dict(
             id="return-the-comparison",
-            text="Replace `return False` with `return roll >= needed`.",
+            text=(
+                "Replace `return False` with `return roll >= needed`. Then a roll of at least `needed` gives `True`, "
+                "and a lower roll gives `False`."
+            ),
             dictated=True,
             hints=[
-                "What should a roll of exactly `needed` give? Exactly enough passes.",
+                "Look at `return False`, under the note `# 2.`. Right now every roll fails. What should a roll of "
+                "exactly `needed` give?",
                 "These two do the same job:\n```python\nif roll >= target:\n    return True\nelse:\n"
                 "    return False\n```\nand `return roll >= target`. The comparison is already `True` or `False`.",
                 "Write `return roll >= needed` in place of `return False`.",
             ],
             checks=[bnd_check("the check passes from needed up")],
-            pass_line="Bomb Shell: It opens. Finally.",
+            pass_line="Your check hands back the answer to the question. Bomb Shell: It opens. Finally.",
         ),
     ],
     solution=STRENGTH_SOLUTION,
@@ -3328,8 +3541,8 @@ RETURN_A_COMPARISON = dict(
             label="The two forms are the same",
             text=(
                 "1. `roll >= needed` is a question. Python answers it: `True` or `False`.\n"
-                "2. The long form asks it in an `if`, then hands back `True` or `False` by hand.\n"
-                "3. The short form hands back the answer straight away. Same result, one line."
+                "2. The long form asks it in an `if`, then hands back `True` or `False` itself.\n"
+                "3. The short form hands back Python's answer straight away. Same result, one line."
             ),
         ),
         dict(
@@ -3338,13 +3551,21 @@ RETURN_A_COMPARISON = dict(
             text="```text\n1 ... needed-1 | needed ... 20\n     False     |     True\n```",
         ),
         dict(angle="shorter", text="`return roll >= needed`. Exactly enough passes."),
+        dict(
+            angle="math class",
+            label="From math class",
+            text=(
+                "In math, you check an inequality by putting in a number. Is 15 ≥ 12? True. Is 11 ≥ 12? False. "
+                "`roll >= needed` is the same check, and `return` hands back Python's true-or-false answer."
+            ),
+        ),
     ],
     bonus=dict(
         by="lucky",
-        title="What's in it for me?",
+        title="A second check for Lucky",
         text=(
-            "Lucky tries the latch with a shim. Write `dexterity_check(roll)` with its own `needed`. Then print both "
-            "checks for a roll of 12."
+            "Lucky tries the latch with a shim, a thin strip of metal. Write `dexterity_check(roll)` with its own "
+            "`needed`. Then print both checks for a roll of 12."
         ),
         hints=[
             "Same shape as `strength_check`, with its own `needed`. Then print both checks for a roll of 12.",
@@ -3359,7 +3580,7 @@ RETURN_A_COMPARISON = dict(
 for _n in ('strength_check', 'dexterity_check'):
     _ok = [_c for _c in _calls_in(_top(), 'print') for _x in _calls_in([_c], _n)
            if len(_x.args) == 1 and type(_x.args[0]).__name__ == 'Constant' and _x.args[0].value == 12]
-    assert _ok, 'Print both checks for a roll of 12: `print(' + _n + '(12))`.'
+    assert _ok, 'A check for a roll of 12 is not printed yet. Add `print(' + _n + '(12))` at the bottom.'
 ''',
             ),
         ],
@@ -3376,7 +3597,7 @@ for _n in ('strength_check', 'dexterity_check'):
         part="skill-checks",
         snippet="def strength_check(roll):\n    required_roll = 12\n    return roll >= required_roll",
         why=(
-            "You have seen this at the trap door. Each check set how hard it was, then handed back the answer to "
+            "You saw this at the trap door. Each check set how hard it was, then handed back the answer to "
             "`roll >= required_roll`. Now you know why that one line was enough."
         ),
     ),
@@ -3384,7 +3605,7 @@ for _n in ('strength_check', 'dexterity_check'):
     wrong_answers=[
         dict(why="needed = 25 (no d20 roll can pass)", code=_strength(needed="25"), fails_at=1,
              message_contains="from 2 to 20"),
-        dict(why="needed left at 0", code=_strength(needed="0"), fails_at=1, message_contains="starter"),
+        dict(why="needed left at 0", code=_strength(needed="0"), fails_at=1, message_contains="placeholder"),
         dict(why="needed in quotes (the try line stops with a TypeError; the explainer's text-vs-number row)",
              code=_strength(needed='"12"'), fails_at=0, message_contains="'>=' not supported"),
         dict(why="needed in quotes, with the try line removed (the check names the quotes)",
@@ -3448,35 +3669,41 @@ ROLL_STARTER = _roll(ret="return 1")
 _RND = r'''
 _f, _m = _find('roll_die', True)
 assert _f, _m
-assert len(_params(_f)) == 1, '`roll_die` takes one ingredient, `die_size`: keep `def roll_die(die_size):`.'
+assert len(_params(_f)) == 1, ('`roll_die` should take one ingredient. Put its `def` line back the way it was: '
+                               '`def roll_die(die_size):`.')
 _g = _gamed('roll_die', [6, 20, 12])
 assert not _g, _g
 _msg = ''
 for _faces, _roll in ((6, 4), (20, 17), (12, 9)):
     _v, _rows, _err, _calls = _run(_f, (_faces,), [_roll])
-    _evd = (" (Mar'tu's check called `roll_die(" + str(_faces) + ")` with a pretend die that always lands on "
-            + str(_roll) + ', only inside the check: ')
+    _evd = (" Mar'tu tested it with a test call, `roll_die(" + str(_faces) + ")`, and a pretend die that lands on "
+            + str(_roll) + ': ')
     if _err:
         _msg = _why(_f, 'roll_die', (_faces,), _err)
     elif not _calls:
-        _msg = (('`roll_die` still hands back 1 every time. ' if _v == 1 else '')
-                + 'Roll with `random.randint`, from 1 to `die_size`.' + _evd + 'nothing was rolled.)')
+        _msg = (('`roll_die` still hands back 1 every time. ' if _v == 1 else 'Nothing in `roll_die` rolls the die. ')
+                + 'Roll with `random.randint`, from 1 to `die_size`.' + _evd + 'nothing was rolled.')
     elif tuple(_calls[0]) != (1, _faces):
         _a, _b = _calls[0]
         if _a == 0:
-            _lead = 'Dice start at 1: roll from 1 to `die_size`.'
+            _lead = 'Your roll starts at 0, but dice start at 1. Roll from 1 to `die_size`.'
         elif (_a, _b) == (_faces, 1):
-            _lead = 'Smallest number first: `random.randint(1, die_size)`.'
+            _lead = ('The two numbers are the wrong way round. The smallest number goes first: '
+                     '`random.randint(1, die_size)`.')
         elif _a == 1 and _b in (_faces - 1, _faces + 1):
-            _lead = 'Both ends are included, so roll from 1 to `die_size` itself.'
+            _lead = ('Your roll stops one away from `die_size`. Both ends are included, so roll from 1 to `die_size` '
+                     'itself.')
         else:
-            _lead = 'Use the ingredient: roll from 1 to `die_size`, not a typed number.'
-        _msg = _lead + _evd + 'it rolled `random.randint(' + str(_a) + ', ' + str(_b) + ')`.)'
+            _lead = ('Your roll uses a typed-in number, so every die rolls the same way. Use the ingredient: roll '
+                     'from 1 to `die_size`.')
+        _msg = _lead + _evd + 'it rolled `random.randint(' + str(_a) + ', ' + str(_b) + ')`.'
     elif _v is None:
-        _msg = (('Hand the roll back with `return`. `print` only shows it.' if _rows else 'Hand the roll back with `return`.')
-                + _evd + 'it handed back `None`.)')
+        _msg = (("Your recipe shows the roll with `print`, but doesn't hand it back. Hand it back with `return`."
+                 if _rows else 'Your recipe hands back nothing. Hand the roll back with `return`.')
+                + _evd + 'it handed back `None`.')
     elif _v != _roll:
-        _msg = 'Hand back the roll itself, the number `random.randint` gives.' + _evd + 'it handed back something else.)'
+        _msg = ('Your recipe hands back something other than the roll. Hand back the number `random.randint` gives.'
+                + _evd + 'it handed back something else.')
     if _msg:
         break
 _rs = _resets('roll_die')
@@ -3488,27 +3715,29 @@ ROLL_RECIPE = dict(
     id="roll-recipe",
     title="A rolling recipe",
     martu=(
-        "At the trap door, `perform_roll(die_size)` rolled the dice for every check. Now you write that recipe "
-        "yourself.\n"
-        "`die_size` is the ingredient: how many faces the die has. 6 for a d6, 20 for a d20.\n"
-        "`random.randint(1, 6)` rolls a d6, both ends included. Here, the number of faces arrives in the "
-        "ingredient."
+        "Your recipe `roll_die` has one ingredient, `die_size`: how many faces the die has. 6 means a six-sided "
+        "die (a d6), and 20 means a d20. In Unit 2, `random.randint(1, 6)` rolled a d6: any whole number from 1 to "
+        "6, both ends included. Put the ingredient where the 6 was, and one recipe rolls any die.\n"
+        "At the trap door, `perform_roll(die_size)` did this for every check. Now you write it yourself."
     ),
     names=["roll_die", "die_size", "random"],
     starter=ROLL_STARTER,
     checkpoints=[
         dict(
             id="roll-from-one-to-die-size",
-            text="Replace `return 1` with a random whole number from 1 to `die_size`.",
+            text=(
+                "Replace `return 1` with a `return` line that hands back a random whole number from 1 to "
+                "`die_size`. Use `random.randint`."
+            ),
             dictated=False,
             hints=[
-                "Which ingredient says how many faces the die has?",
+                "Look at the `def` line, `def roll_die(die_size):`. Which ingredient says how many faces the die has?",
                 "`random.randint(1, 6)` rolls a d6, from Unit 2. Both ends are included. Swap the 6 for the ingredient's "
                 "name, and every die works.",
                 "Write `return random.randint(1, die_size)` in place of `return 1`.",
             ],
             checks=[("roll_die rolls 1 to die_size", _FN + _RND)],
-            pass_line="Lucky: Every die we own. Now roll me a twenty.",
+            pass_line="One recipe rolls any die now. Lucky: Every die we own. Now roll me a twenty.",
         ),
     ],
     solution=_roll(),
@@ -3539,16 +3768,25 @@ ROLL_RECIPE = dict(
             label="A die with die_size faces",
             text="```text\nroll_die(6)   ->  1 to 6\nroll_die(20)  ->  1 to 20\ndie_size sets the top face.\n```",
         ),
+        dict(
+            angle="math class",
+            label="From math class",
+            text=(
+                "In math, a fair die means every face has the same chance. `random.randint(1, 6)` picks one whole "
+                "number from 1 to 6, and 1 and 6 can both come up. In everyday talk, *random* can mean weird. Here it "
+                "means every number has the same chance."
+            ),
+        ),
     ],
     bonus=dict(
         by="lucky",
-        title="What's in it for me?",
+        title="Add Lucky's bonus to the roll",
         text=(
             "Lucky adds his bonus to every attack. Write `attack_roll(die_size, bonus)`: roll with your own "
             "`roll_die`, then add the bonus."
         ),
         hints=[
-            "Inside, call the recipe you just wrote, and add `bonus` to what it hands back.",
+            "Inside, call the recipe you wrote above, `roll_die`, and add `bonus` to what it hands back.",
             "Write `def attack_roll(die_size, bonus):` with `return roll_die(die_size) + bonus` under it, four "
             "spaces in.",
         ],
@@ -3558,15 +3796,18 @@ ROLL_RECIPE = dict(
                 _FN + r'''
 _f, _m = _find('attack_roll')
 assert _f, _m
-assert len(_params(_f)) == 2, '`attack_roll` takes two ingredients: `def attack_roll(die_size, bonus):`.'
+assert len(_params(_f)) == 2, ('`attack_roll` should take two ingredients. Make its `def` line '
+                               '`def attack_roll(die_size, bonus):`.')
 assert _calls_in([_defs().get('attack_roll')], 'roll_die'), (
-    'Inside `attack_roll`, call your recipe `roll_die(die_size)` instead of rolling again.')
+    '`attack_roll` does not call `roll_die` yet. Inside it, call your recipe `roll_die(die_size)` instead of rolling '
+    'again.')
 _v, _rows, _err, _calls = _run(_f, (8, 3), [5])
 assert not _err, _why(_f, 'attack_roll', (8, 3), _err)
-assert _calls and tuple(_calls[0]) == (1, 8), 'Roll with the first ingredient: `roll_die(die_size)`.'
-assert _v == 8, ('Hand back the roll plus the bonus.'
-                 + " (Mar'tu's check called `attack_roll(8, 3)` with a pretend die that always lands on 5, only "
-                 'inside the check: it should hand back 8.)')
+assert _calls and tuple(_calls[0]) == (1, 8), ('The roll does not use the first ingredient. Roll with '
+                                               '`roll_die(die_size)`.')
+assert _v == 8, ('The answer is wrong. Hand back the roll plus the bonus.'
+                 + " Mar'tu tested your recipe with a test call, `attack_roll(8, 3)`, and a pretend die that always "
+                 'lands on 5: it should hand back 8.')
 ''',
             ),
         ],
@@ -3577,8 +3818,8 @@ assert _v == 8, ('Hand back the roll plus the bonus.'
         part="skill-checks",
         snippet="def perform_roll(die_size):\n    return random.randint(1, die_size)",
         why=(
-            "You have seen this at the trap door. You replaced `return 1` with `return random.randint(1, die_size)`. "
-            "Now you know why: the die's size arrives as an ingredient, so one recipe rolls any die."
+            "You saw this at the trap door. You replaced `return 1` with `return random.randint(1, die_size)`. Now "
+            "you know why: the die's size arrives as an ingredient, so one recipe rolls any die."
         ),
     ),
     takeaway="`return random.randint(1, die_size)`: the ingredient sets the top face.",
@@ -3646,32 +3887,38 @@ BROKEN6_SOLUTION = _broken6()
 _ORDER = r'''
 _d = _defs().get('max_mana_for')
 _c = _calls_in(_top(), 'max_mana_for')
-assert _c, "Keep the line `print(max_mana_for(13))`. Move it below the recipe; don't delete it."
-assert _d and all(_x.lineno > _d.lineno for _x in _c), 'Make the recipe first, then call it: the call goes below the `def` block.'
+assert _c, ('The call to `max_mana_for` is gone. Keep the line `print(max_mana_for(13))`: move it below the recipe '
+            "instead of deleting it.")
+assert _d and all(_x.lineno > _d.lineno for _x in _c), ('The call still comes before the recipe is made. Make the '
+                                                         'recipe first, then call it: move the call below the recipe.')
 '''
 
 BROKEN_SPELL_6A = dict(
     id="broken-spell-6a",
     title="Broken spell",
     martu=(
-        "Four slips, and Python reports them one at a time. Read the last line of each message first, then go to "
-        "the line it names.\n"
-        "Mend one, run again, and Python shows you the next. Normal. That is how everyone debugs, yes?"
+        "This code has four mistakes, and Python shows them one at a time. When it stops, read the box in the "
+        "Console: its title says what went wrong, *Python's last line* says it in Python's words, and the line "
+        "number says where. Fix that line, then press Run again.\n"
+        "A new error after a fix is good news: Python got further. The steps say *Mend*, which means fix.\n"
+        "That's how everyone finds [[bug|bugs]], yes?"
     ),
     names=["steady_word", "hours_left", "max_mana_for", "total"],
     pair_talk=(
-        "Pair talk: compare which line each message names, and why. Each of you mends your own screen."
+        "Pair talk: compare which line number each error gives, and why. Each of you fixes the code on your own "
+        "screen."
     ),
     starter=BROKEN6_STARTER,
     checkpoints=[
         dict(
             id="def-line-colon",
-            text="Mend the `def` line Python names first.",
+            text="Mend the `def steady_word()` line. Python stops there first.",
             dictated=False,
             hints=[
-                "Read Python's last line first. Which line does it name?",
+                "Read the box in the Console: its title says what went wrong. Then read Python's last line. Which "
+                "line number does it give?",
                 "Python says `expected ':'` on line 1. Look at the very end of that line.",
-                "Every `def` line ends with a colon: `def hum():`.",
+                "Type `:` (Shift and the `;` key) at the very end of line 1. Line 1 becomes `def steady_word():`.",
             ],
             checks=[
                 (
@@ -3681,29 +3928,34 @@ _f, _m = _find('steady_word', True)
 assert _f, _m
 _v, _rows, _err, _c = _run(_f, ())
 assert not _err, _why(_f, 'steady_word', (), _err)
-assert _v == 'Steady, now.', 'Keep `steady_word` handing back `"Steady, now."`.'
+assert _v == 'Steady, now.', ('`steady_word` no longer hands back `"Steady, now."`. Put its `return` line back the '
+                              'way it was.')
 ''',
                 ),
             ],
         ),
         dict(
             id="a-box-not-a-recipe",
-            text="Mend the line that should make a box for the hours.",
+            text="Mend the `hours_left` line, so it makes a box that holds 37.",
             dictated=False,
             hints=[
-                "Read Python's last line first. Which line does it name?",
-                "Python says `expected '('` after `def`. Is `hours_left` a recipe, or a box?",
-                "`def` makes a recipe. A box is `name = value`, with no `def`: `steps = 12`.",
+                "Press Run, then read the box in the Console: its title, then Python's last line. Which line number "
+                "does it give now?",
+                "Python says `expected '('` on line 4. After `def`, it expects a recipe. Is `hours_left` a recipe, "
+                "or a box?",
+                "Delete `def ` from the start of line 4. Line 4 becomes `hours_left = 37`, a box.",
             ],
             checks=[
                 (
                     "hours_left is a box holding 37",
-                    "assert 'hours_left' in globals(), 'Make the box: `hours_left = 37`.'\n"
-                    "assert type(hours_left).__name__ != 'function', ('`hours_left` is a recipe now. The task wants a "
-                    "box: `hours_left = 37`, with no `def`.')\n"
-                    "assert hours_left == 37 and type(hours_left).__name__ == 'int', '`hours_left` should hold 37, with "
-                    "no quotes.'\n"
-                    "assert 'Hours left: 37' in _lines(), 'Keep the last line, `print(\"Hours left: \" + str(hours_left))`.'\n",
+                    "assert 'hours_left' in globals(), 'There is no box named `hours_left` yet. Make it: "
+                    "`hours_left = 37`.'\n"
+                    "assert type(hours_left).__name__ != 'function', ('`hours_left` is a recipe now, because of `def`. "
+                    "Make it a box instead: `hours_left = 37`, with no `def`.')\n"
+                    "assert hours_left == 37 and type(hours_left).__name__ == 'int', '`hours_left` should hold the "
+                    "number 37, with no quotes.'\n"
+                    "assert 'Hours left: 37' in _lines(), '`Hours left: 37` does not show in the Console. Keep the "
+                    "last line, `print(\"Hours left: \" + str(hours_left))`.'\n",
                 ),
             ],
         ),
@@ -3712,9 +3964,14 @@ assert _v == 'Steady, now.', 'Keep `steady_word` handing back `"Steady, now."`.'
             text="Mend the order, so Python makes `max_mana_for` before the line that calls it.",
             dictated=False,
             hints=[
-                "Read Python's last line first. Which name is not defined yet?",
-                "Python runs top to bottom. The call comes before the `def` block. Which should come first?",
-                "A recipe must be made before it is called:\n```python\ndef hum():\n    print(\"Hmm.\")\n\nhum()\n```",
+                "Read the box in the Console: its title, then Python's last line. Which name is not defined yet, and "
+                "on which line?",
+                "Python reads your code top to bottom, like a page. Line 6 calls `max_mana_for`, but the recipe is "
+                "made only on line 8. Which should come first?",
+                "Make `max_mana_for` before you call it. Move line 6 below the recipe, in three moves:\n"
+                "1. Drag across all of line 6 to select it. Press Ctrl+X (Cmd+X on a Mac) to cut it.\n"
+                "2. Click at the very start of the line `print(steady_word())`, and press Enter.\n"
+                "3. Click on the new empty line, and press Ctrl+V (Cmd+V) to paste.",
             ],
             checks=[("the recipe is made before it is called", _FN + _ORDER)],
         ),
@@ -3723,17 +3980,17 @@ assert _v == 'Steady, now.', 'Keep `steady_word` handing back `"Steady, now."`.'
             text="Mend `max_mana_for` so it hands back the box it made.",
             dictated=False,
             hints=[
-                "Read Python's last line first. Which name does it not know?",
-                "`result` comes from my Example in Send it back. Which box does this recipe make?",
-                "Hand back the box this recipe makes on the line above: write `return total` in place of "
-                "`return result`.",
+                "Read the box in the Console: its title, then Python's last line. Which name doesn't Python know?",
+                "`result` comes from my Example in Send it back. Look at the line above `return result`: which box "
+                "does this recipe make?",
+                "Write `return total` in place of `return result`. That hands back the box this recipe makes.",
             ],
             checks=[
                 returns_check("max_mana_for hands back total", "max_mana_for", ["affinity"], [((9,), 18), ((12,), 24)],
-                              fix="Hand back the box the recipe made: `return total`.",
+                              fix="The recipe hands back the wrong value. Hand back the box it made: `return total`.",
                               foreign=["result", "triple", "n"], box="This recipe's box is `total`."),
             ],
-            pass_line="Mar'tu: Four slips, four mends. You read every message. Good.",
+            pass_line="Four mistakes, found and fixed one at a time. Mar'tu: You read every message. Good.",
         ),
     ],
     solution=BROKEN6_SOLUTION,
@@ -3744,21 +4001,21 @@ assert _v == 'Steady, now.', 'Keep `steady_word` handing back `"Steady, now."`.'
     another_way=[
         dict(
             angle="step-by-step",
-            label="One slip at a time",
+            label="One mistake at a time",
             text=(
-                "1. Run. Read the last line of the message.\n"
-                "2. Go to the line it names. Mend it.\n"
-                "3. Run again. A new message? Good: that is the next slip.\n"
-                "4. No message? The checks tell you what is left."
+                "1. Press Run. Read the box in the Console: its title, then Python's last line.\n"
+                "2. Go to the line number it gives. Fix that line.\n"
+                "3. Press Run again. A new error? Good: Python got further, and that is the next mistake.\n"
+                "4. No error? Then Your steps tell you what is left."
             ),
         ),
         dict(
             angle="picture",
-            label="Where each slip is",
+            label="Where each mistake is",
             text=(
                 "```text\nline 1  def steady_word()\n  needs a colon\nline 4  def hours_left = 37\n"
-                "  a box needs no def\nline 6  the call\n  must come after the def\nline 11 return result\n"
-                "  hand back total\n```\nThe line numbers are the starter's."
+                "  a box needs no def\nline 6  the call\n  must come after the def\nline 10 return result\n"
+                "  hand back total\n```\nThese are the line numbers of the code you started with."
             ),
         ),
         dict(
@@ -3766,7 +4023,10 @@ assert _v == 'Steady, now.', 'Keep `steady_word` handing back `"Steady, now."`.'
             text="Colon after `def`. Boxes need no `def`. Make it, then call it. Hand back the box you made.",
         ),
     ],
-    takeaway="Read the last line, go to the line it names, mend one slip, run again.",
+    takeaway=(
+        "Read the error box: its title, then Python's last line. Go to its line number, fix one mistake, and press "
+        "Run again."
+    ),
     wrong_answers=[
         dict(why="the starter (missing colon first)", code=BROKEN6_STARTER, fails_at=0, message_contains="expected ':'"),
         dict(why="colon mended, def still makes the box (the DEF row; A-02)",
@@ -3780,7 +4040,7 @@ assert _v == 'Steady, now.', 'Keep `steady_word` handing back `"Steady, now."`.'
         dict(why="hours_left made into a recipe instead of a box",
              code=_broken6(hours="def hours_left():\n    return 37"), fails_at=2, message_contains="box"),
         dict(why="the early call deleted instead of moved",
-             code=_broken6().replace("print(max_mana_for(13))\n", ""), fails_at=3, message_contains="Keep the line"),
+             code=_broken6().replace("print(max_mana_for(13))\n", ""), fails_at=3, message_contains="is gone"),
         dict(why="return 26 (PAR-CONST)", code=_broken6(ret="return 26"), fails_at=4, message_contains="both gave back"),
         dict(why="return affinity (RET-PARAM)", code=_broken6(ret="return affinity"), fails_at=4,
              message_contains="as it came in"),
@@ -3832,8 +4092,8 @@ SOLO_6A = dict(
     id="solo-6a",
     title="Show Mar'tu",
     martu=(
-        "A short one, just for you. `heal` has the same shape as `warn`, with two ingredients this time. Then "
-        "`heal_total` hands a number back."
+        "This one is yours alone. `heal` has the same shape as `warn` from Ingredients, but with two ingredients: "
+        "a hero and an amount. Then `heal_total` hands a number back with `return`, like `max_mana_for`."
     ),
     solo=True,
     # Teacher ruling (FORMAT.md, from Unit 2 on): every SOLO item is lean. The crash explainer names the kind of
@@ -3845,41 +4105,49 @@ SOLO_6A = dict(
     checkpoints=[
         dict(
             id="heal-line",
-            text="Finish `heal` so both calls show the right line.",
+            text=(
+                "Replace the `pass` in `heal` with a `print` line, so each call shows the line in its "
+                "`# should show:` note, like `Oogrish heals 4.`"
+            ),
             dictated=False,
             hints=[
-                "Both ingredients go in the line: the hero's name, then ` heals `, then the amount, then a period.",
-                "A number needs `str()` before it is glued to text: `str(sips)`.",
+                "Look at the `# should show:` notes. Each line has four parts: the hero's name, then ` heals `, then "
+                "the amount, then a period.",
+                "Before you glue a number to text, make it text with `str()`. For a box named `sips`, that is "
+                "`str(sips)`.",
             ],
             checks=[
                 prints_check("each call shows its own hero and amount", "heal", ["hero_name", "amount"],
                              [(("Tester", 6), "Tester heals 6."), (("Moth", 11), "Moth heals 11.")],
-                             fix="Use both ingredients, `hero_name` and `amount`, in the line.",
-                             const_fix="A recipe gets its values when it is called: use `hero_name` and `amount`, not "
-                                       "typed values.",
+                             fix="The `print` line in `heal` does not show the right line for every call.",
+                             const_fix="The line in `heal` uses typed-in values, so every call shows the same thing.",
                              foreign=["warn", "cheer", "name"], safe=["Oogrish heals 4.", "Lucky heals 7."]),
             ],
         ),
         dict(
             id="your-own-heal",
-            text="Add a call for your own hero.",
+            text="Under `heal(\"Lucky\", 7)`, add a third call to `heal` for a hero of your own and an amount.",
             dictated=False,
             hints=[
-                "A hero in quotes, a comma, then a number with no quotes.",
-                "Copy the shape of the calls above.",
+                "Look at the two calls to `heal`. What goes inside the parentheses, and which part has quotes?",
+                "Each call hands over two things: a hero in quotes, then a number with no quotes. A comma goes "
+                "between them.",
             ],
             checks=[
                 calls_check("heal is called three times", "heal", 3,
-                            fix="Add a third call at the bottom: `heal(`, your hero in quotes, a number, then `)`.",
+                            fix="`heal` is called only twice. The third call is missing.",
                             example='heal("...", 5)'),
             ],
         ),
         dict(
             id="heal-total",
-            text="Finish `heal_total` so it hands back the new health.",
+            text=(
+                "Replace the `pass` in `heal_total` so it hands back the new health. Use both ingredients, `health` "
+                "and `amount`. Healing adds to health."
+            ),
             dictated=False,
             hints=[
-                "Look at the `def heal_total` line: its two ingredients are all you need. The comment says what to "
+                "Look at the `def heal_total` line: its two ingredients are all you need. The note says what to "
                 "hand back.",
                 "`def add_coins(coins, found):` with `return coins + found` inside hands back the new count: "
                 "`add_coins(3, 2)` hands back 5.",
@@ -3887,22 +4155,20 @@ SOLO_6A = dict(
             checks=[
                 returns_check("heal_total hands back the new health", "heal_total", ["health", "amount"],
                               [((20, 5), 25), ((3, 9), 12)],
-                              fix="Use both ingredients, `health` and `amount`, to work out the new health.",
-                              const_fix="A recipe gets its numbers when it is called: work the new health out from "
-                                        "`health` and `amount`.",
-                              none_fix="End `heal_total` with a `return` line that hands back the new health.",
+                              fix="`heal_total` hands back the wrong new health.",
+                              const_fix="`heal_total` hands back the same answer for every call.",
+                              none_fix="`heal_total` hands back nothing: it has no `return` line.",
                               foreign=["add_coins", "coins", "found"],
-                              rules=[("_v == _a[0] - _a[1]", "Healing adds: the new health goes up by `amount`.")]),
+                              rules=[("_v == _a[0] - _a[1]", "The new health went down, but healing adds.")]),
             ],
-            pass_line="Mar'tu: You did that on your own. On your map: ✓ two ingredients, ✓ hand a value back with "
-                      "`return`.",
+            pass_line="Mar'tu: You did that on your own. Two ingredients, and a value handed back with `return`.",
         ),
     ],
     solution=_heal(),
     partials=[_heal(extra="", total=HEAL_TOTAL_PASS), _heal(total=HEAL_TOTAL_PASS)],
     another_way=[
         dict(angle="step-by-step", text="1. `hero_name`. 2. `\" heals \"`. 3. `str(amount)`. 4. `\".\"`. Glue them with `+`."),
-        dict(angle="shorter", text="Use both ingredient names. `str()` the number."),
+        dict(angle="shorter", text="Use both ingredient names. Make the number text with `str()`."),
         dict(
             angle="from what you know",
             label="Like `max_mana_for`",
@@ -3910,8 +4176,8 @@ SOLO_6A = dict(
         ),
     ],
     takeaway=(
-        "On your own: a recipe with two ingredients, used by name and called three times, and a recipe that hands "
-        "its answer back with `return`."
+        "On your own, you made a recipe with two ingredients and called it three times. You also made a recipe that "
+        "hands its answer back with `return`."
     ),
     wrong_answers=[
         dict(why="one call's line typed in (PAR-CONST)", code=_heal(line='    print("Oogrish heals 4.")\n'), fails_at=1,
@@ -3985,8 +4251,8 @@ LESSON_6A = dict(
     title="Recipes With Names",
     minutes=64,
     summary=(
-        "Make recipes with `def`, call them, give them ingredients, hand values back with `return`, and rebuild "
-        "the campaign's movement, dialogue and skill-check recipes."
+        "Make recipes (functions) with `def`, call them, give them ingredients and hand answers back with "
+        "`return`. Then rebuild the moving, dialogue and skill-check recipes you saw in the campaign."
     ),
     notes=(
         "Lesson 6A (CC; 6A-11 SC; 6A-05a K, +3 min when shown). Preceded by 6a-remembers. Exactly one SOLO "
@@ -4013,7 +4279,7 @@ QUIZ_6A = dict(
     id="recipe-quiz",
     title="Recipe Quiz",
     minutes=8,
-    summary="Eight questions on making, calling and tracing recipes. Retake as often as you like.",
+    summary="Recipe quiz: 8 questions on making, calling and tracing recipes. Retake it as often as you like.",
     notes=(
         "Quiz 6A (CC, retrieval for the cliff): 5 predict, 2 mc, 1 parsons. A deliberate change from the spec's mix "
         "(5 predict, 1 mc, 1 parsons, 1 fill): the two near-duplicates (made-not-called, a copy of 6A-01's predict, "
@@ -4029,7 +4295,10 @@ QUIZ_6A = dict(
             code="def fuel_for(cells):\n    print(4 * 5)\n\nfuel_for(7)\n",
             choices=["20", "35", "an error"],
             answer="20",
-            explain="`4 * 5` is written in ink, so every call shows 20. `cells * 5` would show 35 for this call.",
+            explain=(
+                "`4 * 5` is typed into the recipe, so every call shows 20, whatever it hands over. `cells * 5` would "
+                "show 35 for this call."
+            ),
             notes=(
                 "PAR-CONST, the worksheet's Part 3 cliff (7 of 11 typed one call's numbers inside the recipe): 6A-05. "
                 "35 is the belief that the call's value reaches a recipe that never uses its ingredient."
@@ -4050,14 +4319,14 @@ QUIZ_6A = dict(
             answer="26\nNone",
             explain=(
                 "The call prints 26 while it runs. But the recipe has no `return`, so it hands back `None`, and "
-                "`lucky_max` holds `None`. `print` shows; `return` hands back."
+                "`lucky_max` holds `None`. `print` shows a value on the screen. `return` hands it back."
             ),
             notes="RET (print instead of return; A-07).",
         ),
         dict(
             type="predict",
             id="ledger-again",
-            q="Trace it like the ledger. What will this print?",
+            q="Trace it like the ledger in Be the ledger. What will this print?",
             code=(
                 "def ward_strength(lanterns, runes):\n"
                 "    light = lanterns * 10\n"
@@ -4113,11 +4382,14 @@ QUIZ_6A = dict(
             answer=1,
             why_wrong={
                 0: "`warn` is the recipe's name. It says which recipe to run.",
-                2: "`hero_name` is the parameter: the ingredient's name on the card. It holds the argument during the "
-                   "call.",
-                3: "The brackets make the call happen. What goes inside them is the argument.",
+                2: "`hero_name` is the ingredient (parameter): the blank's name on the `def` line. It holds what you "
+                   "hand over during the call.",
+                3: "The parentheses make the call happen. What goes inside them is the argument, what you hand over.",
             },
-            explain="The argument is the value you hand over: `\"Lucky\"`. During the call, the parameter `hero_name` holds it.",
+            explain=(
+                "The argument (what you hand over) is `\"Lucky\"`. During the call, the ingredient `hero_name` holds "
+                "it."
+            ),
         ),
         dict(
             type="parsons",
@@ -4164,8 +4436,8 @@ QUIZ_6A = dict(
                    "doesn't exist, so Python stops.",
             },
             explain=(
-                "`mana_after`'s box is `left`. `return result` stops Python: name 'result' is not defined. Write "
-                "`return left`."
+                "The box that `mana_after` makes is `left`. `return result` makes Python stop with an error: name "
+                "'result' is not defined. The fix is `return left`."
             ),
             notes=(
                 "RNM, handing back the right box (6A-07; A-01's `return result`). 14 is the belief that `return` "

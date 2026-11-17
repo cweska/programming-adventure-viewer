@@ -135,7 +135,7 @@ test.describe("Intro to Python, Unit 6: Loops", () => {
 
     const board = await runWrong(page, "for-each-yes/each-member", "a comma, as in print: the ley board takes one text (TypeError)", 3);
     await expect(board).toHaveAttribute("data-kind", "wrong-number-of-values");
-    await expect(hint).toContainText("show_on_ley_board takes one piece of text. Glue the parts into one with +, with str() around a number.");
+    await expect(hint).toContainText("show_on_ley_board takes one piece of text: glue the parts into one with +, and put str() around a number.");
 
     const quoted = await runWrong(page, "for-each-yes/each-member", "the list's name in quotes: the loop walks the letters of the text roster", 4);
     await expect(quoted).toHaveAttribute("data-kind", "quoted-name");
@@ -193,7 +193,7 @@ test.describe("Intro to Python, Unit 6: Loops", () => {
     await expect(hint).toContainText("Line 7 asks a for loop to walk one number. A for loop needs a list or range(...), not one number.");
     const promise = await runWrong(page, "qc5-a/a-helper-for-each", "the helper's own word read as a promise: light_lantern(name)", 2);
     await expect(promise).toHaveAttribute("data-kind", "made-inside-recipe");
-    await expect(hint).toContainText("The slip is on line 8: a name that only lives inside a recipe.");
+    await expect(hint).toContainText("The mistake is on line 8: a name that only lives inside a recipe.");
     await expect(hint).not.toContainText('member["name"]');
     await expect(hint).not.toContainText("put quotes around it");
 
@@ -212,12 +212,12 @@ test.describe("Intro to Python, Unit 6: Loops", () => {
     const explainer = page.getByTestId("explainer");
     await expect(explainer).toHaveAttribute("data-kind", "too-much-output");
     await expect(page.getByTestId("explainer").locator(".ex-explainer-title")).toHaveText("Printing forever?");
-    await expect(page.getByTestId("explainer-hint")).toContainText("A loop may be running forever: make sure it has a way to end.");
+    await expect(page.getByTestId("explainer-hint")).toContainText("Your code printed so much that it was stopped. Look for a part of your code that repeats and never ends.");
     await expect(page.getByTestId("python-last-line")).toContainText("TooMuchOutput: This program printed more than 200,000 characters, so it was stopped.");
-    // The line it was stopped on (the print) is right: no "First, mend line 3", and Help stays on the step.
+    // The line it was stopped on (the print) is right: no "First, fix line 3", and Help stays on the step.
     const task = page.getByTestId("task-line");
     await expect(task).toHaveAttribute("data-endless", "true");
-    await expect(task).toContainText("First, make the loop end. Python stopped your program before it could check your steps.");
+    await expect(task).toContainText("First, make the loop end. Python stopped your program before it could check your steps. The box in the Console says why.");
     await expect(task).not.toContainText("line 3");
     await expect(page.getByTestId("help-button")).toBeVisible();
     await expect(page.getByTestId("help-crash-wait")).toHaveCount(0);
@@ -228,7 +228,7 @@ test.describe("Intro to Python, Unit 6: Loops", () => {
     await expect(explainer).toHaveAttribute("data-kind", "timeout");
     await expect(page.getByTestId("explainer").locator(".ex-explainer-title")).toHaveText("Ran too long");
     await expect(page.getByTestId("explainer-hint")).toHaveText(
-      "Your code ran for more than 5 seconds, so it was stopped. A while loop may never end: make sure its condition can become False.",
+      "Your code ran for more than 5 seconds, so it was stopped. A while loop may never end: make sure its question can become False.",
     );
     await expect(page.getByTestId("python-last-line")).toContainText("The program ran too long and was stopped.");
 

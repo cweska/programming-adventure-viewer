@@ -2,12 +2,15 @@
 
 import type { PointerEvent as ReactPointerEvent, MouseEvent as ReactMouseEvent } from "react";
 
-/** The symbols that are hard to find on a phone or tablet keyboard, with what a screen reader says. */
-export const TRAY_SYMBOLS: { text: string; name: string }[] = [
+/**
+ * The symbols that are hard to find on a phone or tablet keyboard, with what a screen reader says (the course's words:
+ * parentheses, square brackets, curly braces). `id` keeps each button's test id as it was when the names changed.
+ */
+export const TRAY_SYMBOLS: { text: string; name: string; id?: string }[] = [
   { text: '"', name: "double quote" },
   { text: "'", name: "single quote" },
-  { text: "(", name: "open bracket" },
-  { text: ")", name: "close bracket" },
+  { text: "(", name: "open parenthesis", id: "open-bracket" },
+  { text: ")", name: "close parenthesis", id: "close-bracket" },
   { text: ":", name: "colon" },
   { text: "=", name: "equals" },
   // Unit 2's questions: >=, <=, == and != (every Unit 2 step types one of them).
@@ -17,8 +20,8 @@ export const TRAY_SYMBOLS: { text: string; name: string }[] = [
   { text: "+", name: "plus" },
   { text: "[", name: "open square bracket" },
   { text: "]", name: "close square bracket" },
-  { text: "{", name: "open curly bracket" },
-  { text: "}", name: "close curly bracket" },
+  { text: "{", name: "open curly brace", id: "open-curly-bracket" },
+  { text: "}", name: "close curly brace", id: "close-curly-bracket" },
   { text: "#", name: "hash" },
   { text: "_", name: "underscore" },
 ];
@@ -40,7 +43,7 @@ export function SymbolTray({ onInsert, names = [] }: { onInsert: (text: string) 
           key={symbol.text}
           type="button"
           className="ex-symbol"
-          data-testid={`symbol-${symbol.name.replace(/\s+/g, "-")}`}
+          data-testid={`symbol-${symbol.id ?? symbol.name.replace(/\s+/g, "-")}`}
           aria-label={`Type ${symbol.name}`}
           onPointerDown={keepFocus}
           onMouseDown={keepFocus}
