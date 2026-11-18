@@ -10,7 +10,8 @@ Every unit lives in a file named ``uNN_<slug>.py`` beside this one. A big unit m
 It checks, for every exercise / project / challenge / test-out item:
   * the solution passes every checkpoint,
   * the starter code fails at least one checkpoint (unless ``starter_passes=True``),
-  * each staged partial solution passes checkpoints 1..k and fails k+1,
+  * each staged partial solution passes checkpoints 1..k and fails k+1 (and a WARNING when it already passes a later
+    checkpoint: the site records every checkpoint a run passes, so that step turns green before its turn),
   * each known wrong answer fails at the checkpoint it names (and with the message it names),
   * the worked example prints exactly ``example_output``,
   * the bonus side quest passes with its own solution,
@@ -444,6 +445,12 @@ def verify_exercise(ex: dict, where: str, gate: ConceptGate, report: Report, kin
             report.error(where, f"partial {k} should pass checkpoints 1..{k} but got {st} ({first_failure(result)[1]})")
         if k < len(checkpoints) and st[k]:
             report.error(where, f"partial {k} unexpectedly passes checkpoint {k + 1}")
+        # The site records every checkpoint a run passes, not only the open one, and shows each one's pass line: a
+        # later step that already passes here turns green (with its "Done!") before its turn.
+        early = [j + 1 for j in range(k + 1, len(checkpoints)) if st[j]]
+        if early:
+            report.warn(where, f"partial {k} already passes checkpoint(s) {early}: on the site they turn green, "
+                               "with their pass lines, before their turn")
 
     for wrong in ex.get("wrong_answers") or []:
         report.stats["wrong_answers"] += 1

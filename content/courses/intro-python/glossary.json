@@ -250,6 +250,17 @@
     "example": "def say_hi():"
   },
   {
+    "term": "default value",
+    "aliases": [
+      "default",
+      "defaults",
+      "default values",
+      "default argument"
+    ],
+    "plain": "The usual value for a parameter, used when the call hands over nothing, like your phone's default ringtone. You write it on the `def` line with `=`. A value handed over in the call wins.",
+    "example": "def pour(cups=2):"
+  },
+  {
     "term": "defined",
     "aliases": [
       "not defined",
@@ -314,6 +325,16 @@
     "example": "for snack in snacks:\n    print(snack)"
   },
   {
+    "term": "function as a value",
+    "aliases": [
+      "functions as values",
+      "hand over a function",
+      "handing over a function"
+    ],
+    "plain": "A function's name with no `()` is the function itself, like a recipe card you can pass around without cooking. A variable or a dictionary can hold it, and you can hand it to another function. Add `()` later to run it.",
+    "example": "pick = wave\npick(moth)"
+  },
+  {
     "term": "glue",
     "aliases": [
       "glues",
@@ -323,6 +344,26 @@
     ],
     "plain": "Join texts end to end with `+`, like a compound word: sun + flower is sunflower. Python adds no spaces, so put the spaces inside the quotes.",
     "example": "\"Shield\" + \" up.\""
+  },
+  {
+    "term": "guard",
+    "aliases": [
+      "guards",
+      "guard clause",
+      "early return"
+    ],
+    "plain": "An `if` at the top of a function that checks first, like a form that says \"Stop here if you are under 13.\" When something is wrong, it shows a line and stops the function with `return`, so the lines below it never run.",
+    "example": "if name not in guests:\n    print(name + \" waits.\")\n    return"
+  },
+  {
+    "term": "helper",
+    "aliases": [
+      "helpers",
+      "helper function",
+      "finished helper"
+    ],
+    "plain": "A finished function that someone else wrote for you to call, like a calculator key you press without opening the calculator. Read its `def` line to see what to hand it, and in what order.",
+    "example": "show_badge(moth, \"★★\")"
   },
   {
     "term": "if",
@@ -436,6 +477,24 @@
     "example": "KeyError: 'Max_Mana'"
   },
   {
+    "term": "keyword argument",
+    "aliases": [
+      "keyword arguments",
+      "named argument",
+      "by name"
+    ],
+    "plain": "A value handed over in a call with its parameter's name in front, like `pour(cups=5)`. Python calls what you hand over an argument. With names, the order of the values doesn't matter.",
+    "example": "pour(cups=5)"
+  },
+  {
+    "term": "lambda",
+    "aliases": [
+      "lambdas"
+    ],
+    "plain": "A whole function on one line, with no name and no `return`, like a rule in math: n → n × 2. Before the colon is the parameter. After it is the value it hands back: `lambda n: n * 2`.",
+    "example": "double = lambda n: n * 2"
+  },
+  {
     "term": "len()",
     "aliases": [
       "len",
@@ -503,6 +562,14 @@
     "example": "for snack in snacks:"
   },
   {
+    "term": "map()",
+    "aliases": [
+      "map"
+    ],
+    "plain": "Calls a function on every item of a list, and collects what each call hands back, like filling in an input-output table. Hand it the function with no `()`, then the list. Wrap it in `list()` to see the results.",
+    "example": "list(map(double, [2, 6]))   # [4, 12]"
+  },
+  {
     "term": "match",
     "aliases": [
       "match statement",
@@ -510,6 +577,15 @@
     ],
     "plain": "Another way to choose between options: `match choice:`, then one `case` line for each value. `case _:` catches anything else, like `else`.",
     "example": "match choice:\n    case \"option 1\":\n        print(\"Then we leave at dawn.\")\n    case _:\n        print(\"Hm.\")"
+  },
+  {
+    "term": "matching parameter",
+    "aliases": [
+      "matching parameters",
+      "matching"
+    ],
+    "plain": "The parameter with exactly the same name as the key, letter for letter. The key keeps its quotes, and the parameter has none, so Python looks inside it.",
+    "example": "\"fuel\": fuel,"
   },
   {
     "term": "math signs",
@@ -768,6 +844,26 @@
     "example": "total = 0\nfor coins in [3, 5]:\n    total = total + coins"
   },
   {
+    "term": "same sheet",
+    "aliases": [
+      "in place",
+      "changes in place",
+      "change in place"
+    ],
+    "plain": "A function that is handed a dictionary gets that very dictionary, not a copy, like a shared doc instead of a printout. A change it makes by key shows up for the line that called it, with no `return` needed.",
+    "example": "def wake(robot):\n    robot[\"awake\"] = True"
+  },
+  {
+    "term": "scope",
+    "aliases": [
+      "inside stays inside",
+      "local variable",
+      "local variables"
+    ],
+    "plain": "Where a name can be used. A function's parameters and the variables made inside it exist only inside it, while it runs. They're like scratch work that never gets handed in. Outside, Python has never heard of them.",
+    "example": "def brew(cups):\n    pot = cups * 2\n\nprint(pot)   # NameError"
+  },
+  {
     "term": "show your work",
     "aliases": [
       "show your working",
@@ -891,6 +987,15 @@
     ],
     "plain": "Two values that don't fit together, like adding 5 meters to 3 seconds in math. Most often it is text glued to a number. Turn the number into text with `str()`, or take the quotes off the number.",
     "example": "print(\"Gold: \" + 7)\nTypeError: can only concatenate str (not \"int\") to str"
+  },
+  {
+    "term": "unpacking",
+    "aliases": [
+      "unpack",
+      "unpacks"
+    ],
+    "plain": "Catching each value of a tuple in its own name, in order. It's like reading x and y off a point (x, y): `share, spare = (4, 1)`.",
+    "example": "share, spare = split_loot(17, 4)"
   },
   {
     "term": "value",

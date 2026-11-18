@@ -44,7 +44,14 @@
  * list's item, a one-line choice's answer: the quotes, never "If it's a box ... If it's text ..."), a `for` line with no
  * `in`, a colon in a one-line choice, one `=` in a `while` line, `Break` with a capital letter, and a loop that never
  * ends (the `while` that kept going, and why its question stays True: no change inside it, the change outside it or
- * kept nowhere, the change the wrong way, a `while` where Mar'tu asks once with `if`). Every unit: a line indented
+ * kept nowhere, the change the wrong way, a `while` where Mar'tu asks once with `if`). Unit 7 (functions II) traces a
+ * value back to the call that handed it over, one frame out in the traceback: a function handed over WITH `()` (its
+ * `None` or its answer called later, or the call stopping on an empty `()`), its name in quotes, a placeholder number
+ * called, a page of a book called whole, two values handed over in the wrong order, text or the wrong sheet where a
+ * sheet goes, a number in quotes handed over, the function handed over where its answer goes, a parameter's name in
+ * quotes as a key, and a guard that lets a key through (no `return`, `in` for `not in`, below the read, or no guard
+ * yet: never "use a key that is already there", the test call stays); the same error on the same line of code, moved
+ * down, is no "One fixed!"; and from Unit 7 every row says "function", "parameter" and "key". Every unit: a line indented
  * under a header that is itself indented counts that header's spaces, the line that makes a box with quotes is the
  * line to fix (`slipLine`), and a recipe that prints its answer hands back `None`, "Python's word for nothing". Some of
  * these rows say the slip in a sentence of their own when the explainer is lean (`lean`), still never the fix.
@@ -172,6 +179,9 @@ export type CourseErrorKind =
   | "choice-needs-else"
   | "for-needs-in"
   | "colon-in-one-line-choice"
+  // functions II (Unit 7)
+  | "text-as-sheet"
+  | "swapped-values"
   // values
   | "input-is-text"
   | "text-plus-number"
@@ -277,6 +287,17 @@ export const DICTS_UNIT_ORDER = 5;
  */
 export const LOOPS_UNIT_ORDER = 6;
 
+/**
+ * Unit 7 ("Functions II: Spells You Can Hand Over") teaches a function that takes a sheet and returns a value, a guard
+ * (`if ... not in ...:` with `return`), a finished helper called with the right values in the right order, a function
+ * handed over by its name with no `()` (`cast_on_everyone(roster, warm_hands)`), a function kept in a dictionary and
+ * called from it (`glow["effect"](lucky)`), and `None` as what a function with no `return` hands back. Its rows trace a
+ * value back to the call that handed it over, and from it the explainer speaks the unit's words: "function",
+ * "parameter" and "key" (curriculum §2.9), never Unit 3's "recipe" and "ingredient" or Unit 5's "tag". Before it the
+ * older advice is unchanged.
+ */
+export const SPELL_RECIPES_UNIT_ORDER = 7;
+
 /** What the player knows about the exercise. Every field is optional; more context gives more exact help. */
 export type ExplainContext = {
   /** The worked example's code: a name copied from it gets "this name is from the example". */
@@ -302,7 +323,10 @@ export type ExplainContext = {
    * (recipe, ingredient, hand over); from Unit 4 (LISTS_UNIT_ORDER) the list rows name square brackets, `.append()`
    * and the list tools; from Unit 5 (DICTS_UNIT_ORDER) the sheet rows name keys in quotes, the colon, square brackets
    * for a key, the level a key sits on and a list of sheets; from Unit 6 (LOOPS_UNIT_ORDER) the loop rows name the loop
-   * variable, `range(...)` and a pass (and nothing a later unit teaches: no f-strings, no `None` written in code).
+   * variable, `range(...)` and a pass (and nothing a later unit teaches: no f-strings, no `None` written in code); from
+   * Unit 7 (SPELL_RECIPES_UNIT_ORDER) the function rows trace a value to the call that handed it over (a function handed
+   * over with `()`, its name in quotes, values in the wrong order, the wrong sheet, a guard that lets a key through) and
+   * every row says "function", "parameter" and "key", the unit's own words.
    * Without a unit, those rows stay closed and the older advice is unchanged.
    */
   unitOrder?: number;
@@ -741,10 +765,12 @@ function nameAgainstTask(
     return { ...explain(kind, title, `Line ${made.line} makes \`${close}\`, but your step's box is \`${name}\`. ${differ} ${fix}`, raw), slipLine: made.line };
   }
   if (task.includes(close) && !task.includes(name)) {
+    // Unit 7: a function is never called a box (`show_man(hero)` for `show_mana`).
+    const word = unitAtLeast(context, SPELL_RECIPES_UNIT_ORDER) && boxKindWord(close, `${context?.setup ?? ""}\n${code}`) === "recipe" ? "function" : "box";
     return explain(
       kind,
       title,
-      `${here[0].toUpperCase()}${here.slice(1)} uses \`${name}\`, but your step's box is \`${close}\`. ${differ} On ${here}, write \`${close}\`, letter for letter.`,
+      `${here[0].toUpperCase()}${here.slice(1)} uses \`${name}\`, but your step's ${word} is \`${close}\`. ${differ} On ${here}, write \`${close}\`, letter for letter.`,
       raw,
     );
   }
@@ -958,7 +984,7 @@ function explainNameShape(text: string, line: number | null, raw: string): Cours
 function barBrackets(text: string): string | null {
   const body = codePart(text).trim();
   // One value: a name, a number, or a read by tag or position (`hero["max_mana"]`, `wall[0]`).
-  const operand = String.raw`(?:[A-Za-z_]\w*(?:\[(?:"[^"\]]*"|'[^'\]]*'|\d+)\])*|\d+)`;
+  const operand = String.raw`(?:[A-Za-z_]\w*(?:\[(?:"[^"]*"|'[^']*'|\d+)\])*|\d+)`;
   const textFirst = new RegExp(String.raw`((?:"[^"]*"|'[^']*'|[A-Za-z_]\w*)\s*\*\s*)(${operand}\s*-\s*${operand})(?![\w(\[])`);
   if (textFirst.test(body)) return body.replace(textFirst, "$1($2)");
   const countFirst = new RegExp(String.raw`(?<![\w)])(${operand}\s*-\s*${operand})(\s*\*\s*(?:"[^"]*"|'[^']*'|[A-Za-z_]\w*))`);
@@ -1934,6 +1960,17 @@ function explainQuotedIngredient(text: string, line: number | null, raw: string,
     return name;
   });
   const fixed = `def ${header[1]}(${names.join(", ")}):`;
+  // Unit 7: Mar'tu's `def` line gives the parameter a default (`def roll_die(die_size=20):`): show his line, never
+  // "the numbers go in the call", which the step turns away.
+  const wanted = (context?.solution ?? "").split("\n").map((row) => codePart(row).trim()).find((row) => new RegExp(`^def\\s+${escapeRegExp(header[1])}\\s*\\(`).test(row));
+  if (unitAtLeast(context, SPELL_RECIPES_UNIT_ORDER) && wanted && /=/.test(wanted.replace(/\)\s*:\s*$/, "")) && !parts.some(quoted)) {
+    return explain(
+      "quoted-ingredient",
+      "A parameter is a name",
+      `${lineWord(line)} has a number where a parameter's name goes. A default goes after the parameter's name, with \`=\`: \`${wanted}\``,
+      raw,
+    );
+  }
   if (parts.some(quoted)) {
     return explain(
       "quoted-ingredient",
@@ -2212,7 +2249,12 @@ function explainRecipeName(
     // `fuel`, wherever the crash shows up (the check's call, or the try line's).
     const inside = blocks.filter((block) => line > block.start && line <= block.end).at(-1);
     const read = new RegExp(`(^|[^\\w.])${escapeRegExp(name)}(?![\\w(])`);
-    if (inside && /^return\b/.test(body) && read.test(maskStrings(body))) {
+    // Unit 7: `return hero[name] + ...`, a key with no quotes where Mar'tu's version reads `hero["name"]`: the key row.
+    const unquotedKey =
+      unitAtLeast(context, SPELL_RECIPES_UNIT_ORDER) &&
+      new RegExp(`\\[\\s*${escapeRegExp(name)}\\s*\\]`).test(maskStrings(body)) &&
+      new RegExp(`\\[\\s*["']${escapeRegExp(name)}["']\\s*\\]`).test(context?.solution ?? "");
+    if (inside && /^return\b/.test(body) && read.test(maskStrings(body)) && !unquotedKey) {
       const ingredients = recipeIngredients(code, inside.recipe) ?? [];
       const boxes = [
         ...new Set(defined.filter((entry) => entry.line > inside.start && entry.line < line).map((entry) => entry.name)),
@@ -2274,6 +2316,22 @@ function explainRecipeName(
     const where = steps.length === 1 && steps[0] === "pass" ? ", in place of `pass`, four spaces in" : ", four spaces in";
     return explain("made-inside-recipe", "Only inside the recipe", `${lead}: move this line inside \`${home.recipe}\`${where}.`, raw);
   }
+  // Unit 7: the line right under the function, with no spaces in front (`spell_book[spell_name] = spell`): it fell out.
+  const rows = (code ?? "").split("\n");
+  const between = rows.slice(home.end, line - 1).every((row) => !codePart(row).trim());
+  const callsHome = new RegExp(`(^|[^\\w.])${escapeRegExp(home.recipe)}\\s*\\(`).test(maskStrings(body));
+  if (unitAtLeast(context, SPELL_RECIPES_UNIT_ORDER) && between && !callsHome && indentOf(rows[line - 1] ?? "") === 0) {
+    const inner = indentOf(rows[home.end - 1] ?? "");
+    return {
+      ...explain(
+        "made-inside-recipe",
+        "Only inside the recipe",
+        `Line ${line} has no spaces in front, so it is outside \`${home.recipe}\`, and \`${name}\` only exists inside that recipe. Indent line ${line} to line up with line ${home.end}, ${inner} spaces in, so it is inside \`${home.recipe}\`.`,
+        raw,
+      ),
+      slip: "a line outside the recipe it belongs in",
+    };
+  }
   return explain(
     "made-inside-recipe",
     "Only inside the recipe",
@@ -2311,6 +2369,9 @@ function explainSyntax(
   context?: ExplainContext,
 ): CourseExplanation {
   const lower = message.toLowerCase();
+  // Unit 7: a keyword in quotes, `==` for a default, `return` inside a `lambda`.
+  const functionsTwo = unitAtLeast(context, SPELL_RECIPES_UNIT_ORDER) ? explainFunctionsTwoSyntax(message, text, line, raw) : null;
+  if (functionsTwo) return functionsTwo;
 
   if (/unterminated triple-quoted string/.test(lower)) {
     return explain(
@@ -2907,6 +2968,12 @@ function explainName(
     );
   }
 
+  // Unit 7: a function handed over with its parameter in `()`, `==` naming a value in a call, the function's own name
+  // guessed for its parameter. Before Unit 3's rows, which say "only inside the function" or "used too early".
+  if (unitAtLeast(context, SPELL_RECIPES_UNIT_ORDER)) {
+    const handed = explainNameFunctionsTwo(name, message, code, text, line, raw, context);
+    if (handed) return handed;
+  }
   // Unit 3 on: a recipe called above its `def` or not made yet, or a name that only lives inside a recipe.
   if (unitAtLeast(context, FUNCTIONS_UNIT_ORDER)) {
     const recipe = explainRecipeName(name, code, text, line, raw, context);
@@ -3080,8 +3147,10 @@ function explainName(
     };
   }
 
-  // `print(hero)` when no line makes `hero` yet, and `hero` is one of the task's own boxes: make it, above.
-  if ((context?.names ?? []).includes(name) && !defined.some((entry) => entry.name === name)) {
+  // `print(hero)` when no line makes `hero` yet, and `hero` is one of the task's own boxes: make it, above. From Unit 7,
+  // also a variable Mar'tu's version makes at the top (`warm_hands = {...}`, the spell made before it is stored).
+  const madeBySolution = unitAtLeast(context, SPELL_RECIPES_UNIT_ORDER) && new RegExp(`^${escapeRegExp(name)}\\s*=(?!=)`, "m").test(context?.solution ?? "");
+  if (((context?.names ?? []).includes(name) || madeBySolution) && !defined.some((entry) => entry.name === name)) {
     const bare = line !== null ? explainQuietSlip((code ?? "").split("\n").slice(0, line - 1).join("\n")) : null;
     if (bare && bare.kind === "bare-value") {
       const value = codePart(sourceLine(code, bare.line)).trim();
@@ -4520,6 +4589,11 @@ function explainSheetName(name: string, code: string, text: string, line: number
   const sheets = sheetNames(code, context);
   // Unit 6: `member` in `for member in roster:` holds one sheet, so `member[name]` is a key with no quotes too.
   if (unitAtLeast(context, LOOPS_UNIT_ORDER)) for (const held of loopSheetNames(code, context)) sheets.add(held);
+  // Unit 7: a function's parameter holds the sheet it is handed (`hero[name]` in `mana_line(hero)`), when Mar'tu's
+  // version reads that key with its quotes.
+  if (unitAtLeast(context, SPELL_RECIPES_UNIT_ORDER) && line !== null && new RegExp(`\\[\\s*["']${escapeRegExp(name)}["']\\s*\\]`).test(context?.solution ?? "")) {
+    for (const block of recipeBlocks(code)) if (line > block.start && line <= block.end) for (const param of recipeIngredients(code, block.recipe) ?? []) sheets.add(param);
+  }
   const open = line === null ? [] : openBefore(code, line);
   const quote = (from: number) => `${body.slice(0, from)}"${name}"${body.slice(from + name.length)}`.trim();
   for (const found of mask.matchAll(new RegExp(`(?<![\\w.])${escapeRegExp(name)}(?![\\w(])`, "g"))) {
@@ -4917,6 +4991,18 @@ function explainSheetCalled(code: string, text: string, line: number | null, raw
   const name = called.find((entry) => sheets.has(entry)) ?? called[0];
   const swapped = name ? squareBracketed(text, name, true) : null;
   if (!name || !swapped) return null;
+  // Unit 7: `glow("effect")(lucky)`: the whole line, so a literal reader never keeps only the read (which calls nothing).
+  if (unitAtLeast(context, SPELL_RECIPES_UNIT_ORDER) && swapped.line !== swapped.fixed) {
+    return {
+      ...explain(
+        "list-needs-square-brackets",
+        "Square brackets for a key",
+        `${lineWord(line)} puts parentheses ( ) after \`${name}\`, so Python tries to run it like a function. \`${name}\` is a dictionary: read a key with square brackets [ ], not parentheses. ${lineWord(line)}, with square brackets: \`${swapped.line}\``,
+        raw,
+      ),
+      slip: "parentheses where a key needs square brackets",
+    };
+  }
   return {
     ...explain(
       "list-needs-square-brackets",
@@ -5195,7 +5281,7 @@ function explainNoneMath(message: string, code: string, raw: string): CourseExpl
  * `print`, the fix is `return` in place of that line, and the crash banner names it. `None` is "Python's word for
  * nothing" (plain-language guide §4.3.13), never left as the explanation. From Unit 3 (recipes).
  */
-function explainNoneValue(message: string, code: string, text: string, line: number | null, raw: string): CourseExplanation | null {
+function explainNoneValue(message: string, code: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
   if (!/not supported between instances of ('NoneType' and '\w+'|'\w+' and 'NoneType')|can only concatenate str \(not "NoneType"\) to str/.test(message)) return null;
   if (line === null) return null;
   const rows = (code ?? "").split("\n");
@@ -5246,6 +5332,26 @@ function explainNoneValue(message: string, code: string, text: string, line: num
       ),
       slip: "a recipe that prints its answer instead of handing it back",
       slipLine: shown[0].at,
+    };
+  }
+  // Unit 7: the body ends by making one variable (`line = ...`): the `return` goes on a new line under it. The banner then
+  // says "line N or a line above it", never "Fix line 1", the `def` line, which is right.
+  const body = rows
+    .map((row, at) => ({ row: codePart(row), at: at + 1 }))
+    .filter((entry) => entry.at > recipe.start && entry.at <= recipe.end && entry.row.trim());
+  const lastRow = body.at(-1);
+  const made = lastRow?.row.match(/^(\s+)([A-Za-z_]\w*)\s*=(?!=)\s*\S/);
+  const balanced = (row: string) => [...maskStrings(row)].reduce((depth, char) => depth + ("([{".includes(char) ? 1 : ")]}".includes(char) ? -1 : 0), 0) === 0;
+  if (unitAtLeast(context, SPELL_RECIPES_UNIT_ORDER) && lastRow && made && made[1] === body[0]?.row.match(/^\s*/)?.[0] && balanced(lastRow.row)) {
+    return {
+      ...explain(
+        "math-with-none",
+        "Nothing came back",
+        `${what} \`${recipe.recipe}\`, made on line ${recipe.start}, has no \`return\`, so it hands nothing back. Under line ${lastRow.at}, add \`return ${made[2]}\`, with the same spaces in front.`,
+        raw,
+      ),
+      slip: "a recipe with no `return`",
+      fixAbove: true,
     };
   }
   return {
@@ -5390,6 +5496,24 @@ function explainKeyNotThere(
   // The key is on another card the program has, and only one (`caster["mana_cost"]`, where the cost is on the
   // spell's page): read it there. Before (h), which would turn the cost test into a test of whether a key is there.
   const elsewhere = keyOnAnotherCard(chain, key, sheets);
+  // Unit 7: the card that holds the key is a page inside the sheet read, by its name (`lucky_book = {"Glow": glow}`, then
+  // `lucky_book["effect"]`): a level skipped, never "read it from `glow`", which the step's own check turns away.
+  if (elsewhere && unitAtLeast(context, SPELL_RECIPES_UNIT_ORDER)) {
+    const walkedKeys = keysBefore(chain, index);
+    const pages = sheets.entries.filter(
+      (entry) =>
+        entry.owner === chain.base &&
+        samePath(entry.path, walkedKeys) &&
+        entry.kind === "name" &&
+        sheets.entries.some((other) => other.owner === entry.value && other.path.length === 0 && other.key === key),
+    );
+    if (pages.length === 1) {
+      return {
+        ...explain("missing-key", "A level skipped", `\`"${key}"\` is inside \`"${pages[0].key}"\`: read the outer key first: \`${chainCode(holder, [pages[0].key, key])}\``, raw),
+        slip: "a skipped level",
+      };
+    }
+  }
   if (elsewhere) {
     return {
       ...explain(
@@ -5566,12 +5690,15 @@ function explainKeyError(message: string, code: string, text: string, line: numb
         };
       }
       const fixed = written.replace(`[${read.text}]`, `[${key}]`);
-      return explain(
+      // Unit 7: the name in quotes is the function's own parameter (`wards["name"]` in `cast_ward(wards, name, hero)`).
+      const param = unitAtLeast(context, SPELL_RECIPES_UNIT_ORDER) && paramHere(mainFrames(raw), key, programFunctions(code, context));
+      const quotedName = explain(
         "quoted-name",
         "Quotes mean these letters",
-        `\`"${key}"\` in quotes means those exact letters, and the sheet has no key spelled that. Without quotes, Python looks inside the box \`${key}\`: \`${fixed}\``,
+        `\`"${key}"\` in quotes means those exact letters, and the sheet has no key spelled that. Without quotes, Python looks inside the ${param ? "parameter" : "box"} \`${key}\`: \`${fixed}\``,
         raw,
       );
+      return param ? { ...quotedName, slip: "a parameter's name in quotes" } : quotedName;
     }
     const missing = explainKeyNotThere(chain, index, key, [...new Set(level)], sheets, text, line, raw, context);
     if (missing) return missing;
@@ -5895,8 +6022,14 @@ function explainWholeAdded(message: string, code: string, text: string, line: nu
   const values = entriesFor(sheets, owner).filter((entry) => entry.kind === wanted && entry.path.length === 0 && (entry.owner === owner || sheets.lists.has(owner)));
   const solved = readChains(context?.solution ?? "").find((chain) => chain.base === name && chain.reads.length === 1 && chain.reads[0].key !== undefined && values.some((entry) => entry.key === chain.reads[0].key));
   const key = solved?.reads[0].key ?? values[0]?.key;
-  const like = key ? `, like \`${name}["${key}"]\`` : "";
-  if (!sheets.names.has(name) && !walked) return null;
+  let like = key ? `, like \`${name}["${key}"]\`` : "";
+  // Unit 7: a parameter that holds a sheet (`print(hero + " cools down.")` in `cool_down(hero)`), with Mar'tu's read of it.
+  const param = unitAtLeast(context, SPELL_RECIPES_UNIT_ORDER) && recipeBlocks(code).some((block) => line !== null && line > block.start && line <= block.end && (recipeIngredients(code, block.recipe) ?? []).includes(name));
+  if (!sheets.names.has(name) && !walked && !param) return null;
+  const paramKey = param && !key
+    ? (context?.solution ?? "").split("\n").flatMap((row) => readChains(row)).find((chain) => chain.base === name && chain.reads.length === 1 && chain.reads[0].key !== undefined)?.reads[0].key
+    : undefined;
+  if (paramKey) like = `, like \`${name}["${paramKey}"]\``;
   return {
     ...explain(
       "whole-card-compared",
@@ -6458,7 +6591,11 @@ function ingredientOutside(
       : "Out here, hand over a value of your own in the call."
     : loop
       ? `Out here, in the loop, use the loop variable, \`${loop.variable}\`.`
-      : `Out here, use a value of your own, or move this line inside \`${recipe}\`.`;
+      : unitAtLeast(context, SPELL_RECIPES_UNIT_ORDER) &&
+          new RegExp(`(^|\\n)\\s*[A-Za-z_]\\w*\\s*=\\s*${escapeRegExp(recipe)}\\s*\\(`).test(context?.solution ?? "")
+        ? // Unit 7 (one fix): what the function hands back gets out only through `return` and a variable that catches it.
+          `Out here, catch what \`${recipe}\` hands back in a variable of your own: the call goes on the right of \`=\`.`
+        : `Out here, use a value of your own, or move this line inside \`${recipe}\`.`;
   return explain("made-inside-recipe", "Only inside the recipe", `${lead} ${instead}`, raw);
 }
 
@@ -6519,6 +6656,1638 @@ function explainOutsidePrint(message: string, text: string, line: number | null,
   );
 }
 
+/* ---------------------------------------------------------------------------------------------- */
+/* Functions II (Unit 7): functions that read sheets, a guard, a function handed over by its name  */
+/* ---------------------------------------------------------------------------------------------- */
+
+/** One frame of the student's own code in a traceback: its line, and the function it ran in (`<module>` at the top). */
+type Frame = { line: number; func: string };
+
+/** The student's frames (`File "main.py", line 7, in cast_on_everyone`), outermost first. */
+function mainFrames(raw: string): Frame[] {
+  return [...(raw ?? "").matchAll(/File "main\.py", line (\d+), in ([^\n]+)/g)].map((found) => ({ line: Number(found[1]), func: found[2].trim() }));
+}
+
+/** A call written on one line: what it calls (a name, or a read like `roar["effect"]`), its values, and the call as written. */
+type LineCall = { callee: string; args: string[]; text: string };
+
+function callsOnLine(text: string): LineCall[] {
+  const body = codePart(text);
+  const mask = maskStrings(body);
+  const calls: LineCall[] = [];
+  for (const found of mask.matchAll(/(?<![\w.\]"'])([A-Za-z_]\w*(?:\s*\[[^[\]]*\])*)\s*\(/g)) {
+    const name = found[1].match(/^[A-Za-z_]\w*/)?.[0] ?? "";
+    if (KEYWORDS.has(name)) continue;
+    const start = found.index ?? 0;
+    const open = start + found[0].length - 1;
+    const close = matchingBracket(mask, open);
+    if (close < 0) continue;
+    const args = splitArguments(body.slice(open + 1, close));
+    if (args) calls.push({ callee: body.slice(start, start + found[1].length).trim(), args, text: body.slice(start, close + 1) });
+  }
+  return calls;
+}
+
+/** A function the program makes with `def`: its parameters, its lines, and whether a `return` hands a value back. */
+type FunctionInfo = { params: string[]; start: number; end: number; returns: boolean };
+
+function functionsIn(code: string): Map<string, FunctionInfo> {
+  const rows = (code ?? "").split("\n");
+  const found = new Map<string, FunctionInfo>();
+  for (const block of recipeBlocks(code)) {
+    const header = codePart(rows[block.start - 1] ?? "").match(/^\s*def\s+[A-Za-z_]\w*\s*\(([^)]*)\)/);
+    const params = (splitArguments(header?.[1] ?? "") ?? [])
+      .map((part) => part.split(/[\s:=]/)[0]?.replace(/^\*+/, "") ?? "")
+      .filter((part) => /^[A-Za-z_]\w*$/.test(part));
+    const returns = rows.slice(block.start, block.end).some((row) => /^\s*return\s+\S/.test(codePart(row)));
+    found.set(block.recipe, { params, start: block.start, end: block.end, returns });
+  }
+  return found;
+}
+
+/** The program's functions: the hidden setup's (the finished helpers) and the student's (which win on a clash). */
+function programFunctions(code: string, context?: ExplainContext): Map<string, FunctionInfo> {
+  const setup = functionsIn(context?.setup ?? "");
+  // A setup function's lines are not the student's: keep its parameters and whether it returns, never its line.
+  for (const [name, info] of setup) setup.set(name, { ...info, start: 0, end: 0 });
+  return new Map([...setup, ...functionsIn(code)]);
+}
+
+type ValueKind = "text" | "number" | "sheet" | "list" | "function" | "nothing" | "unknown";
+
+/** What a value as written holds, as far as the program's own lines say (a name: the last line that makes it). */
+function kindOfValue(expression: string, program: string, functions: Map<string, FunctionInfo>, depth = 0): ValueKind {
+  const value = expression.trim();
+  if (/^(["'])(?:(?!\1)[^\\]|\\.)*\1$/.test(value)) return "text";
+  if (/^-?\d+(\.\d+)?$/.test(value)) return "number";
+  if (value.startsWith("{")) return "sheet";
+  if (value.startsWith("[")) return "list";
+  if (value === "None") return "nothing";
+  if (/^lambda\b/.test(value)) return "function";
+  const call = value.match(/^([A-Za-z_]\w*)\s*\(.*\)$/s);
+  if (call) {
+    const info = functions.get(call[1]);
+    if (info) return info.returns ? "unknown" : "nothing";
+    if (["str", "input"].includes(call[1])) return "text";
+    if (["int", "len", "sum", "round", "float", "abs"].includes(call[1])) return "number";
+    if (["list", "sorted"].includes(call[1])) return "list";
+    return "unknown";
+  }
+  if (!/^[A-Za-z_]\w*$/.test(value) || KEYWORDS.has(value)) return "unknown";
+  if (functions.has(value)) return "function";
+  if (depth > 2) return "unknown";
+  const made = (program ?? "")
+    .split("\n")
+    .map((row) => codePart(row).match(new RegExp(`^\\s*${escapeRegExp(value)}\\s*=(?!=)\\s*(.+)$`)))
+    .filter((found): found is RegExpMatchArray => found !== null)
+    .at(-1);
+  return made ? kindOfValue(made[1], program, functions, depth + 1) : "unknown";
+}
+
+/** Names made with `= <function>` (`chosen_spell = warm_hands`): other names the function can be called by. */
+function aliasesOf(name: string, code: string): string[] {
+  return [...(code ?? "").matchAll(new RegExp(`^\\s*([A-Za-z_]\\w*)\\s*=\\s*${escapeRegExp(name)}\\s*(?:#.*)?$`, "gm"))].map((found) => found[1]);
+}
+
+/**
+ * Where `param` of the function Python stopped in got its value: the call one frame out (the line that called it), and
+ * the value that call hands over in the parameter's place, as written. Null when the call can't be read.
+ */
+function handedValue(
+  code: string,
+  frames: Frame[],
+  param: string,
+  functions: Map<string, FunctionInfo>,
+): { line: number; call: LineCall; index: number; value: string; params: string[] } | null {
+  const inner = frames.at(-1);
+  const outer = frames.at(-2);
+  const info = inner ? functions.get(inner.func) : undefined;
+  if (!inner || !outer || !info) return null;
+  const index = info.params.indexOf(param);
+  if (index < 0) return null;
+  const names = new Set([inner.func, ...aliasesOf(inner.func, code)]);
+  const calls = callsOnLine(sourceLine(code, outer.line));
+  const byName = calls.filter((call) => names.has(call.callee));
+  // A function called from a page (`spell["effect"](hero)`): the one call on the line with the right count of values.
+  const unnamed = calls.filter((call) => !functions.has(call.callee) && !CALLED_TOOLS.has(call.callee) && call.args.length === info.params.length);
+  const call = byName.find((entry) => entry.args.length === info.params.length) ?? byName[0] ?? (unnamed.length === 1 ? unnamed[0] : undefined);
+  if (!call) return null;
+  // A value handed over by its parameter's name (`roll_die(die_size="6")`), else by its place among the others.
+  const keyword = call.args.map((arg) => arg.match(new RegExp(`^${escapeRegExp(param)}\\s*=(?!=)\\s*(.+)$`))?.[1]).find((value) => value !== undefined);
+  if (keyword !== undefined) return { line: outer.line, call, index, value: keyword.trim(), params: info.params };
+  if (call.args.some((arg) => /^[A-Za-z_]\w*\s*=(?!=)/.test(arg)) || index >= call.args.length) return null;
+  return { line: outer.line, call, index, value: call.args[index], params: info.params };
+}
+
+/** `line`'s own text with `from` (written once on it) put back as `to`: the student's line, fixed. */
+function lineWith(code: string, line: number, from: string, to: string): string | null {
+  const body = codePart(sourceLine(code, line)).trim();
+  const at = body.indexOf(from);
+  if (at < 0 || body.indexOf(from, at + 1) >= 0) return null;
+  return `${body.slice(0, at)}${to}${body.slice(at + from.length)}`;
+}
+
+/** The parameter of the function a line sits in, by name: the frame Python stopped in, and that function's own list. */
+function paramHere(frames: Frame[], name: string, functions: Map<string, FunctionInfo>): boolean {
+  const inner = frames.at(-1);
+  return !!inner && inner.func !== "<module>" && (functions.get(inner.func)?.params ?? []).includes(name);
+}
+
+/** The value a name or a read (`roar["effect"]`) got on a line above `line`: `name = value`, `{"effect": value}`, `book["k"] = value`. */
+function storedValue(code: string, callee: string, line: number): { line: number; value: string } | null {
+  const rows = (code ?? "").split("\n");
+  const plain = callee.match(/^[A-Za-z_]\w*$/);
+  const read = callee.match(/^([A-Za-z_]\w*)\s*\[\s*(["'])([^"']+)\2\s*\]$/);
+  for (let at = line - 1; at >= 1; at -= 1) {
+    const row = codePart(rows[at - 1] ?? "");
+    if (plain) {
+      const made = row.match(new RegExp(`^\\s*${escapeRegExp(callee)}\\s*=(?!=)\\s*(.+)$`));
+      if (made) return { line: at, value: made[1].trim() };
+      continue;
+    }
+    if (!read) return null;
+    const stored = row.match(new RegExp(`^\\s*${escapeRegExp(read[1])}\\s*\\[\\s*["']${escapeRegExp(read[3])}["']\\s*\\]\\s*=(?!=)\\s*(.+)$`));
+    if (stored) return { line: at, value: stored[1].trim() };
+    // `roar = {"effect": shout(lucky)}`, or a key inside a sheet made over several lines under `roar = {`.
+    const keyed = row.match(new RegExp(`["']${escapeRegExp(read[3])}["']\\s*:\\s*(.+?)\\s*,?\\s*}?\\s*$`));
+    if (keyed) {
+      const owner = rows
+        .slice(0, at)
+        .map((entry, index) => ({ entry: codePart(entry), at: index + 1 }))
+        .reverse()
+        .find((entry) => /^\s*[A-Za-z_]\w*\s*=\s*\{/.test(entry.entry));
+      const value = keyed[1].replace(/\s*}\s*$/, "").replace(/,\s*$/, "").trim();
+      if (owner && new RegExp(`^\\s*${escapeRegExp(read[1])}\\s*=`).test(owner.entry)) return { line: at, value };
+    }
+  }
+  return null;
+}
+
+/** A call written as a value (`warm_hands(lucky)`), and what it calls (`warm_hands`; `wards[name]["effect"]`). */
+function asCall(value: string): { callee: string; inside: string } | null {
+  const found = value.trim().match(/^([A-Za-z_]\w*(?:\s*\[[^[\]]*\])*)\s*\((.*)\)$/s);
+  if (!found) return null;
+  const mask = maskStrings(value.trim());
+  const open = found[1].length + (value.trim().slice(found[1].length).match(/^\s*/)?.[0].length ?? 0);
+  return matchingBracket(mask, open) === mask.length - 1 ? { callee: found[1].replace(/\s+/g, ""), inside: found[2] } : null;
+}
+
+/**
+ * Unit 7: a value called with `( )` that is not a function ("'NoneType' object is not callable", and `int`, `float` or
+ * `str`). The class hands a function over WITH its `()`: it runs right there, and what it hands back goes over in its
+ * place (`cast_on_everyone(roster, warm_hands(lucky))`, `chosen_spell = warm_hands(lucky)`, `roar = {"effect":
+ * shout(lucky)}`), or hands the function's name over in quotes. The row finds the line that handed it over (the call
+ * one frame out, the line that stored it, or the one value-call of a function with no `return`) and names it
+ * (`slipLine`): the fix is that line, with the function's name and no `()`. Before the box-called row, which says
+ * "only a recipe made with def can be called", untrue once a variable can hold a function.
+ */
+function explainValueCalled(message: string, code: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  const held = message.match(/^'(NoneType|int|float|str)' object is not callable/)?.[1];
+  if (!held || line === null) return null;
+  const functions = programFunctions(code, context);
+  const program = `${context?.setup ?? ""}\n${code ?? ""}`;
+  const frames = mainFrames(raw);
+  const called = callsOnLine(text).filter((call) => !functions.has(call.callee) && !CALLED_TOOLS.has(call.callee) && !COMMON_BUILTINS.includes(call.callee));
+  const callee = called[0]?.callee;
+  const what = held === "NoneType" ? "`None`, Python's word for nothing" : held === "str" ? "text" : "a number";
+  const isFunction = (name: string) => functions.has(name) || kindOfValue(name, program, functions) === "function";
+  if (!callee) {
+    // `map(get_mana(lucky), roster)`: map calls what it is handed, and it got a number (or `"get_name"`, text).
+    const mapped = callsOnLine(text).find((call) => call.callee === "map" && call.args.length === 2);
+    const named = mapped?.args[0].match(/^(["'])([A-Za-z_]\w*)\1$/)?.[2];
+    if (mapped && named && isFunction(named)) {
+      const fixed = lineWith(code, line, mapped.args[0], named);
+      return {
+        ...explain(
+          "not-a-function",
+          "A function's name in quotes",
+          `${lineWord(line)} hands \`${mapped.args[0]}\` to \`map\`, in quotes: quotes make it text, the letters of the name, not the function. Take the quotes off${fixed ? `: \`${fixed}\`` : "."}`,
+          raw,
+        ),
+        slip: "a function's name in quotes",
+        lean: `${lineWord(line)} hands \`${mapped.args[0]}\` to \`map\`, in quotes: text, not a function.`,
+      };
+    }
+    const inner = mapped ? asCall(mapped.args[0]) : null;
+    if (!mapped || !inner || !isFunction(inner.callee)) return null;
+    const fixed = lineWith(code, line, mapped.args[0], inner.callee);
+    return {
+      ...explain(
+        "not-a-function",
+        "Handed over with ( )",
+        `${lineWord(line)} hands \`${mapped.args[0]}\` to \`map\`. The \`()\` runs \`${inner.callee}\` right there, so \`map\` gets ${what}, not the function. Hand the function over by its name, with no \`()\`${fixed ? `: \`${fixed}\`` : "."}`,
+        raw,
+      ),
+      slip: "a function handed over with `()`",
+      lean: `${lineWord(line)} hands \`${mapped.args[0]}\` to \`map\`, with \`()\`, so \`map\` got ${what}, not a function.`,
+    };
+  }
+  // Where the value came from: the call one frame out (a parameter), a line above that stored it, or, for `None`, the
+  // one place a function with no `return` is called as a value (`learn_spell(..., lantern_ward(hero))`).
+  let source: { line: number; value: string; how: "handed" | "stored" | "anywhere" } | null = null;
+  if (/^[A-Za-z_]\w*$/.test(callee) && paramHere(frames, callee, functions)) {
+    const handed = handedValue(code, frames, callee, functions);
+    if (handed) source = { line: handed.line, value: handed.value, how: "handed" };
+  } else {
+    const stored = storedValue(code, callee, line);
+    // A box made with `=` from a number (`x = 5`, then `x(2)`) keeps the box row; one that stored a call's answer is ours.
+    if (stored && (held === "NoneType" || held === "str" || asCall(stored.value))) source = { ...stored, how: "stored" };
+  }
+  const traced = source && (asCall(source.value) || /^(["']).*\1$|^-?\d/.test(source.value));
+  if (!traced && held === "NoneType") {
+    source = null;
+    const rows = (code ?? "").split("\n");
+    const early = rows.flatMap((row, index) =>
+      callsOnLine(row).flatMap((call) =>
+        call.args.filter((arg) => {
+          const inner = asCall(arg);
+          return !!inner && functions.has(inner.callee) && !functions.get(inner.callee)?.returns;
+        }).map((arg) => ({ line: index + 1, value: arg })),
+      ),
+    );
+    // A sheet made with a key holding a call: `{"effect": shout(lucky)}`.
+    rows.forEach((row, index) => {
+      for (const found of codePart(row).matchAll(/["'][^"']+["']\s*:\s*([A-Za-z_]\w*\s*\([^()]*\))/g)) {
+        const inner = asCall(found[1]);
+        if (inner && functions.has(inner.callee) && !functions.get(inner.callee)?.returns) early.push({ line: index + 1, value: found[1] });
+      }
+    });
+    const lines = [...new Set(early.map((entry) => entry.line))];
+    if (lines.length === 1) source = { ...early[0], how: "anywhere" };
+  }
+  const where = (from: { line: number; how: string }) =>
+    from.how === "stored" ? `Line ${from.line} puts` : from.how === "handed" ? `The call on line ${from.line} hands over` : `Line ${from.line} hands over`;
+  const holds = `${lineWord(line)} calls \`${callee}\`, and it holds ${what}.`;
+  const inner = source ? asCall(source.value) : null;
+  if (source && inner) {
+    const fixed = lineWith(code, source.line, source.value, inner.callee);
+    const parens = inner.inside.trim() ? `(${inner.inside.trim()})` : "()";
+    const back =
+      held === "NoneType"
+        ? `and \`${inner.callee}\` hands back nothing`
+        : `and its answer, ${held === "str" ? "text" : "a number"}, goes over in place of the function`;
+    const into = source.how === "stored" ? ` in \`${callee}\`` : "";
+    return {
+      ...explain(
+        "not-a-function",
+        "Handed over with ( )",
+        `${holds} ${where(source)} \`${source.value}\`${into}: the \`${parens}\` runs \`${inner.callee}\` right there, ${back}. Hand the function over by its name, with no \`()\`${fixed ? `: \`${fixed}\`` : "."}`,
+        raw,
+      ),
+      slip: "a function handed over with `()`",
+      lean: `${where(source)} \`${source.value}\`${into}, with \`${parens}\`, so line ${line} calls ${what}.`,
+      ...(source.line !== line ? { slipLine: source.line } : {}),
+    };
+  }
+  if (source && held === "str" && /^(["'])[A-Za-z_]\w*\1$/.test(source.value) && isFunction(source.value.slice(1, -1))) {
+    const name = source.value.slice(1, -1);
+    const fixed = lineWith(code, source.line, source.value, name);
+    return {
+      ...explain(
+        "not-a-function",
+        "A function's name in quotes",
+        `${holds} ${where(source)} \`${source.value}\`, in quotes: quotes make it text, the letters of the name, not the function. Take the quotes off${fixed ? `: \`${fixed}\`` : `: \`${name}\`.`}`,
+        raw,
+      ),
+      slip: "a function's name in quotes",
+      lean: `${where(source)} \`${source.value}\`, in quotes, so line ${line} calls text.`,
+      ...(source.line !== line ? { slipLine: source.line } : {}),
+    };
+  }
+  if (source && /^-?\d+(\.\d+)?$/.test(source.value)) {
+    // A placeholder number handed in (`learn_ward(wards, "Ash Ward", 4, 0)`), then called inside.
+    return {
+      ...explain(
+        "not-a-function",
+        "A number called",
+        `${lineWord(line)} puts \`()\` after \`${callee}\`, so Python calls it, but \`${callee}\` holds ${source.value}, the number ${source.how === "handed" ? `the call on line ${source.line} hands over` : `line ${source.line} puts in it`}. A number can't be called: only a function can.`,
+        raw,
+      ),
+      slip: "a number called like a function",
+      lean: `${lineWord(line)} calls \`${callee}\` with \`()\`, and it holds ${source.value}, the number ${source.how === "handed" ? `the call on line ${source.line} hands over` : `line ${source.line} puts in it`}.`,
+    };
+  }
+  if ((held === "int" || held === "float") && /^[A-Za-z_]\w*$/.test(callee) && paramHere(frames, callee, functions)) {
+    return {
+      ...explain(
+        "not-a-function",
+        "Handed over with ( )",
+        `${lineWord(line)} calls \`${callee}\`, and it holds a number. The call handed over a result, not the function: hand over the function's name, with no \`()\`.`,
+        raw,
+      ),
+      slip: "a function handed over with `()`",
+      lean: `${lineWord(line)} calls \`${callee}\`, and it holds a number, not a function.`,
+    };
+  }
+  if (held === "NoneType") {
+    return {
+      ...explain(
+        "not-a-function",
+        "Handed over with ( )",
+        `${lineWord(line)} calls \`None\`, Python's word for nothing. Something was handed over with \`()\`: it ran early and gave back \`None\`. Hand the function over by its name, with no \`()\`.`,
+        raw,
+      ),
+      slip: "a function handed over with `()`",
+      lean: `${lineWord(line)} calls \`None\`, Python's word for nothing.`,
+    };
+  }
+  return null;
+}
+
+/**
+ * Unit 7: "'dict' object is not callable" on a page of a book or a spell kept in a dictionary (`lucky_book["Glow"](lucky)`,
+ * `glow(lucky)`): the function is inside it, under a key. The key comes from Mar'tu's version (`glow["effect"](`), else
+ * from a key of the program's sheets that holds a function. Never `glow["effect"]` on its own, which calls nothing.
+ */
+function explainPageCalled(code: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  if (line === null) return null;
+  const functions = programFunctions(code, context);
+  const call = callsOnLine(text).find((entry) => !functions.has(entry.callee) && !CALLED_TOOLS.has(entry.callee) && !COMMON_BUILTINS.includes(entry.callee));
+  // `glow("effect")`: a key read with round brackets is Unit 5's row (square brackets for a key).
+  if (!call || (call.args.length === 1 && /^(["']).*\1$/.test(call.args[0]))) return null;
+  const solution = (context?.solution ?? "").replace(/\s+/g, "");
+  const callee = call.callee.replace(/\s+/g, "");
+  const fromSolution = solution.match(new RegExp(`${escapeRegExp(callee)}\\[(["'])(\\w+)\\1\\]\\(`))?.[2];
+  const program = `${context?.setup ?? ""}\n${code ?? ""}`;
+  const keyHolding = [...program.matchAll(/["'](\w+)["']\s*:\s*([A-Za-z_]\w*)\s*[,}\n]/g)].find((found) => functions.has(found[2]))?.[1];
+  const key = fromSolution ?? keyHolding;
+  if (!key) return null;
+  const fixed = lineWith(code, line, call.text, call.text.replace(call.callee, `${call.callee}["${key}"]`));
+  return {
+    ...explain(
+      "not-a-function",
+      "A dictionary, not a function",
+      `${lineWord(line)} calls \`${call.callee}\`, a whole dictionary, with ( ). The function is inside it, under the key \`"${key}"\`: read it, then call it${fixed ? `: \`${fixed}\`` : "."}`,
+      raw,
+    ),
+    slip: "a dictionary called, not the function inside it",
+    lean: `${lineWord(line)} calls \`${call.callee}\`, a whole dictionary, not the function inside it.`,
+  };
+}
+
+/** The program's sheet whose name (or `"name"` value) is the text handed over: `"Lucky"` -> `lucky`. */
+function sheetForText(words: string, code: string, context?: ExplainContext): string | null {
+  const sheets = sheetsOf(code, context);
+  const plain = words.toLowerCase().replace(/\s+/g, "_");
+  if (sheets.names.has(plain) && !sheets.lists.has(plain)) return plain;
+  const owner = sheets.entries.find((entry) => entry.path.length === 0 && entry.key === "name" && entry.kind === "text" && entry.value === words)?.owner;
+  return owner && /^[A-Za-z_]\w*$/.test(owner) ? owner : null;
+}
+
+/**
+ * Unit 7: "string indices must be integers, not 'str'". A line reads text as if it were a sheet. The slips: a parameter's
+ * name in quotes on the line itself (`"hero"["name"]`), the call handing its values over in the wrong order
+ * (`draw_bar("███░", lucky)`), or text handed over where the sheet goes (`chosen_spell("Lucky")`). The call is one
+ * frame out, so the crash banner names its line (`slipLine`). One fix each, never "check the order, or ...".
+ */
+function explainTextAsSheet(message: string, code: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  if (!/string indices must be integers/.test(message) || line === null) return null;
+  const functions = programFunctions(code, context);
+  const program = `${context?.setup ?? ""}\n${code ?? ""}`;
+  const frames = mainFrames(raw);
+  const body = codePart(text);
+  const quoted = body.match(/(["'])([A-Za-z_]\w*)\1(\s*\[)/);
+  const defined = new Set(definedNames(program).map((entry) => entry.name));
+  if (quoted && (paramHere(frames, quoted[2], functions) || defined.has(quoted[2]))) {
+    const name = quoted[2];
+    const fixed = lineWith(code, line, `${quoted[1]}${name}${quoted[1]}${quoted[3]}`, `${name}${quoted[3]}`);
+    const word = paramHere(frames, name, functions) ? "parameter" : "variable";
+    return {
+      ...explain(
+        "quoted-name",
+        "Quotes around a name",
+        `${lineWord(line)} reads \`${quoted[1]}${name}${quoted[1]}[...]\`. With quotes, \`${quoted[1]}${name}${quoted[1]}\` is the text ${name}, not the ${word} \`${name}\`. Quotes mean these exact letters. No quotes means look inside the box with this label. Take the quotes off${fixed ? `: \`${fixed}\`` : "."}`,
+        raw,
+      ),
+      slip: `a ${word}'s name in quotes`,
+      lean: `${lineWord(line)} reads \`${quoted[1]}${name}${quoted[1]}[...]\`: with quotes, it is text, not the ${word} \`${name}\`.`,
+    };
+  }
+  const param = readChains(text).map((chain) => chain.base).find((base) => paramHere(frames, base, functions));
+  const handed = param ? handedValue(code, frames, param, functions) : null;
+  if (!param || !handed) return null;
+  const kinds = handed.call.args.map((arg) => kindOfValue(arg, program, functions));
+  // The other value is a sheet, or is written with this parameter's own name (`draw_bar(fuel_bar, robot)`).
+  const sheetAt = [kinds.findIndex((kind, index) => index !== handed.index && kind === "sheet"), handed.call.args.findIndex((arg, index) => index !== handed.index && arg === param)].find((index) => index >= 0) ?? -1;
+  const banner = handed.line !== line ? { slipLine: handed.line } : {};
+  if (sheetAt >= 0 && handed.call.args.length === handed.params.length && kinds[handed.index] !== "sheet") {
+    const other = handed.params[sheetAt];
+    const sheetValue = handed.call.args[sheetAt];
+    // The call written back with the two values swapped, when it holds no text of the student's own.
+    const swapped = handed.call.args.map((arg, index) => (index === handed.index ? sheetValue : index === sheetAt ? handed.value : arg));
+    const plain = handed.call.args.every((arg) => !/["']/.test(arg));
+    const fixed = plain ? lineWith(code, handed.line, handed.call.text, `${handed.call.callee}(${swapped.join(", ")})`) : null;
+    return {
+      ...explain(
+        "swapped-values",
+        "Values in the wrong order",
+        `The call on line ${handed.line} hands its values over in the wrong order. \`${handed.call.callee}\` takes the sheet as \`${param}\`, and the call puts \`${sheetValue}\` where \`${other}\` goes, so ${lineWord(line).toLowerCase()} reads text as a sheet. Swap the two values on line ${handed.line}${fixed ? `: \`${fixed}\`` : "."}`,
+        raw,
+      ),
+      slip: "two values handed over in the wrong order",
+      lean: `The call on line ${handed.line} puts \`${sheetValue}\`, the sheet, where \`${other}\` goes, so \`${param}\` gets text.`,
+      ...banner,
+    };
+  }
+  const words = handed.value.match(/^(["'])(.*)\1$/)?.[2];
+  const sheet = words !== undefined ? sheetForText(words, code, context) : null;
+  if (sheet) {
+    const fixed = lineWith(code, handed.line, handed.call.text, handed.call.text.replace(handed.value, sheet));
+    return {
+      ...explain(
+        "text-as-sheet",
+        "Text, not a sheet",
+        `The call on line ${handed.line} hands over the text \`${handed.value}\` for \`${param}\`, and ${lineWord(line).toLowerCase()} reads \`${param}\` as a sheet. Hand over the sheet \`${sheet}\` itself, with no quotes${fixed ? `: \`${fixed}\`` : "."}`,
+        raw,
+      ),
+      slip: "text handed over where a sheet goes",
+      lean: `The call on line ${handed.line} hands over the text \`${handed.value}\` for \`${param}\`, where a sheet goes.`,
+      ...banner,
+    };
+  }
+  return {
+    ...explain(
+      "text-as-sheet",
+      "Text, not a sheet",
+      `${lineWord(line)} reads \`${param}\` as a sheet, but \`${param}\` holds text: the call on line ${handed.line} hands over \`${handed.value}\` for it. Hand over a sheet there, with no quotes.`,
+      raw,
+    ),
+    slip: "text handed over where a sheet goes",
+    lean: `The call on line ${handed.line} hands over \`${handed.value}\`, text, for \`${param}\`, where a sheet goes.`,
+    ...banner,
+  };
+}
+
+/**
+ * Unit 7: "'function' object is not iterable" where the call handed its values over in the wrong order: the loop's list
+ * got the function (`cast_on_everyone(warm_hands, roster)`, `run_array(max_mana_dial, roster)`), or `map` got the list
+ * first (`map(roster, get_name)`).
+ */
+function explainSwappedForLoop(message: string, code: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  if (!/^'function' object is not iterable/.test(message) || line === null) return null;
+  const functions = programFunctions(code, context);
+  const program = `${context?.setup ?? ""}\n${code ?? ""}`;
+  const frames = mainFrames(raw);
+  const mapped = callsOnLine(text).find((call) => call.callee === "map" && call.args.length === 2);
+  if (mapped && kindOfValue(mapped.args[1], program, functions) === "function") {
+    const fixed = lineWith(code, line, mapped.text, `map(${mapped.args[1]}, ${mapped.args[0]})`);
+    return {
+      ...explain(
+        "swapped-values",
+        "Values in the wrong order",
+        `${lineWord(line)} hands \`map\` its values in the wrong order. \`map\` takes the function first, then the list. Swap them${fixed ? `: \`${fixed}\`` : "."}`,
+        raw,
+      ),
+      slip: "two values handed over in the wrong order",
+      lean: `${lineWord(line)} hands \`map\` the list first and the function second.`,
+    };
+  }
+  const walked = maskStrings(codePart(text)).match(/^\s*for\s+[A-Za-z_][\w\s,]*\s+in\s+([A-Za-z_]\w*)\s*:/)?.[1];
+  const handed = walked && paramHere(frames, walked, functions) ? handedValue(code, frames, walked, functions) : null;
+  if (!walked || !handed || kindOfValue(handed.value, program, functions) !== "function") return null;
+  const listAt = handed.call.args.findIndex((arg, index) => index !== handed.index && ["list", "unknown"].includes(kindOfValue(arg, program, functions)));
+  if (listAt < 0 || handed.call.args.length !== handed.params.length) return null;
+  const other = handed.params[listAt];
+  return {
+    ...explain(
+      "swapped-values",
+      "Values in the wrong order",
+      `The call on line ${handed.line} hands its values over in the wrong order: \`${walked}\` gets the function \`${handed.value}\`, and \`${other}\` gets \`${handed.call.args[listAt]}\`. ${lineWord(line)} then loops over \`${walked}\`, and a function is not a list. Swap the two values on line ${handed.line}, so \`${walked}\` gets \`${handed.call.args[listAt]}\`.`,
+      raw,
+    ),
+    slip: "two values handed over in the wrong order",
+    lean: `The call on line ${handed.line} hands \`${walked}\` the function \`${handed.value}\` and \`${other}\` \`${handed.call.args[listAt]}\`.`,
+    ...(handed.line !== line ? { slipLine: handed.line } : {}),
+  };
+}
+
+/** The guard of a function: an `if` that asks whether a name is `in` (or `not in`) a dictionary, and the lines under it. */
+type Guard = { line: number; negated: boolean; asks: string; dict: string; lastLine: number; returns: boolean; text: string };
+
+function guardsIn(code: string, start: number, end: number): Guard[] {
+  const rows = (code ?? "").split("\n");
+  const guards: Guard[] = [];
+  for (let at = start + 1; at <= end; at += 1) {
+    const row = codePart(rows[at - 1] ?? "");
+    const found = row.match(/^\s*(?:if|elif)\s+([A-Za-z_]\w*)\s+(not\s+in|in)\s+(.+?)\s*:\s*$/);
+    if (!found) continue;
+    const indent = indentOf(row);
+    let lastLine = at;
+    let returns = false;
+    for (let below = at + 1; below <= end; below += 1) {
+      const next = codePart(rows[below - 1] ?? "");
+      if (!next.trim()) continue;
+      if (indentOf(next) <= indent) break;
+      lastLine = below;
+      if (/^\s*return\b/.test(next)) returns = true;
+    }
+    guards.push({ line: at, negated: /^not/.test(found[2]), asks: found[1], dict: found[3].replace(/\s+/g, ""), lastLine, returns, text: row.trim() });
+  }
+  return guards;
+}
+
+/**
+ * Unit 7: a KeyError on a read inside a function that has (or, in Mar'tu's version, should have) a guard about the same
+ * dictionary: the guard lets the key through (no `return` under it, `in` for `not in`, or it sits below the read), or
+ * there is no guard yet. The test call that hands the unknown name over is the test, so never "Use a key that is
+ * already there".
+ */
+function explainGuardLetsThrough(message: string, code: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  const key = message.match(/^(["'])(.*)\1$/)?.[2];
+  if (key === undefined || line === null) return null;
+  const frames = mainFrames(raw);
+  const inner = frames.at(-1);
+  if (!inner || inner.func === "<module>" || inner.line !== line) return null;
+  const block = recipeBlocks(code).find((entry) => entry.recipe === inner.func && line > entry.start && line <= entry.end);
+  if (!block) return null;
+  // The read that stopped: a dictionary read with a name in square brackets (`hero["spell_book"][spell_name]`).
+  const chain = readChains(text).find((entry) => entry.reads.some((read) => read.name !== undefined));
+  const at = chain ? chain.reads.findIndex((read) => read.name !== undefined) : -1;
+  if (!chain || at < 0) return null;
+  const dict = `${chain.base}${chain.reads.slice(0, at).map((read) => `[${read.text}]`).join("")}`.replace(/\s+/g, "");
+  const asked = chain.reads[at].name as string;
+  const guard = guardsIn(code, block.start, block.end).find((entry) => entry.dict === dict && entry.asks === asked);
+  const through = `Your guard lets "${key}" through to line ${line}`;
+  if (guard && guard.line > line) {
+    return {
+      ...explain(
+        "missing-key",
+        "The guard comes too late",
+        `${through}: it is on line ${guard.line}, below line ${line}, which reads the key first, so "${key}" stops the program before the guard can ask. Move the guard, its \`if\` and the lines under it, above line ${line}.`,
+        raw,
+      ),
+      slip: "a guard below the line that reads the key",
+      lean: `The guard on line ${guard.line} sits below line ${line}, which reads "${key}" first.`,
+      slipLine: guard.line,
+    };
+  }
+  if (guard && !guard.negated) {
+    const fixed = guard.text.replace(new RegExp(`\\b${escapeRegExp(asked)}\\s+in\\b`), `${asked} not in`);
+    return {
+      ...explain(
+        "missing-key",
+        "The guard asks the wrong way",
+        `${through}. Line ${guard.line} asks \`in\`, so it stops the spells the book has and lets the others go on. Ask \`not in\`: \`${fixed}\``,
+        raw,
+      ),
+      slip: "a guard that asks `in`, not `not in`",
+      lean: `The guard on line ${guard.line} asks \`in\`, so "${key}" went on to line ${line}.`,
+      slipLine: guard.line,
+    };
+  }
+  if (guard && !guard.returns) {
+    return {
+      ...explain(
+        "missing-key",
+        "The guard has no return",
+        `${through}. Its \`if\` shows the line, but nothing stops the function, so line ${line} still reads the key. Put \`return\` on a new line under line ${guard.lastLine}, with the same spaces in front.`,
+        raw,
+      ),
+      slip: "a guard with no `return`",
+      lean: `The guard on line ${guard.line} has no \`return\`, so "${key}" went on to line ${line}.`,
+      // The missing line goes under the guard, above the read: "line 7 or a line above it", never "Fix line 6" (a right line).
+      fixAbove: true,
+    };
+  }
+  if (guard) return null;
+  // No guard yet, and Mar'tu's version guards this function: the bottom call is the test, so the guard goes in.
+  const solution = context?.solution ?? "";
+  const own = recipeBlocks(solution).find((entry) => entry.recipe === inner.func);
+  if (!own || !guardsIn(solution, own.start, own.end).some((entry) => entry.dict === dict && entry.negated)) return null;
+  return {
+    ...explain(
+      "missing-key",
+      "Nothing asks first",
+      `\`${dict}\` has no key "${key}", so line ${line} stops the program. The call that hands over "${key}" is the test: keep it. Add your guard above line ${line}, so \`${inner.func}\` asks first.`,
+      raw,
+    ),
+    slip: "a key read before any guard asks",
+    lean: `Nothing asks about "${key}" before line ${line} reads it.`,
+    fixAbove: true,
+  };
+}
+
+/**
+ * Unit 7: a KeyError where a function reads a key of the sheet it is handed (the student's own function, or a finished
+ * helper the setup makes, whose lines the traceback hides), and the call hands over a dictionary without that key
+ * (`glow["effect"](glow)`: the spell's own page, where the hero's sheet goes). The fix hands over the sheet that has the
+ * key, Mar'tu's choice when his version shows it.
+ */
+function explainWrongSheetHanded(message: string, code: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  const key = message.match(/^(["'])(.*)\1$/)?.[2];
+  if (key === undefined || line === null) return null;
+  const functions = programFunctions(code, context);
+  const program = `${context?.setup ?? ""}\n${code ?? ""}`;
+  const frames = mainFrames(raw);
+  const last = frames.at(-1);
+  if (!last || last.line !== line) return null;
+  const reads = (rows: string, param: string) => rows.split("\n").some((row) => readChains(row).some((chain) => chain.base === param && chain.reads[0]?.key === key));
+  let handed: ReturnType<typeof handedValue> = null;
+  let param: string | undefined;
+  let helper: string | null = null;
+  // The student's own function: the line Python stopped on reads `param["key"]`.
+  if (last.func !== "<module>") {
+    param = readChains(text).find((chain) => chain.reads[0]?.key === key && paramHere(frames, chain.base, functions))?.base;
+    handed = param ? handedValue(code, frames, param, functions) : null;
+  }
+  // A finished helper from the setup, called on this line (by its name, or from a page: `glow["effect"](...)`).
+  if (!handed) {
+    const setupBlocks = recipeBlocks(context?.setup ?? "");
+    const setupRows = (context?.setup ?? "").split("\n");
+    for (const call of callsOnLine(text)) {
+      const stored = functions.has(call.callee) ? call.callee : storedValue(code, call.callee, line)?.value;
+      const block = stored ? setupBlocks.find((entry) => entry.recipe === stored) : undefined;
+      const info = stored ? functions.get(stored) : undefined;
+      if (!block || !info || info.start !== 0) continue;
+      const body = setupRows.slice(block.start, block.end).join("\n");
+      const index = info.params.findIndex((name) => reads(body, name));
+      if (index < 0 || index >= call.args.length) continue;
+      handed = { line, call, index, value: call.args[index], params: info.params };
+      param = info.params[index];
+      helper = stored ?? null;
+      break;
+    }
+  }
+  // Unit 7: the function's own sheets count too (a parameter, or a card it read: `show_mana(spell)` inside `cast`).
+  const scope =
+    unitAtLeast(context, SPELL_RECIPES_UNIT_ORDER) && last.func !== "<module>"
+      ? scopeHoldings(code, frames, line, functions, sheetsOf(code, context, line), handedTexts(code, frames, functions))
+      : new Map<string, Holding>();
+  if (!handed || !param || !/^[A-Za-z_]\w*$/.test(handed.value)) return null;
+  if (kindOfValue(handed.value, program, functions) !== "sheet" && !scope.has(handed.value)) return null;
+  // `wards["name"]` inside `cast_ward(wards, name, hero)`: the parameter's name in quotes, Unit 5's row.
+  if (last.func !== "<module>" && (functions.get(last.func)?.params ?? []).includes(key)) return null;
+  // `learn_ward(wards, "Ash Ward", 4, ash_ward(wards))`: the function ran in the call, on the book. It goes over by its name.
+  const nested = callsOnLine(sourceLine(code, handed.line)).find((call) => call.text !== handed.call.text && call.args.includes(handed.call.text) && !CALLED_TOOLS.has(call.callee));
+  if (nested && /^[A-Za-z_]\w*$/.test(handed.call.callee)) {
+    const fixed = lineWith(code, handed.line, handed.call.text, handed.call.callee);
+    return {
+      ...explain(
+        "missing-key",
+        "Handed over with ( )",
+        `Line ${handed.line} hands \`${handed.call.text}\` to \`${nested.callee}\`. The \`(${handed.value})\` runs \`${handed.call.callee}\` right there, on \`${handed.value}\`, a dictionary with no "${key}". Hand the function over by its name, with no \`()\`${fixed ? `: \`${fixed}\`` : "."}`,
+        raw,
+      ),
+      slip: "a function handed over with `()`",
+      lean: `Line ${handed.line} hands \`${handed.call.text}\` to \`${nested.callee}\`, with \`()\`, so \`${handed.call.callee}\` ran there, on \`${handed.value}\`.`,
+      ...(handed.line !== line ? { slipLine: handed.line } : {}),
+    };
+  }
+  const sheets = sheetsOf(code, context);
+  const held = (name: string) => {
+    const card = scope.get(name);
+    return !!card && sheets.entries.some((entry) => entry.owner === card.owner && samePath(entry.path, card.path) && entry.key === key);
+  };
+  const has = (name: string) => held(name) || sheets.entries.some((entry) => entry.owner === name && entry.path.length === 0 && entry.key === key);
+  if (has(handed.value)) return null;
+  const solutionCall = (context?.solution ?? "")
+    .split("\n")
+    .flatMap((row) => callsOnLine(row))
+    .find((call) => call.callee.replace(/\s+/g, "") === handed.call.callee.replace(/\s+/g, "") && call.args.length === handed.call.args.length);
+  const wanted = solutionCall?.args[handed.index];
+  // Inside a function, the sheets it was handed (never `lucky`, the sheet outside, the class's own slip).
+  const holders = helper && scope.size > 0 ? [...scope.keys()].filter(held) : [...sheets.names].filter((name) => has(name) && !sheets.lists.has(name));
+  const pick = wanted && /^[A-Za-z_]\w*$/.test(wanted) && has(wanted) ? wanted : holders.length === 1 ? holders[0] : null;
+  if (!pick) return null;
+  const fixed = lineWith(code, handed.line, handed.call.text, handed.call.text.replace(new RegExp(`(?<=[(,]\\s*)${escapeRegExp(handed.value)}(?=\\s*[,)])`), pick));
+  const reader = helper ? `\`${helper}\` reads the key "${key}" from the sheet it is handed.` : `${lineWord(line)} reads the key "${key}" from \`${param}\`.`;
+  const call = handed.line === line ? `${lineWord(line)} hands over` : `The call on line ${handed.line} hands over`;
+  return {
+    ...explain(
+      "missing-key",
+      "The wrong sheet handed over",
+      `${reader} ${call} \`${handed.value}\`, a dictionary with no "${key}". Hand over \`${pick}\` there${fixed ? `: \`${fixed}\`` : "."}`,
+      raw,
+    ),
+    slip: "the wrong sheet handed over",
+    lean: `${call} \`${handed.value}\`, a dictionary with no "${key}".`,
+    ...(handed.line !== line ? { slipLine: handed.line } : {}),
+  };
+}
+
+/**
+ * Unit 7: `None` glued to text, or caught in two names, when the explainer's older `None` row could not name the
+ * function (its only `return` is a guard's, or the value came another way): the call on the line hands back nothing.
+ */
+function explainNoneFallback(message: string, code: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  const glued = /can only concatenate str \(not "NoneType"\) to str/.test(message);
+  const unpacked = /cannot unpack non-iterable NoneType object/.test(message);
+  if ((!glued && !unpacked) || line === null) return null;
+  const functions = programFunctions(code, context);
+  const silent = callsOnLine(text).find((call) => functions.has(call.callee) && !functions.get(call.callee)?.returns);
+  const where = silent && (functions.get(silent.callee)?.start ?? 0) > 0 ? functions.get(silent.callee)?.start : undefined;
+  if (unpacked) {
+    if (!silent) return null;
+    // The one `print` (or `pass`) line inside the function is where the `return` goes: the banner names it, never the
+    // `def` line, which is right.
+    const info = functions.get(silent.callee);
+    const caught = codePart(text).match(/^\s*([A-Za-z_]\w*(?:\s*,\s*[A-Za-z_]\w*)+)\s*=(?!=)/)?.[1].split(",").length ?? 2;
+    const inside =
+      info && info.start > 0
+        ? (code ?? "")
+            .split("\n")
+            .map((row, at) => ({ at: at + 1, row: codePart(row).trim() }))
+            .filter((entry) => entry.at > info.start && entry.at <= info.end && (/^print\s*\(.*\)$/.test(entry.row) || entry.row === "pass"))
+        : [];
+    if (inside.length === 1) {
+      const shown = inside[0].row.match(/^print\s*\((.*)\)$/)?.[1];
+      const parts = shown !== undefined ? (splitArguments(shown) ?? []) : [];
+      const instead =
+        shown !== undefined && parts.length === caught
+          ? `On line ${inside[0].at}, write \`return ${parts.join(", ")}\` in place of the \`print\` line.`
+          : `On line ${inside[0].at}, in place of \`${shown !== undefined ? "print(...)" : "pass"}\`, hand both values back with one \`return\` line.`;
+      return {
+        ...explain(
+          "math-with-none",
+          "Nothing came back",
+          `${lineWord(line)} catches two values from \`${silent.text}\`, but \`${silent.callee}\` hands back \`None\`, Python's word for nothing: it has no \`return\` line that hands values back. ${instead}`,
+          raw,
+        ),
+        slip: "a function with no `return`",
+        lean: `\`${silent.callee}\` hands back \`None\`, Python's word for nothing, and ${lineWord(line).toLowerCase()} catches two values from it.`,
+        slipLine: inside[0].at,
+      };
+    }
+    return {
+      ...explain(
+        "math-with-none",
+        "Nothing came back",
+        `${lineWord(line)} catches two values from \`${silent.text}\`, but \`${silent.callee}\` hands back \`None\`, Python's word for nothing: it has no \`return\` line that hands values back. Give \`${silent.callee}\` a \`return\` with both values.`,
+        raw,
+      ),
+      slip: "a function with no `return`",
+      lean: `\`${silent.callee}\` hands back \`None\`, Python's word for nothing, and ${lineWord(line).toLowerCase()} catches two values from it.`,
+      ...(where ? { slipLine: where } : {}),
+    };
+  }
+  if (silent) {
+    return {
+      ...explain(
+        "math-with-none",
+        "Nothing came back",
+        `${lineWord(line)} glues text to \`None\`, Python's word for nothing. \`${silent.callee}\` hands back nothing: it has no \`return\` line that hands a value back. Give \`${silent.callee}\` a \`return\` with its answer.`,
+        raw,
+      ),
+      slip: "a function with no `return`",
+      lean: `${lineWord(line)} glues text to \`None\`, Python's word for nothing: \`${silent.callee}\` hands back nothing.`,
+      ...(where ? { slipLine: where } : {}),
+    };
+  }
+  return {
+    ...explain(
+      "math-with-none",
+      "Nothing came back",
+      `${lineWord(line)} glues text to \`None\`, Python's word for nothing. The function it calls hands back nothing: it has no \`return\`.`,
+      raw,
+    ),
+    slip: "a function with no `return`",
+    lean: `${lineWord(line)} glues text to \`None\`, Python's word for nothing.`,
+  };
+}
+
+/**
+ * Unit 7: "can't multiply sequence by non-int of type 'dict'" (`"▮" * robot`): the stamp counts by a whole sheet. Stamp
+ * by one number read from it, by its key (Mar'tu's read when his version shows it).
+ */
+function explainSheetStamp(message: string, code: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  if (!/can't multiply sequence by non-int of type 'dict'/.test(message) || line === null) return null;
+  const mask = maskStrings(codePart(text));
+  const name = mask.match(/["']\s*\*\s*([A-Za-z_]\w*)\b(?!\s*[[(.])/)?.[1] ?? mask.match(/(?<![\w.\]])([A-Za-z_]\w*)\s*\*\s*["']/)?.[1];
+  if (!name || KEYWORDS.has(name)) return null;
+  // The stamp's own read in Mar'tu's version (`"▮" * robot["fuel"]`), never just the sheet's first key.
+  const key = (context?.solution ?? "").match(new RegExp(`\\*\\s*${escapeRegExp(name)}\\s*\\[\\s*(["'])(\\w+)\\1\\s*\\]`))?.[2];
+  const like = key ? `, like \`${name}["${key}"]\`` : "";
+  return {
+    ...explain(
+      "whole-card-compared",
+      "A whole sheet",
+      `${lineWord(line)} stamps text by \`${name}\`, a whole sheet. The stamp needs a number: stamp by one number from the sheet, read by its key${like}.`,
+      raw,
+    ),
+    slip: "a whole sheet used where a number goes",
+    lean: `${lineWord(line)} stamps text by \`${name}\`, a whole sheet, not a number.`,
+  };
+}
+
+/**
+ * Unit 7: parentheses around the stamp instead of the subtraction (`("░" * hero["max_mana"]) - hero["mana"]`): the text is
+ * still stamped first. The bar row's own fix, with the parentheses moved.
+ */
+function barBracketsMoved(text: string): { fixed: string; around: string } | null {
+  const body = codePart(text).trim();
+  const operand = String.raw`(?:[A-Za-z_]\w*(?:\[(?:"[^"]*"|'[^']*'|\d+)\])*|\d+)`;
+  const moved = new RegExp(String.raw`\(\s*((?:"[^"]*"|'[^']*'|[A-Za-z_]\w*)\s*\*\s*)(${operand})\s*\)\s*-\s*(${operand})(?![\w(\[])`);
+  const found = body.match(moved);
+  if (!found) return null;
+  return { fixed: body.replace(moved, "$1($2 - $3)"), around: found[0].slice(0, found[0].lastIndexOf(")") + 1) };
+}
+
+/**
+ * Unit 7 on (curriculum §2.9: "function by Unit 7", "parameter" / "argument" from Functions II on, "key"): the unit's
+ * own words in place of Unit 3's kitchen words and Unit 5's tags. Code spans are never touched.
+ */
+function functionsTwoWords(text: string | undefined): string | undefined {
+  if (text === undefined) return undefined;
+  const cap = (word: string, like: string) => (/^[A-Z]/.test(like) ? `${word.charAt(0).toUpperCase()}${word.slice(1)}` : word);
+  return text
+    .split(/(`[^`\n]*`)/)
+    .map((part, index) =>
+      index % 2 === 1
+        ? part
+        : part
+            .replace(/\b([Rr]ecipe)(s?) \(functions?\)/g, (_, word: string, plural: string) => cap(`function${plural}`, word))
+            .replace(/\b([Ii]ngredient)(s?) \(parameters?\)/g, (_, word: string, plural: string) => cap(`parameter${plural}`, word))
+            .replace(/\b([Tt]ag)(s?) \(keys?\)/g, (_, word: string, plural: string) => cap(`key${plural}`, word))
+            .replace(/\b([Aa])n ([Ii])ngredient\b/g, (_, article: string, letter: string) => `${article} ${letter === "I" ? "P" : "p"}arameter`)
+            .replace(/\b([Ii])ngredient/g, (_, letter: string) => (letter === "I" ? "Parameter" : "parameter"))
+            .replace(/\b([Rr])ecipe/g, (_, letter: string) => (letter === "R" ? "Function" : "function"))
+            .replace(/\b([Tt])ag(s?)\b/g, (_, letter: string, plural: string) => `${letter === "T" ? "K" : "k"}ey${plural}`),
+    )
+    .join("");
+}
+
+/** The explanation in Unit 7's words (`functionsTwoWords`): title, hint, and the lean slip and sentence. */
+function inUnitWords<T extends CourseExplanation>(result: T, context?: ExplainContext): T {
+  if (!unitAtLeast(context, SPELL_RECIPES_UNIT_ORDER)) return result;
+  return {
+    ...result,
+    title: functionsTwoWords(result.title) ?? result.title,
+    hint: functionsTwoWords(result.hint) ?? result.hint,
+    ...(result.slip !== undefined ? { slip: functionsTwoWords(result.slip) } : {}),
+    ...(result.lean !== undefined ? { lean: functionsTwoWords(result.lean) } : {}),
+  };
+}
+
+/**
+ * Unit 7: a function stores under its parameter's name in quotes (`book["spell_name"] = spell`), so the page goes under
+ * the letters spell_name, never under the name handed in; a read of that name below stops (`lucky_book["Glow"]`). The
+ * fix is on the store line, inside the function: take the quotes off.
+ */
+function explainQuotedParamKey(message: string, code: string, text: string, line: number | null, raw: string): CourseExplanation | null {
+  const key = message.match(/^(["'])(.*)\1$/)?.[2];
+  if (key === undefined || line === null) return null;
+  const chain = readChains(text).find((entry) => entry.reads[0]?.key === key);
+  if (!chain) return null;
+  const rows = (code ?? "").split("\n");
+  for (const [name, info] of functionsIn(code)) {
+    for (let at = info.start + 1; at <= info.end; at += 1) {
+      const store = codePart(rows[at - 1] ?? "").match(/^\s*([A-Za-z_]\w*)\s*\[\s*(["'])([A-Za-z_]\w*)\2\s*\]\s*=(?!=)/);
+      if (!store || !info.params.includes(store[1]) || !info.params.includes(store[3])) continue;
+      const bookAt = info.params.indexOf(store[1]);
+      const nameAt = info.params.indexOf(store[3]);
+      // A call above the read that hands this book over, and the name that was read, in those places.
+      const called = rows.slice(0, line - 1).some((row) =>
+        callsOnLine(row).some((call) => call.callee === name && call.args[bookAt] === chain.base && call.args[nameAt]?.replace(/^(["'])(.*)\1$/, "$2") === key),
+      );
+      if (!called) continue;
+      const fixed = lineWith(code, at, `${store[2]}${store[3]}${store[2]}`, store[3]);
+      return {
+        ...explain(
+          "missing-key",
+          "A parameter's name in quotes",
+          `\`${chain.base}\` has no "${key}": line ${at}, inside \`${name}\`, stores under \`${store[2]}${store[3]}${store[2]}\`, the letters of the parameter's name, not the name handed in. Quotes mean these exact letters. No quotes means look inside the box with this label. Take the quotes off on line ${at}${fixed ? `: \`${fixed}\`` : "."}`,
+          raw,
+        ),
+        slip: "a parameter's name in quotes",
+        lean: `Line ${at} stores under \`${store[2]}${store[3]}${store[2]}\`, the letters of the parameter's name, so \`${chain.base}\` has no "${key}".`,
+        slipLine: at,
+      };
+    }
+  }
+  return null;
+}
+
+/**
+ * Unit 7: math or a join where a parameter holds a number in quotes, handed over by the call one frame out
+ * (`spend(lucky, "4")`, `drink_glug(lucky, "5")`): the quotes are on the call's line, never "use int()".
+ */
+function explainQuotedNumberHanded(message: string, code: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  if (!/unsupported operand type\(s\) for [-+*/%]+: '(int|float)' and 'str'|unsupported operand type\(s\) for [-*/%]+: 'str' and '(int|float)'|can only concatenate str \(not "(int|float)"\) to str/.test(message) || line === null) return null;
+  const functions = programFunctions(code, context);
+  const frames = mainFrames(raw);
+  for (const name of namesOnLine(text)) {
+    if (!paramHere(frames, name, functions)) continue;
+    const handed = handedValue(code, frames, name, functions);
+    const quoted = handed?.value.match(/^(["'])(\d+(?:\.\d+)?)\1$/);
+    // Nothing handed over for it: the number in quotes is its default, on the `def` line (`def roll_die(die_size="20"):`).
+    const info = handed ? undefined : functions.get(frames.at(-1)?.func ?? "");
+    const header = info && info.start > 0 ? codePart(sourceLine(code, info.start)).trim() : "";
+    const fallback = header.match(new RegExp(`(?<![\\w.])${escapeRegExp(name)}\\s*=\\s*((["'])(\\d+(?:\\.\\d+)?)\\2)`));
+    if (!handed && info && fallback) {
+      const fixedDef = lineWith(code, info.start, fallback[1], fallback[3]);
+      return {
+        ...explain(
+          "number-in-quotes",
+          "A number in quotes",
+          `${lineWord(line)} does math with \`${name}\`, and its default on line ${info.start} is \`${fallback[1]}\`, in quotes. Quotes make text, even when it looks like a number. Take the quotes off on line ${info.start}${fixedDef ? `: \`${fixedDef}\`` : "."}`,
+          raw,
+        ),
+        slip: "a number in quotes",
+        lean: `The default on line ${info.start} is \`${fallback[1]}\`, a number in quotes, for \`${name}\`, and ${lineWord(line).toLowerCase()} does math with it.`,
+        ...(info.start !== line ? { slipLine: info.start } : {}),
+      };
+    }
+    if (!handed || !quoted) continue;
+    const fixed = lineWith(code, handed.line, handed.call.text, handed.call.text.replace(handed.value, quoted[2]));
+    return {
+      ...explain(
+        "number-in-quotes",
+        "A number in quotes",
+        `${lineWord(line)} does math with \`${name}\`, and the call on line ${handed.line} hands over \`${handed.value}\` for it, in quotes. Quotes make text, even when it looks like a number. Take the quotes off on line ${handed.line}${fixed ? `: \`${fixed}\`` : "."}`,
+        raw,
+      ),
+      slip: "a number in quotes",
+      lean: `The call on line ${handed.line} hands over \`${handed.value}\`, a number in quotes, for \`${name}\`, and ${lineWord(line).toLowerCase()} does math with it.`,
+      ...(handed.line !== line ? { slipLine: handed.line } : {}),
+    };
+  }
+  return null;
+}
+
+/**
+ * Unit 7: a function handed over by its name where what it hands back was wanted (`draw_bar(robot, get_fuel_bar)`),
+ * then glued to text: the call hands over the value Mar'tu's version hands over in that place (the variable that
+ * stored the bar), else the function's answer.
+ */
+function explainFunctionWhereValue(message: string, code: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  if (!/can only concatenate str \(not "function"\) to str|unsupported operand type\(s\) for \+: ('function' and '\w+'|'\w+' and 'function')/.test(message) || line === null) return null;
+  const functions = programFunctions(code, context);
+  const program = `${context?.setup ?? ""}\n${code ?? ""}`;
+  const frames = mainFrames(raw);
+  for (const name of namesOnLine(text)) {
+    if (!paramHere(frames, name, functions)) continue;
+    const handed = handedValue(code, frames, name, functions);
+    if (!handed || kindOfValue(handed.value, program, functions) !== "function") continue;
+    const solutionCall = (context?.solution ?? "")
+      .split("\n")
+      .flatMap((row) => callsOnLine(row))
+      .find((call) => call.callee === handed.call.callee && call.args.length === handed.call.args.length);
+    // The variable the caller stored the function's answer in (`fuel_bar = get_fuel_bar(robot)`), else Mar'tu's own.
+    const caller = recipeBlocks(code).find((block) => handed.line > block.start && handed.line <= block.end);
+    const rows = (code ?? "").split("\n").slice(caller ? caller.start : 0, handed.line - 1);
+    const storedIn = rows.map((row) => codePart(row).match(new RegExp(`^\\s*([A-Za-z_]\\w*)\\s*=(?!=)\\s*${escapeRegExp(handed.value)}\\s*\\(`))?.[1]).filter(Boolean).at(-1);
+    const wanted = storedIn ?? solutionCall?.args[handed.index];
+    const usable = wanted && wanted !== handed.value && rows.some((row) => new RegExp(`^\\s*${escapeRegExp(wanted)}\\s*=(?!=)`).test(codePart(row))) ? wanted : null;
+    const fixed = usable ? lineWith(code, handed.line, handed.call.text, handed.call.text.replace(new RegExp(`(?<=[(,]\\s*)${escapeRegExp(handed.value)}(?=\\s*[,)])`), usable)) : null;
+    // `fuel_bar = get_fuel_bar` above the call: the variable holds the function itself. The slip is that line, and its
+    // fix stores the call's answer, as Mar'tu's version does (`fuel_bar = get_fuel_bar(robot)`).
+    if (!functions.has(handed.value)) {
+      const from = caller ? caller.start : 0;
+      const storeAt = rows
+        .map((row, at) => ({ at: from + at + 1, made: codePart(row).match(new RegExp(`^\\s*${escapeRegExp(handed.value)}\\s*=(?!=)\\s*([A-Za-z_]\\w*)\\s*$`)) }))
+        .filter((entry) => entry.made && functions.has(entry.made[1]))
+        .at(-1);
+      const stored = storeAt?.made?.[1];
+      // Mar'tu's line that stores the call's answer (`fuel_bar = get_fuel_bar(robot)`), with the student's own variable.
+      const kept = stored
+        ? (context?.solution ?? "")
+            .split("\n")
+            .map((row) => codePart(row).trim())
+            .find((row) => new RegExp(`^[A-Za-z_]\\w*\\s*=\\s*${escapeRegExp(stored)}\\s*\\(.*\\)$`).test(row))
+        : undefined;
+      const call = kept ? asCall(kept.replace(/^[^=]*=\s*/, "")) : null;
+      const theirs = call ? `${handed.value} = ${stored}(${call.inside.trim()})` : undefined;
+      if (storeAt && stored && theirs && call) {
+        return {
+          ...explain(
+            "wrong-kind-of-value",
+            "The function, not its answer",
+            `Line ${storeAt.at} stores \`${stored}\` itself in \`${handed.value}\`, with no \`(${call.inside.trim()})\`, so it never runs. Call it and keep its answer: \`${theirs}\``,
+            raw,
+          ),
+          slip: "a function stored where its answer goes",
+          lean: `Line ${storeAt.at} stores \`${stored}\` itself in \`${handed.value}\`, with no \`()\`, so it never runs.`,
+          slipLine: storeAt.at,
+        };
+      }
+    }
+    return {
+      ...explain(
+        "wrong-kind-of-value",
+        "The function, not its answer",
+        `${lineWord(line)} glues \`${name}\` to text, and \`${name}\` holds the function \`${handed.value}\` itself: the call on line ${handed.line} hands it over by its name. Hand over what it makes instead${usable ? `, \`${usable}\`${fixed ? `: \`${fixed}\`` : "."}` : `: call it, and hand over its answer.`}`,
+        raw,
+      ),
+      slip: "a function handed over where its answer goes",
+      lean: `The call on line ${handed.line} hands \`${name}\` the function \`${handed.value}\` itself, where its answer goes.`,
+      ...(handed.line !== line ? { slipLine: handed.line } : {}),
+    };
+  }
+  return null;
+}
+
+/**
+ * Unit 7: "missing 1 required positional argument" on a function handed over WITH `()` (`cast_on_everyone(roster,
+ * warm_hands())`, `{"effect": effect()}`, `chosen_spell = warm_hands()` where Mar'tu's version keeps `warm_hands`): the
+ * `()` runs it right there. Never "hand over one value per parameter", which only gives `warm_hands(lucky)`.
+ */
+function explainCalledWhileHanded(message: string, code: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  const missing = message.match(/^(?:<lambda>|([A-Za-z_]\w*))\(\) missing \d+ required positional arguments?/);
+  if (!missing || line === null) return null;
+  const body = codePart(text).trim();
+  const calls = callsOnLine(text);
+  // `map` takes a function too (`list(map(get_name(), roster))`): it is the one tool whose value is handed over by name.
+  const outerCall = calls.find(
+    (call) => (!CALLED_TOOLS.has(call.callee) || call.callee === "map") && call.args.some((arg) => /^[A-Za-z_]\w*(?:\[[^\]]*\])*\s*\(\s*\)$/.test(arg)),
+  );
+  const inArgs = outerCall?.args.find((arg) => /^[A-Za-z_]\w*(?:\[[^\]]*\])*\s*\(\s*\)$/.test(arg));
+  const inSheet = body.match(/["'][^"']+["']\s*:\s*([A-Za-z_]\w*\s*\(\s*\))/)?.[1];
+  const stored = body.match(/^([A-Za-z_]\w*)\s*=(?!=)\s*([A-Za-z_]\w*)\s*\(\s*\)$/);
+  const solution = (context?.solution ?? "").replace(/[ \t]+/g, " ");
+  const keptInSolution = stored ? new RegExp(`(^|\\n)\\s*${escapeRegExp(stored[1])} = ${escapeRegExp(stored[2])}\\s*(\\n|$)`).test(solution) : false;
+  const value = inArgs ?? inSheet ?? (keptInSolution && stored ? `${stored[2]}()` : undefined);
+  if (!value) return null;
+  const name = value.replace(/\s*\(\s*\)$/, "");
+  const fixed = lineWith(code, line, value, name);
+  const where = inArgs && outerCall ? `hands \`${value}\` to \`${outerCall.callee}\`` : inSheet ? `puts \`${value}\` in the dictionary` : `puts \`${value}\` in \`${stored?.[1]}\``;
+  return {
+    ...explain(
+      "wrong-number-of-values",
+      "Handed over with ( )",
+      `${lineWord(line)} ${where}. The \`()\` runs \`${name}\` right there, with nothing in its parentheses, so Python stops. Hand the function over by its name, with no \`()\`${fixed ? `: \`${fixed}\`` : "."}`,
+      raw,
+    ),
+    slip: "a function handed over with `()`",
+    lean: `${lineWord(line)} ${where}, with \`()\`, so \`${name}\` ran there with nothing in its parentheses.`,
+  };
+}
+
+/** Unit 7 (the extra practice on defaults): a keyword in a call that is not one of the function's parameters (`roll_die(size=6)`). */
+function explainWrongKeyword(message: string, code: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  const found = message.match(/^([A-Za-z_]\w*)\(\) got an unexpected keyword argument '(\w+)'/);
+  if (!found || found[1] === "print") return null;
+  const info = programFunctions(code, context).get(found[1]);
+  if (!info || info.params.length === 0) return null;
+  const like = closeName(found[2], info.params) ?? (info.params.length === 1 ? info.params[0] : null);
+  const fixed = like && line !== null ? lineWith(code, line, `${found[2]}=`, `${like}=`) ?? lineWith(code, line, `${found[2]} =`, `${like}=`) : null;
+  return {
+    ...explain(
+      "spelling",
+      "Not a parameter's name",
+      `\`${found[1]}\` has no parameter called \`${found[2]}\`: ${info.params.length === 1 ? `its parameter is \`${info.params[0]}\`` : `its parameters are ${codeList(info.params)}`}. A name before \`=\` in a call is a parameter's name, letter for letter${like ? `: write \`${like}=\`${fixed ? `, so the line reads \`${fixed}\`` : ""}.` : "."}`,
+      raw,
+    ),
+    slip: "a keyword that is not the parameter's name",
+    lean: `\`${found[1]}\` has no parameter called \`${found[2]}\`.`,
+  };
+}
+
+/**
+ * Unit 7 (defaults, keywords, `lambda`), lines Python can't read: a parameter's name in quotes before `=` in a call
+ * (`roll_die("die_size"=6)`), `==` for a default on a `def` line, and `return` inside a `lambda`.
+ */
+function explainFunctionsTwoSyntax(message: string, text: string, line: number | null, raw: string): CourseExplanation | null {
+  const body = codePart(text).trim();
+  const keyword = body.match(/(["'])([A-Za-z_]\w*)\1\s*=(?!=)/);
+  if (keyword && /expression cannot contain assignment/.test(message)) {
+    const fixed = body.replace(keyword[0], `${keyword[2]}=`);
+    return {
+      ...explain(
+        "quoted-name",
+        "Quotes around a parameter's name",
+        `${lineWord(line)} puts quotes around \`${keyword[2]}\` before \`=\`. Python's last line guesses \`==\`, but that guess is wrong here. A name before \`=\` in a call is the parameter's name, with no quotes: \`${fixed}\``,
+        raw,
+      ),
+      slip: "a parameter's name in quotes",
+      lean: `${lineWord(line)} puts quotes around \`${keyword[2]}\` before \`=\`.`,
+    };
+  }
+  const header = body.match(/^def\s+[A-Za-z_]\w*\s*\((.*)\)\s*:?$/);
+  if (header && /==/.test(header[1])) {
+    const fixed = body.replace(/\s*==\s*/g, "=").replace(/\)\s*$/, "):");
+    return {
+      ...explain(
+        "compare-with-double-equals",
+        "One = for a default",
+        `${lineWord(line)} has \`==\` inside the \`def\` line's parentheses. A default value takes one \`=\`, the way a variable gets a value: \`${fixed.endsWith(":") ? fixed : `${fixed}:`}\``,
+        raw,
+      ),
+      slip: "`==` where a default takes one `=`",
+      lean: `${lineWord(line)} has \`==\` inside the \`def\` line's parentheses.`,
+    };
+  }
+  const lambda = body.match(/\blambda\b([^:]*):\s*return\s+(.+)$/);
+  if (lambda) {
+    const fixed = body.replace(/(\blambda\b[^:]*:\s*)return\s+/, "$1");
+    return {
+      ...explain(
+        "cant-read-line",
+        "No return in a lambda",
+        `${lineWord(line)} has \`return\` inside a \`lambda\`. A \`lambda\` hands its answer back by itself, so it never says \`return\`: \`${fixed}\``,
+        raw,
+      ),
+      slip: "`return` inside a `lambda`",
+      lean: `${lineWord(line)} has \`return\` inside a \`lambda\`.`,
+    };
+  }
+  return null;
+}
+
+/**
+ * Unit 7: "can't multiply sequence by non-int of type 'tuple'" (`full = bar_parts(lucky)`, then `"█" * full`): one name
+ * caught both values a function hands back. Catch them in two names, as Mar'tu's version does.
+ */
+function explainPairStamp(message: string, code: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  if (!/can't multiply sequence by non-int of type 'tuple'/.test(message) || line === null) return null;
+  const mask = maskStrings(codePart(text));
+  const name = mask.match(/["']\s*\*\s*([A-Za-z_]\w*)\b(?!\s*[[(.])/)?.[1] ?? mask.match(/(?<![\w.\]])([A-Za-z_]\w*)\s*\*\s*["']/)?.[1];
+  const made = name ? storedValue(code, name, line) : null;
+  const call = made ? asCall(made.value) : null;
+  if (!name || !made || !call) return null;
+  const caught = (context?.solution ?? "").split("\n").map((row) => codePart(row).trim()).find((row) => new RegExp(`^[A-Za-z_]\\w*\\s*,\\s*[A-Za-z_]\\w*\\s*=\\s*${escapeRegExp(call.callee)}\\s*\\(`).test(row));
+  return {
+    ...explain(
+      "wrong-kind-of-value",
+      "Two values in one name",
+      `${lineWord(line)} stamps text by \`${name}\`, and \`${name}\` holds both values \`${call.callee}\` hands back, as one pair. Line ${made.line} catches them in one name. Catch them in two names, one per value${caught ? `: \`${caught}\`` : ", with a comma between them."}`,
+      raw,
+    ),
+    slip: "two values caught in one name",
+    lean: `Line ${made.line} catches both values from \`${call.callee}\` in one name, \`${name}\`.`,
+    slipLine: made.line,
+  };
+}
+
+/**
+ * Unit 7 (the extra practice on defaults): a call that hands over nothing for a parameter Mar'tu's version gives a default
+ * (`roll_die()` with `def roll_die(die_size):`, or `die_size: 20`, a colon where a default takes `=`): the fix is the
+ * `def` line, never "hand over one value per parameter".
+ */
+function explainMissingDefault(message: string, code: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  const missing = message.match(/^([A-Za-z_]\w*)\(\) missing \d+ required positional arguments?: '(\w+)'/);
+  if (!missing) return null;
+  const [, name, param] = missing;
+  const header = new RegExp(`^\\s*def\\s+${escapeRegExp(name)}\\s*\\(.*\\)\\s*:`);
+  const wanted = (context?.solution ?? "").split("\n").map((row) => codePart(row).trim()).find((row) => header.test(row));
+  if (!wanted || !new RegExp(`\\b${escapeRegExp(param)}\\s*=`).test(wanted)) return null;
+  const rows = (code ?? "").split("\n");
+  const at = rows.findIndex((row) => header.test(codePart(row)));
+  if (at < 0) return null;
+  const own = codePart(rows[at]).trim();
+  const colon = new RegExp(`\\b${escapeRegExp(param)}\\s*:\\s*[^,)]+`).test(own.replace(/\)\s*:\s*$/, ")"));
+  return {
+    ...explain(
+      "wrong-number-of-values",
+      colon ? "A default takes =" : "No default yet",
+      colon
+        ? `Line ${at + 1} has a colon after \`${param}\` in the \`def\` line. A default value takes \`=\`, so \`${param}\` has no default, and ${lineWord(line).toLowerCase()} hands over nothing for it. Write: \`${wanted}\``
+        : `\`${name}\` has the parameter \`${param}\`, and ${lineWord(line).toLowerCase()} hands over nothing for it, so Python stops. Give \`${param}\` a default on line ${at + 1}, the \`def\` line: \`${wanted}\``,
+      raw,
+    ),
+    slip: colon ? "a colon where a default takes `=`" : "a parameter with no default",
+    lean: colon ? `Line ${at + 1} has a colon after \`${param}\`, where a default takes \`=\`.` : `\`${param}\` has no default, and ${lineWord(line).toLowerCase()} hands over nothing for it.`,
+    ...(at + 1 !== line ? { slipLine: at + 1 } : {}),
+  };
+}
+
+/**
+ * Unit 7: "cannot unpack non-iterable function object" (`full, empty = bar_parts`): the function itself, never run, where
+ * the two values it hands back go. Call it, as Mar'tu's version does.
+ */
+function explainUnpackFunction(message: string, code: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  if (!/cannot unpack non-iterable function object/.test(message) || line === null) return null;
+  const found = codePart(text).trim().match(/^([A-Za-z_]\w*\s*(?:,\s*[A-Za-z_]\w*\s*)+)=(?!=)\s*([A-Za-z_]\w*)$/);
+  if (!found) return null;
+  const name = found[2];
+  const called = (context?.solution ?? "").split("\n").map((row) => codePart(row).trim()).find((row) => new RegExp(`=\\s*${escapeRegExp(name)}\\s*\\(`).test(row) && row.includes(","));
+  return {
+    ...explain(
+      "wrong-kind-of-value",
+      "The function, not its answer",
+      `${lineWord(line)} catches two values from \`${name}\`, the function itself: with no \`( )\`, it never runs, so nothing comes back to catch. Call it${called ? `: \`${called}\`` : ", with its value in the parentheses."}`,
+      raw,
+    ),
+    slip: "a function named where its answer goes",
+    lean: `${lineWord(line)} catches two values from \`${name}\`, the function itself, which never runs.`,
+  };
+}
+
+/** Unit 7: `wards.append(ward)`: a dictionary keeps each value under a key, so it has no `.append()`. Store it by its key. */
+function explainAppendToSheet(message: string, code: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  if (!/^'dict' object has no attribute 'append'/.test(message) || line === null) return null;
+  const found = codePart(text).trim().match(/^([A-Za-z_]\w*)\s*\.\s*append\s*\((.+)\)$/);
+  if (!found) return null;
+  const store = (context?.solution ?? "").split("\n").map((row) => codePart(row).trim()).find((row) => new RegExp(`^${escapeRegExp(found[1])}\\s*\\[[^\\]]+\\]\\s*=(?!=)`).test(row));
+  return {
+    ...explain(
+      "dot-on-a-sheet",
+      "A dictionary has no append",
+      `${lineWord(line)} uses \`.append()\` on \`${found[1]}\`, a dictionary. \`.append()\` is a list's tool: a dictionary keeps each value under a key. Store it by its key, with square brackets${store ? `: \`${store}\`` : "."}`,
+      raw,
+    ),
+    slip: "`.append()` on a dictionary",
+    lean: `${lineWord(line)} uses \`.append()\` on \`${found[1]}\`, a dictionary.`,
+  };
+}
+
+/* ---------------------------------------------------------------------------------------------- */
+/* Unit 7, the fixer's pass: a key read from a function's own sheets, a slip traced to its own line  */
+/* ---------------------------------------------------------------------------------------------- */
+
+/** The texts the call one frame out hands to the function Python stopped in, by parameter: `"Lantern Ward"` -> `spell_name`. */
+function handedTexts(code: string, frames: Frame[], functions: Map<string, FunctionInfo>): Map<string, string> {
+  const texts = new Map<string, string>();
+  for (const param of functions.get(frames.at(-1)?.func ?? "")?.params ?? []) {
+    const value = handedValue(code, frames, param, functions)?.value.match(/^(["'])(.*)\1$/)?.[2];
+    if (value !== undefined && !texts.has(value)) texts.set(value, param);
+  }
+  return texts;
+}
+
+/** A card of the program's sheets: the sheet a variable names, and the keys down to the card (`lucky`, `["spell_book", "Lantern Ward"]`). */
+type Holding = { owner: string; path: string[] };
+
+/**
+ * What each parameter and local variable of the function Python stopped in holds, as a card of the program's sheets:
+ * a parameter, the sheet the call one frame out hands over (`cast(lucky, ...)`: `hero` holds `lucky`); a local, the
+ * card it reads (`spell = hero["spell_book"][spell_name]`: the Lantern Ward page, through the name handed in).
+ */
+function scopeHoldings(code: string, frames: Frame[], line: number, functions: Map<string, FunctionInfo>, sheets: Sheets, texts: Map<string, string>): Map<string, Holding> {
+  const holdings = new Map<string, Holding>();
+  const info = functions.get(frames.at(-1)?.func ?? "");
+  if (!info || info.start === 0) return holdings;
+  const nameFor = (param: string) => [...texts.entries()].find(([, owner]) => owner === param)?.[0];
+  const cardOf = (expression: string, scope: Map<string, Holding>): Holding | null => {
+    const value = expression.trim();
+    if (/^[A-Za-z_]\w*$/.test(value)) return scope.get(value) ?? (sheets.entries.some((entry) => entry.owner === value) ? { owner: value, path: [] } : null);
+    const chain = readChains(value).find((entry) => entry.start === 0 && entry.end === value.length);
+    const base = chain ? cardOf(chain.base, scope) : null;
+    if (!chain || !base) return null;
+    const path = [...base.path];
+    for (const read of chain.reads) {
+      const key = read.key ?? (read.name !== undefined ? nameFor(read.name) : undefined);
+      if (key === undefined) return null;
+      path.push(key);
+    }
+    return { owner: base.owner, path };
+  };
+  for (const param of info.params) {
+    const handed = handedValue(code, frames, param, functions);
+    const card = handed ? cardOf(handed.value, new Map()) : null;
+    if (card) holdings.set(param, card);
+  }
+  const rows = (code ?? "").split("\n");
+  for (let at = info.start + 1; at < line && at <= info.end; at += 1) {
+    const made = codePart(rows[at - 1] ?? "").match(/^\s*([A-Za-z_]\w*)\s*=(?!=)\s*(.+)$/);
+    if (!made) continue;
+    const card = cardOf(made[2], holdings);
+    if (card) holdings.set(made[1], card);
+    else holdings.delete(made[1]);
+  }
+  return holdings;
+}
+
+/** A key that is a part of one of the sheet's keys (`"magic"`, `"affinity"` for `"magical_affinity"`; `"cost"` for `"mana_cost"`). */
+function partOfKey(key: string, keys: readonly string[]): string | null {
+  if (key.length < 3) return null;
+  const low = key.toLowerCase();
+  const found = keys.filter((entry) => {
+    const other = entry.toLowerCase();
+    return other !== low && (other.split(/[\s_]/).includes(low) || (low.length >= 4 && other.includes(low)));
+  });
+  return found.length === 1 ? found[0] : null;
+}
+
+/**
+ * Unit 7: a KeyError on a read of a sheet the function was handed, or a card it read from one (`hero["mana_cost"]` in
+ * `cast`, where the cost is on the spell's page; `spell["magical_affinity"]`, where the affinity is on the hero's sheet).
+ * The function's own sheets are what the call handed over, so the fix reads the sheet that really holds the key, through
+ * the function's own names: `spell["mana_cost"]`, `wards[name]["mana_cost"]`. A page is read by the name handed in
+ * (`spell_name`), never by a name typed from the test call ("Lantern Ward"), and never one beside it (`"Ash Ward"`).
+ * Before Unit 5's rows, which only know the program's top-level sheets.
+ */
+function explainScopeKey(message: string, code: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  const key = message.match(/^(["'])(.*)\1$/)?.[2];
+  if (key === undefined || line === null) return null;
+  const frames = mainFrames(raw);
+  const inner = frames.at(-1);
+  if (!inner || inner.func === "<module>" || inner.line !== line) return null;
+  const functions = programFunctions(code, context);
+  // `wards["name"]` inside `cast_ward(wards, name, hero)`: the parameter's name in quotes, Unit 5's row.
+  if ((functions.get(inner.func)?.params ?? []).includes(key)) return null;
+  const sheets = sheetsOf(code, context, line);
+  const texts = handedTexts(code, frames, functions);
+  const holdings = scopeHoldings(code, frames, line, functions, sheets, texts);
+  const nameFor = (param: string) => [...texts.entries()].find(([, owner]) => owner === param)?.[0];
+  const held = (name: string) => {
+    const card = holdings.get(name) as Holding;
+    return sheets.entries
+      .filter((entry) => entry.owner === card.owner && entry.path.length >= card.path.length && card.path.every((step, at) => entry.path[at] === step))
+      .map((entry) => ({ key: entry.key, rel: entry.path.slice(card.path.length) }));
+  };
+  // The read that stopped: one of the function's own sheets, read where it has no such key (a read of the key right
+  // where its sheet keeps it is not the slip: another read on the line is).
+  const found = readChains(text)
+    .filter((entry) => holdings.has(entry.base) && entry.reads.some((read) => read.key === key))
+    .map((entry) => {
+      const at = entry.reads.findIndex((read) => read.key === key);
+      const steps = entry.reads.slice(0, at).map((read) => read.key ?? (read.name !== undefined ? nameFor(read.name) : undefined));
+      return { chain: entry, index: at, walked: steps.every((step) => step !== undefined) ? (steps as string[]) : null };
+    })
+    .find((entry) => entry.walked !== null && held(entry.chain.base).length > 0 && !held(entry.chain.base).some((own) => own.key === key && samePath(own.rel, entry.walked as string[])));
+  if (!found) return null;
+  const { chain, index } = found;
+  const walked = found.walked as string[];
+  const own = held(chain.base);
+  // A read of a card through the function's own names: a page by the name handed in, never a page beside it.
+  const readOf = (base: string, rel: readonly string[]): { code: string; named: boolean } | null => {
+    const entries = held(base);
+    let out = base;
+    let named = false;
+    for (const [at, step] of rel.entries()) {
+      const param = texts.get(step);
+      if (param) {
+        out += `[${param}]`;
+        named = true;
+        continue;
+      }
+      if (entries.some((entry) => samePath(entry.rel, rel.slice(0, at)) && texts.has(entry.key))) return null;
+      out += `["${step}"]`;
+    }
+    return { code: out, named };
+  };
+  const body = codePart(text);
+  const holder = body.slice(chain.start, chain.reads[index].at).trim();
+  const same = (a: Holding, b: Holding) => a.owner === b.owner && samePath(a.path, b.path);
+  const deeper = own
+    .filter((entry) => entry.key === key && entry.rel.length > walked.length && samePath(entry.rel.slice(0, walked.length), walked))
+    .map((entry) => ({ skipped: entry.rel.slice(walked.length), at: readOf(chain.base, entry.rel) }))
+    .filter((entry): entry is { skipped: string[]; at: { code: string; named: boolean } } => entry.at !== null)
+    .sort((a, b) => a.at.code.length - b.at.code.length);
+  const plain = deeper.find((entry) => !entry.at.named);
+  if (plain) {
+    const outer = plain.skipped.length === 1 ? `\`"${plain.skipped[0]}"\`` : plain.skipped.map((step) => `\`"${step}"\``).reverse().join(", inside ");
+    return {
+      ...explain("missing-key", "A level skipped", `\`"${key}"\` is inside ${outer}: read the outer key first: \`${plain.at.code}["${key}"]\``, raw),
+      slip: "a skipped level",
+    };
+  }
+  // The key on another of the function's own sheets (the caster's sheet, the spell's page): read it there.
+  const base = holdings.get(chain.base) as Holding;
+  const others = [...holdings.keys()]
+    .filter((name) => name !== chain.base && !same(holdings.get(name) as Holding, base))
+    .flatMap((name) => held(name).filter((entry) => entry.key === key).map((entry) => readOf(name, entry.rel)))
+    .filter((entry): entry is { code: string; named: boolean } => entry !== null)
+    .sort((a, b) => a.code.length - b.code.length);
+  if (others.length > 0) {
+    return {
+      ...explain("missing-key", "Another sheet's key", `\`${holder}\` has no key \`"${key}"\`. That key is on \`${others[0].code}\`: \`${others[0].code}["${key}"]\``, raw),
+      slip: "a key read from the wrong sheet",
+    };
+  }
+  if (deeper.length > 0) {
+    return {
+      ...explain("missing-key", "A level skipped", `\`"${key}"\` sits deeper in \`${chain.base}\`: read the levels above it first: \`${deeper[0].at.code}["${key}"]\``, raw),
+      slip: "a skipped level",
+    };
+  }
+  // A near miss at the level the read is on: the sheet's own spelling, or a key that is part of one (`"magic"`).
+  const level = [...new Set(own.filter((entry) => samePath(entry.rel, walked)).map((entry) => entry.key))];
+  if (level.length === 0) return null;
+  const near = nearKey(key, level) ?? partOfKey(key, level);
+  if (near) {
+    return {
+      ...explain(
+        "missing-key",
+        "Spell the key exactly",
+        `${lineWord(line)} reads the key \`"${key}"\` from \`${holder}\`. That dictionary spells it \`"${near}"\`. Keys match letter for letter: \`${holder}["${near}"]\``,
+        raw,
+      ),
+      slip: "a key spelled another way",
+    };
+  }
+  const shown = level.length <= 5 ? level.map((entry) => `\`"${entry}"\``) : null;
+  const keys = shown ? (shown.length === 1 ? shown[0] : `${shown.slice(0, -1).join(", ")} and ${shown.at(-1)}`) : null;
+  return {
+    ...explain(
+      "missing-key",
+      "A key the sheet does not have",
+      `${keys ? `\`${holder}\` has the key${level.length > 1 ? "s" : ""} ${keys}, and no \`"${key}"\`` : `\`${holder}\` has no key \`"${key}"\``}, so the read stops the program. Read a key the sheet has.`,
+      raw,
+    ),
+    slip: "a key the sheet does not have",
+  };
+}
+
+/**
+ * Unit 7, NameError: (a) a function handed over WITH its parameter copied from its `def` line (`cast_on_everyone(roster,
+ * warm_hands(hero))`, `chosen_spell = warm_hands(hero)`), where Mar'tu's version hands the function over by its name:
+ * the `(hero)` runs it right there, and `hero` only exists inside it. Never "put quotes around it" or "hand over a value
+ * of your own", which lead to `warm_hands("hero")` and `warm_hands(lucky)`. (b) `==` where a call names a value
+ * (`roll_die(die_size == 6)`): one `=`. (c) a name no line makes, inside a function, that Python guesses is that
+ * function's own name (`caster`, "Did you mean: 'cast'?"): the sheet the function was handed is its parameter.
+ */
+function explainNameFunctionsTwo(name: string, message: string, code: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  if (line === null) return null;
+  const functions = programFunctions(code, context);
+  const body = codePart(text).trim();
+  const calls = callsOnLine(text);
+  const solution = context?.solution ?? "";
+  const solutionCalls = solution.split("\n").flatMap((row) => callsOnLine(row));
+  for (const call of calls) {
+    const info = functions.get(call.callee);
+    if (!info || !info.params.includes(name) || !call.args.includes(name)) continue;
+    const outer = calls.find((other) => other !== call && other.args.includes(call.text));
+    const stored = body.match(new RegExp(`^([A-Za-z_]\\w*)\\s*=(?!=)\\s*${escapeRegExp(call.text)}$`));
+    let where: string | null = null;
+    if (outer) {
+      const at = outer.args.indexOf(call.text);
+      if (solutionCalls.some((other) => other.callee === outer.callee && other.args[at] === call.callee)) where = `hands \`${call.text}\` to \`${outer.callee}\``;
+    } else if (stored && new RegExp(`(^|\\n)\\s*${escapeRegExp(stored[1])}\\s*=\\s*${escapeRegExp(call.callee)}\\s*(#.*)?(\\n|$)`).test(solution)) {
+      where = `puts \`${call.text}\` in \`${stored[1]}\``;
+    }
+    if (!where) continue;
+    const fixed = lineWith(code, line, call.text, call.callee);
+    const parens = call.text.slice(call.callee.length).trim();
+    return {
+      ...explain(
+        "not-a-function",
+        "Handed over with ( )",
+        `${lineWord(line)} ${where}. The \`${parens}\` runs \`${call.callee}\` right there, and \`${name}\` only exists inside the function. Hand the function over by its name, with no \`()\`${fixed ? `: \`${fixed}\`` : "."}`,
+        raw,
+      ),
+      slip: "a function handed over with `()`",
+      lean: `${lineWord(line)} ${where}, with \`${parens}\`, so \`${call.callee}\` ran there, and \`${name}\` only exists inside it.`,
+    };
+  }
+  for (const call of calls) {
+    const info = functions.get(call.callee);
+    if (!info || !info.params.includes(name) || !call.args.some((arg) => new RegExp(`^${escapeRegExp(name)}\\s*==`).test(arg))) continue;
+    const fixed = lineWith(code, line, call.text, call.text.replace(new RegExp(`(?<![\\w.])${escapeRegExp(name)}\\s*==\\s*`), `${name}=`));
+    return {
+      ...explain(
+        "compare-with-double-equals",
+        "One = to name a value",
+        `${lineWord(line)} has \`==\` after \`${name}\` in the call. To name the value, use one \`=\`${fixed ? `: \`${fixed}\`` : "."}`,
+        raw,
+      ),
+      slip: "`==` where a call names a value with one `=`",
+      lean: `${lineWord(line)} has \`==\` after \`${name}\` in the call.`,
+    };
+  }
+  const guess = message.match(/Did you mean: '([^']+)'/)?.[1];
+  const inner = mainFrames(raw).at(-1);
+  const own = inner && inner.func !== "<module>" && guess === inner.func ? functions.get(inner.func) : undefined;
+  if (!own || own.start === 0 || new RegExp(`(?<![\\w.])${escapeRegExp(name)}\\s*\\(`).test(maskStrings(body))) return null;
+  const rows = (code ?? "").split("\n").slice(own.start, own.end);
+  const sheets = own.params.filter((param) => rows.some((row) => new RegExp(`(?<![\\w.])${escapeRegExp(param)}\\s*\\[`).test(maskStrings(codePart(row)))));
+  if (sheets.length !== 1) return null;
+  const param = sheets[0];
+  const fixed = body.replace(new RegExp(`(?<![\\w.])${escapeRegExp(name)}(?!\\w)`, "g"), param);
+  return {
+    ...explain(
+      "unknown-name",
+      "Use the parameter",
+      `${lineWord(line)} uses \`${name}\`, and no line makes it. Python's last line guesses \`${guess}\`, but that is the name of this function. The sheet it was handed is its parameter \`${param}\`: \`${fixed}\``,
+      raw,
+    ),
+    slip: "a name no line makes, where the parameter goes",
+    lean: `${lineWord(line)} uses \`${name}\`, and no line makes it. Python's guess, \`${guess}\`, is this function's own name.`,
+  };
+}
+
+/** Unit 7: `return spell` above the lines that make `spell` (UnboundLocalError): the `return` moves below them. */
+function explainReturnTooEarly(variable: string, code: string, text: string, line: number | null, raw: string): CourseExplanation | null {
+  if (line === null || !new RegExp(`^\\s*return\\s+${escapeRegExp(variable)}\\s*$`).test(codePart(text))) return null;
+  const block = recipeBlocks(code).find((entry) => line > entry.start && line <= entry.end);
+  if (!block) return null;
+  const rows = (code ?? "").split("\n");
+  const made = rows.findIndex((row, at) => at + 1 > line && at + 1 <= block.end && new RegExp(`^\\s*${escapeRegExp(variable)}\\s*=(?!=)`).test(codePart(row)));
+  if (made < 0) return null;
+  // The last line of what makes it: a dictionary written over several lines ends at its `}`.
+  let end = made + 1;
+  let depth = 0;
+  for (let at = made; at < rows.length; at += 1) {
+    for (const char of maskStrings(codePart(rows[at]))) {
+      if ("([{".includes(char)) depth += 1;
+      else if (")]}".includes(char)) depth -= 1;
+    }
+    end = at + 1;
+    if (depth <= 0) break;
+  }
+  return {
+    ...explain(
+      "variable-in-function",
+      "Handed back too early",
+      `${lineWord(line)} hands back \`${variable}\` before line ${made + 1} makes it. Move \`return ${variable}\` below line ${end}, as the function's last line.`,
+      raw,
+    ),
+    slip: "`return` above the line that makes its value",
+    lean: `${lineWord(line)} hands back \`${variable}\` before line ${made + 1} makes it.`,
+  };
+}
+
+/**
+ * Unit 7: a function handed over by its name and called through a parameter (`effect(hero)` inside `cast_on_everyone`),
+ * whose own `def` line takes another number of values than the call hands it (`def cool_down():`): the fix is that
+ * `def` line, Mar'tu's version of it, never the finished helper's call.
+ */
+function explainHandedFunctionParams(message: string, code: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  const found = message.match(/^([A-Za-z_]\w*)\(\) (?:takes \d+ positional arguments? but \d+ (?:were|was) given|missing \d+ required positional arguments?)/);
+  if (!found || line === null) return null;
+  const name = found[1];
+  const functions = programFunctions(code, context);
+  const info = functions.get(name);
+  const frames = mainFrames(raw);
+  const inner = frames.at(-1);
+  if (!info || info.start === 0 || !inner || inner.func === "<module>" || inner.line !== line) return null;
+  const calls = callsOnLine(text);
+  if (calls.some((call) => call.callee === name)) return null;
+  const via = calls.find((call) => paramHere(frames, call.callee, functions));
+  if (!via) return null;
+  const mine = codePart(sourceLine(code, info.start)).trim();
+  const wanted = (context?.solution ?? "").split("\n").map((row) => codePart(row).trim()).find((row) => new RegExp(`^def\\s+${escapeRegExp(name)}\\s*\\(`).test(row));
+  if (!wanted || wanted.replace(/\s+/g, "") === mine.replace(/\s+/g, "")) return null;
+  const handed = via.args.length === 0 ? "nothing" : via.args.length === 1 ? `\`${via.args[0]}\`` : codeList(via.args);
+  const has = info.params.length === 0 ? "its `def` line has no parameters" : `its \`def\` line asks for ${info.params.length === 1 ? "1 value" : `${info.params.length} values`}`;
+  return {
+    ...explain(
+      "wrong-number-of-values",
+      "The def line's parameters",
+      `\`${name}\` is handed ${handed} on line ${line}, but ${has}. Change line ${info.start}, the \`def\` line: \`${wanted}\``,
+      raw,
+    ),
+    slip: "a `def` line that doesn't match how the function is called",
+    lean: `\`${name}\` is handed ${handed} on line ${line}, but ${has}.`,
+    slipLine: info.start,
+  };
+}
+
+/** A function's lines as written, code only (comments and blank lines aside), to tell a finished helper from a changed one. */
+function functionText(source: string, name: string): string | null {
+  const block = recipeBlocks(source).find((entry) => entry.recipe === name);
+  if (!block) return null;
+  return (source ?? "")
+    .split("\n")
+    .slice(block.start - 1, block.end)
+    .map((row) => codePart(row).trimEnd())
+    .filter((row) => row.trim())
+    .join("\n");
+}
+
+/**
+ * Unit 7: a number handed to a parameter that the function glues to text (`draw_bar(lucky, 20)`, `draw_bar(robot,
+ * robot["fuel"])`), when the fix is on the call: Mar'tu's call hands text there, or the function is a finished helper,
+ * just as his. Never `str(bar)` inside the helper, which the step says to leave as it is.
+ */
+function explainNumberWhereText(message: string, code: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  if (!/can only concatenate str \(not "(int|float)"\) to str/.test(message) || line === null) return null;
+  const functions = programFunctions(code, context);
+  const program = `${context?.setup ?? ""}\n${code ?? ""}`;
+  const frames = mainFrames(raw);
+  const inner = frames.at(-1);
+  const sheets = sheetsOf(code, context);
+  const solution = context?.solution ?? "";
+  const numberRead = (value: string) => {
+    const chain = readChains(value).find((entry) => entry.start === 0 && entry.end === value.trim().length);
+    const keys = chain?.reads.map((read) => read.key);
+    if (!chain || !keys || keys.some((key) => key === undefined)) return false;
+    const path = keys as string[];
+    return sheets.entries.some((entry) => entry.owner === chain.base && samePath(entry.path, path.slice(0, -1)) && entry.key === path.at(-1) && entry.kind === "number");
+  };
+  for (const name of namesOnLine(text)) {
+    if (!inner || !paramHere(frames, name, functions)) continue;
+    const handed = handedValue(code, frames, name, functions);
+    // Python says a number was glued: a number as written, a number read from a sheet, or a read the explainer can't
+    // see (a parameter's key, `robot["fuel"]`), never text.
+    if (!handed) continue;
+    const read = readChains(handed.value).some((entry) => entry.start === 0 && entry.end === handed.value.trim().length);
+    const kind = kindOfValue(handed.value, program, functions);
+    if (!(/^-?\d+(\.\d+)?$/.test(handed.value) || kind === "number" || numberRead(handed.value) || (read && kind !== "text"))) continue;
+    const theirs = solution
+      .split("\n")
+      .filter((row) => !/^\s*def\b/.test(codePart(row)))
+      .flatMap((row) => callsOnLine(row))
+      .find((call) => call.callee === handed.call.callee && call.args.length === handed.call.args.length);
+    const want = theirs?.args[handed.index];
+    if (!want) continue;
+    const asText = /^(["']).*\1$/.test(want);
+    const finished = functionText(code, inner.func) !== null && functionText(code, inner.func) === functionText(solution, inner.func);
+    if (!asText && !(finished && /^[A-Za-z_]\w*$/.test(want))) continue;
+    const swapped = handed.call.args.map((arg, index) => (index === handed.index ? want : arg));
+    const caller = recipeBlocks(code).find((block) => handed.line > block.start && handed.line <= block.end);
+    const made = asText || (code ?? "").split("\n").slice(caller ? caller.start : 0, handed.line - 1).some((row) => new RegExp(`^\\s*${escapeRegExp(want)}\\s*=(?!=)`).test(codePart(row)));
+    const fixed = made ? lineWith(code, handed.line, handed.call.text, `${handed.call.callee}(${swapped.join(", ")})`) : null;
+    const instead = asText
+      ? `Hand over text there, in quotes${fixed ? `, like \`${fixed}\`` : "."}`
+      : fixed
+        ? `Hand over \`${want}\` there: \`${fixed}\``
+        : "Hand over text there, not a number.";
+    return {
+      ...explain(
+        "text-plus-number",
+        "A number where text goes",
+        `The call on line ${handed.line} hands over \`${handed.value}\`, a number, for \`${name}\`, and ${lineWord(line).toLowerCase()} glues \`${name}\` to text. ${instead}`,
+        raw,
+      ),
+      slip: "a number handed over where text goes",
+      lean: `The call on line ${handed.line} hands over \`${handed.value}\`, a number, for \`${name}\`, and ${lineWord(line).toLowerCase()} glues \`${name}\` to text.`,
+      ...(handed.line !== line ? { slipLine: handed.line } : {}),
+    };
+  }
+  return null;
+}
+
 function explainType(
   message: string,
   code: string,
@@ -6532,8 +8301,27 @@ function explainType(
   const outside = explainOutsidePrint(message, text, line, raw);
   if (outside) return outside;
   // Unit 3 on: a recipe that prints its answer and has no `return`, its `None` compared or glued (`ore_left >= daily`).
-  const none = unitAtLeast(context, FUNCTIONS_UNIT_ORDER) ? explainNoneValue(message, code, text, line, raw) : null;
+  const none = unitAtLeast(context, FUNCTIONS_UNIT_ORDER) ? explainNoneValue(message, code, text, line, raw, context) : null;
   if (none) return none;
+  // Unit 7: values traced to the call that handed them over (text where a sheet goes, values in the wrong order, `None`
+  // from a function whose only `return` is a guard's, a whole sheet as the stamp's count).
+  if (unitAtLeast(context, SPELL_RECIPES_UNIT_ORDER)) {
+    const handed =
+      explainTextAsSheet(message, code, text, line, raw, context) ??
+      explainSwappedForLoop(message, code, text, line, raw, context) ??
+      explainNoneFallback(message, code, text, line, raw, context) ??
+      explainQuotedNumberHanded(message, code, text, line, raw, context) ??
+      explainNumberWhereText(message, code, text, line, raw, context) ??
+      explainFunctionWhereValue(message, code, text, line, raw, context) ??
+      explainCalledWhileHanded(message, code, text, line, raw, context) ??
+      explainHandedFunctionParams(message, code, text, line, raw, context) ??
+      explainMissingDefault(message, code, line, raw, context) ??
+      explainWrongKeyword(message, code, text, line, raw, context) ??
+      explainSheetStamp(message, code, text, line, raw, context) ??
+      explainPairStamp(message, code, text, line, raw, context) ??
+      explainUnpackFunction(message, code, text, line, raw, context);
+    if (handed) return handed;
+  }
   const fromInput = inputNames(code).find((name) => new RegExp(`\\b${escapeRegExp(name)}\\b`).test(text));
   const joinText = /can only concatenate str \(not "(int|float)"\) to str/.test(message);
   const addToNumber = /unsupported operand type\(s\) for \+: '(int|float)' and 'str'/.test(message);
@@ -6620,6 +8408,23 @@ function explainType(
     );
   }
   const bar = /unsupported operand type\(s\) for -: '(str|int)' and '(int|str)'/.test(message) ? barBrackets(text) : null;
+  // Unit 7: `("░" * hero["max_mana"]) - hero["mana"]`: parentheses around the stamp, so the text is still stamped first.
+  const moved =
+    !bar && unitAtLeast(context, SPELL_RECIPES_UNIT_ORDER) && /unsupported operand type\(s\) for -: 'str' and '(int|float)'/.test(message)
+      ? barBracketsMoved(text)
+      : null;
+  if (moved) {
+    return {
+      ...explain(
+        "bar-needs-brackets",
+        "Parentheses for the gap",
+        `${lineWord(line)} puts parentheses around the stamp, \`${moved.around}\`, so Python still stamps the text first, then tries to take a number away from text. Put the parentheses around the subtraction instead: \`${moved.fixed}\``,
+        raw,
+      ),
+      slip: "parentheses around the stamp, not the subtraction",
+      lean: `${lineWord(line)} puts parentheses around the stamp, \`${moved.around}\`, so the text is still stamped first.`,
+    };
+  }
   if (bar) {
     return explain(
       "bar-needs-brackets",
@@ -6689,6 +8494,12 @@ function explainType(
         `Line ${shadowed.line} uses \`${shadowed.name}\` as a box's name, so \`${shadowed.name}()\` stops working. Pick a different name for your box.`,
         raw,
       );
+    }
+    // Unit 7: a function handed over with `()` (what it handed back is called), its name in quotes, a placeholder number
+    // called; a page of a book called whole. Before the box row: a variable can hold a function from Unit 7 on.
+    if (unitAtLeast(context, SPELL_RECIPES_UNIT_ORDER)) {
+      const handed = notCallable[1] === "dict" ? explainPageCalled(code, text, line, raw, context) : explainValueCalled(message, code, text, line, raw, context);
+      if (handed) return handed;
     }
     // Unit 5: `gearshift("mana")`: a sheet read with round brackets (before the box-called-like-a-recipe row).
     if (notCallable[1] === "dict" && unitAtLeast(context, DICTS_UNIT_ORDER)) {
@@ -6852,6 +8663,16 @@ function explainParsed(parsed: Parsed, raw: string, code: string, context?: Expl
     case "AssertionError":
       return explainAssert(message, text, line, raw);
     case "KeyError": {
+      // Unit 7: a guard that lets the key through (or no guard yet), and the wrong sheet handed to a function. The test
+      // call is meant to stay, so never "Use a key that is already there".
+      if (unitAtLeast(context, SPELL_RECIPES_UNIT_ORDER)) {
+        const guarded =
+          explainGuardLetsThrough(message, code, text, line, raw, context) ??
+          explainQuotedParamKey(message, code, text, line, raw) ??
+          explainWrongSheetHanded(message, code, text, line, raw, context) ??
+          explainScopeKey(message, code, text, line, raw, context);
+        if (guarded) return guarded;
+      }
       // Unit 5: a skipped level, one level too deep, a near miss, a position, two keys in one [ ].
       const key = unitAtLeast(context, DICTS_UNIT_ORDER) ? explainKeyError(message, code, text, line, raw, context) : null;
       if (key) return key;
@@ -6861,6 +8682,9 @@ function explainParsed(parsed: Parsed, raw: string, code: string, context?: Expl
       const meant = message.match(/Did you mean: '([^']+)'/)?.[1];
       const attribute = message.match(/attribute '([^']+)'/)?.[1];
       if (attribute && /^_{2,}$/.test(attribute)) return blankLeft(attribute, line, raw);
+      // Unit 7: `wards.append(ward)`: a dictionary stores by key.
+      const appended = unitAtLeast(context, SPELL_RECIPES_UNIT_ORDER) ? explainAppendToSheet(message, code, text, line, raw, context) : null;
+      if (appended) return appended;
       // Unit 4 on: `short_gaps = short_gaps.append(h)`: the box holds the tool's `None`, never "check the spelling".
       const none = unitAtLeast(context, LISTS_UNIT_ORDER) ? explainNoneTool(message, code, text, line, raw) : null;
       if (none) return none;
@@ -6908,6 +8732,9 @@ function explainParsed(parsed: Parsed, raw: string, code: string, context?: Expl
       // Unit 6: a running total in the recipe's loop with no start (`total = 0` left out): the start goes above it.
       const start = unitAtLeast(context, LOOPS_UNIT_ORDER) ? explainNoStartingValue(variable, code, text, line, raw, context) : null;
       if (start) return start;
+      // Unit 7: `return spell` above the lines that make `spell`: the `return` moves below them (one fix, never "or").
+      const early = unitAtLeast(context, SPELL_RECIPES_UNIT_ORDER) ? explainReturnTooEarly(variable, code, text, line, raw) : null;
+      if (early) return early;
       return explain(
         "variable-in-function",
         "A box inside a recipe",
@@ -6954,7 +8781,7 @@ export function explainCourseError(traceback: string, code: string, context?: Ex
   try {
     const full = explainParsed(parsed, raw, code ?? "", context);
     const result = context?.explainer === "lean" ? leanExplanation(full, raw) : full;
-    return nextErrorAfterFix(result, parsed, raw, context);
+    return inUnitWords(nextErrorAfterFix(result, parsed, raw, context), context);
   } catch (error) {
     // Never let a surprise in the explainer hide the student's error: fall back to Python's own words.
     console.error("Could not explain this error.", error);
@@ -6991,6 +8818,11 @@ function nextErrorAfterFix(result: CourseExplanation, parsed: Parsed, raw: strin
   const line = errorLine(raw);
   const previousLine = errorLine(previousRaw);
   if (line === null || previousLine === null) return result;
+  // The same error again on the same line of code, moved down by lines added above it (a guard with no `return` still
+  // stops on `spell = hero["spell_book"][spell_name]`): nothing was fixed yet.
+  if (previous.type === parsed.type && previous.message === parsed.message && shownLine(raw).trim() !== "" && shownLine(raw).trim() === shownLine(previousRaw).trim()) {
+    return result;
+  }
   const later = line > previousLine;
   // The code could not be read before and now it can: that slip is mended, wherever the next error is (an
   // `import` missing on line 1 after a SyntaxError on line 16). On the same line, the same unquoted slip again
@@ -7110,6 +8942,8 @@ const SLIP_NAMES: Record<CourseErrorKind, string> = {
   "choice-needs-else": "a one-line choice with no `else`",
   "for-needs-in": "a `for` line with no `in`",
   "colon-in-one-line-choice": "a colon in a one-line choice",
+  "text-as-sheet": "text handed over where a sheet goes",
+  "swapped-values": "two values handed over in the wrong order",
   "input-is-text": "an input() answer used as a number",
   "text-plus-number": "text joined to a number",
   "number-plus-text": "a number added to text",
@@ -7356,7 +9190,8 @@ const NUMBER_LITERAL = /^-?\d+(?:\.\d+)?$/;
  */
 export function explainQuietSlip(code: string, options: { missingName?: string; context?: ExplainContext } = {}): QuietSlip | null {
   try {
-    return findQuietSlip(code, options);
+    const found = findQuietSlip(code, options);
+    return found ? inUnitWords(found, options.context) : null;
   } catch (error) {
     console.error("Could not look for quiet slips.", error);
     return null;

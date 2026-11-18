@@ -12,7 +12,9 @@ import {
   GOT_FURTHER_LINE,
   leanExplanation,
   LOOPS_UNIT_ORDER,
+  ONE_FIXED_PREFIX,
   slipName,
+  SPELL_RECIPES_UNIT_ORDER,
   type ExplainContext,
 } from "./explain";
 import { flattenChecks, gradeCheckpoints } from "./grading";
@@ -3007,4 +3009,395 @@ describe("explainCourseError: the merged branch's review (one fix, on the line i
     const newest = lists.find("many-values-one-name/broken-spell-3a", "len(list) used as the position");
     expect(explainCourseError(crashOf(newest), newest.code, newest.context).hint).toContain("Write: `newest = chalk_wall[-1]`");
   });
+});
+
+/* ---------------------------------------------------------------------------------------------- */
+/* Unit 7 ("Functions II: Spells You Can Hand Over"): the teacher's site requests                    */
+/* ---------------------------------------------------------------------------------------------- */
+
+const unit7 = unitWrongAnswers("spell-recipes");
+
+describe("explainCourseError: Unit 7's slips (functions II), from the unit's own wrong answers", () => {
+  it("is Unit 7 on the course map, and its rows open there", () => {
+    expect(unit7.order).toBe(SPELL_RECIPES_UNIT_ORDER);
+    expect(SPELL_RECIPES_UNIT_ORDER).toBe(LOOPS_UNIT_ORDER + 1);
+  });
+
+  // [exercise, the wrong answer's `why`, Python 3.13's own words, kind, the full hint, the line the crash banner names]
+  const rows: [string, string, string, string, string, number | undefined][] = [
+    // (1) A guard that lets the key through: never "Use a key that is already there" (the test call stays).
+    ["recipes-read-sheets/guard-at-the-door", "starter: no guard (the predict's KeyError)", "KeyError: 'Star Glow'", "missing-key",
+      '`hero["spell_book"]` has no key "Star Glow", so line 5 stops the program. The call that hands over "Star Glow" is the test: keep it. Add your guard above line 5, so `cast_glow` asks first.', undefined],
+    ["recipes-read-sheets/guard-at-the-door", "a guard with no return: shows the line, then carries on to the spell", "KeyError", "missing-key",
+      'Your guard lets "Star Glow" through to line 7. Its `if` shows the line, but nothing stops the function, so line 7 still reads the key. Put `return` on a new line under line 6, with the same spaces in front.', undefined],
+    ["recipes-read-sheets/guard-at-the-door", "an if/else guard that never returns: the work below still runs", "KeyError", "missing-key",
+      'Your guard lets "Star Glow" through to line 9. Its `if` shows the line, but nothing stops the function, so line 9 still reads the key. Put `return` on a new line under line 6, with the same spaces in front.', undefined],
+    ["recipes-read-sheets/guard-at-the-door", "the early return placed after the work (the guard comes too late)", "KeyError", "missing-key",
+      'Your guard lets "Star Glow" through to line 5: it is on line 6, below line 5, which reads the key first, so "Star Glow" stops the program before the guard can ask. Move the guard, its `if` and the lines under it, above line 5.', 6],
+    ["recipes-read-sheets/guard-at-the-door", "`in` for `not in`", "KeyError", "missing-key",
+      'Your guard lets "Star Glow" through to line 8. Line 5 asks `in`, so it stops the spells the book has and lets the others go on. Ask `not in`: `if spell_name not in hero["spell_book"]:`', 5],
+    // (2) The bar row: `"░" * hero["max_mana"] - hero["mana"]` gets the parentheses, never "use int()".
+    ["recipes-read-sheets/broken-spell-6b", "two mended; the precedence slip", "unsupported operand", "bar-needs-brackets",
+      'Python does `*` before `-` on line 12, like PEMDAS in math. So it stamps the text first, then tries to take a number away from text. Put parentheses around the subtraction so it happens first: `empty = "░" * (hero["max_mana"] - hero["mana"])`', undefined],
+    ["recipes-read-sheets/bar-then-draw", 'no brackets: "▯" * a - b', "unsupported operand type(s) for -: 'str' and 'int'", "bar-needs-brackets",
+      'Python does `*` before `-` on line 13, like PEMDAS in math. So it stamps the text first, then tries to take a number away from text. Put parentheses around the subtraction so it happens first: `empty = "▯" * (robot["max_fuel"] - robot["fuel"])`', undefined],
+    ["recipes-read-sheets/broken-spell-6b", "brackets in the wrong place: still text minus a number", "unsupported operand", "bar-needs-brackets",
+      'Line 12 puts parentheses around the stamp, `("░" * hero["max_mana"])`, so Python still stamps the text first, then tries to take a number away from text. Put the parentheses around the subtraction instead: `empty = "░" * (hero["max_mana"] - hero["mana"])`', undefined],
+    // (3) `None` called: a function handed over with `()`, traced to the line that handed it over.
+    ["spells-you-can-hand-over/name-without-parentheses", "stored the call (None), then called it: the explainer's NoneType row", "'NoneType' object is not callable", "not-a-function",
+      "Line 16 calls `chosen_spell`, and it holds `None`, Python's word for nothing. Line 13 puts `warm_hands(lucky)` in `chosen_spell`: the `(lucky)` runs `warm_hands` right there, and `warm_hands` hands back nothing. Hand the function over by its name, with no `()`: `chosen_spell = warm_hands`", 13],
+    ["spells-you-can-hand-over/hand-it-over", "handed over the result of a call: warm_hands(lucky) hands over None", "'NoneType' object is not callable", "not-a-function",
+      "Line 7 calls `effect`, and it holds `None`, Python's word for nothing. The call on line 13 hands over `warm_hands(lucky)`: the `(lucky)` runs `warm_hands` right there, and `warm_hands` hands back nothing. Hand the function over by its name, with no `()`: `cast_on_everyone(roster, warm_hands)`", 13],
+    ["spells-you-can-hand-over/broken-spell-6c", "the effect called first while the loop still hands over None (the chain: NoneType)", "'NoneType' object is not callable", "not-a-function",
+      "Line 20 calls `spell[\"effect\"]`, and it holds `None`, Python's word for nothing. Line 26 hands over `lantern_ward(hero)`: the `(hero)` runs `lantern_ward` right there, and `lantern_ward` hands back nothing. Hand the function over by its name, with no `()`: `learn_spell(hero[\"spell_book\"], \"Lantern Ward\", 6, 9, lantern_ward)`", 26],
+    ["spell-book-from-blank", "a test line hands the ward over WITH (): lantern_ward(lucky) stores None, then the cast crashes", "'NoneType' object is not callable", "not-a-function",
+      "Line 20 calls `spell[\"effect\"]`, and it holds `None`, Python's word for nothing. Line 25 hands over `lantern_ward(lucky)`", 25],
+    // (4) `None` glued to text: the older row names the function, and the line the `return` goes under (never "Fix line 1",
+    // the `def` line, which is right).
+    ["recipes-read-sheets/broken-spell-6b", "starter: the missing return (spec: the NoneType TypeError)", '(not "NoneType")', "math-with-none",
+      "Line 26 uses what `mana_line` hands back, and that is `None`, Python's word for nothing. `mana_line`, made on line 1, has no `return`, so it hands nothing back. Under line 2, add `return line`, with the same spaces in front.", undefined],
+    // (5) Text read as a sheet: the quotes on the parameter, the order of the call, or the name for the sheet.
+    ["recipes-read-sheets/hand-over-a-sheet", "the parameter in quotes", "string indices", "quoted-name",
+      'Line 2 reads `"hero"[...]`. With quotes, `"hero"` is the text hero, not the parameter `hero`. Quotes mean these exact letters. No quotes means look inside the box with this label. Take the quotes off: `return hero["name"] + ": " + str(hero["mana"]) + "/" + str(hero["max_mana"])`', undefined],
+    ["recipes-read-sheets/read-the-helper", "the values in the wrong order", "string indices", "swapped-values",
+      "The call on line 15 hands its values over in the wrong order. `draw_bar` takes the sheet as `hero`, and the call puts `lucky` where `bar` goes, so line 5 reads text as a sheet. Swap the two values on line 15.", 15],
+    ["recipes-read-sheets/bar-then-draw", "the values swapped (crashes in the helper)", "string indices", "swapped-values",
+      "The call on line 25 hands its values over in the wrong order. `draw_bar` takes the sheet as `robot`, and the call puts `robot` where `bar` goes, so line 5 reads text as a sheet. Swap the two values on line 25: `draw_bar(robot, fuel_bar)`", 25],
+    ["recipes-read-sheets/read-the-helper", "Lucky's name typed where his sheet goes", "string indices", "text-as-sheet",
+      'The call on line 15 hands over the text `"Lucky"` for `hero`, and line 5 reads `hero` as a sheet. Hand over the sheet `lucky` itself, with no quotes: `draw_bar(lucky, "███░")`', 15],
+    ["spells-you-can-hand-over/name-without-parentheses", "CP2 the name typed as text (string indices)", "string indices must be integers", "text-as-sheet",
+      'The call on line 16 hands over the text `"Lucky"` for `hero`, and line 2 reads `hero` as a sheet. Hand over the sheet `lucky` itself, with no quotes: `chosen_spell(lucky)`', 16],
+    // (6) A number (or text) called: the call handed over a result, not the function. Never "use * to multiply".
+    ["lambda/a-dial-in-one-line", "CP2 the result of a call handed over, not the function ('int' is not callable)", "'int' object is not callable", "not-a-function",
+      "Line 4 calls `dial`, and it holds a number. The call on line 15 hands over `max_mana_dial(lucky)`: the `(lucky)` runs `max_mana_dial` right there, and its answer, a number, goes over in place of the function. Hand the function over by its name, with no `()`: `run_array(roster, max_mana_dial)`", 15],
+    ["map/every-hero-at-once", "CP3 the result of one call handed over ('int' is not callable)", "'int' object is not callable", "not-a-function",
+      "Line 17 hands `get_mana(lucky)` to `map`. The `()` runs `get_mana` right there, so `map` gets a number, not the function. Hand the function over by its name, with no `()`: `manas = list(map(get_mana, roster))`", undefined],
+    ["the-resonance-array", "CP6 the result of a call handed over (text, not a function)", "'str' object is not callable", "not-a-function",
+      "Line 64 calls `dial`, and it holds text. The call on line 69 hands over `mana_dial(lucky)`: the `(lucky)` runs `mana_dial` right there, and its answer, text, goes over in place of the function. Hand the function over by its name, with no `()`: `run_array(roster, mana_dial)`", 69],
+    ["spells-you-can-hand-over/hand-it-over", "the function's name in quotes", "'str' object is not callable", "not-a-function",
+      "Line 7 calls `effect`, and it holds text. The call on line 13 hands over `\"warm_hands\"`, in quotes: quotes make it text, the letters of the name, not the function. Take the quotes off: `cast_on_everyone(roster, warm_hands)`", 13],
+    // (7) Handed over WITH an empty `()`: never "hand over one value per parameter", which only gives `warm_hands(lucky)`.
+    ["spells-you-can-hand-over/hand-it-over", "handed over WITH () (missing argument)", "missing 1 required positional argument: 'hero'", "wrong-number-of-values",
+      "Line 13 hands `warm_hands()` to `cast_on_everyone`. The `()` runs `warm_hands` right there, with nothing in its parentheses, so Python stops. Hand the function over by its name, with no `()`: `cast_on_everyone(roster, warm_hands)`", undefined],
+    ["spells-you-can-hand-over/name-without-parentheses", "() with nothing inside (missing argument)", "missing 1 required positional argument: 'hero'", "wrong-number-of-values",
+      "Line 13 puts `warm_hands()` in `chosen_spell`. The `()` runs `warm_hands` right there, with nothing in its parentheses, so Python stops. Hand the function over by its name, with no `()`: `chosen_spell = warm_hands`", undefined],
+    // (8) A page called whole, a function's values in the wrong order, the wrong sheet, a parameter's name as a key.
+    ["spells-you-can-hand-over/recipe-in-a-box", "CP2 the page called without \"effect\" (the page is a dict)", "'dict' object is not callable", "not-a-function",
+      'Line 23 calls `lucky_book["Glow"]`, a whole dictionary, with ( ). The function is inside it, under the key `"effect"`: read it, then call it: `lucky_book["Glow"]["effect"](lucky)`', undefined],
+    ["spells-you-can-hand-over/recipe-in-a-box", "round brackets on the dictionary", "'dict' object is not callable", "list-needs-square-brackets",
+      'Line 17 puts parentheses ( ) after `glow`, so Python tries to run it like a function. `glow` is a dictionary: read a key with square brackets [ ], not parentheses. Line 17, with square brackets: `glow["effect"](lucky)`', undefined],
+    ["spells-you-can-hand-over/hand-it-over", "the two values in the wrong order", "'function' object is not iterable", "swapped-values",
+      "The call on line 13 hands its values over in the wrong order: `heroes` gets the function `warm_hands`, and `effect` gets `roster`. Line 6 then loops over `heroes`, and a function is not a list. Swap the two values on line 13, so `heroes` gets `roster`.", 13],
+    ["map/every-hero-at-once", "the two values in the wrong order", "'function' object is not iterable", "swapped-values",
+      "Line 8 hands `map` its values in the wrong order. `map` takes the function first, then the list. Swap them: `names = list(map(get_name, roster))`", undefined],
+    ["spells-you-can-hand-over/recipe-in-a-box", "the dictionary handed to its own effect (KeyError)", "KeyError: 'name'", "missing-key",
+      '`light_lantern` reads the key "name" from the sheet it is handed. Line 17 hands over `glow`, a dictionary with no "name". Hand over `lucky` there: `glow["effect"](lucky)`', undefined],
+    ["recipes-read-sheets/broken-spell-6b", "return mended; the quoted key shows as a KeyError on the read", "KeyError: 'Glow'", "missing-key",
+      '`lucky_book` has no "Glow": line 7, inside `add_to_book`, stores under `"spell_name"`, the letters of the parameter\'s name, not the name handed in. Quotes mean these exact letters. No quotes means look inside the box with this label. Take the quotes off on line 7: `book[spell_name] = spell`', 7],
+    // (9) A number in quotes handed over: the quotes are on the call's line, never "use int()".
+    ["recipes-read-sheets/recipes-change-sheets", "the cost in quotes on the bottom call", "unsupported operand", "number-in-quotes",
+      'Line 6 does math with `cost`, and the call on line 16 hands over `"4"` for it, in quotes. Quotes make text, even when it looks like a number. Take the quotes off on line 16: `spend(lucky, 4)`', 16],
+    // (10) Whole sheets, and the function handed over where its answer goes.
+    ["recipes-read-sheets/bar-then-draw", "the block times the whole sheet (the starter's print line runs it", "can't multiply sequence by non-int", "whole-card-compared",
+      'Line 10 stamps text by `robot`, a whole sheet. The stamp needs a number: stamp by one number from the sheet, read by its key, like `robot["fuel"]`.', undefined],
+    ["spells-you-can-hand-over/hand-it-over", "CP2 the whole sheet glued to text, handed over (the loop crashes)", "unsupported operand type(s) for +: 'dict' and 'str'", "whole-card-compared",
+      '`hero` is a whole sheet, not text, so it can\'t be glued to text. Glue on one value from it by its key, like `hero["name"]`.', undefined],
+    ["recipes-read-sheets/bar-then-draw", "the function handed to draw_bar, not the bar", '(not "function")', "wrong-kind-of-value",
+      "Line 5 glues `bar` to text, and `bar` holds the function `get_fuel_bar` itself: the call on line 25 hands it over by its name. Hand over what it makes instead, `fuel_bar`: `draw_bar(robot, fuel_bar)`", 25],
+    // (11) Unit 3's names, in Unit 7's words: a key with no quotes, a line that fell out of its function, a spell not made yet.
+    ["recipes-read-sheets/hand-over-a-sheet", "a key with no quotes", "name 'name' is not defined", "unquoted-key",
+      'A key is text, so it needs quotes: `"name"`. Without quotes, Python looks for a variable called `name`. Line 2, with the quotes put in: `return hero["name"] + ": " + str(hero["mana"]) + "/" + str(hero["max_mana"])`', undefined],
+    ["spells-you-can-hand-over/write-the-spell-book", "CP2 the store line not indented (outside the function: NameError)", "name 'spell' is not defined", "made-inside-recipe",
+      "Line 13 has no spaces in front, so it is outside `learn_spell`, and `spell` only exists inside that function. Indent line 13 to line up with line 9, 4 spaces in, so it is inside `learn_spell`.", undefined],
+    ["recipes-read-sheets/store-by-name", "the second call written with no warm_hands made first", "name 'warm_hands' is not defined", "not-made-yet",
+      "`warm_hands` is one of your step's boxes, but no line makes it yet. Make it above line 14, on a line that starts with `warm_hands = `", undefined],
+    // (12) The extra practice (defaults, keywords, lambda, two values back): one fix each, never "look for a missing quote".
+    ["extra-defaults-and-scope/defaults-and-names", "CP2 a keyword that is not the parameter's name", "unexpected keyword argument 'size'", "spelling",
+      "`roll_die` has no parameter called `size`: its parameter is `die_size`. A name before `=` in a call is a parameter's name, letter for letter: write `die_size=`, so the line reads `print(roll_die(die_size=6))`.", undefined],
+    ["extra-defaults-and-scope/defaults-and-names", "CP2 the parameter's name in quotes", "expression cannot contain assignment", "quoted-name",
+      "Line 13 puts quotes around `die_size` before `=`. Python's last line guesses `==`, but that guess is wrong here. A name before `=` in a call is the parameter's name, with no quotes: `print(roll_die(die_size=6))`", undefined],
+    ["extra-defaults-and-scope/defaults-and-names", "== for = on the def line", "invalid syntax", "compare-with-double-equals",
+      "Line 4 has `==` inside the `def` line's parentheses. A default value takes one `=`, the way a variable gets a value: `def roll_die(die_size=20):`", undefined],
+    ["extra-defaults-and-scope/defaults-and-names", "CP2 the 6 in quotes", "can only concatenate str", "number-in-quotes",
+      'Line 5 does math with `die_size`, and the call on line 13 hands over `"6"` for it, in quotes. Quotes make text, even when it looks like a number. Take the quotes off on line 13: `print(roll_die(die_size=6))`', 13],
+    ["lambda/a-dial-in-one-line", "return inside a lambda", "invalid syntax", "cant-read-line",
+      'Line 12 has `return` inside a `lambda`. A `lambda` hands its answer back by itself, so it never says `return`: `max_mana_dial = lambda hero: hero["magical_affinity"] * 2`', undefined],
+    ["two-things-back/the-bars-two-numbers", "CP2 one name catches the whole tuple", "can't multiply sequence by non-int of type 'tuple'", "wrong-kind-of-value",
+      "Line 16 stamps text by `full`, and `full` holds both values `bar_parts` hands back, as one pair. Line 15 catches them in one name. Catch them in two names, one per value: `full, empty = bar_parts(lucky)`", 15],
+    ["two-things-back/the-bars-two-numbers", "CP2 the function stored, not called", "cannot unpack non-iterable function object", "wrong-kind-of-value",
+      "Line 15 catches two values from `bar_parts`, the function itself: with no `( )`, it never runs, so nothing comes back to catch. Call it: `full, empty = bar_parts(lucky)`", undefined],
+    ["extra-defaults-and-scope/defaults-and-names", "the starter: roll_die() hands over nothing (no default yet)", "missing 1 required positional argument: 'die_size'", "wrong-number-of-values",
+      "`roll_die` has the parameter `die_size`, and line 9 hands over nothing for it, so Python stops. Give `die_size` a default on line 4, the `def` line: `def roll_die(die_size=20):`", 4],
+    ["extra-defaults-and-scope/defaults-and-names", "a colon for = (an annotation, not a default)", "missing 1 required positional argument", "wrong-number-of-values",
+      "Line 4 has a colon after `die_size` in the `def` line. A default value takes `=`, so `die_size` has no default, and line 9 hands over nothing for it. Write: `def roll_die(die_size=20):`", 4],
+    ["two-things-back/the-bars-two-numbers", "CP2 the print inside bar_parts never gets the bar (None unpacked)", "cannot unpack non-iterable NoneType object", "math-with-none",
+      'Line 15 catches two values from `bar_parts(lucky)`, but `bar_parts` hands back `None`, Python\'s word for nothing: it has no `return` line that hands values back. On line 5, write `return hero["mana"], hero["max_mana"] - hero["mana"]` in place of the `print` line.', 5],
+    // (13) The fixer's pass: a key read from the function's own sheets (the caster's sheet, the spell's page), never a
+    // path through the name the test call typed ("Lantern Ward"); a near miss that is part of the key's name.
+    ["spells-you-can-hand-over/cast-from-the-book", "CP2 the cost read from the hero's sheet (the wrong sheet: KeyError)", "KeyError: 'mana_cost'", "missing-key",
+      '`hero` has no key `"mana_cost"`. That key is on `spell`: `spell["mana_cost"]`', undefined],
+    ["spells-you-can-hand-over/cast-from-the-book", "CP3 the required affinity read from the hero's sheet (the wrong sheet: KeyError)", "KeyError: 'required_affinity'", "missing-key",
+      '`hero` has no key `"required_affinity"`. That key is on `spell`: `spell["required_affinity"]`', undefined],
+    ["spells-you-can-hand-over/cast-from-the-book", "CP3 the affinity read from the spell's page (the wrong sheet: KeyError)", "KeyError: 'magical_affinity'", "missing-key",
+      '`spell` has no key `"magical_affinity"`. That key is on `hero["abilities"]`: `hero["abilities"]["magical_affinity"]`', undefined],
+    ["spells-you-can-hand-over/cast-from-the-book", "CP4 the mana read from the spell's page (the wrong sheet: KeyError)", "KeyError: 'mana'", "missing-key",
+      '`spell` has no key `"mana"`. That key is on `hero`: `hero["mana"]`', undefined],
+    ["spells-you-can-hand-over/cast-from-the-book", 'hero["magical_affinity"]: a skipped level (KeyError)', "KeyError: 'magical_affinity'", "missing-key",
+      '`"magical_affinity"` is inside `"abilities"`: read the outer key first: `hero["abilities"]["magical_affinity"]`', undefined],
+    ["spells-you-can-hand-over/cast-from-the-book", 'CP3 a part of the key\'s name: "magic" for "magical_affinity" (KeyError)', "KeyError: 'magic'", "missing-key",
+      'Line 25 reads the key `"magic"` from `hero["abilities"]`. That dictionary spells it `"magical_affinity"`. Keys match letter for letter: `hero["abilities"]["magical_affinity"]`', undefined],
+    ["spells-you-can-hand-over/cast-from-the-book", 'CP4 a part of the key\'s name: "cost" for "mana_cost" (KeyError)', "KeyError: 'cost'", "missing-key",
+      'Line 27 reads the key `"cost"` from `spell`. That dictionary spells it `"mana_cost"`. Keys match letter for letter: `spell["mana_cost"]`', undefined],
+    ["spells-you-can-hand-over/cast-from-the-book", "CP2 show_mana handed the spell's page (KeyError inside the finished helper)", "KeyError: 'mana'", "missing-key",
+      '`show_mana` reads the key "mana" from the sheet it is handed. Line 32 hands over `spell`, a dictionary with no "mana". Hand over `hero` there: `show_mana(hero)`', undefined],
+    ["spells-you-can-hand-over/cast-from-the-book", "the campaign's name caster copied", "name 'caster' is not defined", "unknown-name",
+      "Line 25 uses `caster`, and no line makes it. Python's last line guesses `cast`, but that is the name of this function. The sheet it was handed is its parameter `hero`:", undefined],
+    ["spells-you-can-hand-over/recipe-in-a-box", 'CP2 the page skipped: lucky_book["effect"] (KeyError)', "KeyError: 'effect'", "missing-key",
+      '`"effect"` is inside `"Glow"`: read the outer key first: `lucky_book["Glow"]["effect"]`', undefined],
+    // (14) A function handed over with its parameter copied from its `def` line: never "put quotes around it".
+    ["spells-you-can-hand-over/hand-it-over", "CP1 handed over with its parameter copied from the def line (warm_hands(hero): NameError)", "name 'hero' is not defined", "not-a-function",
+      "Line 13 hands `warm_hands(hero)` to `cast_on_everyone`. The `(hero)` runs `warm_hands` right there, and `hero` only exists inside the function. Hand the function over by its name, with no `()`: `cast_on_everyone(roster, warm_hands)`", undefined],
+    ["spells-you-can-hand-over/hand-it-over", "CP2 cool_down handed over with its parameter (cool_down(hero): NameError)", "name 'hero' is not defined", "not-a-function",
+      "Line 23 hands `cool_down(hero)` to `cast_on_everyone`. The `(hero)` runs `cool_down` right there, and `hero` only exists inside the function. Hand the function over by its name, with no `()`: `cast_on_everyone(roster, cool_down)`", undefined],
+    ["spells-you-can-hand-over/name-without-parentheses", "CP1 handed over with its parameter copied from the def line (warm_hands(hero): NameError)", "name 'hero' is not defined", "not-a-function",
+      "Line 13 puts `warm_hands(hero)` in `chosen_spell`. The `(hero)` runs `warm_hands` right there, and `hero` only exists inside the function. Hand the function over by its name, with no `()`: `chosen_spell = warm_hands`", undefined],
+    ["map/every-hero-at-once", "handed over WITH () (runs now, with no hero)", "missing 1 required positional argument: 'hero'", "wrong-number-of-values",
+      "Line 8 hands `get_name()` to `map`. The `()` runs `get_name` right there, with nothing in its parentheses, so Python stops. Hand the function over by its name, with no `()`: `names = list(map(get_name, roster))`", undefined],
+    // (15) The line the fix goes on: the `def` line of a function handed over, the line that stored the function itself,
+    // the call that handed a number where text goes, the `def` line's quoted default.
+    ["spells-you-can-hand-over/hand-it-over", "CP2 no parameter, but handed over", "takes 0 positional arguments but 1 was given", "wrong-number-of-values",
+      "`cool_down` is handed `hero` on line 7, but its `def` line has no parameters. Change line 19, the `def` line: `def cool_down(hero):`", 19],
+    ["recipes-read-sheets/bar-then-draw", "the function stored with no (), then passed on (both lines written before a Run)", '(not "function")', "wrong-kind-of-value",
+      "Line 24 stores `get_fuel_bar` itself in `fuel_bar`, with no `(robot)`, so it never runs. Call it and keep its answer: `fuel_bar = get_fuel_bar(robot)`", 24],
+    ["recipes-read-sheets/bar-then-draw", "a number read from the sheet handed to draw_bar where the bar goes", "can only concatenate", "text-plus-number",
+      'The call on line 25 hands over `robot["fuel"]`, a number, for `bar`, and line 5 glues `bar` to text. Hand over `fuel_bar` there: `draw_bar(robot, fuel_bar)`', 25],
+    ["recipes-read-sheets/read-the-helper", "a number where the bar text goes", "can only concatenate", "text-plus-number",
+      'The call on line 15 hands over `20`, a number, for `bar`, and line 5 glues `bar` to text. Hand over text there, in quotes, like `draw_bar(lucky, "███░")`', 15],
+    ["recipes-read-sheets/read-the-helper", "the mana read from the sheet where the bar text goes", "can only concatenate", "text-plus-number",
+      'The call on line 15 hands over `lucky["mana"]`, a number, for `bar`, and line 5 glues `bar` to text. Hand over text there, in quotes, like `draw_bar(lucky, "███░")`', 15],
+    ["extra-defaults-and-scope/defaults-and-names", "the default in quotes (text, not a number)", "can only concatenate", "number-in-quotes",
+      'Line 5 does math with `die_size`, and its default on line 4 is `"20"`, in quotes. Quotes make text, even when it looks like a number. Take the quotes off on line 4: `def roll_die(die_size=20):`', 4],
+    ["extra-defaults-and-scope/defaults-and-names", "the number in place of the parameter", "invalid syntax", "quoted-ingredient",
+      "Line 4 has a number where a parameter's name goes. A default goes after the parameter's name, with `=`: `def roll_die(die_size=20):`", undefined],
+    ["extra-defaults-and-scope/defaults-and-names", "CP2 == in the call (a question, not a name)", "name 'die_size' is not defined", "compare-with-double-equals",
+      "Line 13 has `==` after `die_size` in the call. To name the value, use one `=`: `print(roll_die(die_size=6))`", undefined],
+    ["recipes-read-sheets/many-ingredients", "return placed before the dict is built (crashes at the bottom call)", "UnboundLocalError", "variable-in-function",
+      "Line 2 hands back `spell` before line 3 makes it. Move `return spell` below line 7, as the function's last line.", undefined],
+    ["extra-defaults-and-scope/inside-stays-inside", "the parameter printed outside (scope)", "name 'hero' is not defined", "made-inside-recipe",
+      "`hero` is the name of `rest`'s parameter, so it only exists inside the function. Out here, catch what `rest` hands back in a variable of your own: the call goes on the right of `=`.", undefined],
+  ];
+
+  it("explains each slip in the unit's words, with one fix, and names the line the fix goes on", async () => {
+    for (const [at, [key, why, python, kind, hint, slipLine]] of rows.entries()) {
+      // Python runs block the test worker: let it answer vitest between them (its heartbeat, "onTaskUpdate").
+      if (at % 10 === 0) await new Promise((resume) => setImmediate(resume));
+      const found = unit7.find(key, why);
+      expect(found.failsAt, `${key}: ${why} crashes`).toBe(0);
+      const raw = crashOf(found);
+      expect(raw, `${key}: ${why}`).toContain(python);
+      const result = explainCourseError(raw, found.code, found.context);
+      expect(result.kind, `${key}: ${why}`).toBe(kind);
+      expect(result.hint.startsWith(hint), `${key}: ${why}: ${result.hint}`).toBe(true);
+      if (slipLine !== undefined) expect(result.slipLine, `${key}: ${why}`).toBe(slipLine);
+      // A guard with no `return`, or a function whose last line makes its answer: the line goes under a right line,
+      // so the banner says "or a line above it".
+      if (/guard with no return|never returns|starter: the missing return/.test(why)) {
+        expect(result.slipLine, `${key}: ${why}`).toBeUndefined();
+        expect(result.fixAbove, `${key}: ${why}`).toBe(true);
+      }
+      // The unit's words (curriculum §2.9): function, parameter, key. `NoneType` and "use int()" never stand as the help.
+      expect(result.hint, `${key}: ${why}`).not.toMatch(/\b(recipe|ingredient|tag)s?\b/i);
+      expect(result.title, `${key}: ${why}`).not.toMatch(/\b(recipe|ingredient|tag)s?\b/i);
+      expect(result.hint, `${key}: ${why}`).not.toContain("NoneType");
+      expect(result.hint, `${key}: ${why}`).not.toContain("use `int()`");
+      expect(result.hint, `${key}: ${why}`).not.toContain("Use a key that is already there");
+      expect(result.hint, `${key}: ${why}`).not.toContain("Use * to multiply");
+      // One fix: never "..., or ...".
+      expect(result.hint, `${key}: ${why}`).not.toMatch(/, or /);
+    }
+  });
+
+  it("keeps the lean explainer to the slip and its evidence: the Quick Check and the SOLOs", async () => {
+    // [exercise, why, kind, the lean hint's start (its own sentence, never the fix), the fix the full hint gives]
+    const lean: [string, string, string, string, string][] = [
+      ["spells-you-can-hand-over/solo-6c", "stored the call: shout(lucky) puts None in the dict", "not-a-function",
+        "Line 14 puts `shout(lucky)` in `roar[\"effect\"]`, with `(lucky)`, so line 15 calls `None`, Python's word for nothing. Python's last line, below, says what it found.", 'roar = {"effect": shout}'],
+      ["recipes-read-sheets/solo-6b", "sips in quotes on the bottom call", "number-in-quotes",
+        'The call on line 11 hands over `"5"`, a number in quotes, for `sips`, and line 3 does math with it.', "drink_glug(lucky, 5)"],
+      ["qc-r2-a/learn-a-ward", "CP3 the function handed over WITH () (it runs now, with no hero)", "wrong-number-of-values",
+        "Line 22 hands `ash_ward()` to `learn_ward`, with `()`, so `ash_ward` ran there with nothing in its parentheses.", 'learn_ward(wards, "Ash Ward", 4, ash_ward)'],
+      ["qc-r2-b/learn-a-charm", "CP3 the function handed over WITH () (it runs now, with no hero)", "wrong-number-of-values",
+        "Line 22 hands `teal_shield()` to `learn_charm`, with `()`, so `teal_shield` ran there with nothing in its parentheses.", 'learn_charm(charms, "Teal Shield", 5, teal_shield)'],
+      ["qc-r2-a/learn-a-ward", "CP1 the effect called while the dict is made, before step 3 (the 0 placeholder is called)", "not-a-function",
+        "Line 14 calls `effect` with `()`, and it holds 0, the number the call on line 22 hands over.", ""],
+      ["qc-r2-a/learn-a-ward", "CP1 the effect called while the dict is made (with ())", "wrong-number-of-values",
+        "Line 14 puts `effect()` in the dictionary, with `()`, so `effect` ran there with nothing in its parentheses.", '"effect": effect,'],
+      ["qc-r2-a/learn-a-ward", "CP3 called on the book in the call (the wrong sheet: the empty book has no name)", "missing-key",
+        "Line 22 hands `ash_ward(wards)` to `learn_ward`, with `()`, so `ash_ward` ran there, on `wards`.", 'learn_ward(wards, "Ash Ward", 4, ash_ward)'],
+      ["qc-r2-a/cast-from-the-wards", "CP1 the page called, not its effect", "not-a-function",
+        "Line 30 calls `wards[name]`, a whole dictionary, not the function inside it.", 'wards[name]["effect"](hero)'],
+      ["qc-r2-b/cast-from-the-charms", "CP1 the call's result stored where the function was wanted, then called (NoneType)", "not-a-function",
+        "Line 30 puts `charms[name][\"effect\"](hero)` in `effect`, with `(hero)`, so line 31 calls `None`, Python's word for nothing.", 'effect = charms[name]["effect"]'],
+      ["qc-r2-a/learn-a-ward", "CP2 .append on a dictionary", "dot-on-a-sheet", "Line 16 uses `.append()` on `wards`, a dictionary.", "wards[ward_name] = ward"],
+      // A parameter's name in quotes keeps Unit 5's row (the quotes), never "the wrong sheet".
+      ["qc-r2-a/cast-from-the-wards", "CP1 the parameter in quotes", "quoted-name", "The mistake is on line 30: a parameter's name in quotes.", "wards[name]"],
+      // A key read from the wrong sheet is named so, never "a skipped level"; the full hint reads the page by the name handed in.
+      ["qc-r2-a/cast-from-the-wards", "CP2 the cost read from the hero's sheet (a key from the wrong sheet)", "missing-key",
+        "The mistake is on line 31: a key read from the wrong sheet.", 'wards[name]["mana_cost"]'],
+      ["qc-r2-b/cast-from-the-charms", "CP2 the cost read from the hero's sheet (a key from the wrong sheet)", "missing-key",
+        "The mistake is on line 31: a key read from the wrong sheet.", 'charms[name]["mana_cost"]'],
+    ];
+    for (const [key, why, kind, start, fix] of lean) {
+      await new Promise((resume) => setImmediate(resume));
+      const found = unit7.find(key, why);
+      expect(found.context.explainer, `${key} is a lean exercise`).toBe("lean");
+      const raw = crashOf(found);
+      const result = explainCourseError(raw, found.code, found.context);
+      expect(result.kind, `${key}: ${why}`).toBe(kind);
+      expect(result.explainer).toBe("lean");
+      expect(result.hint.startsWith(start), `${key}: ${why}: ${result.hint}`).toBe(true);
+      expect(result.hint).toContain("Fix it yourself, then press Run again.");
+      expect(result.title, `${key}: ${why}`).not.toContain("`");
+      if (fix) {
+        expect(result.hint, `${key}: ${why}`).not.toContain(fix);
+        expect(explainCourseError(raw, found.code, { ...found.context, explainer: "full" }).hint, `${key}: the full hint has the fix`).toContain(fix);
+      }
+    }
+    // The new kinds have lean names; the kinds this unit extends keep their earlier ones (Units 1-6 say exactly that).
+    expect(slipName("text-as-sheet")).toBe("text handed over where a sheet goes");
+    expect(slipName("swapped-values")).toBe("two values handed over in the wrong order");
+    expect(slipName("not-a-function")).toBe("parentheses after something that can't use them");
+    expect(slipName("missing-key")).toBe("a missing key");
+    expect(slipName("math-with-none")).toBe("math with `None`");
+    expect(slipName("bar-needs-brackets")).toBe("math in the wrong order");
+    // Each extended row carries its own lean name, in the unit's words.
+    const guard = unit7.find("recipes-read-sheets/guard-at-the-door", "a guard with no return: shows the line, then carries on to the spell");
+    const leanGuard = explainCourseError(crashOf(guard), guard.code, { ...guard.context, explainer: "lean" });
+    expect(leanGuard.title).toBe("Guard with no return");
+    expect(leanGuard.hint).toBe(
+      "The guard on line 5 has no `return`, so \"Star Glow\" went on to line 7. Python's last line, below, says what it found. Fix it yourself, then press Run again.",
+    );
+    const handed = unit7.find("spells-you-can-hand-over/hand-it-over", "handed over the result of a call: warm_hands(lucky) hands over None");
+    expect(explainCourseError(crashOf(handed), handed.code, { ...handed.context, explainer: "lean" }).slip).toBe("a function handed over with `()`");
+  });
+
+  it("says no \"One fixed!\" when the same error comes back on the same line of code, moved down by lines added above it", () => {
+    const starter = unit7.find("recipes-read-sheets/guard-at-the-door", "starter: no guard (the predict's KeyError)");
+    const previous = crashOf(starter);
+    for (const why of ["a guard with no return: shows the line, then carries on to the spell", "`in` for `not in`"]) {
+      const found = unit7.find("recipes-read-sheets/guard-at-the-door", why);
+      const raw = crashOf(found);
+      // The line number moved (the guard went in above it), the error and the line's code did not.
+      expect(raw).toContain("KeyError: 'Star Glow'");
+      expect(raw).not.toContain("line 5, in cast_glow");
+      const result = explainCourseError(raw, found.code, { ...found.context, previous });
+      expect(result.gotFurther, why).toBeUndefined();
+      expect(result.hint.startsWith(ONE_FIXED_PREFIX), why).toBe(false);
+      expect(explainCourseError(raw, found.code, { ...found.context, previous, debugging: true }).gotFurther).toBeUndefined();
+    }
+    // A real fix still says so: the guard-with-no-return's KeyError, then a NameError further down (a new error).
+    const unit6Context: ExplainContext = { unitOrder: LOOPS_UNIT_ORDER };
+    const first = tracebackOf('book = {}\nprint(book["Star Glow"])\nprint(mana)\n');
+    const next = runCourseChecks('book = {"Star Glow": 1}\nprint(book["Star Glow"])\nprint(mana)\n', []);
+    expect(next.ok).toBe(false);
+    const fixed = explainCourseError(next.traceback, 'book = {"Star Glow": 1}\nprint(book["Star Glow"])\nprint(mana)\n', { ...unit6Context, previous: first });
+    expect(fixed.gotFurther).toBe(true);
+    // The same KeyError on the same code, two lines lower in any unit: not a fix either.
+    const before = tracebackOf('book = {}\nprint(book["Star Glow"])\n');
+    const lower = runCourseChecks('book = {}\nx = 1\ny = 2\nprint(book["Star Glow"])\n', []);
+    expect(explainCourseError(lower.traceback, 'book = {}\nx = 1\ny = 2\nprint(book["Star Glow"])\n', { ...unit6Context, previous: before }).gotFurther).toBeUndefined();
+  });
+
+  it("opens only from Unit 7 on: Units 1 to 6 keep their older advice for the same code", () => {
+    // [exercise, why, the kind the explainer gave before Unit 7 (and still gives below it), its words]
+    const cases: [string, string, string, string][] = [
+      ["recipes-read-sheets/guard-at-the-door", "a guard with no return: shows the line, then carries on to the spell", "missing-key", 'The dictionary has no key "Star Glow". Use a key that is already there.'],
+      ["spells-you-can-hand-over/name-without-parentheses", "stored the call (None), then called it", "not-a-function", "so it is a box, not a recipe (function)"],
+      ["spells-you-can-hand-over/hand-it-over", "handed over the result of a call: warm_hands(lucky) hands over None", "not-a-function", "Only tools like `print`, and recipes made with `def`, take parentheses"],
+      ["lambda/a-dial-in-one-line", "CP2 the result of a call handed over, not the function ('int' is not callable)", "use-star-to-multiply", "Python needs the `*` sign"],
+      ["recipes-read-sheets/read-the-helper", "the values in the wrong order", "wrong-kind-of-value", "mixes kinds of values"],
+      ["recipes-read-sheets/broken-spell-6b", "brackets in the wrong place: still text minus a number", "math-with-text", "use `int()`"],
+      ["recipes-read-sheets/broken-spell-6b", "return mended; the quoted key shows as a KeyError on the read", "missing-key", "Read a key the sheet has"],
+      ["spells-you-can-hand-over/hand-it-over", "handed over WITH () (missing argument)", "wrong-number-of-values", "Hand over one value per ingredient"],
+      ["recipes-read-sheets/recipes-change-sheets", "the cost in quotes on the bottom call", "math-with-text", "use `int()`"],
+      ["spells-you-can-hand-over/write-the-spell-book", "CP2 the store line not indented", "made-inside-recipe", "catch what the recipe hands back"],
+      ["recipes-read-sheets/hand-over-a-sheet", "a key with no quotes", "not-in-recipe", "has no box or ingredient by that name"],
+    ];
+    for (const [key, why, before, words] of cases) {
+      const found = unit7.find(key, why);
+      const raw = crashOf(found);
+      const older = explainCourseError(raw, found.code, { ...found.context, unitOrder: LOOPS_UNIT_ORDER, explainer: "full" });
+      expect(older.kind, `${key}: ${why}, unit 6`).toBe(before);
+      expect(older.hint, `${key}: ${why}, unit 6`).toContain(words);
+    }
+    // Unit 3's words stay below Unit 7, Unit 7's words from it; a code span is never touched.
+    const value = unit7.find("recipes-read-sheets/read-the-helper", "one value only");
+    const raw = crashOf(value);
+    expect(explainCourseError(raw, value.code, { ...value.context, unitOrder: LOOPS_UNIT_ORDER }).hint).toBe(
+      "`draw_bar` has 2 ingredients, `hero` and `bar`, but the call on line 15 hands over 1. Hand over one value per ingredient, the way each blank in a Mad Lib gets one word.",
+    );
+    expect(explainCourseError(raw, value.code, value.context).hint).toBe(
+      "`draw_bar` has 2 parameters, `hero` and `bar`, but the call on line 15 hands over 1. Hand over one value per parameter, the way each blank in a Mad Lib gets one word.",
+    );
+    const recipe = explainRun("def recipe(ingredient):\n    return ingredient\nprint(recipe())\n", [], { unitOrder: SPELL_RECIPES_UNIT_ORDER });
+    expect(recipe.hint).toBe(
+      "`recipe` has 1 parameter, `ingredient`, but the call on line 3 hands over nothing. Hand over one value per parameter, the way each blank in a Mad Lib gets one word.",
+    );
+  });
+
+  it("keeps the older rows where nothing was handed over: a number times parentheses, a box made with = from a number", () => {
+    const unit7Context: ExplainContext = { unitOrder: SPELL_RECIPES_UNIT_ORDER };
+    expect(explainRun("print(2(3 + 4))\n", [], unit7Context).kind).toBe("use-star-to-multiply");
+    const box = explainRun("x = 5\nprint(x(2))\n", [], unit7Context);
+    expect(box.kind).toBe("not-a-function");
+    expect(box.hint).toContain("To multiply by it, write `*` between them.");
+    // A parameter that holds a number, handed over some other way: the teacher's words, one fix.
+    const param = explainRun("def run(dial):\n    return dial(1)\n\n\nvalues = [3]\nprint(run(values[0]))\n", [], unit7Context);
+    expect(param.hint).toBe("Line 2 calls `dial`, and it holds a number. The call handed over a result, not the function: hand over the function's name, with no `()`.");
+    // A placeholder number handed in and called inside the function: the number and the call that handed it over.
+    const placeholder = explainRun("def run(dial):\n    return dial(1)\n\n\nprint(run(0))\n", [], unit7Context);
+    expect(placeholder.hint).toContain("`dial` holds 0, the number the call on line 5 hands over. A number can't be called: only a function can.");
+    // `None` from nowhere the explainer can trace: the teacher's words, `None` translated.
+    const none = explainRun("box = {}\nbox.get(\"spell\")()\n", [], unit7Context);
+    expect(none.hint).not.toContain("NoneType");
+  });
+
+  it("keeps every Unit 1-6 explanation exactly as it was before Unit 7 (kind, title and hint)", async () => {
+    const before = JSON.parse(readFileSync(path.join(process.cwd(), "src/lib/course/explain.before-unit7.json"), "utf8")) as Record<string, string>;
+    const now: Record<string, string> = {};
+    for (const unitId of ["hello-world", "control-flow", "first-recipes", "lists", "dictionaries", "loops"]) {
+      for (const [at, wrong] of unitWrongAnswers(unitId).crashes().entries()) {
+        // Hundreds of python3 runs, each one blocking: let the test worker answer vitest between them (a worker that
+        // stays blocked misses its heartbeat, "Timeout calling onTaskUpdate", and fails the whole run).
+        if (at % 10 === 0) await new Promise((resume) => setImmediate(resume));
+        // The game's random is seeded, so a wrong answer that rolls a die crashes on the same line every time.
+        const result = runCourseChecks(wrong.code, [], { setup: `import random as _seeded\n_seeded.seed(5)\n${wrong.setup}`, stdin: wrong.stdin });
+        if (result.ok) continue;
+        const got = explainCourseError(result.traceback, wrong.code, wrong.context);
+        const hash = createHash("sha256").update(`${got.title}\n${got.hint}`).digest("hex").slice(0, 16);
+        now[`${unitId}:${wrong.key}:${wrong.why}`] = `${got.kind} ${hash}`;
+      }
+    }
+    const { _about: about, ...expected } = before;
+    expect(about).toContain("before Unit 7");
+    expect(Object.keys(now).length).toBe(Object.keys(expected).length);
+    expect(now).toEqual(expected);
+  }, 240_000);
+
+  it("explains every crash wrong answer of Unit 7 in the unit's words, with no raw NoneType and no generic row it could name", async () => {
+    let generic = 0;
+    for (const [at, wrong] of unit7.crashes().entries()) {
+      if (at % 10 === 0) await new Promise((resume) => setImmediate(resume));
+      const result = runCourseChecks(wrong.code, [], { setup: wrong.setup, stdin: wrong.stdin });
+      if (result.ok) continue;
+      const got = explainCourseError(result.traceback, wrong.code, wrong.context);
+      const said = `${got.title} ${got.hint} ${got.lean ?? ""}`;
+      expect(said, `${wrong.key}: ${wrong.why}`).not.toMatch(/\b(recipe|ingredient)s?\b|\btags? \(key/i);
+      expect(said, `${wrong.key}: ${wrong.why}`).not.toContain("NoneType");
+      expect(said, `${wrong.key}: ${wrong.why}`).not.toContain("Use a key that is already there");
+      if (got.kind === "wrong-kind-of-value" && /mixes kinds of values/.test(got.hint)) generic += 1;
+    }
+    // Every crash the unit plans names its slip: none is left to Python's general words.
+    expect(generic).toBe(0);
+  }, 120_000);
 });
