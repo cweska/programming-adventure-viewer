@@ -201,8 +201,8 @@ export type CourseExplanation = Explanation & {
   slipLine?: number;
   /**
    * What the lean explainer says in place of "The mistake is on line N: <the slip's name>." when the row has words of its
-   * own for the slip and the evidence (Unit 6: "Line 8 asks a list for a key, like `roster["name"]`. A list has
-   * positions, not keys."). Never the fix.
+   * own for the slip and the evidence (Unit 6: "Line 8 asks a list for a tag (key), like `roster["name"]`. A list has
+   * positions, not tags."). Never the fix.
    */
   lean?: string;
 };
@@ -5041,7 +5041,7 @@ function explainQuotedLoop(code: string, line: number | null, raw: string, conte
       ...explain(
         "quoted-name",
         "Quotes around a list's name",
-        `Take the quotes off \`${name}\`. With quotes, the loop walks its letters. No quotes means look ${inside}. Line ${loop.line} with no quotes: \`${fixed}\``,
+        `Line ${loop.line} has \`${name}\` in quotes, so the loop walks its letters, one at a time. Take the quotes off \`${name}\`: no quotes means look ${inside}. Line ${loop.line} with no quotes: \`${fixed}\``,
         raw,
       ),
       slip: "a list's name in quotes in a `for` line",
@@ -5062,15 +5062,15 @@ function explainLoopListKey(message: string, code: string, text: string, line: n
     const loop = first?.key !== undefined ? loopOver(code, line, chain.base) : null;
     if (!loop) continue;
     const read = codePart(text).slice(chain.start, chain.end);
-    const lean = `${lineWord(line)} asks a list for a key, like \`${read}\`. A list has positions, not keys.`;
+    const lean = `${lineWord(line)} asks a list for a tag (key), like \`${read}\`. A list has positions, not tags.`;
     return {
       ...explain(
         "name-as-position",
-        "A list has no keys",
+        "A list has no tags (keys)",
         `${lean} Read one sheet through the loop variable: \`${chainCode(loop.variable, keysBefore(chain, chain.reads.length))}\`.`,
         raw,
       ),
-      slip: "a key asked of a whole list",
+      slip: "a tag (key) asked of a whole list",
       lean,
     };
   }
@@ -5093,7 +5093,7 @@ function explainLoopSheetAsPosition(message: string, code: string, text: string,
       ...explain(
         "name-as-position",
         "A sheet, not a position",
-        `${lean} A list's positions are numbers, and \`${first.name}\` already holds one sheet: ${chain.reads.length > 1 ? "read it directly" : "use it directly"}, \`${direct}\`.`,
+        `${lean} A list's positions are numbers, and \`${first.name}\` already holds one sheet, so use it on its own: \`${direct}\`.`,
         raw,
       ),
       slip: "a whole sheet used as a position",
@@ -5107,7 +5107,7 @@ function explainLoopSheetAsPosition(message: string, code: string, text: string,
 function explainLoopOverNumber(message: string, text: string, line: number | null, raw: string): CourseExplanation | null {
   if (!/^'(int|float)' object is not iterable/.test(message)) return null;
   if (!/(^|[^\w.])for\s+[A-Za-z_][\w\s,]*\s+in\s/.test(maskStrings(codePart(text)))) return null;
-  const words = `${lineWord(line)} asks a \`for\` loop to walk one number. A \`for\` loop needs a list or \`range(...)\`, not one number.`;
+  const words = `${lineWord(line)} gives a \`for\` loop one number to walk. A \`for\` loop needs a list or \`range(...)\`: one number has no items to walk through.`;
   return { ...explain("loop-over-number", "A loop over one number", words, raw), lean: words };
 }
 
@@ -5125,7 +5125,7 @@ function explainLoopToolNotCalled(message: string, text: string, line: number | 
     ...explain(
       "call-needs-round-brackets",
       "Parentheses for a call",
-      `${lineWord(line)} hands the loop \`${tool[1]}.${tool[2]}\` with no parentheses ( ), so the loop gets the tool itself, not what it hands back. Call it: \`${fixed}\``,
+      `${lineWord(line)} hands the loop \`${tool[1]}.${tool[2]}\` with no parentheses ( ), so the loop gets the tool itself, not what it hands back. Add the parentheses to call it: \`${fixed}\``,
       raw,
     ),
     slip: "a tool named without its parentheses",
@@ -5146,11 +5146,11 @@ function explainLoopNamesOverKeys(message: string, code: string, text: string, l
   return {
     ...explain(
       "wrong-number-of-values",
-      "One key a pass",
-      `${lineWord(line)} gives the loop ${names.length} names, but a loop over \`${book}\` hands over one key a pass. For each key with its value, walk \`${book}.items()\`: \`${fixed}\``,
+      "One tag each pass",
+      `${lineWord(line)} gives the loop ${names.length} names, but a loop over \`${book}\` hands over one tag (key) each pass. To get each tag with its value, loop over \`${book}.items()\`: \`${fixed}\``,
       raw,
     ),
-    slip: "names for a loop that hands over one key",
+    slip: "two names for a loop that hands over one tag",
   };
 }
 
@@ -5175,7 +5175,7 @@ function explainWholeAdded(message: string, code: string, text: string, line: nu
       ...explain(
         "row-not-item",
         "A whole list",
-        `\`${name}\` is the whole list. ${loop ? `Add the loop variable, \`${loop.variable}\`, instead.` : "Add one item from it instead."}`,
+        `\`${name}\` is the whole list, and a whole list can't be added to a number. ${loop ? `Add the loop variable, \`${loop.variable}\`, instead.` : "Add one item from it instead."}`,
         raw,
       ),
       slip: "a whole list added where one item is meant",
@@ -5196,8 +5196,8 @@ function explainWholeAdded(message: string, code: string, text: string, line: nu
       "whole-card-compared",
       "A whole sheet",
       glued
-        ? `\`${name}\` is a whole sheet, not text. Glue on one value from it by its key${like}.`
-        : `\`${name}\` is a whole sheet. Add one value from it by its key${like}.`,
+        ? `\`${name}\` is a whole sheet, not text, so it can't be glued to text. Glue on one value from it by its tag (key)${like}.`
+        : `\`${name}\` is a whole sheet, and a whole sheet can't be added to a number. Add one value from it by its tag (key)${like}.`,
       raw,
     ),
     slip: glued ? "a whole sheet glued to text" : "a whole sheet added where one value is meant",
@@ -5219,17 +5219,17 @@ function ingredientOutside(
 ): CourseExplanation {
   const loop = enclosingLoops(code, line).find((entry) => /^[A-Za-z_]\w*$/.test(entry.variable) && entry.variable !== name);
   const called = new RegExp(`(^|[^\\w.])${escapeRegExp(recipe)}\\s*\\(`).test(maskStrings(codePart(text)));
-  const lead = `\`${name}\` is \`${recipe}\`'s own ingredient name. It only exists inside the recipe.`;
+  const lead = `\`${name}\` is the name of \`${recipe}\`'s ingredient, so it only exists inside the recipe.`;
   // The call Mar'tu's version makes in its loop, when it hands over the loop variable (`light_lantern(member["name"])`).
   const solved = loop
     ? (context?.solution ?? "").match(new RegExp(`(?<![\\w.])${escapeRegExp(recipe)}\\(\\s*${escapeRegExp(loop.variable)}\\b[^()]*\\)`))?.[0]
     : undefined;
   const instead = called
     ? loop
-      ? `Out here, hand over a value of your own: inside a loop, its loop variable, like \`${solved ?? `${recipe}(${loop.variable})`}\`.`
+      ? `Out here, in the loop, hand over the loop variable instead, like \`${solved ?? `${recipe}(${loop.variable})`}\`.`
       : "Out here, hand over a value of your own in the call."
     : loop
-      ? `Out here, inside the loop, use its loop variable, \`${loop.variable}\`.`
+      ? `Out here, in the loop, use the loop variable, \`${loop.variable}\`.`
       : `Out here, use a value of your own, or move this line inside \`${recipe}\`.`;
   return explain("made-inside-recipe", "Only inside the recipe", `${lead} ${instead}`, raw);
 }

@@ -68,10 +68,10 @@ Check builders (u06a's guarded rerun, copied: each part file is plain data):
   _case(None)     the student's own run, as it is (no evidence bracket); _case(values) a rerun.
   C3 adds _watch_case (the own run, with its two start values read from the student's own starter lines, or a
   rerun), _plan (what the watch should print and count) and _inorder (every number of the watch shows, in order).
-Messages are lean (Unit 2 ruling for Quick Checks): they name the slip and keep the evidence bracket, "(Mar'tu's
-check tried a roster of 5 other heroes, only inside the check.)", but never the line to type or the fix. A
-near-miss name gets the lesson's sentence, "Python matches names letter for letter: you wrote `Total`, the task
-needs `total`." Invented values only in reruns (Pell, Brakka, Moss, Glug, Ivo); a student's own text is never
+Messages are lean (Unit 2 ruling for Quick Checks; plain-language guide 4.3.7): they say what went wrong and keep
+the labelled evidence, "Mar'tu tested your code with a test roster of 5 made-up heroes.", but never the line to type
+or the fix. A near-miss name gets the lesson's sentence, "You wrote `Total`, but the task needs `total`. Python
+matches names letter for letter." Invented values only in reruns (Pell, Brakka, Moss, Glug, Ivo); a student's own text is never
 repeated (a student's number may be). Proved at import, as Units 2-5 do: `_leaned` builds the lean helpers (`_gone`,
 `_lstop`) from u06a's lesson helpers word for word (each rewrite must match, and the copy must still be u06a's text),
 and `_lean_guard` fails the import if any check of either form shows a line of Mar'tu's version the starter does not,
@@ -281,8 +281,8 @@ def _lost(_w, _skip=()):
     # _skip: the task's other names, never offered as the near miss
     _n = [_m for _m in _made_names() if _m != _w and _m not in _skip and _close(_m, _w)]
     if _n:
-        return 'Python matches names letter for letter: you wrote `' + _n[0] + '`, the task needs `' + _w + '`.'
-    return 'No variable named `' + _w + '` was made.'
+        return 'You wrote `' + _n[0] + '`, but the task needs `' + _w + '`. Python matches names letter for letter.'
+    return "Python can't find `" + _w + "`: no variable with that name was made."
 '''
 
 
@@ -296,26 +296,30 @@ def _leaned(code, pairs):
     return code
 
 
-# u06a's lesson helpers, word for word (Lessons 5A and 5B). Their messages lead with the fix ("Keep the line ...",
-# "Make sure the loop can end ...", "Make it work for another roster too."), so the Quick Check says the slip and the
-# evidence instead: _gone (the starter's line is gone) and _lstop (what stopped Python, and the evidence).
+# u06a's lesson helpers, word for word (Lessons 5A and 5B). Their messages give the fix ("Keep that line ...",
+# "Make sure the loop can end ...", "Make your code work for another roster too."), so the Quick Check says the
+# mistake and the evidence instead: _gone (the line is gone) and _lstop (what stopped Python, and the evidence).
 _LESSON_HELPERS = """def _keep(_name):
-    return ('Keep the line `' + _name + " = ...` from the starter, so Mar'tu's check can try other values there.")
-def _stop(_err, _ev, _fix='Make it work for another roster too.'):
+    return ("Mar'tu can't find a line that starts `" + _name + " = `. Keep that line the way it was at the start: "
+            "he tests your code by changing it to other values.")
+def _stop(_err, _ev, _fix='Make your code work for another roster too.'):
     if _err.startswith('Runaway'):
-        return 'Make sure the loop can end, whatever the values. With other values, your loop never stopped.' + _ev
-    return _fix + ' With other values, Python stopped: ' + _err + '.' + _ev
+        return 'With other values, your loop never stopped. Make sure the loop can end, whatever the values.' + _ev
+    return 'With other values, your code stopped with an error, ' + _err.split(':')[0] + '. ' + _fix + _ev
 """
 _HELPERS_LEAN = [
     ("""def _keep(_name):
-    return ('Keep the line `' + _name + " = ...` from the starter, so Mar'tu's check can try other values there.")""",
+    return ("Mar'tu can't find a line that starts `" + _name + " = `. Keep that line the way it was at the start: "
+            "he tests your code by changing it to other values.")""",
      "def _gone(_name):\n"
-     "    return 'The line `' + _name + \" = [` from the starter is gone, so Mar'tu's check has nothing to swap.\""),
-    ("def _stop(_err, _ev, _fix='Make it work for another roster too.'):",
+     "    return \"The line that starts `\" + _name + \" = [` is gone, so Mar'tu can't test your code with other "
+     "values.\""),
+    ("def _stop(_err, _ev, _fix='Make your code work for another roster too.'):",
      "def _lstop(_err, _ev):\n    # Lean: what stopped Python, and the evidence. No fix."),
-    ("return 'Make sure the loop can end, whatever the values. With other values, your loop never stopped.' + _ev",
+    ("return 'With other values, your loop never stopped. Make sure the loop can end, whatever the values.' + _ev",
      "return 'With other values, the loop never stopped.' + _ev"),
-    ("return _fix + ' With other values, Python stopped: ' + _err", "return 'With other values, Python stopped: ' + _err"),
+    ("return 'With other values, your code stopped with an error, ' + _err.split(':')[0] + '. ' + _fix + _ev",
+     "return 'With other values, your code stopped with an error, ' + _err.split(':')[0] + '.' + _ev"),
 ]
 
 
@@ -379,16 +383,17 @@ OTHER5 = [sheet("Pell", 31), sheet("Brakka", 7), sheet("Moss", 15), sheet("Glug"
 OTHER_SHEETS = [sheet("Pell", 31, 34, 17), sheet("Brakka", 7, 12, 6), sheet("Moss", 15, 16, 8),
                 sheet("Glug", 3, 10, 5), sheet("Ivo", 9, 22, 11)]
 
-EV_FIVE = " (Mar'tu's check tried a roster of 5 other heroes, only inside the check.)"
+# The labelled evidence (plain-language guide 4.3.3), last in a message, with no brackets.
+EV_FIVE = " Mar'tu tested your code with a test roster of 5 made-up heroes."
 
 
 def ev_mana(values):
-    return (" (Mar'tu's check tried the same heroes with other mana: " + ", ".join(str(v) for v in values[:-1])
-            + " and " + str(values[-1]) + ", only inside the check.)")
+    return (" Mar'tu tested your code with test mana for the same heroes: " + ", ".join(str(v) for v in values[:-1])
+            + " and " + str(values[-1]) + ".")
 
 
 def ev_list(name, values):
-    return " (Mar'tu's check tried `%s = %s`, only inside the check.)" % (name, values)
+    return " Mar'tu tested your code with a test list, `%s = %s`." % (name, values)
 
 
 def same_heroes(sheets, manas):
@@ -406,20 +411,19 @@ UNIT = dict(
     subtitle="Every Member of the Party",
     published=True,
     martu_intro=(
-        "Four heroes. Four bars to draw. Write it four times? No. Write it once, and let Python walk down the "
-        "line, yes?\n"
-        "You have seen loops already: `for member in party.members:` at the bottom of the spell book and the mana "
-        "bars. Somebody else wrote them for you. Since then you have written recipes and lists of your own. Tonight "
-        "you write them yourself, one pass at a time."
+        "A loop runs the same lines once for each item in a list, so you write those lines only once. Read it "
+        "like English: `for member in roster:` means *for each member of the roster, do the lines under me*.\n"
+        "You've seen loops already: `for member in party.members:` at the bottom of the spell book and the mana "
+        "bars. Somebody else wrote them for you. Now you'll write them yourself.\n"
+        "Four heroes. Four bars to draw. Write it four times? No. Write it once, yes?"
     ),
     goals=[
-        "Say why loops exist, and write `for item in items:` with an indented body",
-        "Loop over a list of sheets, read keys from each `member`, and call a recipe for each one",
-        "Keep a running total, with `total = 0` before the loop",
-        "Put an `if` inside a loop to pick out some items",
-        "Compare neighbors with `range(1, len(chalk_wall))`, and see the decay for yourself",
-        "Write a `while` loop that changes its value each pass, stop a loop that never ends, and leave early "
-        "with `break`",
+        "Make Python repeat some lines once for each item in a list",
+        "Do the same thing for every hero on a list: show each name, or draw each mana bar",
+        "Add up every hero's mana into one total",
+        "Pick out only some items, like the heroes who are low on mana",
+        "Compare each gap on the chalk wall with the one before it, and see how fast the gaps shrink",
+        "Repeat lines while something is true, fix a loop that never ends, and stop a loop early",
     ],
     campaign_links=["friends-in-low-places"],
 )
@@ -433,7 +437,7 @@ GLOSSARY = []
 # Quick Check 5 (test-out), forms A and B: three code tasks each, plus four questions each.
 # =============================================================================================
 
-_STUCK = "Stuck? Skip it, or try the lesson For Each, Yes? Tasks you pass here stay ticked."
+_STUCK = "Stuck? Skip this task, or go back to the lesson For Each, Yes? Tasks you pass here stay done."
 
 
 def _qc_meta(skills, dictates="", foreign="", form="A", level="S2"):
@@ -474,7 +478,7 @@ if _b != _want:
     assert _len(_set([_repr(_x) for _x in _b])) > 1, __SAME__
     assert _len(_b) == _len(_want), ('`' + __HELPER__ + '` ran ' + _str(_len(_b)) + ' times for '
                                      + _str(_len(_want)) + ' members.')
-    assert False, 'The ' + __NOUN__ + 's do not follow the members, in roster order.'
+    assert False, 'The ' + __NOUN__ + 's do not match the members, in roster order.'
 ''',
         REC=rec, KEY=key, SHEETS=FULL_SHEETS, WHAT=what, WHATS=whats, HELPER=helper, NOUN=noun, PAST=past,
         AWHAT=a_what, SAME=same,
@@ -494,7 +498,7 @@ if _b != _want:
     assert _b != [_m.get('max_mana') for _m in __OTHER__], (
         "With another roster, the bars showed each hero's `max_mana`, not their `mana`." + __EV__)
     assert _len(_b) != 4, 'With 5 heroes in `roster`, only 4 ' + __NOUN__ + 's were ' + __PAST__ + '.' + __EV__
-    assert False, 'With another roster, the ' + __NOUN__ + 's did not follow its sheets.' + __EV__
+    assert False, 'With another roster, the ' + __NOUN__ + 's did not match its sheets.' + __EV__
 ''',
         setup=setup,
         from_setup=("roster",),
@@ -505,8 +509,7 @@ if _b != _want:
     return dict(
         id="a-helper-for-each",
         title="One call for each member",
-        martu=lead + "My check also tries a roster of other heroes, only inside the check, so let the loop do the "
-        "work.\n" + _STUCK,
+        martu=lead + "I also test your code with a roster of other heroes, so let the loop do the work.\n" + _STUCK,
         names=["roster", helper],
         support="none",
         explainer="lean",
@@ -515,7 +518,7 @@ if _b != _want:
         checkpoints=[
             dict(
                 id="call-for-each",
-                text=f"For each member of `roster`, call `{helper}(...)` with that member's {what}.",
+                text=f"Under the notes, write a loop: for each member of `roster`, call `{helper}(...)` with that member's {what}.",
                 dictated=False,
                 hints=[
                     "`roster` is a list of sheets. A `for` line walks it, one sheet at a time. The call goes "
@@ -697,7 +700,7 @@ for _vals, _ev in ((None, ''), ({'roster': __MANA__}, __EVM__), ({'roster': __FI
     assert not _err, _lstop(_err, _ev)
     _r = _ns.get('roster')
     assert _tn(_r) == 'list' and _r and _all(_tn(_m) == 'dict' and 'mana' in _m for _m in _r), (
-        "`roster` no longer holds the starter's sheets.")
+        "`roster` no longer holds the sheets it started with.")
     assert 'total' in _ns, _lost('total')
     _want = 0
     for _m in _r:
@@ -710,7 +713,8 @@ for _vals, _ev in ((None, ''), ({'roster': __MANA__}, __EVM__), ({'roster': __FI
     _last = _r[-1]['mana']
     assert not (_got == _last and _reset), (
         "`total` restarts every pass: it ended as only the last member's mana, " + _str(_last) + '.' + _ev)
-    assert not (_bare and _got == 0), 'The sum is worked out on a line of its own, then forgotten: `total` is still 0.'
+    assert not (_bare and _got == 0), ('The adding line has no `total = ` in front, so Python works it out and throws '
+                                       'it away: `total` is still 0.')
     assert not (_wiped and _got == 0), '`total` is set back to 0 after the loop, so the sum is wiped: it ends as 0.'
     assert _got != 0, '`total` is still 0: nothing was added to it.' + _ev
     assert _got != _last, ("`total` ended as only the last member's mana, " + _str(_last) + ': each pass replaced '
@@ -744,7 +748,7 @@ for _vals, _ev in ((None, ''), ({'roster': __MANA__}, __EVM__)):
         continue
     assert not _early, '`total` printed above the loop, before anything was added to it.'
     assert _vals is not None, '`total` was never printed.'
-    assert False, 'The printed total did not follow the sheets.' + _ev
+    assert False, 'With other mana, the printed total did not change to match.' + _ev
 ''',
         MANA=mana_other, EVM=ev_m,
     )
@@ -819,8 +823,8 @@ for _vals, _ev in ((None, ''), ({'roster': __MANA__}, __EVM__), ({'roster': __FI
     return dict(
         id="total-and-tired",
         title="A total, then who needs rest",
-        martu=lead + "My check tries other sheets, only inside the check, so never type a number or a name you "
-        "can see.\n" + _STUCK,
+        martu=lead + "I also test your code with other sheets, so never type a number or a name you can see.\n"
+        + _STUCK,
         names=["roster", "total"],
         support="none",
         explainer="lean",
@@ -828,10 +832,14 @@ for _vals, _ev in ((None, ''), ({'roster': __MANA__}, __EVM__), ({'roster': __FI
         checkpoints=[
             dict(
                 id="add-up-the-mana",
-                text="Add up every member's mana in `total`, and print `total` once, after the loop.",
+                text=(
+                    "Two moves, under note 1:\n"
+                    "1. Add up every member's mana in `total`.\n"
+                    "2. Print `total` once, after the loop."
+                ),
                 dictated=False,
                 hints=[
-                    "A tally starts once, above the loop. Each pass adds one member's mana. The print goes below "
+                    "A running total starts once, above the loop. Each pass adds one member's mana. The print goes below "
                     "the loop, with no spaces in front.",
                     "With other names:\n```python\ncoins = 0\nfor bag in bags:\n    coins = coins + bag[\"left\"]\n"
                     "print(coins)\n```",
@@ -843,7 +851,7 @@ for _vals, _ev in ((None, ''), ({'roster': __MANA__}, __EVM__), ({'roster': __FI
             ),
             dict(
                 id="who-needs-rest",
-                text="Print the name of each member with less than 10 mana.",
+                text="Under note 2, print the name of each member with less than 10 mana.",
                 dictated=False,
                 hints=[
                     "Loop over `roster` again. An `if` inside the loop picks the tired ones, and the print goes "
@@ -872,12 +880,12 @@ for _vals, _ev in ((None, ''), ({'roster': __MANA__}, __EVM__), ({'roster': __FI
                 f"1. `total` starts at 0, once. 2. Each pass adds one sheet's mana. 3. After the loop it holds "
                 f"{own_total}: print it. 4. A second loop asks each sheet `< 10`, and prints the name when it is "
                 "True.")),
-            dict(angle="shorter", text="Reset above, add inside, print below. Then an `if` inside a loop."),
+            dict(angle="shorter", text="Start at 0 above, add inside, print below. Then an `if` inside a loop."),
         ],
         takeaway="`total = 0` above the loop, `total = total + ...` inside it, `print(total)` below; an `if` inside "
         "a loop picks.",
         wrong_answers=[
-            dict(why="the starter (no total)", code=starter, fails_at=1, message_contains="No variable named"),
+            dict(why="the starter (no total)", code=starter, fails_at=1, message_contains="no variable with that name"),
             dict(why=f"the total typed by hand ({own_total})",
                  code=program(f"total = {own_total}\nprint(total)\n"), fails_at=1,
                  message_contains=f"stayed {own_total}"),
@@ -892,14 +900,14 @@ for _vals, _ev in ((None, ''), ({'roster': __MANA__}, __EVM__), ({'roster': __FI
                  fails_at=1, message_contains="each pass replaced it"),
             dict(why="a sum on a line of its own (worked out, then forgotten)",
                  code=program('total = 0\nfor member in roster:\n    total + member["mana"]\nprint(total)\n'),
-                 fails_at=1, message_contains="forgotten"),
+                 fails_at=1, message_contains="throws it away"),
             dict(why="four typed reads, no loop (CMB passes, LOOP fails)",
                  code=program('total = (roster[0]["mana"] + roster[1]["mana"]\n'
                               '         + roster[2]["mana"] + roster[3]["mana"])\nprint(total)\n'),
                  fails_at=1, message_contains="left one out"),
             dict(why="the total worked out, but its value typed in the print",
                  code=program(TOTAL_PART.replace("print(total)", f"print({own_total})")), fails_at=1,
-                 message_contains="did not follow"),
+                 message_contains="did not change to match"),
             dict(why="the total never printed", code=program(TOTAL_PART.replace("print(total)\n", "")), fails_at=1,
                  message_contains="never printed"),
             dict(why="roster[\"mana\"] for member[\"mana\"] (TypeError)",
@@ -995,7 +1003,7 @@ for _vals, _ev in ((None, ''), ({'roster': __MANA__}, __EVM__), ({'roster': __FI
 
 # ---- C3: a lean `while` write task (while-loop, accumulate) ----------------------------------------------------
 
-_STUCK_WHILE = "Stuck? Skip it, or try the lesson While the Clock Ticks. Tasks you pass here stay ticked."
+_STUCK_WHILE = "Stuck? Skip this task, or go back to the lesson While the Clock Ticks. Tasks you pass here stay done."
 
 # Shared by C3's two checks: the student's own run (its two start values read from the student's own starter
 # lines, so a changed number is followed) or a rerun with both lines swapped, and what the watch should show.
@@ -1031,15 +1039,15 @@ def _start(_name):
                 return None
     return None
 def _gone_n(_name):
-    return 'The line `' + __LINES__[_name] + "` from the starter is gone, so Mar'tu's check has nothing to swap."
+    return 'The line `' + __LINES__[_name] + "` is gone, so Mar'tu can't test your code with other numbers."
 def _says(_node, _name):
     return _any(_tn(_x) == 'Name' and _x.id == _name for _x in _ast.walk(_node))
 def _watch_case(_vals):
     if _vals is None:
         return globals(), _lines(), '', [], _start(__LEFT__), _start(__PER__), ''
     _ns, _rows, _err, _miss = _rerun(_vals)
-    _ev = (" (Mar'tu's check tried `" + __LEFT__ + ' = ' + _str(_vals[__LEFT__]) + '` and `' + __PER__ + ' = '
-           + _str(_vals[__PER__]) + '`, only inside the check.)')
+    _ev = (" Mar'tu tested your code with test numbers, `" + __LEFT__ + ' = ' + _str(_vals[__LEFT__]) + '` and `'
+           + __PER__ + ' = ' + _str(_vals[__PER__]) + '`.')
     return _ns, _rows, _err, _miss, _vals[__LEFT__], _vals[__PER__], _ev
 '''
 
@@ -1084,7 +1092,7 @@ for _vals in __CASES__:
             continue
         assert _shows, '`' + __LEFT__ + '` was never printed.'
         assert _shows_in, '`' + __LEFT__ + '` printed once, after the loop, not on every pass.'
-        assert False, 'The printed ' + __STUFF__ + ' did not follow the numbers.' + _ev
+        assert False, 'The printed ' + __STUFF__ + ' did not change to match the numbers.' + _ev
     _gs = _shv(_got)
     assert _whiles or _fors or not _ifs, (
         'There is no loop: an `if` asks once, so `' + __LEFT__ + '` went down only once.')
@@ -1151,7 +1159,7 @@ for _vals in __CASES__:
         continue
     assert not _early, '`' + __COUNT__ + '` printed above the loop, before anything was counted.'
     assert _cprints or _vals is not None, '`' + __COUNT__ + '` was never printed.'
-    assert False, 'The printed count did not follow the numbers.' + _ev
+    assert False, 'With other numbers, the printed count did not change to match.' + _ev
 '''
 
 
@@ -1217,8 +1225,9 @@ def _qc_watch(form, xid, title, head, steps, left, per, count, reruns, noun, las
         checkpoints=[
             dict(
                 id=f"count-the-{noun}s",
-                text=(f"While `{left}` is at least `{per}`, take `{per}` off `{left}` and print `{left}`. Count "
-                      f"each pass in `{count}`, and print `{count}` once, after the loop."),
+                text=(f"Under the notes, write a `while` loop:\n"
+                      f"1. While `{left}` is at least `{per}`, take `{per}` off `{left}` and print `{left}`.\n"
+                      f"2. Count each pass in `{count}`, and print `{count}` once, after the loop."),
                 dictated=False,
                 hints=[
                     f"Two numbers are ready: `{left}` and `{per}`. A `while` loop asks its question before every "
@@ -1256,8 +1265,8 @@ def _qc_watch(form, xid, title, head, steps, left, per, count, reruns, noun, las
             dict(angle="shorter", text="Count above. Ask with `while`. Take off, print and count inside. Print the "
                  "count below."),
         ],
-        takeaway=(f"`while {left} >= {per}:` asks before every pass; the update inside moves it toward `False`, "
-                  "and the count starts above the loop."),
+        takeaway=(f"`while {left} >= {per}:` asks before every pass. The line inside that changes `{left}` moves "
+                  "the answer toward `False`. The count starts above the loop."),
         wrong_answers=[
             dict(why="the starter (two numbers, no loop yet)", code=starter, fails_at=1,
                  message_contains="never changed"),
@@ -1290,7 +1299,7 @@ def _qc_watch(form, xid, title, head, steps, left, per, count, reruns, noun, las
                  code=program(reset="", bump="", tail=f"{count} = {passes}\nprint({count})\n"), fails_at=1,
                  message_contains="the number is typed in the code"),
             dict(why="the count worked out, but its value typed in the print",
-                 code=program(tail=f"print({passes})\n"), fails_at=1, message_contains="did not follow"),
+                 code=program(tail=f"print({passes})\n"), fails_at=1, message_contains="did not change to match"),
             dict(why=f"{per}'s value, {d0}, typed in the while line",
                  code=program(test=f"while {left} >= {d0}:\n"), fails_at=1,
                  message_contains="`while` line compares with a number typed"),
@@ -1399,8 +1408,9 @@ ORE_RERUNS = [{"ore_left": 24, "daily": 6}, {"ore_left": 19, "daily": 5}]
 BARRIER_RERUNS = [{"mana_left": 18, "cost": 6}, {"mana_left": 27, "cost": 4}]
 
 _QC_SUMMARY = (
-    "Three short tasks and four questions, no hints. Pass all three tasks and get 3 of the 4 questions right to "
-    "test out of Unit 6. Stuck on one? The lessons teach all of it, and tasks you pass here stay ticked."
+    "Three short tasks and four questions, with no hints. Pass all three tasks and get 3 of the 4 questions "
+    "right, and you test out of Unit 6: you can skip ahead. Stuck on one? The lessons teach all of it, and tasks "
+    "you pass here stay done."
 )
 _STRETCH = "That is Unit 6, yes? Want a stretch? Try Gearshift's Forecast."
 # The last pass line is the story recap a student who tests out would otherwise miss (teacher ruling).
@@ -1421,23 +1431,22 @@ QC5_A = dict(
         _qc_each(
             "A", "light_lantern", "name", "_lanterns", LANTERN_SETUP, LANTERN_STARTER, "lantern", "lit", "name",
             "names", "a name", "Every lantern went to the same hero.",
-            "Night is coming. One lantern by each hero's bed, yes? `light_lantern(...)` lights one lantern: hand "
-            "it one hero's name. ",
-            "Mar'tu: Four lanterns, four heroes. You wrote the call once, and Python walked the line.",
+            "`light_lantern(...)` lights one lantern: hand it one hero's name. Night is coming: one lantern by "
+            "each hero's bed, yes? ",
+            "Four lanterns lit, one for each hero, from one call in a loop. Mar'tu: Python walked the line.",
         ),
         _qc_tally(
             "A", "# After a night holding the barrier:\n", NIGHT, [12, 9, 10, 2],
-            "After a night holding the barrier, everyone is low. Add up what the party has left, then tell me who "
-            "needs rest. ",
-            "Gearshift: 45. That matches my count.",
-            "Mar'tu: Two to bed. The rest keep watch.",
+            "Add up the party's mana, then print who needs rest. After a night holding the barrier, the shield "
+            "around the cabin, everyone is low. ",
+            "`total` is 45, the party's mana. Gearshift: That matches my count.",
+            "Only the two tired heroes printed. Mar'tu: Two to bed. The rest keep watch.",
         ),
         _qc_watch(
             "A", "the-ore-watch", "The ore watch", ORE_HEAD, ORE_STEPS, "ore_left", "daily", "days", ORE_RERUNS,
             "day", "the ore lasts", "ore",
-            "Bomb Shell runs on Velocite ore. He has 30 chunks left, and he burns 4 a day. How many days is that? "
-            "Keep watch with a `while` loop, yes? My check also tries other numbers, only inside the check, so let "
-            "the loop do the work.",
+            "Count the days of ore with a `while` loop. Bomb Shell runs on Velocite ore: he has 30 chunks left, "
+            "and he burns 4 a day. I also test your code with other numbers, so let the loop do the work.",
             _RECAP + "Bomb Shell has about 7 days of ore. You lit the lanterns, kept the tally and ran the watch. "
             + _STRETCH,
         ),
@@ -1480,22 +1489,21 @@ QC5_B = dict(
             "B", "draw_bar", "mana", "_bars", BAR_SETUP, BAR_STARTER, "bar", "drawn", "mana", "mana values",
             "a number",
             "Every bar is the same.",
-            "Four heroes, four bars to draw. `draw_bar(...)` draws one bar: hand it one hero's mana. ",
-            "Mar'tu: Four bars, one line of yours. The mana bars at the bottom of the campaign did the same.",
+            "`draw_bar(...)` draws one bar: hand it one hero's mana. Four heroes, four bars to draw. ",
+            "Four bars drawn, from one line of yours. Mar'tu: The mana bars at the bottom of the campaign did the same.",
         ),
         _qc_tally(
             "B", "# After one Strengthen Magic each:\n", STRONG, [3, 15, 10, 7],
-            "Each of you cast Strengthen Magic once, at 10 mana a cast. Add up what the party has left, then tell "
-            "me who needs rest. ",
-            "Gearshift: 48. That matches my count.",
-            "Mar'tu: Only Oogrish. Exactly 10 is not less than 10, so Gearshift keeps watch.",
+            "Add up the party's mana, then print who needs rest. Each of you cast Strengthen Magic once, at 10 "
+            "mana a cast. ",
+            "`total` is 48, the party's mana. Gearshift: That matches my count.",
+            "Only Oogrish printed. Mar'tu: Exactly 10 is not less than 10, so Gearshift keeps watch.",
         ),
         _qc_watch(
             "B", "the-barrier-watch", "The barrier watch", BARRIER_HEAD, BARRIER_STEPS, "mana_left", "cost",
             "nights", BARRIER_RERUNS, "night", "the mana lasts", "mana",
-            "My barrier has 30 mana stored, and holding it costs 7 a night. How many nights is that? Keep watch "
-            "with a `while` loop, yes? My check also tries other numbers, only inside the check, so let the loop "
-            "do the work.",
+            "Count the nights of mana with a `while` loop. My barrier has 30 mana stored, and holding it costs 7 a "
+            "night. I also test your code with other numbers, so let the loop do the work.",
             _RECAP + "My barrier has 4 nights of mana. You drew the bars, kept the tally and ran the watch. "
             + _STRETCH,
         ),
@@ -1732,7 +1740,7 @@ QC5_B_QUESTIONS = _qc_questions(
         3,
         {
             0: "Nothing inside the loop changes `hours_left`, so it never counts down.",
-            1: "A `while` loop asks again after every pass. 3 is still more than 0, so it goes round again.",
+            1: "A `while` loop asks again after every pass. 3 is still more than 0, so it goes around again.",
             2: "3 is more than 0, so the loop runs, and then it never stops.",
         },
         (
@@ -1756,8 +1764,8 @@ CHALK_NOTES_6 = dict(
     entries=[
         dict(concept="`for item in items:` and an indent",
              code='for color in ["gold", "teal"]:\n    print(color)\n', output="gold\nteal",
-             note="The colon says *here comes the body*. Four spaces put a line inside the loop. It runs once for "
-                  "each item, and `color` holds the next one each pass. (Lesson: For Each, Yes?)"),
+             note="The colon says *here come the lines that repeat*. Four spaces put a line inside the loop. It "
+                  "runs once for each item, and `color` holds the next one each pass. (Lesson: For Each, Yes?)"),
         dict(concept="Each sheet: `member[\"name\"]`",
              code='roster = [\n    {"name": "Oogrish", "mana": 18},\n    {"name": "Lucky", "mana": 26},\n]\n'
                   'for member in roster:\n    print(member["name"])\n',
@@ -1766,7 +1774,8 @@ CHALK_NOTES_6 = dict(
                   "party.members:` at the bottom of the mana bars."),
         dict(concept="A running total: `total = 0` before the loop",
              code="total = 0\nfor mana in [18, 20, 24, 26]:\n    total = total + mana\nprint(total)\n", output="88",
-             note="Set it to 0 once, above the loop. Add inside. Print once, below. `total += mana` works too."),
+             note="Like adding up a column of numbers. Set it to 0 once, above the loop. Add inside. Print once, "
+                  "below. `total += mana` works too."),
         dict(concept="An `if` inside the loop",
              code='for mana in [6, 14, 3, 22]:\n    if mana < 10:\n        print(mana, "needs rest")\n',
              output="6 needs rest\n3 needs rest",
@@ -1778,39 +1787,42 @@ CHALK_NOTES_6 = dict(
              output="0\n1\n1\n2\n3\n4",
              note="`i` is a position. Start at 1, so `i - 1` is always on the wall. Each shrink is bigger: the "
                   "decay is accelerating."),
-        dict(concept="`while` and an update",
+        dict(concept="`while` and the line that changes it",
              code='hours_left = 3\nwhile hours_left > 0:\n    print(hours_left)\n    hours_left = hours_left - 1\n'
                   'print("Burst!")\n',
              output="3\n2\n1\nBurst!",
-             note="The question is asked before every pass. The update inside the loop moves it toward `False`. "
-                  "(Lesson: While the Clock Ticks)"),
+             note="The question is asked before every pass. The line inside the loop that changes `hours_left` "
+                  "moves the answer toward `False`. (Lesson: While the Clock Ticks)"),
         dict(concept="A loop that never ends",
              code="glug = 3\nwhile glug > 0:\n    print(glug)\n",
              note="Nothing inside changes `glug`, so it never stops: an [[infinite loop]]. The site stops it after "
                   "200,000 characters of printing (*TooMuchOutput*), or after 5 seconds (*ran too long*). Look "
-                  "inside the loop for the missing update, `glug = glug - 1`."),
+                  "inside the loop for the missing line, `glug = glug - 1`."),
         dict(concept="`break`: leave early",
              code='for gap in [48, 46, 44, 41]:\n    if gap < 45:\n        print(gap)\n        break\n'
                   'print("done")\n',
              output="44\ndone",
-             note="`break` leaves the loop at once, and Python goes on below it. Put it inside the `if`, under the "
-                  "print. You know `return`: it stops a recipe the same way."),
+             note="`break` leaves the loop right away, and Python goes on below it. Put it inside the `if`, under "
+                  "the print. You know `return`: it stops a recipe the same way."),
         dict(concept="Error: no colon on the `for` line", code="for gap in [48, 47]\n    print(gap)\n",
-             note="SyntaxError: expected ':'. Every `for` and `while` line ends with `:`."),
+             note="SyntaxError: expected ':'. *Syntax* is grammar, like in English class: Python can't read the "
+                  "line. Every `for` and `while` line ends with `:`."),
         dict(concept="Error: a body with no indent", code="for gap in [48, 47]:\nprint(gap)\n",
-             note="IndentationError: expected an indented block after 'for' statement on line 1. Four spaces put "
-                  "a line inside the loop."),
+             note="IndentationError: expected an indented block after 'for' statement on line 1. *Indented* means "
+                  "pushed in with spaces. Four spaces put a line inside the loop."),
         dict(concept="Error: a loop over a number", code="for i in 5:\n    print(i)\n",
-             note="TypeError: 'int' object is not iterable. A loop needs a list or a `range()`: "
-                  "`for i in range(5):`."),
+             note="TypeError: 'int' object is not iterable. *int* means a whole number, and *iterable* means "
+                  "something a loop can walk. A loop needs a list or a `range()`: `for i in range(5):`."),
         dict(concept="Error: `roster[\"name\"]`",
              code='roster = [{"name": "Lucky"}]\nfor member in roster:\n    print(roster["name"])\n',
-             note="TypeError: list indices must be integers or slices, not str. `roster` is the whole list, and a "
-                  "list has no keys. Read the sheet in your hand: `member[\"name\"]`."),
+             note="TypeError: list indices must be integers or slices, not str. *Indices* means positions, and "
+                  "*str* means text: a list has number positions, not tags (keys). `roster` is the whole list. "
+                  "Read the sheet in your hand: `member[\"name\"]`."),
         dict(concept="Error: one past the end",
              code="wall = [48, 47, 44]\nfor i in range(len(wall)):\n    print(wall[i] - wall[i + 1])\n",
-             note="IndexError: list index out of range. On the last pass there is no next gap. Stop one early, "
-                  "`range(len(wall) - 1)`, or start at 1 and use `i - 1`."),
+             note="IndexError: list index out of range. *Index* means position: there is no position that far. "
+                  "On the last pass there is no next gap. Stop one early, `range(len(wall) - 1)`, or start at 1 "
+                  "and use `i - 1`."),
         dict(concept="No error, wrong answer: the total restarts",
              code="for mana in [18, 20, 24, 26]:\n    total = 0\n    total = total + mana\nprint(total)\n",
              output="26",
@@ -1839,8 +1851,8 @@ CHALK_NOTES_6 = dict(
              code='book = {\n    "Glow": 2,\n    "Warm Hands": 3,\n}\nfor name, cost in book.items():\n'
                   "    print(name, cost)\n",
              output="Glow 2\nWarm Hands 3",
-             note="Each key with its value, as a pair: two names on the `for` line. `.keys()` gives the keys, "
-                  "`.values()` the values. (Article: Looping Over a Dictionary)"),
+             note="Each tag (key) with its value, as a pair: two names on the `for` line. `.keys()` gives the "
+                  "tags, `.values()` the values. (Article: Looping Over a Dictionary)"),
     ],
     notes=(
         "Cheatsheet 6 (the spec's entries in order: for-plus-indent, `member[\"name\"]`, `total = 0` before the "

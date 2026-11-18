@@ -37,16 +37,16 @@
     "aliases": [
       "items()"
     ],
-    "plain": "Hands back each key of a dictionary together with its value, as a pair. A loop can give the pair two names.",
-    "example": "for name, cost in book.items():"
+    "plain": "Hands back each tag (key) of a dictionary together with its value, as a pair, like an (x, y) point in math class. A loop can give the pair two names.",
+    "example": "for snack, price in menu.items():"
   },
   {
     "term": ".keys()",
     "aliases": [
       "keys()"
     ],
-    "plain": "Hands back a dictionary's keys. A plain loop over a dictionary walks its keys too.",
-    "example": "list(book.keys())"
+    "plain": "Hands back a dictionary's tags (keys). A plain loop over a dictionary walks its tags too.",
+    "example": "list(menu.keys())"
   },
   {
     "term": ".lower()",
@@ -79,8 +79,8 @@
     "aliases": [
       "values()"
     ],
-    "plain": "Hands back a dictionary's values, without their keys.",
-    "example": "sum(book.values())"
+    "plain": "Hands back a dictionary's values, without their tags (keys).",
+    "example": "sum(menu.values())"
   },
   {
     "term": "and",
@@ -157,8 +157,8 @@
     "aliases": [
       "break statement"
     ],
-    "plain": "Leaves a loop at once. Python goes on with the first line after the loop.",
-    "example": "if gap < 45:\n    print(gap)\n    break"
+    "plain": "Leaves a loop right away, like closing the dictionary once you find your word. Python goes on with the first line after the loop.",
+    "example": "if score > 90:\n    print(score)\n    break"
   },
   {
     "term": "bug",
@@ -229,8 +229,8 @@
     "aliases": [
       "continue statement"
     ],
-    "plain": "Skips the rest of this pass of a loop and goes straight on to the next item. `break` leaves the whole loop; `continue` only skips one pass.",
-    "example": "if mana == 0:\n    continue"
+    "plain": "Skips the rest of this pass of a loop and goes on to the next item, like skipping one song in a playlist. `break` leaves the whole loop; `continue` skips only one pass.",
+    "example": "if score == 0:\n    continue"
   },
   {
     "term": "decimal",
@@ -308,8 +308,8 @@
       "loop",
       "loops"
     ],
-    "plain": "Runs the same indented lines once for each item in a list. Each time round, the loop variable holds the next item.",
-    "example": "for color in spell_colors:\n    print(color)"
+    "plain": "Lines that run once for each item in a list, like reading down a class list and calling out each name. Each time through, the name after `for` holds the next item.",
+    "example": "for snack in snacks:\n    print(snack)"
   },
   {
     "term": "glue",
@@ -385,8 +385,8 @@
       "endless loop",
       "a loop that never ends"
     ],
-    "plain": "A loop whose question never becomes `False`, so it never stops. The site stops it for you: after a huge amount of printing, or after 5 seconds.",
-    "example": "while glug > 0:\n    print(glug)"
+    "plain": "A loop that never stops, because its question never turns `False`. It's like walking the wrong way on a number line: you never reach 0. The site stops it after a lot of printing, or after 5 seconds.",
+    "example": "while drops > 0:\n    print(drops)"
   },
   {
     "term": "input",
@@ -458,8 +458,8 @@
       "one-line loop",
       "one-line loops"
     ],
-    "plain": "A loop in one line that builds a new list: what to keep, then `for`, then an `if` if you want to pick. It always sits inside square brackets.",
-    "example": "[c for c in coins if c > 4]"
+    "plain": "A loop in one line that builds a new list: what to keep, then `for`, then an `if` if you want to pick some items. It always sits inside square brackets.",
+    "example": "[n for n in marks if n > 4]"
   },
   {
     "term": "list inside a list",
@@ -489,16 +489,16 @@
       "inner loop",
       "outer loop"
     ],
-    "plain": "A loop written in another loop's body. The inner loop runs all the way through on every pass of the outer one.",
-    "example": "for row in log:\n    for score in row:\n        print(score)"
+    "plain": "A loop written inside another loop. The inside loop runs all the way through on every pass of the outside one, like a minute hand going all the way around for each hour.",
+    "example": "for week in weeks:\n    for day in week:\n        print(day)"
   },
   {
     "term": "loop variable",
     "aliases": [
       "loop variables"
     ],
-    "plain": "The name after `for`. You choose it. On each pass through the loop it holds the next item of the list.",
-    "example": "for gap in chalk_wall:"
+    "plain": "The name right after `for`. You pick it. Each time through the loop, it holds the next item of the list, the way x takes each value in an input-output table in math class.",
+    "example": "for snack in snacks:"
   },
   {
     "term": "match",
@@ -595,8 +595,8 @@
       "conditional expression",
       "one-line if"
     ],
-    "plain": "Picks one of two values in one line: the value before `if` when the question is True, the value after `else` when it is False.",
-    "example": "\"lit\" if oil > 0 else \"dark\""
+    "plain": "Picks one of two values in one line. It uses the value before `if` when the question is `True`, and the value after `else` when it is `False`.",
+    "example": "\"open\" if keys > 0 else \"shut\""
   },
   {
     "term": "or",
@@ -760,8 +760,8 @@
       "accumulator",
       "tally"
     ],
-    "plain": "A variable that starts at 0 before a loop and grows on every pass. Set it to 0 above the loop, or it starts again every pass.",
-    "example": "total = 0\nfor mana in [18, 20]:\n    total = total + mana"
+    "plain": "A number that starts at 0 above a loop and grows on every pass. It's like adding up a column of numbers one at a time. If it is set to 0 inside the loop, it starts over every pass.",
+    "example": "total = 0\nfor coins in [3, 5]:\n    total = total + coins"
   },
   {
     "term": "show your work",
@@ -920,8 +920,8 @@
       "while loops",
       "while"
     ],
-    "plain": "Repeats its indented lines while a question is `True`. Something inside the loop must change, so the question can become `False`.",
-    "example": "while hours_left > 0:\n    hours_left = hours_left - 1"
+    "plain": "Repeats its lines while a question is `True`, like *stir while the soup is cold*. A line inside the loop must change something, so the question can turn `False`.",
+    "example": "while steps > 0:\n    steps = steps - 1"
   },
   {
     "term": "zip()",

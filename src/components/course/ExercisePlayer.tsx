@@ -1170,8 +1170,8 @@ export function ExercisePlayer({
           ) : activeCheckpoint && !done && endless ? (
             // A run that never ended checks nothing either, but the line it was stopped on is no slip: the loop is.
             <p className="ex-task-line" data-testid="task-line" data-crash="true" data-endless="true">
-              <span className="ex-task-label">First, make the loop end.</span>{" "}
-              {`Python stopped your program before it could check your ${noun.toLowerCase()}s. The box in the Console says why.`}
+              <span className="ex-task-label">Your loop never ended.</span>{" "}
+              {`Python stopped your code, so it couldn't check your ${noun.toLowerCase()}s yet. Read the box in the Console, then change the loop so it can end.`}
             </p>
           ) : activeCheckpoint && !done && crashed ? (
             // A crash checks nothing, so "step 1" may already be right: the line Python stopped at comes first.

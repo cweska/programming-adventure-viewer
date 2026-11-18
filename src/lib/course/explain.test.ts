@@ -2260,69 +2260,69 @@ const unit6 = unitWrongAnswers("loops");
 describe("explainCourseError: Unit 6's slips (loops), from the unit's own wrong answers", () => {
   // [exercise, the wrong answer's `why`, Python 3.13's own words, kind, what the full hint says]
   const rows: [string, string, string, string, string][] = [
-    // (0) A list asked for a key inside a loop over it: the sheet is read through the loop variable.
+    // (0) A list asked for a tag (key) inside a loop over it: the sheet is read through the loop variable.
     ["for-each-yes/each-member", 'roster["name"] for member["name"] (TypeError)', "not str", "name-as-position",
-      'Line 7 asks a list for a key, like `roster["name"]`. A list has positions, not keys. Read one sheet through the loop variable: `member["name"]`.'],
+      'Line 7 asks a list for a tag (key), like `roster["name"]`. A list has positions, not tags. Read one sheet through the loop variable: `member["name"]`.'],
     ["for-each-yes/running-total", 'roster["mana"] for member["mana"] (TypeError)', "not str", "name-as-position",
-      'Line 10 asks a list for a key, like `roster["mana"]`. A list has positions, not keys. Read one sheet through the loop variable: `member["mana"]`.'],
+      'Line 10 asks a list for a tag (key), like `roster["mana"]`. A list has positions, not tags. Read one sheet through the loop variable: `member["mana"]`.'],
     ["for-each-yes/broken-spell-5a", 'indent mended, roster["name"] left (TypeError)', "not str", "name-as-position",
-      'Line 12 asks a list for a key, like `roster["name"]`.'],
+      'Line 12 asks a list for a tag (key), like `roster["name"]`.'],
     ["the-velocite-watch", 'roster["name"] for member["name"] (TypeError)', "not str", "name-as-position",
       'Read one sheet through the loop variable: `member["name"]`.'],
     ["qc5-a/a-helper-for-each", 'roster["name"] for member["name"] (the TypeError row)', "not str", "name-as-position",
-      'Line 8 asks a list for a key, like `roster["name"]`.'],
+      'Line 8 asks a list for a tag (key), like `roster["name"]`.'],
     // (1) The loop variable used as a position: it already holds one sheet.
     ["for-each-yes/each-member", "the item used as an index (roster[hero])", "not dict", "name-as-position",
-      'Line 7 uses a whole sheet as a position, like `roster[member]`. A list\'s positions are numbers, and `member` already holds one sheet: read it directly, `member["name"]`.'],
+      'Line 7 uses a whole sheet as a position, like `roster[member]`. A list\'s positions are numbers, and `member` already holds one sheet, so use it on its own: `member["name"]`.'],
     ["for-each-yes/solo-5a", "the starter: the item used as an index, roster[member] (TypeError)", "not dict", "name-as-position",
       'Line 8 uses a whole sheet as a position, like `roster[member]`.'],
     ["qc5-b/a-helper-for-each", "the item used as an index (roster[member])", "not dict", "name-as-position",
-      'read it directly, `member["mana"]`.'],
+      'so use it on its own: `member["mana"]`.'],
     ["the-velocite-watch", "the item used as an index (roster[member])", "not dict", "name-as-position",
-      "`member` already holds one sheet: use it directly, `member`."],
+      "`member` already holds one sheet, so use it on its own: `member`."],
     // (2) A `for` loop over one number.
     ["for-each-yes/how-much-each-gap-shrank", "for i in len(...) ('int' object is not iterable)", "'int' object is not iterable", "loop-over-number",
-      "Line 2 asks a `for` loop to walk one number. A `for` loop needs a list or `range(...)`, not one number."],
+      "Line 2 gives a `for` loop one number to walk. A `for` loop needs a list or `range(...)`: one number has no items to walk through."],
     ["for-each-yes/how-much-each-gap-shrank", "for i in 6: a bare number, not range", "'int' object is not iterable", "loop-over-number",
-      "Line 2 asks a `for` loop to walk one number."],
+      "Line 2 gives a `for` loop one number to walk."],
     ["loops-in-one-line/loops-in-loops", "for i in len(...) (an int after `in`)", "'int' object is not iterable", "loop-over-number",
-      "Line 8 asks a `for` loop to walk one number."],
+      "Line 8 gives a `for` loop one number to walk."],
     ["qc5-a/a-helper-for-each", "a loop over a number: for i in 4", "'int' object is not iterable", "loop-over-number",
-      "Line 7 asks a `for` loop to walk one number."],
+      "Line 7 gives a `for` loop one number to walk."],
     // (3) A whole sheet, or a whole list, added to a number (or a whole sheet glued to text).
     ["for-each-yes/running-total", "the whole sheet added (TypeError)", "'int' and 'dict'", "whole-card-compared",
-      '`member` is a whole sheet. Add one value from it by its key, like `member["mana"]`.'],
+      '`member` is a whole sheet, and a whole sheet can\'t be added to a number. Add one value from it by its tag (key), like `member["mana"]`.'],
     ["qc5-a/total-and-tired", "the whole sheet added (TypeError)", "'int' and 'dict'", "whole-card-compared",
-      '`member` is a whole sheet. Add one value from it by its key, like `member["mana"]`.'],
+      '`member` is a whole sheet, and a whole sheet can\'t be added to a number. Add one value from it by its tag (key), like `member["mana"]`.'],
     ["the-velocite-watch", "the whole list added instead of the item", "'int' and 'list'", "row-not-item",
-      "`values` is the whole list. Add the loop variable, `value`, instead."],
+      "`values` is the whole list, and a whole list can't be added to a number. Add the loop variable, `value`, instead."],
     ["for-each-yes/solo-5a", "the sheet glued to text (TypeError)", "'dict' and 'str'", "whole-card-compared",
-      '`member` is a whole sheet, not text. Glue on one value from it by its key, like `member["name"]`.'],
+      '`member` is a whole sheet, not text, so it can\'t be glued to text. Glue on one value from it by its tag (key), like `member["name"]`.'],
     // (4) A recipe's own ingredient name handed over outside it: in the loop, its loop variable.
     ["for-each-yes/bars-for-everyone", "the recipe's ingredient name used in the loop's call, with the name (NameError)", "'hero' is not defined", "made-inside-recipe",
-      "`hero` is `mana_bar`'s own ingredient name. It only exists inside the recipe. Out here, hand over a value of your own: inside a loop, its loop variable, like `mana_bar(member)`."],
+      "`hero` is the name of `mana_bar`'s ingredient, so it only exists inside the recipe. Out here, in the loop, hand over the loop variable instead, like `mana_bar(member)`."],
     ["for-each-yes/bars-for-everyone", "the recipe's ingredient name used in the loop (NameError)", "'hero' is not defined", "made-inside-recipe",
       "like `mana_bar(member)`."],
     ["the-velocite-watch", "mana_bar's own ingredient name handed over in the loop", "'hero' is not defined", "made-inside-recipe",
-      "`hero` is `mana_bar`'s own ingredient name. It only exists inside the recipe."],
+      "`hero` is the name of `mana_bar`'s ingredient, so it only exists inside the recipe."],
     // The setup's helper (`def light_lantern(name):`): its word read as a promise, never "put quotes around it".
     ["qc5-a/a-helper-for-each", "the helper's own word read as a promise: light_lantern(name)", "'name' is not defined", "made-inside-recipe",
-      '`name` is `light_lantern`\'s own ingredient name. It only exists inside the recipe. Out here, hand over a value of your own: inside a loop, its loop variable, like `light_lantern(member["name"])`.'],
+      '`name` is the name of `light_lantern`\'s ingredient, so it only exists inside the recipe. Out here, in the loop, hand over the loop variable instead, like `light_lantern(member["name"])`.'],
     // (5) A list's name in quotes in the `for` line: the crash comes later, the quotes are the slip.
     ["while-the-clock-ticks/stop-at-the-first", "the quoted list name: the loop walks the letters of the text chalk_wall (TypeError)", "'<' not supported", "quoted-name",
-      "Take the quotes off `chalk_wall`. With quotes, the loop walks its letters. No quotes means look inside the list. Line 2 with no quotes: `for gap in chalk_wall:`"],
+      "Line 2 has `chalk_wall` in quotes, so the loop walks its letters, one at a time. Take the quotes off `chalk_wall`: no quotes means look inside the list. Line 2 with no quotes: `for gap in chalk_wall:`"],
     ["for-each-yes/each-member", "the list's name in quotes: the loop walks the letters of the text roster (TypeError)", "string indices must be integers", "quoted-name",
-      "Take the quotes off `roster`. With quotes, the loop walks its letters. No quotes means look inside the list. Line 4 with no quotes: `for member in roster:`"],
+      "Line 4 has `roster` in quotes, so the loop walks its letters, one at a time. Take the quotes off `roster`: no quotes means look inside the list. Line 4 with no quotes: `for member in roster:`"],
     ["the-velocite-watch", "the list's name in quotes: the loop walks the letters of the text roster (TypeError)", "string indices must be integers", "quoted-name",
-      "Take the quotes off `roster`."],
+      "Take the quotes off `roster`: no quotes means look inside the list."],
     // (6) A one-ingredient recipe handed its pieces with a comma, as print takes them.
     ["for-each-yes/each-member", "a comma, as in print: the ley board takes one text (TypeError)", "takes 1 positional argument but 2 were given", "wrong-number-of-values",
       "`show_on_ley_board` has 1 ingredient, `text`, but the call on line 7 hands over 2. `show_on_ley_board` takes one piece of text: glue the parts into one with `+`, and put `str()` around a number."],
-    // (7) The article's loop over a dictionary: `.items` with no ( ), and two names for one key a pass.
+    // (7) The article's loop over a dictionary: `.items` with no ( ), and two names for one tag (key) each pass.
     ["looping-over-a-dictionary/spell-costs", ".items without brackets", "'builtin_function_or_method' object is not iterable", "call-needs-round-brackets",
-      "Line 7 hands the loop `spell_book.items` with no parentheses ( ), so the loop gets the tool itself, not what it hands back. Call it: `for name, cost in spell_book.items():`"],
+      "Line 7 hands the loop `spell_book.items` with no parentheses ( ), so the loop gets the tool itself, not what it hands back. Add the parentheses to call it: `for name, cost in spell_book.items():`"],
     ["looping-over-a-dictionary/spell-costs", "two names with no .items()", "too many values to unpack", "wrong-number-of-values",
-      "Line 7 gives the loop 2 names, but a loop over `spell_book` hands over one key a pass. For each key with its value, walk `spell_book.items()`: `for name, cost in spell_book.items():`"],
+      "Line 7 gives the loop 2 names, but a loop over `spell_book` hands over one tag (key) each pass. To get each tag with its value, loop over `spell_book.items()`: `for name, cost in spell_book.items():`"],
     // (8) A key with no quotes, read from the loop variable (it holds one sheet).
     ["for-each-yes/solo-5a", "the key without quotes (NameError)", "'name' is not defined", "unquoted-key",
       'A key is text, so it needs quotes: `"name"`. Without quotes, Python looks for a variable called `name`. Line 8, with the quotes put in: `print(member["name"] + " keeps watch.")`'],
@@ -2350,19 +2350,19 @@ describe("explainCourseError: Unit 6's slips (loops), from the unit's own wrong 
       ["for-each-yes/solo-5a", "the starter: the item used as an index, roster[member] (TypeError)", "name-as-position",
         "Line 8 uses a whole sheet as a position, like `roster[member]`. Python's last line, below, says what it found."],
       ["for-each-yes/solo-5a", 'roster["name"] for member["name"] (TypeError)', "name-as-position",
-        'Line 8 asks a list for a key, like `roster["name"]`. A list has positions, not keys. Python\'s last line, below, says what it found.'],
+        'Line 8 asks a list for a tag (key), like `roster["name"]`. A list has positions, not tags. Python\'s last line, below, says what it found.'],
       ["for-each-yes/solo-5a", "the sheet glued to text (TypeError)", "whole-card-compared", "The mistake is on line 8: a whole sheet glued to text."],
       ["for-each-yes/solo-5a", "the key without quotes (NameError)", "unquoted-key", "The mistake is on line 8: a key with no quotes."],
       ["qc5-a/a-helper-for-each", "a loop over a number: for i in 4", "loop-over-number",
-        "Line 7 asks a `for` loop to walk one number. A `for` loop needs a list or `range(...)`, not one number. Python's last line"],
-      ["qc5-a/a-helper-for-each", "len without range: for i in len(roster)", "loop-over-number", "Line 7 asks a `for` loop to walk one number."],
+        "Line 7 gives a `for` loop one number to walk. A `for` loop needs a list or `range(...)`: one number has no items to walk through. Python's last line"],
+      ["qc5-a/a-helper-for-each", "len without range: for i in len(roster)", "loop-over-number", "Line 7 gives a `for` loop one number to walk."],
       ["qc5-a/a-helper-for-each", "the item used as an index (roster[member])", "name-as-position", "Line 8 uses a whole sheet as a position, like `roster[member]`. Python's"],
       ["qc5-a/a-helper-for-each", "the helper's own word read as a promise: light_lantern(name)", "made-inside-recipe",
         "The mistake is on line 8: a name that only lives inside a recipe."],
       ["qc5-b/a-helper-for-each", "the helper's own word read as a promise: draw_bar(mana)", "made-inside-recipe",
         "The mistake is on line 8: a name that only lives inside a recipe."],
       ["qc5-a/total-and-tired", "the whole sheet added (TypeError)", "whole-card-compared", "The mistake is on line 12: a whole sheet added where one value is meant."],
-      ["qc5-b/total-and-tired", 'roster["mana"] for member["mana"] (TypeError)', "name-as-position", 'Line 12 asks a list for a key, like `roster["mana"]`.'],
+      ["qc5-b/total-and-tired", 'roster["mana"] for member["mana"] (TypeError)', "name-as-position", 'Line 12 asks a list for a tag (key), like `roster["mana"]`.'],
     ];
     for (const [key, why, kind, hint] of lean) {
       const found = unit6.find(key, why);
@@ -2381,7 +2381,7 @@ describe("explainCourseError: Unit 6's slips (loops), from the unit's own wrong 
       // (A `for` loop over a number says the same words in both: the teacher's ruling, "Lean: the same".)
       if (full.lean !== full.hint) expect(result.hint, `${key}: ${why}`).not.toContain(fix as string);
       expect(result.hint).not.toContain("loop variable:");
-      expect(result.hint).not.toContain("directly");
+      expect(result.hint).not.toContain("on its own");
     }
     // A `for` loop over a number gets the teacher's lean words, which are its full words.
     expect(slipName("loop-over-number")).toBe("a `for` loop over one number");

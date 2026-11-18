@@ -124,14 +124,14 @@ test.describe("Intro to Python, Unit 6: Loops", () => {
     await expect(key).toHaveAttribute("data-explainer", "full");
     await expect(key).toHaveAttribute("data-kind", "name-as-position");
     const hint = page.getByTestId("explainer-hint");
-    await expect(hint).toContainText('Line 7 asks a list for a key, like roster["name"]. A list has positions, not keys. Read one sheet through the loop variable: member["name"].');
+    await expect(hint).toContainText('Line 7 asks a list for a tag (key), like roster["name"]. A list has positions, not tags. Read one sheet through the loop variable: member["name"].');
     // Never Unit 5's "a position number", which sent students to roster[0] inside the loop.
     await expect(hint).not.toContainText("roster[0]");
     await expect(page.getByTestId("python-last-line")).toContainText("list indices must be integers or slices, not str");
 
     const sheet = await runWrong(page, "for-each-yes/each-member", "the item used as an index (roster[hero])", 2);
     await expect(sheet).toHaveAttribute("data-kind", "name-as-position");
-    await expect(hint).toContainText("A list's positions are numbers, and member already holds one sheet: read it directly, member[\"name\"].");
+    await expect(hint).toContainText("A list's positions are numbers, and member already holds one sheet, so use it on its own: member[\"name\"].");
 
     const board = await runWrong(page, "for-each-yes/each-member", "a comma, as in print: the ley board takes one text (TypeError)", 3);
     await expect(board).toHaveAttribute("data-kind", "wrong-number-of-values");
@@ -139,24 +139,24 @@ test.describe("Intro to Python, Unit 6: Loops", () => {
 
     const quoted = await runWrong(page, "for-each-yes/each-member", "the list's name in quotes: the loop walks the letters of the text roster", 4);
     await expect(quoted).toHaveAttribute("data-kind", "quoted-name");
-    await expect(hint).toContainText("Take the quotes off roster. With quotes, the loop walks its letters. No quotes means look inside the list.");
+    await expect(hint).toContainText("Line 4 has roster in quotes, so the loop walks its letters, one at a time. Take the quotes off roster: no quotes means look inside the list.");
     await expect(page.getByTestId("python-last-line")).toContainText("string indices must be integers");
 
     await open(page, "for-each-yes", "how-much-each-gap-shrank");
     const number = await runWrong(page, "for-each-yes/how-much-each-gap-shrank", "for i in len(...) ('int' object is not iterable)", 1);
     await expect(number).toHaveAttribute("data-kind", "loop-over-number");
-    await expect(hint).toContainText("Line 2 asks a for loop to walk one number. A for loop needs a list or range(...), not one number.");
+    await expect(hint).toContainText("Line 2 gives a for loop one number to walk. A for loop needs a list or range(...): one number has no items to walk through.");
 
     await open(page, "for-each-yes", "running-total");
     const whole = await runWrong(page, "for-each-yes/running-total", "the whole sheet added (TypeError)", 1);
     await expect(whole).toHaveAttribute("data-kind", "whole-card-compared");
-    await expect(hint).toContainText('member is a whole sheet. Add one value from it by its key, like member["mana"].');
+    await expect(hint).toContainText('member is a whole sheet, and a whole sheet can\'t be added to a number. Add one value from it by its tag (key), like member["mana"].');
 
     // The recipe's own ingredient name handed over in the loop: the loop variable goes there, never "put quotes around it".
     await open(page, "for-each-yes", "bars-for-everyone");
     const hero = await runWrong(page, "for-each-yes/bars-for-everyone", "the recipe's ingredient name used in the loop's call, with the name (NameError)", 1);
     await expect(hero).toHaveAttribute("data-kind", "made-inside-recipe");
-    await expect(hint).toContainText("hero is mana_bar's own ingredient name. It only exists inside the recipe. Out here, hand over a value of your own: inside a loop, its loop variable, like mana_bar(member).");
+    await expect(hint).toContainText("hero is the name of mana_bar's ingredient, so it only exists inside the recipe. Out here, in the loop, hand over the loop variable instead, like mana_bar(member).");
     await expect(hint).not.toContainText("quotes");
 
     // 5B-03: the quoted wall crashes on the `if` line; the quotes on line 2 are the slip.
@@ -177,12 +177,12 @@ test.describe("Intro to Python, Unit 6: Loops", () => {
     await expect(solo).toHaveAttribute("data-kind", "name-as-position");
     const hint = page.getByTestId("explainer-hint");
     await expect(hint).toContainText("Line 8 uses a whole sheet as a position, like roster[member]. Python's last line, below, says what it found.");
-    await expect(hint).not.toContainText("directly");
+    await expect(hint).not.toContainText("on its own");
     await expect(hint).not.toContainText('member["name"]');
     await expect(page.getByTestId("python-last-line")).toContainText("list indices must be integers or slices, not dict");
 
     await runWrong(page, "for-each-yes/solo-5a", 'roster["name"] for member["name"] (TypeError)', 2);
-    await expect(hint).toContainText('Line 8 asks a list for a key, like roster["name"]. A list has positions, not keys. Python\'s last line');
+    await expect(hint).toContainText('Line 8 asks a list for a tag (key), like roster["name"]. A list has positions, not tags. Python\'s last line');
     await expect(hint).not.toContainText("loop variable");
 
     await open(page, "qc5-a", "a-helper-for-each");
@@ -190,7 +190,7 @@ test.describe("Intro to Python, Unit 6: Loops", () => {
     const number = await runWrong(page, "qc5-a/a-helper-for-each", "a loop over a number: for i in 4", 1);
     await expect(number).toHaveAttribute("data-explainer", "lean");
     await expect(number).toHaveAttribute("data-kind", "loop-over-number");
-    await expect(hint).toContainText("Line 7 asks a for loop to walk one number. A for loop needs a list or range(...), not one number.");
+    await expect(hint).toContainText("Line 7 gives a for loop one number to walk. A for loop needs a list or range(...): one number has no items to walk through.");
     const promise = await runWrong(page, "qc5-a/a-helper-for-each", "the helper's own word read as a promise: light_lantern(name)", 2);
     await expect(promise).toHaveAttribute("data-kind", "made-inside-recipe");
     await expect(hint).toContainText("The mistake is on line 8: a name that only lives inside a recipe.");
@@ -217,7 +217,7 @@ test.describe("Intro to Python, Unit 6: Loops", () => {
     // The line it was stopped on (the print) is right: no "First, fix line 3", and Help stays on the step.
     const task = page.getByTestId("task-line");
     await expect(task).toHaveAttribute("data-endless", "true");
-    await expect(task).toContainText("First, make the loop end. Python stopped your program before it could check your steps. The box in the Console says why.");
+    await expect(task).toContainText("Your loop never ended. Python stopped your code, so it couldn't check your steps yet. Read the box in the Console, then change the loop so it can end.");
     await expect(task).not.toContainText("line 3");
     await expect(page.getByTestId("help-button")).toBeVisible();
     await expect(page.getByTestId("help-crash-wait")).toHaveCount(0);
@@ -249,7 +249,7 @@ test.describe("Intro to Python, Unit 6: Loops", () => {
     await open(page, "extra-loops-that-end", "broken-spell-5b");
     await runAndWait(page, 1);
     await expect(explainer).toHaveAttribute("data-kind", "too-much-output");
-    await expect(page.getByTestId("task-line")).toContainText("First, make the loop end.");
+    await expect(page.getByTestId("task-line")).toContainText("Your loop never ended.");
     await expect(page.getByTestId("help-button")).toBeVisible();
     await page.getByTestId("help-button").click();
     await expect(page.getByTestId("help")).toHaveAttribute("data-step", "count-down");

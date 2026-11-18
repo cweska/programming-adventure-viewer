@@ -783,7 +783,7 @@
             "    show_on_ley_board(member)"
           ],
           "failsAt": 1,
-          "messageContains": "A list you typed"
+          "messageContains": "a list you typed"
         }
       ],
       "notes": "meta: starter_level=S3; path=CC; skills=for-each,list-of-dicts; solo=false; dictates=; foreign_names=jars,jar,spice,left,label\n5A-03. Setup (spec): the four sheets at full mana (real table values) and `show_on_ley_board(text)`, a CALL recorder (Unit 3's helper: it keeps each text and prints `[Ley board] ...`). The starter's comments show the keys and the first line to make. CP1 [ND]. Checks: CALL (four board lines, in roster order, each `<name>: <mana>`; a line may carry more after the mana, so Lucky's side quest stays green) and LOOP (a rerun with 5 other heroes swapped in after the setup runs: four typed calls show 4 lines). Catches (spec): `roster[\"name\"]` (the TypeError row, 'list indices must be integers or slices, not str') and `roster` where `member` belongs; also `roster[member]` (the item as an index), the whole sheet, `print`, `roster[0]`, a typed name, no `str()`, the example's `jars`. The board takes one text, so the Example glues with `+` and models no comma (teacher ruling); a comma in the call is Python's TypeError ('takes 1 positional argument'), and a name with no `\": \"` is told to glue it on with `+`. The Example's one print line is 49 characters, the teacher's dictated line, wider than the 36-character phone rule. The Show rung, the solution and Assemble it use the same two lines (`line = ...`, then `show_on_ley_board(line)`), as the Teach rung does, so Start me off (`line =`) is in the solution. PA distractors: `roster[\"name\"]` in the `line` form, the whole sheet and the colon-less `for` line."
@@ -806,7 +806,7 @@
             "print(total)"
           ],
           "failsAt": 1,
-          "messageContains": "starter's 0"
+          "messageContains": "still 0"
         },
         {
           "why": "total = 0 inside the loop (spec)",
@@ -880,7 +880,7 @@
             "print(total)"
           ],
           "failsAt": 1,
-          "messageContains": "Store the sum"
+          "messageContains": "Store the answer"
         },
         {
           "why": "print(total) indented inside the loop: it prints every pass",
@@ -1043,7 +1043,7 @@
             "print(total)"
           ],
           "failsAt": 1,
-          "messageContains": "Numbers typed"
+          "messageContains": "numbers you typed"
         },
         {
           "why": "the total built right, but 88 printed by hand",
@@ -1077,7 +1077,7 @@
             "    print(shrink)"
           ],
           "failsAt": 1,
-          "messageContains": "starter's 0"
+          "messageContains": "still says `shrink = 0`"
         },
         {
           "why": "neighbors one past the end: [i + 1] with range(1, len) (IndexError)",
@@ -1157,7 +1157,7 @@
             "print(4)"
           ],
           "failsAt": 1,
-          "messageContains": "follows any wall"
+          "messageContains": "works for any wall"
         },
         {
           "why": "the print taken out of the loop: it prints once",
@@ -1201,7 +1201,7 @@
             "    print(shrink)"
           ],
           "failsAt": 1,
-          "messageContains": "not a typed number"
+          "messageContains": "its number is typed in"
         },
         {
           "why": "the values typed by hand: a typed copy of the wall under another name",
@@ -1213,7 +1213,7 @@
             "    print(shrink)"
           ],
           "failsAt": 1,
-          "messageContains": "follows any wall"
+          "messageContains": "works for any wall"
         },
         {
           "why": "the example's list name copied (marks)",
@@ -1560,7 +1560,7 @@
             "    print(name, \"needs rest\")"
           ],
           "failsAt": 1,
-          "messageContains": "A list you typed"
+          "messageContains": "a list you typed"
         },
         {
           "why": "the names typed in the if: name tests, not mana (follows a 5th hero badly, other mana not at all)",
@@ -1636,7 +1636,7 @@
             "    pass"
           ],
           "failsAt": 1,
-          "messageContains": "starter's empty text"
+          "messageContains": "still hands back empty text"
         },
         {
           "why": "every block full (max_mana for mana)",
@@ -1826,7 +1826,7 @@
             "    pass"
           ],
           "failsAt": 1,
-          "messageContains": "round brackets"
+          "messageContains": "parentheses"
         },
         {
           "why": "print for return",
@@ -1941,7 +1941,7 @@
             "    print(member[\"name\"], mana_bar)"
           ],
           "failsAt": 3,
-          "messageContains": "round brackets"
+          "messageContains": "parentheses"
         },
         {
           "why": "no round brackets, glued with + (the TypeError row)",
@@ -2531,7 +2531,7 @@
             "    print(member)"
           ],
           "failsAt": 1,
-          "messageContains": "Nothing printed"
+          "messageContains": "says `keeps watch`"
         },
         {
           "why": "the sheet glued to text (TypeError)",
@@ -3662,7 +3662,7 @@
             "#    and \"needs rest\"."
           ],
           "failsAt": 1,
-          "messageContains": "Fill in the starter's `pass` and `return 0`"
+          "messageContains": "its two placeholders, `pass` and `return 0`"
         },
         {
           "why": "pass filled in, return 0 left (hands back 0 for every list)",
@@ -3804,7 +3804,7 @@
             "#    and \"needs rest\"."
           ],
           "failsAt": 1,
-          "messageContains": "in place of `pass`, with eight spaces"
+          "messageContains": "in place of `pass`, with 8 spaces"
         },
         {
           "why": "the adding line with four spaces, in place of pass (the loop body is not indented)",
@@ -4084,7 +4084,7 @@
             "#    and \"needs rest\"."
           ],
           "failsAt": 1,
-          "messageContains": "`for` loop"
+          "messageContains": "has no loop"
         },
         {
           "why": "a loop added beside sum(), but the answer never comes from it",
@@ -4225,7 +4225,7 @@
             "#    and \"needs rest\"."
           ],
           "failsAt": 1,
-          "messageContains": "not by a number you typed"
+          "messageContains": "divides by a number you typed"
         },
         {
           "why": "the total, not divided",
@@ -4563,7 +4563,7 @@
             "#    and \"needs rest\"."
           ],
           "failsAt": 2,
-          "messageContains": "Use `while`, not `if`"
+          "messageContains": "Use `while`"
         },
         {
           "why": "while ore_left > 0 (one day too many)",
@@ -4713,7 +4713,7 @@
             "#    and \"needs rest\"."
           ],
           "failsAt": 2,
-          "messageContains": "not rounded"
+          "messageContains": "show `ore_left` rounded"
         },
         {
           "why": "ore_left printed once, after the loop (not each pass)",
@@ -5175,7 +5175,7 @@
             "#    and \"needs rest\"."
           ],
           "failsAt": 3,
-          "messageContains": "Indent `days = days + 1`"
+          "messageContains": "is outside the loop, so it adds 1 only once"
         },
         {
           "why": "the days line typed by hand",
@@ -5227,7 +5227,7 @@
             "#    and \"needs rest\"."
           ],
           "failsAt": 3,
-          "messageContains": "typed by hand"
+          "messageContains": "a number typed in, not `days`"
         },
         {
           "why": "four typed prints instead of a loop",
@@ -5283,7 +5283,7 @@
             "print(\"Lucky \" + mana_bar(roster[3]))"
           ],
           "failsAt": 4,
-          "messageContains": "cannot follow a new roster"
+          "messageContains": "stay the same when the roster changes"
         },
         {
           "why": "the whole roster printed each pass (the list, not the item)",
@@ -6049,7 +6049,7 @@
             "    print(member[\"name\"], \"needs rest\")"
           ],
           "failsAt": 5,
-          "messageContains": "Outside the loop, it only checks the last member"
+          "messageContains": "outside the loop, so it only checks the last member"
         },
         {
           "why": "<= 10 (flags Glug's exactly 10 in the rerun roster)",
@@ -6161,7 +6161,7 @@
             "print(\"Bomb Shell needs rest\")"
           ],
           "failsAt": 5,
-          "messageContains": "cannot follow a new roster"
+          "messageContains": "stays the same when the roster changes"
         },
         {
           "why": "the flag line without the name",
@@ -6329,7 +6329,7 @@
             "        print(member[\"name\"], \"is tired\")"
           ],
           "failsAt": 5,
-          "messageContains": "No line said"
+          "messageContains": "No line says `needs rest`"
         },
         {
           "why": "the filter print outside the loop (the if is inside; only the last tired member prints)",
@@ -6387,7 +6387,7 @@
             "print(tired, \"needs rest\")"
           ],
           "failsAt": 5,
-          "messageContains": "After the loop, it prints only once"
+          "messageContains": "its print is after the loop"
         }
       ],
       "notes": "meta: starter_level=S2; path=SC; skills=for-each,list-of-dicts,accumulate,while-loop,loop-with-if; solo=false; dictates=; foreign_names=coin_total,purse,coin,count,fuel,laps,shelf,jar,fill,ore; par=([5, 6, 10],),([1, 2],),([8, 2, 1, 3],)\nProject 5P (SC). Starter: the task-group headers (A, B, C) with numbered comments, the given log, `average` as a skeleton (teacher ruling on the Unit 6 reviews: `total = 0` and `for value in values:` given, with `pass  # add value to total` and `return 0  # total / how many` holding the two places) and the starter's own call `average([2, 4])` (3.0; the intro says to Run it first: it shows 0, and until `average` works `daily` is 0, so task 2's loop would never end; task 2's Where to look says so too), `daily = average(velocite_used)` and `days = 0` given, and 5A-07's `mana_bar` already finished (KEEP: an AST compare). `roster` lives in setup (2.12 rule 3: prebuilt rosters), shown in the intro. Task 1 PAR with [5, 6, 10], [1, 2], [8, 2, 1, 3] (7.0, 1.5, 3.5: no collision with 3.0 or 4.0, lint b) and RET; the skeleton left as given, `pass` filled but `return 0` left, `return` filled but `pass` left, the adding line put below the loop (only the last value) or with four spaces (IndentationError), the reset inside the loop, `return` inside the loop, a typed divisor, `//`, the list added instead of the item, `sum()` with no loop, and a loop beside `sum()` that the answer never uses (the loop must change a name the `return` is built from) each get their own message. Tasks 2-3 CMB: reruns with (log, ore) = ([2, 3, 3, 4], 20), ([1, 2], 6), ([5, 6, 7, 6], 50): 6, 4 and 8 days, and the [1, 2] log lands exactly on one day's use, so `>` fails (BND). The loop prints `ore_left` each pass, so a missing update prints forever and the site stops it at the output limit (TooMuchOutput) in under a second; the checks' own reruns carry a step budget, so no check can hang. Printing `ore_left` before the subtraction passes too; a rounded print fails on the [1, 2] log (4.5 left) with its own message, and a `while` that stops at a typed value (`!= 2.0`) never ends on that log, which the check names as the question, not the update. Task 3 needs `days` printed after the loop's last watch line, and no `days` print inside the loop unless one also prints after it (a 'Day 3: 18.0' watch line is fine). Tasks 4-5 LOOP and CMB with a 5-hero and a 3-hero roster (invented names), Glug at exactly 10 (BND for `<`). The own roster is u06a's night (6, 14, 3, 22: the same night as 5A-06/5A-07). Task 4 also needs a call of `mana_bar` (the recipe is reused, not rebuilt). The flag may sit on its own line or the bar's line; a flag in other words (no `needs rest`), an `if` that flags nobody, and the filter print left below the loop each get their own message. The side quest (Lucky, old group D) is `break` at the first day over 4, rerun with [5, 2, 6, 7] (day 1) and [2, 6, 5, 9] (day 2; three days over 4)."
@@ -6461,7 +6461,7 @@
             "print(shrinks)"
           ],
           "failsAt": 1,
-          "messageContains": "other way round"
+          "messageContains": "other way around"
         },
         {
           "why": "shrinks = [] reset inside the loop (only the last shrink is left)",
@@ -6485,7 +6485,7 @@
             "    shrinks = chalk_wall[i - 1] - chalk_wall[i]"
           ],
           "failsAt": 1,
-          "messageContains": "Keep `shrinks` a list"
+          "messageContains": "not a list"
         },
         {
           "why": "the shrinks typed by hand (right for this wall only)",
@@ -6508,7 +6508,7 @@
             "print(shrinks)"
           ],
           "failsAt": 1,
-          "messageContains": "not a number you typed"
+          "messageContains": "uses a number you typed"
         },
         {
           "why": "the for line without its colon",
@@ -6614,7 +6614,7 @@
             "print(\"Bursts: \" + str(bursts))"
           ],
           "failsAt": 2,
-          "messageContains": "Use `while`, not `if`"
+          "messageContains": "Use `while`"
         },
         {
           "why": "the while line without its colon",
@@ -6867,7 +6867,7 @@
             "print(\"Bursts: \" + str(bursts))"
           ],
           "failsAt": 2,
-          "messageContains": "past that line"
+          "messageContains": "past the 24-hour line"
         },
         {
           "why": "the count printed inside the loop (every pass)",
@@ -7042,7 +7042,7 @@
             "print(\"Burst!\")"
           ],
           "failsAt": 1,
-          "messageContains": "typed by hand"
+          "messageContains": "hours you typed in"
         },
         {
           "why": "if instead of while (asks once: one hour)",
@@ -7055,7 +7055,7 @@
             "print(\"Burst!\")"
           ],
           "failsAt": 1,
-          "messageContains": "Use `while`, not `if`"
+          "messageContains": "Use `while`"
         },
         {
           "why": "only line 5 mended: off by one, 1 never shows",
@@ -7110,7 +7110,7 @@
             "print(\"Burst!\")"
           ],
           "failsAt": 2,
-          "messageContains": "mend line 3 itself"
+          "messageContains": "fix line 3 itself"
         },
         {
           "why": "update before the print (starts at 4)",
@@ -7179,7 +7179,7 @@
             "        continue"
           ],
           "failsAt": 1,
-          "messageContains": "too late"
+          "messageContains": "already printed when the skip comes"
         },
         {
           "why": "an if around the print, and a continue at the end that skips nothing",
@@ -7192,7 +7192,7 @@
             "    continue"
           ],
           "failsAt": 1,
-          "messageContains": "Outside an `if`"
+          "messageContains": "is not under an `if`"
         },
         {
           "why": "an if around the print, no continue (works, but this step meets continue)",
@@ -7276,7 +7276,7 @@
             "print(\"Send Bomb Shell\")"
           ],
           "failsAt": 1,
-          "messageContains": "cannot follow a new roster"
+          "messageContains": "stay the same when the roster changes"
         }
       ],
       "notes": "meta: starter_level=S3; path=optional; skills=continue,loop-with-if; solo=false; dictates=; foreign_names=lanterns,oil,n\n5C-01 (O). Intro node:Continue. The roster (after the long night: 6, 0, 11, 0) lives in setup, as in 5A-03. CP1 [ND] reruns with a 5-hero roster whose FIRST hero is empty (a `break` sends nobody) and a 2-hero roster whose LAST is empty. When the lines say 'Send', only those lines count, so a 'Gearshift rests' line for a skipped hero passes. Caught: `break` for `continue`, `continue` outside its `if`, the skip below the print, an `if` with no `continue` (right output, but the step meets `continue`: a second check names it), a `continue` outside any `if` (it skips nothing), `roster[\"mana\"]`, `=` for `==`, a missing colon or indent, the example's `lanterns`, typed names."
@@ -7382,7 +7382,7 @@
             "        print(training[i][j])"
           ],
           "failsAt": 1,
-          "messageContains": "A number typed in `range()`"
+          "messageContains": "a number is typed in `range()`"
         },
         {
           "why": "for i in len(...) (an int after `in`)",
@@ -7438,7 +7438,7 @@
             "print(10)"
           ],
           "failsAt": 1,
-          "messageContains": "typed by hand"
+          "messageContains": "typed in"
         },
         {
           "why": "the example's list name copied",
@@ -7600,7 +7600,7 @@
             "print(shrinks)"
           ],
           "failsAt": 1,
-          "messageContains": "typed by hand"
+          "messageContains": "typed in"
         },
         {
           "why": "a colon inside the one-line loop (the for-line habit)",
@@ -7702,7 +7702,7 @@
             "print(shrinks)"
           ],
           "failsAt": 2,
-          "messageContains": "other way round"
+          "messageContains": "other way around"
         },
         {
           "why": "the shrinks typed by hand",
@@ -7719,7 +7719,7 @@
             "print(shrinks)"
           ],
           "failsAt": 2,
-          "messageContains": "typed by hand"
+          "messageContains": "typed in"
         },
         {
           "why": "the shrinks built the long way",
@@ -7785,7 +7785,7 @@
             "    print(name + \": \" + status)"
           ],
           "failsAt": 1,
-          "messageContains": "Swap the words"
+          "messageContains": "Your words are swapped"
         },
         {
           "why": "no else",
@@ -7876,7 +7876,7 @@
             "print(high)"
           ],
           "failsAt": 1,
-          "messageContains": "typed by hand"
+          "messageContains": "typed in"
         },
         {
           "why": ">= 45 (the rerun wall has a 45)",
@@ -7935,7 +7935,7 @@
             "#    then print total."
           ],
           "failsAt": 1,
-          "messageContains": "Print every spell"
+          "messageContains": "Not every spell printed"
         },
         {
           "why": "two names with no .items() (each key is unpacked)",
@@ -8026,7 +8026,7 @@
             "#    then print total."
           ],
           "failsAt": 1,
-          "messageContains": "typed by hand"
+          "messageContains": "typed in"
         },
         {
           "why": "spell_book[name] instead of .items() (works, but the try-it meets .items())",
@@ -8117,7 +8117,7 @@
             "#    then print total."
           ],
           "failsAt": 2,
-          "messageContains": "Make `total`"
+          "messageContains": "can't find `total`"
         },
         {
           "why": "the total reset inside the loop",
@@ -8181,7 +8181,7 @@
             "print(\"Total: \" + str(total))"
           ],
           "failsAt": 2,
-          "messageContains": "typed by hand"
+          "messageContains": "typed in"
         },
         {
           "why": ".values() only printed; the total added from .items()",
@@ -8625,7 +8625,7 @@
             "#    with less than 10 mana."
           ],
           "failsAt": 1,
-          "messageContains": "No variable named"
+          "messageContains": "no variable with that name"
         },
         {
           "why": "the total typed by hand (45)",
@@ -8748,7 +8748,7 @@
             "        print(member[\"name\"])"
           ],
           "failsAt": 1,
-          "messageContains": "forgotten"
+          "messageContains": "throws it away"
         },
         {
           "why": "four typed reads, no loop (CMB passes, LOOP fails)",
@@ -8797,7 +8797,7 @@
             "        print(member[\"name\"])"
           ],
           "failsAt": 1,
-          "messageContains": "did not follow"
+          "messageContains": "did not change to match"
         },
         {
           "why": "the total never printed",
@@ -9718,7 +9718,7 @@
             "print(7)"
           ],
           "failsAt": 1,
-          "messageContains": "did not follow"
+          "messageContains": "did not change to match"
         },
         {
           "why": "daily's value, 4, typed in the while line",
@@ -10474,7 +10474,7 @@
             "#    with less than 10 mana."
           ],
           "failsAt": 1,
-          "messageContains": "No variable named"
+          "messageContains": "no variable with that name"
         },
         {
           "why": "the total typed by hand (48)",
@@ -10597,7 +10597,7 @@
             "        print(member[\"name\"])"
           ],
           "failsAt": 1,
-          "messageContains": "forgotten"
+          "messageContains": "throws it away"
         },
         {
           "why": "four typed reads, no loop (CMB passes, LOOP fails)",
@@ -10646,7 +10646,7 @@
             "        print(member[\"name\"])"
           ],
           "failsAt": 1,
-          "messageContains": "did not follow"
+          "messageContains": "did not change to match"
         },
         {
           "why": "the total never printed",
@@ -11579,7 +11579,7 @@
             "print(4)"
           ],
           "failsAt": 1,
-          "messageContains": "did not follow"
+          "messageContains": "did not change to match"
         },
         {
           "why": "cost's value, 7, typed in the while line",
