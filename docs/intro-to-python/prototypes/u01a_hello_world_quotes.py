@@ -193,7 +193,7 @@ HOW_MARTU_TEACHES = dict(
         "Press ▶ [[run|Run]], above your code. Python answers in the [[console|Console]], under your code.\n"
         "Running unfinished code is fine. An error is not a grade: it says what Python couldn't read.\n"
         "Your steps: ✓ done, ● the step you're on, ○ still to come.\n"
-        "Stuck? Press 💡 Help, under the Console. Each press gives more, up to the line itself. "
+        "Stuck? Press 💡 Help, under the Console. Each press gives more, and the last shows the line to type. "
         "Your hints are private.\n"
         "Nothing here is timed."
     ),
@@ -248,9 +248,11 @@ WHAT_AN_ERROR_LOOKS_LIKE = dict(
                 "that's the plan. Read its title, then go on to step 3."
             ),
             dictated=True,
+            planned_error=dict(line=1, error="SyntaxError"),
             hints=[
                 'Look at line 1, at the `"` right after `Shield up.`.\n'
-                'To break the line: click right after that `"`, press Backspace once, and press Run.',
+                'To break the line: click right after that `"`, press Backspace once, and press Run. When the error '
+                "box appears, step 2 is done.",
                 "The error box's title says a quote is missing. Python's last line says *unterminated*, which "
                 'means never ended: the text has no closing `"`.',
                 'Delete the `"` right after `Shield up.`. Line 1 becomes `print("Shield up.)`. Press Run and read '
@@ -259,8 +261,8 @@ WHAT_AN_ERROR_LOOKS_LIKE = dict(
             checks=[
                 (
                     "the line was broken, then changed",
-                    # A crash can't be checked, so this step turns green with step 3, on the run that shows the
-                    # changed line. Until then, a run that still shows the starter's line says what to do next.
+                    # The planned error does this step (planned_error: the run that stops on line 1 with a
+                    # SyntaxError). This check speaks only before that: a run that still shows the starter's line.
                     r'''import ast as _ast
 _l = [l.replace('\u2019', "'") for l in _lines()]
 _bare = [n.lineno for n in _ast.parse(_source).body if isinstance(n, _ast.Expr)
@@ -271,9 +273,8 @@ if 'Shield up.' in _l and 'Shield up!' not in _l:
         _msg = ('Line ' + str(_bare[0]) + ' has the words in quotes but no `print`, so nothing shows. '
                 'Put `print(` before the quotes and `)` after.')
     else:
-        _msg = ("Your line still shows `Shield up.`, the way it started. If you haven't broken it yet, delete "
-                'the `"` right after `Shield up.` and press Run. If you have, step 3 is next: change the `.` '
-                'to `!`.')
+        _msg = ('Step 2 is next: delete the `"` right after `Shield up.` and press Run. An error box will '
+                "appear: that's the plan. Already saw the box? Then do step 3: change the `.` to `!`.")
 assert not _msg, _msg''',
                 ),
             ],
@@ -1249,8 +1250,8 @@ NOTES_FOR_HUMANS = dict(
                 (
                     "the line is kept as a note",
                     NOTES + "assert any('keeping the glug' in text and 'print' in text.lower() for _, text in _notes), "
-                    "'Your code no longer has the whole glug line, `print` and all. Put it back, and switch it off "
-                    "with `#` at its very start.'",
+                    "'The glug line, `print(\"I am keeping the glug.\")`, isn\\'t all there. Press Reset code to get "
+                    "it back. Then put `#` at its very start, before `print`.'",
                 ),
                 (
                     "the other lines still print",
@@ -1387,7 +1388,7 @@ NOTES_FOR_HUMANS = dict(
         dict(why="deletes the line instead of switching it off", code=(
             'print("Steady, now. Rest while you can.")\n'
             'print("I will take first watch.")\n'
-        ), fails_at=1, message_contains="switch it off"),
+        ), fails_at=1, message_contains="isn't all there"),
         dict(why="switches off the wrong line", code=(
             '# print("Steady, now. Rest while you can.")\n'
             'print("I am keeping the glug.")\n'
@@ -1414,12 +1415,12 @@ NOTES_FOR_HUMANS = dict(
             'print("Steady, now. Rest while you can.")\n'
             "# I am keeping the glug.\n"
             'print("I will take first watch.")\n'
-        ), fails_at=1, message_contains="`print` and all"),
+        ), fails_at=1, message_contains="isn't all there"),
         dict(why="check-breaker: deletes the line and writes a note about it", code=(
             "# Lucky is keeping the glug.\n"
             'print("Steady, now. Rest while you can.")\n'
             'print("I will take first watch.")\n'
-        ), fails_at=1, message_contains="`print` and all"),
+        ), fails_at=1, message_contains="isn't all there"),
     ],
     takeaway="`#` (Shift+3) starts a note for people. Python skips it. Put `#` at the start of a line to switch it off.",
     notes=(

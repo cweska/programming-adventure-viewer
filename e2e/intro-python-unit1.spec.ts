@@ -67,6 +67,30 @@ test.describe("Intro to Python, Unit 1: Hello World", () => {
   });
 
   test.describe("play-through fixes", () => {
+    test("the first lesson's planned error does step 2: it is ticked, and stays ticked while step 3 puts the quote back", async ({ page }) => {
+      await page.goto(`${itemPath("before-the-first-spell")}#what-an-error-looks-like`);
+      await expect(page.getByTestId("exercise-title")).toHaveText("What an error looks like");
+      await pythonReady(page);
+      await runAndWait(page, 1);
+      await expect(page.getByTestId("checkpoint-1")).toHaveAttribute("data-state", "passed");
+      await expect(page.getByTestId("checkpoint-message-2")).toContainText("Step 2 is next");
+      // Break the line on purpose: Python stops at line 1, as planned, and step 2 is done.
+      await setCode(page, 'print("Shield up.)');
+      await runAndWait(page, 2);
+      await expect(page.getByTestId("checkpoint-2")).toHaveAttribute("data-state", "passed");
+      await expect(page.getByTestId("task-line")).toHaveAttribute("data-planned", "true");
+      await expect(page.getByTestId("task-line")).toContainText("Python stopped at line 1, as planned. Step 2 is done.");
+      // Put the quote back but keep the dot: step 2 stays done (no ↺), and step 3 says what is left.
+      await setCode(page, 'print("Shield up.")');
+      await runAndWait(page, 3);
+      await expect(page.getByTestId("checkpoint-2")).toHaveAttribute("data-state", "passed");
+      await expect(page.getByTestId("checkpoint-2")).not.toHaveAttribute("data-slipped", "true");
+      await expect(page.getByTestId("checkpoint-message-3")).toContainText("Change the `.` to `!`".replace(/`/g, ""));
+      await setCode(page, 'print("Shield up!")');
+      await runAndWait(page, 4);
+      await expect(page.getByTestId("all-passed")).toBeVisible();
+    });
+
     test("after a crash, Help aims at the line Python stopped on, and Python's last line is on screen", async ({ page }) => {
       await page.goto(`${itemPath("words-in-quotes")}#broken-spell-1a`);
       await expect(page.getByTestId("exercise-title")).toHaveText("Broken spell: three mistakes");
@@ -143,7 +167,11 @@ test.describe("Intro to Python, Unit 1: Hello World", () => {
       // Step 4 says "Fix line 4: ... so line 5 can't find `hero`": the crash on line 5 gets step 4's Help.
       await setCode(page, 'weapon = "Telegun"\ncompanion = "Gearshift"\nglug_sips = 3\n"Lucky"\nprint(hero)\nprint(weapon)\n');
       await runAndWait(page, 2);
-      await expect(page.getByTestId("help-crash")).toContainText("Python stopped at line 5, so it couldn't finish your code. Fix line 5, then press Run again.");
+      // The fix is on line 4 (the value with no name), not on line 5 where Python stopped: the banner says so.
+      await expect(page.getByTestId("help-crash")).toContainText(
+        "Python stopped at line 5, so it couldn't finish your code. The mistake is on line 4. Fix line 4, then press Run again.",
+      );
+      await expect(page.getByTestId("task-line")).toContainText("The mistake is on line 4. Fix line 4, then press Run again.");
       await expect(page.getByTestId("help")).toHaveAttribute("data-step", "line-4");
       await expect(page.getByTestId("help")).not.toHaveAttribute("data-crash-only", "true");
       await expect(page.getByTestId("help-button")).toContainText("step 4");

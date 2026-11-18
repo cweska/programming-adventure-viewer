@@ -406,6 +406,13 @@ def verify_exercise(ex: dict, where: str, gate: ConceptGate, report: Report, kin
             report.error(where, f"checkpoint {i} has two checks with the same name (the site tells them apart by name)")
         if "dictated" in cp and not isinstance(cp["dictated"], bool):
             report.error(where, f"checkpoint {i} dictated must be True or False")
+        planned = cp.get("planned_error")
+        if planned is not None:
+            if not (isinstance(planned, dict) and isinstance(planned.get("line"), int) and planned["line"] >= 1
+                    and isinstance(planned.get("error"), str) and planned["error"]):
+                report.error(where, f"checkpoint {i} planned_error must be dict(line=<1 or more>, error=\"SyntaxError\")")
+            elif not any(wa.get("fails_at") == 0 for wa in ex.get("wrong_answers") or []):
+                report.error(where, f"checkpoint {i} has a planned_error but no wrong answer shows that error (fails_at=0)")
         words, grade = reading_stats(cp.get("text", ""))
         if grade > 9:
             report.warn(where, f"checkpoint {i} text reads at grade {grade}")

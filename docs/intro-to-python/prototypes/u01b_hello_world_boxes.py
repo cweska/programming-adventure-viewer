@@ -283,8 +283,8 @@ KEYBOARD_SYMBOLS = dict(
         dict(
             id="print-the-symbols",
             text=(
-                "On line 2, under the note, show `_`, `-` and `=` on the screen, all on one line. Copy the Example's "
-                "shape, and put the three marks inside its quotes."
+                "On line 2, under the note, type a `print` line like the Example's. Between its quotes, put `_`, `-` "
+                "and `=` instead of `( ) #`."
             ),
             dictated=False,
             hints=[

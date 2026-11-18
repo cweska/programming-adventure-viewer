@@ -343,10 +343,13 @@ def story_pair(label, count_name, price_name, count, price, things, *, known, wi
     return (label, code)
 
 
-def out_line(label, want, missing, privacy=False, spaces="Check the spaces in your line: every space counts.", hide="''"):
+def out_line(label, want, missing, privacy=False, spaces="Check the spaces in your line: every space counts.", hide="''",
+             early=None):
     """OUT diff: `want` (an expression) must be printed. Shows the nearest printed line and where it first
     differs, unless privacy=True (the line holds the student's own creative text). `hide` (an expression, e.g. a
-    creative hero box) keeps other lines that hold the student's own text out of the diff."""
+    creative hero box) keeps other lines that hold the student's own text out of the diff. A line that is right so far
+    but stops early says so first (never "a space is missing" for the space the next piece brings); `early` (the
+    next thing to type, in the step's words) then follows "Your line stops after ...". The pass/fail is unchanged."""
     if privacy:
         code = (
             f"_want = ({want}).strip()\n"
@@ -378,12 +381,13 @@ def out_line(label, want, missing, privacy=False, spaces="Check the spaces in yo
         "    _before = _want[:_i].strip()\n"
         "    if _i == 0:\n"
         "        _msg = _head + 'They are different from the very start. ' + " + repr(missing) + "\n"
+        "    elif _i >= len(_near):\n"
+        + ("        _msg = 'Your line stops after `' + _before + '`. ' + " + repr(early) + "\n" if early else
+           "        _msg = _head + 'Your line stops early, right after `' + _before + '`.'\n") +
         "    elif _want[_i:_i + 1] == ' ' and _near[_i:_i + 1] != ' ':\n"
         "        _msg = _head + 'A space is missing right after `' + _before + '`.'\n"
         "    elif _near[_i:_i + 1] == ' ' and _want[_i:_i + 1] != ' ':\n"
         "        _msg = _head + 'There is an extra space right after `' + _before + '`.'\n"
-        "    elif _i >= len(_near):\n"
-        "        _msg = _head + 'Your line stops early, right after `' + _before + '`.'\n"
         "    else:\n"
         "        _msg = _head + 'They are different right after `' + _before + '`.'\n"
         "assert not _msg, _msg\n"
@@ -626,8 +630,8 @@ CHALK_MATH = dict(
         ),
     ),
     pair_talk=(
-        "Pair talk: each of you guesses the three answers first. Compare, then each of you presses Run on your own "
-        "code. Then both add `print(48 / 2)`: who expected the `.0`?"
+        "Pair talk: each of you picks an answer in the Predict first box, just above ▶ Run, without showing. "
+        "Compare your picks, then each of you presses Run on your own screen."
     ),
     starter=(
         "first_gap = 48\n"
@@ -861,8 +865,8 @@ WHAT_EACH_NUMBER_MEANS = dict(
                 story_pair(
                     "the lantern boxes match the story", "lantern_count", "lantern_price", 3, 4, "lanterns",
                     known=["lantern_count", "lantern_price", "rope_count", "rope_price"],
-                    wild="`lantern_count` should be how many lanterns the story on line 1 says: 3. Lucky gets his "
-                    "1000 in the next exercise.",
+                    wild="`lantern_count` holds a number that isn't in the story. The story on line 1 says Mar'tu "
+                    "needs 3 lanterns: put 3 in `lantern_count`.",
                 ),
             ],
             pass_line="Mar'tu: 3 lanterns, 4 coins for one. Each number in its own box.",
@@ -886,8 +890,8 @@ WHAT_EACH_NUMBER_MEANS = dict(
                 story_pair(
                     "the rope boxes match the story", "rope_count", "rope_price", 5, 2, "coils",
                     known=["lantern_count", "lantern_price", "rope_count", "rope_price"],
-                    wild="`rope_count` should be how many coils the story on line 2 says: 5. Lucky gets his 1000 "
-                    "in the next exercise.",
+                    wild="`rope_count` holds a number that isn't in the story. The story on line 2 says Mar'tu "
+                    "needs 5 coils: put 5 in `rope_count`.",
                     price_first=True,
                 ),
             ],
@@ -1047,7 +1051,8 @@ LET_THE_CODE_COMBINE = dict(
         "Don't work the total out yourself. Write the math with the box names and let Python work it out, like a "
         "formula. In math class, this is [[show your work]]. The Example does it: "
         "`map_cost = map_count * map_price`.\n"
-        "Python is not a spreadsheet: when a number changes, press Run again, and the total changes to match."
+        "Python is not like Google Sheets, which updates by itself. When a number changes, press Run again, and the "
+        "total changes to match."
     ),
     example=(
         "# Oogrish buys 2 maps at 6 coins.\n"
@@ -1183,14 +1188,14 @@ LET_THE_CODE_COMBINE = dict(
         dict(
             id="a-thousand-ropes",
             text=(
-                "On line 3, change `rope_count = 5` to `rope_count = 1000`. Press Run. `total_cost` changes too, and "
-                "you never touched that line."
+                "On line 3, change `rope_count = 5` to `rope_count = 1000`. Press Run. `total_cost` changes too, even "
+                "though you never touched line 7."
             ),
             dictated=True,
             hints=[
                 "Look at line 3, `rope_count = 5`. It is the only line to change.",
-                "Every line built from `rope_count` uses its new number when you press Run again. Python is not a "
-                "spreadsheet: nothing changes until you press Run.",
+                "Every line built from `rope_count` uses its new number when you press Run again. Python is not "
+                "like Google Sheets, which updates by itself: nothing changes until you press Run.",
                 "Change the `5` on line 3 to `1000`. Line 3 becomes `rope_count = 1000`. Press Run.",
             ],
             checks=[
@@ -1599,10 +1604,10 @@ SPEND_MANA = dict(
 
 # OUT for 1C-06. Lucky (the starter's name) gets the full diff; another name a student picked is accepted, and
 # its diff never repeats the name back (privacy, 2.11).
-def named_out(label, tail, missing_lucky, missing_own, spaces):
+def named_out(label, tail, missing_lucky, missing_own, spaces, early=None):
     """OUT for a line that starts with `name`: Lucky gets the full diff; any other name is accepted and its diff
-    never repeats the student's name back."""
-    full = out_line("", "'Lucky' + " + tail, missing_lucky)[1]
+    never repeats the student's name back. `early`: what to type next when Lucky's line is right so far but stops."""
+    full = out_line("", "'Lucky' + " + tail, missing_lucky, early=early)[1]
     own = out_line("", "str(name) + " + tail, missing_own, privacy=True, spaces=spaces)[1]
     return (
         label,
@@ -1617,6 +1622,7 @@ GLUE_OUT = named_out(
     "Show the line glued from `name`, the words in quotes, and `str(mana)`. With a made-up name, Tester, and 4 "
     "mana, it would show `Tester has 4 mana.`",
     "Check the spaces: one after the name, and one on each side of the number.",
+    early="Now add the mana: click just before the last `)` on your `print` line and type `+ str(mana) + \" mana.\"`.",
 )
 
 # Both glue-words checkpoints: a box name in quotes is just letters (the finished line is always accepted).
@@ -1854,6 +1860,9 @@ GLUE_WORDS = dict(
              fails_at=1, message_contains="starts with `Tester has`"),
         dict(why="CP1: no space between the name and has (Lucky has26mana)", code='name = "Lucky"\nmana = 26\nprint(name + "has")\n',
              fails_at=1, message_contains="space is missing"),
+        dict(why="step 1 done, step 2 not started: the line stops early (never 'a space is missing')",
+             code='name = "Lucky"\nmana = 26\n# Print: Lucky has 26 mana.  Build it from the boxes.\nprint(name + " has ")\n',
+             fails_at=2, message_contains="Your line stops after `Lucky has`. Now add the mana"),
         dict(why="CP1: the box name in quotes", code='name = "Lucky"\nmana = 26\nprint("name" + " has ")\n',
              fails_at=1, message_contains="exact letters"),
         dict(why="CP1: gaming the message: the typed bead plus the Tester bead the message showed",
@@ -3328,7 +3337,7 @@ PROJECT_1P1 = dict(
             id="mana-line",
             text=(
                 "C. Under `# C. Write the ledger`, add a `print` line that shows `Mana for the barrier: ` glued to the "
-                "box `mana_needed`. Don't type 74."
+                "box `mana_needed`. Use the box name, not a number you worked out."
             ),
             dictated=False,
             hints=[
@@ -3401,6 +3410,14 @@ PROJECT_1P1 = dict(
                 "Write `print(\"First watch: \" + watch_keeper)` as the last line, under the `watch_keeper` line.",
             ],
             checks=[
+                # The class's most common slip: the box's name in quotes shows the letters `watch_keeper`. The words
+                # only (the pass/fail is the next check's): say what happened, then take the quotes off.
+                (
+                    "the box name is not in quotes",
+                    "assert ('First watch: ' + str(watch_keeper)) in _lines() or not any('watch_keeper' in _l for _l "
+                    "in _lines()), 'Your line shows the word watch_keeper, because of the quotes. Take the quotes off: "
+                    "`+ watch_keeper`. " + QUOTES_RULE + "'",
+                ),
                 out_line("prints the watch line", "'First watch: ' + watch_keeper",
                          "Show `First watch: ` glued to `watch_keeper`. With a made-up name, Tester, it would show "
                          "`First watch: Tester`. Don't type Tester.", privacy=True,
@@ -3648,7 +3665,7 @@ PROJECT_1P1 = dict(
              message_contains="glued to `watch_keeper`"),
         dict(why="split task: the watch line glued to the word watch_keeper in quotes",
              code=_ledger(c7='watch_keeper = "Bomb Shell"\nprint("First watch: " + "watch_keeper")\n'), fails_at=9,
-             message_contains="glued to `watch_keeper`"),
+             message_contains="because of the quotes. Take the quotes off"),
         dict(why="the last task not done: the hours still 37", code=_ledger(), fails_at=10,
              message_contains="`hours_until_burst = 32`"),
         dict(why="the last task as a new line at the bottom (side-work habit): the ledger never sees 32",

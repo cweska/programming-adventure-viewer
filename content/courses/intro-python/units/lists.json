@@ -100,7 +100,7 @@
           "checkpoints": [
             {
               "id": "run-a-try",
-              "text": "Two moves:\n1. On line 4, under the two notes, type a way to keep the other six gaps. Any way you like.\n2. Press Run. If Python stops with an error, read the error in the Console and try again.",
+              "text": "Two moves:\n1. On line 4, under the two notes, store the other six gaps, 48 47 46 44 41 37, any way you like. Line 1 shows one way to keep one gap.\n2. Press Run. If Python stops with an error, read the error in the Console and try again.",
               "hints": [
                 "Look at line 1: `hour_1 = 48` keeps one gap in one box. If Python stopped, read the error in the Console. Its title says what went wrong.",
                 "A box (a variable) keeps one value under one name. What would you name the box for the second gap?",
@@ -144,7 +144,7 @@
         {
           "id": "make-the-wall",
           "title": "Make the wall",
-          "martu": "A [[list]] keeps many values under one name, in order. In math class, a data set is a group of numbers you study together. A list is Python's data set: square brackets `[ ]` around it, and a comma between each two items. `marks = [46, 44, 41]` is a list of three items.\nIn math class, square brackets can group numbers, like parentheses. In Python they never group math. They make a list.\nNumbers in a list get no quotes. Text keeps its quotes, like `[\"gold\", \"teal\"]` in the Example.\n```text\n chalk_wall = [48, 48, 47, ...]\n             ^   ^   ^\n   square bracket  commas\n```",
+          "martu": "A [[list]] keeps many values under one name, in order. In math class, a data set is a group of numbers you study together. A list is Python's data set: square brackets `[ ]` around it, and a comma between each two items. `marks = [46, 44, 41]` is a list of three items.\nIn math class, square brackets can group numbers, like parentheses. In Python they never group math. They make a list.\nNumbers in a list get no quotes. Text keeps its quotes, like `[\"gold\", \"teal\"]` in the Example.\n```text\n chalk_wall = [48, 48, 47, ...]\n              ^  ^   ^\n   square bracket  commas\n```",
           "example": {
             "code": [
               "party_colors = [\"gold\", \"teal\"]",
@@ -641,15 +641,19 @@
                     "_said = lambda _v: any(_hit(_l, _v) for _l in _p)",
                     "_said0 = lambda _v: any(_hit(_l, _v) for _l in _old)",
                     "_rowp = lambda _v: any(_row(_l, _v) for _l in _p)",
-                    "if not (_said(_C['chalk_wall'][-1]) and _said(_C['chalk_wall'][-2])) and _e:",
+                    "_spots = lambda _v: [(_i, _m.start()) for _i, _l in enumerate(_p) if '[' not in _l for _m in _re.finditer(r'(?<![\\w.-])' + _re.escape(str(_v)) + r'(?![\\w.])', _l)]",
+                    "_in_order = lambda _a, _b: bool(_spots(_a)) and bool(_spots(_b)) and min(_spots(_a)) < max(_spots(_b))",
+                    "if not (_said(_C['chalk_wall'][-1]) and _said(_C['chalk_wall'][-2]) and _in_order(_C['chalk_wall'][-1], _C['chalk_wall'][-2])) and _e:",
                     "    _msg = ''",
                     "    if not _msg and (_e.startswith('IndexError')):",
                     "        _msg = 'Your positions fit only 7 gaps. Count from the end with a minus, so they fit a wall of any length.' + ' ' + _ev_txt + (', and Python stopped: that wall doesn' + chr(39) + 't have a position your code asked for.' if _e.startswith('IndexError') else ', and Python stopped with an error: ' + _e.split(':')[0] + '.')",
                     "    if not _msg:",
                     "        _msg = _ev_txt + ', and your code stopped with an error. Python said: ' + _e + '. Make your code work for any wall.'",
                     "    assert False, _msg",
-                    "if not (_said(_C['chalk_wall'][-1]) and _said(_C['chalk_wall'][-2])):",
+                    "if not (_said(_C['chalk_wall'][-1]) and _said(_C['chalk_wall'][-2]) and _in_order(_C['chalk_wall'][-1], _C['chalk_wall'][-2])):",
                     "    _msg = ''",
+                    "    if not _msg and (_said(_C['chalk_wall'][-1]) and _said(_C['chalk_wall'][-2])):",
+                    "        _msg = 'Your code shows the gap before the newest first. Show the newest gap first, `chalk_wall[-1]`, then the one before it, `chalk_wall[-2]`.' + ' ' + _ev_txt + ': ' + ('it printed ' + _show(_p)) + '.'",
                     "    if not _msg and (not _said(_C['chalk_wall'][-1]) and _said(_g0.get('chalk_wall')[-1])):",
                     "        _msg = 'You typed the newest gap instead of reading it from the list. `chalk_wall[-1]` is the last item of a wall of any length.' + ' ' + _ev_txt + ': ' + ('it still printed `' + str(_g0.get('chalk_wall')[-1]) + '`') + '.'",
                     "    if not _msg and (not _said(_C['chalk_wall'][-1])):",
@@ -1133,6 +1137,8 @@
                     "        _msg = 'Your join puts the new marks first. Old marks go first: `old_marks + new_marks`.' + ' ' + _ev_txt + ': ' + ('`both_pages` became ' + _sh(_R('both_pages'))) + '.'",
                     "    if not _msg and (_R('both_pages') == [[50, 49], [45, 40, 36]]):",
                     "        _msg = 'Your line makes a list that holds two lists. `+` joins them into one list: `old_marks + new_marks`.' + ' ' + _ev_txt + ': ' + ('`both_pages` became ' + _sh(_R('both_pages'))) + '.'",
+                    "    if not _msg and (_R('both_pages') == [[50, 49, 45, 40, 36]]):",
+                    "        _msg = 'Your line puts square brackets around the join, so `both_pages` is a list that holds one list. Take off the outer `[ ]`: `both_pages = old_marks + new_marks`.' + ' ' + _ev_txt + ': ' + ('`both_pages` became ' + _sh(_R('both_pages'))) + '.'",
                     "    if not _msg and (type(_R('both_pages')).__name__ == 'list' and _R('both_pages')[-1:] == [[45, 40, 36]]):",
                     "        _msg = '`.append()` put the whole list `new_marks` inside as one item. `+` joins two lists into one: `old_marks + new_marks`.' + ' ' + _ev_txt + ': ' + ('`both_pages` became ' + _sh(_R('both_pages'))) + '.'",
                     "    if not _msg and (_R('both_pages') == [] and _named):",
@@ -1970,7 +1976,7 @@
           "checkpoints": [
             {
               "id": "fix-by-position",
-              "text": "On line 5, the empty line under `# Fix it by position here:`, change the 74 to 47 by its position. Don't retype the list.",
+              "text": "On line 5, the empty line under `# Fix it by position here:`, write one line that puts 47 at the position of the 74 on line 3, the way the Example puts violet at position 1. Don't retype line 3.",
               "hints": [
                 "Count the positions from 0: 48 is at 0, 48 is at 1, and 74 is at...?",
                 "`party_colors[1] = \"violet\"` puts a new value at position 1. Position in square brackets, then `=`, then the new value.",
@@ -2058,9 +2064,10 @@
                   "code": [
                     "import ast as _ast",
                     "_set = [_n for _n in _ast.walk(_ast.parse(_source)) if type(_n).__name__ == 'Assign' and any(type(_t).__name__ == 'Subscript' and type(_t.value).__name__ == 'Name' and (_t.value.id == 'chalk_wall' or globals().get(_t.value.id) is chalk_wall) for _t in _n.targets)]",
-                    "assert _set, ('You fixed the wall without a line that changes it by position. Fix it by position. Lists '",
-                    "    'often come from somewhere you can' + chr(39) + 't retype, like `caster` in the campaign: `chalk_wall[`, '",
-                    "    'the position, `] = 47` on line 5.')"
+                    "assert _set, ('Your code changes the wall without a position. Fix it by position. Lists often come from '",
+                    "    'somewhere you can' + chr(39) + 't retype, like `caster` in the campaign: the game made it, not you. '",
+                    "    'Press Reset code to get the 74 back. Then, on line 5, type `chalk_wall[`, the 74' + chr(39) + 's position, '",
+                    "    'and `] = 47`.')"
                   ]
                 },
                 {
@@ -2139,7 +2146,7 @@
                     "if not (_R('chalk_wall') == [48, 48, 47, 46, 44, 41, 37]):",
                     "    _msg = ''",
                     "    if not _msg:",
-                    "        _msg = \"You changed the wall's line, not the 74's position. Leave the wall's line as it was, 74 and all, and fix the 74 on line 5.\" + ' ' + _ev_txt + ': ' + ('the wall still read ' + _sh(_R('chalk_wall'))) + '.'",
+                    "        _msg = \"Your code fixes the 74 by typing the wall's numbers, not by its position. Keep Lucky's wall on line 3 as he wrote it, with the 74, and put 47 at the 74's position on line 5.\" + ' ' + _ev_txt + ': ' + ('the wall still read ' + _sh(_R('chalk_wall'))) + '.'",
                     "    assert False, _msg"
                   ]
                 },

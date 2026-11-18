@@ -25,7 +25,7 @@
       "title": "How Mar'tu Teaches",
       "minutes": 1,
       "summary": "One minute: how ▶ Run, 💡 Help and Your steps work.",
-      "body": "Press ▶ [[run|Run]], above your code. Python answers in the [[console|Console]], under your code.\nRunning unfinished code is fine. An error is not a grade: it says what Python couldn't read.\nYour steps: ✓ done, ● the step you're on, ○ still to come.\nStuck? Press 💡 Help, under the Console. Each press gives more, up to the line itself. Your hints are private.\nNothing here is timed."
+      "body": "Press ▶ [[run|Run]], above your code. Python answers in the [[console|Console]], under your code.\nRunning unfinished code is fine. An error is not a grade: it says what Python couldn't read.\nYour steps: ✓ done, ● the step you're on, ○ still to come.\nStuck? Press 💡 Help, under the Console. Each press gives more, and the last shows the line to type. Your hints are private.\nNothing here is timed."
     },
     {
       "kind": "lesson",
@@ -83,7 +83,7 @@
               "id": "break-it",
               "text": "Delete the `\"` right after `Shield up.` and press Run. An error box appears in the Console: that's the plan. Read its title, then go on to step 3.",
               "hints": [
-                "Look at line 1, at the `\"` right after `Shield up.`.\nTo break the line: click right after that `\"`, press Backspace once, and press Run.",
+                "Look at line 1, at the `\"` right after `Shield up.`.\nTo break the line: click right after that `\"`, press Backspace once, and press Run. When the error box appears, step 2 is done.",
                 "The error box's title says a quote is missing. Python's last line says *unterminated*, which means never ended: the text has no closing `\"`.",
                 "Delete the `\"` right after `Shield up.`. Line 1 becomes `print(\"Shield up.)`. Press Run and read the error box."
               ],
@@ -101,14 +101,17 @@
                     "        _msg = ('Line ' + str(_bare[0]) + ' has the words in quotes but no `print`, so nothing shows. '",
                     "                'Put `print(` before the quotes and `)` after.')",
                     "    else:",
-                    "        _msg = (\"Your line still shows `Shield up.`, the way it started. If you haven't broken it yet, delete \"",
-                    "                'the `\"` right after `Shield up.` and press Run. If you have, step 3 is next: change the `.` '",
-                    "                'to `!`.')",
+                    "        _msg = ('Step 2 is next: delete the `\"` right after `Shield up.` and press Run. An error box will '",
+                    "                \"appear: that's the plan. Already saw the box? Then do step 3: change the `.` to `!`.\")",
                     "assert not _msg, _msg"
                   ]
                 }
               ],
-              "dictated": true
+              "dictated": true,
+              "plannedError": {
+                "line": 1,
+                "error": "SyntaxError"
+              }
             },
             {
               "id": "close-the-quote",
@@ -981,7 +984,7 @@
                   "code": [
                     "import io as _io, tokenize as _tk",
                     "_notes = [(t.start[0], t.string) for t in _tk.generate_tokens(_io.StringIO(_source).readline) if t.type == _tk.COMMENT]",
-                    "assert any('keeping the glug' in text and 'print' in text.lower() for _, text in _notes), 'Your code no longer has the whole glug line, `print` and all. Put it back, and switch it off with `#` at its very start.'"
+                    "assert any('keeping the glug' in text and 'print' in text.lower() for _, text in _notes), 'The glug line, `print(\"I am keeping the glug.\")`, isn\\'t all there. Press Reset code to get it back. Then put `#` at its very start, before `print`.'"
                   ]
                 },
                 {
@@ -1423,7 +1426,7 @@
           "checkpoints": [
             {
               "id": "print-the-symbols",
-              "text": "On line 2, under the note, show `_`, `-` and `=` on the screen, all on one line. Copy the Example's shape, and put the three marks inside its quotes.",
+              "text": "On line 2, under the note, type a `print` line like the Example's. Between its quotes, put `_`, `-` and `=` instead of `( ) #`.",
               "hints": [
                 "Click on the empty line 2, under `# Your line goes here:`. Line 1 starts with `#`, so Python skips it. Start line 2 with `print(\"` and add the three marks after it.",
                 "Quotes mean *show these exact marks*. Python shows whatever is between them, as it is: `print(\"( )\")` shows `( )`.",
@@ -3998,7 +4001,7 @@
             "first_gap",
             "last_gap"
           ],
-          "pairTalk": "Pair talk: each of you guesses the three answers first. Compare, then each of you presses Run on your own code. Then both add `print(48 / 2)`: who expected the `.0`?"
+          "pairTalk": "Pair talk: each of you picks an answer in the Predict first box, just above ▶ Run, without showing. Compare your picks, then each of you presses Run on your own screen."
         },
         {
           "id": "what-each-number-means",
@@ -4100,7 +4103,7 @@
                     "    elif _newb:",
                     "        _msg = 'Your new box `' + _newb[0][0] + '` holds ' + str(_wants[_newb[0][1]]) + ', but `' + _newb[0][1] + '` still holds 0. Put the number in `' + _newb[0][1] + '` instead.'",
                     "    elif _c not in (0, 3, 4):",
-                    "        _msg = '`lantern_count` should be how many lanterns the story on line 1 says: 3. Lucky gets his 1000 in the next exercise.'",
+                    "        _msg = \"`lantern_count` holds a number that isn't in the story. The story on line 1 says Mar'tu needs 3 lanterns: put 3 in `lantern_count`.\"",
                     "    elif _c == 0 or _p == 0:",
                     "        _msg = '`' + ('lantern_count' if _c == 0 else 'lantern_price') + '` still holds the placeholder 0. Replace the 0 with the number from the story in the `#` note.'",
                     "    elif _c != 3:",
@@ -4175,7 +4178,7 @@
                     "    elif _newb:",
                     "        _msg = 'Your new box `' + _newb[0][0] + '` holds ' + str(_wants[_newb[0][1]]) + ', but `' + _newb[0][1] + '` still holds 0. Put the number in `' + _newb[0][1] + '` instead.'",
                     "    elif _c not in (0, 5, 2):",
-                    "        _msg = '`rope_count` should be how many coils the story on line 2 says: 5. Lucky gets his 1000 in the next exercise.'",
+                    "        _msg = \"`rope_count` holds a number that isn't in the story. The story on line 2 says Mar'tu needs 5 coils: put 5 in `rope_count`.\"",
                     "    elif _c == 0 or _p == 0:",
                     "        _msg = '`' + ('rope_count' if _c == 0 else 'rope_price') + '` still holds the placeholder 0. Replace the 0 with the number from the story in the `#` note.'",
                     "    elif _c != 5:",
@@ -4273,7 +4276,7 @@
         {
           "id": "let-the-code-combine",
           "title": "Let Python do the math",
-          "martu": "Don't work the total out yourself. Write the math with the box names and let Python work it out, like a formula. In math class, this is [[show your work]]. The Example does it: `map_cost = map_count * map_price`.\nPython is not a spreadsheet: when a number changes, press Run again, and the total changes to match.",
+          "martu": "Don't work the total out yourself. Write the math with the box names and let Python work it out, like a formula. In math class, this is [[show your work]]. The Example does it: `map_cost = map_count * map_price`.\nPython is not like Google Sheets, which updates by itself. When a number changes, press Run again, and the total changes to match.",
           "example": {
             "code": [
               "# Oogrish buys 2 maps at 6 coins.",
@@ -4874,10 +4877,10 @@
             },
             {
               "id": "a-thousand-ropes",
-              "text": "On line 3, change `rope_count = 5` to `rope_count = 1000`. Press Run. `total_cost` changes too, and you never touched that line.",
+              "text": "On line 3, change `rope_count = 5` to `rope_count = 1000`. Press Run. `total_cost` changes too, even though you never touched line 7.",
               "hints": [
                 "Look at line 3, `rope_count = 5`. It is the only line to change.",
-                "Every line built from `rope_count` uses its new number when you press Run again. Python is not a spreadsheet: nothing changes until you press Run.",
+                "Every line built from `rope_count` uses its new number when you press Run again. Python is not like Google Sheets, which updates by itself: nothing changes until you press Run.",
                 "Change the `5` on line 3 to `1000`. Line 3 becomes `rope_count = 1000`. Press Run."
               ],
               "checks": [
@@ -5608,12 +5611,12 @@
                     "        _before = _want[:_i].strip()",
                     "        if _i == 0:",
                     "            _msg = _head + 'They are different from the very start. ' + 'Show `Lucky has 26 mana.`, glued from `name`, the words in quotes, and `str(mana)`.'",
+                    "        elif _i >= len(_near):",
+                    "            _msg = 'Your line stops after `' + _before + '`. ' + 'Now add the mana: click just before the last `)` on your `print` line and type `+ str(mana) + \" mana.\"`.'",
                     "        elif _want[_i:_i + 1] == ' ' and _near[_i:_i + 1] != ' ':",
                     "            _msg = _head + 'A space is missing right after `' + _before + '`.'",
                     "        elif _near[_i:_i + 1] == ' ' and _want[_i:_i + 1] != ' ':",
                     "            _msg = _head + 'There is an extra space right after `' + _before + '`.'",
-                    "        elif _i >= len(_near):",
-                    "            _msg = _head + 'Your line stops early, right after `' + _before + '`.'",
                     "        else:",
                     "            _msg = _head + 'They are different right after `' + _before + '`.'",
                     "    assert not _msg, _msg",
@@ -5826,12 +5829,12 @@
                   "        _before = _want[:_i].strip()",
                   "        if _i == 0:",
                   "            _msg = _head + 'They are different from the very start. ' + 'Show `Lucky has 26 of 26 mana.` on a new line.'",
+                  "        elif _i >= len(_near):",
+                  "            _msg = _head + 'Your line stops early, right after `' + _before + '`.'",
                   "        elif _want[_i:_i + 1] == ' ' and _near[_i:_i + 1] != ' ':",
                   "            _msg = _head + 'A space is missing right after `' + _before + '`.'",
                   "        elif _near[_i:_i + 1] == ' ' and _want[_i:_i + 1] != ' ':",
                   "            _msg = _head + 'There is an extra space right after `' + _before + '`.'",
-                  "        elif _i >= len(_near):",
-                  "            _msg = _head + 'Your line stops early, right after `' + _before + '`.'",
                   "        else:",
                   "            _msg = _head + 'They are different right after `' + _before + '`.'",
                   "    assert not _msg, _msg",
@@ -6507,12 +6510,12 @@
                   "    _before = _want[:_i].strip()",
                   "    if _i == 0:",
                   "        _msg = _head + 'They are different from the very start. ' + 'Glue `Lucky: 23/26 mana` from the `lucky_` boxes with `+` and `str()`.'",
+                  "    elif _i >= len(_near):",
+                  "        _msg = _head + 'Your line stops early, right after `' + _before + '`.'",
                   "    elif _want[_i:_i + 1] == ' ' and _near[_i:_i + 1] != ' ':",
                   "        _msg = _head + 'A space is missing right after `' + _before + '`.'",
                   "    elif _near[_i:_i + 1] == ' ' and _want[_i:_i + 1] != ' ':",
                   "        _msg = _head + 'There is an extra space right after `' + _before + '`.'",
-                  "    elif _i >= len(_near):",
-                  "        _msg = _head + 'Your line stops early, right after `' + _before + '`.'",
                   "    else:",
                   "        _msg = _head + 'They are different right after `' + _before + '`.'",
                   "assert not _msg, _msg"
@@ -7223,12 +7226,12 @@
                   "    _before = _want[:_i].strip()",
                   "    if _i == 0:",
                   "        _msg = _head + 'They are different from the very start. ' + 'Show the bar, a space, then the mana, `/` and the max mana, like `[███░░] 3/5`.'",
+                  "    elif _i >= len(_near):",
+                  "        _msg = _head + 'Your line stops early, right after `' + _before + '`.'",
                   "    elif _want[_i:_i + 1] == ' ' and _near[_i:_i + 1] != ' ':",
                   "        _msg = _head + 'A space is missing right after `' + _before + '`.'",
                   "    elif _near[_i:_i + 1] == ' ' and _want[_i:_i + 1] != ' ':",
                   "        _msg = _head + 'There is an extra space right after `' + _before + '`.'",
-                  "    elif _i >= len(_near):",
-                  "        _msg = _head + 'Your line stops early, right after `' + _before + '`.'",
                   "    else:",
                   "        _msg = _head + 'They are different right after `' + _before + '`.'",
                   "assert not _msg, _msg"
@@ -7453,12 +7456,12 @@
                     "    _before = _want[:_i].strip()",
                     "    if _i == 0:",
                     "        _msg = _head + 'They are different from the very start. ' + 'Show `Mana: ` glued to `str(mana)`.'",
+                    "    elif _i >= len(_near):",
+                    "        _msg = _head + 'Your line stops early, right after `' + _before + '`.'",
                     "    elif _want[_i:_i + 1] == ' ' and _near[_i:_i + 1] != ' ':",
                     "        _msg = _head + 'A space is missing right after `' + _before + '`.'",
                     "    elif _near[_i:_i + 1] == ' ' and _want[_i:_i + 1] != ' ':",
                     "        _msg = _head + 'There is an extra space right after `' + _before + '`.'",
-                    "    elif _i >= len(_near):",
-                    "        _msg = _head + 'Your line stops early, right after `' + _before + '`.'",
                     "    else:",
                     "        _msg = _head + 'They are different right after `' + _before + '`.'",
                     "assert not _msg, _msg"
@@ -8112,12 +8115,12 @@
                   "    _before = _want[:_i].strip()",
                   "    if _i == 0:",
                   "        _msg = _head + 'They are different from the very start. ' + 'Show `Total: 22 coins`, glued from `total_cost` with `str()`.'",
+                  "    elif _i >= len(_near):",
+                  "        _msg = _head + 'Your line stops early, right after `' + _before + '`.'",
                   "    elif _want[_i:_i + 1] == ' ' and _near[_i:_i + 1] != ' ':",
                   "        _msg = _head + 'A space is missing right after `' + _before + '`.'",
                   "    elif _near[_i:_i + 1] == ' ' and _want[_i:_i + 1] != ' ':",
                   "        _msg = _head + 'There is an extra space right after `' + _before + '`.'",
-                  "    elif _i >= len(_near):",
-                  "        _msg = _head + 'Your line stops early, right after `' + _before + '`.'",
                   "    else:",
                   "        _msg = _head + 'They are different right after `' + _before + '`.'",
                   "assert not _msg, _msg"
@@ -10017,7 +10020,7 @@
         },
         {
           "id": "mana-line",
-          "text": "C. Under `# C. Write the ledger`, add a `print` line that shows `Mana for the barrier: ` glued to the box `mana_needed`. Don't type 74.",
+          "text": "C. Under `# C. Write the ledger`, add a `print` line that shows `Mana for the barrier: ` glued to the box `mana_needed`. Use the box name, not a number you worked out.",
           "hints": [
             "Click at the end of line 12, `# C. Write the ledger`, and press Enter. Start like this: `print(\"Mana for the barrier: \" + `",
             "The number comes from `mana_needed`. What does a number need before it can be glued? `\"Sips: \" + str(sips)` glues text to a box with a number in it.",
@@ -10049,12 +10052,12 @@
                 "    _before = _want[:_i].strip()",
                 "    if _i == 0:",
                 "        _msg = _head + 'They are different from the very start. ' + 'Show `Mana for the barrier: ` glued to `str(mana_needed)`.'",
+                "    elif _i >= len(_near):",
+                "        _msg = _head + 'Your line stops early, right after `' + _before + '`.'",
                 "    elif _want[_i:_i + 1] == ' ' and _near[_i:_i + 1] != ' ':",
                 "        _msg = _head + 'A space is missing right after `' + _before + '`.'",
                 "    elif _near[_i:_i + 1] == ' ' and _want[_i:_i + 1] != ' ':",
                 "        _msg = _head + 'There is an extra space right after `' + _before + '`.'",
-                "    elif _i >= len(_near):",
-                "        _msg = _head + 'Your line stops early, right after `' + _before + '`.'",
                 "    else:",
                 "        _msg = _head + 'They are different right after `' + _before + '`.'",
                 "assert not _msg, _msg"
@@ -10171,12 +10174,12 @@
                 "    _before = _want[:_i].strip()",
                 "    if _i == 0:",
                 "        _msg = _head + 'They are different from the very start. ' + 'Show the oil line, glued from words in quotes, `str(oil_needed)` and `str(oil_cost)`.'",
+                "    elif _i >= len(_near):",
+                "        _msg = _head + 'Your line stops early, right after `' + _before + '`.'",
                 "    elif _want[_i:_i + 1] == ' ' and _near[_i:_i + 1] != ' ':",
                 "        _msg = _head + 'A space is missing right after `' + _before + '`.'",
                 "    elif _near[_i:_i + 1] == ' ' and _want[_i:_i + 1] != ' ':",
                 "        _msg = _head + 'There is an extra space right after `' + _before + '`.'",
-                "    elif _i >= len(_near):",
-                "        _msg = _head + 'Your line stops early, right after `' + _before + '`.'",
                 "    else:",
                 "        _msg = _head + 'They are different right after `' + _before + '`.'",
                 "assert not _msg, _msg"
@@ -10326,6 +10329,10 @@
             "Write `print(\"First watch: \" + watch_keeper)` as the last line, under the `watch_keeper` line."
           ],
           "checks": [
+            {
+              "name": "the box name is not in quotes",
+              "code": "assert ('First watch: ' + str(watch_keeper)) in _lines() or not any('watch_keeper' in _l for _l in _lines()), 'Your line shows the word watch_keeper, because of the quotes. Take the quotes off: `+ watch_keeper`. Quotes mean these exact letters. No quotes means look inside the box with this label.'"
+            },
             {
               "name": "prints the watch line",
               "code": [

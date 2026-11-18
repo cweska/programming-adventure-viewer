@@ -526,7 +526,7 @@
             "print(\"I will take first watch.\")"
           ],
           "failsAt": 1,
-          "messageContains": "switch it off"
+          "messageContains": "isn't all there"
         },
         {
           "why": "switches off the wrong line",
@@ -578,7 +578,7 @@
             "print(\"I will take first watch.\")"
           ],
           "failsAt": 1,
-          "messageContains": "`print` and all"
+          "messageContains": "isn't all there"
         },
         {
           "why": "check-breaker: deletes the line and writes a note about it",
@@ -588,7 +588,7 @@
             "print(\"I will take first watch.\")"
           ],
           "failsAt": 1,
-          "messageContains": "`print` and all"
+          "messageContains": "isn't all there"
         }
       ],
       "notes": "meta: starter_level=S4; path=SC; skills=print-text; solo=false; dictates=1; foreign_names=; stages=I,M. SC inside a CC lesson (deferrable by the teacher's switch). Notes are found with the tokenizer, so a `#` inside quotes is not a note. Any note text passes (lint e); Mar'tu's pick is the solution's note. Starter lines avoid the red-clock spoiler. Check-breaker pass: the switched-off note must still hold `print`, so deleting the line and writing a note about it, or swapping `print(` for `#`, no longer passes CP1."
@@ -2830,6 +2830,17 @@
           "messageContains": "space is missing"
         },
         {
+          "why": "step 1 done, step 2 not started: the line stops early (never 'a space is missing')",
+          "code": [
+            "name = \"Lucky\"",
+            "mana = 26",
+            "# Print: Lucky has 26 mana.  Build it from the boxes.",
+            "print(name + \" has \")"
+          ],
+          "failsAt": 2,
+          "messageContains": "Your line stops after `Lucky has`. Now add the mana"
+        },
+        {
           "why": "CP1: the box name in quotes",
           "code": [
             "name = \"Lucky\"",
@@ -4480,7 +4491,7 @@
             "print(\"First watch: \" + \"watch_keeper\")"
           ],
           "failsAt": 9,
-          "messageContains": "glued to `watch_keeper`"
+          "messageContains": "because of the quotes. Take the quotes off"
         },
         {
           "why": "the last task not done: the hours still 37",

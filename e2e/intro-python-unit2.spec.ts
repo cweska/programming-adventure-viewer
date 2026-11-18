@@ -110,7 +110,9 @@ test.describe("Intro to Python, Unit 2: Control Flow", () => {
     await open(page, "when-spells-fizzle", "anatomy-of-a-fizzle", "Anatomy of a fizzle");
     await runAndWait(page, 1);
     await expect(page.getByTestId("task-line")).toHaveAttribute("data-switch-off", "true");
-    await expect(page.getByTestId("task-line")).toContainText("Python stopped on line 4.");
+    await expect(page.getByTestId("task-line")).toContainText("Python stopped at line 4.");
+    // The line was there from the start, so reading the box is part of the steps.
+    await expect(page.getByTestId("task-line")).toContainText("That's part of this step.");
     await expect(page.getByTestId("task-line")).not.toContainText("couldn't finish your code");
     await expect(page.getByTestId("task-line")).not.toContainText("Fix line 4");
     await expect(page.getByTestId("explainer-hint")).toContainText("Line 3 makes spell_cost");

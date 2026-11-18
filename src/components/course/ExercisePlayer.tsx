@@ -17,7 +17,7 @@ import type { Bonus, Checkpoint, GlossaryEntry, Playable } from "../../lib/cours
 import { runCourse, whenPythonReady } from "../../lib/languages/python/run";
 import { publicPath } from "../../lib/site";
 import type { StageEvent } from "../../lib/stage/bridge";
-import type { InsertTarget, InsertText, InsertWhere } from "../editor-insert";
+import { replacedLine, type InsertTarget, type InsertText, type InsertWhere } from "../editor-insert";
 import { PythonEditor, type PythonEditorHandle } from "../PythonEditor";
 import { CardSort } from "./CardSort";
 import { CompareView } from "./CompareView";
@@ -33,6 +33,7 @@ import {
   countsAsAttempt,
   crashAim,
   crashFixLine,
+  crashLineInStarter,
   crashLineSwitchedOff,
   crashTarget,
   effectiveSupport,
@@ -53,6 +54,7 @@ import {
   rungPaced,
   rungsShown,
   runOutcome,
+  sameErrorLook,
   soloPassLine,
   soloUnaided,
   solutionUnlocked,
@@ -64,8 +66,10 @@ import {
   stdinBoxText,
   stepNoun,
   stuckCheckpointId,
+  switchOffLine,
   titleFromId,
   usesInput,
+  withPlannedErrors,
   type CrashAim,
   type FailStreak,
   type PlayerMode,
@@ -160,6 +164,10 @@ type RunView = {
   crashStep?: number | null;
   /** The crash is part of the task: Mar'tu's version switches that line off with `#` (crashLineSwitchedOff). */
   crashSwitchOff?: boolean;
+  /** With crashSwitchOff: the line was in the code from the start (Anatomy of a fizzle), not one the student typed. */
+  crashInStarter?: boolean;
+  /** The step this crash finished on purpose (a checkpoint's `plannedError`), when it was newly done by it. */
+  plannedStep?: number;
 };
 
 /** The last line of Python's message ("SyntaxError: unterminated string literal ..."), or "" when there is none. */
@@ -626,6 +634,8 @@ export function ExercisePlayer({
    * comma Python reports on the next line, a whole card read on the line above the comparison).
    */
   const slipAt = crashed && view?.explanation?.slipLine && view.explanation.slipLine !== crashAt ? view.explanation.slipLine : null;
+  /* A box no line makes yet: the fix goes on a line above the one Python stopped at (crashFixLine). */
+  const fixAbove = crashed && view?.explanation?.fixAbove === true;
   /* Steps that passed before, failing on the latest run that Python finished (a crash checks nothing). */
   const slippedSteps =
     view?.grade && !view.grade.crashed && !view.revealPass
@@ -828,14 +838,21 @@ export function ExercisePlayer({
         // The game's hidden sheets (`caster`) count as the program's own, so a KeyError can name the level a key is on.
         setup: exercise.setup,
       };
-      const grade = gradeCheckpoints(exercise.checkpoints, result, source, context);
+      const savedBefore = getCourseProgress().exercises[key];
+      const before = savedBefore?.passed ?? [];
+      // A step done by an error made on purpose (the first lesson's break): the planned crash does it, and it stays done.
+      const crashRaw = result.traceback || result.stderr || "";
+      const { grade, planned } = withPlannedErrors(
+        exercise.checkpoints,
+        gradeCheckpoints(exercise.checkpoints, result, source, context),
+        result.ok ? null : { line: crashLine(crashRaw), error: pythonLastLine(crashRaw) },
+        before,
+      );
       // The side quest's checks come after the main ones: grade them from their own slice, by position.
       const bonusGrade =
         bonusCp && !grade.crashed
           ? gradeCheckpoints([bonusCp], { ...result, checks: (result.checks ?? []).slice(mainChecks.length) }, source, context)
           : null;
-      const savedBefore = getCourseProgress().exercises[key];
-      const before = savedBefore?.passed ?? [];
       const wasDone = savedBefore?.done === true;
       // A pass with Mar'tu's version, copied in: it shows the code works, but it does not finish the exercise
       // (or tick any step) until the student writes it themselves (curriculum §2.2, the immediate typed twin).
@@ -862,7 +879,7 @@ export function ExercisePlayer({
       setStreak(nextStreak);
       activityAt.current = sessionNow.current;
       if (!grade.allPassed) setMissedThisVisit(true);
-      const crashText = result.traceback || result.stderr || "";
+      const crashText = crashRaw;
       const explanation = grade.crashed ? explainCourseError(crashText, source, context) : null;
       // A debugging exercise's crash: which step Help aims at, past the slips already mended this visit.
       let aim: CrashAim | null = null;
@@ -929,8 +946,11 @@ export function ExercisePlayer({
           newlyPassed: outcome.newlyPassed,
           revealPass,
           ...(aim ? { crashStep: aim.step } : {}),
+          ...(planned.some((id) => outcome.newlyPassed.includes(id))
+            ? { plannedStep: exercise.checkpoints.findIndex((checkpoint) => planned.includes(checkpoint.id)) }
+            : {}),
           ...(grade.crashed && explanation && crashLineSwitchedOff(source, crashLine(explanation.raw), exercise.solution)
-            ? { crashSwitchOff: true }
+            ? { crashSwitchOff: true, crashInStarter: crashLineInStarter(source, crashLine(explanation.raw), exercise.starter) }
             : {}),
         };
       });
@@ -1164,17 +1184,22 @@ export function ExercisePlayer({
               <Prose inline text={exercise.title} />
             </h2>
           ) : null}
-          {activeCheckpoint && !done && crashed && view?.crashSwitchOff && crashAt ? (
+          {activeCheckpoint && !done && crashed && view?.plannedStep !== undefined && crashAt ? (
+            // The error was the step (the first lesson's break): say so, and what comes next.
+            <p className="ex-task-line" data-testid="task-line" data-crash="true" data-planned="true">
+              <span className="ex-task-label">{`Python stopped at line ${crashAt}, as planned.`}</span>{" "}
+              {`${noun} ${view.plannedStep + 1} is done. Read the title of the box in the Console. Then do ${noun.toLowerCase()} ${firstOpen + 1}.`}
+            </p>
+          ) : activeCheckpoint && !done && crashed && view?.crashSwitchOff && crashAt ? (
             // The crash is part of the task (Anatomy of a fizzle): read the message first, then switch the line off.
             <p className="ex-task-line" data-testid="task-line" data-crash="true" data-switch-off="true">
-              <span className="ex-task-label">{`Python stopped on line ${crashAt}.`}</span>{" "}
-              {`That's part of this ${noun.toLowerCase()}. First read the box in the Console: your ${noun.toLowerCase()}s come from it. Then put # at the start of line ${crashAt} and press Run again.`}
+              <span className="ex-task-label">{`Python stopped at line ${crashAt}.`}</span> {switchOffLine(noun, crashAt, view.crashInStarter === true)}
             </p>
           ) : activeCheckpoint && !done && crashed ? (
             // A crash checks nothing, so "step 1" may already be right: the line Python stopped at comes first.
             <p className="ex-task-line" data-testid="task-line" data-crash="true">
               <span className="ex-task-label">{crashAt ? `Python stopped at line ${crashAt}` : "Python stopped"}</span>
-              {`, so it couldn't finish your code. ${crashFixLine(crashAt, slipAt)} ${
+              {`, so it couldn't finish your code. ${crashFixLine(crashAt, slipAt, fixAbove)} ${
                 // A lean explainer names the mistake, not the fix: the line promises only what the message gives.
                 exercise.explainer === "lean" ? "The box in the Console names the mistake." : "The box in the Console says how to fix it."
               }`}
@@ -1457,10 +1482,13 @@ export function ExercisePlayer({
               crashed={crashed}
               crashLine={crashAt}
               slipLine={slipAt}
+              fixAbove={fixAbove}
               crashOnly={crashOnlyHelp}
               moreAfterRun={lightBeforeRun}
               crashIsTask={view?.crashSwitchOff === true}
+              crashInStarter={view?.crashInStarter === true}
               startInCode={startInCode}
+              startReplaces={replacedLine(code, startTarget(helpCheckpoint))}
               onReveal={revealRung}
               onDismissOffer={() => {
                 setOfferDismissed(true);
@@ -1607,7 +1635,7 @@ function ExerciseConsole({
             {view.sameError ? (
               <p className="ex-same-error" data-testid="same-error">
                 Same error as last time.{" "}
-                {crashLine(view.explanation.raw) ? `Look closely at line ${crashLine(view.explanation.raw)}.` : "Look closely at the line number in Python's last line."}
+                {sameErrorLook(crashLine(view.explanation.raw), view.explanation.slipLine ?? null, view.explanation.fixAbove === true)}
               </p>
             ) : null}
             <p className="ex-explainer-title">{view.explanation.title}</p>

@@ -201,6 +201,38 @@ export function runOutcome(grade: GradeResult, passedBefore: readonly string[]):
   return { passedNow, newlyPassed, allPassed, failed: !allPassed && newlyPassed.length === 0 };
 }
 
+/**
+ * Steps done by an error made on purpose (a checkpoint's `plannedError`: the first lesson's "delete the quote and press
+ * Run"). A crash checks nothing, so on its own the step could never turn green. A run that stops on the planned line
+ * with the planned error (`crash.error` is Python's last line) counts the step as done, and a step done before stays
+ * done, so putting the line back (the next step's job) never marks it ↺. Returns the grade with those steps passed,
+ * and the ids this crash did.
+ */
+export function withPlannedErrors(
+  checkpoints: readonly Pick<Checkpoint, "id" | "plannedError">[],
+  grade: GradeResult,
+  crash: { line: number | null; error: string } | null,
+  passedBefore: readonly string[],
+): { grade: GradeResult; planned: string[] } {
+  const planned: string[] = [];
+  let changed = false;
+  const rows = grade.checkpoints.map((row, index) => {
+    const want = checkpoints[index]?.plannedError;
+    if (!want || row.passed) return row;
+    const now = grade.crashed && crash !== null && crash.line === want.line && crash.error.trim().startsWith(want.error);
+    if (now) planned.push(row.id);
+    if (!now && !passedBefore.includes(row.id)) return row;
+    changed = true;
+    return { ...row, passed: true, message: "" };
+  });
+  if (!changed) return { grade, planned };
+  const firstFailing = rows.findIndex((row) => !row.passed);
+  return {
+    grade: { ...grade, checkpoints: rows, firstFailing: firstFailing === -1 ? null : firstFailing, allPassed: !grade.crashed && firstFailing === -1 },
+    planned,
+  };
+}
+
 /** Fold one graded run into the saved progress (passed ids are a union across runs). */
 export function applyRun(
   previous: ExerciseProgress,
@@ -518,11 +550,40 @@ function withoutCode(text: string): string {
 /**
  * What to do after a crash, for the crash banners (plain-language guide §9, S2): after "Python stopped at line 3, so
  * it couldn't finish your code." comes "Fix line 3, then press Run again." When the mistake is on another line than
- * the one Python stopped at (`slipLine`: a sheet's missing comma Python reports on the next line), that line.
+ * the one Python stopped at (`slipLine`: a sheet's missing comma Python reports on the next line, a value with no
+ * name on the line above `print(hero)`), that line. When the fix goes above but the explainer can't say which line
+ * (`fixAbove`: a box no line makes yet), it says so, never only "Fix line 5" under "make it above line 5".
  */
-export function crashFixLine(crashLine: number | null, slipLine: number | null = null): string {
+export function crashFixLine(crashLine: number | null, slipLine: number | null = null, fixAbove = false): string {
   if (slipLine !== null && slipLine !== crashLine) return `The mistake is on line ${slipLine}. Fix line ${slipLine}, then press Run again.`;
+  if (fixAbove && crashLine !== null) return `The mistake is on line ${crashLine} or a line above it. Fix it, then press Run again.`;
   return crashLine !== null ? `Fix line ${crashLine}, then press Run again.` : "Fix the error, then press Run again.";
+}
+
+/** "Same error as last time." then where to look: the slip's own line, else the line Python stopped at (and above). */
+export function sameErrorLook(crashLine: number | null, slipLine: number | null = null, fixAbove = false): string {
+  if (slipLine !== null && slipLine !== crashLine) return `Look closely at line ${slipLine}.`;
+  if (crashLine === null) return "Look closely at the line number in Python's last line.";
+  return fixAbove ? `Look closely at line ${crashLine} and the lines above it.` : `Look closely at line ${crashLine}.`;
+}
+
+/**
+ * The crash banner when the crash is part of the task (crashLineSwitchedOff). `inStarter`: the line was in the code
+ * from the start (Anatomy of a fizzle: the steps read Python's message first). Otherwise the student typed it (a
+ * note with no `#`), and it is simply a mistake: never "That's part of this step" then.
+ */
+export function switchOffLine(noun: string, crashLine: number, inStarter: boolean): string {
+  const step = noun.toLowerCase();
+  return inStarter
+    ? `That's part of this ${step}. Read the box in the Console first: your ${step}s use what it says. Then put # at the very start of line ${crashLine} and press Run again.`
+    : `Read the box in the Console. Then put # at the very start of line ${crashLine} and press Run again.`;
+}
+
+/** The line Python stopped at was in the code from the start (the starter's own line, unchanged). */
+export function crashLineInStarter(code: string, crashLine: number | null, starter: string | undefined): boolean {
+  if (crashLine === null || !starter) return false;
+  const text = (code ?? "").split("\n")[crashLine - 1]?.trim() ?? "";
+  return text !== "" && starter.split("\n").some((row) => row.trim() === text);
 }
 
 /**

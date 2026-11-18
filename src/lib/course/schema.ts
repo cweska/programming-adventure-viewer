@@ -42,6 +42,12 @@ export const checkpointSchema = z
     passLine: z.string().optional(),
     /** True when the text spells out the code to type; false for "goal and names only" steps. */
     dictated: z.boolean().optional(),
+    /**
+     * A step done by an error made on purpose (the first lesson's "delete the quote and press Run"): a run that stops
+     * on `line` with an error whose name starts with `error` ("SyntaxError") counts the step as done, though a crash
+     * checks nothing else. Once done it stays done: putting the line back is the next step's job.
+     */
+    plannedError: z.object({ line: z.number().int().min(1), error: z.string().min(1) }).strict().optional(),
   })
   .strict();
 

@@ -2862,8 +2862,9 @@ for _a in (7, 15):
     _pr = [_l.strip() for _l in _out.getvalue().splitlines() if _l.strip()]
     assert not (_v is None and _pr), ('Your recipe printed ' + _pr[0] + ' but handed back `None`: nothing came '
                                       'back. Hand the answer back with `return`, not `print`. ' + _ev + '.')
-    assert _v is not None, ('Your recipe handed back `None`, so nothing came back. Add a `return` line that hands '
-                            'back twice the affinity. ' + _ev + '.')
+    assert _v is not None, ('Your recipe handed back `None`, Python' + chr(39) + 's word for nothing: no `return` line '
+                            'hands a number back. End the recipe with a `return` line that hands back twice the '
+                            'affinity. ' + _ev + ': it should hand back ' + str(2 * _a) + '.')
     assert type(_v).__name__ == 'int', ('Your recipe hands back text, not a number. Take the quotes off. ' + _ev
                                         + '.')
     _seen.append(_v)
@@ -2936,13 +2937,15 @@ assert not _err, _stop(_err, _tried)
 for _var, _hero, _row in _HEROES:
     _mx, _mn = _get(_ns.get(_var), 'max_mana'), _mana_of(_ns, _var)
     _want = 2 * _new[_var]
-    assert _mx == _want, ('Your max mana didn' + chr(39) + 't change to match the affinity. Hand over the sheet'
-                          + chr(39) + 's own affinity, `max_mana_for(' + _var
-                          + '["abilities"]["magical_affinity"])`, not a typed number. ' + _did(_tried, ': ' + _hero
-                          + chr(39) + 's max stayed ' + _lit(_mx) + ', not ' + str(_want)))
-    assert _mn == _want, ('Your mana didn' + chr(39) + 't change to match the max. Set `"mana"` from the sheet, `'
-                          + _var + '["mana"] = ' + _var + '["max_mana"]`, not a typed number. '
-                          + _did(_tried, ': ' + _hero + chr(39) + 's mana stayed ' + _lit(_mn)))
+    # The evidence names this hero's one test number and the max it should give: no chain of numbers to work out.
+    _one = 'a test affinity of ' + str(_new[_var]) + ' for ' + _hero
+    assert _mx == _want, (_hero + chr(39) + 's max mana didn' + chr(39) + 't change with the affinity. Hand over the '
+                          'sheet' + chr(39) + 's own affinity: `max_mana_for(' + _var
+                          + '["abilities"]["magical_affinity"])`, not a typed number. ' + _did(_one, ': the max should '
+                          'be ' + str(_want) + ', but it stayed ' + _lit(_mx)))
+    assert _mn == _want, (_hero + chr(39) + 's mana didn' + chr(39) + 't change to match the max. Set `"mana"` from '
+                          'the sheet, `' + _var + '["mana"] = ' + _var + '["max_mana"]`, not a typed number. '
+                          + _did(_one, ': the mana should be ' + str(_want) + ', but it stayed ' + _lit(_mn)))
 _ns2, _ls2, _err2, _miss2 = _rerun([('max_mana_for', 'def max_mana_for(affinity):\n    return affinity * 2 + 1')])
 assert not _err2, _stop(_err2, 'a test version of `max_mana_for`')
 for _var, _hero, _row in _HEROES:
@@ -3005,9 +3008,9 @@ _tried = 'a test affinity of 8 for Gearshift'
 _ns, _ls, _err, _miss = _rerun([('gearshift', 'gearshift["abilities"]["magical_affinity"] = 8')])
 assert not _err, _stop(_err, _tried)
 _left = _get(_ns.get('gearshift'), 'mana')
-assert _left == 10, ('His mana didn' + chr(39) + 't change to match the sheet. Read the old mana and take 6 from it: '
-                     '`roster[1]["mana"] - 6`, not a typed number. '
-                     + _did(_tried, ': his mana ended at ' + _lit(_left) + ', not 10'))
+assert _left == 10, ('Your line under `# 6.` sets Gearshift' + chr(39) + 's mana to a typed number. Read his old mana '
+                     'and take 6 from it: `roster[1]["mana"] - 6`, not a typed number. '
+                     + _did(_tried, ', so his mana started at 16: it should end at 10, but it ended at ' + _lit(_left)))
 _tried = 'Gearshift at 11 mana right before the cast'
 _ns, _ls, _err, _miss = _rerun([('1:gearshift["mana"]|roster[1]["mana"]', 'gearshift["mana"] = 11')])
 assert not _err, _stop(_err, _tried)
@@ -3122,8 +3125,9 @@ PROJECT_4P = dict(
         "A ledger is a record book. In mine, every hero's sheet has the same keys, the way every row of a table in "
         "math class has the same columns. Then the same kind of line reads any hero: "
         "`oogrish[\"abilities\"][\"wisdom\"]` is 17, and the same keys work on any sheet that has a wisdom.\n"
-        "I test your code with other numbers, like testing a formula in math with other numbers: other affinities, "
-        "and another recipe. Your own sheets don't change.\n"
+        "I test your code with other affinities, like testing a formula in math class with other numbers. So every "
+        "max mana has to come from your recipe and the sheet, never a number you typed. My tests don't change your "
+        "code.\n"
         "At the Institute, every record had the same keys in the same places. A record nobody can read is a diary, "
         "yes?"
     ),
@@ -3153,8 +3157,8 @@ PROJECT_4P = dict(
         dict(
             id="max-mana-recipe",
             text=(
-                "B. Under `# 2.`, write the recipe `max_mana_for(affinity)` again. It hands back (returns) twice the "
-                "affinity."
+                "B. Under `# 2.`, write the recipe `max_mana_for(affinity)` again, as in Unit 3: a `def` line that "
+                "ends in `:`, then an indented `return` line that hands back (returns) twice the affinity."
             ),
             dictated=False,
             hints=[
@@ -3171,8 +3175,8 @@ PROJECT_4P = dict(
             text=(
                 "B. Two moves, under `# 3.`:\n"
                 "1. Take the `#` off the start of Oogrish's two lines.\n"
-                "2. Under them, set `\"max_mana\"` and `\"mana\"` the same way for Gearshift, Bomb Shell and Lucky, "
-                "each with its own affinity."
+                "2. Under them, copy those two lines three times: for Gearshift, Bomb Shell and Lucky. In each copy, "
+                "change every `oogrish` to that hero's sheet name."
             ),
             dictated=False,
             hints=[

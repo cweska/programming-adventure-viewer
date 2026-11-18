@@ -806,8 +806,9 @@ MAKE_A_SHEET = dict(
         "glossary: you look up a word, not entry number 3. In `{\"mana\": 26}`, the key `\"mana\"` holds 26. I "
         "call a dictionary a *sheet*.\n"
         "Curly braces `{ }` hold the sheet. Each line inside is a key in quotes, a colon, its value and a comma. "
-        "Run the Example: Bomb Shell's sheet.\n"
-        "Quotes on a name? A variable's name never has them: `mana = 26`. A key is text, so it does. "
+        "Read the Example: Bomb Shell's sheet. It prints 6.\n"
+        "Why do keys get quotes? A variable's name never has them: `mana = 26`. A key is text, so it does: "
+        "`\"mana\": 26`. "
         + QUOTES_RULE + " " + BOX_NOTE + "\n"
         "Gearshift's sheet. Copy the keys exactly:\n"
         "```text\nGEARSHIFT\nname               Gearshift\nmagical_affinity   10\nmax_mana           20\n"
@@ -838,8 +839,9 @@ MAKE_A_SHEET = dict(
         dict(
             id="four-keys",
             text=(
-                "Between `gearshift = {` and `}`, write one line for each key in the notes: `\"name\"`, "
-                "`\"magical_affinity\"`, `\"max_mana\"` and `\"armor_bonus\"`. Any value is fine for now, like 0."
+                "Between `gearshift = {` and `}`, write one line for each key in the notes, shaped like the Example's "
+                "`\"dexterity\": 6,`: `\"name\"`, `\"magical_affinity\"`, `\"max_mana\"` and `\"armor_bonus\"`. Any "
+                "value is fine for now, like 0."
             ),
             dictated=False,
             hints=[
@@ -854,8 +856,8 @@ MAKE_A_SHEET = dict(
         dict(
             id="fill-the-values",
             text=(
-                "Change each value to Gearshift's own. His sheet is in Mar'tu's words: his name goes in quotes, and "
-                "the three numbers get no quotes."
+                "Change each value to Gearshift's own, from the GEARSHIFT table at the end of Mar'tu's words. His "
+                "name goes in quotes. The three numbers get no quotes."
             ),
             dictated=False,
             hints=[
@@ -1149,8 +1151,8 @@ READ_BY_KEY = dict(
         dict(
             id="build-the-line",
             text=(
-                "Change line 9 so it builds `Gearshift: 20 mana` from `gearshift`. Read the name and the mana by "
-                "their keys, and glue the pieces with `+` and `str()`."
+                "Change line 9 so it builds `Gearshift: 20 mana` from `gearshift`. Glue four pieces with `+`: the "
+                "name by its key, the text `\": \"`, the mana by its key inside `str()`, then the text `\" mana\"`."
             ),
             dictated=False,
             hints=[
@@ -1691,7 +1693,7 @@ WRITE_BY_KEY = dict(
             ),
             dictated=True,
             hints=[
-                "Look at line 8, under `# 1.`: it's empty. The new line reads the old mana on the right of `=`, takes "
+                "Look at line 8, under `# 1.`: your line goes there. It reads the old mana on the right of `=`, takes "
                 "away `fire_bolt_cost`, and stores the answer on the left.",
                 "`shell[\"mana\"] = shell[\"mana\"] - 5` reads 24, takes 5 away, and puts 19 back under the key.",
                 "Write `gearshift[\"mana\"] = gearshift[\"mana\"] - fire_bolt_cost` under `# 1.`",
@@ -2262,7 +2264,8 @@ KEY_FROM_A_BOX = dict(
                     {"spell_name": "Glow"},
                     ev='a test spell name, `spell_name = "Glow"`',
                     ok="_ends_in(_p, 2)",
-                    fix="Use the variable `spell_name` as the key, so your line works for any spell name.",
+                    fix="Your line doesn't use `spell_name` yet. Put the variable `spell_name` in the square brackets, "
+                        "with no quotes, so your line works for any spell name.",
                     said="'the line should end in 2, the cost of Glow'",
                     what="spell name",
                 ),

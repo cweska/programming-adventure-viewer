@@ -410,6 +410,19 @@
           "messageContains": "one before"
         },
         {
+          "why": "the newest two in the wrong order: [-2] then [-1]",
+          "code": [
+            "chalk_wall = [48, 48, 47, 46, 44, 41, 37]",
+            "# 1. Print the oldest gap.",
+            "print(chalk_wall[0])",
+            "# 2. Newest, then the one before.",
+            "print(chalk_wall[-2])",
+            "print(chalk_wall[-1])"
+          ],
+          "failsAt": 2,
+          "messageContains": "the gap before the newest first"
+        },
+        {
           "why": "-1 written as 1 from the end of the line: [1] and [2]",
           "code": [
             "chalk_wall = [48, 48, 47, 46, 44, 41, 37]",
@@ -771,6 +784,23 @@
           ],
           "failsAt": 2,
           "messageContains": "Old marks go first"
+        },
+        {
+          "why": "square brackets around the join: a list holding one list",
+          "code": [
+            "chalk_wall = [48, 48, 47, 46, 44, 41, 37]",
+            "# 1. Append your guess.",
+            "chalk_wall.append(33)",
+            "print(chalk_wall)",
+            "",
+            "old_marks = [48, 48, 47, 46]",
+            "new_marks = [44, 41, 37]",
+            "# 2. Join both pages with +.",
+            "both_pages = [old_marks + new_marks]",
+            "print(both_pages)"
+          ],
+          "failsAt": 2,
+          "messageContains": "Take off the outer `[ ]`"
         },
         {
           "why": "a list of two lists",
@@ -1638,7 +1668,7 @@
             "print(chalk_wall)"
           ],
           "failsAt": 1,
-          "messageContains": "Leave the wall's line"
+          "messageContains": "Keep Lucky's wall on line 3"
         },
         {
           "why": "the wall retyped, plus a do-nothing change by position",
@@ -1652,7 +1682,7 @@
             "print(chalk_wall)"
           ],
           "failsAt": 1,
-          "messageContains": "Leave the wall's line"
+          "messageContains": "Keep Lucky's wall on line 3"
         }
       ],
       "notes": "meta: starter_level=S4; path=SC; skills=list-index; solo=false; dictates=; foreign_names=party_colors\nSpec flags CP1 [D]; the text gives the goal and the name ('Fix the 74 by its position. Don't retype the list.') but not the position, which is the point of the step, so it is marked dictated=False. Checks: the wall is right (with the off-by-one, `==`, `.append()` and text slips named), an Assign to a Subscript of `chalk_wall` (a retyped list or an edited starter line fails with 'Fix it by position. Lists often come from somewhere you can't retype, like `caster` in the campaign', spec WA; teacher ruling), a rerun with Lucky's line put back (so an edited line 3 plus a do-nothing `chalk_wall[0] = 48` fails), and the print shows the fixed wall. Campaign link: `caster[\"mana\"] = ...` in `cast_spell`, the same name-brackets-equals shape."

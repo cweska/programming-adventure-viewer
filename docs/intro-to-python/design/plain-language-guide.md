@@ -92,6 +92,17 @@ asking: *could a literal reader do this without guessing?*
 10. **Keep jokes, lore and extra numbers out of steps.** A story word the step needs gets a short gloss: "a coil
     (one roll of rope)".
 11. **Projects keep their part letters** ("A.", "B.", "C."), which match the starter's `# A.` notes.
+12. **Point only at what is on screen, and say where it is.** An exercise's Example has no Run button: write "Read the
+    Example", never "Run the Example". "His sheet is in Mar'tu's words" becomes "the GEARSHIFT table at the end of
+    Mar'tu's words". Data the step needs and the student can't see on a phone (Mar'tu's block is screens up) goes in
+    the step: "store the other six gaps, 48 47 46 44 41 37".
+13. **"The same way", "again", "shape" and "each with its own" are not directions.** Name the frame: the line to copy
+    and what changes in each copy ("copy those two lines three times. In each copy, change every `oogrish` to that
+    hero's sheet name"), or the pieces in order ("Glue four pieces with `+`: the name by its key, the text `": "`, ...").
+    A blank editor gets the shape in words ("a `def` line that ends in `:`, then an indented `return` line").
+14. **Say which line, every time.** "You never touched that line" reads as the line just changed: write "you never
+    touched line 7". A step that edits in place names the line that holds the thing ("puts 47 at the position of the
+    74 on line 3"), not only the empty line where the new code goes.
 
 **Names on screen.** Use exactly these words.
 
@@ -133,7 +144,8 @@ room for the definition, the analogy and the example, cut story and jokes. Don't
 4. **Teach one new idea per exercise.** Remind students of an old idea in a few words ("Quotes mean these exact
    letters.").
 5. **Say where the analogy breaks, every time it matters.** `=` is not math's equal sign. `x = x - 3` is fine in
-   Python. `*` is ×. Python is not a spreadsheet. `%` is not percent.
+   Python. `*` is ×. `%` is not percent. Python is not a spreadsheet, and a comparison only helps if the student knows
+   the thing: name one they use and what it does ("Python is not like Google Sheets, which updates by itself").
 6. **Never explain with a later idea.** No "box", "value" or "name" in 1A. No "recipe" or "function" before Unit 3.
    In Units 1–2, "variable" appears only as "box (variable)".
 7. **No stray numbers.** Don't put a wrong number in front of the right one ("He says 30. It is 3."), and don't put
@@ -206,6 +218,14 @@ Teach this routine everywhere (Mar'tu, hints, takeaways, the glossary, the Chalk
 Replace "Read the last line first. Then look at the line it names." with this routine. In Python's *full* message
 (and in the campaign), the last line is still the one to read first. Unit 2's When Spells Fizzle says so.
 
+Two things keep the routine true for a literal reader:
+- **When Python's last line guesses wrong**, the box says so, right after what happened: `74 = 47`, `"name" = "Lucky"`
+  inside a sheet and `hour_2 = 48, hour_3 = 47` all get "Maybe you meant '=='", so the box adds "Python's last line
+  guesses `==`, but that guess is wrong here." The fixed line stays last.
+- **The banner names the line the fix goes on.** When the mistake is on another line than the one Python stopped at
+  (the value with no name on line 4, above `print(hero)`), it says "The mistake is on line 4." When the fix goes above
+  but no line can be named (a box no line makes yet), it says "The mistake is on line 5 or a line above it."
+
 ### 4.3 Check messages (the assert message strings)
 
 1. **Start with what happened to their line**, in plain words: "Line 4 is just `"Lucky"` on its own." Don't start
@@ -228,6 +248,16 @@ Replace "Read the last line first. Then look at the line it names." with this ro
    letters. No quotes means look inside the box with this label.*
 9. **Never repeat a student's own creative value** (a hero they chose). Quote only the starter's text and the
    task's own values.
+10. **Name the slip they really made, and never contradict the screen.** A line with brackets around the join does
+    join the lists, so "doesn't join the two lists yet" is false: "Your line puts square brackets around the join".
+    The class's common slips get their own branch: a box's name in quotes ("Your line shows the word watch_keeper,
+    because of the quotes"), a list retyped, a number typed in.
+11. **A line that is right so far but stops early** says so, then the next thing to type: "Your line stops after
+    `Lucky has`. Now add the mana: ...". Never "a space is missing" for the space the next piece brings.
+12. **Evidence needs no math to read.** Name one test number and the answer it should give: "Mar'tu tested it with a
+    test affinity of 4 for Gearshift: the max should be 8, but it stayed 20." Not four test numbers for four heroes.
+13. **Say what Python's words mean.** `None` is "`None`, Python's word for nothing", with why it came back ("no
+    `return` line hands a number back"). No idioms in messages either ("`print` and all", "74 and all").
 
 Before (glue-words, step 1):
 ```text
@@ -280,9 +310,27 @@ Mar'tu tested your line with a made-up name, Tester, and it still said Lucky. Do
 - **`takeaway`:** one line that gives the rule in plain words.
 - **Predict `q` and `explain`:** don't hide a task in them. "Now add `print(48 / 2)` and run" becomes "Try it if
   you like (it's not a step): …".
+- **`pair_talk`:** it shows above Mar'tu's Example, so name where the thing to talk about is ("the Predict first box,
+  just above ▶ Run"), and never add a task in it ("Then both add `print(48 / 2)`").
 - **Another way:** labels are plain words with no `[[links]]`. Every angle follows §3.
 - **Chalk Notes** (cheatsheet `concept`, `note`): translate Python's words. *Syntax* means grammar, `str` means
   text, `int` means a whole number, *concatenate* means glue.
+
+### 4.8 The error box (site code: `explain.ts`)
+
+The box Python's crash opens follows §4.3 too, and the same reps read it literally:
+1. **One fix, from the step's own names.** Never "If it's a box, use `armor_bonus`. If it's text, put quotes" when
+   Mar'tu's version shows which (`weapon = "sword"`). A note step gets the `#` fix; a step that shows words gets
+   `print("...")`.
+2. **Never a fix from a later lesson** ("write the recipe with `def`" for `append(33)`): `.append()` needs the list's
+   name and a dot in front.
+3. **Never a code example that is wrong when copied as it reads**: `chalk_wall = "value"` replaces the whole wall, and
+   `hour_2 = 48, hour_3 == 47` is nonsense.
+4. **Never send a student hunting for what isn't there.** "Look for a missing quote or a missing parenthesis" on
+   `lantern_count lantern_price`, `chalk_wall = [] 48, 48` or `_ - =` gets the row for that slip: two names side by
+   side (algebra's LP), items after the `]`, marks with no `print` and no quotes.
+5. **Translate Python's words**: never leave `NoneType` as the explanation (`print(...) + more` gets "the pieces after
+   the `)` that closes `print( )` are outside it").
 
 ---
 
@@ -481,8 +529,8 @@ keep the others for Another way.
 - *Math:* a formula. area = length × width works for any rectangle, but the answer 12 only works for one. In math
   class, "show your work".
 - *Everyday:* an online cart recalculates from quantity × price when you press Update. Run is your Update button.
-- *Breaks:* Python is not a spreadsheet. The total changes only when you press Run again, and only lines below the
-  change see the new number.
+- *Breaks:* Python is not like Google Sheets, which updates by itself. The total changes only when you press Run
+  again, and only lines below the change see the new number.
 
 **13. How many? How much is one?**
 - *First taught:* U1 · Math and Glue · `what-each-number-means`; per hour, U1 · The Night Watch Ledger.
@@ -813,8 +861,8 @@ After:  In math, 3 × 4 means 4 + 4 + 4. Python does the same with text: `"█" 
    `example_output`; `partials`; `wrong_answers` `code`; bonus `solution`; `snippet`; predict `code` and `choices`;
    quiz `code`, `fix`, `answer`, `accept`, `expected_output`, `lines` and `distractors`; cheatsheet `code` and
    `output`). Also never change check logic (conditions, names, order), any `id`, `names`, `pick`, `introduces`,
-   `preview`, `dictated`, `support`, `solo`, `explainer`, `engine`, `stdin` or `assemble`, or the number and order
-   of steps, hints and choices.
+   `preview`, `dictated`, `planned_error`, `support`, `solo`, `explainer`, `engine`, `stdin` or `assemble`, or the
+   number and order of steps, hints and choices.
 4. **The Help ladder.**
    - (a) Keep the number and order of hints in every step and side quest.
    - (b) The first code span in the last hint is the source for Start me off: the site takes it up to the first `(`
@@ -913,6 +961,11 @@ Writers who meet these should leave them and report them. They need site code or
   "Where you saw this in the game".
 - **S10.** SOLO pass lines promise "On your map: ✓ …", but no skills map is on screen yet.
 - **S11.** Oogrish's nudge says "Read the last line first." It should use the reading routine (§4.2).
+- **Done in the second read-through (site code, no writer action):** S2's banner wording; a step done by an error made
+  on purpose (`planned_error`, FORMAT.md: the first lesson's step 2 ticks on the planned break and stays ticked); the
+  banner and "Same error" name the slip's own line; "That's part of this step" only for a line that was there from
+  the start; Start me off goes "in place of" the line a "Change line 9" step names, and says so; the error-box rows
+  in §4.8.
 - **S12. Structure.**
   - Steps to split: `what-an-error-looks-like` step 2; `name-and-value-again` step 1; the ledger's steps 4 and 7.
   - `keyboard-symbols` comes before `print` and `#` are taught.

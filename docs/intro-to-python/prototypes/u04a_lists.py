@@ -556,7 +556,8 @@ HOW_WOULD_YOU_STORE_IT = dict(
             id="run-a-try",
             text=(
                 "Two moves:\n"
-                "1. On line 4, under the two notes, type a way to keep the other six gaps. Any way you like.\n"
+                "1. On line 4, under the two notes, store the other six gaps, 48 47 46 44 41 37, any way you like. "
+                "Line 1 shows one way to keep one gap.\n"
                 "2. Press Run. If Python stops with an error, read the error in the Console and try again."
             ),
             dictated=False,
@@ -651,7 +652,7 @@ MAKE_THE_WALL = dict(
         "In math class, square brackets can group numbers, like parentheses. In Python they never group math. "
         "They make a list.\n"
         "Numbers in a list get no quotes. Text keeps its quotes, like `[\"gold\", \"teal\"]` in the Example.\n"
-        "```text\n chalk_wall = [48, 48, 47, ...]\n             ^   ^   ^\n   square bracket  commas\n```"
+        "```text\n chalk_wall = [48, 48, 47, ...]\n              ^  ^   ^\n   square bracket  commas\n```"
     ),
     introduces=["node:List"],
     example='party_colors = ["gold", "teal"]\nprint(party_colors)\n',
@@ -890,8 +891,12 @@ OLDEST_CHECK = follows(
 NEWEST_CHECK = follows(
     "the newest two gaps follow the wall (counting from the end)",
     {"chalk_wall": W5},
-    f"_said({_W}[-1]) and _said({_W}[-2])",
+    f"_said({_W}[-1]) and _said({_W}[-2]) and _in_order({_W}[-1], {_W}[-2])",
     rules=[
+        # Both shown, but the one before the newest first: the step asks for the newest, then the one before it.
+        (f"_said({_W}[-1]) and _said({_W}[-2])",
+         "Your code shows the gap before the newest first. Show the newest gap first, `chalk_wall[-1]`, then the one "
+         "before it, `chalk_wall[-2]`.", None),
         (f"not _said({_W}[-1]) and _said({_MINE}[-1])",
          "You typed the newest gap instead of reading it from the list. `chalk_wall[-1]` is the last item of a wall "
          "of any length.",
@@ -904,6 +909,10 @@ NEWEST_CHECK = follows(
     ],
     fix="Your code shows the newest gap, but not the one before it. Show that one too, counting from the end.",
     ev=WALL_EV5,
+    # Where each value first shows (line, then place in the line), so "newest, then the one before" can be checked.
+    pre=("_spots = lambda _v: [(_i, _m.start()) for _i, _l in enumerate(_p) if '[' not in _l for _m in "
+         "_re.finditer(r'(?<![\\w.-])' + _re.escape(str(_v)) + r'(?![\\w.])', _l)]\n"
+         "_in_order = lambda _a, _b: bool(_spots(_a)) and bool(_spots(_b)) and min(_spots(_a)) < max(_spots(_b))\n"),
     crash=[("_e.startswith('IndexError')",
             "Your positions fit only 7 gaps. Count from the end with a minus, so they fit a wall of any length.")],
     own=(
@@ -1092,6 +1101,9 @@ FIRST_IS_ZERO = dict(
              message_contains="typed the newest gap"),
         dict(why="only the newest, not the one before", code=_zero(newest="print(chalk_wall[-1])"), fails_at=2,
              message_contains="one before"),
+        dict(why="the newest two in the wrong order: [-2] then [-1]",
+             code=_zero(newest="print(chalk_wall[-2])\nprint(chalk_wall[-1])"), fails_at=2,
+             message_contains="the gap before the newest first"),
         dict(why="-1 written as 1 from the end of the line: [1] and [2]",
              code=_zero(newest="print(chalk_wall[1])\nprint(chalk_wall[2])"), fails_at=2, message_contains="`chalk_wall[-1]`"),
         dict(why="-7 for the oldest: fits 7 gaps only", code=_zero(first="print(chalk_wall[-7])"), fails_at=1,
@@ -1191,6 +1203,9 @@ JOIN_CHECK = follows(
          "`old_marks + new_marks`.", None),
         ("_R('both_pages') == [[50, 49], [45, 40, 36]]", "Your line makes a list that holds two lists. `+` joins "
          "them into one list: `old_marks + new_marks`.", None),
+        ("_R('both_pages') == [[50, 49, 45, 40, 36]]", "Your line puts square brackets around the join, so "
+         "`both_pages` is a list that holds one list. Take off the outer `[ ]`: `both_pages = old_marks + new_marks`.",
+         None),
         ("type(_R('both_pages')).__name__ == 'list' and _R('both_pages')[-1:] == [[45, 40, 36]]", "`.append()` put "
          "the whole list `new_marks` inside as one item. `+` joins two lists into one: `old_marks + new_marks`.", None),
         ("_R('both_pages') == [] and _named", Code("'`' + _named[0] + '` holds the joined list, but this task' + "
@@ -1411,6 +1426,8 @@ NEW_CHALK_MARK = dict(
              message_contains="typed in the numbers for `both_pages`"),
         dict(why="new marks first", code=_mark(pages="both_pages = new_marks + old_marks"), fails_at=2,
              message_contains="Old marks go first"),
+        dict(why="square brackets around the join: a list holding one list",
+             code=_mark(pages="both_pages = [old_marks + new_marks]"), fails_at=2, message_contains="Take off the outer `[ ]`"),
         dict(why="a list of two lists", code=_mark(pages="both_pages = [old_marks, new_marks]"), fails_at=2,
              message_contains="two lists"),
         dict(why="append used to join: hands back None", code=_mark(pages="both_pages = old_marks.append(new_marks)"),
@@ -1983,9 +2000,10 @@ BY_POSITION = (
     "_set = [_n for _n in _ast.walk(_ast.parse(_source)) if type(_n).__name__ == 'Assign' "
     "and any(type(_t).__name__ == 'Subscript' and type(_t.value).__name__ == 'Name' "
     "and (_t.value.id == 'chalk_wall' or globals().get(_t.value.id) is chalk_wall) for _t in _n.targets)]\n"
-    "assert _set, ('You fixed the wall without a line that changes it by position. Fix it by position. Lists '\n"
-    "    'often come from somewhere you can' + chr(39) + 't retype, like `caster` in the campaign: `chalk_wall[`, '\n"
-    "    'the position, `] = 47` on line 5.')",
+    "assert _set, ('Your code changes the wall without a position. Fix it by position. Lists often come from '\n"
+    "    'somewhere you can' + chr(39) + 't retype, like `caster` in the campaign: the game made it, not you. '\n"
+    "    'Press Reset code to get the 74 back. Then, on line 5, type `chalk_wall[`, the 74' + chr(39) + 's position, '\n"
+    "    'and `] = 47`.')",
 )
 
 # The fix by position must do the mending: with Lucky's line put back (74 and all), the wall still ends right.
@@ -1994,8 +2012,8 @@ FIX_DOES_IT = follows(
     "the fix by position mends Lucky's 74",
     {"chalk_wall": [48, 48, 74, 46, 44, 41, 37]},
     f"_R('chalk_wall') == {WALL!r}",
-    fix="You changed the wall's line, not the 74's position. Leave the wall's line as it was, 74 and all, and fix "
-        "the 74 on line 5.",
+    fix="Your code fixes the 74 by typing the wall's numbers, not by its position. Keep Lucky's wall on line 3 as he "
+        "wrote it, with the 74, and put 47 at the 74's position on line 5.",
     ev="Mar'tu tested your code with the 74 put back",
     saw="'the wall still read ' + _sh(_R('chalk_wall'))",
 )
@@ -2018,8 +2036,8 @@ FIX_A_MARK = dict(
         dict(
             id="fix-by-position",
             text=(
-                "On line 5, the empty line under `# Fix it by position here:`, change the 74 to 47 by its position. "
-                "Don't retype the list."
+                "On line 5, the empty line under `# Fix it by position here:`, write one line that puts 47 at the "
+                "position of the 74 on line 3, the way the Example puts violet at position 1. Don't retype line 3."
             ),
             dictated=False,
             hints=[
@@ -2096,9 +2114,9 @@ FIX_A_MARK = dict(
         dict(why="right place, wrong mark", code=_fix("chalk_wall[2] = 46"), fails_at=1, message_contains="right position"),
         dict(why="Lucky's line edited by hand, plus a do-nothing change by position to pass",
              code=FIX_STARTER.replace(TYPO_LINE, WALL_LINE).replace("\nprint", "chalk_wall[0] = 48\nprint"), fails_at=1,
-             message_contains="Leave the wall's line"),
+             message_contains="Keep Lucky's wall on line 3"),
         dict(why="the wall retyped, plus a do-nothing change by position", code=_fix("chalk_wall = [48, 48, 47, 46, 44, 41, 37]\n"
-             "chalk_wall[0] = 48"), fails_at=1, message_contains="Leave the wall's line"),
+             "chalk_wall[0] = 48"), fails_at=1, message_contains="Keep Lucky's wall on line 3"),
     ],
     notes=(
         meta(starter_level="S4", path="SC", skills="list-index", solo="false", dictates="",

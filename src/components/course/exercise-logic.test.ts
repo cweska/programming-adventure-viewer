@@ -9,6 +9,8 @@ import {
   assemblesBySteps,
   checkpointHeading,
   crashAim,
+  crashFixLine,
+  crashLineInStarter,
   crashLineSwitchedOff,
   effectiveSupport,
   exerciseIndexFromHash,
@@ -27,7 +29,10 @@ import {
   stdinBoxText,
   stepNoun,
   stripComment,
+  sameErrorLook,
   stuckCheckpointId,
+  switchOffLine,
+  withPlannedErrors,
   titleFromId,
   usesInput,
 } from "./exercise-logic";
@@ -442,5 +447,65 @@ describe("the card sort (cardSortMarks)", () => {
     expect(cardSortMarks(sort, [1, 0])).toEqual([true, true]);
     expect(cardSortMarks(sort, [0, 0])).toEqual([false, true]);
     expect(cardSortMarks(sort, [null, null])).toEqual([false, false]);
+  });
+});
+
+describe("the crash banner's words (the second plain-language read-through)", () => {
+  it("says where the fix goes: the slip's own line, or that line and the lines above it", () => {
+    expect(crashFixLine(5, 4)).toBe("The mistake is on line 4. Fix line 4, then press Run again.");
+    expect(crashFixLine(5, null, true)).toBe("The mistake is on line 5 or a line above it. Fix it, then press Run again.");
+    expect(crashFixLine(5, 4, true)).toBe("The mistake is on line 4. Fix line 4, then press Run again.");
+    expect(crashFixLine(5)).toBe("Fix line 5, then press Run again.");
+    expect(sameErrorLook(5, 4)).toBe("Look closely at line 4.");
+    expect(sameErrorLook(5, null, true)).toBe("Look closely at line 5 and the lines above it.");
+    expect(sameErrorLook(5)).toBe("Look closely at line 5.");
+    expect(sameErrorLook(null)).toBe("Look closely at the line number in Python's last line.");
+  });
+
+  it("says 'part of this step' only for a line that was there from the start", () => {
+    expect(switchOffLine("Step", 4, true)).toBe(
+      "That's part of this step. Read the box in the Console first: your steps use what it says. Then put # at the very start of line 4 and press Run again.",
+    );
+    expect(switchOffLine("Step", 1, false)).toBe("Read the box in the Console. Then put # at the very start of line 1 and press Run again.");
+    expect(crashLineInStarter('print(mana_cost)\nx = 1\n', 1, "print(mana_cost)\n")).toBe(true);
+    expect(crashLineInStarter("Night watch at the cabin.\n", 1, 'print("Steady.")\n')).toBe(false);
+    expect(crashLineInStarter("", 1, "x = 1\n")).toBe(false);
+  });
+});
+
+describe("withPlannedErrors: a step done by an error made on purpose", () => {
+  const checkpoints = [
+    { id: "press-run" },
+    { id: "break-it", plannedError: { line: 1, error: "SyntaxError" } },
+    { id: "close-the-quote" },
+  ];
+  const crash = { crashed: true, firstFailing: 0, allPassed: false, checkpoints: checkpoints.map(({ id }) => ({ id, passed: false, message: "Missing quote" })) };
+
+  it("counts the planned crash as the step, and only that crash", () => {
+    const done = withPlannedErrors(checkpoints, crash, { line: 1, error: "SyntaxError: unterminated string literal (detected at line 1)" }, ["press-run"]);
+    expect(done.planned).toEqual(["break-it"]);
+    expect(done.grade.checkpoints.map((row) => row.passed)).toEqual([false, true, false]);
+    expect(done.grade.allPassed).toBe(false);
+    expect(withPlannedErrors(checkpoints, crash, { line: 2, error: "SyntaxError: x" }, []).planned).toEqual([]);
+    expect(withPlannedErrors(checkpoints, crash, { line: 1, error: "NameError: name 'x' is not defined" }, []).planned).toEqual([]);
+  });
+
+  it("keeps the step done once it was (no ↺ while the next step puts the line back)", () => {
+    const ran = {
+      crashed: false,
+      firstFailing: 1,
+      allPassed: false,
+      checkpoints: [
+        { id: "press-run", passed: true, message: "" },
+        { id: "break-it", passed: false, message: "Your line still shows `Shield up.`" },
+        { id: "close-the-quote", passed: false, message: "Change the `.` to `!`" },
+      ],
+    };
+    const kept = withPlannedErrors(checkpoints, ran, null, ["press-run", "break-it"]);
+    expect(kept.grade.firstFailing).toBe(2);
+    expect(kept.grade.checkpoints[1].passed).toBe(true);
+    expect(kept.planned).toEqual([]);
+    // Never done before: the step's own check speaks, as before.
+    expect(withPlannedErrors(checkpoints, ran, null, ["press-run"]).grade).toBe(ran);
   });
 });
