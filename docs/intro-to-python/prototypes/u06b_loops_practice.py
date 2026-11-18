@@ -1622,8 +1622,8 @@ CHALLENGE_FORECAST = dict(
         "A stretch, from a blank page. First build `shrinks`, how much each gap shrank, with a loop over the "
         "wall. Then forecast from the newest gap with a `while` loop, and count the bursts. A *gap* is the hours "
         "between two bursts, the blasts from the leylines.\n"
-        "In Lesson 5B, my forecast started from numbers I typed: `gap = 37` and `shrink = 5`. Gearshift's visor "
-        "dimmed. \"Typed numbers go stale. Read them off the wall.\"\n"
+        "In the lesson While the Clock Ticks, my forecast started from numbers I typed: `gap = 37` and "
+        "`shrink = 5`. Gearshift's visor dimmed. \"Typed numbers go stale. Read them off the wall.\"\n"
         "I test your code with other walls. So read every number from the wall, yes?"
     ),
     names=["chalk_wall", "shrinks", "gap", "shrink", "bursts"],
@@ -1663,8 +1663,9 @@ CHALLENGE_FORECAST = dict(
             hints=[
                 "Look below your shrinks. Three names come before the loop: `gap` starts at the newest gap, "
                 "`chalk_wall[-1]`, and `shrink` is one bigger than `shrinks[-1]`. What does the count start at?",
-                "It's Mar'tu's forecast from Lesson 5B, with every start read off the wall. Each pass: take the "
-                "shrink off the gap, make the shrink 1 bigger, add 1 to the count, and print the gap.",
+                "It's Mar'tu's forecast from the lesson While the Clock Ticks, with every start read off the wall. "
+                "Each pass: take the shrink off the gap, make the shrink 1 bigger, add 1 to the count, and print "
+                "the gap.",
                 "With other names:\n```python\nfuel = tank[-1]\nburn = 2\ntrips = 0\nwhile fuel > 10:\n"
                 "    fuel = fuel - burn\n    burn = burn + 1\n    trips = trips + 1\n    print(fuel)\n"
                 "print(trips)\n```\n`fuel` changes every pass, so the loop can end. `trips` prints once, after it.",
@@ -1711,8 +1712,8 @@ CHALLENGE_FORECAST = dict(
             angle="campaign",
             label="You've seen this",
             text=(
-                "In Lesson 5B, Mar'tu's forecast started from `gap = 37` and `shrink = 5`, typed in. Yours reads both "
-                "off the wall, so a new gap on the wall gives a new forecast."
+                "In the lesson While the Clock Ticks, Mar'tu's forecast started from `gap = 37` and `shrink = 5`, "
+                "typed in. Yours reads both off the wall, so a new gap on the wall gives a new forecast."
             ),
         ),
     ],

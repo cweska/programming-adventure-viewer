@@ -1635,8 +1635,8 @@ QC5_A_QUESTIONS = _qc_questions(
         "print, every item up to the match, and the last match. The right one is authored third.",
     ),
     (
-        "This loop should print how much each gap shrank. Which goes in the blank, so `wall[i - 1]` is always a "
-        "gap on the wall?",
+        "This loop should print how much each gap shrank. Which goes in the blank, so each pass compares a gap "
+        "with the gap just before it, from the second gap to the last, with no error?",
         "wall = [48, 47, 44, 37]\nfor i in ___:\n    print(wall[i - 1] - wall[i])\n",
         ["range(len(wall))", "len(wall)", "range(1, len(wall) + 1)", "range(1, len(wall))"],
         3,
@@ -1648,8 +1648,8 @@ QC5_A_QUESTIONS = _qc_questions(
             2: "The last `i` is 4, and `wall[4]` is past the end of the wall: IndexError.",
         },
         (
-            "`range(1, len(wall))` gives 1, 2 and 3, so `i - 1` is always on the wall. The shrinks are 1, 3 and "
-            "7: the decay is speeding up."
+            "`range(1, len(wall))` gives 1, 2 and 3, so each pass compares a gap with the one just before it, from "
+            "the second gap to the last. The shrinks are 1, 3 and 7: the decay is speeding up."
         ),
         "Added (objective 5, range-len and neighbors), in the `[i - 1]` form the lessons and the cheatsheet "
         "practiced (teacher ruling on the Unit 6 reviews: not an untaught look-ahead). Distractors: the full "
@@ -1710,8 +1710,8 @@ QC5_B_QUESTIONS = _qc_questions(
         "right one is authored second.",
     ),
     (
-        "This loop should print how much more ore each day used. Which goes in the blank, so `ore[i - 1]` is "
-        "always a day in the list?",
+        "This loop should print how much more ore each day used. Which goes in the blank, so each pass compares a "
+        "day with the day just before it, from the second day to the last, with no error?",
         "ore = [2, 3, 5, 8]\nfor i in ___:\n    print(ore[i] - ore[i - 1])\n",
         ["range(1, len(ore))", "range(len(ore))", "len(ore)", "range(1, len(ore) + 1)"],
         0,
@@ -1723,8 +1723,8 @@ QC5_B_QUESTIONS = _qc_questions(
             3: "The last `i` is 4, and `ore[4]` is past the end of the list: IndexError.",
         },
         (
-            "`range(1, len(ore))` gives 1, 2 and 3, so `i - 1` is always in the list. The rises are 1, 2 and 3: "
-            "Bomb Shell burns more ore every day."
+            "`range(1, len(ore))` gives 1, 2 and 3, so each pass compares a day with the one just before it, from "
+            "the second day to the last. The rises are 1, 2 and 3: Bomb Shell burns more ore every day."
         ),
         "Form B of stop-one-early, in the same `[i - 1]` form. The right one is authored first.",
     ),

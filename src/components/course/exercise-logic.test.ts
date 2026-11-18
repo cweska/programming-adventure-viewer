@@ -22,7 +22,9 @@ import {
   rungsShown,
   runOutcome,
   solutionUnlocked,
+  startNote,
   startTarget,
+  taskLineParts,
   stepAssemble,
   stdinBoxText,
   stepNoun,
@@ -442,5 +444,38 @@ describe("the card sort (cardSortMarks)", () => {
     expect(cardSortMarks(sort, [1, 0])).toEqual([true, true]);
     expect(cardSortMarks(sort, [0, 0])).toEqual([false, true]);
     expect(cardSortMarks(sort, [null, null])).toEqual([false, false]);
+  });
+});
+
+describe("the note under Start me off says where the line really goes (startNote)", () => {
+  const code = 'chalk_wall = [48, 47]\nfor ___ in chalk_wall:\n    # Print it as "48 hours".\n    pass\n';
+  it("names the line it replaces, or the line it goes above or under, before the student clicks in the code", () => {
+    expect(startNote(code, "print(", { line: "pass", how: "replace" }, false)).toBe("It replaces `pass`.");
+    expect(startNote(code, "print(", { line: "pass", how: "before" }, false)).toBe("It goes on a new line above `pass`.");
+    expect(startNote(code, "print(", { line: '# Print it as "48 hours".', how: "after" }, false)).toBe('It goes on a new line under `# Print it as "48 hours".`.');
+    // The player asks before it knows the start: the place is the same.
+    expect(startNote(code, "", { line: '# Print it as "48 hours".', how: "after" }, false)).toBe('It goes on a new line under `# Print it as "48 hours".`.');
+    expect(startNote(code, "", { line: "pass", how: "before" }, false)).toBe("It goes on a new line above `pass`.");
+  });
+  it("keeps the general words once the student has clicked in, or when the hint names no place", () => {
+    expect(startNote(code, "print(", { line: "pass", how: "replace" }, true)).toBe("It goes on a new line of its own.");
+    expect(startNote(code, "print(", null, false)).toBe("It goes on a new line of its own.");
+  });
+  it("says it goes at the end when the line the hint names is not in the code any more", () => {
+    expect(startNote("total = 0\nprint(total)\n", "total =", { line: "pass", how: "replace" }, false)).toBe("It goes on a new line under `print(total)`.");
+  });
+});
+
+describe("the Your task line keeps a step's numbered parts as a list (taskLineParts)", () => {
+  it("splits the lead line from the numbered parts", () => {
+    expect(taskLineParts("Two spots to fill:\n1. On line 2, replace `___`.\n2. On line 4, replace `pass`.")).toEqual({
+      lead: "Two spots to fill:",
+      parts: "1. On line 2, replace `___`.\n2. On line 4, replace `pass`.",
+    });
+  });
+  it("leaves a step with no parts whole", () => {
+    expect(taskLineParts("Change `Gearshift` on line 1.")).toEqual({ lead: "Change `Gearshift` on line 1.", parts: null });
+    // A line that only starts with a number in the middle of a sentence is not a part.
+    expect(taskLineParts("Make it 3 casts.\nThen press Run.")).toEqual({ lead: "Make it 3 casts.\nThen press Run.", parts: null });
   });
 });

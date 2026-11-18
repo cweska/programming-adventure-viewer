@@ -2119,6 +2119,12 @@ def _missing(_err):
     _m = _re.search(r"name '(\w+)' is not defined", _err)
     return _m.group(1) if _m and _err.startswith('NameError') else ''
 def _why(_err, _ev):
+    if "can't multiply sequence by non-int of type 'dict'" in _err:
+        # `return full * hero`: the whole sheet, where one number from it is meant.
+        if _re.search(r'full\s*\*\s*hero\b(?!\s*\[)', _source):
+            return ('`hero` is a whole sheet. Multiply `full` by one number from it, the mana: `hero["mana"]`.' + _ev)
+        return ('`hero` is a whole sheet. Multiply by one number from it, read by its tag (key), like '
+                '`hero["mana"]`.' + _ev)
     if 'unsupported operand' in _err and "'str' and 'int'" in _err:
         return ('Python stopped, because it multiplied before it subtracted. Put parentheses around the mana used: '
                 '`empty * (hero["max_mana"] - hero["mana"])`. It is PEMDAS: parentheses first.' + _ev)
@@ -2134,11 +2140,19 @@ def _why(_err, _ev):
     if _n == 'hero':
         return ("Python can't find `hero`, because the `def` line changed. Keep `def mana_bar(hero):` the way it "
                 "was at the start, so the sheet is called `hero` inside it." + _ev)
+    if _n in ('mana', 'max_mana', 'name'):
+        # `return full * mana`: a tag on the sheet, used as a name of its own.
+        return ('`' + _n + '` is a tag (key) on the sheet. Inside the recipe, read it from `hero`: `hero["' + _n
+                + '"]`.' + _ev)
     if _n:
         return ('Python stopped, because the recipe uses `' + _n + '` before it makes it. Make `' + _n + '` inside '
                 'the recipe before you use it, or hand back a name the recipe made.' + _ev)
-    return ('When Mar' + chr(39) + 'tu called `mana_bar`, it stopped with an error, ' + _err.split(':')[0] + '. '
-            'Fix the recipe so it works for any sheet.' + _ev)
+    _plain = {'TypeError': "a line there mixes kinds of values that don't go together",
+              'IndexError': "a line there asks for a position that isn't there",
+              'AttributeError': "a line there uses a dot tool the value doesn't have",
+              'ZeroDivisionError': 'a line there divides by zero'}.get(_err.split(':')[0], 'a line there has a mistake')
+    return ("When Mar'tu called `mana_bar` with a test sheet, Python stopped inside the recipe: " + _plain + '. '
+            'Read the numbers from the sheet it is handed, like `hero["mana"]`.' + _ev)
 def _evh(_h):
     return " Mar'tu tested your recipe with a test sheet, `" + _sh(_h) + "`."
 def _try_bar(_h, _probe):
@@ -2467,6 +2481,12 @@ BARS_FOR_EVERYONE = dict(
              message_contains="still hands back empty text"),
         dict(why="every block full (max_mana for mana)", code=_bar('    return full * hero["max_mana"]'), fails_at=1,
              message_contains="Every block came out full"),
+        dict(why="the whole sheet multiplied: full * hero (TypeError inside the recipe)",
+             code=_bar("    return full * hero", "    pass"), fails_at=1,
+             message_contains='Multiply `full` by one number from it, the mana: `hero["mana"]`'),
+        dict(why="the sheet's tag used as a name: full * mana (NameError inside the recipe)",
+             code=_bar("    return full * mana", "    pass"), fails_at=1,
+             message_contains='Inside the recipe, read it from `hero`: `hero["mana"]`'),
         dict(why="no empty blocks", code=_bar('    return full * hero["mana"]'), fails_at=2,
              message_contains="Add the empty blocks"),
         dict(why="empty blocks for the max, not the mana used",
@@ -2989,7 +3009,7 @@ REMEMBERS_5B = dict(
     title="Quick review: 2 questions, not scored",
     optional=True,
     minutes=2,
-    summary="Two questions from Units 5 and 3, before Lesson 5B. Nothing is scored.",
+    summary="Two questions from Units 5 and 3, before the lesson While the Clock Ticks. Nothing is scored.",
     notes=(
         "meta: path=SC; unscored warm-up shown inline before Lesson 5B. Q1 is the spec's Unit 5 item, "
         "`\"Glow\" in spell_book`, with the value-not-key twin (`2 in spell_book`). Q2 is added for the 2.1 rule "
@@ -3121,6 +3141,12 @@ for _start in (3, 4, 2):
     _got = [_nums(_l)[-1] for _l in _rows if _nums(_l)]
     if _got == _want:
         continue
+    # `if candles > 0:` for `while`: it asks once, so only the start prints (the class's if/while mix-up).
+    _asks = lambda _k: [_n for _n in _ast.walk(_parsed()) if _tn(_n) == _k
+                        and _any(_tn(_x) == 'Name' and _x.id == 'candles' for _x in _ast.walk(_n.test))]
+    assert not (_asks('If') and not _asks('While')), (
+        'Your code checks the candles once, with `if`, so only ' + _str(_start) + ' prints. Use `while`: it asks '
+        'again before every pass.' + _ev)
     assert _got, ('Your loop never ran: its question was `False` at the start. Ask a question that is `True` while '
                   'candles are left, as `hours_left > 0` is.' + _ev)
     assert 0 not in _got, ('Your loop ran one pass too many, and printed 0. Ask whether any candles are left, as '
@@ -3273,6 +3299,9 @@ COUNTDOWN = dict(
              fails_at=2, message_contains="printed 0"),
         dict(why="the candles: > 1, the loop stops at 2", code=_count(turn=_turn("candles > 1")), fails_at=2,
              message_contains="stopped at 2"),
+        dict(why="the candles: if for while (asks once: only 3 prints)",
+             code=_count(turn=_turn("candles > 0").replace("while candles", "if candles")), fails_at=2,
+             message_contains="checks the candles once, with `if`"),
         dict(why="the candles: a question that is False at the start (the loop never runs)",
              code=_count(turn=_turn("candles < 0")), fails_at=2, message_contains="never ran"),
         dict(why="the candles: a question that never becomes False (candles < 10): prints forever, stopped at once",
@@ -3532,6 +3561,11 @@ for _vals, _ev in ((None, ''), ({'chalk_wall': __W__}, __EVW__)):
     assert not (_vals is not None and _rows == _own), (
         'Another wall printed the same line, so the gap is typed in. Print `gap`, the loop variable, so it works '
         'for any wall.' + _ev)
+    # `while gap < 45:` for `if`, with `break` inside it: `break` leaves only the `while`, and the `for` goes on.
+    _inner = [_w for _f in _fors for _w in _ast.walk(_f) if _tn(_w) == 'While'
+              and _any(_tn(_b) == 'Break' for _b in _ast.walk(_w))]
+    assert not _inner, ('Your `while` sits inside the `for`, so `break` leaves only the `while`, and the `for` goes '
+                        'on to the next gap. Use `if`: it asks once for each gap.' + _ev)
     assert _len(_rows) == 1 or _uses('node:Break'), (
         'Your loop printed ' + _str(_len(_rows)) + ' gaps, because nothing stops it. Add `break` under the print, '
         'inside the `if`, so the loop stops at the first one.' + _ev)
@@ -3647,6 +3681,9 @@ STOP_AT_THE_FIRST = dict(
         dict(why="the answer typed by hand", code=WALL_LINE + "print(44)\n", fails_at=1, message_contains="same line"),
         dict(why="while for if inside the loop: 44 prints forever",
              code=_first("    while gap < 45:\n        print(gap)"), fails_at=0, message_contains="printed more than"),
+        dict(why="while for if, with break inside it: break leaves only the while (three gaps print)",
+             code=_first("    while gap < 45:\n        print(gap)\n        break"), fails_at=1,
+             message_contains="sits inside the `for`"),
         dict(why="the whole wall printed", code=_first("    if gap < 45:\n        print(chalk_wall)\n        break"),
              fails_at=1, message_contains="whole wall"),
         dict(why="break outside any loop (SyntaxError)", code=_first("    pass", tail="break\n"), fails_at=0,

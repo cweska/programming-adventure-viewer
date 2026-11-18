@@ -221,10 +221,18 @@ test.describe("Intro to Python, Unit 6: Loops", () => {
     await expect(task).not.toContainText("line 3");
     await expect(page.getByTestId("help-button")).toBeVisible();
     await expect(page.getByTestId("help-crash-wait")).toHaveCount(0);
+    // The update moved to the left edge: the same endless run again. The repeat note sends the reader to the loop's
+    // indented lines, never to line 3, the print it happened to stop on.
+    await setCode(page, wrongAnswer("while-the-clock-ticks/the-loop-that-never-ends", "the update outside the loop: it never ends"));
+    await page.getByTestId("run").click();
+    await expect(page.getByTestId("run-count")).toHaveText(/Run 2 finished/, { timeout: 60_000 });
+    await expect(page.getByTestId("same-error")).toHaveText(
+      "Same error as last time. Look at the indented lines under your loop's first line. Which one changes the number its question checks?",
+    );
 
     // A loop with no update that prints nothing: the 5-second limit stops it, and says why.
     await setCode(page, 'glug = 3\nwhile glug > 0:\n    glug + 1\nprint("The canteen is empty.")\n');
-    await runAndWait(page, 2);
+    await runAndWait(page, 3);
     await expect(explainer).toHaveAttribute("data-kind", "timeout");
     await expect(page.getByTestId("explainer").locator(".ex-explainer-title")).toHaveText("Ran too long");
     await expect(page.getByTestId("explainer-hint")).toHaveText(
@@ -235,7 +243,7 @@ test.describe("Intro to Python, Unit 6: Loops", () => {
     // Python restarts on its own; the mended loop then runs and passes.
     await pythonReady(page);
     await setCode(page, solutionOf("while-the-clock-ticks", "the-loop-that-never-ends"));
-    await runAndWait(page, 3);
+    await runAndWait(page, 4);
     await expect(page.getByTestId("all-passed")).toBeVisible();
     await expect(page.getByTestId("stdout")).toContainText("The canteen is empty.");
 
@@ -255,6 +263,31 @@ test.describe("Intro to Python, Unit 6: Loops", () => {
     await expect(page.getByTestId("help")).toHaveAttribute("data-step", "count-down");
   });
 
+  test("the unit's loop slips get loop words: the item as a position, the list handed to a recipe; the task line keeps its parts", async ({ page }) => {
+    await open(page, "for-each-yes", "each-mark");
+    // The step's numbered parts stay a list under the lead line, never run together.
+    const task = page.getByTestId("task-line");
+    await expect(task).toHaveAttribute("data-parts", "true");
+    await expect(task.locator("li")).toHaveCount(2);
+    await expect(task.locator(".ex-task-lead")).toContainText("Your task (step 1 of 1):");
+    // Start me off replaces the `pass` line, and says so.
+    await runAndWait(page, 1);
+    await page.getByTestId("help-button").click();
+    await expect(page.getByTestId("help-start-note")).toHaveText("It replaces pass.");
+    // The item used as a position: use the item itself, never `[-1]`.
+    const item = await runWrong(page, "for-each-yes/each-mark", "the item used as an index", 2);
+    await expect(item).toHaveAttribute("data-kind", "item-as-position");
+    await expect(page.getByTestId("explainer-hint")).toContainText('Use gap itself: print(gap, "hours")');
+    await expect(page.getByTestId("explainer-hint")).not.toContainText("[-1]");
+
+    // The whole roster handed to the recipe: the call line is the slip, not the finished recipe.
+    await open(page, "for-each-yes", "bars-for-everyone");
+    const handed = await runWrong(page, "for-each-yes/bars-for-everyone", "the roster handed to the recipe (TypeError)", 1);
+    await expect(handed).toHaveAttribute("data-kind", "list-to-recipe");
+    await expect(page.getByTestId("task-line")).toContainText("First, fix line 13. Python stopped on line 6");
+    await expect(page.getByTestId("explainer-hint")).toContainText("Hand it this pass's sheet, the loop variable: mana_bar(member)");
+  });
+
   test("Start me off lands where its hint says: under the note, and above the line it goes before", async ({ page }) => {
     const lines = page.locator('[data-testid="exercise-player"] [data-testid="editor"] .cm-line');
     // countdown: "under `# After the loop: print Burst!`", at the left edge, outside the loop.
@@ -263,6 +296,8 @@ test.describe("Intro to Python, Unit 6: Loops", () => {
     await page.getByTestId("help-button").click();
     await expect(page.getByTestId("help-rung-1")).toHaveAttribute("data-kind", "start");
     await expect(page.getByTestId("help-start-code")).toHaveText("print(");
+    // The note says where the line really goes (before a click in the code): under the note the hint names.
+    await expect(page.getByTestId("help-start-note")).toHaveText("It goes on a new line under # After the loop: print Burst!.");
     await page.getByTestId("help-start-insert").click();
     await expect(lines.nth(4)).toHaveText("# After the loop: print Burst!");
     await expect(lines.nth(5)).toHaveText("print(");
@@ -283,6 +318,7 @@ test.describe("Intro to Python, Unit 6: Loops", () => {
     await expect(page.getByTestId("checkpoint-2")).toHaveAttribute("data-state", "active");
     await page.getByTestId("help-button").click();
     await expect(page.getByTestId("help-start-code")).toHaveText("used =");
+    await expect(page.getByTestId("help-start-note")).toHaveText('It goes on a new line above return full * hero["mana"].');
     await page.getByTestId("help-start-insert").click();
     const used = lines.filter({ hasText: "used =" });
     await expect(used).toHaveCount(1);

@@ -2328,6 +2328,40 @@ describe("explainCourseError: Unit 6's slips (loops), from the unit's own wrong 
       'A key is text, so it needs quotes: `"name"`. Without quotes, Python looks for a variable called `name`. Line 8, with the quotes put in: `print(member["name"] + " keeps watch.")`'],
     ["qc5-b/a-helper-for-each", "the key without quotes (NameError)", "'mana' is not defined", "unquoted-key",
       'Line 8, with the quotes put in: `draw_bar(member["mana"])`'],
+    // (9) The loop variable of a loop over a list used as a position in it: it already holds an item. When Mar'tu's
+    // version walks the list, the item is used itself; when it walks positions, the loop does too. Never `[-1]`.
+    ["for-each-yes/each-mark", "the item used as an index", "list index out of range", "item-as-position",
+      'Line 4 uses `gap` as a position in `chalk_wall`. But `gap` already holds an item, not a position: on the first pass, it holds 48. Use `gap` itself: `print(gap, "hours")`'],
+    ["loops-in-one-line/loops-in-loops", "the item used as an index (row[score])", "list index out of range", "item-as-position",
+      "Line 10 uses `score` as a position in `row`. But `score` already holds an item, not a position. Use `score` itself: `print(score)`"],
+    ["for-each-yes/how-much-each-gap-shrank", "the item used as an index", "list index out of range", "item-as-position",
+      "But `gap` already holds an item, not a position: on the first pass, it holds 48. To use positions, loop over them instead: `for i in range(1, len(chalk_wall)):`"],
+    ["gearshifts-forecast", "the item used as an index (chalk_wall[gap])", "list index out of range", "item-as-position",
+      "To use positions, loop over them instead: `for i in range(1, len(chalk_wall)):`"],
+    // (10) `[i + 1]` in a loop over `range(...len(...))`: one past the end on the last pass. Look back, from 1.
+    ["for-each-yes/how-much-each-gap-shrank", "neighbors one past the end: [i + 1] with range(1, len) (IndexError)", "list index out of range", "one-past-the-end",
+      "Line 3 reads `chalk_wall[i + 1]`, one position after `i`. On the last pass, `i` is 6, so `[i + 1]` asks for position 7, past the end. Look back one instead, with `[i - 1]`: `shrink = chalk_wall[i - 1] - chalk_wall[i]`"],
+    ["for-each-yes/how-much-each-gap-shrank", "neighbors one past the end: range(len) looking ahead (IndexError)", "list index out of range", "one-past-the-end",
+      "Look back with `[i - 1]` instead, and start the range at 1: `for i in range(1, len(chalk_wall)):`"],
+    ["gearshifts-forecast", "neighbors one past the end (wall[i + 1] over the whole range", "list index out of range", "one-past-the-end",
+      "On the last pass, `i` is 6, so `[i + 1]` asks for position 7, past the end."],
+    ["loops-in-one-line/one-line-loops", "neighbors one past the end (the loop must stop one early)", "list index out of range", "one-past-the-end",
+      "and start the range at 1: `shrinks = [chalk_wall[i - 1] - chalk_wall[i] for i in range(1, len(chalk_wall))]`"],
+    // (11) A running total with no start before the loop: the start goes above it, never quotes or the step's names.
+    ["for-each-yes/running-total", "total = 0 deleted (NameError)", "name 'total' is not defined", "no-starting-value",
+      "Line 9 adds to `total` on every pass, but nothing gives `total` a starting value before the loop. Above line 7, where the loop starts, put `total = 0`"],
+    ["for-each-yes/broken-spell-5a", "total = 0 deleted instead of moved (NameError)", "name 'total' is not defined", "no-starting-value",
+      "Above line 14, where the loop starts, put `total = 0`"],
+    // (12) The whole list handed to the recipe: the slip is on the call line, never "change the recipe".
+    ["for-each-yes/bars-for-everyone", "the roster handed to the recipe (TypeError)", "not str", "list-to-recipe",
+      "Line 13 hands `mana_bar` the whole `roster`, so `hero` is a list inside the recipe. Hand it this pass's sheet, the loop variable: `mana_bar(member)`"],
+    // (13) The unit's SyntaxErrors: `break` at the left edge, a colon inside a one-line loop, a choice with no `else`.
+    ["while-the-clock-ticks/stop-at-the-first", "break outside any loop (SyntaxError)", "'break' outside loop", "break-outside-loop",
+      "`break` only works inside a loop, but line 6 is outside every `for` and `while` loop. Indent it to line up with `pass` on line 5, so it sits inside the loop."],
+    ["loops-in-one-line/one-line-loops", "a colon inside the one-line loop (the for-line habit)", "invalid syntax", "colon-in-one-line-loop",
+      "Line 4 has a colon `:` in a one-line loop. A one-line loop has no colon, unlike a `for` line. Take out the `:`: `short_gaps = [h for h in chalk_wall if h < 45]`"],
+    ["loops-in-one-line/choose-in-one-line", "no else", "expected 'else' after 'if' expression", "choice-needs-else",
+      'Line 5 has a one-line choice with no `else`. A one-line choice needs both values, with `else` before the second: `status = "ready" if mana >= 3 else "resting"`'],
   ];
 
   it.each(rows)("%s, %s: Python says %s, the explainer names %s", (key, why, python, kind, hint) => {
@@ -2363,6 +2397,13 @@ describe("explainCourseError: Unit 6's slips (loops), from the unit's own wrong 
         "The mistake is on line 8: a name that only lives inside a recipe."],
       ["qc5-a/total-and-tired", "the whole sheet added (TypeError)", "whole-card-compared", "The mistake is on line 12: a whole sheet added where one value is meant."],
       ["qc5-b/total-and-tired", 'roster["mana"] for member["mana"] (TypeError)', "name-as-position", 'Line 12 asks a list for a tag (key), like `roster["mana"]`.'],
+      ["qc5-a/total-and-tired", "total = 0 left out (NameError)", "no-starting-value",
+        "Line 11 adds to `total`, but `total` has no starting value before the loop. Python's last line, below, says what it found."],
+      ["qc5-a/the-ore-watch", "days = 0 left out (NameError)", "no-starting-value", "Line 14 adds to `days`, but `days` has no starting value before the loop."],
+      ["qc5-b/the-barrier-watch", "nights = 0 left out (NameError)", "no-starting-value", "Line 15 adds to `nights`, but `nights` has no starting value before the loop."],
+      ["loops-in-one-line/solo-5c", "the starter (a colon inside the one-line loop)", "colon-in-one-line-loop",
+        "Line 2 has a colon `:` in a one-line loop. Python's last line, below, says what it found."],
+      ["loops-in-one-line/solo-5c", "the colon moved to the end", "colon-in-one-line-loop", "Line 2 has a colon `:` in a one-line loop."],
     ];
     for (const [key, why, kind, hint] of lean) {
       const found = unit6.find(key, why);
@@ -2426,6 +2467,13 @@ describe("explainCourseError: Unit 6's slips (loops), from the unit's own wrong 
       ["for-each-yes/each-member", "a comma, as in print: the ley board takes one text (TypeError)", "wrong-number-of-values"],
       ["looping-over-a-dictionary/spell-costs", ".items without brackets", "wrong-kind-of-value"],
       ["looping-over-a-dictionary/spell-costs", "two names with no .items()", "other"],
+      ["for-each-yes/each-mark", "the item used as an index", "nothing-at-position"],
+      ["for-each-yes/how-much-each-gap-shrank", "neighbors one past the end: [i + 1] with range(1, len) (IndexError)", "nothing-at-position"],
+      ["for-each-yes/running-total", "total = 0 deleted (NameError)", "unknown-name"],
+      ["for-each-yes/bars-for-everyone", "the roster handed to the recipe (TypeError)", "name-as-position"],
+      ["while-the-clock-ticks/stop-at-the-first", "break outside any loop (SyntaxError)", "cant-read-line"],
+      ["loops-in-one-line/one-line-loops", "a colon inside the one-line loop (the for-line habit)", "cant-read-line"],
+      ["loops-in-one-line/choose-in-one-line", "no else", "cant-read-line"],
     ];
     for (const [key, why, before] of cases) {
       const found = unit6.find(key, why);
@@ -2484,5 +2532,35 @@ describe("explainCourseError: Unit 6's slips (loops), from the unit's own wrong 
     const plus = explainRun('roster = [{"name": "Pell", "mana": 3}]\ntotal = 0\nfor member in roster:\n    total += member\n', [], unit6Context);
     expect(plus.kind).toBe("whole-card-compared");
     expect(plus.hint).toContain('like `member["mana"]`');
+  });
+
+  it("reads the unit's loop slips the way a literal reader would follow them (the Unit 6 play-through)", () => {
+    const unit6Context: ExplainContext = { unitOrder: LOOPS_UNIT_ORDER };
+    const roster = 'roster = [\n    {"name": "Oogrish", "mana": 6},\n    {"name": "Lucky", "mana": 22},\n]\n';
+    // A tag (key) of the loop's sheets used as a name: read it through the loop variable, never "put quotes around it".
+    const tag = explainRun(`${roster}for member in roster:\n    if mana < 10:\n        print(member["name"], "needs rest")\n`, [], unit6Context);
+    expect(tag.kind).toBe("tag-as-name");
+    expect(tag.hint).toBe('`mana` is a tag (key) on each sheet in `roster`, not a name of its own. Read it through the loop variable, `member["mana"]`: `if member["mana"] < 10:`');
+    expect(tag.hint).not.toContain("quotes");
+    // A whole sheet compared with a number, in the unit's words (sheet, tag), with the line and an example.
+    const compared = explainRun(`${roster}for member in roster:\n    if member < 10:\n        print(member["name"], "needs rest")\n`, [], unit6Context);
+    expect(compared.kind).toBe("whole-card-compared");
+    expect(compared.hint).toBe('Line 6 compares `member`, a whole sheet, with a number. Compare one value from it by its tag (key), like `member["mana"] < 10`.');
+    expect(compared.hint).not.toContain("card");
+    // `break` under the `if`, and a loop that is not there at all.
+    const under = explainRun("for gap in [48, 44]:\n    if gap < 45:\n        print(gap)\nbreak\n", [], unit6Context);
+    expect(under.kind).toBe("break-outside-loop");
+    expect(under.hint).toContain("Indent it to line up with `print(gap)` on line 3, so it sits under the `if`, inside the loop.");
+    expect(explainRun("gap = 44\nif gap < 45:\n    break\n", [], unit6Context).hint).toContain("Use it only in the indented lines under a `for` or `while` line.");
+    // A running total with no start inside a recipe's loop; a name that is one letter off stays a spelling slip.
+    const recipe = explainRun("def average(values):\n    for value in values:\n        total = total + value\n    return total\nprint(average([1, 2]))\n", [], unit6Context);
+    expect(recipe.kind).toBe("no-starting-value");
+    expect(recipe.hint).toContain("Above line 2, where the loop starts, put `total = 0`");
+    expect(explainRun("total = 0\nfor value in [1, 2]:\n    totl = totl + value\n", [], unit6Context).kind).not.toBe("no-starting-value");
+    // Outside a loop, `[gap]` and `[i + 1]` keep Unit 4's words.
+    expect(explainRun("wall = [48, 44]\ngap = 48\nprint(wall[gap])\n", [], unit6Context).kind).toBe("nothing-at-position");
+    // Below Unit 6, the same code keeps the older advice.
+    const older = explainRun(`${roster}for member in roster:\n    if mana < 10:\n        print(member["name"])\n`, [], { unitOrder: 5 });
+    expect(older.kind).toBe("unknown-name");
   });
 });

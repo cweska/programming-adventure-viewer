@@ -1658,6 +1658,44 @@
           "messageContains": "Every block came out full"
         },
         {
+          "why": "the whole sheet multiplied: full * hero (TypeError inside the recipe)",
+          "code": [
+            "def mana_bar(hero):",
+            "    full = \"█\"",
+            "    empty = \"░\"",
+            "    # Full blocks for the mana,",
+            "    # empty ones for the mana used.",
+            "    return full * hero",
+            "",
+            "# roster: 4 sheets with \"name\",",
+            "# \"mana\" and \"max_mana\".",
+            "for member in roster:",
+            "    # Print the name and the bar.",
+            "    pass"
+          ],
+          "failsAt": 1,
+          "messageContains": "Multiply `full` by one number from it, the mana: `hero[\"mana\"]`"
+        },
+        {
+          "why": "the sheet's tag used as a name: full * mana (NameError inside the recipe)",
+          "code": [
+            "def mana_bar(hero):",
+            "    full = \"█\"",
+            "    empty = \"░\"",
+            "    # Full blocks for the mana,",
+            "    # empty ones for the mana used.",
+            "    return full * mana",
+            "",
+            "# roster: 4 sheets with \"name\",",
+            "# \"mana\" and \"max_mana\".",
+            "for member in roster:",
+            "    # Print the name and the bar.",
+            "    pass"
+          ],
+          "failsAt": 1,
+          "messageContains": "Inside the recipe, read it from `hero`: `hero[\"mana\"]`"
+        },
+        {
           "why": "no empty blocks",
           "code": [
             "def mana_bar(hero):",
@@ -2847,6 +2885,25 @@
           "messageContains": "stopped at 2"
         },
         {
+          "why": "the candles: if for while (asks once: only 3 prints)",
+          "code": [
+            "hours_left = 5",
+            "while hours_left > 0:",
+            "    print(hours_left)",
+            "    hours_left = hours_left - 1",
+            "# After the loop: print Burst!",
+            "print(\"Burst!\")",
+            "",
+            "# Your turn:",
+            "candles = 3",
+            "if candles > 0:",
+            "    print(candles)",
+            "    candles = candles - 1"
+          ],
+          "failsAt": 2,
+          "messageContains": "checks the candles once, with `if`"
+        },
+        {
           "why": "the candles: a question that is False at the start (the loop never runs)",
           "code": [
             "hours_left = 5",
@@ -3124,6 +3181,20 @@
           ],
           "failsAt": 0,
           "messageContains": "printed more than"
+        },
+        {
+          "why": "while for if, with break inside it: break leaves only the while (three gaps print)",
+          "code": [
+            "chalk_wall = [48, 48, 47, 46, 44, 41, 37]",
+            "for gap in chalk_wall:",
+            "    # 1. If gap is under 45:",
+            "    # 2.   print it, then break.",
+            "    while gap < 45:",
+            "        print(gap)",
+            "        break"
+          ],
+          "failsAt": 1,
+          "messageContains": "sits inside the `for`"
         },
         {
           "why": "the whole wall printed",

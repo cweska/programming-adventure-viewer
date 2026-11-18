@@ -55,12 +55,14 @@ import {
   soloPassLine,
   soloUnaided,
   solutionUnlocked,
+  startNote,
   startTarget,
   stepAssemble,
   stepLine,
   stdinBoxText,
   stepNoun,
   stuckCheckpointId,
+  taskLineParts,
   titleFromId,
   usesInput,
   type CrashAim,
@@ -458,6 +460,8 @@ export function ExercisePlayer({
   const [resumed, setResumed] = useState(false);
   const [saving, setSaving] = useState(true);
   const editorRef = useRef<PythonEditorHandle>(null);
+  /** The student has clicked into the code (or a button put text there): Start me off then goes under the cursor's line. */
+  const [editorPlaced, setEditorPlaced] = useState(false);
 
   const [python, setPython] = useState<PythonStatus>("loading");
   /** Python has been ready once: from then on Run never gets `disabled` (that would drop keyboard focus). */
@@ -1183,13 +1187,31 @@ export function ExercisePlayer({
               }`}
             </p>
           ) : activeCheckpoint && !done ? (
-            // The task first, so a student who skims sees it before Mar'tu's words and the example.
-            <p className="ex-task-line" data-testid="task-line">
-              <span className="ex-task-label">
-                Your task ({noun.toLowerCase()} {firstOpen + 1} of {exercise.checkpoints.length}):
-              </span>{" "}
-              <Prose text={activeCheckpoint.text} glossary={glossary} inline />
-            </p>
+            // The task first, so a student who skims sees it before Mar'tu's words and the example. A step with
+            // numbered parts keeps them as a list under its lead line ("Two spots to fill:"), never run together.
+            (() => {
+              const label = (
+                <span className="ex-task-label">
+                  Your task ({noun.toLowerCase()} {firstOpen + 1} of {exercise.checkpoints.length}):
+                </span>
+              );
+              const task = taskLineParts(activeCheckpoint.text);
+              if (task.parts === null) {
+                return (
+                  <p className="ex-task-line" data-testid="task-line">
+                    {label} <Prose text={activeCheckpoint.text} glossary={glossary} inline />
+                  </p>
+                );
+              }
+              return (
+                <div className="ex-task-line" data-testid="task-line" data-parts="true">
+                  <p className="ex-task-lead">
+                    {label} <Prose text={task.lead} glossary={glossary} inline />
+                  </p>
+                  <Prose text={task.parts} glossary={glossary} className="ex-task-parts" />
+                </div>
+              );
+            })()
           ) : null}
           {exercise.solo && mode !== "testout" ? (
             <p className="ex-solo" data-testid="solo">
@@ -1386,6 +1408,7 @@ export function ExercisePlayer({
               wrapLines
               tabMovesOn
               handleRef={editorRef}
+              onPlaced={() => setEditorPlaced(true)}
             />
           </div>
           <SymbolTray names={names} onInsert={(text) => editorRef.current?.insert(text)} />
@@ -1464,6 +1487,7 @@ export function ExercisePlayer({
               moreAfterRun={lightBeforeRun}
               crashIsTask={view?.crashSwitchOff === true}
               startInCode={startInCode}
+              startNote={startNote(code, "", startTarget(helpCheckpoint), editorPlaced)}
               onReveal={revealRung}
               onDismissOffer={() => {
                 setOfferDismissed(true);
@@ -1610,7 +1634,13 @@ function ExerciseConsole({
             {view.sameError ? (
               <p className="ex-same-error" data-testid="same-error">
                 Same error as last time.{" "}
-                {crashLine(view.explanation.raw) ? `Look closely at line ${crashLine(view.explanation.raw)}.` : "Look closely at the line number in Python's last line."}
+                {/* A run that never ended stops wherever the loop happens to be (often a right `print`): the fix is the
+                    line inside the loop that changes its question, so no line number is named (Unit 6). */}
+                {view.explanation.kind === "timeout" || view.explanation.kind === "too-much-output"
+                  ? "Look at the indented lines under your loop's first line. Which one changes the number its question checks?"
+                  : crashLine(view.explanation.raw)
+                    ? `Look closely at line ${crashLine(view.explanation.raw)}.`
+                    : "Look closely at the line number in Python's last line."}
               </p>
             ) : null}
             <p className="ex-explainer-title">{view.explanation.title}</p>

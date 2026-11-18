@@ -42,6 +42,7 @@ export function HelpStack({
   moreAfterRun = false,
   crashIsTask = false,
   startInCode = () => false,
+  startNote = "It goes on a new line of its own.",
   onReveal,
   onDismissOffer,
   onOpenAssemble,
@@ -75,6 +76,8 @@ export function HelpStack({
   crashIsTask?: boolean;
   /** Whether the code already starts the step's line (Start me off then has nothing to add). */
   startInCode?: (start: string) => boolean;
+  /** Where "Put it in my code" puts the line, in words ("It replaces `pass`."): see startNote() in exercise-logic.ts. */
+  startNote?: string;
   onReveal: () => RevealResult;
   onDismissOffer: () => void;
   onOpenAssemble: () => void;
@@ -173,7 +176,9 @@ export function HelpStack({
           <button type="button" className="ex-quiet" data-testid="help-start-insert" onClick={() => onInsertStart(rung.start ?? "")}>
             Put it in my code
           </button>
-          <p className="ex-muted ex-help-start-note">It goes on a new line of its own.</p>
+          <p className="ex-muted ex-help-start-note" data-testid="help-start-note">
+            <Prose inline text={startNote} />
+          </p>
         </div>
       );
     }

@@ -4,7 +4,7 @@
  */
 import type { ExerciseProgress, GradeResult } from "../../lib/course/contracts";
 import type { AnotherWay, Checkpoint } from "../../lib/course/schema";
-import type { InsertTarget } from "../editor-insert";
+import { planInsert, type InsertTarget } from "../editor-insert";
 
 export type Support = "full" | "light" | "none";
 export type PlayerMode = "lesson" | "project" | "challenge" | "testout" | "try-it";
@@ -354,6 +354,34 @@ export function startTarget(checkpoint: Pick<Checkpoint, "hints" | "text">): Ins
   const near = [...new Set(spans.flatMap((span) => [...span.matchAll(/[A-Za-z_]\w*/g)].map((name) => name[0])))];
   const how = place[1] === "in place of" ? "replace" : place[1] === "above" ? "before" : "after";
   return { line: place[2].trim(), how, near };
+}
+
+/**
+ * The note under Start me off's "Put it in my code" button: where the line will go, as it really will (the same plan
+ * the editor follows). Before the student clicks into the code, a step whose hint names a place puts it there: "It
+ * replaces `pass`.", "It goes on a new line above `print(total)`.", "... under `# 2. Loop`.". Otherwise (a cursor, or
+ * no place named) it goes on a new line of its own.
+ */
+export function startNote(code: string, start: string, target: InsertTarget | null | undefined, placed: boolean): string {
+  const own = "It goes on a new line of its own.";
+  if (placed || !target) return own;
+  // Any text will do to find the place (an empty one would hide which side of the line it goes on).
+  const plan = planInsert(code ?? "", { from: 0, to: 0 }, false, start || "x", "line", target);
+  const doc = code ?? "";
+  const lineOf = (at: number) => {
+    const from = doc.lastIndexOf("\n", at - 1) + 1;
+    const end = doc.indexOf("\n", at);
+    return doc.slice(from, end < 0 ? doc.length : end).trim();
+  };
+  const tick = (text: string) => (text.includes("`") ? text : `\`${text}\``);
+  if (plan.to > plan.from) return `It replaces ${tick(doc.slice(plan.from, plan.to).trim())}.`;
+  if (plan.from === doc.length && !plan.insert.endsWith("\n")) {
+    const last = doc.replace(/\s+$/, "");
+    // At the end: under the line it follows, unless the code is empty.
+    return last ? `It goes on a new line under ${tick(lineOf(last.length - 1))}.` : own;
+  }
+  if (!plan.insert.startsWith("\n") && plan.insert.endsWith("\n")) return `It goes on a new line above ${tick(lineOf(plan.from))}.`;
+  return `It goes on a new line under ${tick(lineOf(Math.max(0, plan.from - 1)))}.`;
 }
 
 /**
@@ -775,6 +803,18 @@ export function firstParagraph(text: string): { first: string; more: boolean } {
   const first = lines.slice(start, end).join("\n");
   const more = lines.slice(end).some((line) => line.trim() !== "");
   return { first, more };
+}
+
+/**
+ * A step's text split for the "Your task" line at the top: the lead (everything before the first numbered or bulleted
+ * part, read as one line after the label) and the parts from there on, which keep their own lines as a list
+ * (plain-language guide §2.2: "Two spots to fill:" then "1. ...", "2. ..."). `parts` is null when the text has none.
+ */
+export function taskLineParts(text: string): { lead: string; parts: string | null } {
+  const lines = (text ?? "").replace(/\r\n?/g, "\n").split("\n");
+  const at = lines.findIndex((line, index) => index > 0 && /^\s*(\d+\.|[-*])\s+\S/.test(line));
+  if (at < 0) return { lead: text ?? "", parts: null };
+  return { lead: lines.slice(0, at).join("\n"), parts: lines.slice(at).join("\n") };
 }
 
 /* ------------------------------------------------------------------------------------------------ */
