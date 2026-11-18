@@ -111,7 +111,8 @@ test.describe("Intro to Python, Unit 2: Control Flow", () => {
     await runAndWait(page, 1);
     await expect(page.getByTestId("task-line")).toHaveAttribute("data-switch-off", "true");
     await expect(page.getByTestId("task-line")).toContainText("Python stopped on line 4.");
-    await expect(page.getByTestId("task-line")).not.toContainText("First, fix");
+    await expect(page.getByTestId("task-line")).not.toContainText("couldn't finish your code");
+    await expect(page.getByTestId("task-line")).not.toContainText("Fix line 4");
     await expect(page.getByTestId("explainer-hint")).toContainText("Line 3 makes spell_cost");
     await expect(page.getByTestId("explainer-hint")).not.toContainText("bad_line");
     await expect(page.getByTestId("explainer-hint")).not.toContainText("quotes");

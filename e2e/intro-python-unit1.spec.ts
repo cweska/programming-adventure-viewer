@@ -8,7 +8,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { expect, test, type Page } from "@playwright/test";
-import { checkpoint } from "./course";
+import { checkpoint, PROGRESS_KEY } from "./course";
 import { pythonReady, replaceEditor } from "./editor";
 
 const UNIT_ID = "hello-world";
@@ -73,9 +73,9 @@ test.describe("Intro to Python, Unit 1: Hello World", () => {
       await pythonReady(page);
       await setCode(page, 'print("Shield up.")\nprint("Barrier\'s holding.")\nprint(Steady)\n');
       await runAndWait(page, 1);
-      await expect(page.getByTestId("help-crash")).toContainText("Fix line 3 first.");
+      await expect(page.getByTestId("help-crash")).toContainText("Python stopped at line 3, so it couldn't finish your code. Fix line 3, then press Run again.");
       await expect(page.getByTestId("help-crash")).not.toContainText("its last line");
-      // Help is for step 3 ("Mend line 3 ..."), not step 1, whose line is already right.
+      // Help is for step 3 (the step that names line 3), not step 1, whose line is already right.
       await expect(page.getByTestId("help")).toHaveAttribute("data-step", "mend-line-3");
       await expect(page.getByTestId("help-button")).toContainText("step 3");
       await expect(page.getByTestId("python-last-line")).toContainText("NameError: name 'Steady' is not defined");
@@ -95,13 +95,48 @@ test.describe("Intro to Python, Unit 1: Hello World", () => {
       await expect(page.getByTestId("explainer-hint")).not.toContainText("One fixed");
     });
 
+    test("Keep it short has no Start me off on a step that edits a line already there, and tools sit apart from boxes", async ({ page }) => {
+      await page.goto(`${itemPath("math-and-glue")}#spend-mana`);
+      await page.evaluate((key) => {
+        window.localStorage.setItem(
+          key,
+          JSON.stringify({ version: 1, exercises: {}, quizzes: {}, read: {}, testedOut: {}, settings: { preset: "short" } }),
+        );
+      }, PROGRESS_KEY);
+      await page.reload();
+      // The step's names (never reworded) say which exercise is open.
+      await expect(page.getByTestId("names").getByTestId("name-chip-spell_cost")).toBeVisible();
+      await expect(page.getByTestId("exercise-player")).toHaveAttribute("data-preset", "short");
+      // Step 1 adds one more `mana = mana - spell_cost` line: the code already starts it, so Start me off is not
+      // listed under More options (it would only say "Your code already starts this line").
+      await expect(page.getByTestId("help-button")).toContainText("Help: Where to look");
+      await expect(page.getByTestId("help-extra-another")).toHaveCount(1);
+      await expect(page.getByTestId("help-extra-start")).toHaveCount(0);
+      // Names to use holds the boxes; Python's tools have a row of their own.
+      await expect(page.getByTestId("names")).toContainText("Names to use:");
+      await expect(page.getByTestId("tools")).toHaveCount(0);
+
+      await page.goto(`${itemPath("math-and-glue")}#glue-words`);
+      await expect(page.getByTestId("names").getByTestId("name-chip-name")).toBeVisible();
+      await expect(page.getByTestId("names").getByTestId("name-chip-mana")).toBeVisible();
+      await expect(page.getByTestId("names").getByTestId("name-chip-str")).toHaveCount(0);
+      await expect(page.getByTestId("tools")).toContainText("Tools to use:");
+      await expect(page.getByTestId("tools").getByTestId("name-chip-str")).toBeVisible();
+
+      // Lesson 1A's only name is `print`: a tool, and no "Names to use" before boxes are taught.
+      await page.goto(`${itemPath("words-in-quotes")}#words-need-quotes`);
+      await expect(page).toHaveURL(/#words-need-quotes$/);
+      await expect(page.getByTestId("tools").getByTestId("name-chip-print")).toBeVisible();
+      await expect(page.getByTestId("names")).toHaveCount(0);
+    });
+
     test("a crash on a line no step names holds the steps' Help back, and names the box to make", async ({ page }) => {
       await page.goto(`${itemPath("boxes-with-labels")}#broken-spell-1b`);
       await expect(page.getByTestId("exercise-title")).toHaveText("Broken spell");
       await pythonReady(page);
       await setCode(page, 'weapon = "Telegun"\ncompanion = "Gearshift"\nglug_sips = 3\n"Lucky"\nprint(hero)\nprint(weapon)\n');
       await runAndWait(page, 1);
-      await expect(page.getByTestId("help-crash")).toContainText("Fix line 5 first.");
+      await expect(page.getByTestId("help-crash")).toContainText("Python stopped at line 5, so it couldn't finish your code. Fix line 5, then press Run again.");
       await expect(page.getByTestId("help")).toHaveAttribute("data-crash-only", "true");
       await expect(page.getByTestId("help-button")).toHaveCount(0);
       await expect(page.getByTestId("explainer-hint")).toContainText("hero is one of your step's boxes");

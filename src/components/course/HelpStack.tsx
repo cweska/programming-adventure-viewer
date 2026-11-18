@@ -3,7 +3,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import type { AnotherWay, Checkpoint, GlossaryEntry } from "../../lib/course/schema";
 import { CardSort } from "./CardSort";
-import { angleLabel, helpOfferLine, type HelpOffer, type HelpState, type Rung } from "./exercise-logic";
+import { angleLabel, crashFixLine, helpOfferLine, type HelpOffer, type HelpState, type Rung } from "./exercise-logic";
 import { Prose } from "./Prose";
 import { ReadAloud } from "./ReadAloud";
 
@@ -16,9 +16,9 @@ export type RevealResult = "opened" | "paced" | "locked" | "none";
  *
  * Under "Keep it short" the control climbs Where to look, Teach me, Show me how and Mar'tu's version; Start me
  * off, Another way and More structure sit under "More options" (curriculum §2.3). Right after a crash, Help
- * first says which line to mend (a crash checks no step), and Start me off waits. The player aims Help at the
+ * first says which line to fix (a crash checks no step), and Start me off waits. The player aims Help at the
  * step that names the crash line; when no step does but the steps name other lines, `crashOnly` holds every
- * rung back until the code runs, so Help never contradicts "Fix line 3 first."
+ * rung back until the code runs, so Help never contradicts "Fix line 3, then press Run again."
  *
  * testids: help, help-button, help-rung-<n> (n from 1, in order), help-offer, help-offer-dismiss,
  * help-paced, help-show-locked, help-another-next, help-start-code, help-start-insert, help-start-done,
@@ -71,7 +71,7 @@ export function HelpStack({
   crashOnly?: boolean;
   /** Light support before the first Run: only Where to look (and Start me off) are open yet; the rest follow a Run. */
   moreAfterRun?: boolean;
-  /** The crash is part of the task (Mar'tu's version switches that line off): read the message, don't mend it. */
+  /** The crash is part of the task (Mar'tu's version switches that line off): read the message, don't fix it. */
   crashIsTask?: boolean;
   /** Whether the code already starts the step's line (Start me off then has nothing to add). */
   startInCode?: (start: string) => boolean;
@@ -214,10 +214,10 @@ export function HelpStack({
       Console: your {noun.toLowerCase()}s come from it.
     </p>
   ) : crashed ? (
+    // Plain-language guide §9, S2: where Python stopped, what that means, what to do, and where to read why.
     <p className="ex-help-crash" data-testid="help-crash">
-      <strong>{`Fix ${slipLine ? `line ${slipLine}` : crashLine ? `line ${crashLine}` : "the error"} first.`}</strong>{" "}
-      {slipLine && crashLine ? `Python stopped on line ${crashLine}` : "Python stopped there"}, so it couldn&apos;t check your steps
-      yet. The box in the Console says what&apos;s wrong. Fix it, then press Run again.
+      <strong>{crashLine ? `Python stopped at line ${crashLine}` : "Python stopped"}</strong>
+      {`, so it couldn't finish your code. ${crashFixLine(crashLine, slipLine)} The box in the Console says what's wrong.`}
     </p>
   ) : null;
 

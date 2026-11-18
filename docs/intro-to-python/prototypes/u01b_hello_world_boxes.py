@@ -45,9 +45,9 @@ if "__NAME__" not in globals():
     if _near:
         _msg = "Your box is named `" + _near[0] + "`, but this step needs `__NAME__`. Names match letter for letter, capitals too, so use `__NAME__` on every line.__EXTRA__"
     elif _left and _left[0][0] == _left[0][1]:
-        _msg = "`" + _left[0][0] + "` is a name from an example or an earlier step. This step's box is named `__NAME__`, so use `__NAME__` on every line."
+        _msg = "`" + _left[0][0] + "` is a name from the Example or an earlier step. This step's box is named `__NAME__`, so use `__NAME__` on every line."
     elif _left:
-        _msg = "`" + _left[0][0] + "` looks like `" + _left[0][1] + "`, a name from an example or an earlier step. This step's box is named `__NAME__`, so use `__NAME__` on every line."
+        _msg = "`" + _left[0][0] + "` looks like `" + _left[0][1] + "`, a name from the Example or an earlier step. This step's box is named `__NAME__`, so use `__NAME__` on every line."
     elif _bare:
         _msg = "Line " + str(_bare[0]) + " is a value with no name in front, so Python reads it and throws it away, like a phone number saved with no contact name. Put `__NAME__ = ` in front of it."
     else:
@@ -76,7 +76,7 @@ def num_check(name):
     return (
         f"{name} holds a number",
         f"_v = {name}\n"
-        f"assert type(_v).__name__ != 'str', \"`{name}` holds text, because of the quotes. Take the quotes off the number.\"\n"
+        f"assert type(_v).__name__ != 'str', \"`{name}` holds text, because of the quotes. Numbers don't get quotes: take them off.\"\n"
         f"assert type(_v).__name__ == 'int', '`{name}` should hold a whole number, like `3`.'",
     )
 
@@ -129,7 +129,7 @@ def value_check(name, value):
     return (
         f"{name} is {value}",
         f"_v = {name}\n"
-        f"assert type(_v).__name__ != 'str', \"`{name}` holds text, because of the quotes. Take the quotes off the number.\"\n"
+        f"assert type(_v).__name__ != 'str', \"`{name}` holds text, because of the quotes. Numbers don't get quotes: take them off.\"\n"
         f"assert _v == {value!r}, '`{name}` holds ' + str(_v) + '. Keep {value} in `{name}`.'",
     )
 
@@ -261,6 +261,110 @@ REMEMBERS_1B = dict(
 # ---------------------------------------------------------------------------------------------
 
 QUOTES_RULE = "Quotes mean these exact letters. No quotes means look inside the box with this label."
+
+KEYBOARD_SYMBOLS = dict(
+    id="keyboard-symbols",
+    title="Where the symbols live",
+    martu=(
+        "Three keys you'll need in this lesson. `-` is minus. `_` is the underscore (Shift and `-`): a name can't "
+        "have a space, so `_` stands in for one, as in `max_mana`. `=` is the equals key, but in Python it won't "
+        "mean equals: the next exercise shows its job. Top right of your keyboard:\n"
+        "```text\n"
+        "with Shift:   (   )   _   +\n"
+        "no Shift:     9   0   -   =\n"
+        "```"
+    ),
+    example='print("( ) #")\n',
+    example_output="( ) #",
+    starter="# Your line goes here:\n\n",
+    names=["print"],
+    pick="_ - = are side by side.",
+    checkpoints=[
+        dict(
+            id="print-the-symbols",
+            text=(
+                "On line 2, under the note, show `_`, `-` and `=` on the screen, all on one line. Copy the Example's "
+                "shape, and put the three marks inside its quotes."
+            ),
+            dictated=False,
+            hints=[
+                "Click on the empty line 2, under `# Your line goes here:`. Line 1 starts with `#`, so Python "
+                'skips it. Start line 2 with `print("` and add the three marks after it.',
+                "Quotes mean *show these exact marks*. Python shows whatever is between them, as it is: "
+                '`print("( )")` shows `( )`.',
+                'Type `print("_ - = are side by side.")` on line 2. Anything inside the quotes shows as it is.',
+            ],
+            checks=[
+                ("prints something", "assert _lines(), 'Nothing shows in the Console yet. Line 1 is a note, so "
+                 "Python skips it. On line 2, write a `print` line with the three marks inside quotes.'"),
+                (
+                    "one line has all three symbols",
+                    "_best = max(_lines(), key=lambda line: sum(s in line for s in '_-='))\n"
+                    "_missing = [s for s in '_-=' if s not in _best]\n"
+                    "assert not _missing, 'Your line is missing ' + ' and '.join('`' + s + '`' for s in _missing) "
+                    "+ '. Put all three marks inside one pair of quotes, on one `print` line.'",
+                ),
+            ],
+            pass_line="Mar'tu: Now you know where they live.",
+        ),
+    ],
+    solution='# Your line goes here:\nprint("_ - = are side by side.")\n',
+    assemble=dict(
+        lines=['print("Keys:")', 'print("_ - =")'],
+        distractors=["print(_ - =)", 'print("_ - =)'],
+    ),
+    another_way=[
+        dict(
+            angle="picture",
+            text=(
+                "The three keys, circled:\n"
+                "```text\n"
+                "  9   0  (-)  (=)   Backspace\n"
+                "         Shift + (-) gives (_)\n"
+                "```"
+            ),
+        ),
+        dict(
+            angle="step-by-step",
+            text=(
+                "1. `-` is the key right after `0`.\n"
+                "2. `_` is the same key with Shift held down.\n"
+                "3. `=` is the next key to the right.\n"
+                '4. `"` is Shift with the `\'` key, next to Enter.\n'
+                "5. `#` is Shift with the `3` key."
+            ),
+        ),
+        dict(
+            angle="shorter",
+            label="Say it shorter",
+            text='Type `print("`, then the three symbols, then `")`.',
+        ),
+    ],
+    wrong_answers=[
+        dict(why="starter unchanged: only the note, nothing printed", code="# Your line goes here:\n\n",
+             fails_at=1, message_contains="Nothing shows"),
+        dict(why="symbols with no quotes", code="print(_ - =)\n", fails_at=0, message_contains="invalid syntax"),
+        dict(why="leaves one symbol out", code='print("_ -")\n', fails_at=1, message_contains="missing `=`"),
+        dict(why="the marks typed into the note, not shown", code="# Your line goes here: _ - =\n\n", fails_at=1,
+             message_contains="Nothing shows"),
+        dict(why="check-breaker: each symbol on its own line, not one line with all three",
+             code='print("_")\nprint("-")\nprint("=")\n', fails_at=1, message_contains="missing"),
+    ],
+    takeaway="`-` is minus. `_` (Shift and `-`) stands in for a space in a name. `=` is not math's equals: "
+             "you'll read it as *gets*.",
+    notes=(
+        "meta: starter_level=S2; path=CC; contingent=show-me-more (K); skills=print-text; solo=false; "
+        "dictates=; foreign_names=. G1 R30 (dash for =: A-04 `chicken_sandwich - \"Fireball`). Any line with "
+        "all three symbols passes; Mar'tu's pick is the solution's line. Check-breaker: WA for one symbol per line. "
+        "Structure pass (guide 9, S12): moved from the 1W warm-ups (before print and # were taught) to the start "
+        "of Boxes With Labels, right before `=` and `_` are used; print and # are known by now, so Mar'tu no "
+        "longer explains them. The starter note was `# Print a line that has _ and - and = in it.`: it held the "
+        "marks themselves (a literal reader could think line 1 was already done) and used print before 1B's "
+        "plain word show. It is now a place note in the shape of name-and-value's, `# Your line goes here:`, "
+        "with an empty line 2 to type on."
+    ),
+)
+
 
 LABEL_A_BOX = dict(
     id="label-a-box",
@@ -631,21 +735,26 @@ NUMBERS_STAND_ALONE = dict(
     title="Numbers don't get quotes",
     martu=(
         "A [[number]] gets no quotes. `3` is an amount you can do math with, like points in a game. `\"3\"` in "
-        "quotes is text, like the 3 on a jersey: nobody adds two jerseys. In the Example, `26` has no quotes, so "
-        "`max_mana` holds a number. Lucky's armor bonus is 3."
+        "quotes is text, like the 3 on a jersey: nobody adds two jerseys. In the Example, `points + points` adds "
+        "up to 6, but `jersey + jersey` only sets two 3s side by side. Lucky's armor bonus is 3."
     ),
     introduces=["const:int"],
-    example='max_mana = 26\nprint(max_mana)\nprint("max_mana")\n',
-    example_output="26\nmax_mana",
+    # The Example shows a number versus text (guide 9, S12), so it previews `+`: plus, as in math class.
+    preview=["op:Add"],
+    example='points = 3\njersey = "3"\nprint(points + points)\nprint(jersey + jersey)\n',
+    example_output="6\n33",
     names=["armor_bonus", "weapon"],
     pick="a brass rune-axe",
     pair_talk="Pair talk: point at one value on your screen and ask your partner: number or text? Then swap.",
     predict=dict(
         q="What will the Example show in the Console?",
-        code='max_mana = 26\nprint(max_mana)\nprint("max_mana")\n',
-        choices=["26\nmax_mana", "max_mana\nmax_mana", "26\n26"],
+        code='points = 3\njersey = "3"\nprint(points + points)\nprint(jersey + jersey)\n',
+        choices=["6\n33", "6\n6", "33\n33"],
         answer=0,
-        explain="`print(max_mana)` looks inside the box: 26. `print(\"max_mana\")` shows those exact letters. " + QUOTES_RULE,
+        explain=(
+            "`points` holds the number 3, so `+` adds: 6. `jersey` holds the text `\"3\"`, so `+` only sets the "
+            "two marks side by side: 33. Ask about any value: would I ever do math with this?"
+        ),
     ),
     starter="# Lucky's armor bonus (a number):\n\n# Any weapon name (text):\n",
     checkpoints=[
@@ -659,7 +768,7 @@ NUMBERS_STAND_ALONE = dict(
                 "Write `armor_bonus = 3` under `# Lucky's armor bonus (a number):`, with no quotes around the 3.",
             ],
             checks=[
-                box_check("armor_bonus", foreign=["max_mana", "dice", "character"]),
+                box_check("armor_bonus", foreign=["points", "jersey", "max_mana", "dice", "character"]),
                 num_check("armor_bonus"),
                 (
                     "armor_bonus is 3",
@@ -684,7 +793,7 @@ NUMBERS_STAND_ALONE = dict(
                 "the quotes.",
             ],
             checks=[
-                box_check("weapon", foreign=["max_mana", "dice", "snack", "character"]),
+                box_check("weapon", foreign=["points", "jersey", "max_mana", "dice", "snack", "character"]),
                 text_check("weapon", "a weapon in quotes"),
                 bare_check(("str",)),
             ],
@@ -777,7 +886,11 @@ NUMBERS_STAND_ALONE = dict(
         dict(why="a lone 3 with no box", code='3\nweapon = "Telegun"\n', fails_at=1, message_contains="no name in front"),
         dict(why="the wrong number", code='armor_bonus = 30\nweapon = "Telegun"\n', fails_at=1, message_contains="3"),
         dict(why="capital letters in the name", code='Armor_Bonus = 3\nweapon = "Telegun"\n', fails_at=1, message_contains="letter for letter"),
-        dict(why="the example's name", code='max_mana = 3\nweapon = "Telegun"\n', fails_at=1, message_contains="example"),
+        dict(why="the example's name", code='points = 3\nweapon = "Telegun"\n', fails_at=1, message_contains="Example"),
+        dict(why="the example's text box for the weapon", code='armor_bonus = 3\njersey = "Telegun"\n', fails_at=2,
+             message_contains="Example"),
+        dict(why="an earlier step's name (max_mana, from the keyboard warm-up)", code='max_mana = 3\nweapon = "Telegun"\n',
+             fails_at=1, message_contains="earlier step"),
         dict(why="weapon text with no quotes", code="armor_bonus = 3\nweapon = Telegun\n", fails_at=0, message_contains="Telegun"),
         dict(why="weapon is a number", code="armor_bonus = 3\nweapon = 7\n", fails_at=2, message_contains="quotes"),
         dict(why="a lone weapon name with no box", code='armor_bonus = 3\n"Telegun"\n', fails_at=2, message_contains="no name in front"),
@@ -789,7 +902,12 @@ NUMBERS_STAND_ALONE = dict(
     ],
     notes=(
         meta(starter_level="S3", path="CC", skills="numbers-vs-text,make-variable", solo="false", dictates="",
-             foreign_names="max_mana,dice,snack,character", twin="dice_count = 2") + "\n"
+             foreign_names="points,jersey,max_mana,dice,snack,character", twin="dice_count = 2") + "\n"
+        "Structure pass (guide 9, S12): the Example was a box versus a word (`print(max_mana)` and "
+        "`print(\"max_mana\")`, the quotes rule again), not a number versus text. It now puts 3 and `\"3\"` in two "
+        "boxes and adds each to itself: 6 and 33, the jersey picture from Mar'tu's text. That needs `+`, so the "
+        "exercise previews op:Add (plus, as in math class; gluing text is taught in 1C). The predict asks about "
+        "the new Example. "
         "CP1 accepts armor_bonus == 3 (so `+3` passes too), or 3 followed by the side quest's `armor_bonus = 4`, "
         "so doing the side quest keeps CP1 green; 3 then 30 fails. WT 'Why \"3\" isn't 3' is the `why` angle. "
         "WA evidence: quoting numbers; lone values (A-04, B-02, B-03); Pizza/pizzas case (B-02, B-03)."
@@ -802,8 +920,8 @@ EXACT_NAMES = dict(
     martu=(
         "Names match letter for letter, capitals too, like a password. `Max_Mana` and `max_mana` are two "
         "different names. A name can't have a space, so use `_`, the underscore (Shift and `-`).\n"
-        "Press Run. Read the title of the box in the Console, then Python's last line. The mistake is on that "
-        "line or the one above."
+        "Press Run. Read the title of the error box, then Python's last line. The mistake is on that line or "
+        "the one above."
     ),
     names=["magical_affinity", "max_mana"],
     pair_talk=(
@@ -973,7 +1091,8 @@ CHANGE_THE_BOX = dict(
     id="change-the-box",
     title="A box can change",
     martu=(
-        "A box holds one value at a time, like a small whiteboard: write 26, wipe it, write 21. In math, x = 26 "
+        "Mana is a hero's magic power. A box holds one value at a time, like a small whiteboard: write 26, wipe "
+        "it, write 21. In math, x = 26 "
         "and x = 21 can't both be true. In Python they happen one after the other, top to bottom, and only the "
         "newest value stays.\n"
         "Guess what prints, then press Run."
@@ -1014,7 +1133,7 @@ CHANGE_THE_BOX = dict(
                     "_v = mana\n"
                     "_near = [_t.id for _n in _sets for _t in _n.targets if type(_t).__name__ == 'Name' "
                     "and _t.id != 'mana' and _t.id.lower().rstrip('s') == 'mana']\n"
-                    "assert type(_v).__name__ != 'str', \"`mana` holds text, because of the quotes. Take the quotes off the number.\"\n"
+                    "assert type(_v).__name__ != 'str', \"`mana` holds text, because of the quotes. Numbers don't get quotes: take them off.\"\n"
                     "assert _v == 14 or not _near, 'Your new line uses the name `' + _near[0] + "
                     "'`, but the box is `mana`. Names match letter for letter, capitals too, so use `mana`.'\n"
                     "_newbox = [_t.id for _n in _sets for _t in _n.targets if type(_t).__name__ == 'Name' "
@@ -1186,22 +1305,22 @@ BROKEN_SPELL_1B = dict(
     title="Broken spell",
     martu=(
         "Six lines, and lines 1 to 4 each have one mistake you've seen before. Fix one at a time: press Run, "
-        "read the title of the box in the Console, then Python's last line, and fix that line. "
+        "read the title of the error box, then Python's last line, and fix that line. "
         "Line 4 gets no error of its own. When Python stops on line 5 and can't find `hero`, the fix is on line 4."
     ),
     names=["weapon", "companion", "glug_sips", "hero"],
     pair_talk=(
-        "Pair talk: take turns. One of you reads the title of the box in the Console out loud, and the other "
+        "Pair talk: take turns. One of you reads the title of the error box out loud, and the other "
         "points at the line number it gives. Each of you fixes it on your own screen."
     ),
     starter='"weapon" = "Telegun"\ndef companion = "Gearshift"\nglug_sips - 3\n"Lucky"\nprint(hero)\nprint(weapon)\n',
     checkpoints=[
         dict(
             id="line-1",
-            text="Mend line 1 so it reads `weapon = \"Telegun\"`: take the quotes off the name `weapon`.",
+            text="Fix line 1 so it reads `weapon = \"Telegun\"`: take the quotes off the name `weapon`.",
             dictated=True,
             hints=[
-                "Read the title of the box in the Console: it points at line 1. Start line 1 with `weapon = `, "
+                "Read the title of the error box: it points at line 1. Start line 1 with `weapon = `, "
                 "with no quotes on the name.",
                 "Look at line 1. Which word is the box's name? Does it have quotes around it?",
                 "Delete the two `\"` around `weapon` on line 1, so line 1 reads `weapon = \"Telegun\"`. A box's name "
@@ -1216,10 +1335,10 @@ BROKEN_SPELL_1B = dict(
         ),
         dict(
             id="line-2",
-            text="Mend line 2 so it reads `companion = \"Gearshift\"`: take out the word `def`.",
+            text="Fix line 2 so it reads `companion = \"Gearshift\"`: take out the word `def`.",
             dictated=True,
             hints=[
-                "Read the title of the box in the Console: it points at line 2. Start line 2 with `companion = `.",
+                "Read the title of the error box: it points at line 2. Start line 2 with `companion = `.",
                 "Look at the first word on line 2. Does a box need it?",
                 "Delete `def` and the space after it, so line 2 reads `companion = \"Gearshift\"`. `def` is for "
                 "something you'll learn in Unit 3. A box is the name, `=`, then the value.",
@@ -1228,10 +1347,10 @@ BROKEN_SPELL_1B = dict(
         ),
         dict(
             id="line-3",
-            text="Mend line 3 so `glug_sips` holds 3: change the `-` to `=`.",
+            text="Fix line 3 so `glug_sips` holds 3: change the `-` to `=`.",
             dictated=True,
             hints=[
-                "Read the title of the box in the Console: it points at line 3. Start line 3 with `glug_sips = `.",
+                "Read the title of the error box: it points at line 3. Start line 3 with `glug_sips = `.",
                 "Look at the sign between `glug_sips` and 3.",
                 "Change the `-` on line 3 to `=`, so line 3 reads `glug_sips = 3`. The `-` sign means minus. "
                 "The `=` sign puts a value in a box.",
@@ -1241,7 +1360,8 @@ BROKEN_SPELL_1B = dict(
         ),
         dict(
             id="line-4",
-            text="Mend line 4: it has the value `\"Lucky\"` but no name. Make it a box named `hero`.",
+            text="Fix line 4: it has the value `\"Lucky\"` but no name, so line 5 can't find `hero`. Make line 4 a "
+                 "box named `hero`.",
             dictated=False,
             hints=[
                 "Python stops on line 5, but the fix is on line 4. Start line 4 with `hero = `.",
@@ -1269,7 +1389,7 @@ BROKEN_SPELL_1B = dict(
             angle="step-by-step",
             label="Read the error box",
             text=(
-                "1. Read the title at the top of the box in the Console. It says what went wrong.\n"
+                "1. Read the title at the top of the error box. It says what went wrong.\n"
                 "2. Read *Python's last line*. It says the same thing in Python's words.\n"
                 "3. Find the line number and fix that line. Press Run again.\n"
                 "4. A new error is good news: Python got further."
@@ -1293,8 +1413,8 @@ BROKEN_SPELL_1B = dict(
         title="Break one on purpose",
         text=(
             "Three moves:\n"
-            "1. At the bottom, add a line that makes a box whose name has a space in it. Press Run and read the box "
-            "in the Console.\n"
+            "1. At the bottom, add a line that makes a box whose name has a space in it. Press Run and read the "
+            "error box.\n"
             "2. Put `#` at the start of that line, so it becomes a note.\n"
             "3. On the next line, write it again with `_` in place of the space."
         ),
@@ -1441,7 +1561,8 @@ SOLO_1B = dict(
         "SOLO make-twin. Seat A (and anyone solo) gets familiar; seat B would get lantern_name once pair mode "
         "ships. Recorded, never blocking, never shown to a partner. Two hints only (schema); using one records "
         "the pass 'with structure'. Teacher ruling: the solo reads as showing off, not being watched, so Learn "
-        "drops 'Nobody helps on this one' and the pass line ticks the skill on the student's map."
+        "drops 'Nobody helps on this one'. The pass line keeps 'You did that on your own.' and says what they did "
+        "(no 'On your map:': no skills map is on screen yet, guide 4.6 and S10)."
     ),
 )
 
@@ -1449,10 +1570,13 @@ LESSON_1B = dict(
     kind="lesson",
     id="boxes-with-labels",
     title="Boxes With Labels",
-    minutes=25,
-    summary="Keep words or a number in a named box, use the exact name, and change what is inside.",
-    notes="Lesson 1B (CC). Preceded by 1b-remembers. Exactly one SOLO (solo-1b); non-dictated checkpoints in 1B-02, 1B-03, 1B-04, 1B-06, 1B-S.",
-    exercises=[LABEL_A_BOX, NAME_AND_VALUE, NUMBERS_STAND_ALONE, EXACT_NAMES, CHANGE_THE_BOX, BROKEN_SPELL_1B, SOLO_1B],
+    minutes=27,
+    summary="Find the `_` and `=` keys, keep words or a number in a named box, use the exact name, and change what "
+    "is inside.",
+    notes="Lesson 1B (CC). Preceded by 1b-remembers. Exactly one SOLO (solo-1b); non-dictated checkpoints in 1B-02, "
+    "1B-03, 1B-04, 1B-06, 1B-S. Structure pass (guide 9, S12): opens with keyboard-symbols (1W-04), moved here from "
+    "the 1W warm-ups so it comes after print and # are taught (two more minutes).",
+    exercises=[KEYBOARD_SYMBOLS, LABEL_A_BOX, NAME_AND_VALUE, NUMBERS_STAND_ALONE, EXACT_NAMES, CHANGE_THE_BOX, BROKEN_SPELL_1B, SOLO_1B],
 )
 
 # ---------------------------------------------------------------------------------------------
@@ -1626,26 +1750,37 @@ NAME_AND_VALUE_AGAIN = dict(
     starter="# 1. A box named satchel (text):\n\n# 2. A box named coins (a number):\n\n# 3. Print both boxes:\n",
     checkpoints=[
         dict(
-            id="two-boxes",
+            id="satchel-box",
             text=(
-                "Make two boxes:\n"
-                "1. Under the `# 1.` note, make a box named `satchel` that holds what is in Lucky's satchel (his "
-                "shoulder bag), in quotes.\n"
-                "2. Under the `# 2.` note, make a box named `coins` that holds any number, with no quotes."
+                "Under the `# 1.` note, make a box named `satchel`. Put the things in Lucky's satchel (his "
+                "shoulder bag) in it, in quotes."
             ),
             dictated=False,
             hints=[
-                "Look at the `# 1.` and `# 2.` notes. Start one line with `satchel = ` and the next with `coins = `.",
-                "Which box holds words, and which holds a number? Only words get quotes.",
-                "Write `satchel = \"three candles and a map\"` under `# 1. A box named satchel (text):`, and "
-                "`coins = 7` under the `# 2.` note. Any words and any number are fine.",
+                "Click on the empty line under `# 1. A box named satchel (text):`. Start the line with `satchel = `.",
+                "What's in a bag is words, and words are text. Text gets quotes: `bag = \"rope\"`.",
+                "Write `satchel = \"three candles and a map\"` under `# 1. A box named satchel (text):`, or put any "
+                "words inside the quotes.",
             ],
             checks=[
                 box_check("satchel", foreign=["backpack", "gems", "armor_bonus", "weapon"]),
                 text_check("satchel", "words in quotes"),
+                bare_check(("str",)),
+            ],
+        ),
+        dict(
+            id="two-boxes",
+            text="Under the `# 2.` note, make a box named `coins` that holds any number, with no quotes.",
+            dictated=False,
+            hints=[
+                "Click on the empty line under `# 2. A box named coins (a number):`. Start the line with `coins = `.",
+                "Coins are an amount you can count, like points in a game. Does a number get quotes?",
+                "Write `coins = 7` under `# 2. A box named coins (a number):`. Any number is fine.",
+            ],
+            checks=[
                 box_check("coins", foreign=["backpack", "gems", "armor_bonus", "weapon"]),
                 num_check("coins"),
-                bare_check(),
+                bare_check(("int", "float")),
             ],
         ),
         dict(
@@ -1668,7 +1803,9 @@ NAME_AND_VALUE_AGAIN = dict(
     ),
     partials=[
         "# 1. A box named satchel (text):\nsatchel = \"three candles and a map\"\n"
-        "# 2. A box named coins (a number):\ncoins = 7\n# 3. Print both boxes:\n"
+        "# 2. A box named coins (a number):\n\n# 3. Print both boxes:\n",
+        "# 1. A box named satchel (text):\nsatchel = \"three candles and a map\"\n"
+        "# 2. A box named coins (a number):\ncoins = 7\n# 3. Print both boxes:\n",
     ],
     assemble=dict(
         lines=['satchel = "three candles and a map"', "coins = 7", "print(satchel)", "print(coins)"],
@@ -1694,14 +1831,17 @@ NAME_AND_VALUE_AGAIN = dict(
     ],
     takeaway="Text gets quotes. Numbers and box names don't.",
     wrong_answers=[
-        dict(why="coins in quotes", code='satchel = "rope"\ncoins = "7"\nprint(satchel)\nprint(coins)\n', fails_at=1, message_contains="quotes"),
+        dict(why="coins in quotes", code='satchel = "rope"\ncoins = "7"\nprint(satchel)\nprint(coins)\n', fails_at=2, message_contains="quotes"),
+        dict(why="a lone number for coins", code='satchel = "rope"\n7\nprint(satchel)\nprint(7)\n', fails_at=2,
+             message_contains="Put `coins = ` in front"),
+        dict(why="coins left out", code='satchel = "rope"\nprint(satchel)\n', fails_at=2, message_contains="Make a box named `coins`"),
         dict(why="a lone value for satchel", code='"rope"\ncoins = 7\nprint("rope")\nprint(coins)\n', fails_at=1, message_contains="no name in front"),
-        dict(why="print with quotes around the name", code='satchel = "rope"\ncoins = 7\nprint("satchel")\nprint(coins)\n', fails_at=2, message_contains="word"),
+        dict(why="print with quotes around the name", code='satchel = "rope"\ncoins = 7\nprint("satchel")\nprint(coins)\n', fails_at=3, message_contains="word"),
         dict(why="capital S", code='Satchel = "rope"\ncoins = 7\nprint(Satchel)\nprint(coins)\n', fails_at=1, message_contains="letter for letter"),
         dict(why="the example's names", code='backpack = "rope"\ngems = 2\nprint(backpack)\nprint(gems)\n', fails_at=1, message_contains="example"),
         dict(why="the example's name, misspelled", code='backpak = "rope"\ncoins = 7\nprint(backpak)\nprint(coins)\n', fails_at=1,
              message_contains="looks like `backpack`"),
-        dict(why="prints the values typed by hand", code='satchel = "rope"\ncoins = 7\nprint("rope")\nprint(7)\n', fails_at=2,
+        dict(why="prints the values typed by hand", code='satchel = "rope"\ncoins = 7\nprint("rope")\nprint(7)\n', fails_at=3,
              message_contains="Print the box instead"),
         dict(why="def used to make a box", code='def satchel(): "rope"\ncoins = 7\nprint(satchel)\nprint(coins)\n', fails_at=1,
              message_contains="learn in Unit 3"),
@@ -1710,7 +1850,10 @@ NAME_AND_VALUE_AGAIN = dict(
     notes=(
         meta(starter_level="S2", path="pool", skills="make-variable,numbers-vs-text,exact-names", solo="false",
              dictates="2", foreign_names="backpack,gems,armor_bonus,weapon") + "\n"
-        "1B-T: the twin for deferral time (and a spaced twin for 1B-02/1B-03)."
+        "1B-T: the twin for deferral time (and a spaced twin for 1B-02/1B-03). Structure pass (guide 9, S12): the "
+        "old step 1 made both boxes; it is now one step per box (satchel-box, then coins under the old id "
+        "two-boxes, so a pass already saved still counts), each with its own hints and checks. The BARE check is "
+        "split by kind, so a lone 7 for coins gets coins' own message (put `coins = ` in front), not satchel's."
     ),
 )
 

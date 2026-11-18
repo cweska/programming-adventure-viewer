@@ -32,6 +32,7 @@ import {
   codeHasStart,
   countsAsAttempt,
   crashAim,
+  crashFixLine,
   crashLineSwitchedOff,
   crashTarget,
   effectiveSupport,
@@ -55,6 +56,8 @@ import {
   soloPassLine,
   soloUnaided,
   solutionUnlocked,
+  splitNames,
+  startInStarter,
   startTarget,
   stepAssemble,
   stepLine,
@@ -151,7 +154,7 @@ type RunView = {
   /** This run passed with Mar'tu's version, copied in with "Copy into my editor". */
   revealPass?: boolean;
   /**
-   * A debugging exercise's crash: the step Help aims at (crashAim), or null for "only say which line to mend".
+   * A debugging exercise's crash: the step Help aims at (crashAim), or null for "only say which line to fix".
    * Undefined outside debugging exercises and for runs that did not crash.
    */
   crashStep?: number | null;
@@ -630,8 +633,8 @@ export function ExercisePlayer({
       : [];
   /** Done before, but the latest run is not right now: the done panel stays, softer, without the celebration. */
   const slippedSinceDone = done && view?.grade != null && !view.grade.allPassed && !view.revealPass;
-  // While a crash stands, Help aims at the line Python stopped on, never at step 1 under "Fix line 3 first.":
-  // a step that names that line ("Mend line 3 ...") gets the Help. When the steps name other lines and none
+  // While a crash stands, Help aims at the line Python stopped on, never at step 1 under "Fix line 3":
+  // a step that names that line ("Fix line 3 ...") gets the Help. When the steps name other lines and none
   // names this one, their Help would talk about a different line, so it waits until the code runs. In a
   // debugging exercise, a crash that got further than the last one aims past the slip just mended (crashAim).
   const aimStep = crashed && view?.crashStep !== undefined ? view.crashStep : undefined;
@@ -670,15 +673,19 @@ export function ExercisePlayer({
     return lightBeforeRun && point >= 0 ? all.slice(0, point + 1) : all;
   }, [helpCheckpoint, exercise.anotherWay.length, exercise.assemble, exercise.solo, exercise.solution, lightBeforeRun]);
   /**
-   * Start me off has nothing to give when the step's line is already begun, or right after a crash (mend that first).
-   * Mar'tu's other finished lines (the starter's, an earlier step's) are not this step's line begun.
+   * Start me off has nothing to give when the step's line is already begun, or right after a crash (fix that first).
+   * Mar'tu's other finished lines (the starter's, an earlier step's) are not this step's line begun. On a step that
+   * only edits a line the starter already has ("Fix line 1 so ...", "Replace the `0` ..."), it never shows at all.
    */
   const startStep = { solution: exercise.solution, line: helpCheckpoint ? stepLine(helpCheckpoint.hints) : null };
   const startInCode = (start: string) => codeHasStart(code, start, startStep);
   const skipRung = (rung: Rung) => rung.kind === "start" && (crashed || startInCode(rung.start ?? ""));
+  const hideRung = (rung: Rung) =>
+    rung.kind === "start" && startInStarter(rung.start, exercise.starter, { ...startStep, text: helpCheckpoint?.text });
   const climbed = helpState(rungs, helpCheckpoint ? rungsShown(saved?.hintsUsed, helpCheckpoint.id, rungs.length) : 0, showUnlocked, {
     preset,
     skip: skipRung,
+    hide: hideRung,
   });
   // A Start me off that Help stepped over was never shown: it stays out of the open rungs (it would only say
   // "Your code already starts this line" above Where to look).
@@ -708,7 +715,7 @@ export function ExercisePlayer({
   const names = exercise.names ?? [];
   /** The task only prints (Lesson 1A): a pick on a line of its own goes in as `print("...")`. */
   const printOnly = isPrintOnlyTask({ names, solution: exercise.solution });
-  /** A Broken spell ("Mend line 3 ..."): a run that gets further shows its own progress line. */
+  /** A Broken spell ("Fix line 3 ..."): a run that gets further shows its own progress line. */
   const debugging = isDebugExercise(exercise);
 
   function openCompare() {
@@ -1064,6 +1071,8 @@ export function ExercisePlayer({
 
   const pairTalkText = exercise.pairTalk ? exercise.pairTalk.replace(/^\s*pair talk\s*:?\s*/i, "") : "";
   const showNames = names.length > 0 || Boolean(exercise.pick);
+  // Python's own tools (`str`, `print`) get their own row, apart from the boxes (plain-language guide §9, S7).
+  const chips = splitNames(names, exercise.solution);
 
   const checkpointList = (
     <section className="ex-checkpoints" aria-labelledby={`${inputId}-steps`}>
@@ -1072,7 +1081,8 @@ export function ExercisePlayer({
       </h3>
       {showNames ? (
         <NamesChips
-          names={names}
+          names={chips.names}
+          tools={chips.tools}
           pick={exercise.pick}
           prominent={activeCheckpoint?.dictated === false}
           onInsertName={(name) => insertInCode(name, name, "code")}
@@ -1163,9 +1173,9 @@ export function ExercisePlayer({
           ) : activeCheckpoint && !done && crashed ? (
             // A crash checks nothing, so "step 1" may already be right: the line Python stopped at comes first.
             <p className="ex-task-line" data-testid="task-line" data-crash="true">
-              <span className="ex-task-label">{`First, fix ${slipAt ? `line ${slipAt}` : crashAt ? `line ${crashAt}` : "the error"}.`}</span>{" "}
-              {`${slipAt && crashAt ? `Python stopped on line ${crashAt}` : "Python stopped there"}, so it couldn't check your ${noun.toLowerCase()}s yet. ${
-                // A lean explainer names the slip, not the fix: the line promises only what the message gives.
+              <span className="ex-task-label">{crashAt ? `Python stopped at line ${crashAt}` : "Python stopped"}</span>
+              {`, so it couldn't finish your code. ${crashFixLine(crashAt, slipAt)} ${
+                // A lean explainer names the mistake, not the fix: the line promises only what the message gives.
                 exercise.explainer === "lean" ? "The box in the Console names the mistake." : "The box in the Console says how to fix it."
               }`}
             </p>

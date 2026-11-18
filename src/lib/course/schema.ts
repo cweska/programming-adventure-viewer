@@ -144,7 +144,7 @@ const exerciseShape = {
   support: supportSchema.default("full"),
   bonus: bonusSchema.optional(),
   assemble: assembleSchema.optional(),
-  /** Lucky's "What's in it for me?" box: where this shows up in the campaign. */
+  /** Lucky's "Where you saw this in the game" box: where this shows up in the campaign. */
   campaignLink: z
     .object({ module: z.string(), part: z.string(), snippet: codeSchema.optional(), why: prose })
     .strict()

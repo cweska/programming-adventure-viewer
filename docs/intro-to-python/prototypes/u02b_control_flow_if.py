@@ -545,21 +545,22 @@ UNIT = dict(
     subtitle="The Ley Clock Decides",
     published=True,
     martu_intro=(
-        "The Ley Clock does not panic. It checks. If the hand is near the arc, it warns. Otherwise, it waits.\n"
-        "Today you teach Python to check the same way. And you learn to roll dice, because the world is not fair, "
-        "yes?\n"
+        "The Ley Clock counts the hours until the next burst of magic. It does not panic. It checks: if the burst "
+        "is close, it warns. Otherwise, it waits.\n"
+        "In this unit, you teach Python to check the same way: ask a yes-or-no question, then choose what to do.\n"
+        "You also roll dice, because the world is not fair, yes?\n"
         "You have seen this code already: the four dialogue options, the trap-door skill checks. It felt like a "
         "wall. Now we take it apart, one stone at a time."
     ),
     goals=[
-        "Ask yes-or-no questions with `==`, `!=`, `<`, `>`, `<=` and `>=`, and get `True` or `False`",
-        "Tell `=` (gets) from `==` (is the same as)",
-        "Choose `>=` on purpose, so exactly enough still passes",
-        "Compare text exactly, and with `.lower()` so capitals don't matter",
-        "Write `if`, `else` and `elif` with colons and indents, knowing the first true branch wins",
-        "Join questions with `and`, `or` and `not`",
-        "Roll dice with `import random` and `random.randint(1, 20)`, both ends included",
-        "Read Python's error message, find the line, and mend it",
+        "Ask Python yes-or-no questions, like *is 6 less than 15?*",
+        "Tell apart putting a value in a box and asking whether two values are the same",
+        "Decide whether exactly enough should count, like the filled dot on a number line",
+        "Compare words exactly, or so that capitals don't matter",
+        "Make Python choose what to do, like a choose-your-own-adventure book",
+        "Join yes-or-no questions with *and*, *or* and *not*",
+        "Roll dice in your code",
+        "Read Python's error messages, find the line, and fix it",
     ],
     campaign_links=["leylines-awaken", "friends-in-low-places"],
 )
@@ -685,7 +686,7 @@ GLOSSARY = [
 REMEMBERS_2B = dict(
     kind="quiz",
     id="2b-remembers",
-    title="Quick review: 2 questions (not scored)",
+    title="Quick review: 2 questions, not scored",
     optional=True,
     minutes=1,
     summary="Two quick questions from earlier lessons, to warm up. Nothing is scored.",
@@ -978,8 +979,7 @@ COLON_AND_INDENT = dict(
         "`if`.\n"
         "This code has three [[bug|bugs]] (mistakes in code). Two are loud: Python stops and shows an error, one "
         "at a time. Read each error box in the Console: its title first, then Python's last line, then the line "
-        "number. The third bug is quiet: the code runs, but one line is in the wrong place.\n"
-        "*Mend* means fix. Each step below starts with it."
+        "number. The third bug is quiet: the code runs, but one line is in the wrong place."
     ),
     names=["hours_left", "mana"],
     pair_talk=(
@@ -990,12 +990,12 @@ COLON_AND_INDENT = dict(
     checkpoints=[
         dict(
             id="mend-the-colon",
-            text="Mend line 4: type the missing colon, `:`, at the very end of `if hours_left < 3`.",
+            text="Fix line 4: type the missing colon, `:`, at the very end of `if hours_left < 3`.",
             dictated=True,
             hints=[
                 "Press Run and read the box in the Console: first its title, then Python's last line. Which line "
                 "number does it give?",
-                "Python's last line says `expected ':'` and gives line 4. Look at the very end of line 4.",
+                "Python's last line says `expected ':'`, and Python stopped on line 4. Look at the very end of line 4.",
                 "Type `:` at the very end of line 4. Line 4 becomes `if hours_left < 3:`. The colon says: the "
                 "indented lines come next.",
             ],
@@ -1007,11 +1007,11 @@ COLON_AND_INDENT = dict(
                      "Keep `if hours_left < 3:` as the first `if`, with `print(\"Get inside!\")` indented under it."),
                 ]),
             ],
-            pass_line="Mar'tu: One fixed. Press Run again, and Python shows you the next one.",
+            pass_line="Mar'tu: The colon is back. It says: here come the `if`'s steps.",
         ),
         dict(
             id="mend-the-indent",
-            text="Mend line 8, so the `Low mana.` line belongs to the `if` on line 7.",
+            text="Fix line 8, so the `Low mana.` line belongs to the `if` on line 7.",
             dictated=False,
             hints=[
                 "Press Run and read the box in the Console: its title, then Python's last line. Which line number "
@@ -1031,7 +1031,7 @@ COLON_AND_INDENT = dict(
         ),
         dict(
             id="always-runs",
-            text="Mend line 13, so `The clock ticks on.` shows every time, even with 10 hours left.",
+            text="Fix line 13, so `The clock ticks on.` shows every time, even with 10 hours left.",
             dictated=False,
             hints=[
                 "Look at line 13 and the `if` on line 10. If `hours_left` were 10, would `The clock ticks on.` "
@@ -1160,7 +1160,7 @@ OTHERWISE = dict(
         "`False`. In plain English: *If it rains, take a coat. Otherwise, take sunglasses.* You never take both. "
         "In Python, `else:` goes on its own line, right under the `if`'s indented lines.\n"
         "So exactly one of the two lines shows: the line under `if`, or the line under `else`. Never both.\n"
-        "Look at the Example: Oogrish's perception check (does he notice the tracks?). Then write Bomb Shell's "
+        "Look at the Example, under my words: Oogrish's perception check (does he notice the tracks?). Then write Bomb Shell's "
         "check: can she pry open a stuck latch? Keep the names `strength_roll` and `strength_needed`, and use your "
         "own words for the two lines."
     ),
@@ -1361,7 +1361,8 @@ CLOCK_COLORS = dict(
     title="Clock colors",
     martu=(
         "[[elif]] is short for *else, if*: another question, asked only when the questions above it were `False`, "
-        "like `elif hours_left <= 12:`. Python checks the chain from the top, takes the *first* question that is "
+        "like `elif hours_left <= 12:`. An `if`, then `elif` lines, then an `else`, one after another, make a "
+        "*chain*. Python checks the chain from the top, takes the *first* question that is "
         "`True`, and skips the rest. It's like a grading scale: 90 or more is an A, 80 or more is a B. Check *80 "
         "or more* first, and a 95 gets a B. Order matters.\n"
         "Each path through the chain is a [[branch]]: the lines under the `if`, under one `elif`, or under the "
@@ -1642,7 +1643,7 @@ FOUR_ANSWERS = dict(
     id="four-answers",
     title="Four answers",
     martu=(
-        "Remember the four dialogue options in the campaign? This is that chain. `choice` holds the option the "
+        "Remember the four dialogue options in the game? This is that chain. `choice` holds the option the "
         "player clicked, like `\"option 3\"`. Each [[branch]] asks about one option, from the top, and the first "
         "one that is `True` speaks.\n"
         "The options are text, so they keep their quotes: `\"option 1\"`, with a space before the 1. Quotes mean "
@@ -2042,7 +2043,7 @@ AND_OR_NOT = dict(
         part="hold-the-barrier",
         snippet='elif caster["mana"] < spell["mana_cost"]:',
         why=(
-            "You have seen both questions in `cast_spell`: enough affinity? enough mana? The campaign asked them "
+            "You have seen both questions in `cast_spell`: enough affinity? enough mana? The game asked them "
             "one at a time, with `if` and `elif`. `and` asks both in one line."
         ),
     ),
@@ -2319,7 +2320,7 @@ ROLL_AND_DECIDE = dict(
     id="roll-and-decide",
     title="Roll and decide",
     martu=(
-        "Now you write the whole skill check, like the trap door in the campaign. Roll a d20 (a die with 20 "
+        "Now you write the whole skill check, like the trap door in the game. Roll a d20 (a die with 20 "
         "faces). Compare the roll with the number you need. Then say what happened. You already know every "
         "piece: `random.randint(1, 20)`, `>=`, `if` and `else`, and `str()` for gluing a number on.\n"
         "Pick any action and any `needed` from 2 to 20. I test your code with my own rolls, so I can try every "
@@ -2559,12 +2560,13 @@ BROKEN_SPELL_2B = dict(
     checkpoints=[
         dict(
             id="ask-with-double-equals",
-            text="Mend line 2, `if roll = 20:`, so it asks whether `roll` is 20.",
+            text="Fix line 2, `if roll = 20:`, so it asks whether `roll` is 20.",
             dictated=False,
             hints=[
                 "Press Run and read the box in the Console: first its title, then Python's last line. Which line "
                 "number does it give?",
-                "Python's last line gives line 2 and says `Maybe you meant '=='`. Which sign asks a question?",
+                "Python's last line says `Maybe you meant '=='`, and Python stopped on line 2. Which sign asks a "
+                "question?",
                 "Type a second `=` right after the `=` on line 2. Line 2 becomes `if roll == 20:`. `=` puts a value "
                 "in a box, and `==` asks: is the same as?",
             ],
@@ -2578,12 +2580,12 @@ BROKEN_SPELL_2B = dict(
         ),
         dict(
             id="quote-the-option",
-            text="Mend line 6, `if choice == option 1:`, so it checks the text `option 1`.",
+            text="Fix line 6, `if choice == option 1:`, so it checks the text `option 1`.",
             dictated=False,
             hints=[
-                "Press Run and read the box: its title, then Python's last line. Then look at the line number it "
+                "Press Run and read the error box: its title, then Python's last line. Then look at the line number it "
                 "gives.",
-                "Python's last line says `invalid syntax` and gives line 6. Look at `option 1` there: it has no "
+                "Python's last line says `invalid syntax`, and Python stopped on line 6. Look at `option 1` there: it has no "
                 "quotes. Is it a box name, or text?",
                 "Type `\"` right before `option 1` and another `\"` right after it. Line 6 becomes "
                 "`if choice == \"option 1\":`. " + QUOTES_RULE,
@@ -2600,12 +2602,12 @@ BROKEN_SPELL_2B = dict(
         ),
         dict(
             id="else-goes-last",
-            text="Mend line 16, the `elif` line, so 5 hours shows `The clock is bright blue.`",
+            text="Fix line 16, the `elif` line, so 5 hours shows `The clock is bright blue.`",
             dictated=False,
             hints=[
-                "Press Run and read the box: its title, then Python's last line. Look at the line number it gives, "
+                "Press Run and read the error box: its title, then Python's last line. Look at the line number it gives, "
                 "and at the line right before it.",
-                "Python's last line says `invalid syntax` and gives line 16, the `elif` line. Look at what comes "
+                "Python's last line says `invalid syntax`, and Python stopped on line 16, the `elif` line. Look at what comes "
                 "right before it. `elif` must come before `else`, because `else` is always last.",
                 "Move the `else:` part to the end, in four moves:\n"
                 "1. Drag across lines 14 and 15 (`else:` and the line under it) to select them.\n"
@@ -2623,10 +2625,10 @@ BROKEN_SPELL_2B = dict(
         ),
         dict(
             id="import-the-dice",
-            text="Mend line 1, so Python knows where `random` comes from.",
+            text="Fix line 1, so Python knows where `random` comes from.",
             dictated=False,
             hints=[
-                "Press Run and read the box: its title, then Python's last line. Python's last line ends with a "
+                "Press Run and read the error box: its title, then Python's last line. Python's last line ends with a "
                 "question for you.",
                 "Python says `name 'random' is not defined` and asks: `Did you forget to import 'random'?` Tools "
                 "from Python's shelf need an `import` first, at the top.",
@@ -2993,7 +2995,7 @@ ARTICLE_2A1 = dict(
         "Python tries the cases from the top and runs the first one that fits. Then it stops, the same as an "
         "`if` and `elif` chain.\n"
         "The two examples below show the same line. Press Run on both and compare them.\n"
-        "The campaign uses `elif`, so learn to read both. When you write your own code, use whichever one is "
+        "The game uses `elif`, so learn to read both. When you write your own code, use whichever one is "
         "clearer to you."
     ),
     examples=[

@@ -245,7 +245,7 @@ export type ExplainContext = {
    */
   unitOrder?: number;
   /**
-   * A debugging exercise (a Broken spell: "Mend line 3 ..."). A run that got further is marked `gotFurther`
+   * A debugging exercise (a Broken spell: "Fix line 3 ...", or the older "Mend line 3 ..."). A run that got further is marked `gotFurther`
    * with no "One fixed!" prefix in the hint: the player shows its own line, GOT_FURTHER_LINE, instead.
    */
   debugging?: boolean;
@@ -2158,12 +2158,16 @@ function explainSyntax(
   const odd = message.match(/invalid character '(.)'/);
   if (odd) {
     const sign = TYPED_SIGNS[odd[1]];
+    // `ink = █`: the mark is text, so the fix is quotes around it, on the student's own line when the line has no
+    // other quotes to get in the way (`print(█ * 5)` -> `print("█" * 5)`).
+    const plain = codePart(text).trim();
+    const quoted = !/["']/.test(plain) && plain.includes(odd[1]) ? plain.replace(new RegExp(`${escapeRegExp(odd[1])}+`), (run) => `"${run}"`) : null;
     return explain(
       "odd-character",
       "Odd character",
       sign
         ? `${lineWord(line)} has ${odd[1]}, which Python can't read. The keyboard has no ${odd[1]} key, so for ${sign[1]} Python uses \`${sign[0]}\`.`
-        : `${lineWord(line)} has ${odd[1]} outside of quotes, where Python can't read it. To show a mark like ${odd[1]}, put it inside quotes as text: \`"${odd[1]}"\`.`,
+        : `${lineWord(line)} has ${odd[1]} outside of quotes, where Python can't read it. A mark like ${odd[1]} is text, so it goes inside quotes: \`${quoted ?? `"${odd[1]}"`}\``,
       raw,
     );
   }
@@ -2646,6 +2650,17 @@ function explainName(
         raw,
       );
     }
+    // `Lucky` alone on line 4, and a later line uses the step's box `hero` that no line makes: the word is that box's
+    // value (Broken spell 1B), so the fix is quotes and the step's own box, never a box named `Lucky`.
+    const box = line !== null ? boxStillToMake(code, line, context) : null;
+    if (box) {
+      return explain(
+        "lone-name",
+        "A name on its own",
+        `${lineWord(line)} is only the word \`${name}\`. With no quotes, Python looks for a box named \`${name}\`, and no line makes one. \`${name}\` is text, so it needs quotes, and your step's box \`${box}\` needs a line that makes it. Write: \`${box} = "${name}"\``,
+        raw,
+      );
+    }
     return explain(
       "lone-name",
       "A name on its own",
@@ -2909,6 +2924,28 @@ function calledBox(code: string, text: string, line: number | null): { name: str
 
 function inputNames(code: string): string[] {
   return [...(code ?? "").matchAll(/^\s*([A-Za-z_]\w*)\s*=\s*input\s*\(/gm)].map((match) => match[1]);
+}
+
+/**
+ * The one box of the step's names (not one of Python's tools) that no line makes, but a line below `line` uses: the
+ * box a lone value on `line` was meant for (`Lucky` alone on line 4, `print(hero)` on line 5). Null when there is
+ * not exactly one.
+ */
+function boxStillToMake(code: string, line: number, context?: ExplainContext): string | null {
+  const defined = new Set(definedNames(code).map((entry) => entry.name));
+  const below = (code ?? "")
+    .split("\n")
+    .slice(line)
+    .map((row) => maskStrings(codePart(row)));
+  const boxes = (context?.names ?? []).filter(
+    (name) =>
+      /^[A-Za-z_]\w*$/.test(name) &&
+      !COMMON_BUILTINS.includes(name) &&
+      !CALLED_TOOLS.has(name) &&
+      !defined.has(name) &&
+      below.some((row) => new RegExp(`(^|[^\\w.])${name}\\b`).test(row)),
+  );
+  return boxes.length === 1 ? boxes[0] : null;
 }
 
 /**
@@ -5598,14 +5635,15 @@ function findQuietSlip(code: string, options: { missingName?: string; context?: 
       const hint = missing
         ? `${lost} Put \`${keep} = \` in front of it: \`${keep} = ${body}\``
         : printOnly
-          ? `${where} is ${STRING_LITERAL.test(body) ? "words in quotes" : "a value"} with no \`print\`, so Python reads it and throws it away. To show it in the Console, write \`print(${body})\``
+          ? `${where} is ${STRING_LITERAL.test(body) ? "words in quotes" : NUMBER_LITERAL.test(body) ? "a number" : "a word"} with no \`print\`, so Python reads it and throws it away. To show it in the Console, write \`print(${body})\``
           : keep
             ? `${lost} Put \`${keep} = \` in front of it: \`${keep} = ${body}\``
             : keep === undefined
               ? `${lost} To keep it, put the box's name from your step and \`=\` in front of it.`
               : `${lost} To keep it, put a box's name and \`=\` in front of it. To show it instead, put it inside \`print( )\`: \`print(${body})\``;
+      // Lesson 1A has not met boxes, values or names yet: its title says what is missing there, `print`.
       return {
-        ...explain("bare-value", "A value with no name", hint, raw),
+        ...explain("bare-value", printOnly && !missing ? "Missing print" : "A value with no name", hint, raw),
         kind: "bare-value",
         line,
       };

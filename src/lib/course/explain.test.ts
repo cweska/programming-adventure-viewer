@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { isDebugExercise } from "../../components/course/exercise-logic";
 import {
   closeName,
   definedNames,
@@ -413,6 +414,34 @@ describe("explainCourseError: starting-from-zero slips", () => {
     expect(explainRun("canes_women  # the order\n").kind).toBe("lone-name");
   });
 
+  it("sends a lone word to the step's own box when a later line uses that box (Broken spell 1B, guide §9, S5)", () => {
+    const names = { names: ["weapon", "companion", "glug_sips", "hero"] };
+    const spell = 'weapon = "Telegun"\ncompanion = "Gearshift"\nglug_sips = 3\nLucky\nprint(hero)\nprint(weapon)\n';
+    const lone = explainRun(spell, [], names);
+    expect(lone.kind).toBe("lone-name");
+    expect(lone.hint).toBe(
+      'Line 4 is only the word `Lucky`. With no quotes, Python looks for a box named `Lucky`, and no line makes one. `Lucky` is text, so it needs quotes, and your step\'s box `hero` needs a line that makes it. Write: `hero = "Lucky"`',
+    );
+    // Never a box named after the word itself.
+    expect(lone.hint).not.toContain("Lucky =");
+    // No step box left to make, or no later line that uses one: the quotes alone, as before.
+    expect(explainRun('hero = "Lucky"\nLucky\nprint(hero)\n', [], names).hint).toContain('If `Lucky` is text, it needs quotes: `"Lucky"`');
+    expect(explainRun("Lucky\n", [], names).hint).toContain('If `Lucky` is text, it needs quotes: `"Lucky"`');
+    // Python's tools are never the box (`str` is in the names of a glue step).
+    expect(explainRun("Lucky\nprint(str(3))\n", [], { names: ["str"] }).hint).toContain('If `Lucky` is text, it needs quotes: `"Lucky"`');
+  });
+
+  it("puts a mark like █ in quotes on the student's own line: the real fix is quotes (guide §9, S5)", () => {
+    const ink = explainRun("ink = █\nprint(ink * 5)\n");
+    expect(ink.kind).toBe("odd-character");
+    expect(ink.hint).toBe("Line 1 has █ outside of quotes, where Python can't read it. A mark like █ is text, so it goes inside quotes: `ink = \"█\"`");
+    expect(ink.hint).not.toMatch(/type .* again/);
+    expect(explainRun("print(█ * 5)\n").hint).toContain('`print("█" * 5)`');
+    expect(explainRun("print(███)\n").hint).toContain('`print("███")`');
+    // Other quotes on the line: only the mark, in quotes.
+    expect(explainRun('print("[" + █)\n').hint).toContain('it goes inside quotes: `"█"`');
+  });
+
   it("explains def: and def ( ) used to make a variable, with the student's own name and value", () => {
     const colon = explainRun('def: Power_up= ("Fire Ball")\n');
     expect(colon.kind).toBe("def-for-variable");
@@ -583,7 +612,14 @@ describe("explainCourseError: Unit 1 play-through findings", () => {
     expect(dash.hint).not.toMatch(/variable|oogrish =/);
     const bare = explainQuietSlip('"_ - ="\n', { context: printOnly });
     expect(bare?.kind).toBe("bare-value");
+    // Lesson 1A has not met values or names: the title says what is missing, `print` (guide §3.6).
+    expect(bare?.title).toBe("Missing print");
     expect(bare?.hint).toBe('Line 1 is words in quotes with no `print`, so Python reads it and throws it away. To show it in the Console, write `print("_ - =")`');
+    expect(explainQuietSlip("37\n", { context: printOnly })?.hint).toBe(
+      "Line 1 is a number with no `print`, so Python reads it and throws it away. To show it in the Console, write `print(37)`",
+    );
+    // Once the task makes boxes, the value has a name to go with.
+    expect(explainQuietSlip('"Zelda"\n', { context: { names: ["character"], solution: 'character = "Zelda"\n' } })?.title).toBe("A value with no name");
     expect(explainRun("Steady\n", [], words).hint).toContain('`print("Steady")`');
     // Once the task makes boxes, the variable advice is right again.
     expect(explainRun('def ("character")\n', [], { names: ["character"], solution: 'character = "Kratos"\nprint(character)\n' }).hint).toContain(
@@ -1065,7 +1101,7 @@ type RawExercise = {
   starter?: RawCode;
   example?: { code: RawCode };
   explainer?: "full" | "lean";
-  checkpoints?: { hints: string[] }[];
+  checkpoints?: { text?: string; hints: string[] }[];
   bonus?: { solution?: RawCode };
 };
 
@@ -1757,7 +1793,7 @@ function unitWrongAnswers(unitId: string) {
     example: exercise.example ? text(exercise.example.code) : undefined,
     explainer: exercise.explainer,
     setup: exercise.setup ? text(exercise.setup) : undefined,
-    debugging: ((exercise.checkpoints ?? []) as { text?: string }[]).some((checkpoint) => /\bmend\b/i.test(checkpoint.text ?? "")),
+    debugging: isDebugExercise({ checkpoints: (exercise.checkpoints ?? []).map((checkpoint) => ({ text: checkpoint.text ?? "" })) }),
     foreign: foreignNames({
       hints: (exercise.checkpoints ?? []).flatMap((checkpoint) => checkpoint.hints),
       solution: [text(exercise.solution), text(exercise.bonus?.solution)].join("\n"),

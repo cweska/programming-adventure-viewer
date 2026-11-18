@@ -60,13 +60,13 @@ if "__NAME__" not in globals():
     _near = [_m for _m in _made if _m not in _foreign and _close(_m)]
     _bare = [_n.lineno for _n in _tree.body if type(_n).__name__ == "Expr" and type(_n.value).__name__ == "Constant" and type(_n.value.value).__name__ in ("str", "int", "float")]
     if _near:
-        _msg = "You wrote `" + _near[0] + "`, but this step's box is `__NAME__`. Python matches names letter for letter, capitals too."
+        _msg = "Your box is named `" + _near[0] + "`, but this step needs `__NAME__`. Names match letter for letter, capitals too."
     elif _left:
-        _msg = "`" + _left[0] + "` is a name from an example, not from this step. This step's box is `__NAME__`."
+        _msg = "`" + _left[0] + "` is a name from the Example or an earlier step. This step's box is named `__NAME__`."
     elif _bare:
-        _msg = "Line " + str(_bare[0]) + " is a value with no name in front, so Python reads it and throws it away.__BARE_FIX__"
+        _msg = "Line " + str(_bare[0]) + " is a value with no name in front, so Python reads it and throws it away__BARE_FIX__"
     elif [_m for _m in _made if _m not in __SKIP__]:
-        _msg = "You made a box named `" + [_m for _m in _made if _m not in __SKIP__][0] + "`, but this step's box is `__NAME__`. Python matches names letter for letter."
+        _msg = "Your box is named `" + [_m for _m in _made if _m not in __SKIP__][0] + "`, but this step needs `__NAME__`. Names match letter for letter."
     else:
         _msg = "__NONE__"
     assert False, _msg'''
@@ -76,7 +76,7 @@ def box_check(name, foreign=(), skip=(), lean=False):
     """NAME + LEFT + BARE (+ another name): the box exists, or the message says why not.
     `skip` = boxes the starter already makes, never named as the student's wrong box.
     `lean` (Quick Check): the same checks, with messages that say what is wrong and where, never the fix."""
-    bare_fix = "" if lean else " Put `__NAME__ = ` in front of it."
+    bare_fix = "." if lean else ", like a phone number saved with no contact name. Put `__NAME__ = ` in front of it."
     none_msg = "There is no box named `__NAME__` yet." if lean else "Make a box named `__NAME__`: start a line with `__NAME__ = `."
     code = (_BOX_TEMPLATE.replace("__BARE_FIX__", bare_fix).replace("__NONE__", none_msg)
             .replace("__NAME__", name).replace("__FOREIGN__", repr(list(foreign)))
@@ -116,7 +116,7 @@ def print_check(name):
         "and type(_n.func).__name__ == 'Name' and _n.func.id == 'print' for _a in _n.args]\n"
         f"_named = [_x for _a in _args for _x in _ast.walk(_a) if type(_x).__name__ == 'Name' and _x.id == '{name}']\n"
         f"_quoted = [_a for _a in _args if type(_a).__name__ == 'Constant' and _a.value == '{name}']\n"
-        f"assert _named or not _quoted, 'Your `print` shows the word {name}, because `{name}` is in quotes.'\n"
+        f"assert _named or not _quoted, 'Your `print` shows the word {name}, because of the quotes.'\n"
         f"assert _named, 'Your code never prints the box `{name}`.'\n"
         f"assert any(str({name}).strip() in _l for _l in _lines()), 'The Console does not show what is inside `{name}`.'",
     )
@@ -132,7 +132,7 @@ for _n in _ast.walk(_ast.parse(_source)):
 def _squash(_m):
     return _m.lower().replace("_", "").rstrip("s")
 _near = [_m for _m in _made if _m != "__NAME__" and _squash(_m) == _squash("__NAME__")]
-assert not _near, "You wrote `" + (_near or ["?"])[0] + "`, but this step's box is `__NAME__`. Python matches names letter for letter, capitals too."'''
+assert not _near, "Your box is named `" + (_near or ["?"])[0] + "`, but this step needs `__NAME__`. Names match letter for letter, capitals too."'''
 
 
 def near_check(name):
@@ -147,9 +147,9 @@ def num_story_check(count_name, price_name, count, price, what):
         f"{count_name} and {price_name} hold the story's numbers",
         f"_c, _p = {count_name}, {price_name}\n"
         f"for _n, _v in (({count_name!r}, _c), ({price_name!r}, _p)):\n"
-        "    assert type(_v).__name__ != 'str', '`' + _n + '` holds text, because its number is in quotes.'\n"
+        "    assert type(_v).__name__ != 'str', '`' + _n + '` holds text, because of the quotes.'\n"
         f"assert not (_c == {price} and _p == {count}), "
-        f"{f'`{count_name}` and `{price_name}` are swapped: each one holds the other number.'!r}\n"
+        f"{f'You swapped `{count_name}` and `{price_name}`: each one holds the other one' + chr(39) + 's number.'!r}\n"
         f"assert _p != {count * price}, "
         f"{f'`{price_name}` holds {count * price}, which is already the cost of all {count} {what}, not the price of one.'!r}\n"
         f"assert _c == {count}, ({f'`{count_name}` still holds the placeholder 0.'!r} if _c == 0 else "
@@ -165,6 +165,31 @@ import re as _re
 import sys as _sys
 def _show(_v):
     return '"' + _v + '"' if type(_v).__name__ == 'str' else str(_v)
+# What stopped a rerun, in plain words (guide 4.3.6, S8): the student's line number, then what it tried.
+def _plain(_x):
+    _t, _s = type(_x).__name__, str(_x)
+    _tb, _at = _x.__traceback__, None
+    while _tb is not None:
+        if _tb.tb_frame.f_code.co_filename == 'main.py':
+            _at = _tb.tb_lineno
+        _tb = _tb.tb_next
+    _where = ('line ' + str(_at)) if _at else 'one line'
+    if _t == 'NameError':
+        _m = _re.search(r"'(\w+)'", _s)
+        return _where + ' uses `' + (_m.group(1) if _m else '?') + '`, but no box has that exact name'
+    if _t == 'ZeroDivisionError':
+        return _where + ' divides by 0'
+    if _t == 'TypeError' and ('concatenate' in _s or ("'str'" in _s and '+' in _s)):
+        return _where + ' glues text and a number with `+`'
+    if _t == 'TypeError' and 'multiply sequence' in _s:
+        return _where + ' repeats text by something that is not a whole number'
+    if _t == 'TypeError':
+        return _where + ' does math with text'
+    if _t == 'EOFError':
+        return _where + ' asks more questions than there are answers'
+    if _t == 'ValueError':
+        return _where + ' turns text into a number, but the text is not a whole number'
+    return _where + ' could not finish'
 def _rerun(_values=None, _answers=None):
     # Every plain `name = value` line of a changed box gets the new value (not only the first), so a student
     # who added a new line under the starter's placeholder instead of editing it is still rerun fairly.
@@ -186,7 +211,7 @@ def _rerun(_values=None, _answers=None):
             _set_stdin(list(_answers))
         exec(compile(_tree, 'main.py', 'exec'), _ns)
     except Exception as _e:
-        _err = type(_e).__name__ + ': ' + str(_e)
+        _err = _plain(_e)
     finally:
         _sys.stdout = _old
     return _ns, _buf.getvalue(), _err, sorted(_left)
@@ -199,8 +224,8 @@ _CMB_HEAD = r'''
     _t = 'test ' + ('number' if _kind == 'numbers' else 'value') + ('' if len(_parts) == 1 else 's')
     _test = ('a ' if len(_parts) == 1 else '') + _t
     _ns, _out, _err, _miss = _rerun(_vals)
-    assert not _miss, 'The line that sets `' + _miss[0] + '` is gone. Mar\'tu tests your code by changing that line, so keep it as `' + _miss[0] + ' = ` and a value.'
-    assert not _err, 'Your code stopped with an error when Mar\'tu tested it with ' + _test + ', ' + _what + '. Python said `' + _err + '`. Your math should work for any ' + _kind + '.'
+    assert not _miss, 'Keep `' + _miss[0] + ' = ` and a ' + _kind[:-1] + ' on a line of its own. Mar\'tu tests your code by changing that line.'
+    assert not _err, 'Your code stopped when Mar\'tu tested it with ' + _test + ', ' + _what + ': ' + _err + '. It has to work for other ' + _kind + ' too.'
 '''
 
 # CMB message, in the order of the plain-language guide (section 4.3): what happened to the student's line, then
@@ -209,19 +234,20 @@ _CMB_HEAD = r'''
 # when the check also swaps in text (C3's made-up hero name Tester).
 _CMB_VALUE = "for _vals, _want in __CASES__:" + _CMB_HEAD + r'''    _got = _ns.get('__TARGET__')
     _was = globals().get('__TARGET__')
-    _proof = 'Mar\'tu tested it with ' + _test + ', ' + _what + ': `__TARGET__` should be ' + _show(_want) + '. Don\'t type the ' + _t + '.'
+    _proof = 'Mar\'tu tested your code with ' + _test + ', ' + _what + ': `__TARGET__` should be ' + _show(_want) + ', but it ' + ('stayed ' if _got == _was else 'became ') + _show(_got) + '. Don\'t type the ' + _t + '.'
+    _typed = 'a typed-in number' if type(_want).__name__ in ('int', 'float') else 'typed-in text'
     if _got == _was and type(_got).__name__ == 'int' and _got == 0:
         _msg = '`__TARGET__` still holds the placeholder 0. ' + __TAIL__
     elif _got == _was:
-        _msg = '`__TARGET__` stays ' + _show(_got) + ' even when the boxes change, so its line has something typed in. ' + __TAIL__ + _proof
+        _msg = '`__TARGET__` has ' + _typed + '. ' + __TAIL__ + _proof
     else:
-        _msg = '`__TARGET__` comes out wrong when the boxes hold other ' + _kind + '. ' + __TAIL__ + _proof
+        _msg = '`__TARGET__` comes out wrong for other ' + _kind + '. ' + __TAIL__ + _proof
     assert _got == _want, _msg.strip()
 '''
 
 _CMB_LINE = "for _vals, _want in __CASES__:" + _CMB_HEAD + r'''    _rows = [_l.strip() for _l in _out.splitlines() if _l.strip()]
-    _said = ('it printed `' + _rows[-1] + '`') if _rows else 'it printed nothing'
-    assert _want in _rows, (__TAIL__ + 'Mar\'tu tested it with ' + _test + ', ' + _what + ': it should print `' + _want + '`, but ' + _said + '. Don\'t type the ' + _t + '.').strip()
+    _said = ('it showed `' + _rows[-1] + '`') if _rows else 'it showed nothing'
+    assert _want in _rows, (__TAIL__ + 'Mar\'tu tested your code with ' + _test + ', ' + _what + ': it should show `' + _want + '`, but ' + _said + '. Don\'t type the ' + _t + '.').strip()
 '''
 
 
@@ -238,7 +264,7 @@ def cmb_check(target, cases, tail=""):
     return (f"{target} follows other numbers", code)
 
 
-def cmb_line_check(cases, tail="Part of your line is typed in, so it does not change when the boxes change.",
+def cmb_line_check(cases, tail="Your line has typed-in words or numbers.",
                    label="the line follows other values"):
     """CMB on printed output: run again with other values; the expected line must appear. `tail` says what
     happened (it comes first): the Quick Check's status line, already right for the student's own numbers."""
@@ -409,24 +435,32 @@ _INK_ROWS = _RERUN + r'''
 _a = _rerun({'ink': '#'})
 _b = _rerun({'ink': '@'})
 assert not _a[3], 'Keep a line like `ink = "█"` near the top, with one mark in quotes. Mar\'tu tests your sign by changing that mark.'
-assert not _a[2], 'When Mar\'tu tested your sign with `ink = "#"`, Python stopped with an error. Python said `' + _a[2] + '`. Check each row that uses `ink`.'
+assert not _a[2], 'Your sign stopped when Mar\'tu tested it with `ink = "#"`: ' + _a[2] + '. Check each row that uses `ink`.'
 _ra, _rb = _a[1].split('\n'), _b[1].split('\n')
 _ink_rows = [_i for _i in range(min(len(_ra), len(_rb))) if _ra[_i] != _rb[_i]]
 _texts = [_n.value for _n in _ast.walk(_ast.parse(_source)) if type(_n).__name__ == 'Constant' and type(_n.value).__name__ == 'str']
 '''
 
 
-def ink_rows_check(at_least, letter, group, shape_msg):
+def ink_rows_check(at_least, letter, group, shape_msg, next_note):
     """CMB with ink, plus: no row half-typed (a mark that stays put when ink changes), and the letter's own five
-    ink rows (group 1 = O, 2 = R, after the T's five) have a gap row, so a copied T or a column of marks fails."""
+    ink rows (group 1 = O, 2 = R, after the T's five) have a gap row, so a copied T or a column of marks fails.
+    With no `print` at all between `# <letter>` and `next_note` (the untouched starter), the message says the
+    letter isn't there yet, instead of counting the T's rows (guide 9, S12)."""
     return (
         f"at least {at_least} rows follow ink",
         _INK_ROWS
         + "assert 'ink' not in _texts, 'Your code has `\"ink\"` in quotes, so Python shows the word ink. "
         "Take the quotes off `ink`. Quotes mean these exact letters. No quotes means look inside the box with this label.'\n"
-        + f"assert len(_ink_rows) >= {at_least}, 'So far, ' + str(len(_ink_rows)) + "
-        f"' rows of your sign change when `ink` changes. Draw all 5 rows of the {letter} under `# {letter}` with `ink`, "
-        "not a typed █, so they repaint too.'\n"
+        + "_src = _source.split('\\n')\n"
+        f"_at = [_i + 1 for _i, _l in enumerate(_src) if _l.strip() == '# {letter}']\n"
+        f"_end = [_i + 1 for _i, _l in enumerate(_src) if _l.strip().startswith({next_note!r}) and _at and _i + 1 > _at[0]]\n"
+        "_drawn = [_n for _n in _ast.walk(_ast.parse(_source)) if type(_n).__name__ == 'Call' "
+        "and getattr(_n.func, 'id', '') == 'print' and _at and _at[0] < _n.lineno < (_end or [len(_src) + 1])[0]]\n"
+        + f"assert len(_ink_rows) >= {at_least}, ('Your sign has no {letter} yet. Under `# {letter}`, draw its 5 rows, "
+        f"one `print` for each row, with `ink` for every mark.' if _at and not _drawn else 'So far, ' + "
+        f"str(len(_ink_rows)) + ' rows of your sign change when `ink` changes. Draw all 5 rows of the {letter} under "
+        f"`# {letter}` with `ink`, not a typed █, so they repaint too.')\n"
         + "_mixed = [_i for _i in _ink_rows if any(_x == _y and _x.strip() for _x, _y in zip(_ra[_i], _rb[_i]))]\n"
         "assert not _mixed, 'One row has a typed mark: when Mar\\'tu repainted the sign with `#`, it came out `' + "
         "_ra[_mixed[0]].strip() + '`. Make every mark in that row come from `ink`.'\n"
@@ -453,7 +487,7 @@ assert any(_i > _last_ink and _l == _top for _i, _l in _shown), 'Your sign has a
 
 REPAINT_CHECK = (
     "ink holds a new mark",
-    _NEAR_TEMPLATE.replace("__NAME__", "ink").replace("this step's box is", "the sign's box is")
+    _NEAR_TEMPLATE.replace("__NAME__", "ink").replace("but this step needs", "but the sign's box is")
     + "\nassert type(ink).__name__ == 'str' and ink.strip(), 'Keep `ink` as one mark in quotes, like `\"▓\"`.'\n"
     "assert ink != '█', '`ink` still holds █. On line 2, change it to another mark, like `#` or `@`, and press Run.'\n"
     + _INK_ROWS
@@ -535,7 +569,7 @@ WARD_SIGN = dict(
                 "Top and bottom: `print(ink * 5)`. The three rows between: `print(ink + \"   \" + ink)`.",
             ],
             checks=[ink_rows_check(10, "O", 1, "Your O has no hole in the middle. Draw its sides with a gap between two "
-                                  "marks: `ink + \"   \" + ink`.")],
+                                  "marks: `ink + \"   \" + ink`.", "# R")],
             pass_line="Mar'tu: An O. Round enough for a post, yes?",
         ),
         dict(
@@ -552,7 +586,7 @@ WARD_SIGN = dict(
                 "print(ink + \"  \" + ink)\nprint(ink + \"   \" + ink)\n```",
             ],
             checks=[ink_rows_check(15, "R", 2, "Your R needs rows with a gap between two marks, for its side and its "
-                                  "leg: `ink + \"   \" + ink`.")],
+                                  "leg: `ink + \"   \" + ink`.", "# C")],
             pass_line="Mar'tu: T, O, R. Tor. Good.",
         ),
         dict(
@@ -715,6 +749,8 @@ WARD_SIGN = dict(
     ),
     takeaway="One `print` per row, every mark from `ink`: change one box and the whole sign repaints.",
     wrong_answers=[
+        dict(why="the starter run as it is: no O yet", code=SIGN_STARTER, fails_at=1, message_contains="no O yet"),
+        dict(why="the O drawn, the R not started", code=_sign(r="# R\n\n"), fails_at=2, message_contains="no R yet"),
         dict(
             why="the O typed with blocks instead of ink",
             code=_sign(o='# O\nprint("█████")\nprint("█   █")\nprint("█   █")\nprint("█   █")\nprint("█████")\n', r="# R\n\n"),
@@ -789,6 +825,11 @@ WARD_SIGN = dict(
         "string of 5+ non-blank rows, drawn with any key. The triple-quoted letter does "
         "not follow ink on purpose: CP5's pass line asks the student to notice that (the quotes rule again). "
         "Side quest (spec): sign the post in your hero's spell color, checked with a rerun (spell_color 'moth-grey'). "
+        "Structure pass (guide 9, S12): run untouched, the starter used to get 'So far, 5 rows of your sign change "
+        "when ink changes', which counts the T Mar'tu drew. With no `print` between `# O` and `# R` (or `# R` and "
+        "`# C`), the message now says the sign has no O (or R) yet and where to draw it (WAs: the starter, and "
+        "the O done with the R empty). A sign that stops on a rerun says what stopped it in plain words (_plain, "
+        "S8). "
         "Trial mode after a QC1 pass: premise + required output + the check table, from blank (site work)."
     ),
 )
@@ -1021,6 +1062,31 @@ import re as _re
 import sys as _sys
 def _show(_v):
     return '"' + _v + '"' if type(_v).__name__ == 'str' else str(_v)
+# What stopped a rerun, in plain words (guide 4.3.6, S8): the student's line number, then what it tried.
+def _plain(_x):
+    _t, _s = type(_x).__name__, str(_x)
+    _tb, _at = _x.__traceback__, None
+    while _tb is not None:
+        if _tb.tb_frame.f_code.co_filename == 'main.py':
+            _at = _tb.tb_lineno
+        _tb = _tb.tb_next
+    _where = ('line ' + str(_at)) if _at else 'one line'
+    if _t == 'NameError':
+        _m = _re.search(r"'(\w+)'", _s)
+        return _where + ' uses `' + (_m.group(1) if _m else '?') + '`, but no box has that exact name'
+    if _t == 'ZeroDivisionError':
+        return _where + ' divides by 0'
+    if _t == 'TypeError' and ('concatenate' in _s or ("'str'" in _s and '+' in _s)):
+        return _where + ' glues text and a number with `+`'
+    if _t == 'TypeError' and 'multiply sequence' in _s:
+        return _where + ' repeats text by something that is not a whole number'
+    if _t == 'TypeError':
+        return _where + ' does math with text'
+    if _t == 'EOFError':
+        return _where + ' asks more questions than there are answers'
+    if _t == 'ValueError':
+        return _where + ' turns text into a number, but the text is not a whole number'
+    return _where + ' could not finish'
 def _quiet(_answers):
     _left, _asked = list(_answers), []
     def _ask(_prompt=''):
@@ -1030,17 +1096,17 @@ def _quiet(_answers):
             raise EOFError('This program asked for more input than it was given.')
         return _left.pop(0)
     _ns = {'__name__': '__main__', 'input': _ask}
-    _buf, _old, _err = _io.StringIO(), _sys.stdout, ''
+    _buf, _old, _err, _why = _io.StringIO(), _sys.stdout, '', ''
     _sys.stdout = _buf
     try:
         exec(compile(_source, 'main.py', 'exec'), _ns)
     except Exception as _e:
-        _err = type(_e).__name__ + ': ' + str(_e)
+        _err, _why = type(_e).__name__ + ': ' + str(_e), _plain(_e)
     finally:
         _sys.stdout = _old
-    return _ns, [_l.strip() for _l in _buf.getvalue().split('\n')], _err, len(_asked)
-_nsA, _a, _errA, _usedA = _quiet(['Lucky', '3'])
-_nsB, _b, _errB, _usedB = _quiet(['Tester', '5'])
+    return _ns, [_l.strip() for _l in _buf.getvalue().split('\n')], _err, len(_asked), _why
+_nsA, _a, _errA, _usedA, _whyA = _quiet(['Lucky', '3'])
+_nsB, _b, _errB, _usedB, _whyB = _quiet(['Tester', '5'])
 _pairs = list(zip(_a, _b))
 '''
 
@@ -1049,7 +1115,7 @@ _GREET_CHECK = (
     _QUIET
     + r'''
 assert _usedA >= 1, 'Your program never asks the traveler\'s name. Keep line 1: `traveler = input("Who goes there? ")`.'
-assert not _errB or 'EOF' in _errB, 'Your code stopped with an error when Mar\'tu tested it with a made-up name, Tester. Python said `' + _errB + '`. Check the line that uses `traveler`.'
+assert not _errB or 'EOF' in _errB, 'Your code stopped when Mar\'tu tested it with a made-up name, Tester: ' + _whyB + '. It has to work for any name.'
 _follow = [_y for _x, _y in _pairs if 'Lucky' in _x and 'Tester' in _y]
 assert _follow or not any('traveler' in _x for _x in _a), 'Your greeting shows the word traveler, because `traveler` is in quotes. Take the quotes off `traveler`. Quotes mean these exact letters. No quotes means look inside the box with this label.'
 assert _follow or not any('Lucky' in _x for _x in _a), 'Your greeting says Lucky because the name is typed in. Use the box instead: `print("Welcome, " + traveler)`. Mar\'tu tested your code with a made-up name, Tester, and it still said Lucky. Don\'t type Tester.'
@@ -1081,7 +1147,7 @@ def _nums(_l):
 assert not any('sipssips' in _x for _x in _a), 'Your line doubles the word sips, because `sips` is in quotes. Take the quotes off `sips`. Quotes mean these exact letters. No quotes means look inside the box with this label.'
 assert not any('33' in _nums(_x) for _x in _a), 'Your program printed 33. That is the text "3" glued twice. Make `sips` a number with `int()` first.'
 assert any('6' in _nums(_x) for _x in _a), 'Nothing shows 6 yet. With 3 sips, double is 6. Under `# 3.`, print `sips` times 2.'
-assert not _errB, 'Your code stopped with an error when Mar\'tu tested it with a test answer, 5 sips. Python said `' + _errB + '`. Check the line that uses `sips`.'
+assert not _errB, 'Your code stopped when Mar\'tu tested it with a test answer, 5 sips: ' + _whyB + '. It has to work for any answer.'
 assert any('6' in _nums(_x) and '10' in _nums(_y) for _x, _y in _pairs), 'Your line that shows 6 has a number typed in. Use the box instead: `print(sips * 2)`. Mar\'tu tested it with a test answer, 5 sips, and your line did not change to 10. Don\'t type 10.'
 ''',
 )
@@ -1369,7 +1435,7 @@ def _c1(form, name, what, foreign, ex_code, ex_out, pick, wrong_value="Zelda", o
             dict(why="a lone value", code=f'"{wrong_value}"\nprint("{wrong_value}")\n', fails_at=1,
                  message_contains="no name in front"),
             dict(why="a box with another name", code=f'{other_name} = "{wrong_value}"\nprint({other_name})\n', fails_at=1,
-                 message_contains="this step's box"),
+                 message_contains="this step needs"),
             dict(why="text with no quotes", code=f"{name} = {wrong_value}\nprint({name})\n", fails_at=0,
                  message_contains=wrong_value),
             dict(why="def used to make a box", code=f'def {name} = "{wrong_value}"\nprint({name})\n', fails_at=0,
@@ -1475,12 +1541,12 @@ def _c2(form, story, a, b, total_name, a_vals, b_vals, cases, total):
         takeaway="For each thing, how many × how much is one, then add. Write it with the box names and let Python do it.",
         wrong_answers=[
             dict(why="the total worked out by hand", code=filled + f"{total_name} = {total}\nprint({total_name})\n",
-                 fails_at=2, message_contains="typed in"),
+                 fails_at=2, message_contains="typed-in"),
             dict(why="the line totals typed in", code=filled + f"{total_name} = {a_vals[0] * a_vals[1]} + {b_vals[0] * b_vals[1]}\n"
-                 f"print({total_name})\n", fails_at=2, message_contains="typed in"),
+                 f"print({total_name})\n", fails_at=2, message_contains="typed-in"),
             dict(why="the story's numbers typed into the formula",
                  code=filled + f"{total_name} = {a_vals[0]} * {a_vals[1]} + {b_vals[0]} * {b_vals[1]}\nprint({total_name})\n",
-                 fails_at=2, message_contains="typed in"),
+                 fails_at=2, message_contains="typed-in"),
             dict(why=f"{aw} count and price swapped",
                  code=story + f"{ac} = {a_vals[1]}\n{ap} = {a_vals[0]}\n{bc} = {b_vals[0]}\n{bp} = {b_vals[1]}\n"
                  f"{total_name} = {formula}\nprint({total_name})\n",
@@ -1713,7 +1779,7 @@ def _c4(form, full, count_name, max_name, bar_name, count, maximum, label, cases
             dict(why="the empty count typed in", code=code(f"{bar_name} = full * {count_name} + empty * {maximum - count}"),
                  fails_at=1, message_contains=count_name),
             dict(why="the bar typed in", code=code(f'{bar_name} = "{full * count + "░" * (maximum - count)}"'),
-                 fails_at=1, message_contains="typed in"),
+                 fails_at=1, message_contains="typed-in"),
             dict(why="the full part only", code=code(f"{bar_name} = full * {count_name}"), fails_at=1, message_contains="empty"),
         ],
         notes=_qc_meta("repeat-string", "", "", form) + "\n"
@@ -1722,7 +1788,7 @@ def _c4(form, full, count_name, max_name, bar_name, count, maximum, label, cases
     )
 
 
-# ---- C5: mend three lines (quote-text, numbers-vs-text, exact-names, read-traceback) ----
+# ---- C5: fix three lines (quote-text, numbers-vs-text, exact-names, read-traceback) ----
 
 def _c5(form, words, box, start, take, name_bad, name_good, value):
     starter = (
@@ -1743,9 +1809,8 @@ def _c5(form, words, box, start, take, name_bad, name_good, value):
         id="mend-three",
         title="Fix three mistakes",
         martu=_QC_MARTU + (
-            "Three mistakes you've seen before, on three lines. *Mend* means fix. When Python stops, read the title "
-            "of the box in the Console, then Python's last line. Find the line number, fix that line, and press "
-            "Run again."
+            "Three mistakes you've seen before, on three lines. When Python stops, read the title of the error box, "
+            "then Python's last line. Find the line number, fix that line, and press Run again."
         ),
         names=[box, name_good],
         support="none",
@@ -1753,7 +1818,7 @@ def _c5(form, words, box, start, take, name_bad, name_good, value):
         checkpoints=[
             dict(
                 id="mend-the-quote",
-                text=f"Mend line 1 so it shows `{words}` in the Console.",
+                text=f"Fix line 1 so it shows `{words}` in the Console.",
                 dictated=False,
                 hints=[
                     "Look at the end of line 1, right before the `)`.",
@@ -1765,7 +1830,7 @@ def _c5(form, words, box, start, take, name_bad, name_good, value):
             ),
             dict(
                 id="mend-the-number",
-                text=f"Mend line 3 so it takes the number {take} away from `{box}`.",
+                text=f"Fix line 3 so it takes the number {take} away from `{box}`.",
                 dictated=False,
                 hints=[
                     f"Look at the `\"{take}\"` on line 3.",
@@ -1791,11 +1856,11 @@ def _c5(form, words, box, start, take, name_bad, name_good, value):
             ),
             dict(
                 id="mend-the-name",
-                text=f"Mend line 4 so the box's name is `{name_good}`, to match line 5.",
+                text=f"Fix line 4 so the box's name is `{name_good}`, to match line 5.",
                 dictated=False,
                 hints=[
                     f"Compare line 4 and line 5 letter by letter.",
-                    "Python matches names letter for letter. One capital letter makes a new name.",
+                    "Names match letter for letter, capitals too. One capital letter makes a new name.",
                     f"On line 4, change `{name_bad}` to `{name_good}`. Line 4 becomes `{name_good} = {value}`.",
                 ],
                 checks=[
@@ -1820,7 +1885,7 @@ def _c5(form, words, box, start, take, name_bad, name_good, value):
         ),
         another_way=[
             dict(angle="step-by-step",
-                 text="1. Press Run.\n2. Read the title of the box in the Console, then Python's last line.\n"
+                 text="1. Press Run.\n2. Read the title of the error box, then Python's last line.\n"
                  "3. Find the line number, and fix that one mistake.\n4. Press Run again."),
             dict(angle="shorter", text="Close the quote. Take the quotes off the number. Match the name letter for letter."),
         ],
@@ -1883,6 +1948,11 @@ QC1_A = dict(
         _c5("A", "The fire is low.", "stamina", 15, 4, "Max_Stamina", "max_stamina", 16),
     ],
     notes=(
+        "Reconciler pass: every lean message here mirrors the lesson's message for the same mistake, minus the fix "
+        "(box_check, print_check, num_story_check and the reruns use the lesson's sentences: 'Your box is named "
+        "`x`, but this step needs `y`', '`total_cost` has a typed-in number. Mar'tu tested your code with ...'), "
+        "and a rerun that stops says what stopped it in plain words (_plain, S8). Task 5 says Fix, not Mend (the "
+        "site reads both, S1). "
         "Quick Check 1, form A (code tasks). Questions live in qc1-a-questions. Pass = every code task plus 2 of the "
         "3 questions; a retake draws form B. The site currently gates on the code tasks only; question scoring joins "
         "when QC scoring ships. Form A uses names and numbers no lesson uses, so it can't be passed from memory: "
@@ -2093,8 +2163,9 @@ CHALK_NOTES = dict(
         dict(concept="Parentheses for the gap", code='mana = 3\nmax_mana = 5\nprint("░" * (max_mana - mana))\n', output="░░",
              note="PEMDAS, as in math class: Python does `*` before `-`, so put the subtraction in parentheses."),
         dict(concept="Error: an unclosed quote", code='print("Shield up.)\n',
-             note="Python's last line: `SyntaxError: unterminated string literal`. Syntax means how a line is put "
-             "together, like grammar. Some text in quotes never closes. Add the missing quote."),
+             note="When Python stops, read the error box's title, then Python's last line, then fix the line with "
+             "that number. Here Python's last line is `SyntaxError: unterminated string literal`. Syntax means how a "
+             "line is put together, like grammar. Some text in quotes never closes. Add the missing quote."),
         dict(concept="Error: a missing closing parenthesis", code='print("Shield up."\n',
              note="Python's last line: `SyntaxError: '(' was never closed`. A `(` has no `)` to match it. "
              "Add the missing `)`."),
