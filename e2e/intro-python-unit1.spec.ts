@@ -69,7 +69,7 @@ test.describe("Intro to Python, Unit 1: Hello World", () => {
   test.describe("play-through fixes", () => {
     test("after a crash, Help aims at the line Python stopped on, and Python's last line is on screen", async ({ page }) => {
       await page.goto(`${itemPath("words-in-quotes")}#broken-spell-1a`);
-      await expect(page.getByTestId("exercise-title")).toHaveText("Broken spell: three slips");
+      await expect(page.getByTestId("exercise-title")).toHaveText("Broken spell: three mistakes");
       await pythonReady(page);
       await setCode(page, 'print("Shield up.")\nprint("Barrier\'s holding.")\nprint(Steady)\n');
       await runAndWait(page, 1);
@@ -84,7 +84,7 @@ test.describe("Intro to Python, Unit 1: Hello World", () => {
 
     test("a Broken spell shows one \"Python got further\" line when the error moves on (no \"One fixed!\" too)", async ({ page }) => {
       await page.goto(`${itemPath("words-in-quotes")}#broken-spell-1a`);
-      await expect(page.getByTestId("exercise-title")).toHaveText("Broken spell: three slips");
+      await expect(page.getByTestId("exercise-title")).toHaveText("Broken spell: three mistakes");
       await pythonReady(page);
       await setCode(page, 'print("Shield up.)\nPrint("Barrier\'s holding.")\nprint(Steady)\n');
       await runAndWait(page, 1);
@@ -130,15 +130,23 @@ test.describe("Intro to Python, Unit 1: Hello World", () => {
       await expect(page.getByTestId("names")).toHaveCount(0);
     });
 
-    test("a crash on a line no step names holds the steps' Help back, and names the box to make", async ({ page }) => {
+    test("a crash on a line no step names holds the steps' Help back; on the line step 4 names, Help is step 4's and names the box to make", async ({ page }) => {
       await page.goto(`${itemPath("boxes-with-labels")}#broken-spell-1b`);
       await expect(page.getByTestId("exercise-title")).toHaveText("Broken spell");
       await pythonReady(page);
-      await setCode(page, 'weapon = "Telegun"\ncompanion = "Gearshift"\nglug_sips = 3\n"Lucky"\nprint(hero)\nprint(weapon)\n');
+      // Line 6 (`print(weapn)`, a typo) is a line no step names: Help waits until the code runs.
+      await setCode(page, 'weapon = "Telegun"\ncompanion = "Gearshift"\nglug_sips = 3\nhero = "Lucky"\nprint(hero)\nprint(weapn)\n');
       await runAndWait(page, 1);
-      await expect(page.getByTestId("help-crash")).toContainText("Python stopped at line 5, so it couldn't finish your code. Fix line 5, then press Run again.");
+      await expect(page.getByTestId("help-crash")).toContainText("Python stopped at line 6, so it couldn't finish your code. Fix line 6, then press Run again.");
       await expect(page.getByTestId("help")).toHaveAttribute("data-crash-only", "true");
       await expect(page.getByTestId("help-button")).toHaveCount(0);
+      // Step 4 says "Fix line 4: ... so line 5 can't find `hero`": the crash on line 5 gets step 4's Help.
+      await setCode(page, 'weapon = "Telegun"\ncompanion = "Gearshift"\nglug_sips = 3\n"Lucky"\nprint(hero)\nprint(weapon)\n');
+      await runAndWait(page, 2);
+      await expect(page.getByTestId("help-crash")).toContainText("Python stopped at line 5, so it couldn't finish your code. Fix line 5, then press Run again.");
+      await expect(page.getByTestId("help")).toHaveAttribute("data-step", "line-4");
+      await expect(page.getByTestId("help")).not.toHaveAttribute("data-crash-only", "true");
+      await expect(page.getByTestId("help-button")).toContainText("step 4");
       await expect(page.getByTestId("explainer-hint")).toContainText("hero is one of your step's boxes");
       await expect(page.getByTestId("explainer-hint")).toContainText('hero = "Lucky"');
     });
@@ -160,11 +168,11 @@ test.describe("Intro to Python, Unit 1: Hello World", () => {
       await expect(page.getByTestId("exercise-done-martu")).toContainText("still done");
     });
 
-    test("in a print-only warm-up, Mar'tu's pick on an empty line goes in as a print line", async ({ page }) => {
-      await page.goto(`${itemPath("before-the-first-spell")}#keyboard-symbols`);
+    test("in a print-only exercise, Mar'tu's pick on an empty line goes in as a print line", async ({ page }) => {
+      await page.goto(`${itemPath("boxes-with-labels")}#keyboard-symbols`);
       await expect(page.getByTestId("exercise-title")).toHaveText("Where the symbols live");
       await pythonReady(page);
-      await setCode(page, "# Print a line that has _ and - and = in it.\n");
+      await setCode(page, "# Your line goes here:\n");
       const lines = page.locator('[data-testid="exercise-player"] [data-testid="editor"] .cm-line');
       await lines.nth(1).click();
       await page.getByTestId("pick-use").first().click();

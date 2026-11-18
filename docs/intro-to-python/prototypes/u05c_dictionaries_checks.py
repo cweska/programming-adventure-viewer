@@ -80,9 +80,10 @@ program runs again in a fresh namespace with its prints kept private (as u05b's 
            a typed name or the hero's own sheet); the spend goes through `roster` too (the reorder rerun: a
            `gearshift[...]` write pays from the wrong sheet). NEWBOX, BARE, the sign the wrong way, a near-miss
            key (`"Mana"`), another hero's mana changed.
-Messages are lean, as Unit 2's QC2 and every Quick Check since (the teacher's ruling): the slip and the evidence in
-brackets, never the fix or the finished line: "The spend does not follow `cost`. (Mar'tu's check tried `cost = 4`, only
-inside the check: the mana went to 14, not 16.)". The helpers copied from u05b's lesson checks (`_gone`, `_stop`) go
+Messages are lean, as Unit 2's QC2 and every Quick Check since (the teacher's ruling): what went wrong, then the
+labelled evidence, never the fix or the finished line: "The spend doesn't change to match when `cost` changes. Mar'tu
+tested your code with a test cost, `cost = 4`: the mana went to 14, not 16." Each mirrors its lesson message
+(u05a, u05b: the same words for the same slip, an inner sheet, a question for the `if`), with the fix left out. The helpers copied from u05b's lesson checks (`_gone`, `_stop`) go
 through _leaned(), whose every rewrite must match the lesson message, and the Quick-Check-only templates are lean as
 written. _lean_guard() proves both at import: no message opens with a fix ("Put a colon ...", "Read it from the sheet
 ..."), and no text a student reads shows a line of Mar'tu's version the starter does not (a rerun's evidence names the
@@ -143,7 +144,7 @@ _g = globals()
 def _lit(_v):
     return '"' + _v + '"' if type(_v).__name__ == 'str' else str(_v)
 def _did(_tried, _end=''):
-    return "(Mar'tu's check tried " + _tried + ', only inside the check' + _end + '.)'
+    return "Mar'tu tested your code with " + _tried + _end + '.'
 def _whole(_v):
     return r'(?<![\d.])' + _re.escape(str(_v)) + r'(?!\d)(?!\.\d)'
 def _display(_l):
@@ -195,14 +196,15 @@ def _made():
 def _gone(_k, _skip=(), _new=False):
     _close = [_m for _m in _made() if _m != _k and _m not in _skip and _near(_m, _k)]
     if _close:
-        return ('Python matches names letter for letter: you wrote `' + _close[0] + '`, and the task needs `'
-                + _k + '`.')
+        return ('You wrote `' + _close[0] + '`, but the task needs `' + _k + '`. Python matches names letter for '
+                'letter.')
     if _new:
         return 'Make the variable `' + _k + '`: nothing in your program is called that yet.'
-    return 'Keep the variable `' + _k + '` from the starter, on a line that starts `' + _k + ' = `.'
+    return ("Python can't find `" + _k + '`. Keep the line that starts `' + _k + ' = `, from the code you started '
+            'with.')
 def _keep(_name):
-    return ('Keep `' + _name + '` from the starter, made on its own line, so Mar' + chr(39) + 'tu' + chr(39)
-            + 's check can try other values there.')
+    return ('No line of its own makes `' + _name + "` now, so Mar'tu can't test other values there. Keep the line "
+            'that starts `' + _name + ' = `, from the code you started with.')
 def _stop(_err, _tried):
     return 'Make it work for other values too. ' + _did(_tried, ', and your program stopped with ' + _err)
 def _rerun(_changes):
@@ -261,7 +263,7 @@ _QX_LEAN = [
     ("return 'Make the variable `' + _k + '`: nothing in your program is called that yet.'",
      "return 'Nothing in your program is called `' + _k + '` yet.'"),
     ("return 'Make it work for other values too. ' + _did(_tried, ', and your program stopped with ' + _err)",
-     "return 'Other values stop your program. ' + _did(_tried, ', and your program stopped with ' + _err)"),
+     "return 'Your program stopped with an error, `' + _err + \"`, when Mar'tu tested it with \" + _tried + '.'"),
 ]
 
 
@@ -285,22 +287,25 @@ UNIT = dict(
     subtitle="Stat Sheets and Spell Books",
     published=True,
     martu_intro=(
-        "A list remembers order. It does not remember *meaning*. Which number is Lucky's armor? Which is his "
-        'mana? A dictionary keeps a tag on every value. At the Institute, every student had a record like '
-        "this. Mine said 'talks too little'.\nYou have seen dictionaries already: the spell book, the mana "
-        'bars, and `caster["abilities"]["magical_affinity"]` when you held the barrier. A lot of that code '
-        'felt like a wall, yes? Tonight we read it one key at a time.'
+        "A list remembers order. It does not remember *meaning*. A [[dictionary]] keeps a tag on every value, and "
+        "Python calls the tag a key.\n"
+        "In `[\"Lucky\", 13, 26, 3]`, which number is Lucky's armor? Which is his mana? At the Institute, every "
+        "student had a record with a tag on every line. Mine said *talks too little*.\n"
+        "You have seen dictionaries already: the spell book, the mana bars, and "
+        "`caster[\"abilities\"][\"magical_affinity\"]` when you held the barrier. A lot of that code felt like a wall, "
+        "yes? Tonight we read it one key at a time."
     ),
     goals=[
-        "Write a dictionary with keys in quotes, `:` and commas, and say why keys have quotes when box names don't",
-        "Read a value by its key, and mend a KeyError caused by spelling, capitals or a skipped level",
-        "Change a value and add a key, including `hero[\"mana\"] = hero[\"mana\"] - cost`",
+        "Make a dictionary: a key in quotes, a colon and a value on each line, and say why keys get quotes when "
+        "variable names don't",
+        "Read a value by its key, and fix a KeyError caused by spelling, capitals or a skipped level",
+        "Change a value by its key, like spending a hero's mana, and add a new key",
         "Ask whether a key is in a dictionary with `in` and `not in`",
-        "Use a key kept in a variable: `book[spell_name]`, not `book[\"spell_name\"]`",
-        "Read and change values inside values: `hero[\"abilities\"][\"magical_affinity\"]`",
-        "Read from a list of sheets, like `roster[2][\"name\"]`",
-        "Build a spell from variables and store it by name: `spell_book[spell_name] = spell`",
-        "Get a value, compare it, and act on it with `if` / `elif` / `else`, like holding the barrier",
+        "Use a key kept in a variable, and know when a key needs quotes",
+        "Read and change a value in a dictionary inside a dictionary",
+        "Read from a list of dictionaries: the position first, then the key",
+        "Build a spell from variables and store it in a spell book under its name",
+        "Read a value, compare it, and act on it with `if`, `elif` and `else`, the way the barrier spell did",
     ],
     campaign_links=["friends-in-low-places"],
 )
@@ -314,7 +319,7 @@ GLOSSARY = []
 # =============================================================================================
 
 def _stuck(lesson):
-    return f"Stuck? Skip it, or try the lesson {lesson}. Tasks you pass here stay ticked."
+    return f"Stuck? Skip this task, or go back to the lesson {lesson}. Tasks you pass here stay ✓ done."
 
 
 def _qc_meta(skills, foreign="", form="A", level="S3", dictates=""):
@@ -340,8 +345,8 @@ def _sheet_lines(var, pairs, inner=None, indent=""):
 # ---- C1: make a sheet (dict-make) ----
 
 # The story so far, for a student who tests out of Unit 5 (the Unit 5 ruling): C1 opens with it in both forms.
-_NOTES_SO_FAR = ("Mar'tu's notes so far: Gearshift's tank holds starlode. Lantern Ward is in the spell book. The "
-                 "barrier holds again.")
+_NOTES_SO_FAR = ("Mar'tu's notes so far: Gearshift's tank holds starlode, his fuel. Lantern Ward is in the spell "
+                 "book. The barrier holds again.")
 
 SHEET_KEYS = ["name", "magical_affinity", "max_mana", "armor_bonus"]
 
@@ -357,24 +362,24 @@ if _name not in _g:
 elif _no_keys:
     _msg = 'Your sheet has values but no keys.'
 elif type(_v).__name__ == 'set':
-    _msg = '`' + _name + '` has commas but no colons, so it is not a dictionary.'
+    _msg = '`' + _name + '` has commas but no colons, so it is not a dictionary yet.'
 elif type(_v).__name__ in ('list', 'tuple'):
-    _msg = '`' + _name + '` has square brackets, so it is a list, not a dictionary.'
+    _msg = '`' + _name + '` has square brackets `[ ]`, so it is a list, not a dictionary.'
 elif type(_v).__name__ != 'dict':
     _msg = '`' + _name + '` does not hold a dictionary.'
 elif not _v:
-    _msg = 'The sheet is still empty.'
+    _msg = 'The sheet `' + _name + '` is still empty: nothing is between its curly braces.'
 else:
     for _k in _want:
         if _k in _v:
             continue
         _x = _near_key(_v, _k, _want)
         if _x is not None:
-            _msg = '`' + _name + '` has a key `' + _lit(_x) + '`, and the card spells it `"' + _k + '"`.'
+            _msg = '`' + _name + '` has a key `' + _lit(_x) + '`, but the card spells it `"' + _k + '"`. Python matches keys letter for letter.'
         elif _k in _g and not _k.startswith('_'):
-            _msg = '`' + _k + '` is a variable of its own, outside the sheet.'
+            _msg = '`' + _k + '` is a variable of its own, outside the sheet `' + _name + '`.'
         else:
-            _msg = '`' + _name + '` has no key `"' + _k + '"` yet.'
+            _msg = 'The sheet `' + _name + '` has no key `"' + _k + '"` yet.'
         break
 assert not _msg, _msg
 '''
@@ -395,21 +400,21 @@ for _k, _w in _wants:
         elif _t != 'str':
             _msg = _at + ' does not hold text.'
         elif not _x.strip():
-            _msg = _at + ' is empty text.'
+            _msg = _at + ' is empty text: nothing is between its quotes.'
     elif _t == 'str':
         if _x.strip().lstrip('+-').isdigit():
-            _msg = _at + ' holds the text `"' + _x + '"`, not a number.'
+            _msg = _at + ' holds `"' + _x + '"`, which is text because of the quotes.'
         else:
-            _msg = _at + ' holds text, and the card has a number.'
+            _msg = _at + ' holds text, but the card has a number there.'
     elif _t != 'int':
         _msg = _at + ' holds ' + _lit(_x) + ', not a whole number.'
     elif _x != _w:
         _swap = [_o for _o, _ow in _nums.items() if _o != _k and _ow == _x]
         if _swap:
-            _msg = ('Two values may be swapped: ' + _at + ' holds ' + str(_x)
-                    + ', the card' + chr(39) + 's `"' + _swap[0] + '"` value.')
+            _msg = (_at + ' holds ' + str(_x) + ', the number for `"' + _swap[0] + '"`. Two numbers may '
+                    'be swapped.')
         else:
-            _msg = _at + ' holds ' + str(_x) + ', and the card says ' + str(_w) + '.'
+            _msg = _at + ' holds ' + str(_x) + ', but the card says ' + str(_w) + '.'
     if _msg:
         break
 assert not _msg, _msg
@@ -448,8 +453,9 @@ def _qc_sheet(form, var, who, values, foreign_var, pass_line):
         # The recap opens the task (the Unit 5 ruling), and the same first line ends with a colon, so "Keep it
         # short" shows the card under it too (the player keeps a code block a first line introduces).
         martu=(
-            _NOTES_SO_FAR + f" Make {who}'s sheet, a [[dictionary]], from this card:\n" + card + "\n"
-            "Use the four keys on the card, with the values beside them. Copy each key exactly.\n" + _stuck(LESSON_A)
+            _NOTES_SO_FAR + f" Now make {who}'s sheet, a [[dictionary]], from this card:\n" + card + "\n"
+            "On the card, each key is on the left and its value is on the right. Use all four keys, and copy each "
+            "one letter for letter.\n" + _stuck(LESSON_A)
         ),
         names=[var],
         support="none",
@@ -458,13 +464,15 @@ def _qc_sheet(form, var, who, values, foreign_var, pass_line):
         checkpoints=[
             dict(
                 id="the-sheet",
-                text=f"Make `{var}` with the card's four keys and {who}'s values.",
+                text=(f"Make the sheet `{var}`: put the card's four keys, each with {who}'s value, between "
+                      f"`{var} = {{` and `}}`."),
                 dictated=False,
                 hints=[
-                    "Look at the card: four keys, each with its value. Text goes in quotes, numbers don't.",
-                    f"Each line inside the curly brackets is a key in quotes, a colon, a value and a comma: "
+                    "Look at the card: four keys, each with its value. Is each value text or a number? Text gets "
+                    "quotes, and numbers don't.",
+                    f"Each line between the curly braces `{{ }}` is a key in quotes, a colon, a value and a comma: "
                     f"`\"{foreign_var}\": 6,`.",
-                    "The keys are text, so each one has quotes. A box's name never does. " + QUOTES_RULE,
+                    "The keys are text, so each one gets quotes. A box's name (a variable) never does. " + QUOTES_RULE,
                 ],
                 checks=[
                     check(f"{var} has the four keys", _SHEET_KEYS, name=var, keys=SHEET_KEYS),
@@ -482,22 +490,23 @@ def _qc_sheet(form, var, who, values, foreign_var, pass_line):
         ),
         another_way=[
             dict(angle="step-by-step", text=(
-                f"1. `{var} = {{` opens the sheet.\n2. One line for each key on the card: the key in quotes, `:`, "
-                "the value, `,`.\n3. `}` closes it.")),
-            dict(angle="why", label="Wait, quotes on names?", text=(
-                "A box's name (a variable) never has quotes: `mana = 26`. A key is text inside the sheet, so it "
-                "does: `{\"mana\": 26}`. " + QUOTES_RULE)),
+                f"1. `{var} = {{` opens the sheet.\n2. Write one line for each key on the card: the key in quotes, "
+                "then `:`, then the value, then `,`.\n3. `}` closes the sheet.")),
+            dict(angle="why", label="Why do keys get quotes?", text=(
+                "A box's name (a variable) never has quotes: `mana = 26`. A key is text inside the sheet, like a "
+                "word you look up in a glossary, so it gets quotes: `{\"mana\": 26}`. " + QUOTES_RULE)),
         ],
         campaign_link=dict(
             module=MODULE,
             part="spell-book",
             snippet='spell = {\n    "mana_cost": 0,\n    "required_affinity": 0,\n}',
             why=(
-                "You have seen this. The spell book part had a dictionary like yours: a key in quotes, a colon and "
-                "a value on every line. Now you write one from nothing."
+                "You've seen this. In the campaign's spell book part, each spell was a dictionary like yours: a "
+                "key in quotes, a colon and a value on every line. Now you write one yourself, from an empty sheet."
             ),
         ),
-        takeaway="A sheet is `{ }` holding `\"key\": value` lines with commas. Keys are text, so they have quotes.",
+        takeaway=("A sheet (a dictionary) goes between curly braces `{ }`, with one `\"key\": value,` line for each "
+                  "key. Keys are text, so they get quotes."),
         wrong_answers=[
             dict(why="the starter (the empty sheet)", code=starter, fails_at=1, message_contains="still empty"),
             dict(why="a key with no quotes (box names have no quotes, keys do; A-02 names in quotes, the other way)",
@@ -544,7 +553,7 @@ def _qc_sheet(form, var, who, values, foreign_var, pass_line):
             dict(why="a capital in the sheet's name (NAME)", code=solution.replace(f"{var} = {{", f"{var.capitalize()} = {{"),
                  fails_at=1, message_contains="letter for letter"),
             dict(why="a number in quotes (NUM)", code=program(mx=f"\"{max_mana}\""), fails_at=1,
-                 message_contains="not a number"),
+                 message_contains="which is text because of the quotes"),
             dict(why="affinity and max mana swapped (SWAP)", code=program(aff=str(max_mana), mx=str(affinity)),
                  fails_at=1, message_contains="swapped"),
             dict(why="a wrong number", code=program(arm=str(armor + 1)), fails_at=1, message_contains="the card says"),
@@ -590,14 +599,15 @@ if _train:
             except Exception:
                 pass
             break
-assert type(_v).__name__ == 'dict', '`' + _name + '` should still hold the sheet from the starter.'
+assert type(_v).__name__ == 'dict', '`' + _name + '` no longer holds the sheet it started with.'
 _out = [_k for _k in _v if _k in _want[_ik]]
-assert not _out, ('Keep the sheet as the starter has it: the sheet now has `"' + _out[0] + '"` on the outside.')
+assert not _out, ('The sheet now has `"' + _out[0] + '"` on the outside, not inside `"' + _ik + '"`. Keep the '
+                  'sheet as it was.')
 _cmp = dict(_v)
 if _train and type(_cmp.get(_ik)).__name__ == 'dict' and _train in _cmp[_ik]:
     _cmp[_ik] = dict(_cmp[_ik])
     _cmp[_ik][_train] = _want[_ik][_train]
-assert _cmp == _want, 'Keep the sheet as the starter has it: its lines changed.'
+assert _cmp == _want, 'A line of the sheet changed. Keep the sheet as it was.'
 '''
 
 # C2's value inside the card, in the student's run or a rerun's namespace (None when it is not a whole number).
@@ -640,14 +650,14 @@ _want = __SHEET__
 _v = _g.get(_name)
 if _name not in _g:
     assert False, _gone(_name)
-assert type(_v).__name__ == 'dict', '`' + _name + '` should still hold the sheet from the starter.'
+assert type(_v).__name__ == 'dict', '`' + _name + '` no longer holds the sheet it started with.'
 _c = _v.get(_ik)
-assert type(_c).__name__ == 'dict', 'Keep `"' + _ik + '"` inside the sheet, as the starter has it.'
+assert type(_c).__name__ == 'dict', '`"' + _ik + '"` is no longer a sheet inside the sheet. Keep it as it was.'
 assert _k not in _v, 'Your line made a new `"' + _k + '"` key on the outside of the sheet.'
 _x = _near_key(_c, _k, list(_want[_ik]))
-assert _x is None, ('The card now has a key `' + _lit(_x) + '` too, and its `"' + _k + '"` is still '
+assert _x is None, ('`"' + _ik + '"` now has a key `' + _lit(_x) + '` too, and its `"' + _k + '"` is still '
                     + _lit(_c.get(_k)) + '.')
-assert _k in _c, 'Keep `"' + _k + '"` inside `"' + _ik + '"`, as the starter has it.'
+assert _k in _c, '`"' + _k + '"` is gone from `"' + _ik + '"`. Keep it inside `"' + _ik + '"`, as it was.'
 _others = ([_o for _o in _want if _o != _ik and _v.get(_o) != _want[_o]]
            + [_o for _o in _want[_ik] if _o != _k and _c.get(_o) != _want[_ik][_o]])
 _x = _c[_k]
@@ -657,17 +667,17 @@ if _x == _start:
     if _others:
         _msg = ('Your line changed `"' + _others[0] + '"`, and the ' + _label + ' is still ' + str(_start) + '.')
     elif _box:
-        _msg = ('Your variable `' + _box[0] + '` holds ' + str(_start + 2) + ', and the card still says '
+        _msg = ('Your variable `' + _box[0] + '` holds ' + str(_start + 2) + ', and the sheet still says '
                 + str(_start) + '.')
     elif _bare:
-        _msg = ('Your line works out the new ' + _label + ', then forgets it. The card still says ' + str(_start)
-                + '.')
+        _msg = ('Your line works out the new ' + _label + ' with nothing in front of it, so Python throws the '
+                'answer away. The sheet still says ' + str(_start) + '.')
     else:
-        _msg = 'The ' + _label + ' inside the card is still ' + str(_start) + '.'
+        _msg = 'The ' + _label + ' is still ' + str(_start) + '.'
     assert False, _msg
-assert not _others, '`"' + _others[0] + '"` changed too, as well as the ' + _label + '.'
-assert type(_x).__name__ == 'int', 'The ' + _label + ' holds ' + _lit(_x) + ', not a whole number.'
-assert _x != _start - 2, 'The ' + _label + ' went down to ' + str(_x) + '.'
+assert not _others, 'Your line changed `"' + _others[0] + '"` too, as well as the ' + _label + '.'
+assert type(_x).__name__ == 'int', 'The ' + _label + ' holds `' + _lit(_x) + '`, not a whole number.'
+assert _x != _start - 2, 'The ' + _label + ' went down to ' + str(_x) + ', not up.'
 assert _x == _start + 2, 'The ' + _label + ' is ' + str(_x) + ' now, and it started at ' + str(_start) + '.'
 '''
 
@@ -679,10 +689,11 @@ assert not _err, _stop(_err, _tried)
 _x = _card_value(_ns)
 if _x != _new + 2:
     _end = ': the ' + _label + ' became ' + _lit(_x) + ', not ' + str(_new + 2)
-    assert _x != _new, ('The ' + str(_start) + ' in the sheet was edited, so the card does not follow. '
-                        + _did(_tried, _end))
-    assert _x != _start + 2, ('The new ' + _label + ' is a typed number. ' + _did(_tried, _end))
-    assert False, 'The new ' + _label + ' does not follow the old one. ' + _did(_tried, _end)
+    assert _x != _new, ('You changed the ' + str(_start) + ' in the sheet itself, so nothing adds 2 to another '
+                        + _label + '. ' + _did(_tried, _end))
+    assert _x != _start + 2, ('The new ' + _label + ' is a typed-in number. ' + _did(_tried, _end))
+    assert False, ('The new ' + _label + " doesn't change to match when the old one changes. "
+                   + _did(_tried, _end))
 '''
 
 
@@ -711,16 +722,18 @@ def _qc_inside(form, var, who, mana, abilities, key, other, pass_line, train_lin
             if k != key]
     near.append((mana, f"Your line printed {mana}, {who}'s mana, not the {label}."))
     # The evidence names the value tried, never the read itself (that is CP1's fix).
-    tried = f"another {label} inside the card, {other}"
+    tried = f"a test {label} in the inner sheet, {other}"
     printed = program(f"print({read})")
     moved = sheet_code.replace(f"    \"mana\": {mana},\n", f"    \"mana\": {mana},\n    \"{key}\": {want},\n")
     return dict(
         id="read-inside",
-        title="A value inside a card",
+        title="A value inside a sheet",
         martu=(
-            f"{who}'s sheet has a card inside it, `\"abilities\"`. Print {who}'s {label}, read from the sheet. "
-            f"Then {who} trains: change the {label} inside the card. Mar'tu's check also tries another {label}, "
-            "so read it from the sheet. Don't type it.\n" + _stuck(LESSON_B)
+            f"{who}'s sheet has an inner sheet: `\"abilities\"` is a smaller sheet inside the big one. The `# 2.` "
+            f"note calls it the card. First, print {who}'s {label}, read from the sheet. Then {who} trains, so "
+            f"add 2 to the {label} inside `\"abilities\"`. I test your code with another {label}, so read it from "
+            "the sheet. Don't type it.\n"
+            + _stuck(LESSON_B)
         ),
         names=[var],
         support="none",
@@ -729,41 +742,45 @@ def _qc_inside(form, var, who, mana, abilities, key, other, pass_line, train_lin
         checkpoints=[
             dict(
                 id=f"print-the-{key.replace('_', '-')}",
-                text=f"Print {who}'s {label}, read from `{var}`.",
+                text=f"Print {who}'s {label} under the `# 1.` note. Read it from the sheet `{var}`.",
                 dictated=False,
                 hints=[
-                    f"Find `\"{key}\"` in the starter. Which card is it inside?",
-                    "Read left to right: the outer key gives the inner card, and the inner key gives one value. "
-                    "`shelf[\"books\"][\"maps\"]` reads `\"maps\"` inside `\"books\"`.",
-                    f"Start with the sheet's name, then two keys in square brackets: `print({var}[`",
+                    f"Find `\"{key}\"` in the sheet at the top of your code. Is it on the big sheet, or inside "
+                    "`\"abilities\"`?",
+                    "Read left to right, outside first, like a table of contents: chapter, then section. The outer "
+                    "key gives the inner sheet, and the inner key gives one value from it. `shelf[\"books\"][\"maps\"]` "
+                    "reads `\"maps\"` inside `\"books\"`.",
+                    f"Start with `print({var}[`, then the two keys, each in its own square brackets.",
                 ],
                 checks=[
                     check(f"the {var} sheet is kept", _KEEP_SHEET, name=var, sheet=sheet, inner="abilities",
                           train=key),
                     check(f"{who}'s {label} is printed", _READ, name=var, inner="abilities", key=key, want=want,
-                          whole="Your line printed a whole dictionary, not one value from inside the card.",
+                          whole="Your line printed a whole dictionary, not one value.",
                           near=near,
                           fix=f"No line printed {who}'s {label}."),
                     check(f"the {label} follows the sheet", _FOLLOW, name=var, inner="abilities", key=key,
                           changes=[(var, f"{read} = {other}")], tried=tried, new=other, old=want,
-                          typed="The line prints a typed number.",
-                          fix=f"The printed {label} does not follow the sheet."),
+                          typed="Your line prints a typed-in number.",
+                          fix=f"The {label} your line prints doesn't change to match when the sheet changes."),
                 ],
                 pass_line=pass_line,
             ),
             dict(
                 id="train-inside",
-                text=f"{who} trains: below your print, add 2 to his {label}, inside the card.",
+                text=f"Add 2 to {who}'s {label} inside `\"abilities\"`. Write it under the `# 2.` note, below your "
+                     "print.",
                 dictated=False,
                 hints=[
-                    f"Below your `print`. The {label} to change is the one you just read: same sheet, same two "
-                    "keys.",
+                    f"Look under the `# 2.` note. The {label} to change is the one you just printed: the same sheet "
+                    "and the same two keys.",
                     "Get it, change it, put it back: `old = jar[\"lid\"][\"turns\"]`, then "
-                    "`jar[\"lid\"][\"turns\"] = old + 1`. The left side walks the same keys as the read.",
-                    "A value inside a card changes like any value: the new value goes on the right of `=`, and the "
-                    "spot it goes back to, both keys, on the left.",
-                    f"Get the old {label} into a variable first: `wis = {var}[`, then put it back plus 2, with the "
-                    "same two keys on the left.",
+                    "`jar[\"lid\"][\"turns\"] = old + 1`. The left side of `=` uses the same two keys as the read.",
+                    "It works like the mana line from Unit 1, where mana gets mana minus the spell's cost. Python "
+                    "works out the right side of `=` first, then puts the answer in the spot on the left. Here that "
+                    "spot is both keys.",
+                    f"First put the old {label} in a variable: `wis = {var}[`, then put it back plus 2, with the "
+                    "same two keys on the left of `=`.",
                 ],
                 checks=[
                     check(f"the {label} inside the card is up by 2", _TRAIN, name=var, inner="abilities", key=key,
@@ -783,26 +800,28 @@ def _qc_inside(form, var, who, mana, abilities, key, other, pass_line, train_lin
                          f"wis = {want}"],
         ),
         another_way=[
-            dict(angle="picture", label="A card inside a sheet", text=(
+            dict(angle="picture", label="A sheet inside a sheet", text=(
                 "```text\n" f"{var}\n" "  \"name\"\n" "  \"mana\"\n" "  \"abilities\"\n" f"      \"{key}\"\n" "```\n"
-                "The outer key opens the card. The inner key reads one line of it. Writing to it walks the same "
-                "two keys.")),
+                "The outer key, `\"abilities\"`, gives the inner sheet. The inner key gives one value from it. To "
+                "change that value, use the same two keys on the left of `=`.")),
             dict(angle="step-by-step", text=(
-                f"1. `{var}[\"abilities\"]` is the whole inner card.\n"
-                f"2. One more key in square brackets reads one line of that card.\n"
+                f"1. `{var}[\"abilities\"]` is the whole inner sheet.\n"
+                f"2. One more key in square brackets reads one value from that inner sheet.\n"
                 "3. Put the read inside `print(...)`.\n"
-                "4. To change it: get the old value into a variable, then put the new one back with the same two "
+                "4. To change it, put the old value in a variable. Then put the new value back, with the same two "
                 "keys on the left of `=`.")),
         ],
         campaign_link=dict(
             module=MODULE,
             part="hold-the-barrier",
             why=(
-                "You have seen this read. Holding the barrier started with "
-                "`caster[\"abilities\"][\"magical_affinity\"]`: the outer key `\"abilities\"`, then the inner key."
+                "You've seen this read. When you held the barrier, the code started with "
+                "`caster[\"abilities\"][\"magical_affinity\"]`: the outer key `\"abilities\"` first, then the inner "
+                "key."
             ),
         ),
-        takeaway="Outer key, then inner key: `hero[\"abilities\"][\"wisdom\"]`, to read it or to change it.",
+        takeaway=("Outer key first, then inner key: `hero[\"abilities\"][\"wisdom\"]`. You use the same two keys to "
+                  "read the value or to change it."),
         wrong_answers=[
             dict(why="the starter (nothing printed)", code=starter, fails_at=1, message_contains="No line printed"),
             dict(why=f"a skipped level: {var}[\"{key}\"] (KeyError)", code=program(f"print({var}[\"{key}\"])"),
@@ -819,7 +838,7 @@ def _qc_inside(form, var, who, mana, abilities, key, other, pass_line, train_lin
             dict(why=f"the {label} typed (CMB; A-06/A-07 typed values)", code=program(f"print({want})"),
                  fails_at=1, message_contains=f"still printed {want}"),
             dict(why="the value typed with a label", code=program(f"print(\"{label.capitalize()}: {want}\")"),
-                 fails_at=1, message_contains="prints a typed number"),
+                 fails_at=1, message_contains="prints a typed-in number"),
             dict(why="the trained value typed in CP1's print (the card is still the starter's)",
                  code=program(f"print({want + 2})"), fails_at=1, message_contains=f"No line printed {who}'s {label}"),
             dict(why="dot access", code=program(f"print({var}.{key})"), fails_at=0,
@@ -846,23 +865,23 @@ def _qc_inside(form, var, who, mana, abilities, key, other, pass_line, train_lin
                  message_contains="No line printed"),
             # CP2: the write inside the card (dict-nested write).
             dict(why="CP2 nothing written yet (the partial)", code=printed, fails_at=2,
-                 message_contains=f"The {label} inside the card is still"),
+                 message_contains=f"The {label} is still {want}"),
             dict(why="CP2 a flat key: the write skips the card (the skipped level, on the left)",
                  code=program(f"print({read})", f"{var}[\"{key}\"] = {read} + 2\n"), fails_at=2,
                  message_contains="on the outside of the sheet"),
             dict(why=f"CP2 the new {label} typed (CMB: {var}[...] = {want + 2})",
                  code=program(f"print({read})", f"{read} = {want + 2}\n"), fails_at=2,
-                 message_contains="is a typed number"),
+                 message_contains="is a typed-in number"),
             dict(why=f"CP2 the sum typed ({want} + 2)", code=program(f"print({read})", f"{read} = {want} + 2\n"),
-                 fails_at=2, message_contains="is a typed number"),
+                 fails_at=2, message_contains="is a typed-in number"),
             dict(why=f"CP2 the {want} in the sheet edited, no write line",
                  code=program(f"print({read})").replace(f"\"{key}\": {want},", f"\"{key}\": {want + 2},"),
-                 fails_at=2, message_contains="was edited"),
+                 fails_at=2, message_contains="in the sheet itself"),
             dict(why="CP2 worked out into a new variable, never put back (NEWBOX)",
                  code=program(f"print({read})", f"wis = {read} + 2\n"), fails_at=2,
                  message_contains="your variable `wis`"),
             dict(why="CP2 worked out, kept nowhere (BARE)", code=program(f"print({read})", f"{read} + 2\n"),
-                 fails_at=2, message_contains="forgets it"),
+                 fails_at=2, message_contains="throws the answer away"),
             dict(why="CP2 the sign the wrong way (minus 2)",
                  code=program(f"print({read})", get_line + f"{read} = wis - 2\n"), fails_at=2,
                  message_contains="went down to"),
@@ -916,14 +935,14 @@ if type(_g.get('needed')).__name__ == 'int':
 if _name not in _g:
     assert False, _gone(_name, __STARTER_NAMES__, True)
 _sp = _g[_name]
-assert type(_sp).__name__ == 'dict', '`' + _name + '` is not a dictionary.'
+assert type(_sp).__name__ == 'dict', '`' + _name + '` does not hold a dictionary.'
 _msg = ''
 for _k in ('mana_cost', 'required_affinity'):
     if _k in _sp:
         continue
     _x = _near_key(_sp, _k, ('mana_cost', 'required_affinity'))
     if _x is not None:
-        _msg = '`' + _name + '` has a key `' + _lit(_x) + '`, and the task spells it `"' + _k + '"`.'
+        _msg = '`' + _name + '` has a key `' + _lit(_x) + '`, but the task spells it `"' + _k + '"`. Python matches keys letter for letter.'
     else:
         _msg = '`' + _name + '` has no key `"' + _k + '"` yet.'
     break
@@ -934,8 +953,8 @@ for _k, _x in (('mana_cost', _mc), ('required_affinity', _ra)):
         _msg = '`' + _name + '["' + _k + '"]` holds the text `"' + _x + '"`. ' + _QUOTES
         break
 assert not _msg, _msg
-assert not (_cv != _nv and _mc == _nv and _ra == _cv), ('Two values are swapped: `"mana_cost"` holds ' + str(_mc)
-                                                        + ', which is `needed`.')
+assert not (_cv != _nv and _mc == _nv and _ra == _cv), ('`"mana_cost"` holds ' + str(_mc) + ', the number in '
+                                                        '`needed`. Two values are swapped.')
 assert _mc == _cv, '`' + _name + '["mana_cost"]` holds ' + _lit(_mc) + ', and `cost` holds ' + str(_cv) + '.'
 assert _ra == _nv, '`' + _name + '["required_affinity"]` holds ' + _lit(_ra) + ', and `needed` holds ' + str(_nv) + '.'
 '''
@@ -947,7 +966,7 @@ assert not _miss, _keep(_miss[0])
 assert not _err, _stop(_err, _tried)
 _sp = _ns.get(__SPELL__)
 _got = (_sp.get('mana_cost'), _sp.get('required_affinity')) if type(_sp).__name__ == 'dict' else ('?', '?')
-assert _got == __WANT__, ('`' + __SPELL__ + '` does not follow `cost` and `needed`. '
+assert _got == __WANT__, ('`' + __SPELL__ + "` doesn't change to match when `cost` and `needed` change. "
                           + _did(_tried, ': `' + __SPELL__ + '` still held ' + _lit(_got[0]) + ' and ' + _lit(_got[1])))
 '''
 
@@ -957,21 +976,21 @@ _old, _page = __OLD__, __OLD_PAGE__
 if _bn not in _g:
     assert False, _gone(_bn)
 _b = _g[_bn]
-assert type(_b).__name__ == 'dict', '`' + _bn + '` should still be a dictionary.'
+assert type(_b).__name__ == 'dict', '`' + _bn + '` is no longer a sheet (a dictionary).'
 _new = _g.get(_nn)
 assert _nn not in _b, ('`' + _bn + '` got a page called `"' + _nn + '"`. ' + _QUOTES)
-assert _old in _b, 'Keep ' + _old + chr(39) + 's page: `' + _bn + '` lost it.'
-assert _b[_old] == _page, 'Leave ' + _old + chr(39) + 's page as the starter has it: it changed.'
+assert _old in _b, '`' + _bn + '` lost ' + _old + chr(39) + 's page. Keep that page as it was.'
+assert _b[_old] == _page, _old + chr(39) + 's page changed. Leave it as it was.'
 if _new not in _b:
     _asks = [_c for _c in _ast.walk(_tree) if type(_c).__name__ == 'Compare' and type(_c.ops[0]).__name__ == 'In'
              and type(_c.left).__name__ == 'Name' and _c.left.id == _nn]
     assert not _asks, 'Your `if` stores only when the name is already in `' + _bn + '`.'
     _extra = [_k for _k in _b if _k != _old]
     assert not _extra, '`' + _bn + '` got a page called `' + _lit(_extra[0]) + '`.'
-    assert False, 'The book has no page for ' + _lit(_new) + ' yet.'
+    assert False, '`' + _bn + '` has no page for ' + _lit(_new) + ' yet.'
 _pg = _b[_new]
-assert type(_pg).__name__ != 'str', ('The page holds the text `"' + _pg + '"`. ' + _QUOTES)
-assert _pg == _g.get(_sn), 'The page holds ' + _lit(_pg) + ', not the whole `' + _sn + '` dictionary.'
+assert type(_pg).__name__ != 'str', ('The new page holds the text `"' + _pg + '"`. ' + _QUOTES)
+assert _pg == _g.get(_sn), 'The new page holds ' + _lit(_pg) + ', not the whole `' + _sn + '` sheet.'
 '''
 
 _STORE_FOLLOW = r'''
@@ -981,11 +1000,11 @@ assert not _miss, _keep(_miss[0])
 assert not _err, _stop(_err, _tried)
 _b = _ns.get(__BOOK__)
 _b = _b if type(_b).__name__ == 'dict' else {}
-assert __NEWNAME__ in _b, ('The page name does not follow `' + __NAMEVAR__ + '`. '
+assert __NEWNAME__ in _b, ("The page name doesn't change to match when `" + __NAMEVAR__ + '` changes. '
                            + _did(_tried, ': the book got no ' + __NEWNAME__ + ' page'))
 _pg = _b[__NEWNAME__]
 _got = (_pg.get('mana_cost'), _pg.get('required_affinity')) if type(_pg).__name__ == 'dict' else None
-assert _got == __WANT__, ('The new page does not follow `' + __SPELL__ + '`. '
+assert _got == __WANT__, ("The new page doesn't change to match when `" + __SPELL__ + '` changes. '
                           + _did(_tried, ': the new page held ' + _lit(_pg)))
 '''
 
@@ -1004,19 +1023,19 @@ _top_store = [_n for _n in _tree.body if type(_n).__name__ in ('Assign', 'AugAss
               and [_t for _t in (_n.targets if type(_n).__name__ == 'Assign' else [_n.target])
                    if type(_t).__name__ == 'Subscript' and type(_t.value).__name__ == 'Name' and _t.value.id == _bn]]
 if _quoted:
-    _why = ('`"' + _nn + '"` in quotes is just those letters, and no page is called that. ' + _QUOTES)
+    _why = ('Your `if` asks about the letters `"' + _nn + '"`, and no page is called that. ' + _QUOTES)
 elif _values:
     _why = ('Your `if` asks about `' + _values[0] + '`, and `in` looks at the keys only, never the values.')
 elif _typed_list:
-    _why = 'Your `if` asks a list of names you typed, not `' + _bn + '`.'
+    _why = 'Your `if` looks in a list of names you typed, not in `' + _bn + '`.'
 elif _cmp and _top_store:
-    _why = 'Line ' + str(_top_store[0].lineno) + ' stores every time, even when the name is not new.'
+    _why = 'Line ' + str(_top_store[0].lineno) + ' stores every time, because it is not indented under the `if`.'
 elif _typed and not _cmp:
     _why = 'Your `if` checks names you typed, not `' + _bn + '`.'
 elif not _cmp:
-    _why = 'No line asks `' + _bn + '` about the name before the store.'
+    _why = 'No line asks `' + _bn + '` about the name before the spell is stored.'
 else:
-    _why = 'The store also runs when the name is already in `' + _bn + '`.'
+    _why = 'Your code also stores the spell when the name is already in `' + _bn + '`.'
 for _tried, _changes, _who, _page, _what in __CASES__:
     _ns, _ls, _err, _miss = _rerun(_changes)
     assert not _miss, _keep(_miss[0])
@@ -1067,14 +1086,14 @@ def _qc_store(form, book, name_var, spell_var, old, old_page, new, cost, needed,
     h_name, h_page = guard3
     page = {"mana_cost": old_cost, "required_affinity": old_needed}
     cases = [
-        (f"`{name_var} = \"{old}\"`, `cost = 9` and `needed = 9`",
+        (f"a name that already has a page, `{name_var} = \"{old}\"`, with `cost = 9` and `needed = 9`",
          [(name_var, f"{name_var} = \"{old}\""), ("cost", "cost = 9"), ("needed", "needed = 9")], old, page,
          f"{old}'s page"),
-        (f"`{name_var} = \"{g_name}\"`, with a page for {g_name} already in `{book}`",
+        (f"a test page for {g_name} already in `{book}`, and `{name_var} = \"{g_name}\"`",
          [(book, f"{book}[\"{g_name}\"] = {{\"mana_cost\": {g_page[0]}, \"required_affinity\": {g_page[1]}}}"),
           (name_var, f"{name_var} = \"{g_name}\"")],
          g_name, {"mana_cost": g_page[0], "required_affinity": g_page[1]}, f"{g_name}'s page"),
-        (f"another name that already has a page in `{book}`",
+        (f"another test name that already has a page in `{book}`",
          [(book, f"{book}[\"{h_name}\"] = {{\"mana_cost\": {h_page[0]}, \"required_affinity\": {h_page[1]}}}"),
           (name_var, f"{name_var} = \"{h_name}\"")],
          h_name, {"mana_cost": h_page[0], "required_affinity": h_page[1]}, "that page"),
@@ -1083,9 +1102,12 @@ def _qc_store(form, book, name_var, spell_var, old, old_page, new, cost, needed,
         id="store-the-spell",
         title="Store a spell by name",
         martu=(
-            f"`{book}` holds one page per spell, by name. Build a new spell from the variables, then store it in "
-            f"`{book}` under the name in `{name_var}`. Store it only if that name is not in the book yet, so a page "
-            "that is already there stays as it is. Mar'tu's check also tries other names and numbers.\n"
+            f"`{book}` is a book of spells: a sheet with one page for each spell, and each page's key is the "
+            f"spell's name." + (f" A *{spell_var}* is a spell that protects." if spell_var == "ward" else "")
+            + f" First, make the new spell from `cost`, its price in mana, and `needed`, how strong a "
+            f"caster's magic must be. Then store it in `{book}`, with the name in `{name_var}` as the key. Store it "
+            f"only if that name is not in `{book}` yet, so a page that is already there stays as it is. I test your "
+            "code with other names and numbers.\n"
             + _stuck(LESSON_B)
         ),
         names=[spell_var, "cost", "needed", book, name_var],
@@ -1095,43 +1117,44 @@ def _qc_store(form, book, name_var, spell_var, old, old_page, new, cost, needed,
         checkpoints=[
             dict(
                 id="build-the-spell",
-                text=(f"Make `{spell_var}` with the keys `\"mana_cost\"` and `\"required_affinity\"`, built from "
-                      "`cost` and `needed`."),
+                text=(f"Make a sheet named `{spell_var}` under the `# 1.` note, with the keys `\"mana_cost\"` and "
+                      "`\"required_affinity\"`. Their values come from `cost` and `needed`."),
                 dictated=False,
                 hints=[
-                    "Look at the variables above the comments. Which one is the price in mana, and which is the "
-                    "affinity a caster needs?",
-                    "A value in a dictionary can be a variable, with no quotes: `{\"fuel\": tank}` holds whatever "
-                    "`tank` holds.",
+                    "Look at the variables above the `# 1.` note. Which one is the price in mana, and which one is how "
+                    "strong a caster's magic must be?",
+                    "A value in a sheet can be a variable, with no quotes: `{\"fuel\": tank}` holds whatever is in "
+                    "`tank`.",
                     f"Start with `{spell_var} = {{`, then one line for each key, with a variable as its value.",
                 ],
                 checks=[
                     check(f"{spell_var} holds the cost and the needed affinity", _SPELL, spell=spell_var, cost=cost,
                           needed=needed, starter_names=[book, name_var, "cost", "needed"]),
                     check(f"{spell_var} follows cost and needed", _SPELL_FOLLOW,
-                          tried=f"`cost = {f_cost}` and `needed = {f_needed}`",
+                          tried=f"test numbers, `cost = {f_cost}` and `needed = {f_needed}`",
                           changes=[("cost", f"cost = {f_cost}"), ("needed", f"needed = {f_needed}")], spell=spell_var,
                           want=(f_cost, f_needed)),
                 ],
-                pass_line="Gearshift: Math checks out. Cost and affinity, from the variables.",
+                pass_line=f"You made `{spell_var}` from `cost` and `needed`. Gearshift: Math checks out.",
             ),
             dict(
                 id="store-if-new",
-                text=(f"If `{name_var}` is not in `{book}` yet, store `{spell_var}` in `{book}`, with `{name_var}` as "
-                      "the key."),
+                text=(f"Store `{spell_var}` in `{book}` only if the name in `{name_var}` is not in `{book}` yet. Use "
+                      "that name as the key, and write your lines under the `# 2.` note."),
                 dictated=False,
                 hints=[
-                    f"Two lines: an `if` that asks the book about `{name_var}`, then an indented line that stores the "
-                    "spell.",
-                    "`if food not in pantry:` asks about a key. Under it, `pantry[food] = amount` stores a value under "
-                    "the key `food` holds.",
+                    f"Look under the `# 2.` note. You need two lines: an `if` that asks `{book}` about the name in "
+                    f"`{name_var}`, then a line indented under it that stores the spell.",
+                    "`if food not in pantry:` asks whether the name in `food` is missing from the keys of `pantry`. "
+                    "Under it, indented, `pantry[food] = amount` stores `amount` under that name.",
                     f"Start with `if {name_var} not in`, then store under `{book}[`",
                 ],
                 checks=[
                     check(f"the spell is stored under {name_var}", _STORE, book=book, namevar=name_var, spell=spell_var,
                           old=old, old_page=page),
                     check("the page follows the name and the numbers", _STORE_FOLLOW,
-                          tried=f"`{name_var} = \"{f_name}\"`, `cost = {f_cost}` and `needed = {f_needed}`",
+                          tried=(f"a test name and test numbers, `{name_var} = \"{f_name}\"`, `cost = {f_cost}` and "
+                                 f"`needed = {f_needed}`"),
                           changes=[(name_var, f"{name_var} = \"{f_name}\""), ("cost", f"cost = {f_cost}"),
                                    ("needed", f"needed = {f_needed}")],
                           book=book, namevar=name_var, spell=spell_var, newname=f_name,
@@ -1151,23 +1174,27 @@ def _qc_store(form, book, name_var, spell_var, old, old_page, new, cost, needed,
         ),
         another_way=[
             dict(angle="step-by-step", text=(
-                f"1. Build `{spell_var}`: two keys in quotes, each with a variable as its value, no quotes.\n"
+                f"1. Make `{spell_var}`: two keys in quotes, each with a variable as its value. The variables get "
+                "no quotes.\n"
                 f"2. Ask the book: is the name in `{name_var}` missing from `{book}`?\n"
-                f"3. If so, store the spell under that name, with no quotes around `{name_var}`.")),
+                f"3. If it is, store the spell under that name, on a line indented under the `if`. No quotes go "
+                f"around `{name_var}`.")),
             dict(angle="from the campaign", label="You've seen this", text=(
-                "The spell book part stored each spell with `spell_book[spell_name] = spell`. The barrier part "
-                "began by asking `if spell_name not in caster[\"spell_book\"]:`. This task puts the two together.")),
+                "In the campaign, the spell book part stored each spell with `spell_book[spell_name] = spell`. The "
+                "barrier part started by asking `if spell_name not in caster[\"spell_book\"]:`. This task puts the "
+                "two together.")),
         ],
         campaign_link=dict(
             module=MODULE,
             part="spell-book",
             snippet="spell_book[spell_name] = spell",
             why=(
-                "You have seen this line in `add_spell()`. The key came from a variable, with no quotes, so each "
-                "page was called by the spell's own name. And `cast_spell` opened by asking `not in` first."
+                "You've seen this line in `add_spell()`. The key came from a variable, with no quotes, so each "
+                "page got the spell's own name. And `cast_spell` started by asking a question with `not in`."
             ),
         ),
-        takeaway="Build a dict from variables, ask `if name not in book:`, then store it with `book[name] = spell`.",
+        takeaway=("Make a sheet from variables, ask `if name not in book:`, then store it with "
+                  "`book[name] = spell`, indented under the `if`."),
         wrong_answers=[
             dict(why="the starter (no spell yet)", code=starter, fails_at=1, message_contains=f"Nothing in your program is called `{spell_var}`"),
             dict(why=f"CP1 the numbers typed in (literals; A-06/A-07 test values)", code=program(spell=literal_spell(cost, needed)),
@@ -1197,7 +1224,7 @@ def _qc_store(form, book, name_var, spell_var, old, old_page, new, cost, needed,
                  fails_at=0, message_contains="unhashable type: 'dict'"),
             dict(why="CP2 the guard asks about the quoted name",
                  code=program(store=f"if \"{name_var}\" not in {book}:\n    {book}[{name_var}] = {spell_var}\n"),
-                 fails_at=2, message_contains="just those letters"),
+                 fails_at=2, message_contains="no page is called that"),
             dict(why="CP2 `in` for `not in` (nothing new is ever stored)",
                  code=program(store=f"if {name_var} in {book}:\n    {book}[{name_var}] = {spell_var}\n"), fails_at=2,
                  message_contains="already in"),
@@ -1220,7 +1247,7 @@ def _qc_store(form, book, name_var, spell_var, old, old_page, new, cost, needed,
                  code=program(store=f"if \"{new}\" not in {book}:\n    {book}[\"{new}\"] = {spell_var}\n"), fails_at=2,
                  message_contains=f"no {f_name} page"),
             dict(why="CP2 the book replaced (the old page lost)", code=program(store=f"{book} = {{{name_var}: {spell_var}}}\n"),
-                 fails_at=2, message_contains="lost it"),
+                 fails_at=2, message_contains=f"lost {old}'s page"),
             dict(why="CP2 the spell's name stored as text", code=program(store=f"if {name_var} not in {book}:\n    {book}[{name_var}] = \"{spell_var}\"\n"),
                  fails_at=2, message_contains="holds the text"),
             dict(why="CP2 something else stored (the cost)", code=program(store=f"if {name_var} not in {book}:\n    {book}[{name_var}] = cost\n"),
@@ -1254,9 +1281,9 @@ def _qc_store(form, book, name_var, spell_var, old, old_page, new, cost, needed,
 # ---- C4: mend a KeyError from a skipped level, then get it, compare, act (dict-nested, Obj 9) ----
 
 _MEND_READ = r'''
-assert _g.get('needed') == __NEEDED__, ('Keep `needed = ' + str(__NEEDED__) + '` as the starter has it: `needed` now '
-                                        'holds ' + _lit(_g.get('needed')) + '.')
-assert 'skill' in _g, 'Keep the line that makes `skill`: it is gone.'
+assert _g.get('needed') == __NEEDED__, ('`needed` now holds ' + _lit(_g.get('needed')) + '. Keep `needed = '
+                                        + str(__NEEDED__) + '` as it was.')
+assert 'skill' in _g, 'The line that makes `skill` is gone. Keep it as it was.'
 _s = _g['skill']
 _msg = ''
 if _s != __WANT__:
@@ -1273,16 +1300,16 @@ _MEND_FOLLOW = r'''
 _tried = __TRIED__
 _yes, _no, _more = __YES__, __NO__, __MORE__
 _now = _lines()
-assert _shows(_now, _yes) or _shows(_now, _more), ('Keep the `if`, `elif` and `else` lines as they are: `'
-                                                   + _yes + '` no longer prints.')
+assert _shows(_now, _yes) or _shows(_now, _more), ('`' + _yes + '` no longer shows in the Console. Keep the `if`, '
+                                                   '`elif` and `else` lines as they are.')
 _ns, _ls, _err, _miss = _rerun(__CHANGES__)
 assert not _miss, _keep(_miss[0])
 assert not _err, _stop(_err, _tried)
-assert _ns.get('skill') == __NEW__, ('`skill` holds a typed number. '
+assert _ns.get('skill') == __NEW__, ('`skill` holds a typed-in number. '
                                      + _did(_tried, ': `skill` still held ' + _lit(_ns.get('skill'))))
 # Only one line printing is CP2's to judge (its last rerun), so a broken chain is named there.
-assert _shows(_ls, _no), ('Keep the `if` line as the starter has it. ' + _did(_tried, ': `' + _no + '` should have '
-                                                                             'printed'))
+assert _shows(_ls, _no), ('Your `if` line changed. Keep it as it was. ' + _did(_tried, ': `' + _no + '` should '
+                                                                              'have printed'))
 '''
 
 # CP2: the mana test in place of `elif False:` (get it, compare, act). The student's own run first, then reruns
@@ -1304,11 +1331,11 @@ _why = ''
 if type(_t).__name__ == 'Constant':
     _why = '`' + str(_t.value) + '` is still there, so every caster gets the same answer.'
 elif _parts and len(_nums) == len(_parts):
-    _why = 'Your test compares typed numbers, so every caster gets the same answer.'
+    _why = 'Your question compares typed numbers, so every caster gets the same answer.'
 elif _nums and _cost:
-    _why = 'Your test uses a typed number for the mana.'
+    _why = 'Your question uses a typed number for the mana.'
 elif _nums:
-    _why = 'Your test uses a typed number for the cost.'
+    _why = 'Your question uses a typed number for the cost.'
 def _seen(_ls):
     return [_x for _x in (_no, _more, _yes) if _shows(_ls, _x)]
 def _said(_got):
@@ -1323,9 +1350,10 @@ if not [_x for _x in (_m, _cv, _sk, _nd) if type(_x).__name__ != 'int']:
         if _why:
             _msg = _why
         elif _exp == _yes and _got == [_more]:
-            _msg = ('The caster has ' + str(_m) + ' mana and `cost` is ' + str(_cv) + ', and your test warned.')
+            _msg = ('The caster has ' + str(_m) + ' mana and `cost` is ' + str(_cv) + ', and your code warned '
+                    'anyway.')
         else:
-            _msg = 'One run should print one line: ' + _said(_got) + '.'
+            _msg = 'Each run should print one line, but ' + _said(_got) + '.'
         assert False, _msg
 for _tried, _changes, _expect, _m in __CASES__:
     _ns, _ls, _err, _miss = _rerun(_changes)
@@ -1366,32 +1394,33 @@ def _qc_mend(form, who, mana, abilities, needed, cost, other, pass_line, mana_li
     near = [(other_value, f"`skill` holds {other_value}, the {other_key}, not the magical affinity."),
             (mana, f"`skill` holds {mana}, the mana, not the magical affinity.")]
     # The evidence names the value tried, never the mended read (CP1's fix).
-    tried = f"another magical affinity inside the card, {other}"
+    tried = f"a test magical affinity in the inner sheet, {other}"
     moved = sheet_code.replace(f"    \"mana\": {mana},\n", f"    \"mana\": {mana},\n    \"magical_affinity\": {affinity},\n")
     low_aff = 4
     cases = [
         (f"a caster with 3 mana against `cost = {cost}`",
          [("caster", "caster[\"mana\"] = 3"), ("cost", f"cost = {cost}")], more,
-         "This caster is short of mana, and your test let them cast."),
-        (f"`cost = 30` against {mana} mana",
+         "This caster doesn't have enough mana, and your code let them cast."),
+        (f"a test cost, `cost = 30`, against {mana} mana",
          [("caster", f"caster[\"mana\"] = {mana}"), ("cost", "cost = 30")], more,
-         "This spell costs more than the caster has, and your test let them cast."),
+         "This spell costs more than the caster has, and your code let them cast."),
         (f"a caster with exactly {cost} mana against `cost = {cost}`",
          [("caster", f"caster[\"mana\"] = {cost}"), ("cost", f"cost = {cost}")], yes,
-         "Your test also warns when the mana equals `cost`."),
-        (f"an affinity of {low_aff} and 3 mana against `cost = {cost}`",
+         "Your code also warns when the mana is exactly the same as `cost`."),
+        (f"a caster with an affinity of {low_aff} and 3 mana, against `cost = {cost}`",
          [("caster", f"caster[\"abilities\"][\"magical_affinity\"] = {low_aff}"),
           ("caster", "caster[\"mana\"] = 3"), ("cost", f"cost = {cost}")], no,
          f"With the affinity too low, only `{no}` should print."),
     ]
     return dict(
         id="mend-the-read",
-        title="Mend it, then test the mana",
+        title="Fix the read, then ask about the mana",
         martu=(
-            f"This program stops with a [[KeyError]]. Read Python's last line, find the line it names, and mend "
-            "the read so the program runs. Leave the sheet as it is.\n"
-            "Then finish the chain: replace `False` with a test of the caster's mana against `cost`. Mar'tu's "
-            "check also tries other casters and costs.\n" + _stuck(LESSON_B)
+            "This code stops with a [[KeyError]]: Python can't find a key it was asked for. Read the box in the "
+            "Console: first its title, then *Python's last line*. Find the line number it gives, and fix the read on "
+            "that line so the code runs. Leave the sheet as it is.\n"
+            "Then finish the `if` / `elif` / `else` chain: replace `False` with a question about the caster's mana "
+            "and `cost`. I test your code with other casters and costs.\n" + _stuck(LESSON_B)
         ),
         names=["caster", "skill", "cost"],
         support="none",
@@ -1400,13 +1429,15 @@ def _qc_mend(form, who, mana, abilities, needed, cost, other, pass_line, mana_li
         checkpoints=[
             dict(
                 id="mend-the-read",
-                text="Mend the line Python stops on, so `skill` holds the caster's magical affinity.",
+                text=(f"Fix line {sheet_code.count(chr(10)) + 4}, where Python stops. `skill` should hold the "
+                      "caster's magical affinity."),
                 dictated=False,
                 hints=[
-                    "Read Python's last line: which key could it not find? Then find that key in the sheet.",
-                    "A [[KeyError]] means no key spelled exactly like that, at that level. A key inside a card "
-                    "needs the card's key first: `shelf[\"books\"][\"maps\"]`.",
-                    "Keep `skill = caster[` and add the outer key before the one that is there.",
+                    "Read the box in the Console: first its title, then *Python's last line*. Which key could Python "
+                    "not find? Then find that key in the sheet at the top.",
+                    "A [[KeyError]] means the sheet has no key spelled exactly like that, at that level. A key inside "
+                    "an inner sheet needs the outer key first: `shelf[\"books\"][\"maps\"]`.",
+                    "Keep `skill = caster[` as it is, and add the outer key in front of the key that is there.",
                 ],
                 checks=[
                     check("the caster sheet is kept", _KEEP_SHEET, name="caster", sheet=sheet, inner="abilities",
@@ -1420,13 +1451,15 @@ def _qc_mend(form, who, mana, abilities, needed, cost, other, pass_line, mana_li
             ),
             dict(
                 id="mana-test",
-                text=("Replace `False` with a test: the warning prints when the caster's mana is lower than `cost`. "
-                      "Exactly enough mana still casts."),
+                text=("Replace `False` in `elif False:` with a question: is the caster's mana lower than `cost`? "
+                      "A caster with exactly enough mana still casts."),
                 dictated=False,
                 hints=[
-                    "The mana is on the big sheet, beside `\"name\"`, not inside the card. The price is in `cost`.",
-                    "`elif` asks only when the `if` above was false. `fuel < trip` asks *lower than*: exactly "
-                    "enough is not lower, so it still goes. That is `<`, not `<=`.",
+                    "Look at the sheet. The mana is on the big sheet, next to `\"name\"`, not inside `\"abilities\"`. The "
+                    "spell's price is in `cost`.",
+                    "`elif` asks its question only when the `if` above it was `False`. `fuel < trip` asks *lower "
+                    "than*. Exactly enough is not lower, so the trip still goes. On a number line, `<` is the open "
+                    "dot: the number itself doesn't count. That is `<`, not `<=`.",
                     "Read the mana with one key, then compare it with `cost`, the way `skill < needed` compares "
                     "two values.",
                     "Start with `elif caster[`, in place of `elif False:`.",
@@ -1447,28 +1480,30 @@ def _qc_mend(form, who, mana, abilities, needed, cost, other, pass_line, mana_li
         ),
         another_way=[
             dict(angle="step-by-step", text=(
-                "1. Python's last line names the key it could not find.\n"
-                "2. Find that key in the sheet: which card is it inside?\n"
-                "3. Read the card's key first, then the inner key.\n"
+                "1. Read the box in the Console. *Python's last line* gives the key Python couldn't find.\n"
+                "2. Find that key in the sheet: is it on the big sheet, or inside `\"abilities\"`?\n"
+                "3. Read the outer key first, then the inner key.\n"
                 "4. In the `elif`, compare the caster's mana with `cost`. *Lower than* is `<`.")),
             dict(angle="picture", label="Where the keys live", text=(
                 "```text\ncaster\n  \"name\"\n  \"mana\"\n  \"abilities\"\n      \"magical_affinity\"\n```\n"
-                "The affinity is one level down, inside the card. The mana is on the big sheet.")),
+                "The affinity is one level down, inside `\"abilities\"`. The mana is on the big sheet.")),
             dict(angle="from the campaign", label="Get it, compare, act", text=(
-                "Holding the barrier was this chain. Get the affinity and compare it with what the spell needs. "
-                "Else, if the mana is lower than the cost, warn. Else, cast. Exactly enough still casts, so the "
-                "tests use `<`.")),
+                "When you held the barrier, the code was this chain. Get the affinity and compare it with what the "
+                "spell needs. Otherwise, if the mana is lower than the cost, warn. Otherwise, cast. Exactly enough "
+                "still casts, so the questions use `<`.")),
         ],
         campaign_link=dict(
             module=MODULE,
             part="hold-the-barrier",
             why=(
-                "You have seen this chain. Holding the barrier asked about "
+                "You've seen this chain. When you held the barrier, the code asked about "
                 "`caster[\"abilities\"][\"magical_affinity\"]` first, then `elif caster[\"mana\"] < "
-                "spell[\"mana_cost\"]:`. `caster[\"magical_affinity\"]` would stop there with the same KeyError."
+                "spell[\"mana_cost\"]:`. `caster[\"magical_affinity\"]` would have stopped there with the same "
+                "KeyError."
             ),
         ),
-        takeaway="Get it, compare, act: read the outer key first, then test with `<`, so exactly enough still casts.",
+        takeaway=("Get it, compare, act: read the outer key first, then compare with `<`, so exactly enough mana "
+                  "still casts."),
         wrong_answers=[
             dict(why="the starter, left unmended (the skipped level; the campaign's own slip)", code=starter,
                  fails_at=0, message_contains="KeyError: 'magical_affinity'"),
@@ -1496,7 +1531,7 @@ def _qc_mend(form, who, mana, abilities, needed, cost, other, pass_line, mana_li
                  fails_at=1, message_contains=f"the {other_key}"),
             dict(why="the read line deleted and the number typed in the if",
                  code=program().replace(f"skill = {slip}\n", "").replace("if skill <", f"if {affinity} <"),
-                 fails_at=1, message_contains="Keep the line that makes `skill`"),
+                 fails_at=1, message_contains="The line that makes `skill` is gone"),
             dict(why="needed changed instead of the read mended (skill typed, needed lowered to match)",
                  code=program(str(affinity)).replace(f"needed = {needed}\n", "needed = 0\n"), fails_at=1,
                  message_contains="Keep `needed"),
@@ -1508,11 +1543,11 @@ def _qc_mend(form, who, mana, abilities, needed, cost, other, pass_line, mana_li
             dict(why=f"CP2 typed numbers ({mana} < {cost}; the class's numbers in ink)",
                  code=program(mended, f"{mana} < {cost}"), fails_at=2, message_contains="typed numbers"),
             dict(why="CP2 <= for < (exactly enough would not cast)", code=program(mended, "caster[\"mana\"] <= cost"),
-                 fails_at=2, message_contains="equals `cost`"),
+                 fails_at=2, message_contains="exactly the same as `cost`"),
             dict(why="CP2 the sides swapped: cost < caster[\"mana\"]", code=program(mended, "cost < caster[\"mana\"]"),
-                 fails_at=2, message_contains="and your test warned"),
+                 fails_at=2, message_contains="and your code warned"),
             dict(why="CP2 > for <", code=program(mended, "caster[\"mana\"] > cost"), fails_at=2,
-                 message_contains="and your test warned"),
+                 message_contains="and your code warned"),
             dict(why="CP2 the mana read inside the card: an extra level (KeyError)",
                  code=program(mended, "caster[\"abilities\"][\"mana\"] < cost"), fails_at=0,
                  message_contains="KeyError: 'mana'"),
@@ -1524,7 +1559,7 @@ def _qc_mend(form, who, mana, abilities, needed, cost, other, pass_line, mana_li
             dict(why="CP2 needed for cost", code=program(mended, "caster[\"mana\"] < needed"), fails_at=2,
                  message_contains="costs more than the caster has"),
             dict(why="CP2 the affinity compared with the cost", code=program(mended, "skill < cost"), fails_at=2,
-                 message_contains="this caster is short"),
+                 message_contains="doesn't have enough mana"),
             dict(why="CP2 the chain broken: the mana test as a second `if` (both lines print)",
                  code=program(mended, mana_ok).replace("elif caster", "if caster"), fails_at=2,
                  message_contains="should print"),
@@ -1561,9 +1596,9 @@ HEROES = [("oogrish", "Oogrish", 18), ("gearshift", "Gearshift", 20), ("bomb_she
 
 _ROSTER_KEEP = r'''
 _r = _g.get('roster')
-assert type(_r).__name__ == 'list' and len(_r) == 4, 'Keep `roster` as the starter has it: four sheets.'
+assert type(_r).__name__ == 'list' and len(_r) == 4, '`roster` no longer holds the four sheets it started with.'
 assert not [_s for _s in _r if type(_s).__name__ != 'dict' or 'name' not in _s or 'mana' not in _s], (
-    'Keep the four sheets as the starter has them, each with `"name"` and `"mana"`.')
+    'A sheet in `roster` lost its `"name"` or its `"mana"`. Keep the four sheets as they were.')
 '''
 
 _ROSTER_READ = r'''
@@ -1590,21 +1625,21 @@ _ns, _ls, _err, _miss = _rerun(__CHANGES__)
 assert not _miss, _keep(_miss[0])
 assert not _err, _stop(_err, _tried)
 if not _shows(_ls, __NEW__):
-    _end = ': position ' + str(__POS__) + ' was ' + __NEW__ + ', and your line did not print that name'
+    _end = ': position ' + str(__POS__) + ' held ' + __NEW__ + ", and your line didn't print that name"
     if _prints_name(__VAR__):
         _msg = 'Your line reads the name from `' + __VAR__ + '`, not through `roster`.'
     elif _prints_text(__WHO__):
-        _msg = 'Your line types the name.'
+        _msg = 'You typed the name into your `print` line.'
     else:
-        _msg = 'The printed name does not follow `roster`.'
+        _msg = "The name your line prints doesn't change to match when `roster` changes."
     assert False, _msg + ' ' + _did(_tried, _end)
 '''
 
 _SPEND = _ROSTER_KEEP + r'''
 _pos, _start, _cost = __POS__, __START__, __COST__
 if type(_g.get('cost')).__name__ == 'int':
-    assert _g['cost'] != 0, ('Keep `cost = ' + str(_cost) + '` as the starter has it: `cost` now holds 0, so '
-                             'nothing is spent.')
+    assert _g['cost'] != 0, ('`cost` now holds 0, so nothing is spent. Keep `cost = ' + str(_cost) + '` as it '
+                             'was.')
     _cost = _g['cost']
 _starts = __STARTS__
 _want = _start - _cost
@@ -1622,14 +1657,16 @@ if _m == _start:
         _msg = ('Your variable `' + _box[0] + '` holds ' + str(_want) + ', and the sheet still says ' + str(_start)
                 + '.')
     elif _bare:
-        _msg = ('Your line works out the new mana, then forgets it. The sheet still says ' + str(_start) + '.')
+        _msg = ('Your line works out the new mana with nothing in front of it, so Python throws the answer away. '
+                'The sheet still says ' + str(_start) + '.')
     else:
         _msg = 'The hero' + chr(39) + 's mana is still ' + str(_start) + '.'
     assert False, _msg
 assert type(_m).__name__ == 'int', 'The mana holds ' + _lit(_m) + ', not a whole number.'
 assert _m != _start + _cost, 'The mana went up to ' + str(_m) + '.'
-assert _m != _cost - _start, 'The mana is ' + str(_m) + ': the cost minus the mana.'
-assert _m == _want, 'The mana should go down by `cost`: it is ' + str(_m) + ', and it started at ' + str(_start) + '.'
+assert _m != _cost - _start, 'The mana is ' + str(_m) + ': your line works out the cost minus the mana.'
+assert _m == _want, ('The mana is ' + str(_m) + ' now, and it started at ' + str(_start) + '. It should go down by '
+                     '`cost`, once.')
 '''
 
 _SPEND_FOLLOW = r'''
@@ -1645,7 +1682,7 @@ for _tried, _changes, _base, _spent, _what, _keepname, _keepmana in __CASES__:
     if _keepname:
         _paid = [_s for _s in _r if type(_s).__name__ == 'dict' and _s.get('name') == _keepname]
         assert not (_paid and _paid[0].get('mana') != _keepmana), (
-            'The spend does not go through `roster`. ' + _did(_tried, ': ' + _keepname + chr(39) + 's own sheet paid, '
+            "The spend doesn't go through `roster`. " + _did(_tried, ': ' + _keepname + chr(39) + 's own sheet paid, '
             'not the hero at position ' + str(_pos)))
     assert _got == _want, _what + ' ' + _did(_tried, ': the mana went to ' + _lit(_got) + ', not ' + str(_want))
 '''
@@ -1669,29 +1706,30 @@ def _qc_roster(form, pos, cost, follow_cost, follow_mana, pass_line):
     order = [3, 2, 1, 0]
     moved_var, moved_who, moved_start = HEROES[order[pos]]
     reorder = "roster = [roster[3], roster[2], roster[1], roster[0]]"
-    reorder_tried = "the heroes in another order, Lucky first"
+    reorder_tried = "a test roster with the heroes in another order, Lucky first"
     near = []
     for i, (_, n, _) in enumerate(HEROES):
         if i == pos:
             continue
-        lead = "Positions count from 0: " if i == pos + 1 else ""
-        near.append((n, f"{lead}your line printed {n}, at position {i}."))
+        tail = " Positions count from 0, like a ruler." if i == pos + 1 else ""
+        near.append((n, f"Your line printed {n}, at position {i}.{tail}"))
     want = start - cost
     starts = [m for _, _, m in HEROES]
     cases = [
-        (f"`cost = {follow_cost}`", [("cost", f"cost = {follow_cost}")], start, follow_cost,
-         "The spend does not follow `cost`.", "", 0),
-        (f"{who} with {follow_mana} mana", [(var, f"{var}[\"mana\"] = {follow_mana}")], follow_mana, None,
-         "The new mana does not follow the old mana.", "", 0),
+        (f"a test cost, `cost = {follow_cost}`", [("cost", f"cost = {follow_cost}")], start, follow_cost,
+         "The spend doesn't change to match when `cost` changes.", "", 0),
+        (f"a test mana for {who}, {follow_mana}", [(var, f"{var}[\"mana\"] = {follow_mana}")], follow_mana, None,
+         "The new mana doesn't change to match when the old mana changes.", "", 0),
         (reorder_tried, [("roster", reorder)], moved_start, None,
-         "The spend does not follow `roster`.", who, start),
+         "The spend doesn't change to match when `roster` changes.", who, start),
     ]
     return dict(
         id="spend-through-the-roster",
         title="A roster of sheets",
         martu=(
-            f"Four sheets, one list. Print the name of the hero at position {pos} in `roster`. Then that hero casts "
-            "a spell: take `cost` from their mana, through `roster`. Mar'tu's check also tries other numbers and "
+            f"`roster` is a list of four sheets, one for each hero. First, print the name of the hero at position "
+            f"{pos} in `roster`. Then that hero casts a spell, which costs mana: take `cost` away from their mana, "
+            "using `roster` to reach their sheet. I test your code with other numbers, and with the heroes in "
             "another order.\n" + _stuck(LESSON_B)
         ),
         names=["roster", "cost"],
@@ -1701,12 +1739,13 @@ def _qc_roster(form, pos, cost, follow_cost, follow_mana, pass_line):
         checkpoints=[
             dict(
                 id="name-at-position",
-                text=f"Print the name of the hero at position {pos} in `roster`.",
+                text=f"Print the name of the hero at position {pos} in `roster`. Write it under the `# 1.` note.",
                 dictated=False,
                 hints=[
-                    "A list counts from 0. Which sheet sits at that position?",
+                    f"Look at the `roster = [` list. Positions count from 0, like a ruler. Which sheet is at "
+                    f"position {pos}?",
                     "Position first, then the key: `shelf[0][\"title\"]` is the title of the first book on the "
-                    "shelf.",
+                    "shelf, the one at position 0.",
                     "Start with `print(roster[`, then the position, then the key.",
                 ],
                 checks=[
@@ -1716,15 +1755,16 @@ def _qc_roster(form, pos, cost, follow_cost, follow_mana, pass_line):
                     check("the name follows the roster", _ROSTER_FOLLOW, tried=reorder_tried,
                           changes=[("roster", reorder)], new=moved_who, pos=pos, var=var, who=who),
                 ],
-                pass_line=f"{who}: That's me. Position {pos}.",
+                pass_line=f"You read a name from a list of sheets. {who}: That's me. Position {pos}.",
             ),
             dict(
                 id="spend-the-cost",
-                text="That hero casts a spell. Take `cost` from their mana, through `roster`.",
+                text="Take `cost` away from that hero's mana, under the `# 2.` note. Use `roster` to reach their sheet.",
                 dictated=False,
                 hints=[
-                    "One line: the left side is where the new mana goes, and the right side works it out from the "
-                    "old mana.",
+                    "Look under the `# 2.` note. You need one line: the left side of `=` is where the new mana goes, "
+                    "and the right side works it out from the old mana.",
+                    "It works like a whiteboard: read the old number, wipe it, write the new one. "
                     "`shelf[0][\"pages\"] = shelf[0][\"pages\"] - torn` reads the old pages, takes `torn` away, and "
                     "stores the answer under the same key.",
                     f"Start with `roster[{pos}][\"mana\"] =`, then read the old mana the same way.",
@@ -1748,23 +1788,25 @@ def _qc_roster(form, pos, cost, follow_cost, follow_mana, pass_line):
         another_way=[
             dict(angle="picture", label="A row of sheets", text=(
                 "```text\nroster\n" + "".join(f"  [{i}]  {v}\n" for i, (v, _, _) in enumerate(HEROES)) + "```\n"
-                "The list is numbered from 0. Each sheet inside it has a key on every value.")),
+                "Positions in the list count from 0. Each sheet inside it has a key on every value.")),
             dict(angle="step-by-step", text=(
                 f"1. `roster[{pos}]` is one whole sheet.\n"
-                "2. Then a key reads one line of it.\n"
-                "3. To spend, read the old mana on the right, take `cost` away, and store it back under the same "
-                "key on the left.")),
+                "2. Then a key reads one value from it.\n"
+                "3. To spend, read the old mana on the right of `=`, take `cost` away, and store the answer under "
+                "the same key, on the left.")),
         ],
         campaign_link=dict(
             module=MODULE,
             part="spell-book",
             snippet="for member in party.members:",
             why=(
-                "You have seen this list. Every caster came from `party.members`, a list of sheets like `roster`. "
-                "And the barrier spell paid with `caster[\"mana\"] = caster[\"mana\"] - spell[\"mana_cost\"]`."
+                "You've seen this list. Every caster came from `party.members`, a list of sheets like `roster`. "
+                "And the barrier spell paid its cost with "
+                "`caster[\"mana\"] = caster[\"mana\"] - spell[\"mana_cost\"]`."
             ),
         ),
-        takeaway="Position first, then the key: `roster[1][\"name\"]`. Spend with `x[\"mana\"] = x[\"mana\"] - cost`.",
+        takeaway=("Position first, then the key: `roster[1][\"name\"]`. Spend with "
+                  "`hero[\"mana\"] = hero[\"mana\"] - cost`."),
         wrong_answers=[
             dict(why="the starter (nothing printed)", code=starter, fails_at=1, message_contains=f"position {pos}"),
             dict(why=f"a name as the position: roster[\"{who}\"] (TypeError)",
@@ -1785,11 +1827,11 @@ def _qc_roster(form, pos, cost, follow_cost, follow_mana, pass_line):
                  code=program(read="".join(f"print(roster[{i}][\"name\"])\n" for i in range(4))), fails_at=1,
                  message_contains="too, at position"),
             dict(why="the name typed (CMB)", code=program(read=f"print(\"{who}\")\n"), fails_at=1,
-                 message_contains="types the name"),
+                 message_contains="typed the name"),
             dict(why="read from the sheet's own variable, not through roster", code=program(read=f"print({var}[\"name\"])\n"),
                  fails_at=1, message_contains="not through `roster`"),
             dict(why="roster in the line, the name typed", code=program(read=f"print(\"{who}\", len(roster))\n"), fails_at=1,
-                 message_contains="types the name"),
+                 message_contains="typed the name"),
             dict(why="a dict read by position: roster[pos][0] (KeyError: 0)",
                  code=program(read=f"print(roster[{pos}][0])\n"), fails_at=0, message_contains="KeyError: 0"),
             dict(why="dot access on a sheet", code=program(read=f"print(roster[{pos}].name)\n"), fails_at=0,
@@ -1801,11 +1843,11 @@ def _qc_roster(form, pos, cost, follow_cost, follow_mana, pass_line):
             dict(why="CP2 the new mana typed (CMB; hero[\"mana\"] = 7-type)", code=program(spend=f"roster[{pos}][\"mana\"] = {want}\n"),
                  fails_at=2, message_contains=f"`cost = {follow_cost}`"),
             dict(why="CP2 the old mana typed", code=program(spend=f"roster[{pos}][\"mana\"] = {start} - cost\n"),
-                 fails_at=2, message_contains="does not follow the old mana"),
+                 fails_at=2, message_contains="when the old mana changes"),
             dict(why="CP2 the cost typed", code=program(spend=f"roster[{pos}][\"mana\"] = roster[{pos}][\"mana\"] - {cost}\n"),
-                 fails_at=2, message_contains="does not follow `cost`"),
+                 fails_at=2, message_contains="when `cost` changes"),
             dict(why="CP2 worked out, kept nowhere (BARE)", code=program(spend=f"roster[{pos}][\"mana\"] - cost\n"),
-                 fails_at=2, message_contains="forgets it"),
+                 fails_at=2, message_contains="throws the answer away"),
             dict(why="CP2 a new variable (NEWBOX)", code=program(spend=f"mana = roster[{pos}][\"mana\"] - cost\n"),
                  fails_at=2, message_contains="your variable `mana`"),
             dict(why="CP2 a capital in the key (KEY)", code=program(spend=f"roster[{pos}][\"Mana\"] = roster[{pos}][\"mana\"] - cost\n"),
@@ -1819,7 +1861,7 @@ def _qc_roster(form, pos, cost, follow_cost, follow_mana, pass_line):
                  fails_at=2, message_contains="Your line changed the mana at position"),
             dict(why="CP2 spent from the sheet's own variable, not through roster",
                  code=program(spend=f"{var}[\"mana\"] = {var}[\"mana\"] - cost\n"), fails_at=2,
-                 message_contains="does not go through `roster`"),
+                 message_contains="doesn't go through `roster`"),
             dict(why="CP2 a name as the position (TypeError)",
                  code=program(spend=f"roster[\"{who}\"][\"mana\"] = roster[\"{who}\"][\"mana\"] - cost\n"), fails_at=0,
                  message_contains="list indices must be integers"),
@@ -1841,12 +1883,13 @@ def _qc_roster(form, pos, cost, follow_cost, follow_mana, pass_line):
 
 
 _QC_SUMMARY = (
-    "Optional. Five short tasks and three questions, no hints. Pass all five tasks and get 2 of the 3 questions right "
-    "to test out of Unit 5. A task you miss just shows Mar'tu where to start. Tasks you pass here stay ticked."
+    "Optional: five short code tasks, then three questions, with no hints. You don't need to know all of this yet: "
+    "it shows Mar'tu where you should start. Pass all five tasks and get 2 of the 3 questions right, and Unit 5 "
+    "counts as done. Tasks you pass here stay ✓ done."
 )
-_STRETCH = "Want more? Lucky's side quest in Mar'tu's Ledger of Heroes."
-_RECAP = ("A sheet, a value read and changed inside a card, a spell stored by name, a mended read with a mana "
-          "test, and a spend through the roster.")
+_STRETCH = "Want more? Try Lucky's side quest in the project Mar'tu's Ledger of Heroes."
+_RECAP = ("You made a sheet, read and changed a value inside a sheet, stored a spell by name, fixed a read and wrote "
+          "a mana question, and spent mana through the roster.")
 
 
 QC4_A = dict(
@@ -1858,23 +1901,26 @@ QC4_A = dict(
     summary=_QC_SUMMARY,
     questions_to_pass=2,
     exercises=[
-        _qc_sheet("A", "lucky", "Lucky", (13, 26, 3), "luck", "Lucky: A key on every value. Even the armor."),
+        _qc_sheet("A", "lucky", "Lucky", (13, 26, 3), "luck",
+                  "Your sheet has a key on every value. Lucky: Even the armor."),
         _qc_inside("A", "gearshift", "Gearshift", 20,
                    [("dexterity", 13), ("wisdom", 15), ("magical_affinity", 10)], "wisdom", 11,
-                   "Gearshift: Fifteen. Math checks out.", "Gearshift: Seventeen. Upgrade logged."),
+                   "You read a value inside a sheet. Gearshift: Fifteen. Math checks out.",
+                   "You changed a value inside a sheet: 15 plus 2 is 17. Gearshift: Upgrade logged."),
         _qc_store("A", "book", "spell_name", "spell", "Glow", (2, 3), "Ember Shield", 5, 8, ("Frost Veil", 4, 11),
                   ("Spark", (1, 1)), ("Quiet Step", (3, 4)),
-                  "Mar'tu: A new page, and Glow's page kept. That is a spell book, yes?"),
+                  "You stored a new page and kept Glow's page. Mar'tu: That is a spell book, yes?"),
         _qc_mend("A", "Bomb Shell", 24, [("dexterity", 6), ("magical_affinity", 12)], 10, 7, 7,
-                 "Bomb Shell: Read mended. Next.", "Bomb Shell: Works. Shield up."),
-        _qc_roster("A", 1, 6, 4, 11, "Mar'tu: " + _RECAP + " That is Unit 5, yes? " + _STRETCH),
+                 "You fixed the read, so the code runs. Bomb Shell: Next.",
+                 "Your mana question works for every caster. Bomb Shell: Shield up."),
+        _qc_roster("A", 1, 6, 4, 11, "That's the last task. " + _RECAP + " Mar'tu: That is Unit 5, yes? " + _STRETCH),
     ],
     notes=(
         "Quick Check 5 (the curriculum's Quick Check 4), form A (code tasks, in the spec's order C1-C5; Q1 lives in "
         "qc4-a-questions). Pass = every code task plus 2 of the 3 questions; a retake draws form B. The site gates on "
         "both (questions_to_pass=2, as Unit 2's QC2 gates on 3 of its 4: all but one), and the code tasks alone still "
         "cover the unit, `dict-in` included (C3 CP2's guard). Framing (G4 R25): it only shows Mar'tu where to start. "
-        "Messages are lean (Unit 2 ruling): the slip and the evidence in brackets, never the fix or the finished line, "
+        "Messages are lean (Unit 2 ruling): the slip and the labelled evidence, never the fix or the finished line, "
         "every one a whole sentence (_lean_guard proves it at import). C1 opens with Mar'tu's three-line story recap for a student who tests out. "
         "Coverage (lint d): dict-make -> C1 (WA `\"Max_Mana\"` KEY, `{name: ...}` NameError, `=` for `:`, the missing "
         "comma and colon, a quoted number, values with no keys) and C3 CP1 (WA a key with a capital, unquoted keys); "
@@ -1903,16 +1949,19 @@ QC4_B = dict(
     summary=_QC_SUMMARY,
     questions_to_pass=2,
     exercises=[
-        _qc_sheet("B", "bomb_shell", "Bomb Shell", (12, 24, 3), "fuse", "Bomb Shell: Logged. Works."),
+        _qc_sheet("B", "bomb_shell", "Bomb Shell", (12, 24, 3), "fuse",
+                  "Your sheet has a key on every value. Bomb Shell: Logged. Works."),
         _qc_inside("B", "oogrish", "Oogrish", 18,
                    [("dexterity", 14), ("wisdom", 17), ("magical_affinity", 9)], "wisdom", 11,
-                   "Oogrish: Seventeen. Steady, now.", "Oogrish: Nineteen. An old shell still learns."),
+                   "You read a value inside a sheet. Oogrish: Seventeen. Steady, now.",
+                   "You changed a value inside a sheet: 17 plus 2 is 19. Oogrish: An old shell still learns."),
         _qc_store("B", "wards", "ward_name", "ward", "Stone Skin", (4, 6), "Thorn Ring", 7, 11, ("Mist Veil", 3, 5),
                   ("Iron Bark", (2, 2)), ("Moss Cloak", (5, 9)),
-                  "Mar'tu: A new ward, and Stone Skin kept. That is a ward book, yes?"),
+                  "You stored a new ward and kept Stone Skin's page. Mar'tu: That is a ward book, yes?"),
         _qc_mend("B", "Gearshift", 20, [("strength", 17), ("magical_affinity", 10)], 9, 8, 6,
-                 "Gearshift: Read corrected. Math checks out.", "Gearshift: Mana test online. Barrier's holding."),
-        _qc_roster("B", 3, 8, 5, 11, "Mar'tu: " + _RECAP + " That is Unit 5, yes? " + _STRETCH),
+                 "You fixed the read, so the code runs. Gearshift: Math checks out.",
+                 "Your mana question works for every caster. Gearshift: Barrier's holding."),
+        _qc_roster("B", 3, 8, 5, 11, "That's the last task. " + _RECAP + " Mar'tu: That is Unit 5, yes? " + _STRETCH),
     ],
     notes=(
         "Quick Check 5 (the curriculum's Quick Check 4), form B (spec: Oogrish's sheet, a `wards` book and "
@@ -1930,7 +1979,7 @@ QC4_B = dict(
 # Lean, proved (as Unit 2's _leaned asserts its rewrites and Unit 4's _lean_guard its forms): no check names the fix.
 _FIX_WORDS = {"Put", "Make", "Add", "Use", "Copy", "Read", "Store", "Take", "Print", "Change", "Replace", "Spend",
               "Fill", "Check", "Write", "Ask", "Indent", "Give", "Build", "Warn", "Swap", "Compare", "Set", "Spell",
-              "Move", "Delete", "Remove", "Type", "Try", "Mend"}
+              "Move", "Delete", "Remove", "Type", "Try", "Mend", "Fix"}
 
 
 def _lean_guard(form):
@@ -1994,13 +2043,13 @@ def _qc_questions(form, keys_q, sheet_q, box_q):
             dict(
                 type="mc",
                 id="quotes-on-keys",
-                q="Which sheet does Python accept?",
+                q="Which of these sheets can Python read without an error?",
                 choices=s_choices,
                 answer=s_answer,
                 why_wrong=s_why,
                 explain=(
-                    "Keys are text, so each one has quotes. A colon goes between a key and its value, and a comma "
-                    "between the pairs. " + QUOTES_RULE
+                    "Keys are text, so each one gets quotes. A colon goes between a key and its value, like a word "
+                    "and its meaning in a glossary, and a comma goes between one pair and the next. " + QUOTES_RULE
                 ),
                 notes=s_notes,
             ),
@@ -2030,8 +2079,9 @@ QC4_A_QUESTIONS = _qc_questions(
         "True\nTrue\nFalse",
         ["True\nTrue\nTrue", "True\nTrue\nFalse", "True\nFalse\nFalse", "False\nTrue\nTrue"],
         (
-            "`in` looks at the keys only. `\"Spark\"` is a key: `True`. `\"Glow\"` is not a key, so `not in` gives "
-            "`True`. 4 is a value, not a key, so `4 in book` is `False`."
+            "`in` looks at the keys only, like looking for a word in a glossary, never at its meaning. `\"Spark\"` "
+            "is a key, so the first line shows `True`. `\"Glow\"` is not a key, so `not in` shows `True`. 4 is a "
+            "value, not a key, so `4 in book` is `False`."
         ),
         "Skill dict-in (spec Q1: `in` / `not in` on keys and on a value). Distractors: True/True/True (the "
         "in-checks-values belief: `4 in book` -> True), not in read as in, and Spark missed.",
@@ -2041,10 +2091,12 @@ QC4_A_QUESTIONS = _qc_questions(
          '{"name": "Pell" "mana": 7}'],
         2,
         {
-            0: "`name` with no quotes is a box name, so Python looks for a box called `name` and stops: "
-               "NameError. Keys are text, so they need quotes.",
-            1: "`=` puts a value in a box. Inside a sheet, a colon goes between each key and its value.",
-            3: "A comma is missing after `\"Pell\"`, so Python stops: invalid syntax.",
+            0: "With no quotes, Python reads `name` as a box's name. It looks for a box called `name`, finds none, "
+               "and stops with a NameError. Keys are text, so they need quotes.",
+            1: "`=` puts a value in a box. Inside a sheet, Python stops with an error at the `=`, because a colon "
+               "goes between each key and its value.",
+            3: "A comma is missing after `\"Pell\"`, so Python can't read the sheet and stops with an error: "
+               "invalid syntax.",
         },
         "Skill dict-make (Obj 1). Distractors: an unquoted key (box names have no quotes, keys do), `=` for `:`, a "
         "missing comma.",
@@ -2059,8 +2111,9 @@ QC4_A_QUESTIONS = _qc_questions(
         "5",
         ["2", "Spark", "5", "an error"],
         (
-            "No quotes means look inside the box: `spell_name` holds `\"Spark\"`, so Python reads Spark's page, 5. "
-            "`book[\"spell_name\"]`, with quotes, would stop with a KeyError."
+            "No quotes means look inside the box: `spell_name` holds `\"Spark\"`, so Python reads the page for "
+            "Spark, 5. With quotes, `book[\"spell_name\"]` would look for a page called spell_name and stop with a "
+            "KeyError."
         ),
         "Skill dict-key-from-variable (Obj 5). Distractors: Glow's 2, the name itself, an error (the belief that "
         "`spell_name` is looked up as a key).",
@@ -2080,8 +2133,9 @@ QC4_B_QUESTIONS = _qc_questions(
         "True\nFalse\nFalse",
         ["True\nFalse\nTrue", "True\nTrue\nFalse", "False\nFalse\nFalse", "True\nFalse\nFalse"],
         (
-            "`in` looks at the keys only. `\"Iron Bark\"` is a key: `True`. `\"Stone Skin\"` is a key too, so "
-            "`not in` gives `False`. 6 is a value, not a key, so `6 in wards` is `False`."
+            "`in` looks at the keys only, like looking for a word in a glossary, never at its meaning. "
+            "`\"Iron Bark\"` is a key, so the first line shows `True`. `\"Stone Skin\"` is a key too, so `not in` "
+            "shows `False`. 6 is a value, not a key, so `6 in wards` is `False`."
         ),
         "Form B of in-looks-at-keys. Distractors: True/False/True (the in-checks-values belief), not in read as "
         "in, Iron Bark missed.",
@@ -2091,10 +2145,12 @@ QC4_B_QUESTIONS = _qc_questions(
          '{"name" "Orrin", "armor": 4}'],
         0,
         {
-            1: "`name` with no quotes is a box name, so Python looks for a box called `name` and stops: "
-               "NameError. Keys are text, so they need quotes.",
-            2: "`=` puts a value in a box. Inside a sheet, a colon goes between each key and its value.",
-            3: "A colon is missing after `\"name\"`, so Python stops: invalid syntax.",
+            1: "With no quotes, Python reads `name` as a box's name. It looks for a box called `name`, finds none, "
+               "and stops with a NameError. Keys are text, so they need quotes.",
+            2: "`=` puts a value in a box. Inside a sheet, Python stops with an error at the `=`, because a colon "
+               "goes between each key and its value.",
+            3: "A colon is missing after `\"name\"`, so Python can't read the sheet and stops with an error: "
+               "invalid syntax.",
         },
         "Form B of quotes-on-keys. Distractors: an unquoted key, `=` for `:`, a missing colon. The names in the "
         "two forms' sheets (Pell, Orrin) are invented Tor names, never a student's own value (2.11).",
@@ -2109,8 +2165,9 @@ QC4_B_QUESTIONS = _qc_questions(
         "4",
         ["6", "4", "Stone Skin", "an error"],
         (
-            "No quotes means look inside the box: `ward_name` holds `\"Stone Skin\"`, so Python reads Stone Skin's "
-            "page, 4. `wards[\"ward_name\"]`, with quotes, would stop with a KeyError."
+            "No quotes means look inside the box: `ward_name` holds `\"Stone Skin\"`, so Python reads the page for "
+            "Stone Skin, 4. With quotes, `wards[\"ward_name\"]` would look for a page called ward_name and stop with "
+            "a KeyError."
         ),
         "Form B of key-from-a-box.",
     ),
@@ -2125,13 +2182,14 @@ CHALK_NOTES_4 = dict(
     kind="cheatsheet",
     id="chalk-notes",
     title="Mar'tu's Chalk Notes: Dictionaries",
-    summary="Everything from Unit 5 on one page. Printable.",
+    summary="Every idea from Unit 5 on one page, with a short example of each. You can print it.",
     entries=[
         dict(concept="A sheet: keys and values",
              code='hero = {\n    "name": "Lucky",\n    "mana": 26,\n}\nprint(hero)\n',
              output="{'name': 'Lucky', 'mana': 26}",
-             note="Curly brackets hold the sheet (a dictionary). Each line is a key in quotes, a colon, its value and "
-                  "a comma. (Lesson: Stat Sheets)"),
+             note="Curly braces `{ }` hold the sheet (a dictionary). Each line is a key in quotes, a colon, its value "
+                  "and a comma. It works like a glossary: you look up the word (the key) to find its meaning (the "
+                  "value). (Lesson: Stat Sheets)"),
         dict(concept="Box names have no quotes. Keys do.",
              code='mana = 26\nhero = {"mana": 26}\nprint(mana)\nprint(hero["mana"])\n',
              output="26\n26",
@@ -2140,34 +2198,38 @@ CHALK_NOTES_4 = dict(
         dict(concept="Read by key",
              code='hero = {"name": "Lucky", "mana": 26}\nprint(hero["name"])\nprint(hero["mana"])\n',
              output="Lucky\n26",
-             note="Square brackets, with the key in quotes, read one value."),
+             note="Square brackets `[ ]` with a key in quotes inside read one value. Read `hero[\"name\"]` as "
+                  "*hero, look up name*."),
         dict(concept="Change a value by key",
              code='hero = {"name": "Lucky", "mana": 26}\nhero["mana"] = hero["mana"] - 3\nprint(hero["mana"])\n',
              output="23",
-             note="The right side reads the old mana and takes 3 away. The left side stores the answer under the same "
-                  "key. You've seen this: `caster[\"mana\"] = caster[\"mana\"] - spell[\"mana_cost\"]`."),
+             note="Python works out the right side first: the old mana, 26, minus 3 is 23. Then it stores 23 under "
+                  "the same key, like a new number written over the old one on a whiteboard. You've seen this: "
+                  "`caster[\"mana\"] = caster[\"mana\"] - spell[\"mana_cost\"]`."),
         dict(concept="Add a new key",
              code='hero = {"name": "Lucky", "mana": 26}\nhero["glug"] = 2\nprint(hero)\n',
              output="{'name': 'Lucky', 'mana': 26, 'glug': 2}",
-             note="A key the sheet doesn't have yet is added. A key it has is changed: a key is never there twice."),
+             note="If the sheet doesn't have the key yet, `=` adds it. If it does, `=` changes its value. A key is "
+                  "never there twice."),
         dict(concept="`in` and `not in` look at keys",
              code='book = {"Glow": 2, "Warm Hands": 3}\nprint("Glow" in book)\nprint("Fire Bolt" not in book)\n'
                   "print(2 in book)\n",
              output="True\nTrue\nFalse",
-             note="2 is a value, not a key, so `2 in book` is `False`. You've seen this: "
-                  "`if spell_name not in caster[\"spell_book\"]:`."),
+             note="`in` asks a yes-or-no question about the keys only. 2 is a value, not a key, so `2 in book` is "
+                  "`False`. You've seen this: `if spell_name not in caster[\"spell_book\"]:`."),
         dict(concept="A key from a variable",
              code='book = {"Glow": 2, "Warm Hands": 3}\nspell_name = "Warm Hands"\nprint(book[spell_name])\n',
              output="3",
              note="No quotes: Python looks inside `spell_name` and finds `\"Warm Hands\"`. `book[\"spell_name\"]`, "
                   "with quotes, looks for a key spelled s-p-e-l-l-_-n-a-m-e, and stops with a KeyError."),
-        dict(concept="A card inside a sheet",
+        dict(concept="A sheet inside a sheet",
              code='hero = {\n    "name": "Bomb Shell",\n    "abilities": {\n        "wisdom": 8,\n    },\n}\n'
                   'print(hero["abilities"]["wisdom"])\n',
              output="8",
-             note="Outer key, then inner key. One key alone gives the whole inner card. You've seen this: "
-                  "`caster[\"abilities\"][\"magical_affinity\"]`. (Lesson: Sheets Inside Sheets)"),
-        dict(concept="Change a value inside a card",
+             note="Outer key first, then inner key, like a table of contents: chapter, then section. One key alone "
+                  "gives the whole inner sheet. You've seen this: `caster[\"abilities\"][\"magical_affinity\"]`. "
+                  "(Lesson: Sheets Inside Sheets)"),
+        dict(concept="Change a value inside a sheet",
              code='hero = {\n    "abilities": {\n        "wisdom": 8,\n    },\n}\n'
                   'w = hero["abilities"]["wisdom"]\nhero["abilities"]["wisdom"] = w + 3\n'
                   'print(hero["abilities"]["wisdom"])\n',
@@ -2178,8 +2240,8 @@ CHALK_NOTES_4 = dict(
              code='roster = [\n    {"name": "Oogrish"},\n    {"name": "Gearshift"},\n    {"name": "Bomb Shell"},\n]\n'
                   'print(roster[2]["name"])\n',
              output="Bomb Shell",
-             note="Position first, counting from 0, then the key. A list remembers order; each sheet remembers "
-                  "meaning. In the campaign, a list like this was `party.members`."),
+             note="Position first, counting from 0, then the key. The list remembers the order, and each sheet "
+                  "remembers what its values mean. In the campaign, a list like this was `party.members`."),
         dict(concept="Store by name",
              code='book = {}\nname = "Warm Hands"\nspell = {"mana_cost": 3}\nbook[name] = spell\nprint(book)\n',
              output="{'Warm Hands': {'mana_cost': 3}}",
@@ -2196,21 +2258,22 @@ CHALK_NOTES_4 = dict(
                   'elif hero["mana"] < cost:\n    print("Needs more mana.")\nelse:\n    print("Cast!")\n',
              output="Cast!",
              note="Get it: read the value through every key. Compare: `<` asks *lower than*, so exactly enough "
-                  "still casts. Act: only one branch of the chain runs. You've seen this: holding the barrier."),
-        dict(concept="(extra) `.get()`: a default, not an error",
+                  "still casts. Act: only one part of the chain runs, the first one whose question is `True`. "
+                  "You've seen this when you held the barrier."),
+        dict(concept="(extra) `.get()`: a backup value, not an error",
              code='hero = {"name": "Lucky"}\nprint(hero.get("glug", 0))\n',
              output="0",
-             note="`.get` gives the second value when the key is missing, in place of a KeyError. (Article: Why "
-                  "Does This Work? Keys and .get())"),
+             note="`hero.get(\"glug\", 0)` gives the value of `\"glug\"`, or 0 when the sheet has no such key, "
+                  "in place of a KeyError. (Article: Why Does This Work? Keys and .get())"),
         dict(concept="Error: a key with no quotes", code='hero = {name: "Lucky"}\n',
-             note="NameError: name 'name' is not defined. With no quotes, `name` is a box name. Keys are text: "
-                  "`\"name\"`."),
+             note="NameError: name 'name' is not defined. With no quotes, Python reads `name` as a box's name, and "
+                  "there is no such box. Keys are text, so they get quotes: `\"name\"`."),
         dict(concept="Error: `=` inside a sheet", code='hero = {"name" = "Lucky"}\n',
              note="SyntaxError: cannot assign to literal here. Maybe you meant '==' instead of '='? Python's guess "
                   "is wrong here: inside a sheet, a colon goes between a key and its value."),
         dict(concept="Error: a missing comma", code='hero = {\n    "mana": 26\n    "glug": 2,\n}\n',
-             note="SyntaxError: invalid syntax. Perhaps you forgot a comma? After a number, Python names that line. "
-                  "After text, it names the next line."),
+             note="SyntaxError: invalid syntax. Perhaps you forgot a comma? After a number, Python gives that "
+                  "line's number. After text, it gives the next line, so check the line above it too."),
         dict(concept="Error: a missing colon", code='hero = {\n    "name": "Lucky",\n    "mana" 26,\n}\n',
              note="SyntaxError: ':' expected after dictionary key. Every key needs a colon before its value."),
         dict(concept="Error: a KeyError", code='hero = {"mana": 26}\nprint(hero["Mana"])\n',
@@ -2218,17 +2281,19 @@ CHALK_NOTES_4 = dict(
                   "spaces."),
         dict(concept="Error: a skipped level",
              code='hero = {\n    "abilities": {\n        "wisdom": 8,\n    },\n}\nprint(hero["wisdom"])\n',
-             note="KeyError: 'wisdom'. Wisdom lives inside `\"abilities\"`. Read the outer key first."),
-        dict(concept="Error: a dot, not brackets", code='hero = {"mana": 26}\nprint(hero.mana)\n',
-             note="AttributeError: 'dict' object has no attribute 'mana'. Read a sheet with square brackets and "
-                  "the key in quotes."),
-        dict(concept="Error: round brackets", code='hero = {"mana": 26}\nprint(hero("mana"))\n',
-             note="TypeError: 'dict' object is not callable. Round brackets call a recipe. A sheet takes square "
-                  "brackets."),
+             note="KeyError: 'wisdom'. `\"wisdom\"` is inside the inner sheet `\"abilities\"`, so read the outer key "
+                  "first: `hero[\"abilities\"][\"wisdom\"]`."),
+        dict(concept="Error: a dot, not square brackets", code='hero = {"mana": 26}\nprint(hero.mana)\n',
+             note="AttributeError: 'dict' object has no attribute 'mana'. Read a sheet with square brackets `[ ]` "
+                  "and the key in quotes: `hero[\"mana\"]`."),
+        dict(concept="Error: parentheses, not square brackets", code='hero = {"mana": 26}\nprint(hero("mana"))\n',
+             note="TypeError: 'dict' object is not callable. Parentheses `( )` call a recipe. A sheet takes square "
+                  "brackets `[ ]`: `hero[\"mana\"]`."),
         dict(concept="Error: a position on a sheet", code='hero = {"mana": 26}\nprint(hero[0])\n',
              note="KeyError: 0. A sheet has no positions, only keys."),
         dict(concept="Error: a name as a list position", code='roster = [{"name": "Lucky"}]\nprint(roster["Lucky"])\n',
-             note="TypeError: list indices must be integers or slices, not str. A list takes a position number."),
+             note="TypeError: list indices must be integers or slices, not str. A list takes a position number, "
+                  "counting from 0: `roster[0]`."),
         dict(concept="Error: a variable's name in quotes",
              code='book = {"Glow": 2}\nspell_name = "Glow"\nprint(book["spell_name"])\n',
              note="KeyError: 'spell_name'. With quotes, Python looks for those exact letters. Without them, it "

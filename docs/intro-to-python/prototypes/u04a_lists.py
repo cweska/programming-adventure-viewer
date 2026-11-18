@@ -296,7 +296,9 @@ def follows(label, changes, ok, rules=(), fix="", ev="", saw=None, crash=(), pre
         for cond, f, s in rules
     )
     crash_code = "".join(
-        f"    if not _msg and ({cond}):\n        _msg = {f!r} + ' ' + _ev_txt + ', and Python stopped with an error: ' + _e.split(':')[0] + '.'\n"
+        f"    if not _msg and ({cond}):\n        _msg = {f!r} + ' ' + _ev_txt + (', and Python stopped: that {kind} doesn' "
+        "+ chr(39) + 't have a position your code asked for.' if _e.startswith('IndexError') else ', and Python "
+        "stopped with an error: ' + _e.split(':')[0] + '.')\n"
         for cond, f in crash
     )
     code = _RERUN_DEF + (
@@ -382,18 +384,18 @@ UNIT = dict(
     subtitle="The Chalk Wall",
     published=True,
     martu_intro=(
-        "Seven numbers on my wall. I could give each one its own box. I could also lose my mind. A list keeps "
-        "them together, in order, yes?\n"
-        "You have met lists already. `party.members` was one: the four of you, in order, under one name. "
+        "A [[list]] keeps many values under one name, in order, like a data set in math class.\n"
+        "My chalk wall holds seven numbers. I could give each one its own box. I could also lose my mind, yes?\n"
+        "You have met a list already: `party.members` held the four of you, in order, under one name. "
         "Tonight we read a list closely, one position at a time."
     ),
     goals=[
-        "Make a [[list]] with square brackets and commas",
-        "Read an item by its [[index|position]], counting from 0, and from the end with `-1`",
-        "Change an item by its position, grow a list with `.append()`, and join two lists with `+`",
-        "Count items with `len()`, and know the last position is `len - 1`",
-        "Read a list inside a list, like `roster[3][1]`",
-        "Count with `range()`, cut a [[slice]] like `[-3:]`, and sort with `sorted()`",
+        "Keep many values in one [[list]], in order, with square brackets and commas",
+        "Read an item by its [[index|position]], counting from 0 like a ruler, or counting from the end",
+        "Change one item by its position, add an item to the end, and join two lists",
+        "Count the items in a list, and find the last one",
+        "Read a list inside a list: the row first, then the item in that row",
+        "Count with `range()`, copy part of a list with a [[slice]], and make a sorted copy",
     ],
     campaign_links=["leylines-awaken", "friends-in-low-places"],
 )
@@ -540,12 +542,12 @@ HOW_WOULD_YOU_STORE_IT = dict(
     title="How would you store it?",
     martu=(
         "Store the seven gaps from my chalk wall in your code, any way you like. A *gap* is the hours between "
-        "two bursts, the blasts from the leylines. Oldest first:\n"
+        "two bursts, the blasts from the leylines. I chalk each gap on my wall as a *mark*. Oldest first:\n"
         "```text\n48  48  47  46  44  41  37\n```\n"
         "In Unit 1 you kept one number in one box (a variable). Line 1, `hour_1 = 48`, keeps the first gap. "
         "It's done for you.\n"
         "Try for two minutes, then press Run. There's no wrong try here, yes? If Python stops with an error, "
-        "that's a try too. Read the box in the Console, then try one box per gap."
+        "that's a try too. Read what the Console says, then try one variable per gap."
     ),
     names=["hour_1"],
     starter=STORE_STARTER,
@@ -555,11 +557,11 @@ HOW_WOULD_YOU_STORE_IT = dict(
             text=(
                 "Two moves:\n"
                 "1. On line 4, under the two notes, type a way to keep the other six gaps. Any way you like.\n"
-                "2. Press Run. If Python stops with an error, read the box in the Console and try again."
+                "2. Press Run. If Python stops with an error, read the error in the Console and try again."
             ),
             dictated=False,
             hints=[
-                "Look at line 1: `hour_1 = 48` keeps one gap in one box. If Python stopped, read the box in the "
+                "Look at line 1: `hour_1 = 48` keeps one gap in one box. If Python stopped, read the error in the "
                 "Console. Its title says what went wrong.",
                 "A box (a variable) keeps one value under one name. What would you name the box for the second gap?",
                 "One box per gap works: `night_1 = 9`, then `night_2 = 8`, and so on. Seven gaps, seven lines.",
@@ -649,7 +651,7 @@ MAKE_THE_WALL = dict(
         "In math class, square brackets can group numbers, like parentheses. In Python they never group math. "
         "They make a list.\n"
         "Numbers in a list get no quotes. Text keeps its quotes, like `[\"gold\", \"teal\"]` in the Example.\n"
-        "```text\n chalk_wall = [48, 48, 47, ...]\n             ^   ^   ^\n          bracket  commas\n```"
+        "```text\n chalk_wall = [48, 48, 47, ...]\n             ^   ^   ^\n   square bracket  commas\n```"
     ),
     introduces=["node:List"],
     example='party_colors = ["gold", "teal"]\nprint(party_colors)\n',
@@ -661,8 +663,8 @@ MAKE_THE_WALL = dict(
         choices=["46, 44, 41", "46 44 41", "marks", "[46, 44, 41]"],
         answer=3,
         explain=(
-            "`print` shows the whole list, square brackets and commas too. Text in a list shows with `'` marks, "
-            "like the Example's `['gold', 'teal']`. That's Python's own way of showing text in a list."
+            "`print` shows the whole list, square brackets and commas too. Text in a list shows with single quotes "
+            "`'`, like the Example's `['gold', 'teal']`. That's Python's own way of showing text in a list."
         ),
     ),
     pair_talk=(
@@ -679,7 +681,7 @@ MAKE_THE_WALL = dict(
             ),
             dictated=False,
             hints=[
-                "Look at the Example, `[\"gold\", \"teal\"]`. What goes between the two items? Put the same mark "
+                "Look at the Example, `[\"gold\", \"teal\"]`. What goes between the two items? Put the same thing "
                 "between each two gaps.",
                 "A list is square brackets with a comma between each two items: `[5, 9, 2]`. Numbers get no quotes.",
                 "Write `chalk_wall = [48, 48, 47, 46, 44, 41, 37]` in place of `chalk_wall = []`.",
@@ -716,7 +718,7 @@ MAKE_THE_WALL = dict(
             text=(
                 "```text\nchalk wall    48 48 47 46 44 41 37\n"
                 "               |  |  |  |  |  |  |\nPython      [48,48,47,46,44,41,37]\n```\n"
-                "Same numbers, same order. Brackets at the ends, commas in between."
+                "Same numbers, same order. Square brackets at the ends, commas in between."
             ),
         ),
         dict(
@@ -915,8 +917,8 @@ FIRST_IS_ZERO = dict(
     id="first-is-zero",
     title="The first is zero",
     martu=(
-        "Each item in a list has a position, its [[index]]. Positions count from 0, like a ruler: the first mark "
-        "is 0, no steps from the start. So `chalk_wall[0]` is the oldest gap. A minus counts from the end: "
+        "Each item in a list has a position, its [[index]]. Positions count from 0, like a ruler: a ruler starts "
+        "at 0, no steps from the start. So `chalk_wall[0]` is the oldest gap. A minus counts from the end: "
         "`chalk_wall[-1]` is the newest. The positions:\n"
         "```text\n 0  1  2  3  4  5  6\n48 48 47 46 44 41 37\n-7 -6 -5 -4 -3 -2 -1\n```\n"
         "As in English class, *seven* says how many and *seventh* says which one. The seventh gap is at position "
@@ -1012,7 +1014,7 @@ FIRST_IS_ZERO = dict(
             angle="everyday",
             label="A ruler starts at 0",
             text=(
-                "Look at a ruler. The first mark is 0, not 1. Position 0 means no steps from the start, and "
+                "Look at a ruler. The first number on it is 0, not 1. Position 0 means no steps from the start, and "
                 "position 2 means two steps in: the third item."
             ),
         ),
@@ -1143,7 +1145,7 @@ GUESS_CHECK = (
     "assert _v is not None, ('`chalk_wall` now holds `None`, Python' + chr(39) + 's word for nothing. `.append()` '\n"
     "    'changes the list and hands back nothing, so `chalk_wall = ` threw the wall away. Write '\n"
     "    '`chalk_wall.append(...)` on a line of its own.')\n"
-    "assert type(_v).__name__ == 'list', ('`chalk_wall` isn' + chr(39) + 't a list any more. Keep it as the wall, a '\n"
+    "assert type(_v).__name__ == 'list', ('`chalk_wall` isn' + chr(39) + 't a list anymore. Keep it as the wall, a '\n"
     "    'list of gaps, and add your guess with `.append()`.')\n"
     "_lost = [_n.lineno for _n in _tree.body if type(_n).__name__ == 'Expr' and type(_n.value).__name__ == 'BinOp' "
     "and type(_n.value.op).__name__ == 'Add' and type(_n.value.left).__name__ == 'Name' "
@@ -1229,11 +1231,12 @@ NEW_CHALK_MARK = dict(
     title="A new chalk mark",
     martu=(
         "[[append|`.append()`]] adds one item to the end of a list, the way an *appendix* goes at the end of a "
-        "book. The dot speaks to the list: `chalk_wall.append(33)` means *chalk wall, add 33 to your end*. It "
-        "changes the list itself.\n"
+        "book. The dot asks the list to do something, the way it asked text in Unit 2: `chalk_wall.append(33)` "
+        "means *chalk wall, add 33 to your end*. It changes the list itself.\n"
         "`+` joins two lists into one new list, the way it glued text in Unit 1: `[41, 37] + [33]` makes "
         "`[41, 37, 33]`. The two old lists stay as they were.\n"
-        "Bursts keep coming, so my wall keeps growing. Your guess for the next gap goes on the end."
+        "Bursts keep coming, so my wall keeps growing: each new gap is a new mark. Your guess for the next gap "
+        "goes on the end. For Step 2, I copied my marks onto two pages, `old_marks` and `new_marks`."
     ),
     introduces=["attr:append"],
     example='party_colors = ["gold", "teal"]\nparty_colors.append("silver")\nprint(party_colors)\n',
@@ -1324,7 +1327,7 @@ NEW_CHALK_MARK = dict(
         ),
         dict(
             angle="everyday",
-            label="A notebook and a photocopy",
+            label="A notebook and a new sheet",
             text=(
                 "`.append()` writes one more line in your notebook. `+` puts two pages together on a new sheet. "
                 "Your old pages stay as they were."
@@ -1342,7 +1345,7 @@ NEW_CHALK_MARK = dict(
     ],
     bonus=dict(
         by="lucky",
-        title="Lucky's bet",
+        title="Lucky's bet: 4 less each time",
         text=(
             "Lucky bets the gaps shrink by 4 each time. Add two more gaps with `.append()`, each one 4 less than "
             "the newest gap: `chalk_wall[-1] - 4`. Put both lines above `print(chalk_wall)`."
@@ -1503,11 +1506,11 @@ def recipe_par(label, fname, pick, word, missing=None, lean=False):
             missing="The recipe `newest_mark` is gone, so Mar'tu has nothing to test.",
             args="The ingredient on the `def` line is no longer named `wall`.",
             outer="The recipe reads the list from outside, not the one it is handed.",
-            idx="The recipe asks for a position the wall does not have.",
+            idx="The recipe asks for a position the wall doesn't have.",
             err="The recipe stops with an error on some walls.",
             text="The recipe hands back text, not the item.",
             printed="The recipe prints the item but does not hand it back.",
-            box="The recipe makes a box, then hands back nothing.",
+            box="The recipe makes a variable, then hands back nothing.",
             none="The recipe hands back nothing.",
             zero="The recipe still hands back the placeholder.",
             same="The recipe hands back the same answer for every wall.",
@@ -1528,7 +1531,7 @@ def recipe_par(label, fname, pick, word, missing=None, lean=False):
             text="Your recipe hands back the item as text. Hand back the item itself, with no `str()` and no quotes.",
             printed="Your recipe shows the item with `print`, but doesn't hand it back. Hand it back with `return`, "
                     "not `print`.",
-            box="Your recipe makes a box, but its `return` hands back nothing. Hand back the box you made: `return ",
+            box="Your recipe makes a variable, but its `return` hands back nothing. Hand back the variable you made: `return ",
             none=f"Your recipe hands back nothing. Put `return` in front of the {word} item, so it hands that back.",
             zero=f"Your recipe still hands back the placeholder 0. Replace the `0` with the {word} item of `wall`.",
             same="Your recipe hands back the same answer for every wall, because the answer is typed in. Read the "
@@ -1662,7 +1665,7 @@ LEN_PLAIN_USED = (
     "import ast as _ast\n" + _TOP_READS +
     "_neg = [_n for _n in _subs if type(_n.slice).__name__ == 'UnaryOp']\n"
     "assert _lenp or not _neg, ('Your line uses `[-1]`, the short way. This step practices the long way, with '\n"
-    "    '`len - 1`, the way Unit 6' + chr(39) + 's loops count positions.')\n"
+    "    '`len - 1`. In Unit 6, you' + chr(39) + 'll count positions this way.')\n"
     "assert _lenp, 'Your line doesn' + chr(39) + 't use `len`. Find the position with `len`: " + LONG_FIX + ".'",
 )
 
@@ -1677,7 +1680,8 @@ HOW_LONG = dict(
         "A recipe (function) can take a whole list as its ingredient (parameter). Whatever list the call hands "
         "over, inside the recipe it's called `wall`. So `newest_mark(chalk_wall)` and `newest_mark([9, 8, 7])` "
         "both work.\n"
-        "Why the long way, when `[-1]` exists? In Unit 6, loops count from 0 to `len - 1`."
+        "Why the long way, when `[-1]` exists? In Unit 6, you'll go down a list one position at a time, from 0 to "
+        "`len - 1`."
     ),
     introduces=["call:len"],
     example='colors = ["gold", "teal", "silver"]\nprint(len(colors))\nprint(colors[len(colors) - 1])\n',
@@ -1804,7 +1808,7 @@ HOW_LONG = dict(
             "2. At the bottom, show the shrink from oldest to newest, using both recipes."
         ),
         hints=[
-            "The oldest is at position 0 on any wall: `return wall[0]`. Store each recipe's answer in a box, "
+            "The oldest is at position 0 on any wall: `return wall[0]`. Store each recipe's answer in a variable, "
             "then show the first minus the last.",
             "Write `def oldest_mark(wall):` at the bottom, with `    return wall[0]` under it. Then `first = oldest_mark(chalk_wall)`, `last = newest_mark(chalk_wall)` and `print(first - last)`.",
         ],
@@ -1947,7 +1951,7 @@ FIX_CHECK = (
     "_v = chalk_wall\n"
     f"_right = {WALL!r}\n"
     "_typo = [48, 48, 74, 46, 44, 41, 37]\n"
-    "assert type(_v).__name__ == 'list', ('`chalk_wall` isn' + chr(39) + 't a list any more. Keep the wall' + chr(39) + 's '\n"
+    "assert type(_v).__name__ == 'list', ('`chalk_wall` isn' + chr(39) + 't a list anymore. Keep the wall' + chr(39) + 's '\n"
     "    'line as it is, and change one mark by its position, with `=`.')\n"
     "if _v != _right:\n"
     "    _asks = [_n.lineno for _n in _tree.body if type(_n).__name__ == 'Expr' and type(_n.value).__name__ == 'Compare' "
@@ -2166,7 +2170,7 @@ OWN_ROW = (
     "roster grows by one row",
     "_v = roster\n"
     f"_base = {ROSTER_ROWS!r}\n"
-    "assert type(_v).__name__ == 'list', ('`roster` isn' + chr(39) + 't a list of rows any more. Keep its lines as '\n"
+    "assert type(_v).__name__ == 'list', ('`roster` isn' + chr(39) + 't a list of rows anymore. Keep its lines as '\n"
     "    'they were, and add your row with `.append()`.')\n"
     "assert _v[:4] == _base, 'The four rows at the top have changed. Put them back the way they were. Your hero goes at the end.'\n"
     "assert len(_v) > 4, ('`roster` still has 4 rows. Add your hero' + chr(39) + 's row to the end: '\n"
@@ -2423,7 +2427,7 @@ BROKEN_SPELL_3A = dict(
     id="broken-spell-3a",
     title="Broken spell",
     martu=(
-        "This code has three [[bug|bugs]], all loud: each one makes Python stop with an error. *Mend* means fix. "
+        "This code has three [[bug|bugs]], all loud: each one makes Python stop with an error. "
         "Python shows one error at a time, so fix one, press Run again, and see what Python finds next. A new "
         "error is good news: Python got further.\n"
         "When Python stops, read the box in the Console, in this order:\n"
@@ -2440,7 +2444,7 @@ BROKEN_SPELL_3A = dict(
     checkpoints=[
         dict(
             id="mend-the-commas",
-            text="Mend line 1 so `chalk_wall` holds the seven gaps.",
+            text="Fix line 1 so `chalk_wall` holds the seven gaps.",
             dictated=False,
             hints=[
                 "Read the box in the Console: first its title, then Python's last line, `SyntaxError: invalid "
@@ -2454,7 +2458,7 @@ BROKEN_SPELL_3A = dict(
         ),
         dict(
             id="mend-the-brackets",
-            text="Mend line 2 so `oldest` reads the first gap from the list.",
+            text="Fix line 2 so `oldest` reads the first gap from the list.",
             dictated=False,
             hints=[
                 "Press Run again and read the new box: first its title, then Python's last line, `TypeError: "
@@ -2468,7 +2472,7 @@ BROKEN_SPELL_3A = dict(
         ),
         dict(
             id="mend-the-position",
-            text="Mend line 3 so `newest` reads the last gap, on a wall of any length.",
+            text="Fix line 3 so `newest` reads the last gap, on a wall of any length.",
             dictated=False,
             hints=[
                 "Press Run again and read the new box: first its title, then Python's last line, `IndexError: list "
@@ -2634,14 +2638,14 @@ SOLO_3A = dict(
         dict(why="a counted position [6]: the call on [9, 8, 7] stops the student's own Run",
              code=_solo_a("    return wall[6]"), fails_at=0, message_contains="out of range"),
         dict(why="a counted position [2] that fits [9, 8, 7] only", code=_solo_a("    return wall[2]"), fails_at=1,
-             message_contains="a position the wall does not have"),
+             message_contains="a position the wall doesn't have"),
         dict(why="the first item, not the last", code=_solo_a("    return wall[0]"), fails_at=1,
              message_contains="wrong item"),
         dict(why="hands back the count", code=_solo_a("    return len(wall)"), fails_at=1, message_contains="the count"),
         dict(why="hands back the last position, not the item", code=_solo_a("    return len(wall) - 1"), fails_at=1,
              message_contains="a position, not the item"),
         dict(why="a box made, then a bare return", code=_solo_a("    last = wall[-1]\n    return"), fails_at=1,
-             message_contains="makes a box, then hands back nothing"),
+             message_contains="makes a variable, then hands back nothing"),
         dict(why="the ingredient renamed to the outside name", code=_solo_a("    return chalk_wall[-1]",
              head="def newest_mark(chalk_wall):\n"), fails_at=1, message_contains="ingredient"),
         dict(why="round brackets: the list called like a recipe", code=_solo_a("    return wall(-1)"), fails_at=0,
@@ -2848,7 +2852,7 @@ RANGE_OF_MARKS = dict(
             label="A ruler",
             text=(
                 "```text\nrange(1, 9)\n|--|--|--|--|--|--|--|--|\n1  2  3  4  5  6  7  8  9\n"
-                "^ start          stop ^\n```\nThe stop mark is where you stop. You don't take it."
+                "^ start          stop ^\n```\nThe stop number is where you stop. You don't take it."
             ),
         ),
         dict(
@@ -3041,7 +3045,8 @@ SLICE_THE_WALL = dict(
         "```text\n 0  1  2  3  4  5  6\n48 48 47 46 44 41 37\n      [2:5] -> 47 46 44\n```\n"
         "In a book, \"pages 2 to 5\" includes page 5. A slice doesn't: it stops before its end number.\n"
         "Leave a side empty to run to the edge. `chalk_wall[:3]` is the first three gaps. `chalk_wall[-2:]` is the "
-        "last two."
+        "last two.\n"
+        "As before, each number on my chalk wall is a *gap*: the hours between two bursts, oldest first."
     ),
     introduces=["node:Slice"],
     example="notes = [5, 6, 7, 8, 9]\nprint(notes[1:3])\nprint(notes[-2:])\n",
@@ -3109,7 +3114,7 @@ SLICE_THE_WALL = dict(
     another_way=[
         dict(
             angle="picture",
-            label="Cut marks",
+            label="Cuts between the items",
             text=(
                 "Cuts go BETWEEN the items:\n```text\n | 48 | 48 | 47 | 46 |\n 0    1    2    3    4\n```\n"
                 "`[1:3]` cuts at 1 and at 3. What lies between: 48 and 47."
@@ -3130,7 +3135,7 @@ SLICE_THE_WALL = dict(
                 "stays the same. Change the wall, and the copy you made stays the same too."
             ),
         ),
-        dict(angle="shorter", text="`[start:stop]`: from the start, and stop before the stop. Leave a side empty to "
+        dict(angle="shorter", text="`[start:end]`: from the start, and stop before the end. Leave a side empty to "
              "reach the edge."),
     ],
     bonus=dict(
@@ -3297,8 +3302,8 @@ WALL_KEPT = follows(
     f"_R('chalk_wall') == {_MX}",
     rules=[
         ("_R('chalk_wall') is not None and _R('chalk_wall') is _R('shortest_first')",
-         "`shortest_first = chalk_wall` is a second name for the same list, not a copy. Use `sorted(chalk_wall)`: "
-         "it makes a new list.", "'`chalk_wall` got sorted too'"),
+         "`shortest_first = chalk_wall` gives the same list a second name, like a nickname. It is not a copy. Use "
+         "`sorted(chalk_wall)`: it makes a new list.", "'`chalk_wall` got sorted too'"),
         (f"_R('chalk_wall') == sorted({_MX})", "`.sort()` sorted the wall itself. Use `sorted(chalk_wall)`: it makes "
          "a sorted copy and leaves the wall as it is.", "'`chalk_wall` got sorted'"),
     ],
@@ -3402,7 +3407,7 @@ SORTED_OR_SORT = dict(
             text=(
                 "Not this: `shortest_first = chalk_wall.sort()` (`None`: nothing came back). Not this: "
                 "`shortest_first = chalk_wall` "
-                "(the same list, a second name).\nThis: `shortest_first = sorted(chalk_wall)`."
+                "(the same list with a second name, like a nickname).\nThis: `shortest_first = sorted(chalk_wall)`."
             ),
         ),
     ],
@@ -3532,7 +3537,7 @@ SOLO_3B = dict(
                          "The end of a slice is left out, so the newest gap is missing.", None),
                         ("_R('newest_four') == []", "The slice is empty: it took no gaps.", None),
                         ("_R('newest_four') == _g0.get('newest_four') and _plain('newest_four')",
-                         "`newest_four` holds typed-in gaps, not a slice of the wall.",
+                         "You typed the gaps into `newest_four` instead of slicing them from the wall.",
                          "'`newest_four` stayed the same'"),
                     ],
                     fix="`newest_four` does not hold the four newest gaps.",
@@ -3562,7 +3567,7 @@ SOLO_3B = dict(
         dict(why="starter unchanged: the slice end is not included", code=SOLO_B_STARTER, fails_at=1,
              message_contains="left out"),
         dict(why="the four typed by hand", code=_solo_b("newest_four = [46, 44, 41, 37]"), fails_at=1,
-             message_contains="typed-in gaps"),
+             message_contains="instead of slicing them"),
         dict(why="the window moved instead of the end opened: [-5:-1]", code=_solo_b("newest_four = chalk_wall[-5:-1]"),
              fails_at=1, message_contains="four newest"),
         dict(why="a start counted for 7 gaps: [3:7]", code=_solo_b("newest_four = chalk_wall[3:7]"), fails_at=1,

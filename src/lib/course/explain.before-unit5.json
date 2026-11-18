@@ -1,10 +1,10 @@
 {
  "_about": "What the explainer says for every crash wrong answer of Units 1-4 (kind, then a hash of the title and hint), regenerated from the explainer after the plain-language strings pass (docs/intro-to-python/design/plain-language-guide.md), the game's random seeded with 5. Every kind is the one the explainer gave before Unit 5 (commit d2bd347); only the words changed. explain.test.ts proves the explainer still says exactly this: the Unit 5 rows (DICTS_UNIT_ORDER) are closed below Unit 5.",
- "hello-world:before-the-first-spell/what-an-error-looks-like:broken on purpose and not mended yet: the quote is still open": "missing-quote 6d444774fee95c7c",
+ "hello-world:before-the-first-spell/what-an-error-looks-like:broken on purpose and not put back yet: the quote is still open": "missing-quote 6d444774fee95c7c",
  "hello-world:before-the-first-spell/what-an-error-looks-like:puts the quote back with the other quote mark": "quotes-dont-match 7c446b46064cc370",
  "hello-world:before-the-first-spell/what-an-error-looks-like:puts the quote back after the bracket instead of before it": "never-closed a813ad93422c76d3",
  "hello-world:before-the-first-spell/what-an-error-looks-like:removes the opening quote instead of the closing one": "unquoted-words 9801fdabf46621f9",
- "hello-world:before-the-first-spell/keyboard-symbols:symbols with no quotes": "unquoted-words c2b0464b0dd5c771",
+ "hello-world:boxes-with-labels/keyboard-symbols:symbols with no quotes": "unquoted-words c2b0464b0dd5c771",
  "hello-world:words-in-quotes/your-own-words:new words with no quotes": "unquoted-word 7b0bc31edda559ea",
  "hello-world:words-in-quotes/your-own-words:quote never closed": "missing-quote 8194cea8ffddaea2",
  "hello-world:words-in-quotes/close-the-quote:starter unchanged: the explainer's 'unterminated' row": "missing-quote 74741da367ec55a9",

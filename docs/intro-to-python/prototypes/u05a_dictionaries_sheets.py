@@ -67,8 +67,8 @@ check only, with its prints kept private, and puts stdout back:
                   never the fix (`follows(..., lead="_wl + ' '")` puts the line in front).
 Messages follow the plain-language guide 4.3 (as Units 1-4 after the plain-language pass): what happened, then the one
 thing to try, then the labelled evidence with no brackets, "Mar'tu tested your code with a test sheet that has name
-`"Pell"`, mana 7 and max mana 31: the line should show `Pell: 7 mana`." Debug step texts keep "Mend" (the site finds
-debugging exercises by it); every other word says "fix".
+`"Pell"`, mana 7 and max mana 31: the line should show `Pell: 7 mana`." Debug step texts say "Fix line N" (the site finds
+debugging exercises by "fix" or the older "mend"); the old word "mend" is gone.
 Invented values only ("Pell", an invented Tor name, as in the Unit 4 ruling; "Moth"); a student's own text is never
 repeated back (2.11). No lesson codes in student-facing text.
 
@@ -458,23 +458,25 @@ UNIT = dict(
     subtitle="Stat Sheets and Spell Books",
     published=True,
     martu_intro=(
-        "A list remembers order. It does not remember *meaning*. Which number is Lucky's armor? Which is his "
-        'mana? A dictionary keeps a tag on every value. At the Institute, every student had a record like '
-        "this. Mine said 'talks too little'.\nYou have seen dictionaries already: the spell book, the mana "
-        'bars, and `caster["abilities"]["magical_affinity"]` when you held the barrier. A lot of that code '
-        'felt like a wall, yes? Tonight we read it one key at a time.'
+        "A list remembers order. It does not remember *meaning*. A [[dictionary]] keeps a tag on every value, and "
+        "Python calls the tag a key.\n"
+        "In `[\"Lucky\", 13, 26, 3]`, which number is Lucky's armor? Which is his mana? At the Institute, every "
+        "student had a record with a tag on every line. Mine said *talks too little*.\n"
+        "You have seen dictionaries already: the spell book, the mana bars, and "
+        "`caster[\"abilities\"][\"magical_affinity\"]` when you held the barrier. A lot of that code felt like a wall, "
+        "yes? Tonight we read it one key at a time."
     ),
     goals=[
-        'Write a dictionary with keys in quotes, `:` and commas, and say why keys have quotes when box names '
-        "don't",
-        'Read a value by its key, and mend a KeyError caused by spelling, capitals or a skipped level',
-        'Change a value and add a key, including `hero["mana"] = hero["mana"] - cost`',
-        'Ask whether a key is in a dictionary with `in` and `not in`',
-        'Use a key kept in a variable: `book[spell_name]`, not `book["spell_name"]`',
-        'Read and change values inside values: `hero["abilities"]["magical_affinity"]`',
-        'Read from a list of sheets, like `roster[2]["name"]`',
-        'Build a spell from variables and store it by name: `spell_book[spell_name] = spell`',
-        'Get a value, compare it, and act on it with `if` / `elif` / `else`, like holding the barrier',
+        "Make a dictionary: a key in quotes, a colon and a value on each line, and say why keys get quotes when "
+        "variable names don't",
+        "Read a value by its key, and fix a KeyError caused by spelling, capitals or a skipped level",
+        "Change a value by its key, like spending a hero's mana, and add a new key",
+        "Ask whether a key is in a dictionary with `in` and `not in`",
+        "Use a key kept in a variable, and know when a key needs quotes",
+        "Read and change a value in a dictionary inside a dictionary",
+        "Read from a list of dictionaries: the position first, then the key",
+        "Build a spell from variables and store it in a spell book under its name",
+        "Read a value, compare it, and act on it with `if`, `elif` and `else`, the way the barrier spell did",
     ],
     campaign_links=["friends-in-low-places"],
 )
@@ -487,7 +489,7 @@ GLOSSARY = [
             "Many values, each kept under its own tag (a key), like words in the glossary of a textbook. Curly "
             "braces `{ }` hold it: a key, a colon, its value, then a comma."
         ),
-        example='{"name": "Lucky", "mana": 26}',
+        example='{"name": "Moth", "glug": 1}',
     ),
     dict(
         term="key",
@@ -496,7 +498,7 @@ GLOSSARY = [
             "The tag on one value in a dictionary, like the word you look up in a glossary. A key is text, so it "
             "gets quotes: `\"mana\"`. To read its value, put the key in square brackets."
         ),
-        example='lucky["mana"]',
+        example='moth["glug"]',
     ),
     dict(
         term="KeyError",
@@ -1364,8 +1366,7 @@ KEY_ERRORS = dict(
         "A [[KeyError]] means the sheet has no key spelled exactly like the one you asked for. It's like a "
         "password: one wrong capital, and it doesn't work. Capitals count, and so do spaces: `\"Max_Mana\"` and "
         "`\"max_mana\"` are two different keys to Python.\n"
-        "Each step here says *Mend*, which means fix. When Python stops, read the box in the Console, in this "
-        "order:\n"
+        "When Python stops, read the box in the Console, in this order:\n"
         "1. Read its title. It says what went wrong.\n"
         "2. Read *Python's last line*. It names the key Python couldn't find, like `KeyError: 'Max_Mana'`. "
         "Python shows the key in `'` marks instead of `\"`. Same text.\n"
@@ -1377,7 +1378,7 @@ KEY_ERRORS = dict(
     checkpoints=[
         dict(
             id="mend-max-mana",
-            text="Mend line 6 so it shows Gearshift's max mana. Use the key exactly as the sheet spells it on line 4.",
+            text="Fix line 6 so it shows Gearshift's max mana. Use the key exactly as the sheet spells it on line 4.",
             dictated=False,
             hints=[
                 "Read the box in the Console: first its title, then Python's last line, `KeyError: 'Max_Mana'`. "
@@ -1409,7 +1410,7 @@ KEY_ERRORS = dict(
         ),
         dict(
             id="mend-mana-used",
-            text="Mend the next `KeyError`, on line 7. Spell the key the way the sheet does on line 4.",
+            text="Fix the next `KeyError`, on line 7. Spell the key the way the sheet does on line 4.",
             dictated=False,
             hints=[
                 "Press Run again and read the new box: first its title, then Python's last line, "
@@ -2087,8 +2088,8 @@ IS_IT_IN = dict(
         dict(
             angle="everyday",
             text=(
-                "Is *Fire Bolt* in a book's table of contents? You read the chapter titles, not the page numbers. "
-                "The titles are the keys."
+                "Is Zelda on the class list? You read down the names, not the grades written next to them. "
+                "The names are the keys."
             ),
         ),
         dict(
@@ -2443,8 +2444,8 @@ BROKEN_SPELL_4A = dict(
     id="broken-spell-4a",
     title="Broken spell",
     martu=(
-        "Lucky's code has three [[bug|bugs]], all loud: each one makes Python stop with an error. *Mend* means "
-        "fix. Python shows one error at a time, so fix one, press Run again, and see what Python finds next. A new "
+        "Lucky's code has three [[bug|bugs]], all loud: each one makes Python stop with an error. "
+        "Python shows one error at a time, so fix one, press Run again, and see what Python finds next. A new "
         "error is good news: Python got further.\n"
         "When Python stops, read the box in the Console, in this order:\n"
         "1. Read its title. It says what went wrong.\n"
@@ -2461,7 +2462,7 @@ BROKEN_SPELL_4A = dict(
     checkpoints=[
         dict(
             id="colon-not-equals",
-            text="Mend line 2, inside the sheet. Python names that line first.",
+            text="Fix line 2, inside the sheet. Python names that line first.",
             dictated=False,
             hints=[
                 "Read the box in the Console: first its title, then Python's last line. Which line does it name?",
@@ -2475,7 +2476,7 @@ BROKEN_SPELL_4A = dict(
         ),
         dict(
             id="quote-the-key",
-            text="Mend line 5 so it shows Lucky's name, read from the sheet.",
+            text="Fix line 5 so it shows Lucky's name, read from the sheet.",
             dictated=False,
             hints=[
                 "Press Run again and read the new box: first its title, then Python's last line. Which name is not "
@@ -2497,7 +2498,7 @@ BROKEN_SPELL_4A = dict(
         ),
         dict(
             id="brackets-not-a-dot",
-            text="Mend line 7 so it spends 2 mana on Glow, reading the old mana from the sheet.",
+            text="Fix line 7 so it spends 2 mana on Glow, reading the old mana from the sheet.",
             dictated=False,
             hints=[
                 "Press Run again and read the new box: first its title, then Python's last line, `AttributeError: "
@@ -2730,7 +2731,7 @@ SOLO_4A = dict(
     checkpoints=[
         dict(
             id="oogrish-mana-left",
-            text="Mend line 9 so it shows Oogrish's name and his mana.",
+            text="Fix line 9 so it shows Oogrish's name and his mana.",
             dictated=False,
             hints=[
                 "Read the box in the Console: first its title, then Python's last line.",
@@ -3052,7 +3053,7 @@ ARTICLE_4A1 = dict(
         "print(hero.get(\"glug\", 0))\n```\n"
         "It prints 7, then 0. No KeyError.\n"
         "*Fast questions.* To find a value in a list, Python checks the items one by one, like opening a row of "
-        "lockers. A dictionary works like the index at the back of a book: Python jumps straight to the key. So "
+        "lockers. A dictionary works like the glossary at the back of a textbook: Python jumps straight to the key. So "
         "`\"Glow\" in spell_book` takes about the same time for 3 spells or 3,000."
     ),
     examples=[

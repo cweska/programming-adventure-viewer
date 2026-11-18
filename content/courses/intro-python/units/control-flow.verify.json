@@ -1641,7 +1641,7 @@
             "print(can_cast)"
           ],
           "failsAt": 1,
-          "messageContains": "Which sign counts the number itself?"
+          "messageContains": "leaves out exactly enough mana"
         },
         {
           "why": "the answer typed in",
