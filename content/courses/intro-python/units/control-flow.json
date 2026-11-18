@@ -4,16 +4,16 @@
   "title": "Control Flow",
   "subtitle": "The Ley Clock Decides",
   "published": true,
-  "martuIntro": "The Ley Clock does not panic. It checks. If the hand is near the arc, it warns. Otherwise, it waits.\nToday you teach Python to check the same way. And you learn to roll dice, because the world is not fair, yes?\nYou have seen this code already: the four dialogue options, the trap-door skill checks. It felt like a wall. Now we take it apart, one stone at a time.",
+  "martuIntro": "The Ley Clock counts the hours until the next burst of magic. It does not panic. It checks: if the burst is close, it warns. Otherwise, it waits.\nIn this unit, you teach Python to check the same way: ask a yes-or-no question, then choose what to do.\nYou also roll dice, because the world is not fair, yes?\nYou have seen this code already: the four dialogue options, the trap-door skill checks. It felt like a wall. Now we take it apart, one stone at a time.",
   "goals": [
-    "Ask yes-or-no questions with `==`, `!=`, `<`, `>`, `<=` and `>=`, and get `True` or `False`",
-    "Tell `=` (gets) from `==` (is the same as)",
-    "Choose `>=` on purpose, so exactly enough still passes",
-    "Compare text exactly, and with `.lower()` so capitals don't matter",
-    "Write `if`, `else` and `elif` with colons and indents, knowing the first true branch wins",
-    "Join questions with `and`, `or` and `not`",
-    "Roll dice with `import random` and `random.randint(1, 20)`, both ends included",
-    "Read Python's error message, find the line, and mend it"
+    "Ask Python yes-or-no questions, like *is 6 less than 15?*",
+    "Tell apart putting a value in a box and asking whether two values are the same",
+    "Decide whether exactly enough should count, like the filled dot on a number line",
+    "Compare words exactly, or so that capitals don't matter",
+    "Make Python choose what to do, like a choose-your-own-adventure book",
+    "Join yes-or-no questions with *and*, *or* and *not*",
+    "Roll dice in your code",
+    "Read Python's error messages, find the line, and fix it"
   ],
   "campaignLinks": [
     "leylines-awaken",
@@ -23,7 +23,7 @@
     {
       "kind": "quiz",
       "id": "2a-remembers",
-      "title": "Quick review: 2 questions (not scored)",
+      "title": "Quick review: 2 questions, not scored",
       "optional": true,
       "minutes": 1,
       "summary": "Two quick questions from Unit 1, to warm up. Nothing is scored.",
@@ -2871,7 +2871,7 @@
         {
           "id": "broken-spell-2a",
           "title": "Broken spell",
-          "martu": "This spell has three [[bug|bugs]], three mistakes in the code. Two are loud: Python stops and shows an error box in the Console. One is quiet: the code runs, but a box holds the wrong kind of thing. Each step says *Mend*, which means fix.\nWhen Python stops, read the box in the Console in this order:\n1. The title at the top says what went wrong.\n2. *Python's last line* says the same thing in Python's words.\n3. Find the line number. Fix that line, then press Run again.\nA new error means Python got further. That's good news. Fix the next one the same way.",
+          "martu": "This spell has three [[bug|bugs]], three mistakes in the code. Two are loud: Python stops and shows an error box in the Console. One is quiet: the code runs, but a box holds the wrong kind of thing.\nWhen Python stops, read the box in the Console in this order:\n1. The title at the top says what went wrong.\n2. *Python's last line* says the same thing in Python's words.\n3. Find the line number. Fix that line, then press Run again.\nA new error means Python got further. That's good news. Fix the next one the same way.",
           "anotherWay": [
             {
               "angle": "step-by-step",
@@ -2905,9 +2905,9 @@
           "checkpoints": [
             {
               "id": "mend-the-sign",
-              "text": "Mend the sign on line 3, between `roll` and `needed`, so `passed` asks whether `roll` is *at least* `needed`.",
+              "text": "Fix the sign on line 3, between `roll` and `needed`, so `passed` asks whether `roll` is *at least* `needed`.",
               "hints": [
-                "Press Run and read the box in the Console: first its title, then Python's last line, `SyntaxError: invalid syntax`. Both point at line 3. Look at the two marks between `roll` and `needed`.",
+                "Press Run and read the box in the Console: first its title, then Python's last line, `SyntaxError: invalid syntax`. Python stopped on line 3. Look at the two marks between `roll` and `needed`.",
                 "*Syntax* means how a line is put together, like grammar in English class. Type a two-key sign in the order you say it: *greater than or equal to* is `>`, then `=`, as in `coins >= price`.",
                 "On line 3, type `>=` instead of `=>`: the `>` first, then the `=`. Line 3 becomes `passed = roll >= needed`."
               ],
@@ -2997,9 +2997,9 @@
             },
             {
               "id": "mend-needed",
-              "text": "Mend line 2, `needed = \"15\"`, so `needed` holds a number. Python stops on line 3, where it compares a number with text.",
+              "text": "Fix line 2, `needed = \"15\"`, so `needed` holds a number. Python stops on line 3, where it compares a number with text.",
               "hints": [
-                "Press Run and read the box: its title says TypeError, and Python's last line points at line 3, where a number meets text. Which box holds text? Look at line 2.",
+                "Press Run and read the error box: its title, then Python's last line, which starts with `TypeError`. Python stopped on line 3, where a number meets text. Which box holds text? Look at line 2.",
                 "Python's last line names `int` and `str`. `int` means a whole number, and `str` means text. Quotes make text: `\"7\" > 3` makes Python stop, but `7 > 3` is True.",
                 "Delete the two `\"` marks around 15 on line 2. Line 2 becomes `needed = 15`."
               ],
@@ -3096,7 +3096,7 @@
             },
             {
               "id": "mend-clock",
-              "text": "Mend line 6, `clock_is_red = \"red\"`, so it asks whether `clock_color` is the same as `\"red\"`. Right now the Console shows `red`, not `True` or `False`.",
+              "text": "Fix line 6, `clock_is_red = \"red\"`, so it asks whether `clock_color` is the same as `\"red\"`. Right now the Console shows `red`, not `True` or `False`.",
               "hints": [
                 "No error box this time: the bug is quiet. Look at the last line in the Console: `red`. A yes-or-no answer would be `True` or `False`. Which line puts red in `clock_is_red`?",
                 "One `=` puts a value in a box. `==` asks *is the same as*. In `door_is_shut = door == \"shut\"`, the box gets the answer to a question.",
@@ -3488,7 +3488,7 @@
                     "    return _ns, [_l.strip() for _l in _out.splitlines() if _l.strip()], _found, _err",
                     "_g0 = globals()",
                     "_T, _L, _Rt = 'can_cast', 'mana', 'cost'",
-                    "_fixes = {'short': '`can_cast` should be True when `mana` is at least `cost`.', 'exact': 'Which sign counts the number itself?', 'over': '`can_cast` should be True when `mana` is more than `cost`, too.', 'shift': 'Your line has a typed-in number where a box name should be.'}",
+                    "_fixes = {'short': 'Your `can_cast` line lets a caster with too little mana cast.', 'exact': 'Your `can_cast` line leaves out exactly enough mana.', 'over': 'Your `can_cast` line leaves out more than enough mana.', 'shift': 'Your line has a typed-in number where a box name should be.'}",
                     "_said = {'short': \"was True, so one short could cast. Don't type the test numbers.\", 'exact': \"was False, so exactly enough could not cast. Don't type the test numbers.\", 'over': \"was False, so more than enough could not cast. Don't type the test numbers.\"}",
                     "_rev_at = [1 for _n in _ast.walk(_ast.parse(_source)) if type(_n).__name__ == 'Compare' and len(_n.ops) == 1 and ((getattr(_n.left, 'id', ''), type(_n.ops[0]).__name__, getattr(_n.comparators[0], 'id', '')) in ((_L, 'LtE', _Rt), (_Rt, 'GtE', _L)))]",
                     "_lt = ' `mana < cost` asks the opposite: *not enough?*' if _uses('op:Lt') and not _rev_at else ''",
@@ -3562,7 +3562,7 @@
     {
       "kind": "quiz",
       "id": "2b-remembers",
-      "title": "Quick review: 2 questions (not scored)",
+      "title": "Quick review: 2 questions, not scored",
       "optional": true,
       "minutes": 1,
       "summary": "Two quick questions from earlier lessons, to warm up. Nothing is scored.",
@@ -4036,7 +4036,7 @@
         {
           "id": "colon-and-indent",
           "title": "Colon and indent",
-          "martu": "Two marks make an `if` work, and you know both from English class. A [[colon]] introduces a list, and in an outline, sub-points are indented under their main point. In Python, the colon at the end of `if mana < 6:` says: here come its steps. The [[indent]], four spaces, says: this line belongs to the `if`.\nThis code has three [[bug|bugs]] (mistakes in code). Two are loud: Python stops and shows an error, one at a time. Read each error box in the Console: its title first, then Python's last line, then the line number. The third bug is quiet: the code runs, but one line is in the wrong place.\n*Mend* means fix. Each step below starts with it.",
+          "martu": "Two marks make an `if` work, and you know both from English class. A [[colon]] introduces a list, and in an outline, sub-points are indented under their main point. In Python, the colon at the end of `if mana < 6:` says: here come its steps. The [[indent]], four spaces, says: this line belongs to the `if`.\nThis code has three [[bug|bugs]] (mistakes in code). Two are loud: Python stops and shows an error, one at a time. Read each error box in the Console: its title first, then Python's last line, then the line number. The third bug is quiet: the code runs, but one line is in the wrong place.",
           "anotherWay": [
             {
               "angle": "step-by-step",
@@ -4071,10 +4071,10 @@
           "checkpoints": [
             {
               "id": "mend-the-colon",
-              "text": "Mend line 4: type the missing colon, `:`, at the very end of `if hours_left < 3`.",
+              "text": "Fix line 4: type the missing colon, `:`, at the very end of `if hours_left < 3`.",
               "hints": [
                 "Press Run and read the box in the Console: first its title, then Python's last line. Which line number does it give?",
-                "Python's last line says `expected ':'` and gives line 4. Look at the very end of line 4.",
+                "Python's last line says `expected ':'`, and Python stopped on line 4. Look at the very end of line 4.",
                 "Type `:` at the very end of line 4. Line 4 becomes `if hours_left < 3:`. The colon says: the indented lines come next."
               ],
               "checks": [
@@ -4178,12 +4178,12 @@
                   ]
                 }
               ],
-              "passLine": "Mar'tu: One fixed. Press Run again, and Python shows you the next one.",
+              "passLine": "Mar'tu: The colon is back. It says: here come the `if`'s steps.",
               "dictated": true
             },
             {
               "id": "mend-the-indent",
-              "text": "Mend line 8, so the `Low mana.` line belongs to the `if` on line 7.",
+              "text": "Fix line 8, so the `Low mana.` line belongs to the `if` on line 7.",
               "hints": [
                 "Press Run and read the box in the Console: its title, then Python's last line. Which line number does it give?",
                 "Python's last line says `expected an indented block`. A line that belongs to an `if` has to start further right than the `if`:\n```python\nif rain > 0:\n    print(\"Take the umbrella.\")\n```",
@@ -4294,7 +4294,7 @@
             },
             {
               "id": "always-runs",
-              "text": "Mend line 13, so `The clock ticks on.` shows every time, even with 10 hours left.",
+              "text": "Fix line 13, so `The clock ticks on.` shows every time, even with 10 hours left.",
               "hints": [
                 "Look at line 13 and the `if` on line 10. If `hours_left` were 10, would `The clock ticks on.` still show?",
                 "Run the last `if` in your head with `hours_left = 10`. Is `10 < 3` `True` or `False`? Then which lines does Python skip?\nA line with no indent does not belong to the `if`. It runs every time:\n```python\nif rain > 0:\n    print(\"Take the umbrella.\")\nprint(\"Off we go.\")\n```",
@@ -4543,7 +4543,7 @@
         {
           "id": "otherwise",
           "title": "Otherwise",
-          "martu": "[[else]] means *otherwise*. It has no question of its own. Its lines run when the `if` answer was `False`. In plain English: *If it rains, take a coat. Otherwise, take sunglasses.* You never take both. In Python, `else:` goes on its own line, right under the `if`'s indented lines.\nSo exactly one of the two lines shows: the line under `if`, or the line under `else`. Never both.\nLook at the Example: Oogrish's perception check (does he notice the tracks?). Then write Bomb Shell's check: can she pry open a stuck latch? Keep the names `strength_roll` and `strength_needed`, and use your own words for the two lines.",
+          "martu": "[[else]] means *otherwise*. It has no question of its own. Its lines run when the `if` answer was `False`. In plain English: *If it rains, take a coat. Otherwise, take sunglasses.* You never take both. In Python, `else:` goes on its own line, right under the `if`'s indented lines.\nSo exactly one of the two lines shows: the line under `if`, or the line under `else`. Never both.\nLook at the Example, under my words: Oogrish's perception check (does he notice the tracks?). Then write Bomb Shell's check: can she pry open a stuck latch? Keep the names `strength_roll` and `strength_needed`, and use your own words for the two lines.",
           "example": {
             "code": [
               "spot_roll = 13",
@@ -4941,7 +4941,7 @@
         {
           "id": "clock-colors",
           "title": "Clock colors",
-          "martu": "[[elif]] is short for *else, if*: another question, asked only when the questions above it were `False`, like `elif hours_left <= 12:`. Python checks the chain from the top, takes the *first* question that is `True`, and skips the rest. It's like a grading scale: 90 or more is an A, 80 or more is a B. Check *80 or more* first, and a 95 gets a B. Order matters.\nEach path through the chain is a [[branch]]: the lines under the `if`, under one `elif`, or under the `else`.\nMy Ley Clock should glow red at 2 hours or fewer, bright blue up to 12, and calm blue after that. This chain is in the wrong order. Which hours get the wrong color?",
+          "martu": "[[elif]] is short for *else, if*: another question, asked only when the questions above it were `False`, like `elif hours_left <= 12:`. An `if`, then `elif` lines, then an `else`, one after another, make a *chain*. Python checks the chain from the top, takes the *first* question that is `True`, and skips the rest. It's like a grading scale: 90 or more is an A, 80 or more is a B. Check *80 or more* first, and a 95 gets a B. Order matters.\nEach path through the chain is a [[branch]]: the lines under the `if`, under one `elif`, or under the `else`.\nMy Ley Clock should glow red at 2 hours or fewer, bright blue up to 12, and calm blue after that. This chain is in the wrong order. Which hours get the wrong color?",
           "anotherWay": [
             {
               "angle": "everyday",
@@ -5332,7 +5332,7 @@
         {
           "id": "four-answers",
           "title": "Four answers",
-          "martu": "Remember the four dialogue options in the campaign? This is that chain. `choice` holds the option the player clicked, like `\"option 3\"`. Each [[branch]] asks about one option, from the top, and the first one that is `True` speaks.\nThe options are text, so they keep their quotes: `\"option 1\"`, with a space before the 1. Quotes mean these exact letters.\nFollow the numbered notes (the `#` lines) at the top of your code, one per step.",
+          "martu": "Remember the four dialogue options in the game? This is that chain. `choice` holds the option the player clicked, like `\"option 3\"`. Each [[branch]] asks about one option, from the top, and the first one that is `True` speaks.\nThe options are text, so they keep their quotes: `\"option 1\"`, with a space before the 1. Quotes mean these exact letters.\nFollow the numbered notes (the `#` lines) at the top of your code, one per step.",
           "anotherWay": [
             {
               "angle": "campaign",
@@ -6660,7 +6660,7 @@
             "snippet": [
               "elif caster[\"mana\"] < spell[\"mana_cost\"]:"
             ],
-            "why": "You have seen both questions in `cast_spell`: enough affinity? enough mana? The campaign asked them one at a time, with `if` and `elif`. `and` asks both in one line."
+            "why": "You have seen both questions in `cast_spell`: enough affinity? enough mana? The game asked them one at a time, with `if` and `elif`. `and` asks both in one line."
           },
           "takeaway": "`and` needs both answers `True`. `or` needs at least one. `not` flips `True` and `False`.",
           "predict": {
@@ -7169,7 +7169,7 @@
         {
           "id": "roll-and-decide",
           "title": "Roll and decide",
-          "martu": "Now you write the whole skill check, like the trap door in the campaign. Roll a d20 (a die with 20 faces). Compare the roll with the number you need. Then say what happened. You already know every piece: `random.randint(1, 20)`, `>=`, `if` and `else`, and `str()` for gluing a number on.\nPick any action and any `needed` from 2 to 20. I test your code with my own rolls, so I can try every kind of roll.",
+          "martu": "Now you write the whole skill check, like the trap door in the game. Roll a d20 (a die with 20 faces). Compare the roll with the number you need. Then say what happened. You already know every piece: `random.randint(1, 20)`, `>=`, `if` and `else`, and `str()` for gluing a number on.\nPick any action and any `needed` from 2 to 20. I test your code with my own rolls, so I can try every kind of roll.",
           "anotherWay": [
             {
               "angle": "step-by-step",
@@ -7880,10 +7880,10 @@
           "checkpoints": [
             {
               "id": "ask-with-double-equals",
-              "text": "Mend line 2, `if roll = 20:`, so it asks whether `roll` is 20.",
+              "text": "Fix line 2, `if roll = 20:`, so it asks whether `roll` is 20.",
               "hints": [
                 "Press Run and read the box in the Console: first its title, then Python's last line. Which line number does it give?",
-                "Python's last line gives line 2 and says `Maybe you meant '=='`. Which sign asks a question?",
+                "Python's last line says `Maybe you meant '=='`, and Python stopped on line 2. Which sign asks a question?",
                 "Type a second `=` right after the `=` on line 2. Line 2 becomes `if roll == 20:`. `=` puts a value in a box, and `==` asks: is the same as?"
               ],
               "checks": [
@@ -7991,10 +7991,10 @@
             },
             {
               "id": "quote-the-option",
-              "text": "Mend line 6, `if choice == option 1:`, so it checks the text `option 1`.",
+              "text": "Fix line 6, `if choice == option 1:`, so it checks the text `option 1`.",
               "hints": [
-                "Press Run and read the box: its title, then Python's last line. Then look at the line number it gives.",
-                "Python's last line says `invalid syntax` and gives line 6. Look at `option 1` there: it has no quotes. Is it a box name, or text?",
+                "Press Run and read the error box: its title, then Python's last line. Then look at the line number it gives.",
+                "Python's last line says `invalid syntax`, and Python stopped on line 6. Look at `option 1` there: it has no quotes. Is it a box name, or text?",
                 "Type `\"` right before `option 1` and another `\"` right after it. Line 6 becomes `if choice == \"option 1\":`. Quotes mean these exact letters. No quotes means look inside the box with this label."
               ],
               "checks": [
@@ -8113,10 +8113,10 @@
             },
             {
               "id": "else-goes-last",
-              "text": "Mend line 16, the `elif` line, so 5 hours shows `The clock is bright blue.`",
+              "text": "Fix line 16, the `elif` line, so 5 hours shows `The clock is bright blue.`",
               "hints": [
-                "Press Run and read the box: its title, then Python's last line. Look at the line number it gives, and at the line right before it.",
-                "Python's last line says `invalid syntax` and gives line 16, the `elif` line. Look at what comes right before it. `elif` must come before `else`, because `else` is always last.",
+                "Press Run and read the error box: its title, then Python's last line. Look at the line number it gives, and at the line right before it.",
+                "Python's last line says `invalid syntax`, and Python stopped on line 16, the `elif` line. Look at what comes right before it. `elif` must come before `else`, because `else` is always last.",
                 "Move the `else:` part to the end, in four moves:\n1. Drag across lines 14 and 15 (`else:` and the line under it) to select them.\n2. Press Ctrl+X (Cmd+X on a Mac) to cut them.\n3. Click at the end of the last line, press Enter, and delete any spaces in front of the cursor.\n4. Press Ctrl+V (Cmd+V) to paste. `else:` should start at the left edge, with no spaces."
               ],
               "checks": [
@@ -8224,9 +8224,9 @@
             },
             {
               "id": "import-the-dice",
-              "text": "Mend line 1, so Python knows where `random` comes from.",
+              "text": "Fix line 1, so Python knows where `random` comes from.",
               "hints": [
-                "Press Run and read the box: its title, then Python's last line. Python's last line ends with a question for you.",
+                "Press Run and read the error box: its title, then Python's last line. Python's last line ends with a question for you.",
                 "Python says `name 'random' is not defined` and asks: `Did you forget to import 'random'?` Tools from Python's shelf need an `import` first, at the top.",
                 "Click at the very start of line 1 and press Enter, so line 1 is empty. Then type `import random` on that empty line, at the top."
               ],
@@ -8559,7 +8559,7 @@
       "optional": true,
       "minutes": 12,
       "summary": "The four-answers chain, written with `match` and `case`. Learn to read both.",
-      "body": "There is another way to write the four-answers chain. It is called [[match]].\n`match choice:` says: look at what is in `choice`. Each `case \"option 1\":` says: if it is these exact letters, run the indented lines under me. `case _:` catches anything else, like `else`.\nPython tries the cases from the top and runs the first one that fits. Then it stops, the same as an `if` and `elif` chain.\nThe two examples below show the same line. Press Run on both and compare them.\nThe campaign uses `elif`, so learn to read both. When you write your own code, use whichever one is clearer to you.",
+      "body": "There is another way to write the four-answers chain. It is called [[match]].\n`match choice:` says: look at what is in `choice`. Each `case \"option 1\":` says: if it is these exact letters, run the indented lines under me. `case _:` catches anything else, like `else`.\nPython tries the cases from the top and runs the first one that fits. Then it stops, the same as an `if` and `elif` chain.\nThe two examples below show the same line. Press Run on both and compare them.\nThe game uses `elif`, so learn to read both. When you write your own code, use whichever one is clearer to you.",
       "examples": [
         {
           "code": [
@@ -11789,7 +11789,7 @@
             {
               "angle": "campaign",
               "label": "You've seen this",
-              "text": "In the game, the barrier part said it plainly: use `<` and not `<=`, because a caster with exactly enough mana can still cast. It's the same boundary, seen from the other side."
+              "text": "In the game, the barrier part said it plainly: use `<` and not `<=`, because a caster with exactly enough mana can still cast. It's the same exactly-enough question, seen from the other side."
             },
             {
               "angle": "math class",
@@ -11864,7 +11864,7 @@
             },
             {
               "id": "mend-the-sign",
-              "text": "Mend the sign in `if mana > cost:`, so exactly enough mana casts the ward.",
+              "text": "Fix the sign in `if mana > cost:`, so exactly enough mana casts the ward.",
               "hints": [
                 "Look at the Console: 9, then 9, then `Not enough mana.` With 9 mana and a cost of 9, is that the right answer?",
                 "Look at the sign in the `if`. `4 > 4` is False, but `4 >= 4` is True. Which sign says *at least*, so 9 against 9 passes?",
@@ -12065,7 +12065,7 @@
             "snippet": [
               "elif caster[\"mana\"] < spell[\"mana_cost\"]:"
             ],
-            "why": "You've seen this boundary. `cast_spell` used `<`, not `<=`, so a caster with exactly enough mana still cast. Now you get why. When a cast fails with no error, print the mana and the cost: the values show the boundary."
+            "why": "You've seen this before. `cast_spell` used `<`, not `<=`, so a caster with exactly enough mana still cast. Now you get why. When a cast fails with no error, print the mana and the cost: the values show you it was exactly enough."
           },
           "takeaway": "No error but a wrong answer? Print the values right before the line that decides.",
           "predict": {
@@ -12214,11 +12214,11 @@
         {
           "id": "debug-routine",
           "title": "The four-step routine",
-          "martu": "You've met [[bug|bugs]] before: a loud bug stops Python with an error, and a quiet bug runs but gives a wrong answer. I hunt both with the same four steps every time, the way you proofread an essay one mark at a time.\n1. Read the box in the Console: its title, then Python's last line.\n2. Find the line number, and go to that line.\n3. Check the line above it too, and the lines where its boxes were made.\n4. No error, but a wrong answer? Print the values.\nThis 12-line script about the road ahead has three bugs: two loud, one quiet.",
+          "martu": "You've met [[bug|bugs]] before: a loud bug stops Python with an error, and a quiet bug runs but gives a wrong answer. I hunt both with the same four steps every time, the way you proofread an essay one mark at a time.\n1. Read the box in the Console: its title, then Python's last line.\n2. Find the line number, and go to that line.\n3. Check the line above it too, and the lines where its boxes were made.\n4. No error, but a wrong answer? Print the values.\nThis code about the road ahead has 12 lines and three bugs: two loud, one quiet.",
           "anotherWay": [
             {
               "angle": "step-by-step",
-              "label": "The routine on this script",
+              "label": "The four steps on this code",
               "text": "1. First bug. Python's last line: `name 'encounterr' is not defined`. It stopped on line 9. Lines 6 and 8 make `encounter`, with one r at the end.\n2. Second bug. Press Run again. Python's last line: `can only concatenate str`, Python's way of saying it can only glue text. It stopped on line 10. Line 3 makes `roll` a number, so it needs `str()`.\n3. Third bug, the quiet one. No error box. Set `roll = 12` for one Run and read what prints. Then put the dice back."
             },
             {
@@ -12229,11 +12229,11 @@
             {
               "angle": "campaign",
               "label": "You've seen this",
-              "text": "In the game, the trap-door checks said `return roll >= required_roll`. A roll of exactly the number needed passed. The quiet bug here is the same boundary."
+              "text": "In the game, the trap-door checks said `return roll >= required_roll`. A roll of exactly the number needed passed. The quiet bug here is the same exactly-enough question."
             },
             {
               "angle": "shorter",
-              "text": "Read the box. Go to the line. Check the line above. No error? Print the values."
+              "text": "Read the error box. Go to the line. Check the line above. No error? Print the values."
             }
           ],
           "starter": [
@@ -12253,7 +12253,7 @@
           "checkpoints": [
             {
               "id": "mend-the-name",
-              "text": "Mend the name on line 9 that Python can't find.",
+              "text": "Fix the name on line 9 that Python can't find.",
               "hints": [
                 "Read the box in the Console. First its title, then Python's last line. Python even asks: `Did you mean ...?`",
                 "Python matches names letter for letter, so `lantern` and `lanternn` are two names. Go to line 9, where Python stopped. Compare its name with lines 6 and 8.",
@@ -12381,9 +12381,9 @@
             },
             {
               "id": "glue-the-roll",
-              "text": "Mend line 10, which glues the roll to text.",
+              "text": "Fix line 10, which glues the roll to text.",
               "hints": [
-                "Press Run again and read the new box: its title, then Python's last line. Which line number does it give?",
+                "Press Run again and read the new error box: its title, then Python's last line. Which line number does it give?",
                 "Python can only glue text to text. Go to line 10, then check line 3, where `roll` is made: does `roll` hold text or a number?",
                 "`\"Gold: \" + str(gold)` turns the number into text first, so the glue works.",
                 "Write `print(\"Rolled: \" + str(roll))` in place of `print(\"Rolled: \" + roll)`."
@@ -12503,7 +12503,7 @@
             },
             {
               "id": "exactly-enough",
-              "text": "The last bug is quiet: a roll of exactly `needed` should pass, but it doesn't. Three moves:\n1. Change line 3 to `roll = 12` and press Run. Does Oogrish spot the cart?\n2. Mend the sign in the `if` on line 5, so a roll of exactly 12 passes.\n3. Put line 3 back to `roll = random.randint(1, 20)`.",
+              "text": "The last bug is quiet: a roll of exactly `needed` should pass, but it doesn't. Three moves:\n1. Change line 3 to `roll = 12` and press Run. Does Oogrish spot the cart?\n2. Fix the sign in the `if` on line 5, so a roll of exactly 12 passes.\n3. Put line 3 back to `roll = random.randint(1, 20)`.",
               "hints": [
                 "No error box now, so read what your code printed. With `roll = 12` on line 3 and `needed = 12`, does Oogrish spot the cart? Should he?",
                 "Look at the sign in the `if` on line 5. On a number line, `>` is the open dot: 12 itself is left out. Which sign is the filled dot, so 12 counts?",
@@ -12752,7 +12752,7 @@
             ],
             "why": "You've seen this. Each trap-door check used `>=`, so a roll of exactly the number needed still passed. Swap in `>` and Python doesn't stop, but the check gives the wrong answer. Only step 4 finds that."
           },
-          "takeaway": "Read the box: its title, then Python's last line. Go to that line, and check the line above it. No error? Print the values.",
+          "takeaway": "Read the error box: its title, then Python's last line. Go to that line, and check the line above it. No error? Print the values.",
           "names": [
             "encounter",
             "roll",
@@ -12784,7 +12784,7 @@
               "id": "make-it-print",
               "text": "Make line 2 show `Mana: 14` in the Console.",
               "hints": [
-                "Read Python's last line in the box. What can Python only glue?",
+                "Read Python's last line in the error box. What can Python only glue?",
                 "Look at line 2, where Python stopped. `mana` holds a number, and `+` glues text to text.",
                 "`\"Gold: \" + str(gold)` turns the number into text first."
               ],
@@ -12905,7 +12905,7 @@
             "mana = 14",
             "print(\"Mana: \" + str(mana))"
           ],
-          "takeaway": "On your own: read the box, go to the line Python stopped on, and fix the mistake.",
+          "takeaway": "On your own: read the error box, go to the line Python stopped on, and fix the mistake.",
           "names": [
             "mana",
             "str"
@@ -12926,7 +12926,7 @@
         {
           "id": "syntax-fizzles",
           "title": "Lines Python can't read",
-          "martu": "*Syntax* is how a line is put together, like grammar in English class. A [[SyntaxError]] means Python can't read a line, so it stops before anything runs. This spell has three: a missing `\"`, a missing `:` and a missing `)`.\nGuess first: three mistakes, so how many error boxes will you see? Press Run and count.\nThen fix them one at a time. After each fix, press Run and read the new box. A new error means Python got further.",
+          "martu": "*Syntax* is how a line is put together, like grammar in English class. A [[SyntaxError]] means Python can't read a line, so it stops before anything runs. This spell has three: a missing `\"`, a missing `:` and a missing `)`.\nGuess first: three mistakes, so how many error boxes will you see? Press Run and count.\nThen fix them one at a time. After each fix, press Run and read the new error box. A new error means Python got further.",
           "anotherWay": [
             {
               "angle": "why",
@@ -12940,7 +12940,7 @@
             },
             {
               "angle": "step-by-step",
-              "text": "1. Press Run.\n2. Read the box: its title, then Python's last line.\n3. Fix that one mistake.\n4. Press Run again. A new error means Python got further."
+              "text": "1. Press Run.\n2. Read the error box: its title, then Python's last line.\n3. Fix that one mistake.\n4. Press Run again. A new error means Python got further."
             },
             {
               "angle": "shorter",
@@ -12957,7 +12957,7 @@
           "checkpoints": [
             {
               "id": "close-the-quote",
-              "text": "Mend line 2, so it shows `Shield up.` in the Console.",
+              "text": "Fix line 2, so it shows `Shield up.` in the Console.",
               "hints": [
                 "Read the box in the Console. First its title, then Python's last line. *Unterminated* means the text never ended.",
                 "Look at line 2. Quotes come in pairs: one before the words, one after.",
@@ -12973,9 +12973,9 @@
             },
             {
               "id": "add-the-colon",
-              "text": "Mend the `if` on line 3.",
+              "text": "Fix the `if` on line 3.",
               "hints": [
-                "Press Run again and read the new box. Python's last line says `expected ':'`.",
+                "Press Run again and read the new error box. Python's last line says `expected ':'`.",
                 "Look at the very end of line 3. Every `if` line ends with a colon, like `if rain > 0:`.",
                 "Type `:` at the very end of line 3. Line 3 becomes `if mana < 6:`."
               ],
@@ -13092,9 +13092,9 @@
             },
             {
               "id": "close-the-bracket",
-              "text": "Mend line 5, the last line, so it shows the mana.",
+              "text": "Fix line 5, the last line, so it shows the mana.",
               "hints": [
-                "Press Run again and read the new box. Python's last line says `'(' was never closed`.",
+                "Press Run again and read the new error box. Python's last line says `'(' was never closed`.",
                 "Count the `(` and the `)` on line 5. Parentheses come in pairs, like in math class: `print(str(gold))` has two `(` and two `)`.",
                 "Type `)` at the very end of line 5. Line 5 becomes `print(\"Mana: \" + str(mana))`."
               ],
@@ -13226,7 +13226,7 @@
         {
           "id": "name-fizzles",
           "title": "Names Python can't find",
-          "martu": "A [[NameError]] means Python met a name that no line has made yet. It's like a story that says *she grabbed it* but never said who *she* is. `print(mama)` stops Python if no line made `mama`.\nThis spell has four, each for a different reason: a typo, a box used too early, words without quotes, and a capital letter. Read the box each time. Sometimes Python even asks: *Did you mean ...?*",
+          "martu": "A [[NameError]] means Python met a name that no line has made yet. It's like a story that says *she grabbed it* but never said who *she* is. `print(mama)` stops Python if no line made `mama`.\nThis spell has four, each for a different reason: a typo, a box used too early, words without quotes, and a capital letter. Read the error box each time. Sometimes Python even asks: *Did you mean ...?*",
           "anotherWay": [
             {
               "angle": "picture",
@@ -13255,7 +13255,7 @@
           "checkpoints": [
             {
               "id": "mend-the-typo",
-              "text": "Mend line 2 so it shows the mana.",
+              "text": "Fix line 2 so it shows the mana.",
               "hints": [
                 "Read the box in the Console: its title, then Python's last line. It asks: `Did you mean: 'mana'?`",
                 "Compare the name on line 2 with the box made on line 1, letter by letter. `lantern` and `lantren` are two different names to Python.",
@@ -13380,7 +13380,7 @@
               "id": "make-it-first",
               "text": "Move `shield = 8` from line 4 up above line 3, so `shield` is made before line 3 uses it.",
               "hints": [
-                "Press Run again and read the new box. Python's last line: `name 'shield' is not defined`. Which line makes `shield`?",
+                "Press Run again and read the new error box. Python's last line: `name 'shield' is not defined`. Which line makes `shield`?",
                 "Python reads your code like a page in a book, from the top line down. On line 3, has any line made `shield` yet? A box must be made before it is used:\n```python\ngold = 12\nprint(gold)\n```",
                 "Write `shield = 8` above `print(\"Shield: \" + str(shield))`. Then delete the old `shield = 8` under that print line, so the box is made once."
               ],
@@ -13499,7 +13499,7 @@
               "id": "quote-the-spell",
               "text": "On line 5, put quotes around `Fireball`, so `spell` holds the text `Fireball`.",
               "hints": [
-                "Press Run again and read the new box. Python's last line: `name 'Fireball' is not defined`. Is `Fireball` a box, or words?",
+                "Press Run again and read the new error box. Python's last line: `name 'Fireball' is not defined`. Is `Fireball` a box, or words?",
                 "Python looked for a box called `Fireball` and found none. You meant the words. Quotes mean these exact letters. No quotes means look inside the box with this label.",
                 "Type `\"` before and after `Fireball` on line 5. Line 5 becomes `spell = \"Fireball\"`."
               ],
@@ -13518,7 +13518,7 @@
               "id": "match-the-health",
               "text": "Line 8 uses `health`, but line 7 makes `Health`. Change line 7 so both lines use the name `health`.",
               "hints": [
-                "Press Run again and read the new box. Python's last line asks: `Did you mean: 'Health'?`",
+                "Press Run again and read the new error box. Python's last line asks: `Did you mean: 'Health'?`",
                 "Compare line 7 with line 8. One name has a capital, one does not. Python sees `Gold` and `gold` as two different names. The task's name is `health`.",
                 "Change the `H` in `Health` on line 7 to a small `h`. Line 7 becomes `health = 100`."
               ],
@@ -13704,7 +13704,7 @@
         {
           "id": "type-fizzles",
           "title": "Text and numbers mixed up",
-          "martu": "A [[TypeError]] means two values that don't fit together, like adding 5 meters to 3 seconds in math. In Python it's mostly text and a number: `\"Mana: \" + 14` stops Python, because `+` can only glue text to text.\nRead the box, then go to the line Python stopped on. Also check the lines where its boxes were made: the mistake is not always on the line where Python stopped.",
+          "martu": "A [[TypeError]] means two values that don't fit together, like adding 5 meters to 3 seconds in math. In Python it's mostly text and a number: `\"Mana: \" + 14` stops Python, because `+` can only glue text to text.\nRead the error box, then go to the line Python stopped on. Also check the lines where its boxes were made: the mistake is not always on the line where Python stopped.",
           "anotherWay": [
             {
               "angle": "picture",
@@ -13730,7 +13730,7 @@
           "checkpoints": [
             {
               "id": "glue-the-mana",
-              "text": "Mend line 2 so it shows the mana.",
+              "text": "Fix line 2 so it shows the mana.",
               "hints": [
                 "Read the box in the Console: its title, then Python's last line. What can Python only glue?",
                 "Look at line 2, where Python stopped. Python can only glue text to text, and `mana` holds a number.",
@@ -13850,9 +13850,9 @@
             },
             {
               "id": "cost-is-a-number",
-              "text": "Line 4 compares a number with text. Mend line 3, which makes `cost`, so `cost` holds a number.",
+              "text": "Line 4 compares a number with text. Fix line 3, which makes `cost`, so `cost` holds a number.",
               "hints": [
-                "Press Run again and read the new box. Python's last line: `'>=' not supported between instances of 'int' and 'str'`. In Python's words, `int` means a whole number and `str` means text. Which box holds text?",
+                "Press Run again and read the new error box. Python's last line: `'>=' not supported between instances of 'int' and 'str'`. In Python's words, `int` means a whole number and `str` means text. Which box holds text?",
                 "Python stopped on line 4, but the text comes from line 3. Look at the quotes there. `\"7\" > 3` stops Python, but `7 > 3` is True.",
                 "Delete both `\"` around the `9` on line 3. Line 3 becomes `cost = 9`."
               ],
@@ -14000,7 +14000,7 @@
       "optional": true,
       "minutes": 10,
       "summary": "An `assert` line says what must be true. Put one at the boundary, the exact number that should pass, and a quiet bug becomes loud.",
-      "body": "A seal is an [[assert]] line: the word `assert`, then a yes-or-no question whose answer must be `True`. It's like checking a math answer by putting it back into the equation. `assert passed == True` says: `passed` must be `True` here.\nIf the answer is `True`, nothing happens, and your code goes on. If it is `False`, Python stops with `AssertionError` and gives the line:\n```text\nFile \"main.py\", line 4\n    assert passed == True\nAssertionError\n```\nWhy bother? Seals catch quiet [[bug|bugs]]. A `>` where `>=` belongs gives no error at all. A seal at the *boundary*, the exact number that should still pass, turns that quiet bug into a loud one.\nAt the Institute we sealed our work this way. The campaign never asks for seals. They are for the careful, yes?",
+      "body": "A seal is an [[assert]] line: the word `assert`, then a yes-or-no question whose answer must be `True`. It's like checking a math answer by putting it back into the equation. `assert passed == True` says: `passed` must be `True` here.\nIf the answer is `True`, nothing happens, and your code goes on. If it is `False`, Python stops with `AssertionError` and gives the line:\n```text\nFile \"main.py\", line 4\n    assert passed == True\nAssertionError\n```\nWhy bother? Seals catch quiet [[bug|bugs]]. A `>` where `>=` belongs gives no error at all. A seal at the *boundary*, the exact number that should still pass, turns that quiet bug into a loud one.\nAt the Institute we sealed our work this way. The game never asks for seals. They are for the careful, yes?",
       "examples": [
         {
           "code": [
@@ -14689,12 +14689,12 @@
         },
         {
           "id": "mend-the-choices",
-          "title": "Mend the choices",
-          "martu": "Three mistakes in a dialogue chain, like the dialogue options in the game: two loud, one quiet. For each loud one, read the box, go to the line Python stopped on, and fix it. Then press Run again for the next. When there is no error box, read what your code printed.\nStuck? Skip it, or go back to the lesson When Spells Fizzle. Tasks you pass here stay done.",
+          "title": "Fix the choices",
+          "martu": "Three mistakes in a dialogue chain, like the dialogue options in the game: two loud, one quiet. For each loud one, read the error box, go to the line Python stopped on, and fix it. Then press Run again for the next. When there is no error box, read what your code printed.\nStuck? Skip it, or go back to the lesson When Spells Fizzle. Tasks you pass here stay done.",
           "anotherWay": [
             {
               "angle": "step-by-step",
-              "text": "1. Press Run and read the box.\n2. Fix the line Python stopped on.\n3. Press Run again for the next.\n4. No error box, but `Mar'tu: Hm.`? Look at line 2: is the copy kept?"
+              "text": "1. Press Run and read the error box.\n2. Fix the line Python stopped on.\n3. Press Run again for the next.\n4. No error box, but `Mar'tu: Hm.`? Look at line 2: is the copy kept?"
             },
             {
               "angle": "shorter",
@@ -14714,9 +14714,9 @@
           "checkpoints": [
             {
               "id": "mend-the-ask",
-              "text": "Mend line 3, the line that asks about `\"option 1\"`.",
+              "text": "Fix line 3, the line that asks about `\"option 1\"`.",
               "hints": [
-                "Read the box: its title, then Python's last line. Which line did Python stop on?",
+                "Read the error box: its title, then Python's last line. Which line did Python stop on?",
                 "Python stopped on line 3 and asks: `Maybe you meant '=='`? Which sign asks a question?",
                 "`=` puts a value in a box. `==` asks: is the same as? `if mana == 0:` asks whether mana is 0."
               ],
@@ -14851,9 +14851,9 @@
             },
             {
               "id": "mend-the-quotes",
-              "text": "Mend line 5, the line that asks about `option 2`.",
+              "text": "Fix line 5, the line that asks about `option 2`.",
               "hints": [
-                "Press Run again and read the new box. Which line did Python stop on?",
+                "Press Run again and read the new error box. Which line did Python stop on?",
                 "Python says `invalid syntax` on line 5. Two words with no quotes: is `option 2` a box, or text?",
                 "Quotes mean these exact letters. No quotes means look inside the box with this label. The option is text, so it needs quotes."
               ],
@@ -15495,7 +15495,7 @@
                   ]
                 }
               ],
-              "passLine": "Mar'tu: Bomb Shell rolled for the wall. You fixed our choices. Oogrish held the barrier. That is Unit 2, yes? Want a stretch? Try Three Roads to the Institute.",
+              "passLine": "Mar'tu: You rolled a skill check, fixed our choices and held the barrier. That is Unit 2, yes? Want a stretch? Try Three Roads to the Institute.",
               "dictated": false
             }
           ],
@@ -16177,12 +16177,12 @@
         },
         {
           "id": "mend-the-choices",
-          "title": "Mend the choices",
-          "martu": "Three mistakes in a dialogue chain, like the dialogue options in the game: two loud, one quiet. For each loud one, read the box, go to the line Python stopped on, and fix it. Then press Run again for the next. When there is no error box, read what your code printed.\nStuck? Skip it, or go back to the lesson When Spells Fizzle. Tasks you pass here stay done.",
+          "title": "Fix the choices",
+          "martu": "Three mistakes in a dialogue chain, like the dialogue options in the game: two loud, one quiet. For each loud one, read the error box, go to the line Python stopped on, and fix it. Then press Run again for the next. When there is no error box, read what your code printed.\nStuck? Skip it, or go back to the lesson When Spells Fizzle. Tasks you pass here stay done.",
           "anotherWay": [
             {
               "angle": "step-by-step",
-              "text": "1. Press Run and read the box.\n2. Fix the line Python stopped on.\n3. Press Run again for the next.\n4. No error box, but `Mar'tu: Hm.`? Look at line 2: is the copy kept?"
+              "text": "1. Press Run and read the error box.\n2. Fix the line Python stopped on.\n3. Press Run again for the next.\n4. No error box, but `Mar'tu: Hm.`? Look at line 2: is the copy kept?"
             },
             {
               "angle": "shorter",
@@ -16202,9 +16202,9 @@
           "checkpoints": [
             {
               "id": "mend-the-ask",
-              "text": "Mend line 3, the line that asks about `\"option 3\"`.",
+              "text": "Fix line 3, the line that asks about `\"option 3\"`.",
               "hints": [
-                "Read the box: its title, then Python's last line. Which line did Python stop on?",
+                "Read the error box: its title, then Python's last line. Which line did Python stop on?",
                 "Python stopped on line 3 and asks: `Maybe you meant '=='`? Which sign asks a question?",
                 "`=` puts a value in a box. `==` asks: is the same as? `if mana == 0:` asks whether mana is 0."
               ],
@@ -16339,9 +16339,9 @@
             },
             {
               "id": "mend-the-quotes",
-              "text": "Mend line 5, the line that asks about `option 4`.",
+              "text": "Fix line 5, the line that asks about `option 4`.",
               "hints": [
-                "Press Run again and read the new box. Which line did Python stop on?",
+                "Press Run again and read the new error box. Which line did Python stop on?",
                 "Python says `invalid syntax` on line 5. Two words with no quotes: is `option 4` a box, or text?",
                 "Quotes mean these exact letters. No quotes means look inside the box with this label. The option is text, so it needs quotes."
               ],
@@ -16983,7 +16983,7 @@
                   ]
                 }
               ],
-              "passLine": "Mar'tu: Gearshift rolled for the cart. You fixed our choices. The barrier is holding. That is Unit 2, yes? Want a stretch? Try Three Roads to the Institute.",
+              "passLine": "Mar'tu: You rolled a skill check, fixed our choices and held the barrier. That is Unit 2, yes? Want a stretch? Try Three Roads to the Institute.",
               "dictated": false
             }
           ],
@@ -17288,7 +17288,7 @@
           "code": [
             "print(\"Rolled: \" + 7)"
           ],
-          "note": "1. Read the box: its title, then Python's last line. 2. Go to the line Python stopped on. 3. Check the line above it, and where its boxes were made. 4. No error, but a wrong answer? Print the values. (Lesson: When Spells Fizzle)"
+          "note": "1. Read the error box: its title, then Python's last line. 2. Go to the line Python stopped on. 3. Check the line above it, and where its boxes were made. 4. No error, but a wrong answer? Print the values. (Lesson: When Spells Fizzle)"
         },
         {
           "concept": "Error: `=` in an `if`",
@@ -17363,7 +17363,7 @@
             "        print(\"Hm.\")"
           ],
           "output": "Rest first, yes?",
-          "note": "`case _:` catches anything else. The campaign uses `elif`, so read both. (Article: Match)"
+          "note": "`case _:` catches anything else. The game uses `elif`, so read both. (Article: Match)"
         },
         {
           "concept": "(extra) Mar'tu's seal: `assert`",

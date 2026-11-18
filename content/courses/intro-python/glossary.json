@@ -21,7 +21,7 @@
     "aliases": [
       "get()"
     ],
-    "plain": "Reads a key gently. `hero.get(\"glug\", 0)` gives the value, or 0 when the key is missing, with no KeyError.",
+    "plain": "Reads a key without stopping. `hero.get(\"glug\", 0)` gives the value, or 0 when the key is missing, instead of a KeyError.",
     "example": "hero.get(\"glug\", 0)"
   },
   {
@@ -31,6 +31,22 @@
     ],
     "plain": "Puts a new item into a list at a position. You give the position first, then the value. Each item after it moves back one place, like people in a line when a friend steps in.",
     "example": "wall.insert(2, 47)"
+  },
+  {
+    "term": ".items()",
+    "aliases": [
+      "items()"
+    ],
+    "plain": "Hands back each tag (key) of a dictionary together with its value, as a pair, like an (x, y) point in math class. A loop can give the pair two names.",
+    "example": "for snack, price in menu.items():"
+  },
+  {
+    "term": ".keys()",
+    "aliases": [
+      "keys()"
+    ],
+    "plain": "Hands back a dictionary's tags (keys). A plain loop over a dictionary walks its tags too.",
+    "example": "list(menu.keys())"
   },
   {
     "term": ".lower()",
@@ -57,6 +73,14 @@
     ],
     "plain": "Takes a value out of a list: the first item that is the same as the value you hand it. You give the value, not its position. If the value isn't in the list, Python stops with a ValueError.",
     "example": "wall.remove(99)"
+  },
+  {
+    "term": ".values()",
+    "aliases": [
+      "values()"
+    ],
+    "plain": "Hands back a dictionary's values, without their tags (keys).",
+    "example": "sum(menu.values())"
   },
   {
     "term": "and",
@@ -109,7 +133,7 @@
     "aliases": [
       "attribute error"
     ],
-    "plain": "Python's message when a dot asks for something that is not there. Read a dictionary with square brackets, not a dot: `lucky[\"mana\"]`, not `lucky.mana`.",
+    "plain": "The error Python shows when a dot asks for something that isn't there. Read a dictionary with square brackets, never a dot: `hero[\"mana\"]`, not `hero.mana`.",
     "example": "AttributeError: 'dict' object has no attribute 'mana'"
   },
   {
@@ -127,6 +151,14 @@
     ],
     "plain": "One of the paths Python can take: the lines under the `if`, under one `elif`, or under the `else`. Python takes only one of them.",
     "example": "elif choice == \"option 2\":"
+  },
+  {
+    "term": "break",
+    "aliases": [
+      "break statement"
+    ],
+    "plain": "Leaves a loop right away, like closing the dictionary once you find your word. Python goes on with the first line after the loop.",
+    "example": "if score > 90:\n    print(score)\n    break"
   },
   {
     "term": "bug",
@@ -190,7 +222,15 @@
     "aliases": [
       "the console"
     ],
-    "plain": "The space under your code where Python's answers appear: what `print` shows, and Python's error messages."
+    "plain": "The space under your code where Python's answers appear: what `print` shows, and the error box when Python stops."
+  },
+  {
+    "term": "continue",
+    "aliases": [
+      "continue statement"
+    ],
+    "plain": "Skips the rest of this pass of a loop and goes on to the next item, like skipping one song in a playlist. `break` leaves the whole loop; `continue` skips only one pass.",
+    "example": "if score == 0:\n    continue"
   },
   {
     "term": "decimal",
@@ -225,8 +265,8 @@
       "dict",
       "dicts"
     ],
-    "plain": "Values kept under keys, in curly brackets. Each key, then a colon, then its value. Commas go between.",
-    "example": "{\"name\": \"Lucky\", \"mana\": 26}"
+    "plain": "Many values, each kept under its own tag (a key), like words in the glossary of a textbook. Curly braces `{ }` hold it: a key, a colon, its value, then a comma.",
+    "example": "{\"name\": \"Moth\", \"glug\": 1}"
   },
   {
     "term": "elif",
@@ -248,9 +288,11 @@
     "term": "error message",
     "aliases": [
       "error messages",
-      "message from Python"
+      "message from Python",
+      "error box",
+      "error boxes"
     ],
-    "plain": "Python's note that it stopped at a line it couldn't run, like a teacher's note in the margin: it points to the spot, and it isn't a grade. Read the box's title, then Python's last line, then fix the line with that number.",
+    "plain": "When Python can't run a line, it stops and shows an error box in the Console. It's like a teacher's note in the margin: it points to the spot, and it isn't a grade. Read the box's title, then Python's last line. Then fix the line with that number.",
     "example": "SyntaxError: unterminated string literal"
   },
   {
@@ -260,6 +302,16 @@
     ],
     "plain": "Divide and keep only the whole part (floor means round down). In math class, 50 ÷ 12 = 4 R 2, and `50 // 12` gives the 4.",
     "example": "print(50 // 12)"
+  },
+  {
+    "term": "for loop",
+    "aliases": [
+      "for loops",
+      "loop",
+      "loops"
+    ],
+    "plain": "Lines that run once for each item in a list, like reading down a class list and calling out each name. Each time through, the name after `for` holds the next item.",
+    "example": "for snack in snacks:\n    print(snack)"
   },
   {
     "term": "glue",
@@ -329,6 +381,16 @@
     "example": "IndexError: list index out of range"
   },
   {
+    "term": "infinite loop",
+    "aliases": [
+      "infinite loops",
+      "endless loop",
+      "a loop that never ends"
+    ],
+    "plain": "A loop that never stops, because its question never turns `False`. It's like walking the wrong way on a number line: you never reach 0. The site stops it after a lot of printing, or after 5 seconds.",
+    "example": "while drops > 0:\n    print(drops)"
+  },
+  {
     "term": "input",
     "aliases": [
       "input()"
@@ -361,8 +423,8 @@
       "keys",
       "tag"
     ],
-    "plain": "The tag on one value in a dictionary. A key is text, so it has quotes: `\"mana\"`. Read its value with the key in square brackets.",
-    "example": "lucky[\"mana\"]"
+    "plain": "The tag on one value in a dictionary, like the word you look up in a glossary. A key is text, so it gets quotes: `\"mana\"`. To read its value, put the key in square brackets.",
+    "example": "moth[\"glug\"]"
   },
   {
     "term": "KeyError",
@@ -370,7 +432,7 @@
       "key error",
       "key errors"
     ],
-    "plain": "Python's message when a dictionary has no key spelled exactly like that. Check the spelling, the capitals and the spaces.",
+    "plain": "The error Python shows when a dictionary has no key spelled exactly like the one you asked for. Check the spelling, the capitals and the spaces.",
     "example": "KeyError: 'Max_Mana'"
   },
   {
@@ -391,6 +453,17 @@
     "example": "marks = [9, 8, 7]"
   },
   {
+    "term": "list comprehension",
+    "aliases": [
+      "list comprehensions",
+      "comprehension",
+      "one-line loop",
+      "one-line loops"
+    ],
+    "plain": "A loop in one line that builds a new list: what to keep, then `for`, then an `if` if you want to pick some items. It always sits inside square brackets.",
+    "example": "[n for n in marks if n > 4]"
+  },
+  {
     "term": "list inside a list",
     "aliases": [
       "lists inside lists",
@@ -406,8 +479,28 @@
       "lists of dictionaries",
       "list of sheets"
     ],
-    "plain": "A list whose items are dictionaries. Pick a sheet by its position first, then read it by key.",
-    "example": "roster[2][\"name\"]"
+    "plain": "A list whose items are sheets (dictionaries). Pick a sheet by its position first, then read it by key.",
+    "example": "team[0][\"name\"]"
+  },
+  {
+    "term": "loop inside a loop",
+    "aliases": [
+      "loops inside loops",
+      "nested loop",
+      "nested loops",
+      "inner loop",
+      "outer loop"
+    ],
+    "plain": "A loop written inside another loop. The inside loop runs all the way through on every pass of the outside one, like a minute hand going all the way around for each hour.",
+    "example": "for week in weeks:\n    for day in week:\n        print(day)"
+  },
+  {
+    "term": "loop variable",
+    "aliases": [
+      "loop variables"
+    ],
+    "plain": "The name right after `for`. You pick it. Each time through the loop, it holds the next item of the list, the way x takes each value in an input-output table in math class.",
+    "example": "for snack in snacks:"
   },
   {
     "term": "match",
@@ -445,7 +538,7 @@
       "slip",
       "slips"
     ],
-    "plain": "To fix a small mistake in your code, the way you mend a small tear in a sleeve. A slip is a small mistake.",
+    "plain": "An older word for fix: to mend a line is to fix a small mistake in it, the way you mend a small tear in a sleeve. A slip is a small mistake.",
     "example": "print(\"Hi)   becomes   print(\"Hi\")"
   },
   {
@@ -463,10 +556,12 @@
       "nested dictionaries",
       "dictionary inside a dictionary",
       "inner dictionary",
-      "inner card"
+      "inner card",
+      "inner sheet",
+      "sheet inside a sheet"
     ],
-    "plain": "A dictionary kept as a value inside another dictionary. Read it with two keys in a row: the outer key first, then the inner key.",
-    "example": "bomb_shell[\"abilities\"][\"wisdom\"]"
+    "plain": "A sheet (a dictionary) kept as a value inside another sheet. Read it with two keys in a row: the outer key first, then the inner key.",
+    "example": "pet[\"food\"][\"cups\"]"
   },
   {
     "term": "None",
@@ -486,7 +581,7 @@
     "aliases": [
       "in (a dictionary)"
     ],
-    "plain": "`in` asks whether a key is in a dictionary, and gives `True` or `False`. `not in` asks whether it is missing. Both look at the keys only, never the values.",
+    "plain": "`in` asks a yes-or-no question: is this key in the dictionary? Python answers `True` or `False`. `not in` asks the opposite: is it missing? Both look at the keys only, never the values.",
     "example": "\"Glow\" not in spell_book"
   },
   {
@@ -496,6 +591,16 @@
     ],
     "plain": "An amount Python can do math with, like points in a game. Numbers get no quotes: `3` is a number, and `\"3\"` is text.",
     "example": "armor_bonus = 3"
+  },
+  {
+    "term": "one-line choice",
+    "aliases": [
+      "one-line choices",
+      "conditional expression",
+      "one-line if"
+    ],
+    "plain": "Picks one of two values in one line. It uses the value before `if` when the question is `True`, and the value after `else` when it is `False`.",
+    "example": "\"open\" if keys > 0 else \"shut\""
   },
   {
     "term": "or",
@@ -653,6 +758,16 @@
     "plain": "Tell Python to do your code, from the top line down. Press ▶ Run, just above your code, as often as you like: running unfinished code is fine."
   },
   {
+    "term": "running total",
+    "aliases": [
+      "running totals",
+      "accumulator",
+      "tally"
+    ],
+    "plain": "A number that starts at 0 above a loop and grows on every pass. It's like adding up a column of numbers one at a time. If it is set to 0 inside the loop, it starts over every pass.",
+    "example": "total = 0\nfor coins in [3, 5]:\n    total = total + coins"
+  },
+  {
     "term": "show your work",
     "aliases": [
       "show your working",
@@ -765,7 +880,7 @@
     "aliases": [
       "tuples"
     ],
-    "plain": "A few values that stay together, in order, and can't change, like a point (3, 8) in math class. It uses parentheses `( )`, not square brackets. You read it by position, like a list, but you can't add, remove or swap its items.",
+    "plain": "A few values that stay together, in order, like a point (3, 8) in math class. It uses parentheses `( )`, and you read it like a list, but you can't change it.",
     "example": "hero = (\"Lucky\", 26)"
   },
   {
@@ -804,11 +919,20 @@
     "example": "companion = \"Gearshift\""
   },
   {
+    "term": "while loop",
+    "aliases": [
+      "while loops",
+      "while"
+    ],
+    "plain": "Repeats its lines while a question is `True`, like *stir while the soup is cold*. A line inside the loop must change something, so the question can turn `False`.",
+    "example": "while steps > 0:\n    steps = steps - 1"
+  },
+  {
     "term": "zip()",
     "aliases": [
       "zip"
     ],
-    "plain": "A tool that pairs up two lists, item by item, like the teeth of a zipper: first with first, second with second. Each pair is a tuple. Put it inside `list()` to see the pairs.",
+    "plain": "A tool that pairs up two lists like the teeth of a zipper: first with first, second with second. Put it inside `list()` to see the pairs, each one a tuple.",
     "example": "list(zip(fruits, prices))"
   }
 ]

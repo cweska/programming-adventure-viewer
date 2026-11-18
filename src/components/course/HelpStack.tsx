@@ -3,7 +3,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import type { AnotherWay, Checkpoint, GlossaryEntry } from "../../lib/course/schema";
 import { CardSort } from "./CardSort";
-import { angleLabel, helpOfferLine, type HelpOffer, type HelpState, type Rung } from "./exercise-logic";
+import { angleLabel, crashFixLine, helpOfferLine, switchOffLine, type HelpOffer, type HelpState, type Rung } from "./exercise-logic";
 import { Prose } from "./Prose";
 import { ReadAloud } from "./ReadAloud";
 
@@ -16,12 +16,12 @@ export type RevealResult = "opened" | "paced" | "locked" | "none";
  *
  * Under "Keep it short" the control climbs Where to look, Teach me, Show me how and Mar'tu's version; Start me
  * off, Another way and More structure sit under "More options" (curriculum §2.3). Right after a crash, Help
- * first says which line to mend (a crash checks no step), and Start me off waits. The player aims Help at the
+ * first says which line to fix (a crash checks no step), and Start me off waits. The player aims Help at the
  * step that names the crash line; when no step does but the steps name other lines, `crashOnly` holds every
- * rung back until the code runs, so Help never contradicts "Fix line 3 first."
+ * rung back until the code runs, so Help never contradicts "Fix line 3, then press Run again."
  *
  * testids: help, help-button, help-rung-<n> (n from 1, in order), help-offer, help-offer-dismiss,
- * help-paced, help-show-locked, help-another-next, help-start-code, help-start-insert, help-start-done,
+ * help-paced, help-show-locked, help-another-next, help-start-code, help-start-insert, help-start-note, help-start-done,
  * help-crash, help-more-options, help-extra-<kind>, assemble-open, compare-open, help-locked.
  */
 export function HelpStack({
@@ -38,10 +38,13 @@ export function HelpStack({
   crashed = false,
   crashLine = null,
   slipLine = null,
+  fixAbove = false,
   crashOnly = false,
   moreAfterRun = false,
   crashIsTask = false,
+  crashInStarter = false,
   startInCode = () => false,
+  startNote = () => "It goes on a new line of its own.",
   onReveal,
   onDismissOffer,
   onOpenAssemble,
@@ -64,6 +67,8 @@ export function HelpStack({
   crashLine?: number | null;
   /** The line the slip is on, when the explainer knows it is not the one Python stopped on (a sheet's missing comma). */
   slipLine?: number | null;
+  /** The fix goes on a line above the crash line, which the explainer can't name (a box no line makes yet). */
+  fixAbove?: boolean;
   /**
    * The crash is on a line no step names, while the steps name other lines (a broken spell): this step's
    * rungs would talk about a different line, so they wait until the code runs. Only the crash note shows.
@@ -71,10 +76,18 @@ export function HelpStack({
   crashOnly?: boolean;
   /** Light support before the first Run: only Where to look (and Start me off) are open yet; the rest follow a Run. */
   moreAfterRun?: boolean;
-  /** The crash is part of the task (Mar'tu's version switches that line off): read the message, don't mend it. */
+  /** The crash is part of the task (Mar'tu's version switches that line off): read the message, don't fix it. */
   crashIsTask?: boolean;
+  /** With crashIsTask: the line was in the code from the start, so reading the message is part of the steps. */
+  crashInStarter?: boolean;
   /** Whether the code already starts the step's line (Start me off then has nothing to add). */
   startInCode?: (start: string) => boolean;
+  /**
+   * Where "Put it in my code" puts this start, in words, from the same plan the editor follows (startNote() in
+   * exercise-logic.ts): "It replaces `pass` on line 3." (also a line a "Change line 9" step goes in place of, even
+   * after a click), "It goes on a new line above `print(total)`.", or "It goes on a new line of its own."
+   */
+  startNote?: (start: string) => string;
   onReveal: () => RevealResult;
   onDismissOffer: () => void;
   onOpenAssemble: () => void;
@@ -173,7 +186,9 @@ export function HelpStack({
           <button type="button" className="ex-quiet" data-testid="help-start-insert" onClick={() => onInsertStart(rung.start ?? "")}>
             Put it in my code
           </button>
-          <p className="ex-muted ex-help-start-note">It goes on a new line of its own.</p>
+          <p className="ex-muted ex-help-start-note" data-testid="help-start-note">
+            <Prose inline text={startNote(rung.start ?? "")} />
+          </p>
         </div>
       );
     }
@@ -210,14 +225,13 @@ export function HelpStack({
 
   const crashNote = crashed && crashIsTask && crashLine ? (
     <p className="ex-help-crash" data-testid="help-crash" data-switch-off="true">
-      <strong>{`Python stopped on line ${crashLine}.`}</strong> That&apos;s part of this {noun.toLowerCase()}. Read the box in the
-      Console: your {noun.toLowerCase()}s come from it.
+      <strong>{`Python stopped at line ${crashLine}.`}</strong> {switchOffLine(noun, crashLine, crashInStarter)}
     </p>
   ) : crashed ? (
+    // Plain-language guide §9, S2: where Python stopped, what that means, what to do, and where to read why.
     <p className="ex-help-crash" data-testid="help-crash">
-      <strong>{`Fix ${slipLine ? `line ${slipLine}` : crashLine ? `line ${crashLine}` : "the error"} first.`}</strong>{" "}
-      {slipLine && crashLine ? `Python stopped on line ${crashLine}` : "Python stopped there"}, so it couldn&apos;t check your steps
-      yet. The box in the Console says what&apos;s wrong. Fix it, then press Run again.
+      <strong>{crashLine ? `Python stopped at line ${crashLine}` : "Python stopped"}</strong>
+      {`, so it couldn't finish your code. ${crashFixLine(crashLine, slipLine, fixAbove)} The box in the Console says what's wrong.`}
     </p>
   ) : null;
 

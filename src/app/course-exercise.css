@@ -229,6 +229,16 @@
   font-weight: 700;
 }
 
+/* A step with numbered parts: the lead line, then the parts as a list (never run together on one line). */
+.ex-task-lead {
+  margin: 0;
+}
+
+.ex-task-parts {
+  margin-top: 6px;
+  gap: 4px;
+}
+
 /* After a crash: the line to mend comes first (a crash checks no step). */
 .ex-task-line[data-crash="true"] {
   border-left-color: #f0d7a2;
@@ -507,6 +517,13 @@
 
 .ex-name-chip:hover {
   border-color: var(--metal, #b8925a);
+}
+
+/* Python's own tools (str, print, len) sit in a row of their own, as dashed, less rounded chips, apart from the boxes. */
+.ex-name-chip.is-tool,
+.course-page .ex-name-chip.is-tool {
+  border-style: dashed;
+  border-radius: 6px;
 }
 
 .ex-extras.is-prominent .ex-names {

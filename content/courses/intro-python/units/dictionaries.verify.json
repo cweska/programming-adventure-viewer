@@ -26,7 +26,7 @@
       "notes": "5X pool (4A-T write-by-key-again, 4B-T store-by-name-again). Optional; both twins are goal-only (ND). Feeds twins, the spaced queue and early finishers."
     },
     "qc4-a": {
-      "notes": "Quick Check 5 (the curriculum's Quick Check 4), form A (code tasks, in the spec's order C1-C5; Q1 lives in qc4-a-questions). Pass = every code task plus 2 of the 3 questions; a retake draws form B. The site gates on both (questions_to_pass=2, as Unit 2's QC2 gates on 3 of its 4: all but one), and the code tasks alone still cover the unit, `dict-in` included (C3 CP2's guard). Framing (G4 R25): it only shows Mar'tu where to start. Messages are lean (Unit 2 ruling): the slip and the evidence in brackets, never the fix or the finished line, every one a whole sentence (_lean_guard proves it at import). C1 opens with Mar'tu's three-line story recap for a student who tests out. Coverage (lint d): dict-make -> C1 (WA `\"Max_Mana\"` KEY, `{name: ...}` NameError, `=` for `:`, the missing comma and colon, a quoted number, values with no keys) and C3 CP1 (WA a key with a capital, unquoted keys); dict-read, dict-nested -> C2 CP1 (WA `gearshift[\"wisdom\"]` KeyError, a typed 15, dot, round brackets, a position) and C4 CP1 (WA left unmended, a typed 12, the key moved outside); dict-nested write -> C2 CP2 (the Unit 5 ruling: a gated write inside a card; WA a flat `gearshift[\"wisdom\"] = ...`, a typed 17, the 15 in the sheet edited, NEWBOX, BARE, the sign); get-compare-act (objective 9) -> C4 CP2 (the campaign's chain, the student writes the mana test; WA typed `24 < 7`, `<=` on the edge, `cost < caster[\"mana\"]`, `caster[\"abilities\"][\"mana\"]`, a typed cost or mana, a second `if`); dict-key-from-variable -> C3 CP1 (WA `\"cost\"` in quotes) and CP2 (WA `book[\"spell_name\"]`, the typed name); dict-write -> C3 CP2 and C5 CP2 (WA a typed 14, the typed old mana or cost, NEWBOX, BARE, `\"Mana\"`, the sign); dict-in -> C3 CP2 (WA no ask, `cost` asked about, the quoted name, `in` for `not in`) and Q1 (`4 in book` -> True); list-of-dicts -> C5 CP1 (WA `roster[\"Gearshift\"]` TypeError, counting from 1, the typed name, `gearshift[\"name\"]`). The last task's pass line recaps the form and offers the stretch. support='none' and explainer='lean' everywhere: no hints, tracer or compare; glossary and read-aloud stay on. 14 minutes (the Unit 5 ruling, as Unit 4's): C2 and C4 each gained a goal-only step."
+      "notes": "Quick Check 5 (the curriculum's Quick Check 4), form A (code tasks, in the spec's order C1-C5; Q1 lives in qc4-a-questions). Pass = every code task plus 2 of the 3 questions; a retake draws form B. The site gates on both (questions_to_pass=2, as Unit 2's QC2 gates on 3 of its 4: all but one), and the code tasks alone still cover the unit, `dict-in` included (C3 CP2's guard). Framing (G4 R25): it only shows Mar'tu where to start. Messages are lean (Unit 2 ruling): the slip and the labelled evidence, never the fix or the finished line, every one a whole sentence (_lean_guard proves it at import). C1 opens with Mar'tu's three-line story recap for a student who tests out. Coverage (lint d): dict-make -> C1 (WA `\"Max_Mana\"` KEY, `{name: ...}` NameError, `=` for `:`, the missing comma and colon, a quoted number, values with no keys) and C3 CP1 (WA a key with a capital, unquoted keys); dict-read, dict-nested -> C2 CP1 (WA `gearshift[\"wisdom\"]` KeyError, a typed 15, dot, round brackets, a position) and C4 CP1 (WA left unmended, a typed 12, the key moved outside); dict-nested write -> C2 CP2 (the Unit 5 ruling: a gated write inside a card; WA a flat `gearshift[\"wisdom\"] = ...`, a typed 17, the 15 in the sheet edited, NEWBOX, BARE, the sign); get-compare-act (objective 9) -> C4 CP2 (the campaign's chain, the student writes the mana test; WA typed `24 < 7`, `<=` on the edge, `cost < caster[\"mana\"]`, `caster[\"abilities\"][\"mana\"]`, a typed cost or mana, a second `if`); dict-key-from-variable -> C3 CP1 (WA `\"cost\"` in quotes) and CP2 (WA `book[\"spell_name\"]`, the typed name); dict-write -> C3 CP2 and C5 CP2 (WA a typed 14, the typed old mana or cost, NEWBOX, BARE, `\"Mana\"`, the sign); dict-in -> C3 CP2 (WA no ask, `cost` asked about, the quoted name, `in` for `not in`) and Q1 (`4 in book` -> True); list-of-dicts -> C5 CP1 (WA `roster[\"Gearshift\"]` TypeError, counting from 1, the typed name, `gearshift[\"name\"]`). The last task's pass line recaps the form and offers the stretch. support='none' and explainer='lean' everywhere: no hints, tracer or compare; glossary and read-aloud stay on. 14 minutes (the Unit 5 ruling, as Unit 4's): C2 and C4 each gained a goal-only step."
     },
     "qc4-a-questions": {
       "notes": "Quick Check 5, form A questions (scored with qc4-a: every code task plus 2 of these 3, questions_to_pass=2 on the form, as Unit 2's QC2 gates on 3 of its 4). The best score counts, so a retake can lift it. Q1 is the spec's; the quotes mc (Obj 1, the reconciliation card) and the key-from-a-box predict (Obj 5) are additions. No hints; read-aloud and glossary stay on. The right answers sit at varied positions (the Unit 5 ruling, as Unit 4's: form A second, third, third; form B fourth, first, second), and the site shuffles the rest."
@@ -75,7 +75,7 @@
             "print(3)"
           ],
           "failsAt": 1,
-          "messageContains": "follows the list"
+          "messageContains": "works for any list"
         },
         {
           "why": "position 1 (the affinity)",
@@ -141,7 +141,7 @@
             "print(lucky[2])"
           ],
           "failsAt": 1,
-          "messageContains": "Keep the list as the starter has it"
+          "messageContains": "Put it back the way it was"
         },
         {
           "why": "worked out from the list's length, not read (len(lucky) - 1 is 3 too)",
@@ -152,7 +152,7 @@
             "print(len(lucky) - 1)"
           ],
           "failsAt": 1,
-          "messageContains": "follows the list"
+          "messageContains": "works for any list"
         }
       ],
       "notes": "meta: starter_level=S4; path=SC; skills=list-index; solo=false; dictates=; foreign_names=drill\nProtected story beat (2P1, 4A-01, 5A-05, 5B-04): a student who tests out gets it as a 'Mar'tu's notes' line. Hook (P): the predict asks for `lucky[2]` (26, his max mana; written third of four), then CP1 [ND] prints the armor bonus (position 3 or -1). Checks: the student's run ends a line in 3 (a printed list never counts), then CMB with another list `[\"Pell\", 11, 22, 5]`, so a typed `print(3)` fails. The starter's comment labels the four positions so the win is certain (teacher decision 2). Mar'tu's spec line is the pass line. The TypeError row for a text index on a list (`lucky[\"armor_bonus\"]`) is proven here; Lesson 4B proves `roster[\"Gearshift\"]`."
@@ -871,7 +871,7 @@
             "print(\"Used: 6\")"
           ],
           "failsAt": 2,
-          "messageContains": "typed by hand"
+          "messageContains": "has `Used: 6` typed in"
         },
         {
           "why": "the sheet's mana changed to fit (mana 20), then the reads work but the answer is 0",
@@ -904,7 +904,7 @@
           "messageContains": "wrong way round"
         }
       ],
-      "notes": "meta: starter_level=S4; path=CC; skills=dict-read,read-traceback; solo=false; dictates=; foreign_names=dexterity,armor_bonus\nDebug (D), one checkpoint per KeyError, in the order Python reports them (the Learn pane notes that Python shows keys in `'` marks): `\"Max_Mana\"` (capitals), then `\"max mana\"` (a space for `_`). The KeyError row: 'The dictionary has no key spelled exactly ...' (site request: the spec's row, which also says 'or whether it lives one level deeper', for 4B). Each check is CMB with another sheet, so typing 20 or 6 fails, and a sheet changed to fit the slip fails ('Mend the lines that read the sheet, not the sheet'; its values must stay 14 and 20 too). A typed `Used:` line and the mana typed into line 7 (31 - 14 = 17 in the rerun) get their own messages. Line 7 is the mana-bars subtraction (mana used). No partials: a crash fails every checkpoint on the site."
+      "notes": "meta: starter_level=S4; path=CC; skills=dict-read,read-traceback; solo=false; dictates=; foreign_names=dexterity,armor_bonus\nDebug (D), one checkpoint per KeyError, in the order Python reports them (the Learn pane notes that Python shows keys in `'` marks): `\"Max_Mana\"` (capitals), then `\"max mana\"` (a space for `_`). The KeyError row: 'The dictionary has no key spelled exactly ...' (site request: the spec's row, which also says 'or whether it lives one level deeper', for 4B). Each check is CMB with another sheet, so typing 20 or 6 fails, and a sheet changed to fit the slip fails ('Fix the lines that read the sheet, not the sheet'; its values must stay 14 and 20 too). A typed `Used:` line and the mana typed into line 7 (31 - 14 = 17 in the rerun) get their own messages. Line 7 is the mana-bars subtraction (mana used). No partials: a crash fails every checkpoint on the site."
     },
     "stat-sheets/write-by-key": {
       "partials": [
@@ -979,7 +979,7 @@
             "print(gearshift)"
           ],
           "failsAt": 1,
-          "messageContains": "not a number you typed"
+          "messageContains": "instead of the math"
         },
         {
           "why": "the old mana typed by hand: 20 - cost (CMB on the sheet)",
@@ -1017,7 +1017,7 @@
             "print(gearshift)"
           ],
           "failsAt": 1,
-          "messageContains": "That reads `\"max_mana\"`"
+          "messageContains": "Your line reads `\"max_mana\"`"
         },
         {
           "why": "a new sheet typed with the new mana, instead of writing by key",
@@ -1150,7 +1150,7 @@
             "print(gearshift)"
           ],
           "failsAt": 1,
-          "messageContains": "just the cost"
+          "messageContains": "only the cost"
         },
         {
           "why": "dot access on the right",
@@ -1726,7 +1726,7 @@
             "# that spell_name names."
           ],
           "failsAt": 1,
-          "messageContains": "Print the spell's cost"
+          "messageContains": "No line shows the spell's cost"
         },
         {
           "why": "the variable's name in quotes (spec)",
@@ -1778,7 +1778,7 @@
             "print(3)"
           ],
           "failsAt": 1,
-          "messageContains": "follows it"
+          "messageContains": "works for any spell name"
         },
         {
           "why": "the spell's name with no quotes and a space",
@@ -2032,7 +2032,7 @@
             "print(\"After Glow: \" + str(lucky[\"mana\"]))"
           ],
           "failsAt": 1,
-          "messageContains": "Mend the read, not the sheet"
+          "messageContains": "Fix the read, not the sheet"
         },
         {
           "why": "the spend line dropped, the cost taken off inside the print: nothing is stored in the sheet",
@@ -2062,7 +2062,7 @@
             "print(\"After Glow: 24\")"
           ],
           "failsAt": 3,
-          "messageContains": "typed by hand"
+          "messageContains": "last line has the mana typed in"
         },
         {
           "why": "the cost changed (3 for Glow's 2)",
@@ -2080,7 +2080,7 @@
           "messageContains": "Glow costs 2"
         }
       ],
-      "notes": "meta: starter_level=S4; path=SC; skills=dict-make,dict-read,dict-write,read-traceback; solo=false; dictates=; foreign_names=dexterity,hero,glug\nBroken spell, three of the spec's four slips in the order Python reports them (teacher ruling: the capital-letter KeyError `lucky[\"Mana\"]` is cut, its third copy in 4A; 4A-04 practises it and 4A-S checks it alone, which pays for 4A-S's new write; line 6 is now right and the other line numbers are unchanged). The SyntaxError first (`\"name\" = \"Lucky\"` -> 'cannot assign to literal here'; site request: inside `{ }` the explainer should say 'Use `:` between a key and its value', not the box-name row, which says 'Take the quotes off'; until that fix lands, CP1's Teach rung says the key keeps its quotes and `=` is for variables, and WA proves that taking the quotes off is still a crash), then the runtime slips in line order: `lucky[name]` (NameError, rule 9), `lucky.mana` (AttributeError; site request: the spec's row 'Read a dictionary with square brackets: `hero[\"mana\"]`'). Each slip left fails at 0 with its own message (WA). Each mend is CMB with another sheet (name \"Pell\", mana 31), so typed values fail. A key added to fit a read (`\"Name\": \"Lucky\"` in the sheet, or `lucky[\"Name\"] = lucky[\"name\"]`) fails CP1, 'Mend the read, not the sheet'. CP3 also reads the sheet after the rerun, so the cost taken off inside the last `print` (nothing stored) fails, and a changed cost or a typed last line get their own messages. No partials: a crash fails every checkpoint on the site. About 2 minutes (one slip fewer: -1)."
+      "notes": "meta: starter_level=S4; path=SC; skills=dict-make,dict-read,dict-write,read-traceback; solo=false; dictates=; foreign_names=dexterity,hero,glug\nBroken spell, three of the spec's four slips in the order Python reports them (teacher ruling: the capital-letter KeyError `lucky[\"Mana\"]` is cut, its third copy in 4A; 4A-04 practises it and 4A-S checks it alone, which pays for 4A-S's new write; line 6 is now right and the other line numbers are unchanged). The SyntaxError first (`\"name\" = \"Lucky\"` -> 'cannot assign to literal here'; site request: inside `{ }` the explainer should say 'Use `:` between a key and its value', not the box-name row, which says 'Take the quotes off'; until that fix lands, CP1's Teach rung says the key keeps its quotes and `=` is for variables, and WA proves that taking the quotes off is still a crash), then the runtime slips in line order: `lucky[name]` (NameError, rule 9), `lucky.mana` (AttributeError; site request: the spec's row 'Read a dictionary with square brackets: `hero[\"mana\"]`'). Each slip left fails at 0 with its own message (WA). Each mend is CMB with another sheet (name \"Pell\", mana 31), so typed values fail. A key added to fit a read (`\"Name\": \"Lucky\"` in the sheet, or `lucky[\"Name\"] = lucky[\"name\"]`) fails CP1, 'Fix the read, not the sheet'. CP3 also reads the sheet after the rerun, so the cost taken off inside the last `print` (nothing stored) fails, and a changed cost or a typed last line get their own messages. No partials: a crash fails every checkpoint on the site. About 2 minutes (one slip fewer: -1)."
     },
     "stat-sheets/solo-4a": {
       "partials": [
@@ -2191,7 +2191,7 @@
             "print(oogrish[\"name\"] + \": \" + str(oogrish[\"max_mana\"]))"
           ],
           "failsAt": 1,
-          "messageContains": "That reads the max mana"
+          "messageContains": "reads the max mana, not his mana"
         },
         {
           "why": "a key added to fit the slip: the rerun's sheet has no Mana",
@@ -2208,7 +2208,7 @@
             "print(oogrish[\"name\"] + \": \" + str(oogrish[\"Mana\"]))"
           ],
           "failsAt": 1,
-          "messageContains": "Mend the read, not the sheet"
+          "messageContains": "Fix the read, not the sheet"
         },
         {
           "why": "no str()",
@@ -2241,7 +2241,7 @@
             "print(oogrish[\"name\"] + \": \" + str(oogrish[\"Mana\"]))"
           ],
           "failsAt": 1,
-          "messageContains": "Mend the read, not the sheet"
+          "messageContains": "Fix the read, not the sheet"
         },
         {
           "why": "the sheet's key renamed to Mana everywhere, so the read matches a changed sheet",
@@ -2257,7 +2257,7 @@
             "print(oogrish[\"name\"] + \": \" + str(oogrish[\"Mana\"]))"
           ],
           "failsAt": 1,
-          "messageContains": "Mend the read, not the sheet"
+          "messageContains": "Fix the read, not the sheet"
         },
         {
           "why": "the spend written below the print: the line shows the mana from before Glow",
@@ -2483,7 +2483,7 @@
             "print(oogrish[\"name\"] + \": \" + str(oogrish[\"mana\"]))"
           ],
           "failsAt": 2,
-          "messageContains": "just the cost"
+          "messageContains": "only the cost"
         },
         {
           "why": "dot access on the right of the spend",
@@ -2502,7 +2502,7 @@
           "messageContains": "has no attribute 'mana'"
         }
       ],
-      "notes": "meta: starter_level=S4; path=CC; skills=dict-read,dict-write; solo=true; dictates=; foreign_names=glug,hero,cost,gold,pouch,price; seat_b=oogrish.mana for oogrish[\"mana\"] in the last line (AttributeError); glow_cost = 5\nSOLO, one bug and one undictated write (C6), about 3 minutes. CP1 [ND]: seat A (and anyone solo) gets `oogrish[\"Mana\"]`; seat B would get `oogrish.mana` (WA proves it) once pair mode ships. Values differ per seat (seat B: Oogrish casts for 5, so seat B's spend uses its own cost, `glow_cost = 5`). CP1's checks hold before and after CP2: the line must show whatever the sheet holds now (own run, then CMB with another sheet, \"Pell\", mana 30, max mana 35). The sheet must keep its keys: a key the code reads, added or renamed to fit the slip, fails 'Mend the read, not the sheet' (a write to a near-miss key is CP2's slip). A typed line, the max mana read and the line run before the spend each get their own message. CP2 [ND] (teacher ruling: a write by key checked solo, which the cut of 4A-08's KeyError pays for): write-by-key's SPENT pattern on `oogrish` and `glow_cost` (BARE, NEWBOX, a near-miss key, the sign, the cost added, the cost alone), then CMB with another sheet and `glow_cost = 3` (a typed number, a typed `- 4`, a typed 18, the max mana read, a second sheet). CP2's messages are lean: the kind of slip and the line, never the fix. The pass line (the map ticks) is CP2's. Recorded, never blocking, never shown to a partner. explainer='lean' (teacher's ruling, every SOLO from Unit 2 on)."
+      "notes": "meta: starter_level=S4; path=CC; skills=dict-read,dict-write; solo=true; dictates=; foreign_names=glug,hero,cost,gold,pouch,price; seat_b=oogrish.mana for oogrish[\"mana\"] in the last line (AttributeError); glow_cost = 5\nSOLO, one bug and one undictated write (C6), about 3 minutes. CP1 [ND]: seat A (and anyone solo) gets `oogrish[\"Mana\"]`; seat B would get `oogrish.mana` (WA proves it) once pair mode ships. Values differ per seat (seat B: Oogrish casts for 5, so seat B's spend uses its own cost, `glow_cost = 5`). CP1's checks hold before and after CP2: the line must show whatever the sheet holds now (own run, then CMB with another sheet, \"Pell\", mana 30, max mana 35). The sheet must keep its keys: a key the code reads, added or renamed to fit the slip, fails 'Fix the read, not the sheet' (a write to a near-miss key is CP2's slip). A typed line, the max mana read and the line run before the spend each get their own message. CP2 [ND] (teacher ruling: a write by key checked solo, which the cut of 4A-08's KeyError pays for): write-by-key's SPENT pattern on `oogrish` and `glow_cost` (BARE, NEWBOX, a near-miss key, the sign, the cost added, the cost alone), then CMB with another sheet and `glow_cost = 3` (a typed number, a typed `- 4`, a typed 18, the max mana read, a second sheet). CP2's messages are lean: the kind of slip and the line, never the fix. The pass line (the map ticks) is CP2's. Recorded, never blocking, never shown to a partner. explainer='lean' (teacher's ruling, every SOLO from Unit 2 on)."
     },
     "keys-and-get/lucky-canteen": {
       "wrongAnswers": [
@@ -2634,7 +2634,7 @@
             "print(bomb_shell[\"abilities\"])"
           ],
           "failsAt": 1,
-          "messageContains": "whole abilities card"
+          "messageContains": "whole `\"abilities\"` sheet"
         },
         {
           "why": "the number typed (CMB)",
@@ -2848,7 +2848,7 @@
             "print(bomb_shell[\"abilities\"])"
           ],
           "failsAt": 1,
-          "messageContains": "typed 8"
+          "messageContains": "always ends with 8"
         },
         {
           "why": "6 + 2 worked out by hand (CMB)",
@@ -2866,7 +2866,7 @@
             "print(bomb_shell[\"abilities\"])"
           ],
           "failsAt": 1,
-          "messageContains": "typed 8"
+          "messageContains": "always ends with 8"
         },
         {
           "why": "the 6 in the sheet edited to 8 instead of a line of code",
@@ -3048,7 +3048,7 @@
             "print(bomb_shell[\"abilities\"])"
           ],
           "failsAt": 1,
-          "messageContains": "Build it from the old value"
+          "messageContains": "Use the old value"
         }
       ],
       "notes": "meta: starter_level=S4; path=SC; skills=dict-nested,dict-write; solo=false; dictates=; foreign_names=jar,lid,turns,old,cost; stages=M\nThe nested read-modify-write, in the Example's two-step form (teacher's ruling: the Example cannot fit a one-line nested write in 36 characters, so the Learn text, the starter comment, the hints, the solution and Assemble all use `dex = ...` then `... = dex + 2`). The one-line campaign shape (HANDS_ONE_LINE) and `+= 2` pass too; the 'In one line' angle says so. CMB: the dexterity is reset to 3 and to 11 right after the sheet, inside the check, and must end 2 higher: a typed 8 (or 6 + 2) stays 8, and an edited sheet with no line stays 3 ('not by editing the 6'). A flat `bomb_shell[\"dexterity\"]` on the left is the skipped-level slip written instead of read. The starter's last line prints the inner card, so each Run shows the change. The put-back line is 45 characters, longer than a phone line, because the nested path itself is 35."
@@ -4067,7 +4067,7 @@
             "print(spell_book)"
           ],
           "failsAt": 1,
-          "messageContains": "starter's 0"
+          "messageContains": "still holds a 0"
         },
         {
           "why": "numbers typed in the blanks (CMB; the campaign's replace-each-placeholder step, A-08 25 * 2)",
@@ -4175,7 +4175,7 @@
             "print(spell_book)"
           ],
           "failsAt": 1,
-          "messageContains": "\"mana_cost\"`, letter for letter"
+          "messageContains": "spells it `\"mana_cost\"`"
         },
         {
           "why": "a key without quotes (a box name, not text: NameError)",
@@ -4387,7 +4387,7 @@
             "print(spell_book)"
           ],
           "failsAt": 2,
-          "messageContains": "just the word"
+          "messageContains": "only the word"
         },
         {
           "why": "CP2 a typed copy of the spell (CMB)",
@@ -4598,7 +4598,7 @@
             "print(spell_book)"
           ],
           "failsAt": 3,
-          "messageContains": "Indent the store line"
+          "messageContains": "because it is not indented under the"
         },
         {
           "why": "CP3 the guard asks about the quoted name, \"spell_name\" (always not in)",
@@ -4625,7 +4625,7 @@
             "print(spell_book)"
           ],
           "failsAt": 3,
-          "messageContains": "just those letters"
+          "messageContains": "only those letters"
         },
         {
           "why": "CP3 a typed name in the if (!= the one page it has seen; the unnamed page catches it)",
@@ -5647,7 +5647,7 @@
             "print(spell_book[\"Glow\"])"
           ],
           "failsAt": 2,
-          "messageContains": "not from the `lucky` box"
+          "messageContains": "not from `lucky` or a typed 26"
         },
         {
           "why": "Bomb Shell's mana plus 2 (26 worked out by hand, through roster)",
@@ -5696,7 +5696,7 @@
             "print(spell_book[Glow])"
           ],
           "failsAt": 3,
-          "messageContains": "take out the box `Glow`"
+          "messageContains": "take out the variable `Glow`"
         }
       ],
       "notes": "meta: starter_level=S4; path=SC; skills=dict-nested,list-of-dicts,dict-read,read-traceback; solo=false; dictates=; foreign_names=\nBroken spell, three runtime slips in run order: `bomb_shell[\"dexterity\"]` (KeyError, a skipped level), `roster[\"Lucky\"]` (TypeError: list indices must be integers or slices, not str) and `spell_book[Glow]` (NameError: quotes missing). Each slip left fails at 0 with Python's own words (WA). No partials: on the site a crash fails every checkpoint. Every mend has CMB (the dexterity 9, Lucky's mana 11, Glow's cost 5). Lucky's line must read through `roster`, checked by behavior: a roster of copies with Lucky's mana at 11, so `hero = roster[1]` then `print(hero[\"mana\"])` passes, while `lucky[\"mana\"]` (even printed next to a `roster` read) fails. CP3 also refuses a new box `Glow = \"Glow\"`: it hides the NameError instead of quoting the key. Bomb Shell has mana 24, so `roster[0]` gets its own message; `roster[2]` (counting from 1) is an IndexError with two sheets. Lucky is position 1 here; 4B-S seat B uses the same TypeError shape (`roster[\"Lucky\"][\"mana\"]`) on another roster."
@@ -5746,7 +5746,7 @@
             "print(lucky[\"abilities\"])"
           ],
           "failsAt": 1,
-          "messageContains": "whole card"
+          "messageContains": "whole `\"abilities\"` sheet"
         },
         {
           "why": "the sheet flattened instead of the line mended",
@@ -6957,7 +6957,7 @@
             "roster[1][\"mana\"] = roster[1][\"mana\"] - 6"
           ],
           "failsAt": 1,
-          "messageContains": "\"strength\"`, letter for letter"
+          "messageContains": "spells it `\"strength\"`"
         },
         {
           "why": "an ability that is not on the table",
@@ -8118,7 +8118,7 @@
             "roster[1][\"mana\"] = roster[1][\"mana\"] - 6"
           ],
           "failsAt": 3,
-          "messageContains": "\"max_mana\"`, letter for letter"
+          "messageContains": "spells it `\"max_mana\"`"
         },
         {
           "why": "a read with Max_Mana when the key is max_mana (KeyError)",
@@ -8370,7 +8370,7 @@
             "roster[1][\"mana\"] = roster[1][\"mana\"] - 6"
           ],
           "failsAt": 3,
-          "messageContains": "(26 is twice Lucky's 13.)"
+          "messageContains": "26, twice Lucky's 13"
         },
         {
           "why": "the # left on Oogrish's worked example (his sheet never set)",
@@ -8863,7 +8863,7 @@
             "# 6. Gearshift casts Fire Bolt (6)."
           ],
           "failsAt": 4,
-          "messageContains": "It holds 3"
+          "messageContains": "`roster` holds 3 sheets"
         },
         {
           "why": "roster[\"Bomb Shell\"] (TypeError)",
@@ -9972,7 +9972,7 @@
             "            caster[\"mana\"] = caster[\"mana\"] - spell[\"mana_cost\"]"
           ],
           "failsAt": 2,
-          "messageContains": "Mend this slip in the recipe: KeyError: 'magical_affinity'"
+          "messageContains": "Your recipe stopped with an error: `KeyError: 'magical_affinity'`"
         },
         {
           "why": "a typed affinity (Lantern Ward's 9)",
@@ -10160,7 +10160,7 @@
             "print(caster[\"mana\"])"
           ],
           "failsAt": 4,
-          "messageContains": "Spend nothing"
+          "messageContains": "spends nothing"
         },
         {
           "why": "never called",
@@ -10254,7 +10254,7 @@
             "print(oogrish[\"mana\"])"
           ],
           "failsAt": 1,
-          "messageContains": "don't set the mana"
+          "messageContains": "set Oogrish's mana to 5"
         },
         {
           "why": "dot access",
@@ -10617,7 +10617,7 @@
             "print(\"Moss Shield\" in book)"
           ],
           "failsAt": 2,
-          "messageContains": "follows the name"
+          "messageContains": "Ask about the variable"
         },
         {
           "why": "CP2 not in",
@@ -10669,7 +10669,7 @@
             "print(True)"
           ],
           "failsAt": 2,
-          "messageContains": "Ask with `in`"
+          "messageContains": "doesn't ask the book with `in`"
         },
         {
           "why": "CP2 the example's Glow asked about instead (always True, so it proves nothing)",
@@ -10695,7 +10695,7 @@
             "print(\"Glow\" in book)"
           ],
           "failsAt": 2,
-          "messageContains": "follows the name"
+          "messageContains": "Ask about the variable"
         },
         {
           "why": "CP2 the right question asked before the store (False)",
@@ -10971,7 +10971,7 @@
             "}"
           ],
           "failsAt": 1,
-          "messageContains": "not a number"
+          "messageContains": "which is text because of the quotes"
         },
         {
           "why": "affinity and max mana swapped (SWAP)",
@@ -11259,7 +11259,7 @@
             "#    his wisdom, inside the card."
           ],
           "failsAt": 1,
-          "messageContains": "prints a typed number"
+          "messageContains": "prints a typed-in number"
         },
         {
           "why": "the trained value typed in CP1's print (the card is still the starter's)",
@@ -11546,7 +11546,7 @@
             "#    his wisdom, inside the card."
           ],
           "failsAt": 2,
-          "messageContains": "The wisdom inside the card is still"
+          "messageContains": "The wisdom is still 15"
         },
         {
           "why": "CP2 a flat key: the write skips the card (the skipped level, on the left)",
@@ -11592,7 +11592,7 @@
             "gearshift[\"abilities\"][\"wisdom\"] = 17"
           ],
           "failsAt": 2,
-          "messageContains": "is a typed number"
+          "messageContains": "is a typed-in number"
         },
         {
           "why": "CP2 the sum typed (15 + 2)",
@@ -11615,7 +11615,7 @@
             "gearshift[\"abilities\"][\"wisdom\"] = 15 + 2"
           ],
           "failsAt": 2,
-          "messageContains": "is a typed number"
+          "messageContains": "is a typed-in number"
         },
         {
           "why": "CP2 the 15 in the sheet edited, no write line",
@@ -11637,7 +11637,7 @@
             "#    his wisdom, inside the card."
           ],
           "failsAt": 2,
-          "messageContains": "was edited"
+          "messageContains": "in the sheet itself"
         },
         {
           "why": "CP2 worked out into a new variable, never put back (NEWBOX)",
@@ -11683,7 +11683,7 @@
             "gearshift[\"abilities\"][\"wisdom\"] + 2"
           ],
           "failsAt": 2,
-          "messageContains": "forgets it"
+          "messageContains": "throws the answer away"
         },
         {
           "why": "CP2 the sign the wrong way (minus 2)",
@@ -12302,7 +12302,7 @@
             "print(book)"
           ],
           "failsAt": 2,
-          "messageContains": "just those letters"
+          "messageContains": "no page is called that"
         },
         {
           "why": "CP2 `in` for `not in` (nothing new is ever stored)",
@@ -12533,7 +12533,7 @@
             "print(book)"
           ],
           "failsAt": 2,
-          "messageContains": "lost it"
+          "messageContains": "lost Glow's page"
         },
         {
           "why": "CP2 the spell's name stored as text",
@@ -13048,7 +13048,7 @@
             "    print(\"Bomb Shell can cast it.\")"
           ],
           "failsAt": 1,
-          "messageContains": "Keep the line that makes `skill`"
+          "messageContains": "The line that makes `skill` is gone"
         },
         {
           "why": "needed changed instead of the read mended (skill typed, needed lowered to match)",
@@ -13173,7 +13173,7 @@
             "    print(\"Bomb Shell can cast it.\")"
           ],
           "failsAt": 2,
-          "messageContains": "equals `cost`"
+          "messageContains": "exactly the same as `cost`"
         },
         {
           "why": "CP2 the sides swapped: cost < caster[\"mana\"]",
@@ -13198,7 +13198,7 @@
             "    print(\"Bomb Shell can cast it.\")"
           ],
           "failsAt": 2,
-          "messageContains": "and your test warned"
+          "messageContains": "and your code warned"
         },
         {
           "why": "CP2 > for <",
@@ -13223,7 +13223,7 @@
             "    print(\"Bomb Shell can cast it.\")"
           ],
           "failsAt": 2,
-          "messageContains": "and your test warned"
+          "messageContains": "and your code warned"
         },
         {
           "why": "CP2 the mana read inside the card: an extra level (KeyError)",
@@ -13348,7 +13348,7 @@
             "    print(\"Bomb Shell can cast it.\")"
           ],
           "failsAt": 2,
-          "messageContains": "this caster is short"
+          "messageContains": "doesn't have enough mana"
         },
         {
           "why": "CP2 the chain broken: the mana test as a second `if` (both lines print)",
@@ -13815,7 +13815,7 @@
             "roster[1][\"mana\"] = roster[1][\"mana\"] - cost"
           ],
           "failsAt": 1,
-          "messageContains": "types the name"
+          "messageContains": "typed the name"
         },
         {
           "why": "read from the sheet's own variable, not through roster",
@@ -13893,7 +13893,7 @@
             "roster[1][\"mana\"] = roster[1][\"mana\"] - cost"
           ],
           "failsAt": 1,
-          "messageContains": "types the name"
+          "messageContains": "typed the name"
         },
         {
           "why": "a dict read by position: roster[pos][0] (KeyError: 0)",
@@ -14127,7 +14127,7 @@
             "roster[1][\"mana\"] = 20 - cost"
           ],
           "failsAt": 2,
-          "messageContains": "does not follow the old mana"
+          "messageContains": "when the old mana changes"
         },
         {
           "why": "CP2 the cost typed",
@@ -14166,7 +14166,7 @@
             "roster[1][\"mana\"] = roster[1][\"mana\"] - 6"
           ],
           "failsAt": 2,
-          "messageContains": "does not follow `cost`"
+          "messageContains": "when `cost` changes"
         },
         {
           "why": "CP2 worked out, kept nowhere (BARE)",
@@ -14205,7 +14205,7 @@
             "roster[1][\"mana\"] - cost"
           ],
           "failsAt": 2,
-          "messageContains": "forgets it"
+          "messageContains": "throws the answer away"
         },
         {
           "why": "CP2 a new variable (NEWBOX)",
@@ -14439,7 +14439,7 @@
             "gearshift[\"mana\"] = gearshift[\"mana\"] - cost"
           ],
           "failsAt": 2,
-          "messageContains": "does not go through `roster`"
+          "messageContains": "doesn't go through `roster`"
         },
         {
           "why": "CP2 a name as the position (TypeError)",
@@ -14767,7 +14767,7 @@
             "}"
           ],
           "failsAt": 1,
-          "messageContains": "not a number"
+          "messageContains": "which is text because of the quotes"
         },
         {
           "why": "affinity and max mana swapped (SWAP)",
@@ -15070,7 +15070,7 @@
             "#    his wisdom, inside the card."
           ],
           "failsAt": 1,
-          "messageContains": "prints a typed number"
+          "messageContains": "prints a typed-in number"
         },
         {
           "why": "the trained value typed in CP1's print (the card is still the starter's)",
@@ -15357,7 +15357,7 @@
             "#    his wisdom, inside the card."
           ],
           "failsAt": 2,
-          "messageContains": "The wisdom inside the card is still"
+          "messageContains": "The wisdom is still 17"
         },
         {
           "why": "CP2 a flat key: the write skips the card (the skipped level, on the left)",
@@ -15403,7 +15403,7 @@
             "oogrish[\"abilities\"][\"wisdom\"] = 19"
           ],
           "failsAt": 2,
-          "messageContains": "is a typed number"
+          "messageContains": "is a typed-in number"
         },
         {
           "why": "CP2 the sum typed (17 + 2)",
@@ -15426,7 +15426,7 @@
             "oogrish[\"abilities\"][\"wisdom\"] = 17 + 2"
           ],
           "failsAt": 2,
-          "messageContains": "is a typed number"
+          "messageContains": "is a typed-in number"
         },
         {
           "why": "CP2 the 17 in the sheet edited, no write line",
@@ -15448,7 +15448,7 @@
             "#    his wisdom, inside the card."
           ],
           "failsAt": 2,
-          "messageContains": "was edited"
+          "messageContains": "in the sheet itself"
         },
         {
           "why": "CP2 worked out into a new variable, never put back (NEWBOX)",
@@ -15494,7 +15494,7 @@
             "oogrish[\"abilities\"][\"wisdom\"] + 2"
           ],
           "failsAt": 2,
-          "messageContains": "forgets it"
+          "messageContains": "throws the answer away"
         },
         {
           "why": "CP2 the sign the wrong way (minus 2)",
@@ -16113,7 +16113,7 @@
             "print(wards)"
           ],
           "failsAt": 2,
-          "messageContains": "just those letters"
+          "messageContains": "no page is called that"
         },
         {
           "why": "CP2 `in` for `not in` (nothing new is ever stored)",
@@ -16344,7 +16344,7 @@
             "print(wards)"
           ],
           "failsAt": 2,
-          "messageContains": "lost it"
+          "messageContains": "lost Stone Skin's page"
         },
         {
           "why": "CP2 the spell's name stored as text",
@@ -16859,7 +16859,7 @@
             "    print(\"Gearshift can cast it.\")"
           ],
           "failsAt": 1,
-          "messageContains": "Keep the line that makes `skill`"
+          "messageContains": "The line that makes `skill` is gone"
         },
         {
           "why": "needed changed instead of the read mended (skill typed, needed lowered to match)",
@@ -16984,7 +16984,7 @@
             "    print(\"Gearshift can cast it.\")"
           ],
           "failsAt": 2,
-          "messageContains": "equals `cost`"
+          "messageContains": "exactly the same as `cost`"
         },
         {
           "why": "CP2 the sides swapped: cost < caster[\"mana\"]",
@@ -17009,7 +17009,7 @@
             "    print(\"Gearshift can cast it.\")"
           ],
           "failsAt": 2,
-          "messageContains": "and your test warned"
+          "messageContains": "and your code warned"
         },
         {
           "why": "CP2 > for <",
@@ -17034,7 +17034,7 @@
             "    print(\"Gearshift can cast it.\")"
           ],
           "failsAt": 2,
-          "messageContains": "and your test warned"
+          "messageContains": "and your code warned"
         },
         {
           "why": "CP2 the mana read inside the card: an extra level (KeyError)",
@@ -17159,7 +17159,7 @@
             "    print(\"Gearshift can cast it.\")"
           ],
           "failsAt": 2,
-          "messageContains": "this caster is short"
+          "messageContains": "doesn't have enough mana"
         },
         {
           "why": "CP2 the chain broken: the mana test as a second `if` (both lines print)",
@@ -17626,7 +17626,7 @@
             "roster[3][\"mana\"] = roster[3][\"mana\"] - cost"
           ],
           "failsAt": 1,
-          "messageContains": "types the name"
+          "messageContains": "typed the name"
         },
         {
           "why": "read from the sheet's own variable, not through roster",
@@ -17704,7 +17704,7 @@
             "roster[3][\"mana\"] = roster[3][\"mana\"] - cost"
           ],
           "failsAt": 1,
-          "messageContains": "types the name"
+          "messageContains": "typed the name"
         },
         {
           "why": "a dict read by position: roster[pos][0] (KeyError: 0)",
@@ -17938,7 +17938,7 @@
             "roster[3][\"mana\"] = 26 - cost"
           ],
           "failsAt": 2,
-          "messageContains": "does not follow the old mana"
+          "messageContains": "when the old mana changes"
         },
         {
           "why": "CP2 the cost typed",
@@ -17977,7 +17977,7 @@
             "roster[3][\"mana\"] = roster[3][\"mana\"] - 8"
           ],
           "failsAt": 2,
-          "messageContains": "does not follow `cost`"
+          "messageContains": "when `cost` changes"
         },
         {
           "why": "CP2 worked out, kept nowhere (BARE)",
@@ -18016,7 +18016,7 @@
             "roster[3][\"mana\"] - cost"
           ],
           "failsAt": 2,
-          "messageContains": "forgets it"
+          "messageContains": "throws the answer away"
         },
         {
           "why": "CP2 a new variable (NEWBOX)",
@@ -18250,7 +18250,7 @@
             "lucky[\"mana\"] = lucky[\"mana\"] - cost"
           ],
           "failsAt": 2,
-          "messageContains": "does not go through `roster`"
+          "messageContains": "doesn't go through `roster`"
         },
         {
           "why": "CP2 a name as the position (TypeError)",

@@ -583,6 +583,19 @@ describe("exported course content", () => {
     }
   });
 
+  it("keeps every SOLO from Unit 2 on lean, and from Unit 3 on free of an Assemble rung that hands over its mend", () => {
+    for (const unit of parsedUnits().filter((entry) => entry.published && entry.order >= 2)) {
+      for (const item of unit.items) {
+        for (const { exercise } of playablesOf(item)) {
+          if (!exercise.solo) continue;
+          expect(exercise.explainer, `${unit.id}/${item.id}/${exercise.id}`).toBe("lean");
+          // Unit 2's first SOLO predates the ruling; from Unit 3 on, More structure would be the fixed line itself.
+          if (unit.order >= 3) expect(exercise.assemble, `${unit.id}/${item.id}/${exercise.id} has no Assemble it`).toBeUndefined();
+        }
+      }
+    }
+  });
+
   it("parses course.json, opening with Mar'tu's line", () => {
     const course = courseMetaSchema.parse(courseJson);
     expect(course.title).toBe("Intro to Python");

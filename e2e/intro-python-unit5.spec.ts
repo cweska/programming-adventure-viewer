@@ -210,7 +210,9 @@ test.describe("Intro to Python, Unit 5: Dictionaries", () => {
     await expect(page.getByTestId("explainer")).toHaveAttribute("data-kind", "whole-card-compared");
     // The card was read on line 12 (`skill = caster["abilities"]`): the slip is there, not on the comparison Python stopped on.
     await expect(page.getByTestId("explainer-hint")).toContainText("The mistake is on line 12: a whole card read where one value is meant.");
-    await expect(page.getByTestId("task-line")).toContainText("First, fix line 12. Python stopped on line 13, so it couldn't check your steps yet.");
+    await expect(page.getByTestId("task-line")).toContainText(
+      "Python stopped at line 13, so it couldn't finish your code. The mistake is on line 12. Fix line 12, then press Run again. The box in the Console names the mistake.",
+    );
     await expect(page.getByTestId("explainer-hint")).not.toContainText("magical_affinity");
 
     await open(page, "sheets-inside-sheets", "solo-4b");

@@ -51,6 +51,7 @@ export function PythonEditor({
   wrapLines = false,
   tabMovesOn = false,
   handleRef,
+  onPlaced,
 }: {
   code: string;
   onChange: (value: string) => void;
@@ -69,6 +70,8 @@ export function PythonEditor({
    */
   tabMovesOn?: boolean;
   handleRef?: Ref<PythonEditorHandle>;
+  /** The first time the cursor is placed (a click, a tab into the code, or a button that put text there). */
+  onPlaced?: () => void;
 }) {
   const ownHelpId = useId();
   const cmRef = useRef<ReactCodeMirrorRef>(null);
@@ -79,6 +82,13 @@ export function PythonEditor({
   // Read when the event fires, so the memoized extensions never call a stale handler.
   const onBlurRef = useRef(onBlur);
   onBlurRef.current = onBlur;
+  const onPlacedRef = useRef(onPlaced);
+  onPlacedRef.current = onPlaced;
+  const markPlaced = useRef(() => {
+    if (placed.current) return;
+    placed.current = true;
+    onPlacedRef.current?.();
+  });
   const helpId = describedBy ?? `${ownHelpId}-keys`;
 
   useImperativeHandle(
@@ -95,7 +105,7 @@ export function PythonEditor({
           scrollIntoView: true,
           userEvent: "input.type",
         });
-        placed.current = true;
+        markPlaced.current();
         view.focus();
         return true;
       },
@@ -130,7 +140,7 @@ export function PythonEditor({
           return false;
         },
         focus: (_event, view) => {
-          placed.current = true;
+          markPlaced.current();
           // Arrived by keyboard (or a button handed the keyboard over): Tab moves on until a key is typed.
           // CodeMirror ends this mode by itself on the first key that is not Tab, Esc or a modifier.
           if (tabMovesOn && Date.now() - pointerAt.current > POINTER_FOCUS_MS) {

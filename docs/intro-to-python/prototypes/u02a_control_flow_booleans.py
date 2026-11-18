@@ -516,21 +516,22 @@ UNIT = dict(
     subtitle="The Ley Clock Decides",
     published=True,
     martu_intro=(
-        "The Ley Clock does not panic. It checks. If the hand is near the arc, it warns. Otherwise, it waits.\n"
-        "Today you teach Python to check the same way. And you learn to roll dice, because the world is not fair, "
-        "yes?\n"
+        "The Ley Clock counts the hours until the next burst of magic. It does not panic. It checks: if the burst "
+        "is close, it warns. Otherwise, it waits.\n"
+        "In this unit, you teach Python to check the same way: ask a yes-or-no question, then choose what to do.\n"
+        "You also roll dice, because the world is not fair, yes?\n"
         "You have seen this code already: the four dialogue options, the trap-door skill checks. It felt like a "
         "wall. Now we take it apart, one stone at a time."
     ),
     goals=[
-        "Ask yes-or-no questions with `==`, `!=`, `<`, `>`, `<=` and `>=`, and get `True` or `False`",
-        "Tell `=` (gets) from `==` (is the same as)",
-        "Choose `>=` on purpose, so exactly enough still passes",
-        "Compare text exactly, and with `.lower()` so capitals don't matter",
-        "Write `if`, `else` and `elif` with colons and indents, knowing the first true branch wins",
-        "Join questions with `and`, `or` and `not`",
-        "Roll dice with `import random` and `random.randint(1, 20)`, both ends included",
-        "Read Python's error message, find the line, and mend it",
+        "Ask Python yes-or-no questions, like *is 6 less than 15?*",
+        "Tell apart putting a value in a box and asking whether two values are the same",
+        "Decide whether exactly enough should count, like the filled dot on a number line",
+        "Compare words exactly, or so that capitals don't matter",
+        "Make Python choose what to do, like a choose-your-own-adventure book",
+        "Join yes-or-no questions with *and*, *or* and *not*",
+        "Roll dice in your code",
+        "Read Python's error messages, find the line, and fix it",
     ],
     campaign_links=["leylines-awaken", "friends-in-low-places"],
 )
@@ -590,7 +591,7 @@ GLOSSARY = [
 REMEMBERS_2A = dict(
     kind="quiz",
     id="2a-remembers",
-    title="Quick review: 2 questions (not scored)",
+    title="Quick review: 2 questions, not scored",
     optional=True,
     minutes=1,
     summary="Two quick questions from Unit 1, to warm up. Nothing is scored.",
@@ -1283,11 +1284,12 @@ MANA_FIX = dict(
     shift_fix="Use both box names, `mana` and `cost`, not a typed-in number.",
     lt_note=" `mana < cost` asks the opposite: *not enough?*",
 )
-# The SOLO's messages say what went wrong but never name the sign: a solo pass stays the student's own.
+# The SOLO's messages say what went wrong but never name the sign: a solo pass stays the student's own. They use
+# the lesson's words for the mistake (broken-spell-2a: "`>` leaves out exactly enough"), minus the fix.
 SOLO_FIX = dict(
-    short_fix="`can_cast` should be True when `mana` is at least `cost`.",
-    exact_fix="Which sign counts the number itself?",
-    over_fix="`can_cast` should be True when `mana` is more than `cost`, too.",
+    short_fix="Your `can_cast` line lets a caster with too little mana cast.",
+    exact_fix="Your `can_cast` line leaves out exactly enough mana.",
+    over_fix="Your `can_cast` line leaves out more than enough mana.",
     shift_fix="Your line has a typed-in number where a box name should be.",
     lt_note=" `mana < cost` asks the opposite: *not enough?*",
     rev_fix="Your sign faces the wrong way: it asks *at most*.",
@@ -1821,8 +1823,7 @@ BROKEN_SPELL_2A = dict(
     title="Broken spell",
     martu=(
         "This spell has three [[bug|bugs]], three mistakes in the code. Two are loud: Python stops and shows an "
-        "error box in the Console. One is quiet: the code runs, but a box holds the wrong kind of thing. Each step "
-        "says *Mend*, which means fix.\n"
+        "error box in the Console. One is quiet: the code runs, but a box holds the wrong kind of thing.\n"
         "When Python stops, read the box in the Console in this order:\n"
         "1. The title at the top says what went wrong.\n"
         "2. *Python's last line* says the same thing in Python's words.\n"
@@ -1839,13 +1840,13 @@ BROKEN_SPELL_2A = dict(
         dict(
             id="mend-the-sign",
             text=(
-                "Mend the sign on line 3, between `roll` and `needed`, so `passed` asks whether `roll` is *at least* "
+                "Fix the sign on line 3, between `roll` and `needed`, so `passed` asks whether `roll` is *at least* "
                 "`needed`."
             ),
             dictated=False,
             hints=[
                 "Press Run and read the box in the Console: first its title, then Python's last line, "
-                "`SyntaxError: invalid syntax`. Both point at line 3. Look at the two marks between `roll` and "
+                "`SyntaxError: invalid syntax`. Python stopped on line 3. Look at the two marks between `roll` and "
                 "`needed`.",
                 "*Syntax* means how a line is put together, like grammar in English class. Type a two-key sign in "
                 "the order you say it: *greater than or equal to* is `>`, then `=`, as in `coins >= price`.",
@@ -1873,13 +1874,13 @@ BROKEN_SPELL_2A = dict(
         dict(
             id="mend-needed",
             text=(
-                "Mend line 2, `needed = \"15\"`, so `needed` holds a number. Python stops on line 3, where it "
+                "Fix line 2, `needed = \"15\"`, so `needed` holds a number. Python stops on line 3, where it "
                 "compares a number with text."
             ),
             dictated=False,
             hints=[
-                "Press Run and read the box: its title says TypeError, and Python's last line points at line 3, "
-                "where a number meets text. Which box holds text? Look at line 2.",
+                "Press Run and read the error box: its title, then Python's last line, which starts with `TypeError`. "
+                "Python stopped on line 3, where a number meets text. Which box holds text? Look at line 2.",
                 "Python's last line names `int` and `str`. `int` means a whole number, and `str` means text. Quotes "
                 "make text: `\"7\" > 3` makes Python stop, but `7 > 3` is True.",
                 "Delete the two `\"` marks around 15 on line 2. Line 2 becomes `needed = 15`.",
@@ -1901,7 +1902,7 @@ BROKEN_SPELL_2A = dict(
         dict(
             id="mend-clock",
             text=(
-                "Mend line 6, `clock_is_red = \"red\"`, so it asks whether `clock_color` is the same as `\"red\"`. "
+                "Fix line 6, `clock_is_red = \"red\"`, so it asks whether `clock_color` is the same as `\"red\"`. "
                 "Right now the Console shows `red`, not `True` or `False`."
             ),
             dictated=False,
@@ -2101,7 +2102,7 @@ SOLO_2A = dict(
     takeaway="Use `>=` when exactly enough should still pass.",
     wrong_answers=[
         dict(why="starter unchanged: the boundary bug", code=SOLO_STARTER, fails_at=1,
-             message_contains="Which sign counts the number itself?"),
+             message_contains="leaves out exactly enough mana"),
         dict(why="the answer typed in", code=_solo(line="can_cast = True"), fails_at=1, message_contains="one short"),
         dict(why="a number typed in for cost", code=_solo(line="can_cast = mana >= 9"), fails_at=1,
              message_contains="cost = 12"),

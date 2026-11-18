@@ -4,7 +4,7 @@
  */
 import type { ExerciseProgress, GradeResult } from "../../lib/course/contracts";
 import type { AnotherWay, Checkpoint } from "../../lib/course/schema";
-import type { InsertTarget } from "../editor-insert";
+import { planInsert, replacedLine, type InsertTarget } from "../editor-insert";
 
 export type Support = "full" | "light" | "none";
 export type PlayerMode = "lesson" | "project" | "challenge" | "testout" | "try-it";
@@ -201,6 +201,38 @@ export function runOutcome(grade: GradeResult, passedBefore: readonly string[]):
   return { passedNow, newlyPassed, allPassed, failed: !allPassed && newlyPassed.length === 0 };
 }
 
+/**
+ * Steps done by an error made on purpose (a checkpoint's `plannedError`: the first lesson's "delete the quote and press
+ * Run"). A crash checks nothing, so on its own the step could never turn green. A run that stops on the planned line
+ * with the planned error (`crash.error` is Python's last line) counts the step as done, and a step done before stays
+ * done, so putting the line back (the next step's job) never marks it ↺. Returns the grade with those steps passed,
+ * and the ids this crash did.
+ */
+export function withPlannedErrors(
+  checkpoints: readonly Pick<Checkpoint, "id" | "plannedError">[],
+  grade: GradeResult,
+  crash: { line: number | null; error: string } | null,
+  passedBefore: readonly string[],
+): { grade: GradeResult; planned: string[] } {
+  const planned: string[] = [];
+  let changed = false;
+  const rows = grade.checkpoints.map((row, index) => {
+    const want = checkpoints[index]?.plannedError;
+    if (!want || row.passed) return row;
+    const now = grade.crashed && crash !== null && crash.line === want.line && crash.error.trim().startsWith(want.error);
+    if (now) planned.push(row.id);
+    if (!now && !passedBefore.includes(row.id)) return row;
+    changed = true;
+    return { ...row, passed: true, message: "" };
+  });
+  if (!changed) return { grade, planned };
+  const firstFailing = rows.findIndex((row) => !row.passed);
+  return {
+    grade: { ...grade, checkpoints: rows, firstFailing: firstFailing === -1 ? null : firstFailing, allPassed: !grade.crashed && firstFailing === -1 },
+    planned,
+  };
+}
+
 /** Fold one graded run into the saved progress (passed ids are a union across runs). */
 export function applyRun(
   previous: ExerciseProgress,
@@ -271,13 +303,14 @@ export function helpOffer(input: {
 }
 
 /**
- * The one line that highlights Help (Oogrish's line after repeated misses, §2.2). "Read the last line first"
- * is about Python's error message, so it is said only when the last run crashed.
+ * The one line that highlights Help (Oogrish's line after repeated misses, §2.2). After a crash it is the course's
+ * reading routine (plain-language guide §4.2): the box's title, then Python's last line, then the line number and
+ * that line. It is about Python's error box, so it is said only when the last run crashed.
  */
 export function helpOfferLine(offer: HelpOffer, crashed = false): string {
   if (offer === "misses") {
     return crashed
-      ? "Oogrish: \u201cSteady, now. Read the title of the box in the Console, then Python\u2019s last line. Want a nudge?\u201d"
+      ? "Oogrish: \u201cSteady, now. Read the title of the box in the Console, then Python\u2019s last line. Then find the line number and fix that line. Want a nudge?\u201d"
       : "Oogrish: \u201cSteady, now. Want a nudge?\u201d";
   }
   if (offer === "time") return "This one is taking a while. That's normal. Want a nudge?";
@@ -357,6 +390,41 @@ export function startTarget(checkpoint: Pick<Checkpoint, "hints" | "text">): Ins
 }
 
 /**
+ * The note under Start me off's "Put it in my code" button: where the line will go, as it really will (the same plan
+ * the editor follows, planInsert()). Before the student clicks into the code, a step whose hint names a place puts it
+ * there: "It replaces `pass` on line 3.", "It goes on a new line above `print(total)`.", "... under `# 2. Loop`.". An
+ * "in place of" line that is still there wins over the cursor too (a "Change line 9 so ..." step: replacedLine()), so
+ * the note names it after a click as well. Otherwise (a cursor, or no place named) it goes on a new line of its own.
+ */
+export function startNote(code: string, start: string, target: InsertTarget | null | undefined, placed: boolean): string {
+  const own = "It goes on a new line of its own.";
+  const doc = code ?? "";
+  if (!target) return own;
+  // After a click the cursor decides, except for an "in place of" line the code still has.
+  if (placed && replacedLine(doc, target) === null) return own;
+  // Any text will do to find the place (an empty one would hide which side of the line it goes on).
+  const plan = planInsert(doc, { from: 0, to: 0 }, placed, start || "x", "line", target);
+  const lineOf = (at: number) => {
+    const from = doc.lastIndexOf("\n", at - 1) + 1;
+    const end = doc.indexOf("\n", at);
+    return doc.slice(from, end < 0 ? doc.length : end).trim();
+  };
+  const tick = (text: string) => (text.includes("`") ? text : `\`${text}\``);
+  if (plan.to > plan.from) {
+    const number = doc.slice(0, plan.from).split("\n").length;
+    return `It replaces ${tick(doc.slice(plan.from, plan.to).trim())} on line ${number}.`;
+  }
+  if (placed) return own;
+  if (plan.from === doc.length && !plan.insert.endsWith("\n")) {
+    const last = doc.replace(/\s+$/, "");
+    // At the end: under the line it follows, unless the code is empty.
+    return last ? `It goes on a new line under ${tick(lineOf(last.length - 1))}.` : own;
+  }
+  if (!plan.insert.startsWith("\n") && plan.insert.endsWith("\n")) return `It goes on a new line above ${tick(lineOf(plan.from))}.`;
+  return `It goes on a new line under ${tick(lineOf(Math.max(0, plan.from - 1)))}.`;
+}
+
+/**
  * The Help rungs for one step, in the curriculum's order (§2.2): Start me off (derived, see startOfLine),
  * Where to look (hints[0]), Another way (the exercise's angles), Teach me (the middle hints), More structure
  * (Assemble it), Show me how (the last hint: the step's own line), and Compare with Mar'tu's version (the
@@ -414,19 +482,22 @@ export type HelpState = {
  * The Help control's state. The saved count always runs over the whole helpRungs() list, whatever the preset,
  * so switching presets never opens Mar'tu's version early. The control steps over rungs that are not in this
  * preset's stack, and over rungs `skip` says have nothing to give right now (Start me off when the line is
- * already there, or right after a crash).
+ * already there, or right after a crash). Rungs `hide` names never show at all, open or under "More options"
+ * (Start me off on a step that only edits a line the code starts with, startInStarter()); they still count in the
+ * saved count, so a saved count means the same rungs as before.
  */
 export function helpState(
   rungs: readonly Rung[],
   used: number,
   showUnlocked: boolean,
-  options: { preset?: Preset; skip?: (rung: Rung) => boolean } = {},
+  options: { preset?: Preset; skip?: (rung: Rung) => boolean; hide?: (rung: Rung) => boolean } = {},
 ): HelpState {
   const preset = options.preset ?? "more";
+  const hide = options.hide ?? (() => false);
   const skip = options.skip ?? (() => false);
   const count = Math.max(0, Math.min(rungs.length, Math.floor(used)));
-  const open = rungs.slice(0, count).filter((rung) => rungInStack(rung.kind, preset));
-  const climbable = (rung: Rung) => rungInStack(rung.kind, preset) && !skip(rung);
+  const open = rungs.slice(0, count).filter((rung) => rungInStack(rung.kind, preset) && !hide(rung));
+  const climbable = (rung: Rung) => rungInStack(rung.kind, preset) && !skip(rung) && !hide(rung);
   let nextIndex = -1;
   for (let index = count; index < rungs.length; index += 1) {
     if (climbable(rungs[index])) {
@@ -436,7 +507,7 @@ export function helpState(
   }
   const next = nextIndex >= 0 ? rungs[nextIndex] : null;
   const left = rungs.slice(count).filter((rung) => climbable(rung) && (rung.kind !== "show" || showUnlocked)).length;
-  const extras = preset === "more" ? [] : rungs.filter((rung) => !rungInStack(rung.kind, preset));
+  const extras = preset === "more" ? [] : rungs.filter((rung) => !rungInStack(rung.kind, preset) && !hide(rung));
   return { open, opened: count, next, nextIndex, nextLocked: next?.kind === "show" && !showUnlocked, left, extras };
 }
 
@@ -460,23 +531,128 @@ export function codeHasStart(code: string, start: string, step?: { solution?: st
   });
 }
 
-/** The step's text names a line of the code ("Mend line 3 so ...", "Line 2 is Lucky's secret."). */
+/**
+ * The step only edits a line the exercise's code starts with ("On line 3, replace the `0` in `hand = 0`", "Fix line 9
+ * ..."): the starter already begins the step's line (codeHasStart(), so Mar'tu's other finished lines in the starter
+ * do not count). Start me off has nothing to give there, so Help hides it (plain-language guide §9, S3): it would only
+ * say "Your code already starts this line".
+ *
+ * A start that names its box or list (`hand =`, `print(chalk_wall[`) is that line wherever it is. A bare call
+ * (`print(`) could be any line, so the step must also point at the starter's line: by its number ("line 9"), or by
+ * quoting it (`print(___ + ___)`). "Make a new line 2 that shows ..." under a starter whose only line is step 1's
+ * broken `print(Fireball)` keeps its Start me off.
+ */
+export function startInStarter(
+  start: string | undefined,
+  starter: string | undefined,
+  step: { solution?: string; line?: string | null; text?: string } = {},
+): boolean {
+  if (!start || !codeHasStart(starter ?? "", start, step)) return false;
+  if (!/\($/.test(start.trim())) return true;
+  const squash = (text: string) => text.replace(/\s+/g, "");
+  const rows = (starter ?? "").replace(/\r/g, "").split("\n");
+  const text = step.text ?? "";
+  const byNumber = [...text.matchAll(/\bline (\d+)\b/gi)].map((match) => rows[Number(match[1]) - 1] ?? "");
+  const spans = [...text.matchAll(/`([^`\n]+)`/g)].map((match) => squash(match[1])).filter((span) => span.startsWith(squash(start)));
+  const quoted = rows.filter((row) => spans.some((span) => squash(row).includes(span)));
+  return [...byNumber, ...quoted].some((row) => row.trim() !== "" && codeHasStart(row, start, step));
+}
+
+/** The step's text names a line of the code ("Fix line 3 so ...", "Line 2 is Lucky's secret."). */
 export function namesALine(text: string, line?: number): boolean {
   return new RegExp(`\\bline ${line === undefined ? "\\d+" : line}\\b`, "i").test(text ?? "");
 }
 
+/** The verb of a debugging step: "Fix" (the course's word), or "Mend" (the older word, still read). */
+const DEBUG_VERB = /\b(?:fix|mend)\b/i;
+
 /**
- * A debugging exercise (curriculum §2.1 step 6, the Broken spell; also the Quick Check "mend" tasks): one of its
- * steps says "Mend ..." ("Mend line 3 so it shows `Steady`."). There a run that gets further than the last one
- * shows "Python got further: you fixed that mistake." on a line of its own (FORMAT.md, checkpoint `text`).
+ * A debugging exercise (curriculum §2.1 step 6, the Broken spell; also the Quick Check "fix" tasks): one of its
+ * steps says "Fix ..." or "Mend ..." ("Fix line 3 so it shows `Steady`."), as a whole word in the step's own words
+ * (never inside code, like the starter's `# Fix it by position here:` note; never "fixed", "prefix" or "amend").
+ * There a run that gets further than the last one shows "Python got further: you fixed that mistake." on a line of
+ * its own (FORMAT.md, checkpoint `text`).
  */
 export function isDebugExercise(exercise: { checkpoints: readonly Pick<Checkpoint, "text">[] }): boolean {
-  return exercise.checkpoints.some((checkpoint) => /\bmend\b/i.test(checkpoint.text ?? ""));
+  return exercise.checkpoints.some((checkpoint) => DEBUG_VERB.test(withoutCode(checkpoint.text ?? "")));
+}
+
+/** Prose with its code taken out: fenced blocks and `code spans` become a space. */
+function withoutCode(text: string): string {
+  return text.replace(/```[\s\S]*?(```|$)/g, " ").replace(/`[^`\n]*`/g, " ");
 }
 
 /**
- * After a crash on `crashLine`: the step whose text names that line (broken spells: "Mend line 3 ..."), or -1.
- * Help aims there, so it never talks about line 1 under "Fix line 3 first."
+ * What to do after a crash, for the crash banners (plain-language guide §9, S2): after "Python stopped at line 3, so
+ * it couldn't finish your code." comes "Fix line 3, then press Run again." When the mistake is on another line than
+ * the one Python stopped at (`slipLine`: a sheet's missing comma Python reports on the next line, a value with no
+ * name on the line above `print(hero)`), that line. When the fix goes above but the explainer can't say which line
+ * (`fixAbove`: a box no line makes yet), it says so, never only "Fix line 5" under "make it above line 5".
+ */
+export function crashFixLine(crashLine: number | null, slipLine: number | null = null, fixAbove = false): string {
+  if (slipLine !== null && slipLine !== crashLine) return `The mistake is on line ${slipLine}. Fix line ${slipLine}, then press Run again.`;
+  if (fixAbove && crashLine !== null) return `The mistake is on line ${crashLine} or a line above it. Fix it, then press Run again.`;
+  return crashLine !== null ? `Fix line ${crashLine}, then press Run again.` : "Fix the error, then press Run again.";
+}
+
+/**
+ * A run that never ended (a loop that printed forever, or ran past the time limit): Python was stopped wherever the
+ * loop happened to be, often a line that is right (`print(hours_left)`), so there is no line to fix first (Unit 6).
+ */
+export function endlessRun(explanation: { kind?: string; loopFree?: boolean } | null | undefined): boolean {
+  // Code with no `for` or `while` line that printed too much (`print(ink * 300000)`): no loop to talk about, and the
+  // line Python stopped at is the one to fix, so the ordinary crash words apply (Units 1-5 never say "loop").
+  if (explanation?.loopFree) return false;
+  return explanation?.kind === "timeout" || explanation?.kind === "too-much-output";
+}
+
+/**
+ * The task line for a run that never ended (Unit 6). With the loop the explainer found (`loopLine`), it names that
+ * loop's line, never "your loop" with three on screen; with the line the fix goes on (`slipLine`: the change outside the
+ * loop, the `while` that should be an `if`), that line, else the loop itself.
+ */
+export function endlessLine(noun: string, loopLine: number | null = null, slipLine: number | null = null): { label: string; text: string } {
+  const label = loopLine !== null ? `Your loop on line ${loopLine} never ended.` : "Your loop never ended.";
+  const then = slipLine !== null ? `fix line ${slipLine}` : loopLine !== null ? "change that loop so it can end" : "change the loop so it can end";
+  return { label, text: `Python stopped your code, so it couldn't check your ${noun.toLowerCase()}s yet. Read the box in the Console, then ${then}.` };
+}
+
+/** "Same error as last time." then where to look: the slip's own line, else the line Python stopped at (and above). */
+export function sameErrorLook(crashLine: number | null, slipLine: number | null = null, fixAbove = false, endless = false, loopLine: number | null = null): string {
+  // A run that never ended stops wherever the loop happens to be (often a right `print`): the fix is the line the
+  // explainer found, else a line inside the loop that changes its question, which may not be there yet (Unit 6).
+  if (endless) {
+    if (slipLine !== null) return `Look closely at line ${slipLine}.`;
+    const under = loopLine !== null ? `under line ${loopLine}` : "under your loop's first line";
+    return `Look at the indented lines ${under}. If none of them changes the number its question checks, add one.`;
+  }
+  if (slipLine !== null && slipLine !== crashLine) return `Look closely at line ${slipLine}.`;
+  if (crashLine === null) return "Look closely at the line number in Python's last line.";
+  return fixAbove ? `Look closely at line ${crashLine} and the lines above it.` : `Look closely at line ${crashLine}.`;
+}
+
+/**
+ * The crash banner when the crash is part of the task (crashLineSwitchedOff). `inStarter`: the line was in the code
+ * from the start (Anatomy of a fizzle: the steps read Python's message first). Otherwise the student typed it (a
+ * note with no `#`), and it is simply a mistake: never "That's part of this step" then.
+ */
+export function switchOffLine(noun: string, crashLine: number, inStarter: boolean): string {
+  const step = noun.toLowerCase();
+  return inStarter
+    ? `That's part of this ${step}. Read the box in the Console first: your ${step}s use what it says. Then put # at the very start of line ${crashLine} and press Run again.`
+    : `Read the box in the Console. Then put # at the very start of line ${crashLine} and press Run again.`;
+}
+
+/** The line Python stopped at was in the code from the start (the starter's own line, unchanged). */
+export function crashLineInStarter(code: string, crashLine: number | null, starter: string | undefined): boolean {
+  if (crashLine === null || !starter) return false;
+  const text = (code ?? "").split("\n")[crashLine - 1]?.trim() ?? "";
+  return text !== "" && starter.split("\n").some((row) => row.trim() === text);
+}
+
+/**
+ * After a crash on `crashLine`: the step whose text names that line (broken spells: "Fix line 3 ..."), or -1.
+ * Help aims there, so it never talks about line 1 under "Python stopped at line 3 ... Fix line 3".
  */
 export function crashTarget(checkpoints: readonly Pick<Checkpoint, "text">[], crashLine: number | null): number {
   if (crashLine === null) return -1;
@@ -485,7 +661,7 @@ export function crashTarget(checkpoints: readonly Pick<Checkpoint, "text">[], cr
 
 /**
  * The crash is part of the task: Mar'tu's version keeps the line Python stopped on, switched off with `#`
- * (Anatomy of a fizzle: read the message, write it down, then switch line 4 off). "First, fix line 4" would
+ * (Anatomy of a fizzle: read the message, write it down, then switch line 4 off). "Fix line 4, then press Run" would
  * contradict the task there, so the player says to read the message first. False for an empty line or no solution.
  */
 export function crashLineSwitchedOff(code: string, crashLine: number | null, solution: string | undefined): boolean {
@@ -500,9 +676,9 @@ export type CrashAim = { signature: string; step: number | null };
 
 /**
  * Where Help aims while a crash stands in a debugging exercise with several slips (a Broken spell). A crash checks
- * no step, so the first open step stays at step 1 while the student mends slip after slip; Help must move on with
- * them, or it talks about the line they just mended. Returns the step index, or null for "only say which line to
- * mend" (the steps name other lines).
+ * no step, so the first open step stays at step 1 while the student fixes mistake after mistake; Help must move on
+ * with them, or it talks about the line they just fixed. Returns the step index, or null for "only say which line to
+ * fix" (the steps name other lines).
  *
  * - A crash seen before this visit gets the step it had (a slip mended and then broken again).
  * - A crash that got further than the last one (`gotFurther`) aims past the last crash's step: the next step that
@@ -700,6 +876,46 @@ export function compareLines(mine: string, theirs: string): { mine: CompareLine[
 /* Inserting into the editor: Names to use, Mar'tu's pick                                            */
 /* ------------------------------------------------------------------------------------------------ */
 
+/**
+ * Python's own tools a step can list among its names: what Python already knows (`print`, `str`, `len`, `sorted`),
+ * the tools after a dot (`.append()`, `.lower()`, `.get()`) and the modules the course imports (`random`).
+ */
+const PYTHON_TOOLS: ReadonlySet<string> = new Set([
+  "print", "input", "int", "str", "float", "bool", "len", "range", "sorted", "reversed", "max", "min", "sum", "abs",
+  "round", "list", "dict", "tuple", "set", "zip", "enumerate", "type",
+  "append", "insert", "pop", "remove", "sort", "reverse", "count", "index", "extend", "copy", "clear",
+  "lower", "upper", "capitalize", "title", "strip", "split", "join", "replace", "startswith", "endswith",
+  "get", "keys", "values", "items",
+  "random", "randint", "choice", "math",
+]);
+
+/**
+ * The "Names to use" split in two (plain-language guide §9, S7): the names the student's code makes or fills (boxes,
+ * recipes, ingredients), and Python's own tools (`str`, `print`, `len`, `.append()`, `random`), shown apart as tools.
+ * A tool's name that Mar'tu's version makes itself (`count` as a recipe's ingredient, `title = ...`) stays a name.
+ * Both keep the step's order.
+ */
+export function splitNames(names: readonly string[], solution = ""): { names: string[]; tools: string[] } {
+  const lines = meaningfulLines(solution);
+  const made = (name: string) => {
+    const word = `\\b${name}\\b`;
+    return lines.some((line) => {
+      const text = line.trim();
+      // `def count(...)`, `def item_cost(count, price):`, `for count in ...`, `import random as count`.
+      if (new RegExp(`^def\\s+${word}`).test(text)) return true;
+      if (new RegExp(`^def\\s+\\w+\\s*\\([^)]*${word}`).test(text)) return true;
+      if (new RegExp(`^for\\s+[\\w\\s,()]*${word}[\\w\\s,()]*\\s+in\\b`).test(text)) return true;
+      if (new RegExp(`\\bas\\s+${word}\\s*$`).test(text)) return true;
+      // `count = 3`, `across, down = cabin`, `count += 1`: the name on the left of one `=`.
+      const left = text.match(/^([\w\s,()[\]"'.]*?)\s*(?:[-+*/%]|\/\/|\*\*)?=(?!=)/)?.[1];
+      return left !== undefined && new RegExp(`^[\\s(]*(?:\\w+\\s*,\\s*)*${word}\\s*(?:,|\\)|$)`).test(left);
+    });
+  };
+  // Every tool is a plain identifier, so `name` is safe inside the patterns above.
+  const tools = names.filter((name) => PYTHON_TOOLS.has(name) && !made(name));
+  return { names: names.filter((name) => !tools.includes(name)), tools };
+}
+
 /** True when the text before the cursor (on its line) leaves a string open. */
 export function insideString(lineBefore: string): boolean {
   let quote: string | null = null;
@@ -775,6 +991,18 @@ export function firstParagraph(text: string): { first: string; more: boolean } {
   const first = lines.slice(start, end).join("\n");
   const more = lines.slice(end).some((line) => line.trim() !== "");
   return { first, more };
+}
+
+/**
+ * A step's text split for the "Your task" line at the top: the lead (everything before the first numbered or bulleted
+ * part, read as one line after the label) and the parts from there on, which keep their own lines as a list
+ * (plain-language guide §2.2: "Two spots to fill:" then "1. ...", "2. ..."). `parts` is null when the text has none.
+ */
+export function taskLineParts(text: string): { lead: string; parts: string | null } {
+  const lines = (text ?? "").replace(/\r\n?/g, "\n").split("\n");
+  const at = lines.findIndex((line, index) => index > 0 && /^\s*(\d+\.|[-*])\s+\S/.test(line));
+  if (at < 0) return { lead: text ?? "", parts: null };
+  return { lead: lines.slice(0, at).join("\n"), parts: lines.slice(at).join("\n") };
 }
 
 /* ------------------------------------------------------------------------------------------------ */

@@ -12,7 +12,10 @@
  * Before the student has ever clicked into the editor (`placed` false) there is no cursor to honour: text goes
  * on a new line at the end, and a note goes at the very top. A "line" with a `target` (the step's own hint says where
  * its line goes: "in place of `pass`", "on the line after `total = affinity * 2`") goes there instead, so Start me off
- * never leaves the step's line outside the recipe it belongs in.
+ * never leaves the step's line outside the recipe it belongs in. An "in place of" target wins over the cursor too, while
+ * that line is still there: the step changes that line ("Change line 9 so it builds ..."), so a second line under the
+ * cursor would leave the old one behind. Help says so ("It replaces `print("Gearshift: 20 mana")` on line 9.": startNote()
+ * in course/exercise-logic.ts, which uses replacedLine).
  */
 export type InsertWhere = "cursor" | "code" | "line" | "note";
 
@@ -123,6 +126,21 @@ function findTarget(doc: string, target: InsertTarget): { line: Line; how: Inser
   return { line: matches[0].line, how: target.how };
 }
 
+/** Put the text in place of `at`'s line, keeping its indent. */
+function replacePlan(at: Line, value: (lineBefore: string, lineAfter?: string) => string): InsertPlan {
+  const indent = indentOf(at.text);
+  const insert = value(indent);
+  return { from: at.from + indent.length, to: at.to, insert, anchor: at.from + indent.length + insert.length };
+}
+
+/** The line (1-based) an "in place of" target would replace in `doc`, or null (no such target, or the line is gone). */
+export function replacedLine(doc: string, target: InsertTarget | null | undefined): number | null {
+  if (!target || target.how !== "replace") return null;
+  const found = findTarget(doc, target);
+  if (!found || found.how !== "replace") return null;
+  return doc.slice(0, found.line.from).split("\n").length;
+}
+
 export function planInsert(
   doc: string,
   selection: { from: number; to: number },
@@ -133,6 +151,11 @@ export function planInsert(
 ): InsertPlan {
   const value = (lineBefore: string, lineAfter = "") => (typeof text === "function" ? text(lineBefore, lineAfter) : text);
   const end = doc.length;
+
+  if (placed && where === "line" && target?.how === "replace") {
+    const found = findTarget(doc, target);
+    if (found?.how === "replace") return replacePlan(found.line, value);
+  }
 
   if (!placed) {
     const found = where === "line" && target ? findTarget(doc, target) : null;
@@ -151,11 +174,7 @@ export function planInsert(
         how = "replace";
       }
     }
-    if (at && how === "replace") {
-      const indent = indentOf(at.text);
-      const insert = value(indent);
-      return { from: at.from + indent.length, to: at.to, insert, anchor: at.from + indent.length + insert.length };
-    }
+    if (at && how === "replace") return replacePlan(at, value);
     if (at && how === "before") {
       const indent = indentOf(at.text);
       const body = value(indent);

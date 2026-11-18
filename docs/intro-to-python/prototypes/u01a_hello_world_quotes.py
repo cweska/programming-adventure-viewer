@@ -78,15 +78,15 @@ GLOSSARY = [
     dict(
         term="console",
         aliases=["the console"],
-        plain="The space under your code where Python's answers appear: what `print` shows, and Python's "
-        "error messages.",
+        plain="The space under your code where Python's answers appear: what `print` shows, and the error box "
+        "when Python stops.",
     ),
     dict(
         term="error message",
-        aliases=["error messages", "message from Python"],
-        plain="Python's note that it stopped at a line it couldn't run, like a teacher's note in the margin: it "
-        "points to the spot, and it isn't a grade. Read the box's title, then Python's last line, then fix the "
-        "line with that number.",
+        aliases=["error messages", "message from Python", "error box", "error boxes"],
+        plain="When Python can't run a line, it stops and shows an error box in the Console. It's like a teacher's "
+        "note in the margin: it points to the spot, and it isn't a grade. Read the box's title, then Python's "
+        "last line. Then fix the line with that number.",
         example="SyntaxError: unterminated string literal",
     ),
     dict(
@@ -99,8 +99,8 @@ GLOSSARY = [
     dict(
         term="mend",
         aliases=["mends", "mended", "slip", "slips"],
-        plain="To fix a small mistake in your code, the way you mend a small tear in a sleeve. A slip is a "
-        "small mistake.",
+        plain="An older word for fix: to mend a line is to fix a small mistake in it, the way you mend a small "
+        "tear in a sleeve. A slip is a small mistake.",
         example='print("Hi)   becomes   print("Hi")',
     ),
 ]
@@ -193,7 +193,7 @@ HOW_MARTU_TEACHES = dict(
         "Press ▶ [[run|Run]], above your code. Python answers in the [[console|Console]], under your code.\n"
         "Running unfinished code is fine. An error is not a grade: it says what Python couldn't read.\n"
         "Your steps: ✓ done, ● the step you're on, ○ still to come.\n"
-        "Stuck? Press 💡 Help, under the Console. Each press gives more, up to the line itself. "
+        "Stuck? Press 💡 Help, under the Console. Each press gives more, and the last shows the line to type. "
         "Your hints are private.\n"
         "Nothing here is timed."
     ),
@@ -216,10 +216,10 @@ WHAT_AN_ERROR_LOOKS_LIKE = dict(
     id="what-an-error-looks-like",
     title="What an error looks like",
     martu=(
-        "`print` means show on the screen, not on paper: this line shows `Shield up.` in the "
-        "[[console|Console]], the box under your code. Press ▶ Run, just above your code. Then you'll break it "
-        "on purpose, and Python will show an [[error message]]. That's not a grade. It's like a teacher's note "
-        "in the margin: it points to the spot."
+        "`print` means show on the screen, not on paper. This line shows `Shield up.` in the "
+        "[[console|Console]], the space under your code. Press ▶ Run. Then you'll break the line on purpose, and "
+        "Python will show an [[error box]] in the Console. That's not a grade. It's like a teacher's note in the "
+        "margin: it points to the spot."
     ),
     introduces=["call:print", "const:str"],
     starter='print("Shield up.")\n',
@@ -242,20 +242,55 @@ WHAT_AN_ERROR_LOOKS_LIKE = dict(
             pass_line="Mar'tu: Shield up. Next, you break it on purpose. That is safe, yes?",
         ),
         dict(
+            id="break-it",
+            text=(
+                'Delete the `"` right after `Shield up.` and press Run. An error box appears in the Console: '
+                "that's the plan. Read its title, then go on to step 3."
+            ),
+            dictated=True,
+            planned_error=dict(line=1, error="SyntaxError"),
+            hints=[
+                'Look at line 1, at the `"` right after `Shield up.`.\n'
+                'To break the line: click right after that `"`, press Backspace once, and press Run. When the error '
+                "box appears, step 2 is done.",
+                "The error box's title says a quote is missing. Python's last line says *unterminated*, which "
+                'means never ended: the text has no closing `"`.',
+                'Delete the `"` right after `Shield up.`. Line 1 becomes `print("Shield up.)`. Press Run and read '
+                "the error box.",
+            ],
+            checks=[
+                (
+                    "the line was broken, then changed",
+                    # The planned error does this step (planned_error: the run that stops on line 1 with a
+                    # SyntaxError). This check speaks only before that: a run that still shows the starter's line.
+                    r'''import ast as _ast
+_l = [l.replace('\u2019', "'") for l in _lines()]
+_bare = [n.lineno for n in _ast.parse(_source).body if isinstance(n, _ast.Expr)
+         and isinstance(n.value, _ast.Constant) and isinstance(n.value.value, str)]
+_msg = ''
+if 'Shield up.' in _l and 'Shield up!' not in _l:
+    if _bare:
+        _msg = ('Line ' + str(_bare[0]) + ' has the words in quotes but no `print`, so nothing shows. '
+                'Put `print(` before the quotes and `)` after.')
+    else:
+        _msg = ('Step 2 is next: delete the `"` right after `Shield up.` and press Run. An error box will '
+                "appear: that's the plan. Already saw the box? Then do step 3: change the `.` to `!`.")
+assert not _msg, _msg''',
+                ),
+            ],
+        ),
+        dict(
             id="close-the-quote",
             text=(
-                "Three moves, in order:\n"
-                '1. Delete the `"` right after `Shield up.` and press Run. An error appears. That\'s the plan.\n'
-                "2. Read the box in the Console. Its title says what went wrong.\n"
-                '3. Put the `"` back, change the `.` to `!`, and press Run. You should see `Shield up!`.'
+                'Type the `"` back right after `Shield up.`, and change the `.` to `!`. Press Run. You should see '
+                "`Shield up!` in the Console."
             ),
             dictated=True,
             hints=[
-                'Look at the `"` right after `Shield up.` on line 1.\n'
-                'To break the line: click right after that `"` and press Backspace once.\n'
-                'Already broken? Type the `"` back in the same spot (Shift and the `\'` key).',
-                "The box's title says a quote is missing. Python's last line says *unterminated*, which means "
-                'never ended: the text has no closing `"`.',
+                'Look at line 1, right after `Shield up.`. Is there a `"` to close the words?\n'
+                "Type it with Shift and the `'` key, next to Enter.",
+                'Quotes come in pairs, like quotation marks in English class. The `"` after the words tells '
+                "Python where the text stops.",
                 'Type `"` right after `Shield up.`, then change the `.` to `!`. Line 1 becomes '
                 '`print("Shield up!")`. Press Run.',
             ],
@@ -274,13 +309,13 @@ WHAT_AN_ERROR_LOOKS_LIKE = dict(
                     "        _msg = ('Line ' + str(_bare[0]) + ' has the words in quotes but no `print`, so nothing '\n"
                     "                'shows. Put `print(` before the quotes and `)` after.')\n"
                     "    elif 'Shield up.' in _l:\n"
-                    "        _msg = ('Your line still shows `Shield up.`, with a `.` at the end. If you have not broken it '\n"
-                    "                'yet, do move 1 first. Then put the `\"` back, change the `.` to `!`, and press Run.')\n"
+                    "        _msg = ('Your line shows `Shield up.`, with a `.` at the end. Change the `.` to `!` '\n"
+                    "                'and press Run.')\n"
                     "    elif _near and _near[0].rstrip('.!?') != 'Shield up' and _near[0].rstrip('.!?').lower() == 'shield up':\n"
                     "        _msg = ('Your line shows `' + _near[0] + '`. Capitals count: Python shows exactly what is '\n"
                     "                'inside the quotes. Make it `Shield up!`, with a capital S.')\n"
                     "    elif _near and _near[0].rstrip('.!?') == 'Shield up':\n"
-                    "        _msg = ('Your line shows `' + _near[0] + '`. Step 2 needs a `!` at the end: '\n"
+                    "        _msg = ('Your line shows `' + _near[0] + '`. Add a `!` at the end: '\n"
                     "                'make it `Shield up!` and press Run.')\n"
                     "    elif _near:\n"
                     "        _msg = ('Your line shows `' + _near[0] + '`. Spaces, marks and capitals all count. '\n"
@@ -291,7 +326,7 @@ WHAT_AN_ERROR_LOOKS_LIKE = dict(
                     "assert not _msg, _msg",
                 ),
             ],
-            pass_line="Mar'tu: You broke it, read the box, and fixed it. That is the whole trick.",
+            pass_line="Mar'tu: You broke it, read the error box, and fixed it. That is the whole trick.",
         ),
     ],
     solution='print("Shield up!")\n',
@@ -300,17 +335,17 @@ WHAT_AN_ERROR_LOOKS_LIKE = dict(
         dict(
             angle="picture",
             text=(
-                "Press *Show Python's full message* in the box, and you see this:\n"
+                "Press *Show Python's full message* in the error box, and you see this:\n"
                 "```text\n"
                 'File "main.py", line 1\n'
                 '  print("Shield up.)\n'
                 "        ^\n"
                 "SyntaxError: unterminated ...\n"
                 "```\n"
-                "1. Read the last line first. *Syntax* is how a line is put together, as in English class, so a "
-                "*SyntaxError* is a line Python can't read.\n"
+                "1. In this full message, read the last line first. *Syntax* is how a line is put together, as in "
+                "English class, so a *SyntaxError* is a line Python can't read.\n"
                 "2. *Unterminated* means never ended: the text has no closing quote.\n"
-                "3. The top line gives the line number, line 1. Fix that line."
+                "3. The top line gives the line number, line 1. That's the line to fix."
             ),
         ),
         dict(
@@ -324,12 +359,12 @@ WHAT_AN_ERROR_LOOKS_LIKE = dict(
         dict(
             angle="shorter",
             label="Say it shorter",
-            text='Delete the `"` after `Shield up.` and press Run. Read the box. Put the `"` back, make the `.` '
-                 'a `!`, and press Run.',
+            text='Delete the `"` after `Shield up.` and press Run. Read the error box. Put the `"` back, make the '
+                 '`.` a `!`, and press Run.',
         ),
     ],
     wrong_answers=[
-        dict(why="broken on purpose and not mended yet: the quote is still open", code='print("Shield up.)\n',
+        dict(why="broken on purpose and not put back yet: the quote is still open", code='print("Shield up.)\n',
              fails_at=0, message_contains="unterminated"),
         dict(why="starter unchanged: ran it, but never broke it or changed the mark", code='print("Shield up.")\n',
              fails_at=2, message_contains="change the `.` to `!`"),
@@ -340,135 +375,45 @@ WHAT_AN_ERROR_LOOKS_LIKE = dict(
         dict(why="removes the opening quote instead of the closing one", code="print(Shield up.)\n",
              fails_at=0, message_contains="comma"),
         dict(why="deletes the `.` instead of the quote, and never adds `!`", code='print("Shield up")\n',
-             fails_at=2, message_contains="`!` at the end"),
-        dict(why="retyped in lower case", code='print("shield up!")\n', fails_at=2, message_contains="Capitals"),
+             fails_at=3, message_contains="`!` at the end"),
+        dict(why="retyped in lower case", code='print("shield up!")\n', fails_at=3, message_contains="Capitals"),
         dict(why="words in quotes with no print: nothing shows at all", code='"Shield up!"\n', fails_at=1,
              message_contains="Press Run"),
+        dict(why="the whole line deleted", code="", fails_at=1, message_contains="Reset code"),
         dict(why="check-breaker: old line kept, new words added with no print (BARE)",
              code='print("Shield up.")\n"Shield up!"\n', fails_at=2, message_contains="no `print`"),
-        dict(why="check-breaker: a space lost", code='print("Shieldup!")\n', fails_at=2,
+        dict(why="check-breaker: a space lost", code='print("Shieldup!")\n', fails_at=3,
              message_contains="Spaces, marks and capitals"),
-        dict(why="check-breaker: line replaced with other words", code='print("Ready.")\n', fails_at=2,
+        dict(why="check-breaker: line replaced with other words", code='print("Ready.")\n', fails_at=3,
              message_contains="Reset code"),
     ],
-    takeaway="When Python stops, read the box's title, then Python's last line. Fix the line it gives and press "
-             "Run again.",
+    takeaway="When Python stops, read the error box's title, then Python's last line. Find the line number, fix "
+             "that line, and press Run again.",
     notes=(
         "meta: starter_level=S4; path=CC; contingent=show-me-more (K); skills=print-text,read-traceback; "
-        "solo=false; dictates=1,2; foreign_names=. "
-        "Teaches the explainer footer ('Read the last line first. Then look at the line it names.'), which the "
-        "site shows on every crash from here on. Teacher ruling: the starter is valid and the first Run is a win "
-        "for a Show-me-more student (G1: a success in the first two minutes): it turns CP1 green (proven by "
-        "partial 1, which is the starter). CP2 then has them break the quote on purpose, read 'unterminated', "
-        "and mend it. starter_passes stays False on purpose: that field means the starter passes EVERY "
-        "checkpoint (harness rule, the site's exercise-flow test, and the 'Run it and read the output' "
-        "heading), and here the starter passes CP1 only. CP2 checks for exactly `Shield up!` (the "
-        "`.` to `!` change proves they edited and re-ran; shows() would treat the end mark as optional, so the "
-        "check is written directly). Checkpoint passes are a union across runs, so CP1 stays green while the "
-        "line is broken; the deliberate crash is the point of CP2 and never blocks the exercise. A bare "
-        "`\"Shield up!\"` fails CP1 in a single run (nothing printed); the site shows CP2's message, which names "
-        "the missing print (proven by the check-breaker WA). Hint 1 says `Shield up.\"` (with the quote) so "
-        "clicking there and pressing Backspace deletes the quote, not the period. "
+        "solo=false; dictates=1,2,3; foreign_names=. "
+        "Teaches the reading routine (the error box's title, then Python's last line, then the line number), "
+        "which the site's error box shows on every crash from here on. Teacher ruling: the starter is valid and "
+        "the first Run is a win for a Show-me-more student (G1: a success in the first two minutes): it turns "
+        "step 1 green (proven by partial 1, which is the starter). "
+        "Structure pass (guide 9, S12): the old step 2 held three moves; it is now two steps. Step 2 (break-it) "
+        "breaks the quote on purpose and reads the error box; step 3 (close-the-quote, the old id, so a pass "
+        "already saved still counts) puts the quote back and changes the `.` to `!`. A crash can't be checked, "
+        "so step 2's check passes on any run that no longer shows the starter's exact `Shield up.`: steps 2 and "
+        "3 turn green together on the run that shows `Shield up!`, as a Broken spell's steps do. Until then, "
+        "running the starter shows step 2's message, which is step 2's instruction again (and, for a student "
+        "who broke it and put the quote back, the pointer to step 3). Its text says 'go on to step 3', so a "
+        "literal reader doesn't wait for a green tick that only comes with step 3. No partial 2: the state after "
+        "step 2 is a crash, which passes nothing. "
+        "starter_passes stays False on purpose: that field means the starter passes EVERY checkpoint. Step 3 "
+        "checks for exactly `Shield up!` (the `.` to `!` change proves they edited and re-ran; shows() would "
+        "treat the end mark as optional, so the check is written directly). A bare `\"Shield up!\"` fails step 1 "
+        "in a single run (nothing printed). Hint 1 of step 2 says `Shield up.\"` (with the quote) so clicking "
+        "there and pressing Backspace deletes the quote, not the period. "
         "Evidence: unclosed quotes on A-02 ('Fire Ball'), A-03 ('Fierball.'), A-04 ('Fireball'). "
         "No Assemble: the whole answer is one line. WAs: open quote (crash), starter unchanged, other quote "
         "mark, quote put back after the bracket, the period deleted instead of the quote, lower case, no print, "
-        "a space lost, other words (points to Reset code)."
-    ),
-)
-
-KEYBOARD_SYMBOLS = dict(
-    id="keyboard-symbols",
-    title="Where the symbols live",
-    martu=(
-        "`-` is minus, as in math. `_` is the underscore (Shift and `-`): it stands in for a space, as in "
-        "`max_mana`. `=` is the equals key, but in Python it won't mean equals. More in Boxes With Labels. "
-        "Top right of your keyboard:\n"
-        "```text\n"
-        "with Shift:   (   )   _   +\n"
-        "no Shift:     9   0   -   =\n"
-        "```\n"
-        "`print` means show on the screen, not on paper. `#` is Shift+3."
-    ),
-    example='print("( ) #")\n',
-    example_output="( ) #",
-    starter="# Print a line that has _ and - and = in it.\n",
-    names=["print"],
-    pick="_ - = are side by side.",
-    checkpoints=[
-        dict(
-            id="print-the-symbols",
-            text=(
-                "Show `_`, `-` and `=` on the screen, all on one line. On line 2, copy the Example's shape and "
-                "put the three marks inside its quotes."
-            ),
-            dictated=False,
-            hints=[
-                "Click at the end of line 1 and press Enter. Line 1 starts with `#`, so Python skips it. "
-                'Start a new line with `print("` and add the symbols after it.',
-                "Quotes mean *show these exact marks*. Python shows whatever is between them, as it is: "
-                '`print("( )")` shows `( )`.',
-                'Type `print("_ - = are side by side.")` on line 2. Anything inside the quotes shows as it is.',
-            ],
-            checks=[
-                ("prints something", "assert _lines(), 'Nothing shows in the Console yet. Line 1 starts with `#`, "
-                 "so Python skips it. On line 2, write a `print` line with the three marks inside quotes.'"),
-                (
-                    "one line has all three symbols",
-                    "_best = max(_lines(), key=lambda line: sum(s in line for s in '_-='))\n"
-                    "_missing = [s for s in '_-=' if s not in _best]\n"
-                    "assert not _missing, 'Your line is missing ' + ' and '.join('`' + s + '`' for s in _missing) "
-                    "+ '. Put all three marks inside one pair of quotes, on one `print` line.'",
-                ),
-            ],
-            pass_line="Mar'tu: Now you know where they live.",
-        ),
-    ],
-    solution='print("_ - = are side by side.")\n',
-    assemble=dict(
-        lines=['print("Keys:")', 'print("_ - =")'],
-        distractors=["print(_ - =)", 'print("_ - =)'],
-    ),
-    another_way=[
-        dict(
-            angle="picture",
-            text=(
-                "The three keys, circled:\n"
-                "```text\n"
-                "  9   0  (-)  (=)   Backspace\n"
-                "         Shift + (-) gives (_)\n"
-                "```"
-            ),
-        ),
-        dict(
-            angle="step-by-step",
-            text=(
-                "1. `-` is the key right after `0`.\n"
-                "2. `_` is the same key with Shift held down.\n"
-                "3. `=` is the next key to the right.\n"
-                '4. `"` is Shift with the `\'` key, next to Enter.\n'
-                "5. `#` is Shift with the `3` key."
-            ),
-        ),
-        dict(
-            angle="shorter",
-            label="Say it shorter",
-            text='Type `print("`, then the three symbols, then `")`.',
-        ),
-    ],
-    wrong_answers=[
-        dict(why="starter unchanged: only the note, nothing printed", code="# Print a line that has _ and - and = in it.\n",
-             fails_at=1, message_contains="Nothing shows"),
-        dict(why="symbols with no quotes", code="print(_ - =)\n", fails_at=0, message_contains="invalid syntax"),
-        dict(why="leaves one symbol out", code='print("_ -")\n', fails_at=1, message_contains="missing `=`"),
-        dict(why="check-breaker: each symbol on its own line, not one line with all three",
-             code='print("_")\nprint("-")\nprint("=")\n', fails_at=1, message_contains="missing"),
-    ],
-    takeaway="`-` is minus. `_` (Shift and `-`) stands in for a space. `=` is not math's equals: its job comes "
-             "in Boxes With Labels.",
-    notes=(
-        "meta: starter_level=S2; path=CC; contingent=show-me-more (K); skills=print-text; solo=false; "
-        "dictates=; foreign_names=. G1 R30 (dash for =: A-04 `chicken_sandwich - \"Fireball`). Any line with "
-        "all three symbols passes; Mar'tu's pick is the solution's line. Check-breaker: WA for one symbol per line."
+        "the line deleted, a space lost, other words (points to Reset code)."
     ),
 )
 
@@ -481,7 +426,7 @@ PRESS_RUN = dict(
     title="Press Run",
     martu=(
         "In Python, *print* means show on the screen, not on paper. `print` shows text in the "
-        "[[console|Console]], the box under your code where Python's answers appear. Think of a play script: "
+        "[[console|Console]], the space under your code where Python's answers appear. Think of a play script: "
         "your code is the script, ▶ [[run|Run]] is \"Action!\", and the Console is the stage. Guess what will "
         "show, then press Run."
     ),
@@ -715,26 +660,27 @@ CLOSE_THE_QUOTE = dict(
     martu=(
         "[[quotes|Quotes]] come in pairs, like quotation marks in English class. [[parentheses|Parentheses]] "
         "`( )` come in pairs too, as in math: 3 × (2 + 4). Line 1 needs a closing quote, and line 2 needs a "
-        "`)`. To [[mend]] a line means to fix it, and a *slip* is a small mistake. Press Run, read the box, and "
-        "mend one line at a time."
+        "`)`. Press Run and read the error box. Fix one line at a time: Python stops at the first mistake it "
+        "finds."
     ),
-    example='print("Two quotes, two brackets.")\n',
-    example_output="Two quotes, two brackets.",
+    example='print("Two quotes, two parentheses.")\n',
+    example_output="Two quotes, two parentheses.",
     starter='print("It is not a compass)\nprint("Shield up."\n',
     pair_talk=(
-        "Pair talk: read the title of the box in the Console out loud to your partner. Which line number does "
-        "it give? Then each of you fixes your own code."
+        "Pair talk: read the title of the error box out loud to your partner. Which line number does it give? "
+        "Then each of you fixes your own code."
     ),
     checkpoints=[
         dict(
             id="mend-line-1",
             text=(
-                'Mend line 1: it needs a closing `"` right after the word `compass`. Then press Run, and '
+                'Fix line 1: it needs a closing `"` right after the word `compass`. Then press Run, and '
                 "Python moves on to line 2."
             ),
             dictated=True,
             hints=[
-                'Look at the end of line 1, right after the word `compass`. Is there a `"` to close the words?',
+                "Read the title of the error box, then Python's last line. Both point at line 1. Look right after "
+                'the word `compass`: is there a `"` to close the words?',
                 'Count the `"` marks on line 1. There is only one. Quotes come in pairs, so the text never '
                 "ends: Python calls that *unterminated*.",
                 'Type `"` right after `compass`. Line 1 becomes `print("It is not a compass")`.',
@@ -747,10 +693,11 @@ CLOSE_THE_QUOTE = dict(
         ),
         dict(
             id="mend-line-2",
-            text="Mend line 2: one of its marks has no partner. Count its `(` and `)`.",
+            text="Fix line 2: one of its marks has no partner. Count its `(` and `)`.",
             dictated=False,
             hints=[
-                "Look at the very end of line 2. Which mark opened, but never closed?",
+                "Press Run again and read the error box: now it points at line 2. Look at the very end of line 2. "
+                "Which mark opened, but never closed?",
                 "Count the parentheses on line 2. A `(` opens and a `)` closes, the same as in math: (2 + 4).",
                 'Type `)` at the very end of line 2. Line 2 becomes `print("Shield up.")`.',
             ],
@@ -842,7 +789,7 @@ CLOSE_THE_QUOTE = dict(
         dict(why="check-breaker: both lines squeezed into one print",
              code='print("It is not a compass", "Shield up.")\n', fails_at=1, message_contains="line of its own"),
     ],
-    takeaway="Quotes come in pairs, and parentheses come in pairs. To mend a line means to fix it.",
+    takeaway="Quotes come in pairs, and so do parentheses. Fix one line at a time, and press Run after each fix.",
     notes=(
         "meta: starter_level=S4; path=CC; skills=quote-text; solo=false; dictates=1; foreign_names=; "
         "stages=D,I. Explainer rows proven here (2.6): unterminated (starter), mixed quotes (WA), two "
@@ -1268,9 +1215,9 @@ NOTES_FOR_HUMANS = dict(
     id="notes-for-humans",
     title="Notes for humans",
     martu=(
-        "A line that starts with the `#` sign (Shift+3) is a [[comment|note for people]]: Python skips it. It's "
-        "like the stage directions in a play script: the actors read them but never say them out loud. Put `#` "
-        "at the very start of a line to switch that line off: `# print(\"Hi\")` shows nothing."
+        "A line that starts with `#` (Shift+3) is a [[comment|note for people]]: Python skips it. Back to the "
+        "play script: a `#` line is like a stage direction. The actors read it but never say it out loud. Put "
+        "`#` at the very start of a line to switch that line off: `# print(\"Hi\")` shows nothing."
     ),
     example='# This note is for humans.\nprint("Python reads this.")\n# print("Python skips this.")\n',
     example_output="Python reads this.",
@@ -1303,8 +1250,8 @@ NOTES_FOR_HUMANS = dict(
                 (
                     "the line is kept as a note",
                     NOTES + "assert any('keeping the glug' in text and 'print' in text.lower() for _, text in _notes), "
-                    "'Your code no longer has the whole glug line, `print` and all. Put it back, and switch it off "
-                    "with `#` at its very start.'",
+                    "'The glug line, `print(\"I am keeping the glug.\")`, isn\\'t all there. Press Reset code to get "
+                    "it back. Then put `#` at its very start, before `print`.'",
                 ),
                 (
                     "the other lines still print",
@@ -1402,8 +1349,9 @@ NOTES_FOR_HUMANS = dict(
             angle="everyday",
             label="From English class",
             text=(
-                "A note in the margin of your own essay helps you, but it isn't part of the essay. A `#` note "
-                "is like that: it helps the people who read your code, and Python skips it."
+                "In a play script, a stage direction like *Lucky hides the glug* tells the actors what to do. "
+                "They read it, but they never say it out loud. A `#` note is the same: it's for the people who "
+                "read your code, and Python never runs it."
             ),
         ),
         dict(
@@ -1440,7 +1388,7 @@ NOTES_FOR_HUMANS = dict(
         dict(why="deletes the line instead of switching it off", code=(
             'print("Steady, now. Rest while you can.")\n'
             'print("I will take first watch.")\n'
-        ), fails_at=1, message_contains="switch it off"),
+        ), fails_at=1, message_contains="isn't all there"),
         dict(why="switches off the wrong line", code=(
             '# print("Steady, now. Rest while you can.")\n'
             'print("I am keeping the glug.")\n'
@@ -1467,12 +1415,12 @@ NOTES_FOR_HUMANS = dict(
             'print("Steady, now. Rest while you can.")\n'
             "# I am keeping the glug.\n"
             'print("I will take first watch.")\n'
-        ), fails_at=1, message_contains="`print` and all"),
+        ), fails_at=1, message_contains="isn't all there"),
         dict(why="check-breaker: deletes the line and writes a note about it", code=(
             "# Lucky is keeping the glug.\n"
             'print("Steady, now. Rest while you can.")\n'
             'print("I will take first watch.")\n'
-        ), fails_at=1, message_contains="`print` and all"),
+        ), fails_at=1, message_contains="isn't all there"),
     ],
     takeaway="`#` (Shift+3) starts a note for people. Python skips it. Put `#` at the start of a line to switch it off.",
     notes=(
@@ -1485,11 +1433,11 @@ NOTES_FOR_HUMANS = dict(
 
 BROKEN_SPELL_1A = dict(
     id="broken-spell-1a",
-    title="Broken spell: three slips",
+    title="Broken spell: three mistakes",
     martu=(
-        "Three lines, three small mistakes, one on each line. Press Run. Read the title of the box, then "
-        "Python's last line. Fix the line it gives, then press Run again. Python stops at the first mistake it "
-        "meets, so each fixed line lets it get further."
+        "Three lines, three small mistakes, one on each line. Press Run. Read the title of the error box, then "
+        "Python's last line. Find the line number, fix that line, and press Run again. Python stops at the first "
+        "mistake it finds, so each fix lets it get further."
     ),
     starter=(
         'print("Shield up.)\n'
@@ -1498,17 +1446,17 @@ BROKEN_SPELL_1A = dict(
     ),
     names=["print"],
     pair_talk=(
-        "Pair talk: before you fix anything, tell your partner which line number the box gives first. "
+        "Pair talk: before you fix anything, tell your partner which line number the error box gives first. "
         "Then each of you fixes your own code."
     ),
     checkpoints=[
         dict(
             id="mend-line-1",
-            text="Mend line 1 so it shows `Shield up.` in the Console.",
+            text="Fix line 1 so it shows `Shield up.` in the Console.",
             dictated=True,
             hints=[
-                "Read the title of the box in the Console, then Python's last line. Both point at line 1: look "
-                "right after `Shield up.`",
+                "Read the title of the error box, then Python's last line. Both point at line 1. Look right after "
+                "`Shield up.`: is a quote missing?",
                 'Count the `"` marks on line 1. Quotes come in pairs, and line 1 has only one.',
                 'Type `"` right after `Shield up.` on line 1. Line 1 becomes `print("Shield up.")`.',
             ],
@@ -1519,10 +1467,11 @@ BROKEN_SPELL_1A = dict(
         ),
         dict(
             id="mend-line-2",
-            text="Mend line 2 so it shows `Barrier's holding.` in the Console.",
+            text="Fix line 2 so it shows `Barrier's holding.` in the Console.",
             dictated=True,
             hints=[
-                "Read the box's title and Python's last line. Then look at the first letter of line 2.",
+                "Read the error box's title and Python's last line: now they point at line 2. Look at the first "
+                "letter of line 2.",
                 "Compare the first word of line 2 with `print` on line 1. Python's words are all small letters, "
                 "so `Print` and `print` are different names to Python.",
                 "Change the capital `P` at the start of line 2 to a small `p`. Line 2 becomes "
@@ -1536,10 +1485,11 @@ BROKEN_SPELL_1A = dict(
         ),
         dict(
             id="mend-line-3",
-            text="Mend line 3 so it shows `Steady` in the Console.",
+            text="Fix line 3 so it shows `Steady` in the Console.",
             dictated=True,
             hints=[
-                "Look at `Steady` on line 3. Does it have quotes around it?",
+                "Read the error box again: now it points at line 3. Look at `Steady` there. Does it have quotes "
+                "around it?",
                 "Is `Steady` a word to show, or a name Python should look up? Text to show needs quotes. "
                 "Without quotes, Python looks for a name it should already know.",
                 'Type `"` right before `Steady` and another `"` right after it. Line 3 becomes '
@@ -1575,7 +1525,7 @@ BROKEN_SPELL_1A = dict(
             angle="step-by-step",
             text=(
                 "Each time you press Run:\n"
-                "1. Read the title of the box in the Console. It says what went wrong.\n"
+                "1. Read the title of the error box. It says what went wrong.\n"
                 "2. Read Python's last line. It says the same thing in Python's words.\n"
                 "3. Find the line number and fix that line. Press Run again.\n"
                 "Each fixed line shows in the Console before the next error."
@@ -1642,7 +1592,8 @@ BROKEN_SPELL_1A = dict(
             '"Steady"\n'
         ), fails_at=3, message_contains="no `print`"),
     ],
-    takeaway="Press Run, read the box's title and Python's last line, fix that one line, and press Run again.",
+    takeaway="Press Run. Read the error box's title, then Python's last line. Fix that one line, and press Run "
+             "again.",
     notes=(
         "meta: starter_level=S4; path=CC; skills=quote-text,read-traceback; solo=false; dictates=1,2,3; "
         "foreign_names=. "
@@ -1667,11 +1618,11 @@ SOLO_1A = dict(
     checkpoints=[
         dict(
             id="mend-the-lantern",
-            text="Mend line 1 so it shows `The lantern is lit.` in the Console.",
+            text="Fix line 1 so it shows `The lantern is lit.` in the Console.",
             dictated=False,
             hints=[
-                "Read the title of the box in the Console, then Python's last line. Then look at the line "
-                "with that number.",
+                "Read the title of the error box, then Python's last line. Then look at the line with that "
+                "number.",
                 'Count the `"` marks on line 1. Quotes come in pairs.',
             ],
             checks=[
@@ -1710,13 +1661,14 @@ ITEMS = [
         kind="lesson",
         id="before-the-first-spell",
         title="Before the First Spell",
-        minutes=4,
-        summary="Two warm-ups: what an error looks like, and where the symbols live on the keyboard.",
-        exercises=[WHAT_AN_ERROR_LOOKS_LIKE, KEYBOARD_SYMBOLS],
+        minutes=3,
+        summary="A warm-up: break a line on purpose, and read the error box Python shows.",
+        exercises=[WHAT_AN_ERROR_LOOKS_LIKE],
         notes=(
             "1W: contingent (K), on under 'Show me more', off under 'Keep it short' and instructions-light. "
             "In the prototype it is an ordinary lesson (curriculum section 7 note). A warm-up, so it has no "
-            "SOLO item (lint g applies to 1A)."
+            "SOLO item (lint g applies to 1A). Structure pass (guide 9, S12): keyboard-symbols moved to the start "
+            "of Boxes With Labels (u01b), after print and # are taught and right before `=` and `_` are used."
         ),
     ),
     dict(

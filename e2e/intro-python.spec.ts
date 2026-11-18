@@ -149,7 +149,9 @@ test.describe("Intro to Python", () => {
       if (n < 4) await run();
       if (n === 3) {
         // Three misses in a row on the step: Help is highlighted with Oogrish's one line (no popup).
-        await expect(page.getByTestId("help-offer")).toContainText("Read the title of the box in the Console");
+        await expect(page.getByTestId("help-offer")).toContainText(
+          "Read the title of the box in the Console, then Python’s last line. Then find the line number and fix that line.",
+        );
         await expect(help).toHaveClass(/is-offered/);
       }
     }
@@ -297,11 +299,15 @@ test.describe("Intro to Python", () => {
     await expect(lines.nth(3)).toHaveText("# 2. Make mana");
     await expect(lines.nth(4)).toHaveText("mana");
 
-    // After a crash, Help names the line to mend first; Start me off is not offered for a line that is there.
+    // After a crash, Help names the line to fix first; Start me off is not offered for a line that is there.
     await runCode(page, 'caster = "Gearshift"\nmana = 20\nprint(caster + " has " + mana + " mana.")\n');
     await expect(page.getByTestId("explainer")).toBeVisible();
-    await expect(page.getByTestId("task-line")).toContainText("First, fix line 3.");
-    await expect(page.getByTestId("help-crash")).toContainText("Fix line 3 first.");
+    await expect(page.getByTestId("task-line")).toContainText(
+      "Python stopped at line 3, so it couldn't finish your code. Fix line 3, then press Run again. The box in the Console says how to fix it.",
+    );
+    await expect(page.getByTestId("help-crash")).toContainText(
+      "Python stopped at line 3, so it couldn't finish your code. Fix line 3, then press Run again. The box in the Console says what's wrong.",
+    );
     await expect(page.getByTestId("help-button")).not.toContainText("Start me off");
   });
 

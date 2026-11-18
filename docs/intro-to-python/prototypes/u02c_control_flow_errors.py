@@ -951,21 +951,22 @@ UNIT = dict(
     subtitle="The Ley Clock Decides",
     published=True,
     martu_intro=(
-        "The Ley Clock does not panic. It checks. If the hand is near the arc, it warns. Otherwise, it waits.\n"
-        "Today you teach Python to check the same way. And you learn to roll dice, because the world is not fair, "
-        "yes?\n"
+        "The Ley Clock counts the hours until the next burst of magic. It does not panic. It checks: if the burst "
+        "is close, it warns. Otherwise, it waits.\n"
+        "In this unit, you teach Python to check the same way: ask a yes-or-no question, then choose what to do.\n"
+        "You also roll dice, because the world is not fair, yes?\n"
         "You have seen this code already: the four dialogue options, the trap-door skill checks. It felt like a "
         "wall. Now we take it apart, one stone at a time."
     ),
     goals=[
-        "Ask yes-or-no questions with `==`, `!=`, `<`, `>`, `<=` and `>=`, and get `True` or `False`",
-        "Tell `=` (gets) from `==` (is the same as)",
-        "Choose `>=` on purpose, so exactly enough still passes",
-        "Compare text exactly, and with `.lower()` so capitals don't matter",
-        "Write `if`, `else` and `elif` with colons and indents, knowing the first true branch wins",
-        "Join questions with `and`, `or` and `not`",
-        "Roll dice with `import random` and `random.randint(1, 20)`, both ends included",
-        "Read Python's error message, find the line, and mend it",
+        "Ask Python yes-or-no questions, like *is 6 less than 15?*",
+        "Tell apart putting a value in a box and asking whether two values are the same",
+        "Decide whether exactly enough should count, like the filled dot on a number line",
+        "Compare words exactly, or so that capitals don't matter",
+        "Make Python choose what to do, like a choose-your-own-adventure book",
+        "Join yes-or-no questions with *and*, *or* and *not*",
+        "Roll dice in your code",
+        "Read Python's error messages, find the line, and fix it",
     ],
     campaign_links=["leylines-awaken", "friends-in-low-places"],
 )
@@ -1873,7 +1874,7 @@ NO_ERROR_WRONG_ANSWER = dict(
         ),
         dict(
             id="mend-the-sign",
-            text="Mend the sign in `if mana > cost:`, so exactly enough mana casts the ward.",
+            text="Fix the sign in `if mana > cost:`, so exactly enough mana casts the ward.",
             dictated=False,
             hints=[
                 "Look at the Console: 9, then 9, then `Not enough mana.` With 9 mana and a cost of 9, is that the right "
@@ -1916,7 +1917,7 @@ NO_ERROR_WRONG_ANSWER = dict(
             label="You've seen this",
             text=(
                 "In the game, the barrier part said it plainly: use `<` and not `<=`, because a caster with exactly "
-                "enough mana can still cast. It's the same boundary, seen from the other side."
+                "enough mana can still cast. It's the same exactly-enough question, seen from the other side."
             ),
         ),
         dict(
@@ -1935,9 +1936,9 @@ NO_ERROR_WRONG_ANSWER = dict(
         part="hold-the-barrier",
         snippet='elif caster["mana"] < spell["mana_cost"]:',
         why=(
-            "You've seen this boundary. `cast_spell` used `<`, not `<=`, so a caster with exactly enough mana "
+            "You've seen this before. `cast_spell` used `<`, not `<=`, so a caster with exactly enough mana "
             "still cast. Now you get why. When a cast fails with no error, print the mana and the cost: the values "
-            "show the boundary."
+            "show you it was exactly enough."
         ),
     ),
     takeaway="No error but a wrong answer? Print the values right before the line that decides.",
@@ -2161,7 +2162,7 @@ DEBUG_ROUTINE = dict(
         "2. Find the line number, and go to that line.\n"
         "3. Check the line above it too, and the lines where its boxes were made.\n"
         "4. No error, but a wrong answer? Print the values.\n"
-        "This 12-line script about the road ahead has three bugs: two loud, one quiet."
+        "This code about the road ahead has 12 lines and three bugs: two loud, one quiet."
     ),
     names=["encounter", "roll", "needed", "str"],
     pair_talk=(
@@ -2172,7 +2173,7 @@ DEBUG_ROUTINE = dict(
     checkpoints=[
         dict(
             id="mend-the-name",
-            text="Mend the name on line 9 that Python can't find.",
+            text="Fix the name on line 9 that Python can't find.",
             dictated=False,
             hints=[
                 "Read the box in the Console. First its title, then Python's last line. Python even asks: `Did you "
@@ -2186,10 +2187,10 @@ DEBUG_ROUTINE = dict(
         ),
         dict(
             id="glue-the-roll",
-            text="Mend line 10, which glues the roll to text.",
+            text="Fix line 10, which glues the roll to text.",
             dictated=False,
             hints=[
-                "Press Run again and read the new box: its title, then Python's last line. Which line number does it "
+                "Press Run again and read the new error box: its title, then Python's last line. Which line number does it "
                 "give?",
                 "Python can only glue text to text. Go to line 10, then check line 3, where `roll` is made: does "
                 "`roll` hold text or a number?",
@@ -2203,7 +2204,7 @@ DEBUG_ROUTINE = dict(
             text=(
                 "The last bug is quiet: a roll of exactly `needed` should pass, but it doesn't. Three moves:\n"
                 "1. Change line 3 to `roll = 12` and press Run. Does Oogrish spot the cart?\n"
-                "2. Mend the sign in the `if` on line 5, so a roll of exactly 12 passes.\n"
+                "2. Fix the sign in the `if` on line 5, so a roll of exactly 12 passes.\n"
                 "3. Put line 3 back to `roll = random.randint(1, 20)`."
             ),
             dictated=False,
@@ -2227,7 +2228,7 @@ DEBUG_ROUTINE = dict(
     another_way=[
         dict(
             angle="step-by-step",
-            label="The routine on this script",
+            label="The four steps on this code",
             text=(
                 "1. First bug. Python's last line: `name 'encounterr' is not defined`. It stopped on line 9. Lines 6 "
                 "and 8 make `encounter`, with one r at the end.\n"
@@ -2251,10 +2252,10 @@ DEBUG_ROUTINE = dict(
             label="You've seen this",
             text=(
                 "In the game, the trap-door checks said `return roll >= required_roll`. A roll of exactly the number "
-                "needed passed. The quiet bug here is the same boundary."
+                "needed passed. The quiet bug here is the same exactly-enough question."
             ),
         ),
-        dict(angle="shorter", text="Read the box. Go to the line. Check the line above. No error? Print the values."),
+        dict(angle="shorter", text="Read the error box. Go to the line. Check the line above. No error? Print the values."),
     ],
     campaign_link=dict(
         module="friends-in-low-places",
@@ -2266,7 +2267,7 @@ DEBUG_ROUTINE = dict(
             "that."
         ),
     ),
-    takeaway="Read the box: its title, then Python's last line. Go to that line, and check the line above it. No error? Print the values.",
+    takeaway="Read the error box: its title, then Python's last line. Go to that line, and check the line above it. No error? Print the values.",
     wrong_answers=[
         dict(why="the starter (the typo is reported first)", code=ROUTINE_STARTER, fails_at=0, message_contains="encounterr"),
         dict(why="typo mended, the roll still glued without str()",
@@ -2341,7 +2342,7 @@ SOLO_2C = dict(
             text="Make line 2 show `Mana: 14` in the Console.",
             dictated=False,
             hints=[
-                "Read Python's last line in the box. What can Python only glue?",
+                "Read Python's last line in the error box. What can Python only glue?",
                 "Look at line 2, where Python stopped. `mana` holds a number, and `+` glues text to text.",
                 "`\"Gold: \" + str(gold)` turns the number into text first.",
             ],
@@ -2362,7 +2363,7 @@ SOLO_2C = dict(
             "1. Read Python's last line: it can only glue text.\n2. Go to line 2.\n3. Put the number inside `str()`.")),
         dict(angle="shorter", text="Text + number? Use `str(mana)`."),
     ],
-    takeaway="On your own: read the box, go to the line Python stopped on, and fix the mistake.",
+    takeaway="On your own: read the error box, go to the line Python stopped on, and fix the mistake.",
     wrong_answers=[
         dict(why="the starter (text + number)", code=SOLO_2C_STARTER, fails_at=0, message_contains="concatenate"),
         dict(why="the mana typed into the text", code="mana = 14\nprint(\"Mana: 14\")\n", fails_at=1,
@@ -2428,7 +2429,7 @@ SYNTAX_FIZZLES = dict(
         "can't read a line, so it stops before anything runs. This spell has three: a missing `\"`, a missing `:` "
         "and a missing `)`.\n"
         "Guess first: three mistakes, so how many error boxes will you see? Press Run and count.\n"
-        "Then fix them one at a time. After each fix, press Run and read the new box. A new error means Python "
+        "Then fix them one at a time. After each fix, press Run and read the new error box. A new error means Python "
         "got further."
     ),
     names=["mana"],
@@ -2436,7 +2437,7 @@ SYNTAX_FIZZLES = dict(
     checkpoints=[
         dict(
             id="close-the-quote",
-            text="Mend line 2, so it shows `Shield up.` in the Console.",
+            text="Fix line 2, so it shows `Shield up.` in the Console.",
             dictated=False,
             hints=[
                 "Read the box in the Console. First its title, then Python's last line. *Unterminated* means the "
@@ -2452,10 +2453,10 @@ SYNTAX_FIZZLES = dict(
         ),
         dict(
             id="add-the-colon",
-            text="Mend the `if` on line 3.",
+            text="Fix the `if` on line 3.",
             dictated=False,
             hints=[
-                "Press Run again and read the new box. Python's last line says `expected ':'`.",
+                "Press Run again and read the new error box. Python's last line says `expected ':'`.",
                 "Look at the very end of line 3. Every `if` line ends with a colon, like `if rain > 0:`.",
                 "Type `:` at the very end of line 3. Line 3 becomes `if mana < 6:`.",
             ],
@@ -2472,10 +2473,10 @@ SYNTAX_FIZZLES = dict(
         ),
         dict(
             id="close-the-bracket",
-            text="Mend line 5, the last line, so it shows the mana.",
+            text="Fix line 5, the last line, so it shows the mana.",
             dictated=False,
             hints=[
-                "Press Run again and read the new box. Python's last line says `'(' was never closed`.",
+                "Press Run again and read the new error box. Python's last line says `'(' was never closed`.",
                 "Count the `(` and the `)` on line 5. Parentheses come in pairs, like in math class: "
                 "`print(str(gold))` has two `(` and two `)`.",
                 "Type `)` at the very end of line 5. Line 5 becomes `print(\"Mana: \" + str(mana))`.",
@@ -2513,7 +2514,7 @@ SYNTAX_FIZZLES = dict(
         dict(
             angle="step-by-step",
             text=(
-                "1. Press Run.\n2. Read the box: its title, then Python's last line.\n3. Fix that one mistake.\n"
+                "1. Press Run.\n2. Read the error box: its title, then Python's last line.\n3. Fix that one mistake.\n"
                 "4. Press Run again. A new error means Python got further."
             ),
         ),
@@ -2585,14 +2586,14 @@ NAME_FIZZLES = dict(
         "A [[NameError]] means Python met a name that no line has made yet. It's like a story that says *she "
         "grabbed it* but never said who *she* is. `print(mama)` stops Python if no line made `mama`.\n"
         "This spell has four, each for a different reason: a typo, a box used too early, words without quotes, "
-        "and a capital letter. Read the box each time. Sometimes Python even asks: *Did you mean ...?*"
+        "and a capital letter. Read the error box each time. Sometimes Python even asks: *Did you mean ...?*"
     ),
     names=["mana", "shield", "spell", "health"],
     starter=NAMES_STARTER,
     checkpoints=[
         dict(
             id="mend-the-typo",
-            text="Mend line 2 so it shows the mana.",
+            text="Fix line 2 so it shows the mana.",
             dictated=False,
             hints=[
                 "Read the box in the Console: its title, then Python's last line. It asks: `Did you mean: 'mana'?`",
@@ -2619,7 +2620,7 @@ NAME_FIZZLES = dict(
             text="Move `shield = 8` from line 4 up above line 3, so `shield` is made before line 3 uses it.",
             dictated=False,
             hints=[
-                "Press Run again and read the new box. Python's last line: `name 'shield' is not defined`. Which line "
+                "Press Run again and read the new error box. Python's last line: `name 'shield' is not defined`. Which line "
                 "makes `shield`?",
                 "Python reads your code like a page in a book, from the top line down. On line 3, has any line made "
                 "`shield` yet? A box must be made before it is used:\n```python\ngold = 12\nprint(gold)\n```",
@@ -2638,7 +2639,7 @@ NAME_FIZZLES = dict(
             text="On line 5, put quotes around `Fireball`, so `spell` holds the text `Fireball`.",
             dictated=True,
             hints=[
-                "Press Run again and read the new box. Python's last line: `name 'Fireball' is not defined`. Is "
+                "Press Run again and read the new error box. Python's last line: `name 'Fireball' is not defined`. Is "
                 "`Fireball` a box, or words?",
                 "Python looked for a box called `Fireball` and found none. You meant the words. " + QUOTES_RULE,
                 "Type `\"` before and after `Fireball` on line 5. Line 5 becomes `spell = \"Fireball\"`.",
@@ -2657,7 +2658,7 @@ NAME_FIZZLES = dict(
             text="Line 8 uses `health`, but line 7 makes `Health`. Change line 7 so both lines use the name `health`.",
             dictated=False,
             hints=[
-                "Press Run again and read the new box. Python's last line asks: `Did you mean: 'Health'?`",
+                "Press Run again and read the new error box. Python's last line asks: `Did you mean: 'Health'?`",
                 "Compare line 7 with line 8. One name has a capital, one does not. Python sees `Gold` and `gold` as "
                 "two different names. The task's name is `health`.",
                 "Change the `H` in `Health` on line 7 to a small `h`. Line 7 becomes `health = 100`.",
@@ -2755,7 +2756,7 @@ TYPE_FIZZLES = dict(
         "A [[TypeError]] means two values that don't fit together, like adding 5 meters to 3 seconds in math. "
         "In Python it's mostly text and a number: `\"Mana: \" + 14` stops Python, because `+` can only glue text "
         "to text.\n"
-        "Read the box, then go to the line Python stopped on. Also check the lines where its boxes were made: the "
+        "Read the error box, then go to the line Python stopped on. Also check the lines where its boxes were made: the "
         "mistake is not always on the line where Python stopped."
     ),
     names=["mana", "cost", "str"],
@@ -2763,7 +2764,7 @@ TYPE_FIZZLES = dict(
     checkpoints=[
         dict(
             id="glue-the-mana",
-            text="Mend line 2 so it shows the mana.",
+            text="Fix line 2 so it shows the mana.",
             dictated=False,
             hints=[
                 "Read the box in the Console: its title, then Python's last line. What can Python only glue?",
@@ -2781,10 +2782,10 @@ TYPE_FIZZLES = dict(
         ),
         dict(
             id="cost-is-a-number",
-            text="Line 4 compares a number with text. Mend line 3, which makes `cost`, so `cost` holds a number.",
+            text="Line 4 compares a number with text. Fix line 3, which makes `cost`, so `cost` holds a number.",
             dictated=False,
             hints=[
-                "Press Run again and read the new box. Python's last line: `'>=' not supported between instances of "
+                "Press Run again and read the new error box. Python's last line: `'>=' not supported between instances of "
                 "'int' and 'str'`. In Python's words, `int` means a whole number and `str` means text. Which box "
                 "holds text?",
                 "Python stopped on line 4, but the text comes from line 3. Look at the quotes there. `\"7\" > 3` "
@@ -3001,7 +3002,7 @@ MARTUS_SEAL = dict(
         "```text\nFile \"main.py\", line 4\n    assert passed == True\nAssertionError\n```\n"
         "Why bother? Seals catch quiet [[bug|bugs]]. A `>` where `>=` belongs gives no error at all. A seal at the "
         "*boundary*, the exact number that should still pass, turns that quiet bug into a loud one.\n"
-        "At the Institute we sealed our work this way. The campaign never asks for seals. They are for the "
+        "At the Institute we sealed our work this way. The game never asks for seals. They are for the "
         "careful, yes?"
     ),
     examples=[
@@ -3216,10 +3217,10 @@ def _qc_mend(form, first, second, first_line, second_line):
     loud_mended = program(lower="choice.lower()")
     return dict(
         id="mend-the-choices",
-        title="Mend the choices",
+        title="Fix the choices",
         martu=_QC_MARTU + (
             "Three mistakes in a dialogue chain, like the dialogue options in the game: two loud, one quiet. For "
-            "each loud one, read the box, go to the line Python stopped on, and fix it. Then press Run again for the "
+            "each loud one, read the error box, go to the line Python stopped on, and fix it. Then press Run again for the "
             "next. When there is no error box, read what your code printed.\n"
             "Stuck? Skip it, or go back to the lesson When Spells Fizzle. Tasks you pass here stay done."
         ),
@@ -3230,10 +3231,10 @@ def _qc_mend(form, first, second, first_line, second_line):
         checkpoints=[
             dict(
                 id="mend-the-ask",
-                text=f"Mend line 3, the line that asks about `\"{first}\"`.",
+                text=f"Fix line 3, the line that asks about `\"{first}\"`.",
                 dictated=False,
                 hints=[
-                    "Read the box: its title, then Python's last line. Which line did Python stop on?",
+                    "Read the error box: its title, then Python's last line. Which line did Python stop on?",
                     "Python stopped on line 3 and asks: `Maybe you meant '=='`? Which sign asks a question?",
                     "`=` puts a value in a box. `==` asks: is the same as? `if mana == 0:` asks whether mana is 0.",
                 ],
@@ -3255,10 +3256,10 @@ def _qc_mend(form, first, second, first_line, second_line):
             ),
             dict(
                 id="mend-the-quotes",
-                text=f"Mend line 5, the line that asks about `{second}`.",
+                text=f"Fix line 5, the line that asks about `{second}`.",
                 dictated=False,
                 hints=[
-                    "Press Run again and read the new box. Which line did Python stop on?",
+                    "Press Run again and read the new error box. Which line did Python stop on?",
                     f"Python says `invalid syntax` on line 5. Two words with no quotes: is `{second}` a box, or text?",
                     QUOTES_RULE + " The option is text, so it needs quotes.",
                 ],
@@ -3297,7 +3298,7 @@ def _qc_mend(form, first, second, first_line, second_line):
         ),
         another_way=[
             dict(angle="step-by-step", text=(
-                "1. Press Run and read the box.\n2. Fix the line Python stopped on.\n3. Press Run again for the "
+                "1. Press Run and read the error box.\n2. Fix the line Python stopped on.\n3. Press Run again for the "
                 f"next.\n4. No error box, but `{hm}`? Look at line 2: is the copy kept?")),
             dict(angle="shorter", text=f"`==` asks. `\"{second}\"` needs quotes. Keep the copy: `choice = choice.lower()`."),
         ],
@@ -3589,7 +3590,7 @@ QC2_A = dict(
         _qc_mend("A", "option 1", "option 2", "Mar'tu: Then we take the jeep.", "Mar'tu: Then we walk."),
         _qc_barrier("A", "Oogrish", "Lantern Ward", 9, 9,
                     ("Oogrish isn't skilled enough.", "Oogrish doesn't have enough mana.", "The barrier holds."),
-                    "Mar'tu: Bomb Shell rolled for the wall. You fixed our choices. Oogrish held the barrier. "
+                    "Mar'tu: You rolled a skill check, fixed our choices and held the barrier. "
                     "That is Unit 2, yes? Want a stretch? Try Three Roads to the Institute."),
     ],
     notes=(
@@ -3625,7 +3626,7 @@ QC2_B = dict(
         _qc_mend("B", "option 3", "option 4", "Mar'tu: Then we rest here.", "Mar'tu: Then we follow the river."),
         _qc_barrier("B", "Gearshift", "Ember Wall", 14, 10,
                     ("Gearshift isn't skilled enough.", "Gearshift doesn't have enough mana.", "Barrier's holding."),
-                    "Mar'tu: Gearshift rolled for the cart. You fixed our choices. The barrier is holding. "
+                    "Mar'tu: You rolled a skill check, fixed our choices and held the barrier. "
                     "That is Unit 2, yes? Want a stretch? Try Three Roads to the Institute."),
     ],
     notes=(
@@ -3788,7 +3789,7 @@ CHALK_NOTES_2 = dict(
         dict(concept="Dice: `random.randint`", code="import random\nroll = random.randint(1, 20)\nprint(roll)\n",
              note="`import random` once, at the top. `random.randint(1, 20)` gives 1 to 20, both ends included."),
         dict(concept="The four-step routine", code="print(\"Rolled: \" + 7)\n",
-             note="1. Read the box: its title, then Python's last line. 2. Go to the line Python stopped on. 3. Check "
+             note="1. Read the error box: its title, then Python's last line. 2. Go to the line Python stopped on. 3. Check "
              "the line above it, and where its boxes were made. 4. No error, but a wrong answer? Print the values. "
              "(Lesson: When Spells Fizzle)"),
         dict(concept="Error: `=` in an `if`", code="roll = 20\nif roll = 20:\n    print(\"A perfect roll!\")\n",
@@ -3813,7 +3814,7 @@ CHALK_NOTES_2 = dict(
         dict(concept="(extra) Another way to choose: `match`",
              code="choice = \"option 2\"\nmatch choice:\n    case \"option 1\":\n        print(\"Then we leave at dawn.\")\n"
                   "    case \"option 2\":\n        print(\"Rest first, yes?\")\n    case _:\n        print(\"Hm.\")\n",
-             output="Rest first, yes?", note="`case _:` catches anything else. The campaign uses `elif`, so read both. "
+             output="Rest first, yes?", note="`case _:` catches anything else. The game uses `elif`, so read both. "
              "(Article: Match)"),
         dict(concept="(extra) Mar'tu's seal: `assert`",
              code="roll = 15\nneeded = 15\npassed = roll >= needed\nassert passed == True\nprint(\"Sealed.\")\n",
