@@ -145,7 +145,8 @@ test.describe("Intro to Python, Unit 6: Loops", () => {
     await open(page, "for-each-yes", "how-much-each-gap-shrank");
     const number = await runWrong(page, "for-each-yes/how-much-each-gap-shrank", "for i in len(...) ('int' object is not iterable)", 1);
     await expect(number).toHaveAttribute("data-kind", "loop-over-number");
-    await expect(hint).toContainText("Line 2 gives a for loop one number to walk. A for loop needs a list or range(...): one number has no items to walk through.");
+    // The student's own `for` line, walking positions from where Mar'tu's version starts: one fix, never "a list or range(...)".
+    await expect(hint).toContainText("Line 2 gives a for loop one number to walk, and one number has no items to walk through. Walk the positions with range: for i in range(1, len(chalk_wall)):");
 
     await open(page, "for-each-yes", "running-total");
     const whole = await runWrong(page, "for-each-yes/running-total", "the whole sheet added (TypeError)", 1);
@@ -190,7 +191,9 @@ test.describe("Intro to Python, Unit 6: Loops", () => {
     const number = await runWrong(page, "qc5-a/a-helper-for-each", "a loop over a number: for i in 4", 1);
     await expect(number).toHaveAttribute("data-explainer", "lean");
     await expect(number).toHaveAttribute("data-kind", "loop-over-number");
+    // Lean keeps the rule, never the fixed line.
     await expect(hint).toContainText("Line 7 gives a for loop one number to walk. A for loop needs a list or range(...): one number has no items to walk through.");
+    await expect(hint).not.toContainText("for i in range(");
     const promise = await runWrong(page, "qc5-a/a-helper-for-each", "the helper's own word read as a promise: light_lantern(name)", 2);
     await expect(promise).toHaveAttribute("data-kind", "made-inside-recipe");
     await expect(hint).toContainText("The mistake is on line 8: a name that only lives inside a recipe.");
@@ -211,32 +214,35 @@ test.describe("Intro to Python, Unit 6: Loops", () => {
     await runAndWait(page, 1);
     const explainer = page.getByTestId("explainer");
     await expect(explainer).toHaveAttribute("data-kind", "too-much-output");
-    await expect(page.getByTestId("explainer").locator(".ex-explainer-title")).toHaveText("Printing forever?");
-    await expect(page.getByTestId("explainer-hint")).toContainText("Your code printed so much that it was stopped. Look for a part of your code that repeats and never ends.");
+    // The box names the loop and why its question stays True, with Mar'tu's change as the one fix.
+    await expect(page.getByTestId("explainer").locator(".ex-explainer-title")).toHaveText("A loop that never ends");
+    await expect(page.getByTestId("explainer-hint")).toContainText(
+      "Your while loop on line 2 never ended: nothing inside it changes glug, so glug > 0 stays True. Add glug = glug - 1 inside the loop, under line 2.",
+    );
     await expect(page.getByTestId("python-last-line")).toContainText("TooMuchOutput: This program printed more than 200,000 characters, so it was stopped.");
     // The line it was stopped on (the print) is right: no "Fix line 3", and Help stays on the step.
     const task = page.getByTestId("task-line");
     await expect(task).toHaveAttribute("data-endless", "true");
-    await expect(task).toContainText("Your loop never ended. Python stopped your code, so it couldn't check your steps yet. Read the box in the Console, then change the loop so it can end.");
+    await expect(task).toContainText("Your loop on line 2 never ended. Python stopped your code, so it couldn't check your steps yet. Read the box in the Console, then change that loop so it can end.");
     await expect(task).not.toContainText("line 3");
     await expect(page.getByTestId("help-button")).toBeVisible();
     await expect(page.getByTestId("help-crash-wait")).toHaveCount(0);
-    // The update moved to the left edge: the same endless run again. The repeat note sends the reader to the loop's
-    // indented lines, never to line 3, the print it happened to stop on.
+    // The update moved to the left edge: the same endless run again. The repeat note sends the reader to that line
+    // (line 4, outside the loop), never to line 3, the print it happened to stop on.
     await setCode(page, wrongAnswer("while-the-clock-ticks/the-loop-that-never-ends", "the update outside the loop: it never ends"));
     await page.getByTestId("run").click();
     await expect(page.getByTestId("run-count")).toHaveText(/Run 2 finished/, { timeout: 60_000 });
-    await expect(page.getByTestId("same-error")).toHaveText(
-      "Same error as last time. Look at the indented lines under your loop's first line. Which one changes the number its question checks?",
-    );
+    await expect(page.getByTestId("same-error")).toHaveText("Same error as last time. Look closely at line 4.");
+    await expect(page.getByTestId("task-line")).toContainText("Read the box in the Console, then fix line 4.");
 
     // A loop with no update that prints nothing: the 5-second limit stops it, and says why.
     await setCode(page, 'glug = 3\nwhile glug > 0:\n    glug + 1\nprint("The canteen is empty.")\n');
     await runAndWait(page, 3);
     await expect(explainer).toHaveAttribute("data-kind", "timeout");
-    await expect(page.getByTestId("explainer").locator(".ex-explainer-title")).toHaveText("Ran too long");
+    await expect(page.getByTestId("explainer").locator(".ex-explainer-title")).toHaveText("A loop that never ends");
+    // Kept, `glug + 1` would still never end: Mar'tu's change instead.
     await expect(page.getByTestId("explainer-hint")).toHaveText(
-      "Your code ran for more than 5 seconds, so it was stopped. A while loop may never end: make sure its question can become False.",
+      "Your while loop on line 2 never ended: line 3 works out glug + 1, then throws it away, so glug > 0 stays True. Change line 3 to glug = glug - 1",
     );
     await expect(page.getByTestId("python-last-line")).toContainText("The program ran too long and was stopped.");
 
@@ -247,17 +253,19 @@ test.describe("Intro to Python, Unit 6: Loops", () => {
     await expect(page.getByTestId("all-passed")).toBeVisible();
     await expect(page.getByTestId("stdout")).toContainText("The canteen is empty.");
 
-    // The SOLO's wrong-way update: always the full "Printing forever?", even in a lean exercise.
+    // The SOLO's wrong-way update: the lean box names the loop and the slip, never the fix.
     await open(page, "while-the-clock-ticks", "solo-5b");
     await runAndWait(page, 1);
     await expect(explainer).toHaveAttribute("data-kind", "too-much-output");
-    await expect(page.getByTestId("explainer").locator(".ex-explainer-title")).toHaveText("Printing forever?");
+    await expect(explainer).toHaveAttribute("data-explainer", "lean");
+    await expect(page.getByTestId("explainer-hint")).toContainText("Your while loop on line 2 never ended: line 4 makes oil bigger on every pass.");
+    await expect(page.getByTestId("explainer-hint")).not.toContainText("oil = oil -");
 
     // A broken spell whose steps name lines ("Mend line 5 ..."): Help is there for the step, never "wait until it runs".
     await open(page, "extra-loops-that-end", "broken-spell-5b");
     await runAndWait(page, 1);
     await expect(explainer).toHaveAttribute("data-kind", "too-much-output");
-    await expect(page.getByTestId("task-line")).toContainText("Your loop never ended.");
+    await expect(page.getByTestId("task-line")).toContainText("Your loop on line 3 never ended.");
     await expect(page.getByTestId("help-button")).toBeVisible();
     await page.getByTestId("help-button").click();
     await expect(page.getByTestId("help")).toHaveAttribute("data-step", "count-down");

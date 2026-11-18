@@ -315,9 +315,18 @@ OTHER_SHEETS = [sheet("Pell", 31, 34, 17), sheet("Brakka", 7, 12, 6), sheet("Mos
 EV_FIVE = " Mar'tu tested your code with a test roster of 5 made-up heroes."
 
 
-def ev_mana(values):
-    return (" Mar'tu tested your code with test mana for the same heroes: " + ", ".join(str(v) for v in values[:-1])
-            + " and " + str(values[-1]) + ".")
+def ev_other(answer):
+    # One test and the answer it should give (plain-language guide 4.3.12): never a list of numbers to add up.
+    return " Mar'tu tested your code with other mana on the same sheets, where " + answer + "."
+
+
+def names_and(names):
+    return names[0] if len(names) == 1 else ", ".join(names[:-1]) + " and " + names[-1]
+
+
+def ev_under_ten(sheets):
+    tired = [s["name"] for s in sheets if s["mana"] < 10]
+    return ev_other("only " + names_and(tired) + (" has" if len(tired) == 1 else " have") + " less than 10")
 
 
 def ev_wall(wall):
@@ -1015,8 +1024,8 @@ if not _b:
     assert False, ('Nothing reached the ley board. Call `show_on_ley_board(...)` inside the loop, with four spaces '
                    'in front.')
 assert not _any(_tn(_t) == 'dict' for _t in _b), (
-    'The board shows a whole sheet, curly braces and all. Show only the name and the mana: build the text from '
-    '`member["name"]` and `member["mana"]`.')
+    'The board shows a whole sheet, with its curly braces `{ }`. Show only the name and the mana: build the text '
+    'from `member["name"]` and `member["mana"]`.')
 assert not _any(_tn(_t) == 'list' for _t in _b), (
     'The board shows the whole roster on each line. Show one member at a time: use `member`, not `roster`.')
 assert _len(_b) != 1, ('Your `show_on_ley_board` line is not indented under the `for` line. It ran once. Indent it '
@@ -1034,10 +1043,14 @@ for (_n, _m), _t in _zip(_want, _texts):
                     "`member[\"name\"]`, then `: ` and the mana, like `Oogrish: 18`.")
     assert _first[0] == _n, ('A typed name stays the same on every pass. Read each name from `member`, so it '
                              'changes every pass.')
+    _full = 'member["name"] + ": " + str(member["mana"])'
+    # Right so far, but it stops after the name: the next piece (guide 4.3.11).
+    assert _t != _n, 'Your line stops after the name. Now glue on `": "` and the mana: `' + _full + '`.'
+    assert not _t.startswith(_n + ' '), ('Your line puts a space between the name and the mana, not `: `. Glue '
+                                         '`": "` there in place of `" "`.')
     assert _t.startswith(_n + ': '), ('After the name, the line needs `: `. Glue it on with `+`: '
-                                      '`member["name"] + ": "`. The ley board takes one piece of text, so a comma '
-                                      "won't work.")
-    assert False, 'After the name and `: `, the line needs the mana. Add `member["mana"]`, like `Oogrish: 18`.'
+                                      '`member["name"] + ": "`.')
+    assert False, 'After the name and `: `, the line needs the mana, turned into text: `' + _full + '`.'
 ''',
     SHEETS=FULL_SHEETS,
 )
@@ -1173,11 +1186,12 @@ EACH_MEMBER = dict(
         title="Lucky's affinity",
         text=(
             "Lucky wants each hero's affinity, how strong their magic is, on the board too. Show it after the mana, "
-            "like `Oogrish: 18, affinity 9`."
+            "like `Oogrish: 18, affinity 9`. Each sheet keeps it inside `\"abilities\"`, under the tag "
+            "`\"magical_affinity\"`."
         ),
         hints=[
-            "The affinity sits on the sheet inside the sheet, under `\"abilities\"`. Read the outside tag first, "
-            "then the inside one.",
+            "The affinity sits on the sheet inside the sheet: under `\"abilities\"`, its tag is "
+            "`\"magical_affinity\"`. Read the outside tag first, then the inside one.",
             "Add `+ \", affinity \" + str(member[\"abilities\"][\"magical_affinity\"])` at the end of the text.",
         ],
         checks=[MEMBER_BONUS],
@@ -1220,12 +1234,12 @@ EACH_MEMBER = dict(
         dict(why="the name typed by hand", code=_member('    show_on_ley_board("Oogrish: " + str(member["mana"]))'),
              fails_at=1, message_contains="typed name"),
         dict(why="no colon after the name", code=_member('    show_on_ley_board(member["name"] + " " + str(member["mana"]))'),
-             fails_at=1, message_contains="Glue"),
+             fails_at=1, message_contains="puts a space between the name and the mana"),
         dict(why="a comma, as in print: the ley board takes one text (TypeError)",
              code=_member('    show_on_ley_board(member["name"], member["mana"])'), fails_at=0,
              message_contains="takes 1 positional argument"),
         dict(why="the name alone on the board: no colon, no mana",
-             code=_member('    show_on_ley_board(member["name"])'), fails_at=1, message_contains="Glue"),
+             code=_member('    show_on_ley_board(member["name"])'), fails_at=1, message_contains="stops after the name"),
         dict(why="the two-line form with the list's key read through roster (TypeError)",
              code=_member('    line = roster["name"] + ": " + str(member["mana"])\n    show_on_ley_board(line)'),
              fails_at=0, message_contains="list indices must be integers"),
@@ -1331,7 +1345,7 @@ for _vals, _ev in ((None, ''), ({'roster': __MANA__}, __EVM__), ({'roster': __FI
 assert _in, _INSIDE
 ''',
     MANA=MANA_OTHER,
-    EVM=ev_mana([12, 9, 30, 5]),
+    EVM=ev_other("the total should be %d" % sum(s["mana"] for s in MANA_OTHER)),
     FIVE=OTHER5,
     EV5=EV_FIVE,
 )
@@ -1359,11 +1373,11 @@ _want = 0
 for _m in _ns.get('roster') or []:
     _want = _want + _m['mana']
 assert _err or _any(_want in _nums(_l) for _l in _rows), (
-    'With other mana, your program did not show the new total, ' + _str(_want) + '. Print `total` itself after '
-    'the loop: `print(total)`.' + __EVM__)
+    'With other mana, your program did not show the new total. Print `total` itself after the loop: '
+    '`print(total)`.' + __EVM__)
 ''',
     MANA=MANA_OTHER,
-    EVM=ev_mana([12, 9, 30, 5]),
+    EVM=ev_other("the total should be %d" % sum(s["mana"] for s in MANA_OTHER)),
 )
 
 TOTAL_BONUS = chk(
@@ -1382,7 +1396,7 @@ for _vals, _ev in ((None, ''), ({'roster': __MANA__}, __EVM__)):
                   'total shared out over the heroes.' + _ev)
 ''',
     MANA=MANA_OTHER,
-    EVM=ev_mana([12, 9, 30, 5]),
+    EVM=ev_other("the average should be %s" % (sum(s["mana"] for s in MANA_OTHER) / len(MANA_OTHER))),
 )
 
 RUNNING_TOTAL = dict(
@@ -1663,8 +1677,8 @@ HOW_MUCH_EACH_GAP_SHRANK = dict(
         ),
     ),
     pair_talk=(
-        "Pair talk: once it passes, look at the shrinks together. Tell your partner what you think the next gap "
-        "will be, and why. Then share it with the class."
+        "Pair talk: once it passes, look at the shrinks in the Console together. Tell your partner what you think "
+        "the next gap will be, and why."
     ),
     starter=SHRINK_STARTER,
     checkpoints=[
@@ -1863,8 +1877,9 @@ for _vals, _ev in ((None, ''), ({'roster': __MANA__}, __EVM__), ({'roster': __FI
         continue
     assert not _any(_l.startswith('[') for _l in _rows), ('Each line shows the whole roster. Print one name at a '
                                                           'time: `member["name"]`, not the whole roster.')
-    assert not _any(_l.startswith('{') for _l in _rows), ('A line shows a whole sheet, curly braces and all. Print '
-                                                          'only the name: `member["name"]`, not the whole sheet.')
+    assert not _any(_l.startswith('{') for _l in _rows), ('A line shows a whole sheet, with its curly braces `{ }`. '
+                                                          'Print only the name: `member["name"]`, not the whole '
+                                                          'sheet.')
     assert _fors, 'Your code has no loop yet. Start with `for member in roster:`, then put the `if` inside the loop.'
     assert not _outside, ('Your `if` is not indented under the `for` line, so it ran once, after the loop. Indent it '
                           '4 spaces, so it checks every member.')
@@ -1891,7 +1906,7 @@ for _vals, _ev in ((None, ''), ({'roster': __MANA__}, __EVM__), ({'roster': __FI
                    'for no one else.' + _ev)
 ''',
     MANA=TIRED_MANA,
-    EVM=ev_mana([12, 9, 10, 2]),
+    EVM=ev_under_ten(TIRED_MANA),
     FIVE=OTHER5,
     EV5=EV_FIVE,
 )
@@ -1910,7 +1925,7 @@ for _vals, _ev in ((None, ''), ({'roster': __COUNT__}, __EVC__)):
                                                              "after the loop." + _ev)
 ''',
     COUNT=[sheet("Oogrish", 5), sheet("Gearshift", 9), sheet("Bomb Shell", 1), sheet("Lucky", 30)],
-    EVC=ev_mana([5, 9, 1, 30]),
+    EVC=ev_other("`resting` should be 3"),
 )
 
 LOOP_WITH_A_CHECK = dict(
@@ -2145,8 +2160,17 @@ def _why(_err, _ev):
         return ('`' + _n + '` is a tag (key) on the sheet. Inside the recipe, read it from `hero`: `hero["' + _n
                 + '"]`.' + _ev)
     if _n:
-        return ('Python stopped, because the recipe uses `' + _n + '` before it makes it. Make `' + _n + '` inside '
-                'the recipe before you use it, or hand back a name the recipe made.' + _ev)
+        # `bar = full * ...` then `return result`: the recipe made the bar under another name.
+        _defs = [_d for _d in _ast.walk(_parsed()) if _tn(_d) == 'FunctionDef' and _d.name == 'mana_bar']
+        _made = [_t.id for _d in _defs for _a in _ast.walk(_d) if _tn(_a) == 'Assign' for _t in _a.targets
+                 if _tn(_t) == 'Name' and _t.id not in ('full', 'empty')]
+        _gives = [_r for _d in _defs for _r in _ast.walk(_d) if _tn(_r) == 'Return' and _tn(_r.value) == 'Name'
+                  and _r.value.id == _n]
+        if _gives and _made:
+            return ('Your recipe stores the bar in `' + _made[-1] + '`, then hands back `' + _n + '`, a name it never '
+                    'made. Hand back `' + _made[-1] + '`: `return ' + _made[-1] + '`.' + _ev)
+        return ('Python stopped, because the recipe uses `' + _n + '`, a name it never makes. Make `' + _n + '` inside '
+                'the recipe, above the line that uses it.' + _ev)
     _plain = {'TypeError': "a line there mixes kinds of values that don't go together",
               'IndexError': "a line there asks for a position that isn't there",
               'AttributeError': "a line there uses a dot tool the value doesn't have",
@@ -2154,7 +2178,8 @@ def _why(_err, _ev):
     return ("When Mar'tu called `mana_bar` with a test sheet, Python stopped inside the recipe: " + _plain + '. '
             'Read the numbers from the sheet it is handed, like `hero["mana"]`.' + _ev)
 def _evh(_h):
-    return " Mar'tu tested your recipe with a test sheet, `" + _sh(_h) + "`."
+    return (" Mar'tu tested your recipe with a test sheet that has " + _str(_h['mana']) + ' mana and a max of '
+            + _str(_h['max_mana']) + '.')
 def _try_bar(_h, _probe):
     # (printed, value, error, probed) for a fresh copy of _h. With _probe (the full-blocks step only), a recipe
     # that stops on a name it never made gets one more try with that name set to 0, so a slip in the empty part
@@ -2252,8 +2277,9 @@ if _got != _wants:
     _lens = _set([_len(_v) for _v in _got if _tn(_v) == 'str'])
     assert not (_all(_tn(_v) == 'str' for _v in _got) and _len(_lens) == 1), (
         'Every bar came out ' + _str(_lens.pop()) + ' blocks long, because the max is typed in. Read the max from '
-        'the sheet, `hero["max_mana"]`, so each bar is as long as that hero' + chr(39) + 's max.'
-        " Mar'tu tested your recipe with three test sheets, with max 8, 5 and 7.")
+        'the sheet: `hero["max_mana"]`.'
+        " Mar'tu tested your recipe with a test sheet whose max is " + _str(_tests[0]['max_mana']) + ', where the bar '
+        'should be ' + _str(_tests[0]['max_mana']) + ' blocks long.')
     for _h, _v, _w in _zip(_tests, _got, _wants):
         if _v == _w:
             continue
@@ -2494,7 +2520,7 @@ BARS_FOR_EVERYONE = dict(
              message_contains="blocks long"),
         dict(why="the bar stored under one name, another name handed back (NameError inside the recipe)",
              code=_bar('    bar = full * hero["mana"]\n    return result', "    pass"), fails_at=1,
-             message_contains="a name the recipe made"),
+             message_contains="a name it never made. Hand back `bar`"),
         dict(why="empty * used with no used line (NameError in the empty part: the full part is right)",
              code=_bar('    return full * hero["mana"] + empty * used', "    pass"), fails_at=2,
              message_contains="Make `used`"),
@@ -3147,6 +3173,13 @@ for _start in (3, 4, 2):
     assert not (_asks('If') and not _asks('While')), (
         'Your code checks the candles once, with `if`, so only ' + _str(_start) + ' prints. Use `while`: it asks '
         'again before every pass.' + _ev)
+    # `while hours_left > 0:` copied for the candles: by then the countdown has made `hours_left` 0.
+    _candle_loops = [_n for _n in _ast.walk(_parsed()) if _tn(_n) == 'While'
+                     and _any(_tn(_x) == 'Name' and _x.id == 'candles' for _b in _n.body for _x in _ast.walk(_b))]
+    _named = lambda _n, _w: _any(_tn(_x) == 'Name' and _x.id == _w for _x in _ast.walk(_n.test))
+    assert not (not _got and _any(_named(_n, 'hours_left') and not _named(_n, 'candles') for _n in _candle_loops)), (
+        'Your `while` line under `# Your turn:` asks about `hours_left`, not `candles`. By then `hours_left` is 0, '
+        'so the loop never ran. Ask whether any candles are left.' + _ev)
     assert _got, ('Your loop never ran: its question was `False` at the start. Ask a question that is `True` while '
                   'candles are left, as `hours_left > 0` is.' + _ev)
     assert 0 not in _got, ('Your loop ran one pass too many, and printed 0. Ask whether any candles are left, as '
@@ -3307,7 +3340,7 @@ COUNTDOWN = dict(
         dict(why="the candles: a question that never becomes False (candles < 10): prints forever, stopped at once",
              code=_count(turn=_turn("candles < 10")), fails_at=0, message_contains="printed more than"),
         dict(why="the candles: a question about the countdown, not the candles (hours_left is 0 by then)",
-             code=_count(turn=_turn("hours_left > 0")), fails_at=2, message_contains="never ran"),
+             code=_count(turn=_turn("hours_left > 0")), fails_at=2, message_contains="asks about `hours_left`, not `candles`"),
         dict(why="the candles filled, the burst not written yet: the countdown's step comes first",
              code=_count(tail="", turn=_turn("candles > 0")), fails_at=1, message_contains='Add `print("Burst!")`'),
     ],
@@ -3747,6 +3780,12 @@ FORECAST_CHECK = chk(
     "shrink starts at another number, and Mar'tu's loop is kept",
     _FORECAST_START + r'''
 assert 'gap' in _start, "Mar'tu can't find `gap = 37`. Put it back on line 1, the way it was at the start."
+_made = [_n for _n in _t0.body if _tn(_n) == 'Assign' and _len(_n.targets) == 1 and _tn(_n.targets[0]) == 'Name'
+         and _n.targets[0].id == 'shrink']
+# `shrink = 2 + 1`: the line still starts `shrink = `, so never "no longer starts": the math is the slip.
+assert not (_made and 'shrink' not in _start and _tn(_made[0].value) == 'BinOp'), (
+    'Line 2 has math after `shrink =`. Type just one number there, like `shrink = 3`.')
+assert not (_made and 'shrink' not in _start), 'After `shrink =` on line 2, type just one number, like 3.'
 assert 'shrink' in _start, ('Line 2 no longer starts `shrink = ` with a number. Keep the line `shrink = ...`: change '
                             'only the number after `=`.')
 _loops = [_n for _n in _t0.body if _tn(_n) == 'While']
@@ -3761,7 +3800,7 @@ assert _start['shrink'] != 5, ('`shrink` is still 5. Change the 5 in `shrink = 5
 )
 
 FORECAST_BONUS = chk(
-    "the smallest whole shrink that runs out of nights in 3 steps",
+    "the smallest whole shrink that runs out of nights in 3 passes",
     _FORECAST_START + r'''
 _s0 = _start.get('shrink')
 assert _start.get('gap') == 37, "`gap` changed. Keep `gap = 37`: the question is about tonight's wall."
@@ -3774,8 +3813,9 @@ def _steps(_s):
         _n = _n + 1
     return _n
 _n0 = _steps(_s0)
-assert _n0 == 3, 'With `shrink = ' + _str(_s0) + '`, the loop takes ' + _str(_n0) + ' steps. Find a start that takes 3.'
-assert _s0 == 4, '`shrink = ' + _str(_s0) + '` takes 3 steps. Is there a smaller start that still takes 3?'
+assert _n0 == 3, ('With `shrink = ' + _str(_s0) + '`, the loop takes ' + _str(_n0) + ' passes, and prints '
+                  + _str(_n0) + ' lines. Find a start that takes 3.')
+assert _s0 == 4, '`shrink = ' + _str(_s0) + '` takes 3 passes. Is there a smaller start that still takes 3?'
 ''',
 )
 
@@ -3798,10 +3838,13 @@ FORECAST = dict(
         answer=2,
         explain=(
             "```text\ngap  shrink  new gap\n37   5       32\n32   6       26\n26   7       19\n```\n"
-            "19 is not more than 24, so the loop stops after 3 steps."
+            "19 is not more than 24, so the loop stops after 3 passes."
         ),
     ),
-    pair_talk="Pair talk: each of you tries a different `shrink`. Compare: how many steps until the nights run out?",
+    pair_talk=(
+        "Pair talk: each of you puts a different number in `shrink = 5` on line 2. Compare your Consoles: how many "
+        "lines did each of you get before the loop stopped?"
+    ),
     starter=FORECAST_STARTER,
     checkpoints=[
         dict(
@@ -3850,12 +3893,12 @@ FORECAST = dict(
         title="Run the math",
         text=(
             "Gearshift wants numbers, not guesses. Find the smallest whole number for `shrink` that ends the loop in "
-            "exactly 3 steps, which is 3 lines printed."
+            "exactly 3 passes, which is 3 lines printed."
         ),
         hints=[
             "A bigger shrink means fewer lines. Try 3, 4 and 5, and count the lines each time.",
-            "Two of those starts take 3 steps. The task wants the smaller one.",
-            "3 takes 4 steps. Write `shrink = 4` on line 2.",
+            "Two of those starts take 3 passes. The task wants the smaller one.",
+            "3 takes 4 passes. Write `shrink = 4` on line 2.",
         ],
         checks=[FORECAST_BONUS],
         solution=_forecast("4"),
@@ -3877,7 +3920,7 @@ FORECAST = dict(
         dict(why="the shrink line deleted (NameError)", code="gap = 37\n" + FORECAST_LOOP, fails_at=0,
              message_contains="'shrink' is not defined"),
         dict(why="a sum in place of the number: shrink = 2 + 1", code=_forecast("2 + 1"), fails_at=1,
-             message_contains="change only the number after `=`"),
+             message_contains="has math after `shrink =`"),
     ],
     notes=(
         meta(starter_level="S4", path="SC", skills="while-loop", solo="false", dictates="1", foreign_names="",

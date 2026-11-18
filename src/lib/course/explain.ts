@@ -37,8 +37,16 @@
  * (`for i in len(wall):`), a whole sheet or a whole list added to a number (`total + member`, `total + values`), a
  * list's name in quotes in a `for` line (`for gap in "chalk_wall":`, whatever crash it causes later), a recipe's
  * ingredient name used outside the recipe (`mana_bar(hero)` in the loop: hand over the loop variable), a
- * one-ingredient recipe handed its pieces with a comma (`show_on_ley_board(member["name"], member["mana"])`), and a loop
- * over a dictionary given `.items` with no `( )` or two names for one key a pass. Some of
+ * one-ingredient recipe handed its pieces with a comma (`show_on_ley_board(member["name"], member["mana"])`), a loop
+ * over a dictionary given `.items` with no `( )` or two names for one key a pass, a running total whose start line was
+ * deleted (`shrink = shrink + 1` in the loop, the start above it), a name copied from a hint's fenced "With other
+ * names:" example (with the one task name that goes in its place), a bare word Mar'tu's version keeps as text (a
+ * list's item, a one-line choice's answer: the quotes, never "If it's a box ... If it's text ..."), a `for` line with no
+ * `in`, a colon in a one-line choice, one `=` in a `while` line, `Break` with a capital letter, and a loop that never
+ * ends (the `while` that kept going, and why its question stays True: no change inside it, the change outside it or
+ * kept nowhere, the change the wrong way, a `while` where Mar'tu asks once with `if`). Every unit: a line indented
+ * under a header that is itself indented counts that header's spaces, the line that makes a box with quotes is the
+ * line to fix (`slipLine`), and a recipe that prints its answer hands back `None`, "Python's word for nothing". Some of
  * these rows say the slip in a sentence of their own when the explainer is lean (`lean`), still never the fix.
  *
  * ExplainContext sets how much it says: `unitOrder` keeps advice to what the class has met (no "make it with
@@ -162,6 +170,8 @@ export type CourseErrorKind =
   | "break-outside-loop"
   | "colon-in-one-line-loop"
   | "choice-needs-else"
+  | "for-needs-in"
+  | "colon-in-one-line-choice"
   // values
   | "input-is-text"
   | "text-plus-number"
@@ -223,6 +233,16 @@ export type CourseExplanation = Explanation & {
    * yet): the crash banner says "the mistake is on line 5 or a line above it", never only "Fix line 5".
    */
   fixAbove?: boolean;
+  /**
+   * A run that never ended (Unit 6): the `while` line of the loop that kept going, when the explainer found it. The
+   * crash banner names it ("Your `while` loop on line 2 never ended."), never only "your loop" with three on screen.
+   */
+  loopLine?: number;
+  /**
+   * A run that printed too much or ran too long in code with no `for` or `while` line (`print(ink * 300000)`): the
+   * player says no word about a loop, and names the line Python stopped at as for any crash (endlessRun()).
+   */
+  loopFree?: boolean;
 };
 
 /** The line a debugging exercise shows when a run gets further than the one before (ExercisePlayer). */
@@ -717,7 +737,8 @@ function nameAgainstTask(
     const madeText = codePart(sourceLine(code, made.line)).trim();
     const renamed = madeText.replace(new RegExp(`^${escapeRegExp(close)}(?![\\w])`), name);
     const fix = renamed !== madeText ? `Change line ${made.line} to \`${renamed}\`` : `Rename it to \`${name}\` on line ${made.line}.`;
-    return explain(kind, title, `Line ${made.line} makes \`${close}\`, but your step's box is \`${name}\`. ${differ} ${fix}`, raw);
+    // The fix is on the line that made the box: the crash banner names that line, never only the one Python stopped at.
+    return { ...explain(kind, title, `Line ${made.line} makes \`${close}\`, but your step's box is \`${name}\`. ${differ} ${fix}`, raw), slipLine: made.line };
   }
   if (task.includes(close) && !task.includes(name)) {
     return explain(
@@ -769,8 +790,8 @@ function identifiersIn(code: string): string[] {
 }
 
 /**
- * The names Mar'tu's Teach me examples use (the code spans of the hints: `note = get_note()`, `mix(2, 9)`) that the
- * task itself never does: not in its names, Mar'tu's version or the starter, and not one of Python's own. The player
+ * The names Mar'tu's Teach me examples use (the code spans of the hints: `note = get_note()`, `mix(2, 9)`, and every
+ * line of a fenced ```python block) that the task itself never does: not in its names, Mar'tu's version or the starter, and not one of Python's own. The player
  * passes them as ExplainContext.foreign.
  */
 export function foreignNames(exercise: {
@@ -787,6 +808,12 @@ export function foreignNames(exercise: {
   ]);
   const found = new Set<string>();
   for (const hint of exercise.hints) {
+    // A fenced ```python block (Unit 6's "With other names:" examples) is code from end to end: every name in it
+    // counts, read whole (`for bag in bags:` has no `(`, `=` or `.name` to mark it as code). A ```text block is words.
+    for (const block of hint.matchAll(/```python[^\n]*\n([\s\S]*?)```/g)) {
+      const lines = block[1].split("\n").map((row) => codePart(row)).join("\n");
+      for (const name of identifiersIn(lines)) if (!own.has(name) && !name.startsWith("_")) found.add(name);
+    }
     const plain = hint.replace(/```[\s\S]*?```/g, " ");
     for (const span of plain.matchAll(/`([^`\n]+)`/g)) {
       // Only a span that is code (`note = get_note()`, `cups * 10`, `line.lower()`): a lone word or a few words
@@ -930,8 +957,9 @@ function explainNameShape(text: string, line: number | null, raw: string): Cours
  */
 function barBrackets(text: string): string | null {
   const body = codePart(text).trim();
-  const operand = String.raw`(?:[A-Za-z_]\w*|\d+)`;
-  const textFirst = new RegExp(String.raw`((?:"[^"]*"|'[^']*'|[A-Za-z_]\w*)\s*\*\s*)(${operand}\s*-\s*${operand})(?![\w(])`);
+  // One value: a name, a number, or a read by tag or position (`hero["max_mana"]`, `wall[0]`).
+  const operand = String.raw`(?:[A-Za-z_]\w*(?:\[(?:"[^"\]]*"|'[^'\]]*'|\d+)\])*|\d+)`;
+  const textFirst = new RegExp(String.raw`((?:"[^"]*"|'[^']*'|[A-Za-z_]\w*)\s*\*\s*)(${operand}\s*-\s*${operand})(?![\w(\[])`);
   if (textFirst.test(body)) return body.replace(textFirst, "$1($2)");
   const countFirst = new RegExp(String.raw`(?<![\w)])(${operand}\s*-\s*${operand})(\s*\*\s*(?:"[^"]*"|'[^']*'|[A-Za-z_]\w*))`);
   if (countFirst.test(body)) return body.replace(countFirst, "($1)$2");
@@ -1494,10 +1522,22 @@ function explainChain(code: string, text: string, line: number | null, raw: stri
       raw,
     );
   }
+  // No `if` anywhere above: "put it after the `if`" would send the student after a line that isn't there. A chain of
+  // questions starts with `if`, so the one fix is to make this `elif` an `if` (plain-language guide §4.8.1, §4.8.4).
+  const anyIf = lines.slice(0, line - 1).some((row) => /^\s*if\b/.test(codePart(row)));
+  if (word === "elif" && !anyIf) {
+    const fixed = codePart(text).trim().replace(/^elif\b/, "if");
+    return explain(
+      "elif-without-if",
+      `${word} needs an if`,
+      `Line ${line} starts with \`elif\`, but no \`if\` comes before it, so Python can't tell which question it belongs to. A chain of questions starts with \`if\`: \`${fixed}\``,
+      raw,
+    );
+  }
   return explain(
     "elif-without-if",
     `${word} needs an if`,
-    `Line ${line} starts with \`${word}\`, but no \`if\` comes right before it, lined up the same, so Python can't tell which question it belongs to. Put this line right after the \`if\` and its indented lines, lined up with the \`if\`${word === "elif" ? ", or make it an `if`" : ""}.`,
+    `Line ${line} starts with \`${word}\`, but no \`if\` comes right before it, lined up the same, so Python can't tell which question it belongs to. Put this line right after the \`if\` and its indented lines, lined up with the \`if\`.`,
     raw,
   );
 }
@@ -1507,6 +1547,24 @@ function namesOnLine(text: string): string[] {
   return [...new Set([...maskStrings(text).matchAll(/(?<![\w.])[A-Za-z_]\w*/g)].map((match) => match[0]))].filter(
     (name) => !KEYWORDS.has(name),
   );
+}
+
+/**
+ * A name on the line whose making line above it gives it a number in quotes (`needed = "15"`, `shrink = "3"`): the line,
+ * as written and with the quotes off. The latest line above that makes the name decides (a later `shrink = 3` mends it).
+ */
+function quotedNumberMaker(code: string, text: string, line: number | null): { name: string; at: number; made: string; fixed: string } | null {
+  const lines = (code ?? "").split("\n");
+  for (const name of namesOnLine(text)) {
+    const makes = lines
+      .map((row, index) => ({ row: codePart(row), at: index + 1 }))
+      .filter((entry) => (line === null || entry.at < line) && new RegExp(`^\\s*${escapeRegExp(name)}\\s*=(?!=)`).test(entry.row));
+    const last = makes.at(-1);
+    if (!last || !new RegExp(`^\\s*${escapeRegExp(name)}\\s*=\\s*(["'])\\d+(?:\\.\\d+)?\\1\\s*$`).test(last.row)) continue;
+    const made = last.row.trim();
+    return { name, at: last.at, made, fixed: made.replace(/(["'])(\d+(?:\.\d+)?)\1/, "$2") };
+  }
+  return null;
 }
 
 /** `roll >= "12"`, `needed = "15"` then `roll >= needed`, an input() answer: a number compared with text. */
@@ -1533,19 +1591,19 @@ function explainNumberAndText(op: string, code: string, text: string, line: numb
       raw,
     );
   }
-  const lines = (code ?? "").split("\n");
-  for (const name of used) {
-    const at = lines.findIndex(
-      (row, index) => (line === null || index + 1 < line) && new RegExp(`^\\s*${escapeRegExp(name)}\\s*=\\s*(["'])\\d+(?:\\.\\d+)?\\1\\s*$`).test(codePart(row)),
-    );
-    if (at < 0) continue;
-    const made = codePart(lines[at]).trim();
-    return explain(
-      "compare-number-text",
-      title,
-      `Line ${at + 1} makes \`${name}\` with quotes: \`${made}\`. Quotes make text, even when it looks like a number, so ${lineWord(line).toLowerCase()} can't compare it with a number. Take the quotes off on line ${at + 1}: \`${made.replace(/(["'])(\d+(?:\.\d+)?)\1/, "$2")}\``,
-      raw,
-    );
+  const maker = quotedNumberMaker(code, text, line);
+  if (maker) {
+    return {
+      ...explain(
+        "compare-number-text",
+        title,
+        `Line ${maker.at} makes \`${maker.name}\` with quotes: \`${maker.made}\`. Quotes make text, even when it looks like a number, so ${lineWord(line).toLowerCase()} can't compare it with a number. Take the quotes off on line ${maker.at}: \`${maker.fixed}\``,
+        raw,
+      ),
+      // The quotes are on the line that made the box: the crash banner (and the lean explainer) names that line.
+      slip: "a number in quotes",
+      slipLine: maker.at,
+    };
   }
   return explain(
     "compare-number-text",
@@ -1635,12 +1693,14 @@ function headerWithColon(code: string, text: string, line: number | null): strin
 }
 
 /** `else roll < needed:`: `else` has no question of its own (the Otherwise distractor, QC2's "else with a condition"). */
-function elseWithQuestion(text: string, line: number | null, raw: string): CourseExplanation {
+function elseWithQuestion(text: string, line: number | null, raw: string, solution?: string): CourseExplanation {
   const question = codePart(text).trim().replace(/^else\b\s*/, "").replace(/:\s*$/, "").trim();
+  // `elif` is taught after `else` (2B-04): before an exercise that uses it, the box never names it.
+  const elif = solution === undefined || /^\s*elif\b/m.test(solution) ? " A new question goes after `elif` instead." : "";
   return explain(
     "else-has-question",
     "else asks nothing",
-    `${lineWord(line)} gives \`else\` a question${question ? `, \`${question}\`` : ""}. \`else\` has no question of its own: it runs when every question above it was False. Write \`else:\` with nothing between \`else\` and the colon. A new question goes after \`elif\` instead.`,
+    `${lineWord(line)} gives \`else\` a question${question ? `, \`${question}\`` : ""}. \`else\` has no question of its own: it runs when every question above it was False. Write \`else:\` with nothing between \`else\` and the colon.${elif}`,
     raw,
   );
 }
@@ -1688,7 +1748,7 @@ function explainKeywordShape(text: string, line: number | null, raw: string): Co
   return null;
 }
 
-function explainMissingColon(code: string, text: string, line: number | null, raw: string): CourseExplanation {
+function explainMissingColon(code: string, text: string, line: number | null, raw: string, solution?: string): CourseExplanation {
   const elseIf = codePart(text).match(/^\s*else\s+if\b(.*)$/);
   if (elseIf) {
     const rest = elseIf[1].trim().replace(/:?$/, ":");
@@ -1700,7 +1760,7 @@ function explainMissingColon(code: string, text: string, line: number | null, ra
     );
   }
   // `else roll < needed:`: else never asks. Python says "expected ':'", but the colon is not what is missing.
-  if (/^\s*else\b(?!\s*:)\s*\S/.test(codePart(text))) return elseWithQuestion(text, line, raw);
+  if (/^\s*else\b(?!\s*:)\s*\S/.test(codePart(text))) return elseWithQuestion(text, line, raw, solution);
   const fixed = headerWithColon(code, text, line);
   const word = codePart(text).trim().match(BLOCK_HEADER)?.[1];
   if (fixed && word) {
@@ -2382,6 +2442,20 @@ function explainSyntax(
     const asked = /maybe you meant '=='/.test(lower) || /^\s*(if|elif|while|assert)\b/.test(text) || /cannot assign/.test(lower)
       ? doubleEqualsFix(text)
       : null;
+    // Unit 6: a `while` line. `while candles == 0:` would never run (or never end), so no `==` line to copy: what a
+    // `while` question is, and a sign, from the student's own other `while` line when there is one.
+    const whileLine = asked && unitAtLeast(context, LOOPS_UNIT_ORDER) && /^\s*while\b/.test(maskStrings(codePart(text)));
+    if (asked && whileLine) {
+      const rows = (code ?? "").split("\n");
+      const other = rows.findIndex((row, at) => at + 1 !== line && /^\s*while\b.*(<|>|!=)/.test(maskStrings(codePart(row))));
+      const like = other >= 0 ? `, as line ${other + 1} does: \`${codePart(rows[other]).trim()}\`` : ", like `>` or `<`";
+      return explain(
+        "compare-with-double-equals",
+        "A while line asks a question",
+        `${lineWord(line)} has one \`=\`, and one \`=\` puts a value in a box. A \`while\` line asks a question before every pass, and the loop runs while the answer is \`True\`. Ask it with a sign${like}`,
+        raw,
+      );
+    }
     if (asked) {
       return explain(
         "compare-with-double-equals",
@@ -2585,26 +2659,29 @@ function explainSyntax(
     return explain("def-needs-brackets", "def needs ( )", `A \`def\` line needs parentheses ( ) after the name, then a colon: \`def greet():\``, raw);
   }
   if (/expected ':'/.test(lower)) {
-    return explainMissingColon(code, text, line, raw);
+    return explainMissingColon(code, text, line, raw, context?.solution);
   }
   if (/invalid decimal literal|invalid imaginary literal/.test(lower)) {
     return explainStuckNumber(text, code, line, raw);
   }
   if (/expected an indented block|unexpected indent|unindent does not match/.test(lower) || type === "IndentationError") {
-    return explainIndent(message, line, raw, unitAtLeast(context, FUNCTIONS_UNIT_ORDER) ? code : "");
+    return explainIndent(message, line, raw, unitAtLeast(context, FUNCTIONS_UNIT_ORDER) ? code : "", code);
   }
   if (/^invalid syntax/.test(lower)) {
     // Unit 4: the wall's row copied as it looks (`hours = 48 48 47`), `chalk_wall.pop[]`, and the items typed after
     // the starter's empty brackets (`chalk_wall = [] 48, 48, 47`).
     if (unitAtLeast(context, LISTS_UNIT_ORDER)) {
-      const list = explainNumbersSideBySide(text, line, raw) ?? explainEmptySquareCall(code, text, line, raw) ?? explainItemsAfterBrackets(text, line, raw);
+      const list =
+        explainNumbersSideBySide(text, line, raw) ??
+        explainEmptySquareCall(code, text, line, raw, unitAtLeast(context, DICTS_UNIT_ORDER) ? SHEET_TOOLS : undefined) ??
+        explainItemsAfterBrackets(text, line, raw);
       if (list) return list;
     }
     // `lantern_cost = lantern_count lantern_price`: two of the code's names side by side, the algebra habit (5P).
     const sideBySide = explainNamesSideBySide(code, text, line, raw, context);
     if (sideBySide) return sideBySide;
     // `if hours_left < 3;`: a semicolon typed for the colon.
-    if (/;\s*$/.test(codePart(text)) && headerWithColon(code, text, line)) return explainMissingColon(code, text, line, raw);
+    if (/;\s*$/.test(codePart(text)) && headerWithColon(code, text, line)) return explainMissingColon(code, text, line, raw, context?.solution);
     const option = explainUnquotedOption(text, line, raw);
     if (option) return option;
     const unquoted = explainUnquoted(text, code, line, raw);
@@ -2655,8 +2732,11 @@ function explainSyntax(
   );
 }
 
-/** `code` only from Unit 3 on (recipes): it reads a recipe with no step yet. Without it, the older rows. */
-function explainIndent(message: string, line: number | null, raw: string, code = ""): CourseExplanation {
+/**
+ * `code` only from Unit 3 on (recipes): it reads a recipe with no step yet. Without it, the older rows. `program` is the
+ * student's code in every unit: it counts the spaces of a header that is itself indented.
+ */
+function explainIndent(message: string, line: number | null, raw: string, code = "", program = code): CourseExplanation {
   const after = message.match(/expected an indented block after (.+?) on line (\d+)/);
   // A recipe with no step under its def line (its `pass` deleted, or only a note left): indenting the next line
   // (a blank, a note, or the next `def`) would not mend it, so the rule is what to say.
@@ -2679,6 +2759,17 @@ function explainIndent(message: string, line: number | null, raw: string, code =
       .replace(/^'(\w+)' statement$/, "the `$1`")
       .replace(/^function definition$/, "the `def`")
       .replace(/^class definition$/, "the `class`");
+    // A header that is itself indented (an `if` inside a loop, an inner `for`): the line needs 4 more spaces than the
+    // header, not 4 in all. A literal reader whose line already has 4 would otherwise be told to add what is there.
+    const headerIndent = program ? indentOf(codePart(sourceLine(program, Number(after[2])))) : 0;
+    if (headerIndent > 0) {
+      return explain(
+        "indent",
+        "Indent this line",
+        `The line after line ${after[2]} belongs inside ${what}, so it needs 4 more spaces than ${what}: ${headerIndent + 4} spaces at the start, like a sub-point under a sub-point in an outline.`,
+        raw,
+      );
+    }
     return explain("indent", "Indent this line", `The line after line ${after[2]} belongs inside ${what}, so it needs 4 spaces at the start, like a sub-point in an outline.`, raw);
   }
   if (/expected an indented block/.test(message)) {
@@ -2847,6 +2938,16 @@ function explainName(
 
   // `canes_women` alone on a line: no `=`, no print( ). Python looked it up and found nothing.
   if (codePart(text).trim() === name) {
+    // `Break`, `Continue`, `Pass`: one of Python's own words with a capital letter, never text that needs quotes.
+    const small = name.toLowerCase();
+    if (name !== small && LONE_KEYWORDS.has(small)) {
+      return explain(
+        "keyword-capital",
+        "Small letters",
+        `${lineWord(line)} has \`${name}\` with a capital letter. Python's own words, like \`print\` and \`${small}\`, are all small letters, even at the start of a line. Write: \`${small}\``,
+        raw,
+      );
+    }
     if (close === "print") {
       return explain(
         "lone-name",
@@ -2890,8 +2991,11 @@ function explainName(
     );
   }
 
-  // `print("Hello, " + traveler)` in a task whose variable is `name`: copied from the worked example.
-  if (exampleOnlyNames(context).includes(name) && !defined.some((entry) => entry.name === name)) {
+  // `print("Hello, " + traveler)` in a task whose variable is `name`: copied from the worked example. Unit 6: also a
+  // name the code only makes on a later line, from itself (`while sacks >= 2:` over `sacks = sacks - 2`), copied whole.
+  const loopsUnit = unitAtLeast(context, LOOPS_UNIT_ORDER);
+  const madeBefore = defined.some((entry) => entry.name === name && (!loopsUnit || line === null || entry.line < line));
+  if (exampleOnlyNames(context).includes(name) && !madeBefore) {
     const assignedHere = text.match(/^\s*([A-Za-z_]\w*)\s*=(?!=)/)?.[1];
     // `note = get_note()`, copied from a Teach me hint: a recipe called by the example's name. Point at the task's own
     // recipe that shares a word with it (`get_greeting`), when there is one.
@@ -2908,12 +3012,29 @@ function explainName(
         raw,
       );
     }
-    return explain(
-      "example-name",
-      "Name from the example",
-      exampleNameHint(name, taskNamesInstead(code, line, context, [name, ...(assignedHere ? [assignedHere] : [])])),
-      raw,
-    );
+    const instead = taskNamesInstead(code, line, context, [name, ...(assignedHere ? [assignedHere] : [])]);
+    if (loopsUnit) {
+      // A name from a hint's "With other names:" block (Unit 6), not the Example: say so, and name the one task name that
+      // goes in its place when Mar'tu's version shows which (`for i in range(1, len(chalk_wall)):` for `hills`).
+      const inExample = context?.example ? identifiersIn(context.example).includes(name) : false;
+      const from = `\`${name}\` is a name from ${inExample ? "the Example" : "an example"}, not from your task.`;
+      // Python's last line guesses a name the class has never met ("Did you mean: 'vars'?"): the box says it is wrong.
+      const guess = suggested && !trusted ? ` Python's last line guesses \`${suggested}\`, but that guess is wrong here.` : "";
+      const one = oneNameInstead(name, text, instead, context);
+      const slip = inExample ? undefined : "a name from an example";
+      if (one) {
+        const rows = (code ?? "").split("\n").map((row, at) => ({ at: at + 1, mask: maskStrings(codePart(row)) }));
+        const lines = rows.filter((row) => new RegExp(`(?<![\\w.])${escapeRegExp(name)}(?![\\w])`).test(row.mask)).map((row) => row.at);
+        const what = boxKindWord(one.use, `${context?.setup ?? ""}\n${code ?? ""}`);
+        const hint = lines.length > 1
+          ? `${from}${guess} Your task's ${what} is \`${one.use}\`. Write \`${one.use}\` in place of \`${name}\` on lines ${lines.slice(0, -1).join(", ")} and ${lines.at(-1)}: \`${one.fixed}\``
+          : `${from}${guess} Your task's ${what} is \`${one.use}\`: \`${one.fixed}\``;
+        return { ...explain("example-name", "Name from the example", hint, raw), ...(slip ? { slip } : {}) };
+      }
+      const hint = exampleNameHint(name, instead).replace(/^`[^`]+` is a name from the Example, not from your task\./, `${from}${guess}`);
+      return { ...explain("example-name", "Name from the example", hint, raw), ...(slip ? { slip } : {}) };
+    }
+    return explain("example-name", "Name from the example", exampleNameHint(name, instead), raw);
   }
 
   if (close) {
@@ -2947,12 +3068,16 @@ function explainName(
 
   const later = defined.find((entry) => entry.name === name && line !== null && entry.line > line);
   if (later) {
-    return explain(
-      "used-too-early",
-      "Used too early",
-      `Line ${line} uses \`${name}\`, but \`${name}\` is only made on line ${later.line}. Python reads your code like a page, from top to bottom, so make \`${name}\` above line ${line}.`,
-      raw,
-    );
+    return {
+      ...explain(
+        "used-too-early",
+        "Used too early",
+        `Line ${line} uses \`${name}\`, but \`${name}\` is only made on line ${later.line}. Python reads your code like a page, from top to bottom, so make \`${name}\` above line ${line}.`,
+        raw,
+      ),
+      // "make it above line 5": the crash banner says "line 5 or a line above it", never only "Fix line 5".
+      fixAbove: true,
+    };
   }
 
   // `print(hero)` when no line makes `hero` yet, and `hero` is one of the task's own boxes: make it, above.
@@ -3039,10 +3164,20 @@ function explainName(
       raw,
     );
   }
-  const earlier = taskNamesInstead(code, line, context, [name, ...(assignedHere ? [assignedHere] : [])]);
+  if (loopsUnit) {
+    const quoted = explainWordMartuQuotes(name, code, text, line, raw, context);
+    if (quoted) return quoted;
+  }
+  const allEarlier = taskNamesInstead(code, line, context, [name, ...(assignedHere ? [assignedHere] : [])]);
+  // Unit 6: only names the code (or the setup) has made above this line: never a box the code has not made yet.
+  const offset = context?.setup ? context.setup.split("\n").length : 0;
+  const madeAbove = new Set(namesBefore(context?.setup ? `${context.setup}\n${code ?? ""}` : (code ?? ""), line === null ? null : line + offset));
+  const earlier = loopsUnit && allEarlier.some((entry) => madeAbove.has(entry)) ? allEarlier.filter((entry) => madeAbove.has(entry)) : allEarlier;
   if (/^[a-z][a-z0-9_]*$/.test(name) && earlier.length > 0) {
     // `mana - mana_cost`: a number is wanted there, so quotes (text) would only lead to the next crash.
-    const quotes = inMath(text, name) ? "" : ` If it's text, put quotes around it: \`"${name}"\``;
+    // Unit 6: a name a loop walks, or that `len()` counts or a dot follows, is a list's (or a dictionary's): never text.
+    const walked = loopsUnit && new RegExp(`(?<![\\w.])in\\s+${escapeRegExp(name)}(?![\\w])|len\\s*\\(\\s*${escapeRegExp(name)}\\s*\\)|(?<![\\w.])${escapeRegExp(name)}\\s*\\.`).test(maskStrings(codePart(text)));
+    const quotes = inMath(text, name) || walked ? "" : ` If it's text, put quotes around it: \`"${name}"\``;
     // Only names a letter or two away are worth offering as "use this one": a list of unrelated task names
     // (bad_line, error_type ...) sends the student after the wrong thing.
     const nearTask = (context?.names ?? []).filter((task) => task !== name && editDistance(task.toLowerCase(), name.toLowerCase()) <= 2);
@@ -3103,6 +3238,86 @@ function explainName(
     );
   }
   return explain("unknown-name", "Unknown name", `Python doesn't know \`${name}\` yet${onLine(line)}. Check the spelling, or make it on a line above with \`${name} = \`.`, raw);
+}
+
+/** Python's words that stand alone on a line: typed with a capital letter, Python reads them as an unknown name. */
+const LONE_KEYWORDS = new Set(["break", "continue", "pass", "return"]);
+
+/** What a name holds, from the line that makes it: "list" (`= [`), "dictionary" (`= {`), "recipe" (`def`), else "name". */
+function boxKindWord(name: string, program: string): string {
+  const shape = new RegExp(`^\\s*${escapeRegExp(name)}\\s*=(?!=)\\s*([[{])`, "m").exec(program ?? "")?.[1];
+  if (shape === "[") return "list";
+  if (shape === "{") return "dictionary";
+  return new RegExp(`^\\s*def\\s+${escapeRegExp(name)}\\b`, "m").test(program ?? "") ? "recipe" : "name";
+}
+
+/**
+ * Unit 6: the one name from `candidates` that, put in place of `name` on the student's line, gives a line of Mar'tu's
+ * version, or a `for` line that walks what his walks (`for jar in roster:` for `for jar in jars:`). Null when none or
+ * several do: then the explainer lists the task's names.
+ */
+function oneNameInstead(name: string, text: string, candidates: readonly string[], context?: ExplainContext): { use: string; fixed: string } | null {
+  const solution = (context?.solution ?? "").split("\n").map((row) => codePart(row).trim()).filter(Boolean);
+  if (solution.length === 0) return null;
+  const body = codePart(text).trim();
+  const mask = maskStrings(body);
+  const swap = (to: string) => {
+    let out = body;
+    for (const found of [...mask.matchAll(new RegExp(`(?<![\\w.])${escapeRegExp(name)}(?![\\w])`, "g"))].reverse()) {
+      const at = found.index ?? 0;
+      out = `${out.slice(0, at)}${to}${out.slice(at + name.length)}`;
+    }
+    return out;
+  };
+  const squash = (row: string) => row.replace(/\s+/g, "");
+  const walks = solution.map((row) => row.match(FOR_HEADER)?.[3]).filter((walk): walk is string => walk !== undefined).map(squash);
+  const fits = candidates.filter((use) => {
+    const fixed = swap(use);
+    if (solution.some((row) => squash(row) === squash(fixed))) return true;
+    const walk = fixed.match(FOR_HEADER)?.[3];
+    return walk !== undefined && walks.includes(squash(walk));
+  });
+  return fits.length === 1 ? { use: fits[0], fixed: swap(fits[0]) } : null;
+}
+
+/**
+ * Unit 6: a bare word Mar'tu's version keeps as text. Either a list's item beside quoted items (`violet,` inside
+ * `spell_colors = [ ... ]`), or a word his version has in quotes as a value (not a tag, not a box of his):
+ * `status = ready if mana >= 3 else resting`. One fix, the quotes, on the student's own line (every such word on it):
+ * never "If it's a box ... If it's text ...".
+ */
+function explainWordMartuQuotes(name: string, code: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  if (line === null || !/^[A-Za-z][A-Za-z_]*$/.test(name)) return null;
+  const solution = context?.solution ?? "";
+  const boxes = new Set([...definedNames(`${context?.setup ?? ""}\n${solution}`).map((entry) => entry.name), ...(context?.names ?? [])]);
+  if (boxes.has(name)) return null;
+  // In quotes as a value in Mar'tu's version: not a tag read (`member["mana"]`) and not a sheet's key (`"name": ...`).
+  const quotedThere = (word: string) =>
+    !boxes.has(word) && new RegExp(`(?<!\\[\\s*)(["'])${escapeRegExp(word)}\\1(?!\\s*[:\\]])`).test(maskedComments(solution));
+  const rows = (code ?? "").split("\n");
+  const body = codePart(text).trim();
+  const mask = maskStrings(body);
+  const isText = (row: string | undefined) => /^\s*(["']).*\1\s*,?\s*$/.test(codePart(row ?? ""));
+  const ownLine = openBefore(code, line).at(-1) === "[" && new RegExp(`^${escapeRegExp(name)}\\s*,?$`).test(body);
+  const besideText = ownLine
+    ? isText(rows[line - 2]) || isText(rows[line])
+    : new RegExp(`[\\[,]\\s*${escapeRegExp(name)}\\s*[,\\]]`).test(mask) && /\[[^\]]*["']/.test(body);
+  if (!besideText && !quotedThere(name)) return null;
+  const made = new Set(definedNames(`${context?.setup ?? ""}\n${code ?? ""}`).map((entry) => entry.name));
+  let fixed = body;
+  for (const found of [...mask.matchAll(/(?<![\w.])([A-Za-z][A-Za-z_]*)(?![\w(.[])/g)].reverse()) {
+    const word = found[1];
+    if (word !== name && (made.has(word) || KEYWORDS.has(word) || COMMON_BUILTINS.includes(word) || !quotedThere(word))) continue;
+    const at = found.index ?? 0;
+    fixed = `${fixed.slice(0, at)}"${word}"${fixed.slice(at + word.length)}`;
+  }
+  const why = besideText ? "Each item in this list is text, and text needs quotes" : "Words to show need quotes";
+  return explain("unquoted-word", "Missing quotes?", `\`${name}\` has no quotes, so Python looks for a box named \`${name}\` and finds none. ${why}: \`${fixed}\``, raw);
+}
+
+/** The code with each line's `#` note cut (an apostrophe in a note is not a quote). */
+function maskedComments(code: string): string {
+  return (code ?? "").split("\n").map((row) => codePart(row)).join("\n");
 }
 
 /** `name` is one whole value inside a call's brackets on this line: `scout.step(north)`, `heal(hero, 5)`. */
@@ -3706,14 +3921,18 @@ function explainNoneRead(message: string, code: string, text: string, line: numb
   }
   const what = `\`.${found.tool}()\`${found.at ? ` on line ${found.at}` : ""} ${IN_PLACE[found.tool]} and hands back nothing.`;
   const instead = found.tool === "sort" ? ` \`sorted(${found.list})\` hands back a sorted copy.` : ` Read the list itself, \`${found.list}\`, after it has changed.`;
-  return explain(
-    "read-from-none",
-    "Nothing came back",
-    found.holder
-      ? `${lineWord(line)} reads a position from \`${found.holder}\`, and \`${found.holder}\` holds ${nothing}. ${what}${instead}`
-      : `${lineWord(line)} reads a position from ${nothing}. ${what}${instead}`,
-    raw,
-  );
+  return {
+    ...explain(
+      "read-from-none",
+      "Nothing came back",
+      found.holder
+        ? `${lineWord(line)} reads a position from \`${found.holder}\`, and \`${found.holder}\` holds ${nothing}. ${what}${instead}`
+        : `${lineWord(line)} reads a position from ${nothing}. ${what}${instead}`,
+      raw,
+    ),
+    // `x = x.sort()` on a line above: that line is the one to change.
+    ...(found.at ? { slipLine: found.at, slip: "a list tool's answer kept in a box" } : {}),
+  };
 }
 
 /**
@@ -3790,17 +4009,34 @@ function readableLength(code: string, name: string): number | null {
  * row: `len()` counts the items, so it is one past the last position. Otherwise the list's own count when it can be
  * read ("`chalk_wall` holds 7 items, so its positions are 0 to 6"), and never Unit 1's "3 items" example.
  */
-function explainOutOfRange(message: string, code: string, text: string, line: number | null, raw: string): CourseExplanation | null {
+function explainOutOfRange(message: string, code: string, text: string, line: number | null, raw: string, solution?: string): CourseExplanation | null {
   if (/string/.test(message)) return null;
   const what = /tuple/.test(message) ? "tuple" : "list";
   const mask = maskStrings(codePart(text));
   const counted = mask.match(/(?<![\w.])([A-Za-z_]\w*)\s*(?:\[|\.\s*pop\s*\()\s*len\s*\(\s*\1\s*\)\s*[\])]/);
   if (counted) {
     const name = counted[1];
+    const lead = `${lineWord(line)} uses \`len(${name})\` as a position. \`len(${name})\` counts the items, but positions start at 0, like a ruler, so the count is one past the last position.`;
+    // One fix, the way Mar'tu's version reads the last item: `pop()`, `[-1]` or `len(...) - 1` (never `.pop([-1])`).
+    const body = codePart(text).trim();
+    const at = maskStrings(body).search(new RegExp(`len\\s*\\(\\s*${escapeRegExp(name)}\\s*\\)`));
+    const lenCall = at >= 0 ? body.slice(at).match(new RegExp(`^len\\s*\\(\\s*${escapeRegExp(name)}\\s*\\)`))?.[0] : undefined;
+    const solved = maskedComments(solution ?? "");
+    const pop = /\.\s*pop\s*\(\s*len/.test(maskStrings(body));
+    let fixed: string | null = null;
+    if (lenCall && pop) {
+      fixed = new RegExp(`${escapeRegExp(name)}\\s*\\.\\s*pop\\s*\\(\\s*\\)`).test(solved)
+        ? body.replace(lenCall, "")
+        : body.replace(lenCall, `${lenCall} - 1`);
+    } else if (lenCall) {
+      const countsBack = new RegExp(`\\[\\s*len\\s*\\(\\s*${escapeRegExp(name)}\\s*\\)\\s*-\\s*1\\s*\\]`).test(solved);
+      const fromEnd = new RegExp(`${escapeRegExp(name)}\\s*\\[\\s*-\\s*1\\s*\\]`).test(solved);
+      fixed = fromEnd && !countsBack ? body.replace(lenCall, "-1") : body.replace(lenCall, `${lenCall} - 1`);
+    }
     return explain(
       "nothing-at-position",
       "One past the end",
-      `${lineWord(line)} uses \`len(${name})\` as a position. \`len(${name})\` counts the items, but positions start at 0, like a ruler, so the count is one past the last position. Use \`len(${name}) - 1\`, or \`[-1]\`.`,
+      fixed ? `${lead} Write: \`${fixed}\`` : `${lead} Use \`len(${name}) - 1\`.`,
       raw,
     );
   }
@@ -3906,12 +4142,12 @@ function explainNamesSideBySide(code: string, text: string, line: number | null,
 }
 
 /** Unit 4: `newest = chalk_wall.pop[]`, `sorted[]`: empty square brackets after a tool that is called (a SyntaxError). */
-function explainEmptySquareCall(code: string, text: string, line: number | null, raw: string): CourseExplanation | null {
+function explainEmptySquareCall(code: string, text: string, line: number | null, raw: string, extra: ReadonlySet<string> = new Set()): CourseExplanation | null {
   const recipes = new Set(recipeBlocks(code).map((block) => block.recipe));
   const mask = maskStrings(codePart(text));
   for (const found of mask.matchAll(/(?<![\w.])((?:[A-Za-z_]\w*\.)*([A-Za-z_]\w*))\s*\[\s*\]/g)) {
     const tool = found[2];
-    if (!CALLED_TOOLS.has(tool) && !recipes.has(tool)) continue;
+    if (!CALLED_TOOLS.has(tool) && !recipes.has(tool) && !(extra.has(tool) && found[1].includes("."))) continue;
     if (!found[1].includes(".") && !recipes.has(tool) && !COMMON_BUILTINS.includes(tool)) continue;
     return explain(
       "call-needs-round-brackets",
@@ -4938,14 +5174,165 @@ function explainNoneMath(message: string, code: string, raw: string): CourseExpl
     const steps = (code ?? "").split("\n").slice(block.start, block.end).map((row) => codePart(row).trim());
     return !steps.some((step) => /^return\b/.test(step));
   });
-  return explain(
-    "math-with-none",
-    "Math with None",
-    silent.length === 1
-      ? `Something handed back \`None\`: nothing came back. \`${silent[0].recipe}\`, made on line ${silent[0].start}, has no \`return\`, so it hands back \`None\`. Give it a \`return\` with its answer.`
-      : "Something handed back `None`: nothing came back. Does your recipe have a `return`?",
-    raw,
-  );
+  return {
+    ...explain(
+      "math-with-none",
+      "Math with None",
+      silent.length === 1
+        ? `Something handed back \`None\`: nothing came back. \`${silent[0].recipe}\`, made on line ${silent[0].start}, has no \`return\`, so it hands back \`None\`. Give it a \`return\` with its answer.`
+        : "Something handed back `None`: nothing came back. Does your recipe have a `return`?",
+      raw,
+    ),
+    // The `return` goes in that recipe: the crash banner names its `def` line, not the line that did the math.
+    ...(silent.length === 1 ? { slipLine: silent[0].start, slip: "a recipe with no `return`" } : {}),
+  };
+}
+
+/**
+ * A comparison or a join with `None` ("'>=' not supported between instances of 'int' and 'NoneType'", "can only
+ * concatenate str (not "NoneType") to str") from a recipe with no `return`: a name on the line holds what it handed back
+ * (`daily = average(velocite_used)`), or the line calls it (`mana_bar(member)`). When the recipe shows its answer with
+ * `print`, the fix is `return` in place of that line, and the crash banner names it. `None` is "Python's word for
+ * nothing" (plain-language guide §4.3.13), never left as the explanation. From Unit 3 (recipes).
+ */
+function explainNoneValue(message: string, code: string, text: string, line: number | null, raw: string): CourseExplanation | null {
+  if (!/not supported between instances of ('NoneType' and '\w+'|'\w+' and 'NoneType')|can only concatenate str \(not "NoneType"\) to str/.test(message)) return null;
+  if (line === null) return null;
+  const rows = (code ?? "").split("\n");
+  const silent = recipeBlocks(code).filter((block) => !rows.slice(block.start, block.end).some((row) => /^\s*return\b/.test(codePart(row))));
+  if (silent.length === 0) return null;
+  const mask = maskStrings(codePart(text));
+  let recipe: (typeof silent)[number] | undefined;
+  let holder: string | null = null;
+  for (const block of silent) {
+    if (new RegExp(`(?<![\\w.])${escapeRegExp(block.recipe)}\\s*\\(`).test(mask) && !(line > block.start && line <= block.end)) {
+      recipe = block;
+      break;
+    }
+  }
+  if (!recipe) {
+    // A name on the line whose latest making line above holds the recipe's call.
+    for (const name of namesOnLine(text)) {
+      const made = rows
+        .slice(0, line - 1)
+        .map((row, at) => ({ row: maskStrings(codePart(row)), at: at + 1 }))
+        .filter((entry) => new RegExp(`^\\s*${escapeRegExp(name)}\\s*=(?!=)`).test(entry.row))
+        .at(-1);
+      const from = made ? silent.find((block) => new RegExp(`^\\s*${escapeRegExp(name)}\\s*=(?!=)\\s*${escapeRegExp(block.recipe)}\\s*\\(`).test(made.row)) : undefined;
+      if (from) {
+        recipe = from;
+        holder = name;
+        break;
+      }
+    }
+  }
+  if (!recipe) return null;
+  const shown = rows
+    .map((row, at) => ({ row: codePart(row), at: at + 1 }))
+    .filter((entry) => entry.at > recipe.start && entry.at <= recipe.end)
+    .map((entry) => ({ ...entry, inside: entry.row.match(/^\s*print\s*\((.*)\)\s*$/)?.[1]?.trim() }))
+    .filter((entry) => entry.inside && splitArguments(entry.inside)?.length === 1);
+  const what = holder
+    ? `${lineWord(line)} uses \`${holder}\`, and \`${holder}\` holds \`None\`, Python's word for nothing.`
+    : `${lineWord(line)} uses what \`${recipe.recipe}\` hands back, and that is \`None\`, Python's word for nothing.`;
+  if (shown.length === 1) {
+    const answer = shown[0].inside as string;
+    return {
+      ...explain(
+        "math-with-none",
+        "Nothing came back",
+        `${what} \`${recipe.recipe}\` shows its answer with \`print\`, but has no \`return\`, so it hands nothing back. On line ${shown[0].at}, write \`return ${answer}\` in place of the \`print\` line.`,
+        raw,
+      ),
+      slip: "a recipe that prints its answer instead of handing it back",
+      slipLine: shown[0].at,
+    };
+  }
+  return {
+    ...explain(
+      "math-with-none",
+      "Nothing came back",
+      `${what} \`${recipe.recipe}\`, made on line ${recipe.start}, has no \`return\`, so it hands nothing back. Give it a \`return\` with its answer.`,
+      raw,
+    ),
+    slip: "a recipe with no `return`",
+    slipLine: recipe.start,
+  };
+}
+
+/**
+ * "'NoneType' object has no attribute 'append'" after `short_gaps = short_gaps.append(h)`: a list tool that changes the
+ * list itself hands back `None`, so the box that held the list now holds nothing. The fix is the tool on its own, with
+ * no `short_gaps =` in front, on the line that stored it (the crash banner names it). From Unit 4 (lists).
+ */
+function explainNoneTool(message: string, code: string, text: string, line: number | null, raw: string): CourseExplanation | null {
+  const tool = message.match(/^'NoneType' object has no attribute '(\w+)'/)?.[1];
+  if (!tool || line === null) return null;
+  const tools = Object.keys(IN_PLACE).join("|");
+  const holder = maskStrings(codePart(text)).match(new RegExp(`(?<![\\w.])([A-Za-z_]\\w*)\\s*\\.\\s*${escapeRegExp(tool)}\\s*\\(`))?.[1];
+  if (!holder) return null;
+  const rows = (code ?? "").split("\n");
+  const stored = new RegExp(`^(\\s*)${escapeRegExp(holder)}\\s*=(?!=)\\s*(${escapeRegExp(holder)}\\s*\\.\\s*(${tools})\\s*\\(.*)$`);
+  // This very line (the loop's next pass), else the nearest line above that stores the tool's answer in the box.
+  const candidates = [line, ...Array.from({ length: line - 1 }, (_, at) => line - 1 - at)];
+  for (const at of candidates) {
+    const row = codePart(rows[at - 1] ?? "");
+    const found = maskStrings(row).match(stored);
+    if (!found) {
+      if (at !== line && new RegExp(`^\\s*${escapeRegExp(holder)}\\s*=(?!=)`).test(row)) return null;
+      continue;
+    }
+    const call = row.trim().replace(new RegExp(`^${escapeRegExp(holder)}\\s*=\\s*`), "");
+    const used = found[3];
+    const loop = at === line && enclosingLoopHeaders(code, line).length > 0;
+    const after = loop ? "so on the next pass" : `so after line ${at}`;
+    return {
+      ...explain(
+        "read-from-none",
+        "Nothing came back",
+        `Line ${at} puts what \`.${used}()\` hands back into \`${holder}\`. \`.${used}()\` ${IN_PLACE[used]} and hands back \`None\`, Python's word for nothing, ${after} \`${holder}\` holds nothing. Write \`${call}\`, with no \`${holder} =\` in front.`,
+        raw,
+      ),
+      slip: "a list tool's answer kept in a box",
+      slipLine: at,
+    };
+  }
+  return null;
+}
+
+/**
+ * A recipe named with no `( )`, glued to text with `+` ("can only concatenate str (not "function") to str",
+ * "unsupported operand type(s) for +: 'function' and 'str'"): the recipe itself, not what it hands back. The fix
+ * calls it the way Mar'tu's version does (`mana_bar(member)`), else with this pass's item. From Unit 3 (recipes).
+ */
+function explainRecipeGlued(message: string, code: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  if (!/can only concatenate str \(not "function"\) to str|unsupported operand type\(s\) for \+: ('function' and '\w+'|'\w+' and 'function')/.test(message)) return null;
+  const body = codePart(text).trim();
+  const mask = maskStrings(body);
+  for (const block of recipeBlocks(code)) {
+    const bare = new RegExp(`(?<![\\w.])${escapeRegExp(block.recipe)}(?!\\s*\\()(?![\\w])`).exec(mask);
+    if (!bare) continue;
+    const ingredients = recipeIngredients(code, block.recipe) ?? [];
+    const solved = maskStrings(context?.solution ?? "").match(new RegExp(`(?<![\\w.])${escapeRegExp(block.recipe)}\\s*\\(([^()]*)\\)`));
+    const loop = enclosingLoops(code, line).find((entry) => /^[A-Za-z_]\w*$/.test(entry.variable));
+    const handed = solved && (context?.solution ?? "").slice(solved.index ?? 0, (solved.index ?? 0) + solved[0].length);
+    const call = handed && (!loop || handed.includes(loop.variable) || ingredients.length !== 1)
+      ? handed
+      : `${block.recipe}(${ingredients.length === 1 && loop ? loop.variable : ingredients.length === 0 ? "" : ingredients.join(", ")})`;
+    const fixed = `${body.slice(0, bare.index)}${call}${body.slice(bare.index + block.recipe.length)}`;
+    const sheets = loop ? loopSheetNames(code, context).includes(loop.variable) : false;
+    const pass = loop && call.includes(loop.variable) ? ` with this pass's ${sheets ? "sheet" : "item"}` : "";
+    return {
+      ...explain(
+        "call-needs-round-brackets",
+        "Parentheses for a call",
+        `${lineWord(line)} glues \`${block.recipe}\`, the recipe itself, onto text. With no parentheses ( ), \`${block.recipe}\` is the recipe, not what it hands back. Call it${pass}: \`${fixed}\``,
+        raw,
+      ),
+      slip: "a recipe named but not called",
+    };
+  }
+  return null;
 }
 
 /**
@@ -5395,12 +5782,39 @@ function explainLoopSheetAsPosition(message: string, code: string, text: string,
   return null;
 }
 
-/** Unit 6: "'int' object is not iterable" on a `for` line (`for i in len(wall):`, `for i in 6:`): one number to walk. */
-function explainLoopOverNumber(message: string, text: string, line: number | null, raw: string): CourseExplanation | null {
+/**
+ * Unit 6: "'int' object is not iterable" on a `for` line (`for i in len(wall):`, `for i in 6:`): one number to walk. The
+ * full explainer ends with the student's own `for` line walking positions with `range`, keeping their loop variable:
+ * `len(X)` goes inside `range( )` (from where Mar'tu's version starts over that list), and a bare number becomes his
+ * version's range. The lean one keeps the rule.
+ */
+function explainLoopOverNumber(message: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
   if (!/^'(int|float)' object is not iterable/.test(message)) return null;
   if (!/(^|[^\w.])for\s+[A-Za-z_][\w\s,]*\s+in\s/.test(maskStrings(codePart(text)))) return null;
   const words = `${lineWord(line)} gives a \`for\` loop one number to walk. A \`for\` loop needs a list or \`range(...)\`: one number has no items to walk through.`;
-  return { ...explain("loop-over-number", "A loop over one number", words, raw), lean: words };
+  const body = codePart(text).trim();
+  const header = body.match(FOR_HEADER);
+  const ranges = (context?.solution ?? "")
+    .split("\n")
+    .map((row) => codePart(row).trim().match(FOR_HEADER)?.[3])
+    .map((walk) => (walk ? rangeOverLength(walk) : null))
+    .filter((walk): walk is { start: number; list: string } => walk !== null);
+  const counted = header?.[3].trim().match(/^len\s*\(\s*([A-Za-z_]\w*)\s*\)$/)?.[1];
+  const range = (start: number, list: string) => `range(${start ? `${start}, ` : ""}len(${list}))`;
+  let walk: string | null = null;
+  if (header && counted) walk = range(ranges.find((entry) => entry.list === counted)?.start ?? 0, counted);
+  else if (header && /^\d+$/.test(header[3].trim()) && ranges.length === 1) walk = range(ranges[0].start, ranges[0].list);
+  if (!header || !walk) return { ...explain("loop-over-number", "A loop over one number", words, raw), lean: words };
+  const fixed = body.replace(header[3].trim(), walk);
+  return {
+    ...explain(
+      "loop-over-number",
+      "A loop over one number",
+      `${lineWord(line)} gives a \`for\` loop one number to walk, and one number has no items to walk through. Walk the positions with \`range\`: \`${fixed}\``,
+      raw,
+    ),
+    lean: words,
+  };
 }
 
 /**
@@ -5651,11 +6065,14 @@ function explainLoopIndex(code: string, text: string, line: number | null, raw: 
       const fixed = shifted.replace(counter.iterable, from);
       return { ...explain("one-past-the-end", "One past the end", `${lead} Look back with \`[${index} - 1]\` instead, and start the range at 1: \`${fixed}\``, raw), lean };
     }
+    // The loop's own line is another line: both changes, each on its line, with the student's own `for` line.
+    const header = codePart(sourceLine(code, counter.line)).trim();
+    const fixedHeader = header.match(FOR_HEADER) ? header.replace(counter.iterable, from) : `for ${index} in ${from}:`;
     return {
       ...explain(
         "one-past-the-end",
         "One past the end",
-        `${lead} Look back with \`[${index} - 1]\` instead, and start the range at 1: \`for ${index} in ${from}:\``,
+        `${lead} Look back with \`[${index} - 1]\` instead, and start the range at 1. Change line ${counter.line} to \`${fixedHeader}\` and line ${line} to \`${shifted}\``,
         raw,
       ),
       lean,
@@ -5669,15 +6086,28 @@ function explainLoopIndex(code: string, text: string, line: number | null, raw: 
  * nothing before the loop gave it a value: a running total needs its start above the loop (`total = 0`), never quotes.
  */
 function explainNoStartingValue(name: string, code: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
-  const body = maskStrings(codePart(text));
   const who = escapeRegExp(name);
-  const grows = body.match(new RegExp(`^\\s*${who}\\s*([-+*/]|//)=`)) ?? body.match(new RegExp(`^\\s*${who}\\s*=(?!=)\\s*${who}\\s*([-+*/])`));
-  const fromItself = grows ?? (new RegExp(`^\\s*${who}\\s*=(?!=)(.*)(?<![\\w.])${who}(?![\\w(])`).test(body) ? ["", ""] : null);
-  if (!fromItself) return null;
+  const changes = (row: string) => {
+    const body = maskStrings(codePart(row));
+    const grows = body.match(new RegExp(`^\\s*${who}\\s*([-+*/]|//)=`)) ?? body.match(new RegExp(`^\\s*${who}\\s*=(?!=)\\s*${who}\\s*([-+*/])`));
+    return grows ?? (new RegExp(`^\\s*${who}\\s*=(?!=)(.*)(?<![\\w.])${who}(?![\\w(])`).test(body) ? ["", ""] : null);
+  };
   // A name a letter or two from one the code makes (`totl` for `total`) is a spelling slip, not a missing start.
   if (closeName(name, definedNames(code).map((entry) => entry.name).filter((entry) => entry !== name))) return null;
   const loops = enclosingLoopHeaders(code, line);
   if (loops.length === 0) return null;
+  // The line only reads it (`gap = gap - shrink`), and every line that makes it changes it from itself, in this loop
+  // (`shrink = shrink + 1`, on line 4): the start line was deleted, so it goes above the loop, not above line 3.
+  let reader: number | null = null;
+  let fromItself = changes(text);
+  if (!fromItself) {
+    const makes = definedNames(code).filter((entry) => entry.name === name);
+    const inLoop = (at: number) => enclosingLoopHeaders(code, at).some((loop) => loops.some((own) => own.line === loop.line));
+    const update = makes[0] ? changes(sourceLine(code, makes[0].line)) : null;
+    if (!update || exampleOnlyNames(context).includes(name) || !makes.every((entry) => entry.line !== line && changes(sourceLine(code, entry.line)) && inLoop(entry.line))) return null;
+    reader = makes[0].line;
+    fromItself = update;
+  }
   // Mar'tu's version gives it its start (`total = 0`) at the indent of the loop it goes above.
   const start = (context?.solution ?? "")
     .split("\n")
@@ -5688,12 +6118,17 @@ function explainNoStartingValue(name: string, code: string, text: string, line: 
   const value = start && /^(-?\d+(\.\d+)?|""|''|\[\])$/.test(start[2]) ? start[2] : "0";
   const sign = fromItself[1];
   const verb = sign === "+" ? "adds to" : sign === "-" ? "takes away from" : "changes";
-  const lean = `${lineWord(line)} ${verb} \`${name}\`, but \`${name}\` has no starting value before the loop.`;
+  const lean = reader !== null
+    ? `${lineWord(line)} uses \`${name}\`, but \`${name}\` has no starting value before the loop.`
+    : `${lineWord(line)} ${verb} \`${name}\`, but \`${name}\` has no starting value before the loop.`;
+  const what = reader !== null
+    ? `${lineWord(line)} uses \`${name}\`, and line ${reader} ${verb} it on every pass, but nothing gives \`${name}\` a starting value before the loop.`
+    : `${lineWord(line)} ${verb} \`${name}\` on every pass, but nothing gives \`${name}\` a starting value before the loop.`;
   return {
     ...explain(
       "no-starting-value",
       "No starting value",
-      `${lineWord(line)} ${verb} \`${name}\` on every pass, but nothing gives \`${name}\` a starting value before the loop. Above line ${loop.line}, where the loop starts, put \`${name} = ${value}\``,
+      `${what} Above line ${loop.line}, where the loop starts, put \`${name} = ${value}\``,
       raw,
     ),
     lean,
@@ -5817,6 +6252,83 @@ function explainLoopSheetCompared(message: string, code: string, text: string, l
 }
 
 /**
+ * Unit 6: a `for` line with no `in` (`for gap of chalk_wall:`, `for gap = chalk_wall:`, `for gap chalk_wall:`), or with
+ * no loop variable (`for in chalk_wall:`). Python can't read it; the fix is the line with `in`, or with the name
+ * Mar'tu's version gives the loop over the same thing.
+ */
+function explainForWithoutIn(code: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  const body = codePart(text).trim();
+  if (!/^for\b.*:$/.test(maskStrings(body)) || FOR_HEADER.test(body)) return null;
+  const lean = `${lineWord(line)} is a \`for\` line with no \`in\`.`;
+  const missing = body.match(/^for\s+in\s+(.+?)\s*:$/);
+  if (missing) {
+    const walk = missing[1].trim();
+    const named = (context?.solution ?? "")
+      .split("\n")
+      .map((row) => codePart(row).trim().match(FOR_HEADER))
+      .find((header) => header !== null && header[3].replace(/\s+/g, "") === walk.replace(/\s+/g, ""))?.[2];
+    const variable = named ?? "item";
+    return {
+      ...explain(
+        "for-needs-in",
+        "A for line needs a name and in",
+        `${lineWord(line)} is a \`for\` line with no loop variable. A name for each item goes between \`for\` and \`in\`${named ? "" : ", like `item`"}: \`for ${variable} in ${walk}:\``,
+        raw,
+      ),
+      slip: "a `for` line with no loop variable",
+      lean: `${lineWord(line)} is a \`for\` line with no loop variable.`,
+    };
+  }
+  const shape = body.match(/^for\s+([A-Za-z_]\w*(?:\s*,\s*[A-Za-z_]\w*)*)\s*(?:(=|of|from|over|through|inside|at)\s*)?([A-Za-z_][\w.()[\]"', ]*?)\s*:$/);
+  if (!shape || KEYWORDS.has(shape[1]) || KEYWORDS.has(shape[3].split(/[.([\s]/)[0] ?? "")) return null;
+  const fixed = `for ${shape[1]} in ${shape[3]}:`;
+  return {
+    ...explain(
+      "for-needs-in",
+      "A for line needs in",
+      `${lineWord(line)} is a \`for\` line, and it needs the word \`in\` between the loop variable and what the loop walks: \`${fixed}\``,
+      raw,
+    ),
+    slip: "a `for` line with no `in`",
+    lean,
+  };
+}
+
+/**
+ * Unit 6: a colon in a one-line choice (`status = "ready" if mana >= 3: else "resting"`, or after its `else`): the
+ * `if` line's habit. Only a colon outside brackets and quotes counts (a slice `x[1:2]` is not one).
+ */
+function explainColonInChoice(text: string, line: number | null, raw: string): CourseExplanation | null {
+  const body = codePart(text).trim();
+  const mask = maskStrings(body);
+  if (/^(if|elif|else|while|for|def|class|try|except|with)\b/.test(mask)) return null;
+  const ask = mask.search(/(?<![\w.])if\s/);
+  if (ask < 0 || !/(?<![\w.])else\b/.test(mask.slice(ask))) return null;
+  const colons: number[] = [];
+  let depth = 0;
+  for (let at = ask; at < mask.length; at += 1) {
+    const char = mask[at];
+    if (char in CLOSER) depth += 1;
+    else if (char in OPENER) depth -= 1;
+    else if (char === ":" && depth === 0) colons.push(at);
+  }
+  if (colons.length === 0) return null;
+  let fixed = body;
+  for (const at of [...colons].reverse()) fixed = `${fixed.slice(0, at)}${fixed.slice(at + 1)}`;
+  fixed = fixed.replace(/ {2,}/g, " ").trim();
+  const lean = `${lineWord(line)} has a colon \`:\` in a one-line choice.`;
+  return {
+    ...explain(
+      "colon-in-one-line-choice",
+      "No colon in a one-line choice",
+      `${lean} A one-line choice has no colon, unlike an \`if\` line. Take out the \`:\`: \`${fixed}\``,
+      raw,
+    ),
+    lean,
+  };
+}
+
+/**
  * Unit 6's SyntaxErrors: `break` (or `continue`) at the left edge, outside the loop; a colon inside a one-line loop
  * (`[h for h in chalk_wall: if h < 45]`, the `for` line's habit); a one-line choice with no `else`
  * (`status = "ready" if mana >= 3`). Null for anything else.
@@ -5877,6 +6389,10 @@ function explainLoopSyntax(message: string, code: string, text: string, line: nu
       lean,
     };
   }
+  const forNeedsIn = explainForWithoutIn(code, text, line, raw, context);
+  if (forNeedsIn) return forNeedsIn;
+  const choiceColon = explainColonInChoice(text, line, raw);
+  if (choiceColon) return choiceColon;
   if (/^invalid syntax/.test(message)) {
     const body = codePart(text);
     const mask = maskStrings(body);
@@ -6015,6 +6531,9 @@ function explainType(
   // print hands back `None`. Never "values of kinds that don't go together" with Python's 'NoneType'.
   const outside = explainOutsidePrint(message, text, line, raw);
   if (outside) return outside;
+  // Unit 3 on: a recipe that prints its answer and has no `return`, its `None` compared or glued (`ore_left >= daily`).
+  const none = unitAtLeast(context, FUNCTIONS_UNIT_ORDER) ? explainNoneValue(message, code, text, line, raw) : null;
+  if (none) return none;
   const fromInput = inputNames(code).find((name) => new RegExp(`\\b${escapeRegExp(name)}\\b`).test(text));
   const joinText = /can only concatenate str \(not "(int|float)"\) to str/.test(message);
   const addToNumber = /unsupported operand type\(s\) for \+: '(int|float)' and 'str'/.test(message);
@@ -6051,6 +6570,9 @@ function explainType(
   // `def hero(): "Lucky"` then `hero + " is ready."`: Python's own hint led to a recipe, not a box.
   const recipe = explainRecipeUsedAsBox(message, code, text, raw, context);
   if (recipe) return recipe;
+  // Unit 3 on: `print(member["name"] + " " + mana_bar)`: a recipe glued with `+`, named but not called.
+  const glued = unitAtLeast(context, FUNCTIONS_UNIT_ORDER) ? explainRecipeGlued(message, code, text, line, raw, context) : null;
+  if (glued) return glued;
   // Unit 6: inside a loop over a list of sheets, a key asked of the list or a sheet used as a position; a `for` loop over
   // one number; a whole sheet or a whole list added to a number. Before the Unit 5 rows, which do not know the loop.
   if (unitAtLeast(context, LOOPS_UNIT_ORDER)) {
@@ -6058,7 +6580,7 @@ function explainType(
       explainListToRecipe(message, code, line, raw, context) ??
       explainLoopListKey(message, code, text, line, raw) ??
       explainLoopSheetAsPosition(message, code, text, line, raw) ??
-      explainLoopOverNumber(message, text, line, raw) ??
+      explainLoopOverNumber(message, text, line, raw, context) ??
       explainLoopToolNotCalled(message, text, line, raw) ??
       explainWholeAdded(message, code, text, line, raw, context) ??
       explainLoopSheetCompared(message, code, text, line, raw, context);
@@ -6127,6 +6649,20 @@ function explainType(
       message,
     )
   ) {
+    // `shrink = "3"` on line 2, then `gap = gap - shrink`: the quotes on line 2 are the slip, never "use int()" here.
+    const maker = quotedNumberMaker(code, text, line);
+    if (maker) {
+      return {
+        ...explain(
+          "math-with-text",
+          "Math with text",
+          `Line ${maker.at} makes \`${maker.name}\` with quotes: \`${maker.made}\`. Quotes make text, even when it looks like a number, so ${lineWord(line).toLowerCase()} can't do math with it. Take the quotes off on line ${maker.at}: \`${maker.fixed}\``,
+          raw,
+        ),
+        slip: "a number in quotes",
+        slipLine: maker.at,
+      };
+    }
     return explain(
       "math-with-text",
       "Math with text",
@@ -6170,12 +6706,16 @@ function explainType(
       const recipe = taskRecipe(boxCalled.name, code, context);
       const made = `line ${boxCalled.line} makes \`${boxCalled.name}\` with \`=\`, so it is a box, not a recipe (function)`;
       if (recipe) {
-        return explain(
-          "recipe-like-math",
-          "A recipe starts with def",
-          `${lineWord(line)} calls \`${boxCalled.name}\`, but ${made}. ${recipeShape(recipe, boxCalled.value)}`,
-          raw,
-        );
+        return {
+          ...explain(
+            "recipe-like-math",
+            "A recipe starts with def",
+            `${lineWord(line)} calls \`${boxCalled.name}\`, but ${made}. ${recipeShape(recipe, boxCalled.value)}`,
+            raw,
+          ),
+          // The `=` line is the one to rewrite as a `def`: the crash banner names it.
+          slipLine: boxCalled.line,
+        };
       }
       return explain(
         "not-a-function",
@@ -6226,7 +6766,7 @@ function explainParsed(parsed: Parsed, raw: string, code: string, context?: Expl
       return explainSyntax(message, type, text, line, raw, code, context);
     case "IndentationError":
     case "TabError":
-      return explainIndent(message, line, raw, unitAtLeast(context, FUNCTIONS_UNIT_ORDER) ? code : "");
+      return explainIndent(message, line, raw, unitAtLeast(context, FUNCTIONS_UNIT_ORDER) ? code : "", code);
     case "NameError":
       return explainName(message, code, text, line, raw, context);
     case "TypeError":
@@ -6246,13 +6786,20 @@ function explainParsed(parsed: Parsed, raw: string, code: string, context?: Expl
         raw,
       );
     case "TimeoutError":
-      return explainTimeout(code, raw);
+      return withLoopFree(
+        (unitAtLeast(context, LOOPS_UNIT_ORDER) ? explainEndlessWhile("timeout", code, line, raw, context) : null) ?? explainTimeout(code, raw),
+        code,
+      );
     case "TooMuchOutput":
-      return explain(
-        "too-much-output",
-        "Printing forever?",
-        "Your code printed so much that it was stopped. Look for a part of your code that repeats and never ends.",
-        raw,
+      return withLoopFree(
+        (unitAtLeast(context, LOOPS_UNIT_ORDER) ? explainEndlessWhile("too-much-output", code, line, raw, context) : null) ??
+          explain(
+            "too-much-output",
+            "Printing forever?",
+            "Your code printed so much that it was stopped. Look for a part of your code that repeats and never ends.",
+            raw,
+          ),
+        code,
       );
     case "ValueError": {
       const notNumber = message.match(/invalid literal for int\(\) with base 10: (.+)$|could not convert string to float: (.+)$/);
@@ -6291,7 +6838,7 @@ function explainParsed(parsed: Parsed, raw: string, code: string, context?: Expl
         const sheetList = unitAtLeast(context, DICTS_UNIT_ORDER) && /list/.test(message) ? explainSheetsOutOfRange(code, text, line, raw, context) : null;
         if (sheetList) return sheetList;
         // Unit 4: in the unit's words (`len(wall)` as a position, the list's own count), never "3 items".
-        const list = unitAtLeast(context, LISTS_UNIT_ORDER) ? explainOutOfRange(message, code, text, line, raw) : null;
+        const list = unitAtLeast(context, LISTS_UNIT_ORDER) ? explainOutOfRange(message, code, text, line, raw, context?.solution) : null;
         if (list) return list;
         const what = /string/.test(message) ? "text" : "list";
         return explain(
@@ -6314,6 +6861,9 @@ function explainParsed(parsed: Parsed, raw: string, code: string, context?: Expl
       const meant = message.match(/Did you mean: '([^']+)'/)?.[1];
       const attribute = message.match(/attribute '([^']+)'/)?.[1];
       if (attribute && /^_{2,}$/.test(attribute)) return blankLeft(attribute, line, raw);
+      // Unit 4 on: `short_gaps = short_gaps.append(h)`: the box holds the tool's `None`, never "check the spelling".
+      const none = unitAtLeast(context, LISTS_UNIT_ORDER) ? explainNoneTool(message, code, text, line, raw) : null;
+      if (none) return none;
       // Unit 5: `lucky.mana`, `gearshift.fuel = "starlode"`: a dot where a sheet needs square brackets.
       if (unitAtLeast(context, DICTS_UNIT_ORDER)) {
         const dot = explainSheetDot(message, code, text, line, raw, context);
@@ -6558,6 +7108,8 @@ const SLIP_NAMES: Record<CourseErrorKind, string> = {
   "break-outside-loop": "`break` outside a loop",
   "colon-in-one-line-loop": "a colon inside a one-line loop",
   "choice-needs-else": "a one-line choice with no `else`",
+  "for-needs-in": "a `for` line with no `in`",
+  "colon-in-one-line-choice": "a colon in a one-line choice",
   "input-is-text": "an input() answer used as a number",
   "text-plus-number": "text joined to a number",
   "number-plus-text": "a number added to text",
@@ -6602,7 +7154,8 @@ export function slipName(kind: CourseErrorKind): string {
  * Python's own last line stays on screen under it, so the student reads Python first.
  */
 export function leanExplanation(full: CourseExplanation, raw = full.raw): CourseExplanation {
-  if (ALWAYS_FULL.has(full.kind)) return full;
+  // A run that never ended keeps its full words, unless the row found the loop and has lean words of its own (Unit 6).
+  if (ALWAYS_FULL.has(full.kind) && !(full.loopLine !== undefined && full.lean)) return full;
   const name = full.slip ?? SLIP_NAMES[full.kind];
   const line = full.slipLine ?? errorLine(raw);
   // Titles are plain text (no code marks). A name that starts with a code word (or a sign, `=`) keeps its small letters.
@@ -6617,6 +7170,150 @@ export function leanExplanation(full: CourseExplanation, raw = full.raw): Course
     title,
     hint: `${mistake} Python's last line, below, says what it found. Fix it yourself, then press Run again.`,
   };
+}
+
+/** A run that never ended in code with no `for` or `while` line (and no recipe that calls itself): `loopFree`. */
+function withLoopFree(result: CourseExplanation, code: string): CourseExplanation {
+  const loops = (code ?? "").split("\n").some((row) => /^\s*(for|while)\b|(?<![\w.])for\s+[A-Za-z_][\w\s,]*\s+in\s/.test(maskStrings(codePart(row))));
+  return loops || recipeBlocks(code).length > 0 ? result : { ...result, loopFree: true };
+}
+
+/** One line of the code, with its number and indent (the `#` note cut). */
+type CodeRow = { at: number; text: string; indent: number };
+
+/**
+ * Unit 6: a run that never ended (printed forever, or ran too long) inside a `while` loop. Finds the loop that kept going
+ * (the innermost `while` around the line Python was stopped on, else the code's only `while`), the names its question
+ * watches, and why its answer stays `True`:
+ * - a `while` inside a `for` loop, where Mar'tu's version asks once each pass with `if`: the fix is `if`;
+ * - the line that changes the name sits outside the loop (no spaces in front): indent it;
+ * - a line works the change out and keeps it nowhere (`glug - 1`, `glug == glug - 1`): put `glug = ` in front;
+ * - the change goes the wrong way for the question (`+ 1` under `> 0`): Mar'tu's change, or a question that can end;
+ * - nothing inside changes it: add the change, Mar'tu's line when his version has one.
+ * The lean explainer names the loop and the slip, never the fix. Null when no `while` explains it.
+ */
+function explainEndlessWhile(kind: "timeout" | "too-much-output", code: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  const rows: CodeRow[] = (code ?? "").split("\n").map((text, index) => ({ at: index + 1, text: codePart(text), indent: indentOf(text) }));
+  const whiles = rows.filter((row) => /^\s*while\b.*:\s*$/.test(maskStrings(row.text)));
+  const around = line !== null ? enclosingLoopHeaders(code, line).find((loop) => loop.keyword === "while") : undefined;
+  const header = around ? rows[around.line - 1] : whiles.length === 1 ? whiles[0] : undefined;
+  if (!header) return null;
+  const question = header.text.trim().match(/^while\s+(.+?)\s*:$/)?.[1]?.trim();
+  if (!question) return null;
+  const body: CodeRow[] = [];
+  for (const row of rows.slice(header.at)) {
+    if (!row.text.trim()) continue;
+    if (row.indent <= header.indent) break;
+    body.push(row);
+  }
+  const after = rows.slice(header.at + body.length).find((row) => row.text.trim() !== "");
+  const program = `${context?.setup ?? ""}\n${code ?? ""}`;
+  const made = new Set(definedNames(program).map((entry) => entry.name));
+  // What the question watches: its reads by tag (`member["mana"]`) and its plain names (not Python's own tools).
+  const qmask = maskStrings(question);
+  const chains = readChains(question).filter((chain) => chain.reads.length > 0 && chain.reads.every((read) => read.key !== undefined)).map((chain) => question.slice(chain.start, chain.end));
+  const plain = [...qmask.matchAll(/(?<![\w.\]"'])([A-Za-z_]\w*)(?![\w([])/g)].map((found) => found[1]).filter((name) => made.has(name) && !KEYWORDS.has(name) && !COMMON_BUILTINS.includes(name));
+  const watched = [...new Set([...plain, ...chains])];
+  if (watched.length === 0) return null;
+  const who = (name: string) => escapeRegExp(name).replace(/\\\[/g, "\\s*\\[").replace(/\\\]/g, "\\]\\s*");
+  const changes = (row: CodeRow | undefined, name: string) => !!row && new RegExp(`^\\s*${who(name)}\\s*([-+*/]|//)?=(?!=)`).test(maskStrings(row.text));
+  const changers = body.filter((row) => watched.some((name) => changes(row, name)));
+  const name = watched.find((entry) => changers.some((row) => changes(row, entry))) ?? watched[0];
+  const loopWord = `Your \`while\` loop on line ${header.at}`;
+  const stays = `so \`${question}\` stays \`True\``;
+  const solution = (context?.solution ?? "").split("\n").map((row) => codePart(row).trim());
+  const squash = (text: string) => text.replace(/\s+/g, "");
+  // Mar'tu's own line that changes the name from itself (`glug = glug - 1`, `days += 1`).
+  const martuChange = solution.find((row) => {
+    const mask = maskStrings(row);
+    return new RegExp(`^${who(name)}\\s*([-+*/]|//)=`).test(mask) || new RegExp(`^${who(name)}\\s*=(?!=)\\s*${who(name)}\\s*[-+*/]`).test(mask);
+  });
+  const title = "A loop that never ends";
+  const result = (hint: string, lean: string, slipLine?: number): CourseExplanation => ({
+    ...explain(kind, title, hint, raw),
+    slip: "a loop that never ends",
+    lean,
+    loopLine: header.at,
+    ...(slipLine !== undefined ? { slipLine } : {}),
+  });
+  // A `while` asked inside a `for` loop where Mar'tu's version asks once each pass: `if`.
+  const insideFor = enclosingLoopHeaders(code, header.at).some((loop) => loop.keyword === "for");
+  const asksOnce = solution.some((row) => squash(row) === squash(`if ${question}:`));
+  if (changers.length === 0 && insideFor && asksOnce) {
+    const lean = `Line ${header.at} asks with \`while\` inside the \`for\` loop, and nothing under it changes \`${name}\`.`;
+    return result(
+      `Line ${header.at} asks with \`while\`, so it repeats its lines for as long as \`${question}\` is \`True\`, and nothing under it changes \`${name}\`. To ask once on each pass of the \`for\` loop, use \`if\`: \`if ${question}:\``,
+      lean,
+      header.at,
+    );
+  }
+  if (changers.length === 0) {
+    // The change sits right after the loop, at its left edge: it never runs inside.
+    if (after && changes(after, name)) {
+      const under = body.at(-1);
+      const lean = `${loopWord} never ended: line ${after.at} changes \`${name}\`, but it is outside the loop.`;
+      return result(
+        `${loopWord} never ended: nothing inside it changes \`${name}\`, ${stays}. Line ${after.at} changes it, but it is outside the loop. Indent line ${after.at}${under ? ` to line up with line ${under.at}` : ""}, so it runs on every pass.`,
+        lean,
+        after.at,
+      );
+    }
+    // The change worked out and kept nowhere: `glug - 1`, or `glug == glug - 1`.
+    const thrown = body.find((row) => new RegExp(`^\\s*${who(name)}\\s*(==\\s*${who(name)}\\s*)?[-+*/]\\s*\\S`).test(maskStrings(row.text)) && !singleEquals(maskStrings(row.text)).length);
+    if (thrown) {
+      const worked = thrown.text.trim().replace(new RegExp(`^${who(name)}\\s*==\\s*`), "");
+      const asked = /==/.test(thrown.text);
+      // Kept, a change the wrong way (`oil + 1` under `oil > 0`) would still never end: then Mar'tu's own change.
+      const workedSign = maskStrings(worked).match(new RegExp(`^${who(name)}\\s*([-+])`))?.[1];
+      const asks = qmask.match(new RegExp(`${who(name)}\\s*(>=|<=|>|<|!=)`))?.[1];
+      const backwards = workedSign && asks && ((workedSign === "+" && /^(>|>=|!=)$/.test(asks)) || (workedSign === "-" && /^(<|<=)$/.test(asks)));
+      const kept = backwards && martuChange ? martuChange : `${name} = ${worked}`;
+      const lean = `${loopWord} never ended: line ${thrown.at} works out a new \`${name}\` and keeps it nowhere.`;
+      return result(
+        asked
+          ? `${loopWord} never ended: line ${thrown.at} only asks whether \`${name}\` is the same as \`${worked}\`, and changes nothing, ${stays}. One \`=\` puts a value in the box: \`${kept}\``
+          : backwards && martuChange
+            ? `${loopWord} never ended: line ${thrown.at} works out \`${worked}\`, then throws it away, ${stays}. Change line ${thrown.at} to \`${kept}\``
+            : `${loopWord} never ended: line ${thrown.at} works out \`${worked}\`, then throws it away, ${stays}. Put \`${name} = \` in front of it: \`${kept}\``,
+        lean,
+        thrown.at,
+      );
+    }
+    const lean = `${loopWord} never ended: nothing inside it changes \`${name}\`.`;
+    const add = martuChange
+      ? `Add \`${martuChange}\` inside the loop, under line ${header.at}.`
+      : `Add a line inside the loop, under line ${header.at}, that changes \`${name}\`.`;
+    return result(`${loopWord} never ended: nothing inside it changes \`${name}\`, ${stays}. ${add}`, lean);
+  }
+  // A change that goes the wrong way for the question: `+` under `>` (or `>=`, `!=`), `-` under `<` (or `<=`).
+  const changer = changers.find((row) => changes(row, name)) ?? changers[0];
+  const sign = maskStrings(changer.text).match(new RegExp(`^\\s*${who(name)}\\s*([-+])=`))?.[1] ?? maskStrings(changer.text).match(new RegExp(`=(?!=)\\s*${who(name)}\\s*([-+])`))?.[1];
+  const compare = qmask.match(new RegExp(`${who(name)}\\s*(>=|<=|>|<|!=)`))?.[1];
+  const grows = sign === "+";
+  const wrongWay = sign && compare && ((grows && /^(>|>=|!=)$/.test(compare)) || (!grows && /^(<|<=)$/.test(compare)));
+  if (!wrongWay) return null;
+  const bigger = grows ? "bigger" : "smaller";
+  const lean = `${loopWord} never ended: line ${changer.at} makes \`${name}\` ${bigger} on every pass.`;
+  if (!martuChange) {
+    return result(
+      `${loopWord} never ended: line ${changer.at} makes \`${name}\` ${bigger} on every pass, ${stays}. Change line ${changer.at} so it makes \`${name}\` ${grows ? "smaller" : "bigger"}.`,
+      lean,
+      changer.at,
+    );
+  }
+  if (squash(martuChange) === squash(changer.text.trim())) {
+    // The change is Mar'tu's: the question is the slip.
+    return result(
+      `${loopWord} never ended: line ${changer.at} makes \`${name}\` ${bigger} on every pass, ${stays}. Ask a question on line ${header.at} that becomes \`False\` as \`${name}\` gets ${bigger}.`,
+      lean,
+      header.at,
+    );
+  }
+  return result(
+    `${loopWord} never ended: line ${changer.at} makes \`${name}\` ${bigger} on every pass, ${stays}. Change line ${changer.at} to \`${martuChange}\``,
+    lean,
+    changer.at,
+  );
 }
 
 function explainTimeout(code: string, raw: string): CourseExplanation {

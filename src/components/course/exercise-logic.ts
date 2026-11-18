@@ -599,15 +599,33 @@ export function crashFixLine(crashLine: number | null, slipLine: number | null =
  * A run that never ended (a loop that printed forever, or ran past the time limit): Python was stopped wherever the
  * loop happened to be, often a line that is right (`print(hours_left)`), so there is no line to fix first (Unit 6).
  */
-export function endlessRun(explanation: { kind?: string } | null | undefined): boolean {
+export function endlessRun(explanation: { kind?: string; loopFree?: boolean } | null | undefined): boolean {
+  // Code with no `for` or `while` line that printed too much (`print(ink * 300000)`): no loop to talk about, and the
+  // line Python stopped at is the one to fix, so the ordinary crash words apply (Units 1-5 never say "loop").
+  if (explanation?.loopFree) return false;
   return explanation?.kind === "timeout" || explanation?.kind === "too-much-output";
 }
 
+/**
+ * The task line for a run that never ended (Unit 6). With the loop the explainer found (`loopLine`), it names that
+ * loop's line, never "your loop" with three on screen; with the line the fix goes on (`slipLine`: the change outside the
+ * loop, the `while` that should be an `if`), that line, else the loop itself.
+ */
+export function endlessLine(noun: string, loopLine: number | null = null, slipLine: number | null = null): { label: string; text: string } {
+  const label = loopLine !== null ? `Your loop on line ${loopLine} never ended.` : "Your loop never ended.";
+  const then = slipLine !== null ? `fix line ${slipLine}` : loopLine !== null ? "change that loop so it can end" : "change the loop so it can end";
+  return { label, text: `Python stopped your code, so it couldn't check your ${noun.toLowerCase()}s yet. Read the box in the Console, then ${then}.` };
+}
+
 /** "Same error as last time." then where to look: the slip's own line, else the line Python stopped at (and above). */
-export function sameErrorLook(crashLine: number | null, slipLine: number | null = null, fixAbove = false, endless = false): string {
-  // A run that never ended stops wherever the loop happens to be (often a right `print`): the fix is the line inside
-  // the loop that changes its question, so no line number is named (Unit 6, endlessRun()).
-  if (endless) return "Look at the indented lines under your loop's first line. Which one changes the number its question checks?";
+export function sameErrorLook(crashLine: number | null, slipLine: number | null = null, fixAbove = false, endless = false, loopLine: number | null = null): string {
+  // A run that never ended stops wherever the loop happens to be (often a right `print`): the fix is the line the
+  // explainer found, else a line inside the loop that changes its question, which may not be there yet (Unit 6).
+  if (endless) {
+    if (slipLine !== null) return `Look closely at line ${slipLine}.`;
+    const under = loopLine !== null ? `under line ${loopLine}` : "under your loop's first line";
+    return `Look at the indented lines ${under}. If none of them changes the number its question checks, add one.`;
+  }
   if (slipLine !== null && slipLine !== crashLine) return `Look closely at line ${slipLine}.`;
   if (crashLine === null) return "Look closely at the line number in Python's last line.";
   return fixAbove ? `Look closely at line ${crashLine} and the lines above it.` : `Look closely at line ${crashLine}.`;

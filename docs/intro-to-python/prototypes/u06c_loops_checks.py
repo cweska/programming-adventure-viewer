@@ -387,9 +387,18 @@ OTHER_SHEETS = [sheet("Pell", 31, 34, 17), sheet("Brakka", 7, 12, 6), sheet("Mos
 EV_FIVE = " Mar'tu tested your code with a test roster of 5 made-up heroes."
 
 
-def ev_mana(values):
-    return (" Mar'tu tested your code with test mana for the same heroes: " + ", ".join(str(v) for v in values[:-1])
-            + " and " + str(values[-1]) + ".")
+def ev_other(answer):
+    # One test and the answer it should give (plain-language guide 4.3.12): never a list of numbers to add up.
+    return " Mar'tu tested your code with other mana on the same sheets, where " + answer + "."
+
+
+def names_and(names):
+    return names[0] if len(names) == 1 else ", ".join(names[:-1]) + " and " + names[-1]
+
+
+def ev_under_ten(sheets):
+    tired = [s["name"] for s in sheets if s["mana"] < 10]
+    return ev_other("only " + names_and(tired) + (" has" if len(tired) == 1 else " have") + " less than 10")
 
 
 def ev_list(name, values):
@@ -672,7 +681,8 @@ TIRED_PART = 'for member in roster:\n    if member["mana"] < 10:\n        print(
 def _qc_tally(form, story, sheets, other_mana, lead, pass_total, pass_tired):
     roster = story + roster_code(sheets)
     mana_other = same_heroes(sheets, other_mana)
-    ev_m = ev_mana(other_mana)
+    ev_t = ev_other("the total should be %d" % sum(other_mana))
+    ev_n = ev_under_ten(mana_other)
     own_total = sum(s["mana"] for s in sheets)
     tired = [s["name"] for s in sheets if s["mana"] < 10]
 
@@ -728,7 +738,7 @@ for _vals, _ev in ((None, ''), ({'roster': __MANA__}, __EVM__), ({'roster': __FI
     assert _loops, "`total` ended as " + _shv(_got) + ", not the party's mana added up, and there is no loop."
     assert False, "`total` ended as " + _shv(_got) + ", not the party's mana added up." + _ev
 ''',
-        MANA=mana_other, EVM=ev_m, FIVE=OTHER5, EV5=EV_FIVE,
+        MANA=mana_other, EVM=ev_t, FIVE=OTHER5, EV5=EV_FIVE,
     )
     total_printed = chk(
         "the total prints once, after the loop",
@@ -750,7 +760,7 @@ for _vals, _ev in ((None, ''), ({'roster': __MANA__}, __EVM__)):
     assert _vals is not None, '`total` was never printed.'
     assert False, 'With other mana, the printed total did not change to match.' + _ev
 ''',
-        MANA=mana_other, EVM=ev_m,
+        MANA=mana_other, EVM=ev_t,
     )
     tired_check = chk(
         "only the members under 10 mana print, and the names follow other sheets",
@@ -801,7 +811,7 @@ for _vals, _ev in ((None, ''), ({'roster': __MANA__}, __EVM__), ({'roster': __FI
     _extra = [_n for _n in _said if _n not in _want]
     # the `<=` slip: every extra name is a member at exactly 10
     _ten = [_m['name'] for _m in _r if _m['mana'] == 10 and _m['name'] in _said]
-    assert not (_ten and _all(_n in _ten for _n in _extra)), 'A member with exactly 10 mana printed too.' + _ev
+    assert not (_ten and _all(_n in _ten for _n in _extra)), _ten[0] + ', with exactly 10 mana, printed too.' + _ev
     _big = [_m['name'] for _m in _r if _m['mana'] > 10]
     assert not _all(_n in _big for _n in _said), 'The members with more than 10 mana printed, not those under 10.' + _ev
     # one name, printed from outside every loop (the filter print below the loop)
@@ -813,7 +823,7 @@ for _vals, _ev in ((None, ''), ({'roster': __MANA__}, __EVM__), ({'roster': __FI
                                        + ' mana, did not print.' + _ev) if _left else ''
     assert False, 'The names printed are not the members under 10 mana, in roster order.' + _ev
 ''',
-        MANA=mana_other, EVM=ev_m, FIVE=OTHER5, EV5=EV_FIVE,
+        MANA=mana_other, EVM=ev_n, FIVE=OTHER5, EV5=EV_FIVE,
     )
     one_loop = (
         'total = 0\nfor member in roster:\n    total = total + member["mana"]\n    if member["mana"] < 10:\n'

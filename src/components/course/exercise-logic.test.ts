@@ -13,6 +13,7 @@ import {
   crashLineInStarter,
   crashLineSwitchedOff,
   effectiveSupport,
+  endlessLine,
   endlessRun,
   exerciseIndexFromHash,
   hashForExercise,
@@ -513,14 +514,27 @@ describe("the crash banner's words (the second plain-language read-through)", ()
     expect(sameErrorLook(null)).toBe("Look closely at the line number in Python's last line.");
   });
 
-  it("names no line for a run that never ended (Unit 6): the loop's question is the place to look", () => {
-    const loop = "Look at the indented lines under your loop's first line. Which one changes the number its question checks?";
-    expect(sameErrorLook(7, null, false, true)).toBe(loop);
-    expect(sameErrorLook(null, 3, true, true)).toBe(loop);
+  it("names no line Python stopped at for a run that never ended (Unit 6): the loop, or the line the explainer found", () => {
+    // Never "Which one changes ...?" when none may: the starter's loop has no such line yet.
+    expect(sameErrorLook(7, null, false, true)).toBe("Look at the indented lines under your loop's first line. If none of them changes the number its question checks, add one.");
+    expect(sameErrorLook(7, null, false, true, 2)).toBe("Look at the indented lines under line 2. If none of them changes the number its question checks, add one.");
+    // The change sits outside the loop, or the `while` should be an `if`: that line.
+    expect(sameErrorLook(null, 4, false, true, 2)).toBe("Look closely at line 4.");
     expect(endlessRun({ kind: "timeout" })).toBe(true);
     expect(endlessRun({ kind: "too-much-output" })).toBe(true);
     expect(endlessRun({ kind: "name-error" })).toBe(false);
     expect(endlessRun(null)).toBe(false);
+    // No `for` or `while` in the code (`print(ink * 300000)`): an ordinary crash, never "your loop".
+    expect(endlessRun({ kind: "too-much-output", loopFree: true })).toBe(false);
+    expect(endlessLine("Step")).toEqual({
+      label: "Your loop never ended.",
+      text: "Python stopped your code, so it couldn't check your steps yet. Read the box in the Console, then change the loop so it can end.",
+    });
+    expect(endlessLine("Step", 28)).toEqual({
+      label: "Your loop on line 28 never ended.",
+      text: "Python stopped your code, so it couldn't check your steps yet. Read the box in the Console, then change that loop so it can end.",
+    });
+    expect(endlessLine("Task", 2, 4).text).toBe("Python stopped your code, so it couldn't check your tasks yet. Read the box in the Console, then fix line 4.");
   });
 
   it("says 'part of this step' only for a line that was there from the start", () => {

@@ -196,6 +196,22 @@ test.describe("Intro to Python, Unit 1: Hello World", () => {
       await expect(page.getByTestId("exercise-done-martu")).toContainText("still done");
     });
 
+    test("a run that prints too much with no loop names Python's line, never 'your loop' (Units 1-5 teach no loop)", async ({ page }) => {
+      await page.goto(itemPath("ward-sign"));
+      await expect(page.getByTestId("exercise-player")).toBeVisible();
+      await pythonReady(page);
+      await setCode(page, 'ink = "#"\nprint(ink * 300000)\n');
+      await runAndWait(page, 1);
+      await expect(page.getByTestId("explainer")).toHaveAttribute("data-kind", "too-much-output");
+      const task = page.getByTestId("task-line");
+      await expect(task).not.toHaveAttribute("data-endless", "true");
+      await expect(task).toContainText("Python stopped at line 2, so it couldn't finish your code. Fix line 2, then press Run again.");
+      await expect(task).not.toContainText("loop");
+      await page.getByTestId("run").click();
+      await expect(page.getByTestId("run-count")).toHaveText(/Run 2 finished/, { timeout: 60_000 });
+      await expect(page.getByTestId("same-error")).toHaveText("Same error as last time. Look closely at line 2.");
+    });
+
     test("in a print-only exercise, Mar'tu's pick on an empty line goes in as a print line", async ({ page }) => {
       await page.goto(`${itemPath("boxes-with-labels")}#keyboard-symbols`);
       await expect(page.getByTestId("exercise-title")).toHaveText("Where the symbols live");

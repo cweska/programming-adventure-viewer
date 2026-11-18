@@ -37,6 +37,7 @@ import {
   crashLineSwitchedOff,
   crashTarget,
   effectiveSupport,
+  endlessLine,
   endlessRun,
   firstParagraph,
   helpOffer,
@@ -1210,8 +1211,14 @@ export function ExercisePlayer({
           ) : activeCheckpoint && !done && endless ? (
             // A run that never ended checks nothing either, but the line it was stopped on is no slip: the loop is.
             <p className="ex-task-line" data-testid="task-line" data-crash="true" data-endless="true">
-              <span className="ex-task-label">Your loop never ended.</span>{" "}
-              {`Python stopped your code, so it couldn't check your ${noun.toLowerCase()}s yet. Read the box in the Console, then change the loop so it can end.`}
+              {(() => {
+                const words = endlessLine(noun, view?.explanation?.loopLine ?? null, view?.explanation?.slipLine ?? null);
+                return (
+                  <>
+                    <span className="ex-task-label">{words.label}</span> {words.text}
+                  </>
+                );
+              })()}
             </p>
           ) : activeCheckpoint && !done && crashed ? (
             // A crash checks nothing, so "step 1" may already be right: the line Python stopped at comes first.
@@ -1672,7 +1679,13 @@ function ExerciseConsole({
             {view.sameError ? (
               <p className="ex-same-error" data-testid="same-error">
                 Same error as last time.{" "}
-                {sameErrorLook(crashLine(view.explanation.raw), view.explanation.slipLine ?? null, view.explanation.fixAbove === true, endlessRun(view.explanation))}
+                {sameErrorLook(
+                  crashLine(view.explanation.raw),
+                  view.explanation.slipLine ?? null,
+                  view.explanation.fixAbove === true,
+                  endlessRun(view.explanation),
+                  view.explanation.loopLine ?? null,
+                )}
               </p>
             ) : null}
             <p className="ex-explainer-title">{view.explanation.title}</p>

@@ -580,8 +580,8 @@ for _arg, _r, _rows in _res:
     _e = (" Mar'tu tested your recipe with " + _call + ': it handed back ' + _shv(_r) + ', but the average is '
           + _sh(_want) + '.')
     if _r is None:
-        assert not _rows, ('Your recipe printed the answer, then handed back `None`. Hand the answer back with '
-                           '`return`: `print` only shows it on the screen.'
+        assert not _rows, ('Your recipe printed the answer, then handed back `None`, Python\'s word for nothing: '
+                           'nothing came back. Hand the answer back with `return`, not `print`.'
                            " Mar'tu tested your recipe with " + _call + '.')
         assert False, ('The recipe handed back `None`: nothing. Put `return` in front of the answer, at the end of '
                        'the recipe.' + _e)
@@ -676,8 +676,9 @@ for _vals in __CASES__:
                 and (_ok_a or _ok_b)), _stop(_err, _e)
         continue
     _daily = _ns.get('daily')
-    assert _close(_daily, _d), ("`daily` is not one day's average use, " + _sh(_d) + " here. Keep "
-                                "`daily = average(velocite_used)` the way it was at the start." + _e)
+    assert _close(_daily, _d), ("`daily` does not follow the log. Keep `daily = average(velocite_used)` the way it "
+                                "was at the start. Mar'tu tested your code with a test log whose average is "
+                                + _sh(_d) + ': `daily` should be ' + _sh(_d) + ', but it was ' + _shv(_daily) + '.')
     assert _whiles or not _ifs, ('Your code checks once, with `if`. Use `while`: it asks again before every pass, so '
                                  'the loop goes on day after day.' + _e)
     assert _whiles, ("Your code has no `while` loop. Write one: `while ore_left >= daily:`, with the day's steps "
@@ -697,7 +698,9 @@ for _vals in __CASES__:
             'Each pass takes off a number you typed, but another log has another daily use. Take `daily` off each '
             'pass: `ore_left = ore_left - daily`.' + _e)
         assert not _close(_got, _o + _d), ('Your loop stopped one day early. Use `>=`: with exactly one day of ore '
-                                           'left, Bomb Shell still has a day.' + _e)
+                                           "left, Bomb Shell still has a day. Mar'tu tested your code with a test log "
+                                           'where each day uses ' + _sh(_d) + ' chunks: `ore_left` should end at '
+                                           + _sh(_o) + ', but your loop stopped at ' + _gs + '.')
         assert not _close(_got, _ore), ('`ore_left` stayed ' + _gs + ". Take a day's use off each pass: "
                                         '`ore_left = ore_left - daily`, indented under the `while` line.' + _e)
         assert False, ('`ore_left` ended at ' + _gs + ', but it should end at ' + _sh(_o) + '. Each pass, take '
@@ -826,7 +829,7 @@ for _ros, _note in __CASES__:
         'Your loop printed the whole roster. Print one member at a time: use `member`, the hero for this pass, not '
         '`roster`.' + _e)
     assert not [_l for _l in _rows if _l.startswith("{'")], (
-        'Your loop printed each whole sheet, curly braces and all. Print the name, `member["name"]`, and the bar, '
+        'Your loop printed each whole sheet, with its curly braces `{ }`. Print the name, `member["name"]`, and the bar, '
         'not the whole sheet.' + _e)
     assert _fors, ('Your code has no `for` loop over `roster`. Use one, so every member gets a line: '
                    '`for member in roster:`.' + _e)
@@ -1889,6 +1892,24 @@ def _typed_hours():
         if _num or (_B.id(_n) not in _inside and _mentions(_n, 'hours_left')):
             _out.append(_n)
     return _out
+def _patch_message():
+    # The patch the student made (a typed hour, or an hour printed after the loop), named, with one fix: take it
+    # out, and fix line 3 when it still asks `> 1`. '' when there is none.
+    _patch = _typed_hours()
+    if not _patch:
+        return ''
+    _p = _patch[0]
+    _iffed = _B.any(_kind(_n) == 'If' and _B.any(_kind(_x) == 'Call' and _x.lineno == _p.lineno for _x in _ast.walk(_n))
+                    for _n in _ast.walk(_tree()))
+    _num = _p.args and _kind(_p.args[0]) == 'Constant' and _kind(_p.args[0].value) == 'int'
+    _then = ' Then fix line 3 itself.' if _re.search(r'while\s+hours_left\s*>\s*1\s*:', _source) else ''
+    if _iffed:
+        _what = 'Your `if` after the loop prints the hour outside the countdown, so it does not come from the loop.'
+    elif _num:
+        _what = 'Your `print(' + _B.str(_p.args[0].value) + ')` on line ' + _B.str(_p.lineno) + ' types the hour in.'
+    else:
+        _what = 'Your `print` on line ' + _B.str(_p.lineno) + ' shows the hour after the loop, outside the countdown.'
+    return _what + ' Take it out.' + _then
 '''
 
 GOES_DOWN = chk(
@@ -1919,6 +1940,9 @@ for _start in __STARTS__:
     assert not (_hrs and _B.all(_x == -1 for _x in _steps) and _hrs[0] in (_s, _s - 1)), (
         'It printed only ' + _B.str(_B.len(_hrs)) + ' hours, from ' + _B.str(_hrs[0]) + '. Let the countdown run '
         'all the way down.' + _e)
+    # Line 3 mended, the patch left in: the countdown is right, and the patch is the one slip.
+    _pm = _patch_message()
+    assert not _pm, _pm
     assert False, ('The hours do not count down from ' + _B.str(_s) + '. Print `hours_left` inside the loop, each '
                    'pass.' + _e)
 ''',
@@ -1930,9 +1954,8 @@ SHOWS_ONE = chk(
     _HOURS + r'''
 # An hour printed by hand, or by a print outside the loop (even one that only prints at the right moment), is a
 # patch: the step is to mend the `while` line.
-assert not _typed_hours(), (
-    'An hour is typed in, or printed outside the loop, so it does not come from the countdown. Let the `while` '
-    'line decide when to stop: fix line 3 itself.')
+_pm = _patch_message()
+assert not _pm, _pm
 for _start in __STARTS__:
     _rows, _err, _s, _e = _hours_case(_start)
     assert _err != 'ENDLESS', 'The loop never ended. Make sure the loop can end.' + _e
@@ -2080,10 +2103,10 @@ BROKEN_5B = dict(
         dict(why=">= 0 (prints 0 too)", code=_count("hours_left >= 0", COUNT_DOWN), fails_at=2,
              message_contains="printed 0"),
         dict(why="a print(1) typed after the loop instead of mending line 3",
-             code=_count(update=COUNT_DOWN, extra="print(1)\n"), fails_at=2, message_contains="decide when to stop"),
+             code=_count(update=COUNT_DOWN, extra="print(1)\n"), fails_at=2, message_contains="types the hour in. Take it out."),
         dict(why="a patch after the loop (`if hours_left == 1:` prints it) instead of mending line 3",
              code=_count(update=COUNT_DOWN, extra="if hours_left == 1:\n    print(hours_left)\n"), fails_at=2,
-             message_contains="fix line 3 itself"),
+             message_contains="Your `if` after the loop prints the hour outside the countdown"),
         dict(why="update before the print (starts at 4)",
              code=_count("hours_left > 0", body="    hours_left = hours_left - 1\n    print(hours_left)\n"),
              fails_at=2, message_contains="started at 4"),
@@ -2176,7 +2199,7 @@ for _ros, _note in __CASES__:
     assert _err != 'ENDLESS', 'The loop never ended. Make sure the loop can end.' + _e
     assert not _err, _stop(_err, _e)
     assert not [_l for _l in _rows if _l.startswith('{') or _l.startswith('[')], (
-        'Your loop printed whole sheets, curly braces and all. Send each hero by name: `"Send " + member["name"]`.'
+        'Your loop printed whole sheets, with their curly braces `{ }`. Send each hero by name: `"Send " + member["name"]`.'
         + _e)
     # When the lines say "Send", only those lines send: a "Gearshift rests" line for a skipped hero is fine.
     _send_rows = [_l for _l in _rows if 'send' in _l.lower()] or _rows
@@ -2499,8 +2522,8 @@ LOOPS_IN_LOOPS = dict(
         explain="The outer loop hands over `[1, 2]`, and the inner loop prints 1, then 2. Then `[3]`: it prints 3.",
     ),
     pair_talk=(
-        "Before you press Run, tell your partner how many times `print(score)` will run, and why. Then check it "
-        "on your own screen."
+        "Pair talk: look at `training` on lines 3 to 7, 3 rows of 3 scores. Once you have written your inner loop, "
+        "before you press Run, tell your partner how many lines it will print, and why."
     ),
     starter=TRAIN_STARTER,
     checkpoints=[
@@ -3316,7 +3339,7 @@ for _vals in __CASES__:
         continue
     assert not _err, _stop(_err, _e)
     assert not [_l for _l in _rows if _l.startswith("('")], (
-        'One name got the whole pair, parentheses and all. Give the pair two names: '
+        'One name got the whole pair, with its parentheses. Give the pair two names: '
         '`for name, cost in spell_book.items():`.' + _e)
     assert not [_l for _l in _rows if _l.startswith("{'")], (
         'A line shows the whole spell book. Print one spell at a time, inside the loop.' + _e)
@@ -3557,7 +3580,7 @@ ARTICLE_5A1 = dict(
         "class holds two numbers in order. You met tuples in the Tuples article. Write two names on the left, and "
         "Python puts one value in each. The second example shows that on its own.\n"
         "So `for name, cost in spell_book.items():` gives `name` the tag and `cost` its value, every pass. Two "
-        "names, two things in each pair. Write only one name, and you get the whole pair, parentheses and all.\n"
+        "names, two things in each pair. Write only one name, and you get the whole pair, with its parentheses.\n"
         "[[.keys()|`.keys()`]] hands back only the tags, and [[.values()|`.values()`]] only the values. "
         "`sum(spell_book.values())` adds up every cost in the book.\n"
         "You've seen this shape in the campaign: every hero's sheet was a dictionary, and Lucky's pack could be "

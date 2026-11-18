@@ -863,7 +863,8 @@ describe("explainCourseError: the lean explainer (explainer: \"lean\")", () => {
       const full = explainRun(code, [], { unitOrder: 2 });
       const lean = explainRun(code, [], { unitOrder: 2, explainer: "lean" });
       expect(lean.kind, code).toBe(full.kind);
-      expect(lean.hint, code).toContain(slipName(full.kind));
+      // A row that names its own slip (`needed = "15"` above the compare: "a number in quotes") says that one.
+      expect(lean.hint, code).toContain(full.slip ?? slipName(full.kind));
       expect(lean.hint, code).not.toContain("Write:");
       expect(lean.title, code).not.toContain("`");
     }
@@ -1573,7 +1574,8 @@ describe("explainCourseError: Unit 4's slips (lists), from the unit's own wrong 
       "read-from-none", "and `chalk_wall` holds `None`: nothing came back. `.sort()` on line 2 sorts the list itself"],
     // Positions past the end, in the unit's words: `len(wall)` is one past the last position (the class's slip).
     ["many-values-one-name/how-long", "len(list) used as an index (spec)", "list index out of range", "nothing-at-position",
-      'Line 4 uses `len(chalk_wall)` as a position. `len(chalk_wall)` counts the items, but positions start at 0, like a ruler, so the count is one past the last position. Use `len(chalk_wall) - 1`, or `[-1]`.'],
+      // One fix, the one Mar'tu's version uses here (`len(chalk_wall) - 1`), on the student's own line.
+      'Line 4 uses `len(chalk_wall)` as a position. `len(chalk_wall)` counts the items, but positions start at 0, like a ruler, so the count is one past the last position. Write: `print(chalk_wall[len(chalk_wall) - 1])`'],
     ["many-values-one-name/broken-spell-3a", "len(list) used as the position", "list index out of range", "nothing-at-position",
       '`len(chalk_wall)` counts the items, but positions start at 0, like a ruler, so the count is one past the last position.'],
     ["many-values-one-name/first-is-zero", "position 7 for the newest", "list index out of range", "nothing-at-position",
@@ -1666,7 +1668,8 @@ describe("explainCourseError: Unit 4's slips (lists), from the unit's own wrong 
       ["qc3-a/make-append-read", "missing commas", "missing-comma-in-list", 'The mistake is on line 2: a missing comma in a list.'],
       ["qc3-a/mend-the-reads", "sorted with square brackets", "call-needs-round-brackets",
         'The mistake is on line 11: square brackets where a call needs parentheses.'],
-      ["reading-the-wall-closely/solo-3b", "seat B's bug", "read-from-none", 'The mistake is on line 3: a position read from `None`.'],
+      // `x = wall.sort()` on line 2 is the slip: the line Python stopped at (3) only reads the `None` it left.
+      ["reading-the-wall-closely/solo-3b", "seat B's bug", "read-from-none", "The mistake is on line 2: a list tool's answer kept in a box."],
     ];
     for (const [key, why, kind, hint] of lean) {
       const { code, context } = unit4(key, why);
@@ -1829,7 +1832,13 @@ function unitWrongAnswers(unitId: string) {
         .filter((wrong) => wrong.failsAt === 0)
         .map((wrong) => ({ key, why: wrong.why, code: text(wrong.code), context: contextOf(exercise), setup: text(exercise.setup), stdin: exercise.stdin })),
     );
-  return { find, crashes, order: unit.order };
+  /** An exercise's own context, setup and answers, for code written in a test (not one of its wrong answers). */
+  const exercise = (key: string) => {
+    const found = exercises.get(key);
+    expect(found, key).toBeTruthy();
+    return { context: contextOf(found!), setup: found?.setup ? text(found.setup) : "", stdin: found?.stdin, solution: text(found?.solution) };
+  };
+  return { find, crashes, exercise, order: unit.order };
 }
 
 const unit5 = unitWrongAnswers("dictionaries");
@@ -2320,12 +2329,14 @@ describe("explainCourseError: Unit 6's slips (loops), from the unit's own wrong 
     ["the-velocite-watch", "the item used as an index (roster[member])", "not dict", "name-as-position",
       "`member` already holds one sheet, so use it on its own: `member`."],
     // (2) A `for` loop over one number.
+    // The full explainer ends with the student's own `for` line, walking positions (from where Mar'tu's starts).
     ["for-each-yes/how-much-each-gap-shrank", "for i in len(...) ('int' object is not iterable)", "'int' object is not iterable", "loop-over-number",
-      "Line 2 gives a `for` loop one number to walk. A `for` loop needs a list or `range(...)`: one number has no items to walk through."],
+      "Line 2 gives a `for` loop one number to walk, and one number has no items to walk through. Walk the positions with `range`: `for i in range(1, len(chalk_wall)):`"],
     ["for-each-yes/how-much-each-gap-shrank", "for i in 6: a bare number, not range", "'int' object is not iterable", "loop-over-number",
-      "Line 2 gives a `for` loop one number to walk."],
+      "Walk the positions with `range`: `for i in range(1, len(chalk_wall)):`"],
+    // Mar'tu's version walks the rows themselves: the student's `i` keeps its line under it right (`training[i]`).
     ["loops-in-one-line/loops-in-loops", "for i in len(...) (an int after `in`)", "'int' object is not iterable", "loop-over-number",
-      "Line 8 gives a `for` loop one number to walk."],
+      "Walk the positions with `range`: `for i in range(len(training)):`"],
     ["qc5-a/a-helper-for-each", "a loop over a number: for i in 4", "'int' object is not iterable", "loop-over-number",
       "Line 7 gives a `for` loop one number to walk."],
     // (3) A whole sheet, or a whole list, added to a number (or a whole sheet glued to text).
@@ -2380,10 +2391,11 @@ describe("explainCourseError: Unit 6's slips (loops), from the unit's own wrong 
     // (10) `[i + 1]` in a loop over `range(...len(...))`: one past the end on the last pass. Look back, from 1.
     ["for-each-yes/how-much-each-gap-shrank", "neighbors one past the end: [i + 1] with range(1, len) (IndexError)", "list index out of range", "one-past-the-end",
       "Line 3 reads `chalk_wall[i + 1]`, one position after `i`. On the last pass, `i` is 6, so `[i + 1]` asks for position 7, past the end. Look back one instead, with `[i - 1]`: `shrink = chalk_wall[i - 1] - chalk_wall[i]`"],
+    // The `for` line is another line: both changes, each on its own line (never only the `for` line).
     ["for-each-yes/how-much-each-gap-shrank", "neighbors one past the end: range(len) looking ahead (IndexError)", "list index out of range", "one-past-the-end",
-      "Look back with `[i - 1]` instead, and start the range at 1: `for i in range(1, len(chalk_wall)):`"],
+      "Look back with `[i - 1]` instead, and start the range at 1. Change line 2 to `for i in range(1, len(chalk_wall)):` and line 3 to `shrink = chalk_wall[i - 1] - chalk_wall[i]`"],
     ["gearshifts-forecast", "neighbors one past the end (wall[i + 1] over the whole range", "list index out of range", "one-past-the-end",
-      "On the last pass, `i` is 6, so `[i + 1]` asks for position 7, past the end."],
+      "Change line 4 to `for i in range(1, len(chalk_wall)):` and line 5 to `shrinks.append(chalk_wall[i - 1] - chalk_wall[i])`"],
     ["loops-in-one-line/one-line-loops", "neighbors one past the end (the loop must stop one early)", "list index out of range", "one-past-the-end",
       "and start the range at 1: `shrinks = [chalk_wall[i - 1] - chalk_wall[i] for i in range(1, len(chalk_wall))]`"],
     // (11) A running total with no start before the loop: the start goes above it, never quotes or the step's names.
@@ -2474,20 +2486,81 @@ describe("explainCourseError: Unit 6's slips (loops), from the unit's own wrong 
     expect(slipName("wrong-number-of-values")).toBe("the wrong number of values handed over");
   });
 
-  it("keeps a run that never ends readable, and full even in a lean exercise", () => {
+  it("names the loop that never ended and why its question stays True; lean names the slip, never the fix", () => {
     // The SOLO's own starter: the update moves the wrong way and it prints on every pass (the output limit stops it).
     const solo = unit6.find("while-the-clock-ticks/solo-5b", "the starter: the update moves the wrong way (prints forever)");
     const raw = crashOf(solo);
     expect(raw).toContain("TooMuchOutput: This program printed more than 200,000 characters, so it was stopped.");
     const flood = explainCourseError(raw, solo.code, solo.context);
     expect(flood.kind).toBe("too-much-output");
-    expect(flood.title).toBe("Printing forever?");
-    expect(flood.explainer).toBeUndefined();
-    // A loop that prints nothing hits the 5-second limit: the player's own timeout line, explained the same way.
+    expect(flood.explainer).toBe("lean");
+    expect(flood.loopLine).toBe(2);
+    expect(flood.hint).toBe(
+      "Your `while` loop on line 2 never ended: line 4 makes `oil` bigger on every pass. Python's last line, below, says what it found. Fix it yourself, then press Run again.",
+    );
+    expect(flood.hint).not.toContain("oil = oil -");
+    // [exercise, why, the full hint, the line the fix goes on]
+    const rows: [string, string, string, number | undefined][] = [
+      // Nothing inside changes the name: Mar'tu's change, under the `while` line.
+      ["while-the-clock-ticks/the-loop-that-never-ends", "the starter: no update",
+        "Your `while` loop on line 2 never ended: nothing inside it changes `glug`, so `glug > 0` stays `True`. Add `glug = glug - 1` inside the loop, under line 2.", undefined],
+      // The change sits at the left edge, after the loop: indent it.
+      ["while-the-clock-ticks/the-loop-that-never-ends", "the update outside the loop",
+        "Your `while` loop on line 2 never ended: nothing inside it changes `glug`, so `glug > 0` stays `True`. Line 4 changes it, but it is outside the loop. Indent line 4 to line up with line 3, so it runs on every pass.", 4],
+      // The change goes the wrong way: Mar'tu's change on that line.
+      ["extra-loops-that-end/broken-spell-5b", "the starter: the update moves the wrong way",
+        "Your `while` loop on line 3 never ended: line 5 makes `hours_left` bigger on every pass, so `hours_left > 1` stays `True`. Change line 5 to `hours_left = hours_left - 1`", 5],
+      // The change is worked out and kept nowhere.
+      ["extra-loops-that-end/broken-spell-5b", "the update with no `hours_left =`",
+        "Your `while` loop on line 3 never ended: line 5 works out `hours_left - 1`, then throws it away, so `hours_left > 1` stays `True`. Put `hours_left = ` in front of it: `hours_left = hours_left - 1`", 5],
+      // The change is Mar'tu's, so the question is the slip: no answer to copy, a question that can end.
+      ["while-the-clock-ticks/countdown", "the candles: a question that never becomes False",
+        "Your `while` loop on line 10 never ended: line 12 makes `candles` smaller on every pass, so `candles < 10` stays `True`. Ask a question on line 10 that becomes `False` as `candles` gets smaller.", 10],
+      // The loop that ran forever is Mar'tu's example loop on line 2, not the student's candles loop.
+      ["while-the-clock-ticks/countdown", "the update removed: the loop never ends",
+        "Your `while` loop on line 2 never ended: nothing inside it changes `hours_left`, so `hours_left > 0` stays `True`. Add `hours_left = hours_left - 1` inside the loop, under line 2.", undefined],
+      // A `while` typed where Mar'tu's version asks once each pass: `if`, never "add an update".
+      ["while-the-clock-ticks/stop-at-the-first", "while for if inside the loop",
+        "Line 5 asks with `while`, so it repeats its lines for as long as `gap < 45` is `True`, and nothing under it changes `gap`. To ask once on each pass of the `for` loop, use `if`: `if gap < 45:`", 5],
+      // The Velocite Watch: three loops on screen, the one on line 28.
+      ["the-velocite-watch", "a while loop with no update",
+        "Your `while` loop on line 28 never ended: nothing inside it changes `ore_left`, so `ore_left >= daily` stays `True`. Add `ore_left = ore_left - daily` inside the loop, under line 28.", undefined],
+    ];
+    for (const [key, why, hint, slipLine] of rows) {
+      const found = unit6.find(key, why);
+      const got = explainCourseError(crashOf(found), found.code, found.context);
+      expect(got.kind, `${key}: ${why}`).toBe("too-much-output");
+      expect(got.title, `${key}: ${why}`).toBe("A loop that never ends");
+      expect(got.hint, `${key}: ${why}`).toBe(hint);
+      expect(got.slipLine, `${key}: ${why}`).toBe(slipLine);
+      expect(got.loopLine, `${key}: ${why}`).toBeDefined();
+    }
+    // A Quick Check's `while` for `if`: the slip and the line, never "use `if`".
+    const qc = unit6.find("qc5-a/total-and-tired", "while for if");
+    const lean = explainCourseError(crashOf(qc), qc.code, qc.context);
+    expect(lean.hint).toContain('Line 17 asks with `while` inside the `for` loop, and nothing under it changes `member["mana"]`.');
+    expect(lean.hint).not.toContain("use `if`");
+    // A loop that prints nothing hits the 5-second limit: the same loop words, from the code's only `while`.
     const silent = "oil = 4\nwhile oil > 0:\n    oil + 1\nprint(\"The lamp goes out.\")\n";
-    const timeout = explainCourseError("TimeoutError: The program ran too long and was stopped.", silent, { ...solo.context });
+    const timeout = explainCourseError("TimeoutError: The program ran too long and was stopped.", silent, { unitOrder: LOOPS_UNIT_ORDER });
     expect(timeout.kind).toBe("timeout");
-    expect(timeout.hint).toBe("Your code ran for more than 5 seconds, so it was stopped. A `while` loop may never end: make sure its question can become False.");
+    // Kept, `oil = oil + 1` would still never end: with no Mar'tu's version to copy, the kept change as written.
+    expect(timeout.hint).toBe(
+      "Your `while` loop on line 2 never ended: line 3 works out `oil + 1`, then throws it away, so `oil > 0` stays `True`. Put `oil = ` in front of it: `oil = oil + 1`",
+    );
+    const mended = explainCourseError("TimeoutError: The program ran too long and was stopped.", silent, {
+      unitOrder: LOOPS_UNIT_ORDER,
+      solution: "oil = 4\nwhile oil > 0:\n    oil = oil - 1\nprint(\"The lamp goes out.\")\n",
+    });
+    expect(mended.hint).toContain("Change line 3 to `oil = oil - 1`");
+    // Below Unit 6, the older words; code with no loop at all is loop-free (no "loop" words in the player).
+    expect(explainCourseError("TimeoutError: The program ran too long and was stopped.", silent, { unitOrder: 5 }).hint).toBe(
+      "Your code ran for more than 5 seconds, so it was stopped. A `while` loop may never end: make sure its question can become False.",
+    );
+    const stamped = explainRun('ink = "#"\nprint(ink * 300000)\n', [], { unitOrder: 1 });
+    expect(stamped.kind).toBe("too-much-output");
+    expect(stamped.loopFree).toBe(true);
+    expect(explainCourseError(crashOf(solo), solo.code, solo.context).loopFree).toBeUndefined();
   });
 
   it("opens only from Unit 6 on: Units 1 to 5 keep their older advice for the same code", () => {
@@ -2715,5 +2788,223 @@ describe("explainCourseError: the second plain-language read-through (two studen
     expect(result.kind).toBe("equals-in-sheet");
     expect(result.hint).toContain("Python's last line guesses `==`, but that guess is wrong here.");
     expect([...result.hint.matchAll(/`([^`]+)`/g)].at(-1)?.[1]).toBe('"name": "Gearshift",');
+  });
+});
+
+/* ---------------------------------------------------------------------------------------------- */
+/* The merged branch's review (Units 1-6 after the plain-language finish): each finding, pinned     */
+/* ---------------------------------------------------------------------------------------------- */
+
+describe("explainCourseError: the merged branch's review (one fix, on the line it goes on)", () => {
+  const unit6Context: ExplainContext = { unitOrder: LOOPS_UNIT_ORDER };
+  const run = (key: string, code: string) => {
+    const base = unit6.exercise(key);
+    return explainCourseError(crashOf({ code, setup: base.setup, stdin: base.stdin }), code, base.context);
+  };
+
+  it("counts the spaces of a header that is itself indented: 4 more than the `if`, never the 4 the line already has", () => {
+    for (const [key, why, header] of [
+      ["for-each-yes/loop-with-a-check", "the print not indented under the if", "line 13 belongs inside the `if`, so it needs 4 more spaces than the `if`: 8 spaces"],
+      ["while-the-clock-ticks/stop-at-the-first", "the print not indented under the if", "line 5 belongs inside the `if`, so it needs 4 more spaces than the `if`: 8 spaces"],
+      ["the-velocite-watch", "the adding line with four spaces, in place of pass", "line 13 belongs inside the `for`, so it needs 4 more spaces than the `for`: 8 spaces"],
+      ["loops-in-one-line/skip-the-empty", "continue not indented under the if", "line 4 belongs inside the `if`, so it needs 4 more spaces than the `if`: 8 spaces"],
+      ["loops-in-one-line/loops-in-loops", "the inner loop's body not indented", "line 9 belongs inside the `for`, so it needs 4 more spaces than the `for`: 8 spaces"],
+    ]) {
+      const found = unit6.find(key, why);
+      const got = explainCourseError(crashOf(found), found.code, found.context);
+      expect(got.kind, key).toBe("indent");
+      expect(got.hint, key).toContain(header);
+      expect(got.hint, key).toContain("like a sub-point under a sub-point in an outline");
+    }
+    // A header at the left edge keeps its words, in every unit.
+    expect(explainRun("if True:\nprint(1)\n", [], { unitOrder: 2 }).hint).toBe(
+      "The line after line 1 belongs inside the `if`, so it needs 4 spaces at the start, like a sub-point in an outline.",
+    );
+  });
+
+  it("traces math with text to the line that made the box with quotes, and brackets a bar read by tag", () => {
+    const forecast = unit6.find("while-the-clock-ticks/forecast", "shrink in quotes (TypeError)");
+    const quoted = explainCourseError(crashOf(forecast), forecast.code, forecast.context);
+    expect(quoted.kind).toBe("math-with-text");
+    expect(quoted.hint).toBe(
+      'Line 2 makes `shrink` with quotes: `shrink = "3"`. Quotes make text, even when it looks like a number, so line 4 can\'t do math with it. Take the quotes off on line 2: `shrink = 3`',
+    );
+    expect(quoted.hint).not.toContain("int()");
+    expect(quoted.slipLine).toBe(2);
+    const bars = unit6.find("for-each-yes/bars-for-everyone", "no brackets round the subtraction (TypeError inside the recipe)");
+    const bracketed = explainCourseError(crashOf(bars), bars.code, bars.context);
+    expect(bracketed.kind).toBe("bar-needs-brackets");
+    expect(bracketed.hint).toContain('Put parentheses around the subtraction so it happens first: `return full * hero["mana"] + empty * (hero["max_mana"] - hero["mana"])`');
+    // Unit 1's bar keeps its words.
+    expect(explainRun('mana = 3\nmax_mana = 8\nfull = "█"\nempty = "░"\nprint(full * mana + empty * max_mana - mana)\n', [], { unitOrder: 1 }).hint).toContain(
+      "`print(full * mana + empty * (max_mana - mana))`",
+    );
+  });
+
+  it("reads a hint's fenced example as code: a name copied from it gets the example row, with the one name to use", () => {
+    const hills = unit6.find("gearshifts-forecast", "the hint's list name copied (hills)");
+    expect(hills.context.foreign).toContain("hills");
+    const copied = explainCourseError(crashOf(hills), hills.code, hills.context);
+    expect(copied.kind).toBe("example-name");
+    expect(copied.hint).toBe(
+      "`hills` is a name from an example, not from your task. Your task's list is `chalk_wall`. Write `chalk_wall` in place of `hills` on lines 4 and 5: `for i in range(1, len(chalk_wall)):`",
+    );
+    expect(copied.hint).not.toContain("quotes");
+    const pack = unit6.find("looping-over-a-dictionary/spell-costs", "the example's dictionary name copied");
+    expect(explainCourseError(crashOf(pack), pack.code, pack.context).hint).toBe(
+      "`pack` is a name from an example, not from your task. Your task's dictionary is `spell_book`: `for item, count in spell_book.items():`",
+    );
+    // Python's own guess (`vars`) is wrong here: the box says so.
+    const jars = unit6.find("for-each-yes/each-member", "the example's list name copied");
+    expect(explainCourseError(crashOf(jars), jars.code, jars.context).hint).toBe(
+      "`jars` is a name from the Example, not from your task. Python's last line guesses `vars`, but that guess is wrong here. Your task's list is `roster`: `for jar in roster:`",
+    );
+    // Lean (Quick Check): the name's source, never "spelled two ways" or "used before it is made".
+    for (const [key, why, line] of [
+      ["qc5-a/total-and-tired", "the hint's names copied (bags", 11],
+      ["qc5-b/total-and-tired", "the hint's names copied (bags", 11],
+      ["qc5-a/the-ore-watch", "the hint's names copied (sacks", 12],
+      ["qc5-b/the-barrier-watch", "the hint's names copied (sacks", 13],
+    ] as const) {
+      const found = unit6.find(key, why);
+      const lean = explainCourseError(crashOf(found), found.code, found.context);
+      expect(lean.kind, key).toBe("example-name");
+      expect(lean.hint, key).toContain(`The mistake is on line ${line}: a name from an example.`);
+    }
+  });
+
+  it("gives the quotes as the one fix when Mar'tu's version keeps the word as text", () => {
+    const violet = unit6.find("for-each-yes/predict-the-loop", "the color typed without quotes");
+    expect(explainCourseError(crashOf(violet), violet.code, violet.context).hint).toBe(
+      '`violet` has no quotes, so Python looks for a box named `violet` and finds none. Each item in this list is text, and text needs quotes: `"violet",`',
+    );
+    const ready = unit6.find("loops-in-one-line/choose-in-one-line", "the words without quotes");
+    const choice = explainCourseError(crashOf(ready), ready.code, ready.context);
+    expect(choice.kind).toBe("unquoted-word");
+    expect(choice.hint).toContain('`status = "ready" if mana >= 3 else "resting"`');
+    expect(choice.hint).not.toContain("If it's a box");
+    // A tag Mar'tu's version reads (`member["name"]`) is no text of his: never the quotes-only row.
+    expect(explainRun("mana = 3\nprint(name)\n", [], { ...unit6Context, solution: 'for member in roster:\n    print(member["name"])\n' }).kind).not.toBe("unquoted-word");
+  });
+
+  it("puts a deleted start above the loop, and says 'or a line above it' for a box used too early", () => {
+    const deleted = unit6.find("while-the-clock-ticks/forecast", "the shrink line deleted (NameError)");
+    const start = explainCourseError(crashOf(deleted), deleted.code, deleted.context);
+    expect(start.kind).toBe("no-starting-value");
+    expect(start.hint).toBe(
+      "Line 3 uses `shrink`, and line 4 adds to it on every pass, but nothing gives `shrink` a starting value before the loop. Above line 2, where the loop starts, put `shrink = 3`",
+    );
+    expect(start.fixAbove).toBe(true);
+    const early = unitWrongAnswers("control-flow").find("extra-more-fizzles/name-fizzles", "typo mended, shield still used too early");
+    const used = explainCourseError(crashOf(early), early.code, early.context);
+    expect(used.kind).toBe("used-too-early");
+    expect(used.fixAbove).toBe(true);
+  });
+
+  it("names the line the fix goes on (slipLine) when the box tells the student to change another line", () => {
+    // [unit, exercise, why, slipLine]
+    const rows: [string, string, string, number][] = [
+      ["hello-world", "qc1-a/mend-three", "the name left as it was", 4],
+      ["hello-world", "boxes-with-labels/exact-names", "only line 3 mended: line 2 still breaks", 1],
+      ["control-flow", "true-or-false-yes/broken-spell-2a", "sign mended, needed still text", 2],
+      ["control-flow", "extra-more-fizzles/type-fizzles", "glue mended, cost still text", 3],
+      ["first-recipes", "recipes-with-names/box-or-recipe", "= used to make the recipe, then called", 2],
+      ["lists", "extra-reading-the-wall/broken-spell-3b", "x = x.sort(): the wall itself becomes None", 2],
+      ["dictionaries", "martus-ledger-of-heroes", "the recipe with no return, the rest written", 51],
+    ];
+    for (const [unitId, key, why, slipLine] of rows) {
+      const found = unitWrongAnswers(unitId).find(key, why);
+      const got = explainCourseError(crashOf(found), found.code, found.context);
+      expect(got.slipLine, `${key}: ${why}`).toBe(slipLine);
+      expect(got.hint, `${key}: ${why}`).toMatch(new RegExp(`\\bline ${slipLine}\\b`, "i"));
+    }
+    // A recipe called above its def keeps Python's line: moving the call down is a fix too.
+    const early = unitWrongAnswers("first-recipes").crashes().find((wrong) => explainCourseError(crashOf(wrong), wrong.code, wrong.context).kind === "recipe-called-too-early");
+    if (early) expect(explainCourseError(crashOf(early), early.code, early.context).slipLine).toBeUndefined();
+  });
+
+  it("translates None from a recipe that prints its answer, and a list tool's None kept in the box", () => {
+    const velocite = unit6.exercise("the-velocite-watch");
+    const printed = run("the-velocite-watch", velocite.solution.replace("    return total / len(values)", "    print(total / len(values))"));
+    expect(printed.hint).toBe(
+      "Line 28 uses `daily`, and `daily` holds `None`, Python's word for nothing. `average` shows its answer with `print`, but has no `return`, so it hands nothing back. On line 15, write `return total / len(values)` in place of the `print` line.",
+    );
+    expect(printed.slipLine).toBe(15);
+    expect(printed.hint).not.toContain("NoneType");
+    const appended = run(
+      "loops-in-one-line/one-line-loops",
+      "chalk_wall = [48, 48, 47, 46, 44, 41, 37]\nshort_gaps = []\nfor h in chalk_wall:\n    if h < 45:\n        short_gaps = short_gaps.append(h)\nprint(short_gaps)\n",
+    );
+    expect(appended.hint).toBe(
+      "Line 5 puts what `.append()` hands back into `short_gaps`. `.append()` adds to the list itself and hands back `None`, Python's word for nothing, so on the next pass `short_gaps` holds nothing. Write `short_gaps.append(h)`, with no `short_gaps =` in front.",
+    );
+    expect(appended.hint).not.toContain("spelling");
+  });
+
+  it("calls a recipe glued with + and no parentheses, with this pass's sheet", () => {
+    const glued = unit6.find("for-each-yes/bars-for-everyone", "no round brackets, glued with + (the TypeError row)");
+    const got = explainCourseError(crashOf(glued), glued.code, glued.context);
+    expect(got.kind).toBe("call-needs-round-brackets");
+    expect(got.hint).toBe(
+      'Line 13 glues `mana_bar`, the recipe itself, onto text. With no parentheses ( ), `mana_bar` is the recipe, not what it hands back. Call it with this pass\'s sheet: `print(member["name"] + " " + mana_bar(member))`',
+    );
+    expect(leanExplanation(got).hint).toContain("The mistake is on line 13: a recipe named but not called.");
+  });
+
+  it("reads a capital Break, a for line with no in, a colon in a one-line choice, .items[] and one = in a while line", () => {
+    const stop = unit6.exercise("while-the-clock-ticks/stop-at-the-first");
+    const capital = run("while-the-clock-ticks/stop-at-the-first", stop.solution.replace("        break", "        Break"));
+    expect(capital.kind).toBe("keyword-capital");
+    expect(capital.hint).toBe("Line 7 has `Break` with a capital letter. Python's own words, like `print` and `break`, are all small letters, even at the start of a line. Write: `break`");
+    const mark = unit6.exercise("for-each-yes/each-mark");
+    for (const typed of ["for gap of chalk_wall:", "for gap = chalk_wall:", "for gap chalk_wall:"]) {
+      const got = run("for-each-yes/each-mark", mark.solution.replace("for gap in chalk_wall:", typed));
+      expect(got.kind, typed).toBe("for-needs-in");
+      expect(got.hint, typed).toContain("`for gap in chalk_wall:`");
+      expect(got.hint, typed).not.toContain("missing quote");
+    }
+    expect(run("for-each-yes/each-mark", mark.solution.replace("for gap in chalk_wall:", "for in chalk_wall:")).hint).toBe(
+      "Line 2 is a `for` line with no loop variable. A name for each item goes between `for` and `in`: `for gap in chalk_wall:`",
+    );
+    const choose = unit6.exercise("loops-in-one-line/choose-in-one-line");
+    for (const typed of ['"ready" if mana >= 3: else "resting"', '"ready" if mana >= 3 else: "resting"']) {
+      const got = run("loops-in-one-line/choose-in-one-line", choose.solution.replace('"ready" if mana >= 3 else "resting"', typed));
+      expect(got.kind, typed).toBe("colon-in-one-line-choice");
+      expect(got.hint, typed).toBe(
+        'Line 5 has a colon `:` in a one-line choice. A one-line choice has no colon, unlike an `if` line. Take out the `:`: `status = "ready" if mana >= 3 else "resting"`',
+      );
+    }
+    // A slice's colon is no one-line choice's.
+    expect(explainRun('x = [1, 2, 3][0:2] if True else []\nprint(x\n', [], unit6Context).kind).not.toBe("colon-in-one-line-choice");
+    const book = unit6.exercise("looping-over-a-dictionary/spell-costs");
+    expect(run("looping-over-a-dictionary/spell-costs", book.solution.replace("spell_book.items():", "spell_book.items[]:")).hint).toContain(
+      "Call it with parentheses ( ): `spell_book.items()`",
+    );
+    // One `=` in a `while` line: what a `while` question is, never a `==` line that would never run.
+    const countdown = unit6.exercise("while-the-clock-ticks/countdown");
+    const one = run("while-the-clock-ticks/countdown", countdown.solution.replace("while candles > 0:", "while candles = 0:"));
+    expect(one.kind).toBe("compare-with-double-equals");
+    expect(one.hint).not.toContain("==");
+    expect(one.hint).toContain("Ask it with a sign, as line 2 does: `while hours_left > 0:`");
+    // An `if` line keeps the `==` line.
+    expect(explainRun("roll = 3\nif roll = 3:\n    print(1)\n", [], unit6Context).hint).toContain("`if roll == 3:`");
+  });
+
+  it("gives Units 1-5 one fix: an elif with no if becomes an if, len() as a position the way Mar'tu's version reads the end", () => {
+    const control = unitWrongAnswers("control-flow");
+    const elif = control.find("if-the-clock-turns-red/four-answers", "elif without if (the chain starts with elif)");
+    const chain = explainCourseError(crashOf(elif), elif.code, elif.context);
+    expect(chain.hint).not.toContain(", or make it");
+    expect(chain.hint).toContain('A chain of questions starts with `if`: `if choice == "option 1":`');
+    // `elif` is not named before the exercise that teaches it (2B-03 otherwise), and is after it (2B-04).
+    const otherwise = control.find("if-the-clock-turns-red/otherwise", "else with a question");
+    expect(explainCourseError(crashOf(otherwise), otherwise.code, otherwise.context).hint).not.toContain("elif");
+    const lists = unitWrongAnswers("lists");
+    const popped = lists.find("the-basement-inventory", "len used as a position (IndexError)");
+    const pop = explainCourseError(crashOf(popped), popped.code, popped.context);
+    expect(pop.hint).toContain("Write: `borrowed = parts.pop()`");
+    expect(pop.hint).not.toContain("[-1]");
+    const newest = lists.find("many-values-one-name/broken-spell-3a", "len(list) used as the position");
+    expect(explainCourseError(crashOf(newest), newest.code, newest.context).hint).toContain("Write: `newest = chalk_wall[-1]`");
   });
 });

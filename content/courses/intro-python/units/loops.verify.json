@@ -654,7 +654,7 @@
             "    show_on_ley_board(member[\"name\"] + \" \" + str(member[\"mana\"]))"
           ],
           "failsAt": 1,
-          "messageContains": "Glue"
+          "messageContains": "puts a space between the name and the mana"
         },
         {
           "why": "a comma, as in print: the ley board takes one text (TypeError)",
@@ -682,7 +682,7 @@
             "    show_on_ley_board(member[\"name\"])"
           ],
           "failsAt": 1,
-          "messageContains": "Glue"
+          "messageContains": "stops after the name"
         },
         {
           "why": "the two-line form with the list's key read through roster (TypeError)",
@@ -1751,7 +1751,7 @@
             "    pass"
           ],
           "failsAt": 1,
-          "messageContains": "a name the recipe made"
+          "messageContains": "a name it never made. Hand back `bar`"
         },
         {
           "why": "empty * used with no used line (NameError in the empty part: the full part is right)",
@@ -2958,7 +2958,7 @@
             "    candles = candles - 1"
           ],
           "failsAt": 2,
-          "messageContains": "never ran"
+          "messageContains": "asks about `hours_left`, not `candles`"
         },
         {
           "why": "the candles filled, the burst not written yet: the countdown's step comes first",
@@ -3358,7 +3358,7 @@
             "    print(gap)"
           ],
           "failsAt": 1,
-          "messageContains": "change only the number after `=`"
+          "messageContains": "has math after `shrink =`"
         }
       ],
       "notes": "meta: starter_level=S4; path=SC; skills=while-loop; solo=false; dictates=1; foreign_names=; stages=P,R; story_beat=protected; minutes=2\n5B-04, the protected story beat ('Mar'tu wants to show you something'). Pre-written as spec: `gap = 37`, `shrink = 5`, `while gap > 24`: subtract, add 1 to shrink, print -> 32, 26, 19 (verified: the predict runs it). Predict, then Run; CP1 [D] changes `shrink` (any number but 5; Mar'tu's pick 3 gives 34, 30, 25, 19) and keeps the loop exactly (an AST compare, made inside the check so the Python version cannot differ). Every start ends: `shrink` grows by 1 each pass. Mar'tu's grim line is the pass line. Bonus (G4 R16): the smallest whole shrink that ends in 3 steps is 4 (3 takes 4 steps; 4 and 5 take 3). The campaign link is the 'thirty-two-hours' beat: 37 - 5 = 32. Teacher ruling on the Unit 6 reviews: the CP text and the keep-the-line message say 'change only the number after `shrink =`' (a whole new line, or a sum, is not a number), and the bonus ladder gets a middle rung ('Two of those starts take 3 steps. The task wants the smaller one.'); its last rung keeps the answer, opt-in like every bonus's last rung."
@@ -7166,7 +7166,7 @@
             "print(\"Burst!\")"
           ],
           "failsAt": 2,
-          "messageContains": "decide when to stop"
+          "messageContains": "types the hour in. Take it out."
         },
         {
           "why": "a patch after the loop (`if hours_left == 1:` prints it) instead of mending line 3",
@@ -7181,7 +7181,7 @@
             "print(\"Burst!\")"
           ],
           "failsAt": 2,
-          "messageContains": "fix line 3 itself"
+          "messageContains": "Your `if` after the loop prints the hour outside the countdown"
         },
         {
           "why": "update before the print (starts at 4)",
