@@ -21,7 +21,7 @@
     "aliases": [
       "get()"
     ],
-    "plain": "Reads a key gently. `hero.get(\"glug\", 0)` gives the value, or 0 when the key is missing, with no KeyError.",
+    "plain": "Reads a key without stopping. `hero.get(\"glug\", 0)` gives the value, or 0 when the key is missing, instead of a KeyError.",
     "example": "hero.get(\"glug\", 0)"
   },
   {
@@ -133,7 +133,7 @@
     "aliases": [
       "attribute error"
     ],
-    "plain": "Python's message when a dot asks for something that is not there. Read a dictionary with square brackets, not a dot: `lucky[\"mana\"]`, not `lucky.mana`.",
+    "plain": "The error Python shows when a dot asks for something that isn't there. Read a dictionary with square brackets, never a dot: `hero[\"mana\"]`, not `hero.mana`.",
     "example": "AttributeError: 'dict' object has no attribute 'mana'"
   },
   {
@@ -222,7 +222,7 @@
     "aliases": [
       "the console"
     ],
-    "plain": "The space under your code where Python's answers appear: what `print` shows, and Python's error messages."
+    "plain": "The space under your code where Python's answers appear: what `print` shows, and the error box when Python stops."
   },
   {
     "term": "continue",
@@ -265,8 +265,8 @@
       "dict",
       "dicts"
     ],
-    "plain": "Values kept under keys, in curly brackets. Each key, then a colon, then its value. Commas go between.",
-    "example": "{\"name\": \"Lucky\", \"mana\": 26}"
+    "plain": "Many values, each kept under its own tag (a key), like words in the glossary of a textbook. Curly braces `{ }` hold it: a key, a colon, its value, then a comma.",
+    "example": "{\"name\": \"Moth\", \"glug\": 1}"
   },
   {
     "term": "elif",
@@ -288,9 +288,11 @@
     "term": "error message",
     "aliases": [
       "error messages",
-      "message from Python"
+      "message from Python",
+      "error box",
+      "error boxes"
     ],
-    "plain": "Python's note that it stopped at a line it couldn't run, like a teacher's note in the margin: it points to the spot, and it isn't a grade. Read the box's title, then Python's last line, then fix the line with that number.",
+    "plain": "When Python can't run a line, it stops and shows an error box in the Console. It's like a teacher's note in the margin: it points to the spot, and it isn't a grade. Read the box's title, then Python's last line. Then fix the line with that number.",
     "example": "SyntaxError: unterminated string literal"
   },
   {
@@ -421,8 +423,8 @@
       "keys",
       "tag"
     ],
-    "plain": "The tag on one value in a dictionary. A key is text, so it has quotes: `\"mana\"`. Read its value with the key in square brackets.",
-    "example": "lucky[\"mana\"]"
+    "plain": "The tag on one value in a dictionary, like the word you look up in a glossary. A key is text, so it gets quotes: `\"mana\"`. To read its value, put the key in square brackets.",
+    "example": "moth[\"glug\"]"
   },
   {
     "term": "KeyError",
@@ -430,7 +432,7 @@
       "key error",
       "key errors"
     ],
-    "plain": "Python's message when a dictionary has no key spelled exactly like that. Check the spelling, the capitals and the spaces.",
+    "plain": "The error Python shows when a dictionary has no key spelled exactly like the one you asked for. Check the spelling, the capitals and the spaces.",
     "example": "KeyError: 'Max_Mana'"
   },
   {
@@ -477,8 +479,8 @@
       "lists of dictionaries",
       "list of sheets"
     ],
-    "plain": "A list whose items are dictionaries. Pick a sheet by its position first, then read it by key.",
-    "example": "roster[2][\"name\"]"
+    "plain": "A list whose items are sheets (dictionaries). Pick a sheet by its position first, then read it by key.",
+    "example": "team[0][\"name\"]"
   },
   {
     "term": "loop inside a loop",
@@ -536,7 +538,7 @@
       "slip",
       "slips"
     ],
-    "plain": "To fix a small mistake in your code, the way you mend a small tear in a sleeve. A slip is a small mistake.",
+    "plain": "An older word for fix: to mend a line is to fix a small mistake in it, the way you mend a small tear in a sleeve. A slip is a small mistake.",
     "example": "print(\"Hi)   becomes   print(\"Hi\")"
   },
   {
@@ -554,10 +556,12 @@
       "nested dictionaries",
       "dictionary inside a dictionary",
       "inner dictionary",
-      "inner card"
+      "inner card",
+      "inner sheet",
+      "sheet inside a sheet"
     ],
-    "plain": "A dictionary kept as a value inside another dictionary. Read it with two keys in a row: the outer key first, then the inner key.",
-    "example": "bomb_shell[\"abilities\"][\"wisdom\"]"
+    "plain": "A sheet (a dictionary) kept as a value inside another sheet. Read it with two keys in a row: the outer key first, then the inner key.",
+    "example": "pet[\"food\"][\"cups\"]"
   },
   {
     "term": "None",
@@ -577,7 +581,7 @@
     "aliases": [
       "in (a dictionary)"
     ],
-    "plain": "`in` asks whether a key is in a dictionary, and gives `True` or `False`. `not in` asks whether it is missing. Both look at the keys only, never the values.",
+    "plain": "`in` asks a yes-or-no question: is this key in the dictionary? Python answers `True` or `False`. `not in` asks the opposite: is it missing? Both look at the keys only, never the values.",
     "example": "\"Glow\" not in spell_book"
   },
   {
@@ -876,7 +880,7 @@
     "aliases": [
       "tuples"
     ],
-    "plain": "A few values that stay together, in order, and can't change, like a point (3, 8) in math class. It uses parentheses `( )`, not square brackets. You read it by position, like a list, but you can't add, remove or swap its items.",
+    "plain": "A few values that stay together, in order, like a point (3, 8) in math class. It uses parentheses `( )`, and you read it like a list, but you can't change it.",
     "example": "hero = (\"Lucky\", 26)"
   },
   {
@@ -928,7 +932,7 @@
     "aliases": [
       "zip"
     ],
-    "plain": "A tool that pairs up two lists, item by item, like the teeth of a zipper: first with first, second with second. Each pair is a tuple. Put it inside `list()` to see the pairs.",
+    "plain": "A tool that pairs up two lists like the teeth of a zipper: first with first, second with second. Put it inside `list()` to see the pairs, each one a tuple.",
     "example": "list(zip(fruits, prices))"
   }
 ]

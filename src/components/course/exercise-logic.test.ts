@@ -9,8 +9,11 @@ import {
   assemblesBySteps,
   checkpointHeading,
   crashAim,
+  crashFixLine,
+  crashLineInStarter,
   crashLineSwitchedOff,
   effectiveSupport,
+  endlessRun,
   exerciseIndexFromHash,
   hashForExercise,
   hintButtonLabel,
@@ -29,7 +32,10 @@ import {
   stdinBoxText,
   stepNoun,
   stripComment,
+  sameErrorLook,
   stuckCheckpointId,
+  switchOffLine,
+  withPlannedErrors,
   titleFromId,
   usesInput,
 } from "./exercise-logic";
@@ -450,7 +456,7 @@ describe("the card sort (cardSortMarks)", () => {
 describe("the note under Start me off says where the line really goes (startNote)", () => {
   const code = 'chalk_wall = [48, 47]\nfor ___ in chalk_wall:\n    # Print it as "48 hours".\n    pass\n';
   it("names the line it replaces, or the line it goes above or under, before the student clicks in the code", () => {
-    expect(startNote(code, "print(", { line: "pass", how: "replace" }, false)).toBe("It replaces `pass`.");
+    expect(startNote(code, "print(", { line: "pass", how: "replace" }, false)).toBe("It replaces `pass` on line 4.");
     expect(startNote(code, "print(", { line: "pass", how: "before" }, false)).toBe("It goes on a new line above `pass`.");
     expect(startNote(code, "print(", { line: '# Print it as "48 hours".', how: "after" }, false)).toBe('It goes on a new line under `# Print it as "48 hours".`.');
     // The player asks before it knows the start: the place is the same.
@@ -458,8 +464,23 @@ describe("the note under Start me off says where the line really goes (startNote
     expect(startNote(code, "", { line: "pass", how: "before" }, false)).toBe("It goes on a new line above `pass`.");
   });
   it("keeps the general words once the student has clicked in, or when the hint names no place", () => {
-    expect(startNote(code, "print(", { line: "pass", how: "replace" }, true)).toBe("It goes on a new line of its own.");
+    expect(startNote(code, "print(", { line: "pass", how: "before" }, true)).toBe("It goes on a new line of its own.");
+    expect(startNote(code, "print(", { line: '# Print it as "48 hours".', how: "after" }, true)).toBe("It goes on a new line of its own.");
     expect(startNote(code, "print(", null, false)).toBe("It goes on a new line of its own.");
+    expect(startNote(code, "print(", null, true)).toBe("It goes on a new line of its own.");
+  });
+  it("names an \"in place of\" line even after a click, while the code still has it (the editor replaces it then too)", () => {
+    expect(startNote(code, "print(", { line: "pass", how: "replace" }, true)).toBe("It replaces `pass` on line 4.");
+    const read = 'print(gearshift["mana"])\nprint("Gearshift: 20 mana")\n';
+    const target = { line: 'print("Gearshift: 20 mana")', how: "replace" } as const;
+    expect(startNote(read, "print(gearshift[", target, true)).toBe('It replaces `print("Gearshift: 20 mana")` on line 2.');
+    expect(startNote(read, "print(gearshift[", target, false)).toBe('It replaces `print("Gearshift: 20 mana")` on line 2.');
+    // The line is gone (the student changed it): after a click the cursor decides again.
+    expect(startNote("print(gearshift[1])\n", "print(gearshift[", target, true)).toBe("It goes on a new line of its own.");
+  });
+  it("follows the editor when it rewrites a placeholder under the named line (`road_roll =` over `road_roll = 0`)", () => {
+    const placeholder = "# 2. Roll the road\nroad_roll = 0\nprint(road_roll)\n";
+    expect(startNote(placeholder, "road_roll =", { line: "# 2.", how: "after" }, false)).toBe("It replaces `road_roll = 0` on line 2.");
   });
   it("says it goes at the end when the line the hint names is not in the code any more", () => {
     expect(startNote("total = 0\nprint(total)\n", "total =", { line: "pass", how: "replace" }, false)).toBe("It goes on a new line under `print(total)`.");
@@ -477,5 +498,75 @@ describe("the Your task line keeps a step's numbered parts as a list (taskLinePa
     expect(taskLineParts("Change `Gearshift` on line 1.")).toEqual({ lead: "Change `Gearshift` on line 1.", parts: null });
     // A line that only starts with a number in the middle of a sentence is not a part.
     expect(taskLineParts("Make it 3 casts.\nThen press Run.")).toEqual({ lead: "Make it 3 casts.\nThen press Run.", parts: null });
+  });
+});
+
+describe("the crash banner's words (the second plain-language read-through)", () => {
+  it("says where the fix goes: the slip's own line, or that line and the lines above it", () => {
+    expect(crashFixLine(5, 4)).toBe("The mistake is on line 4. Fix line 4, then press Run again.");
+    expect(crashFixLine(5, null, true)).toBe("The mistake is on line 5 or a line above it. Fix it, then press Run again.");
+    expect(crashFixLine(5, 4, true)).toBe("The mistake is on line 4. Fix line 4, then press Run again.");
+    expect(crashFixLine(5)).toBe("Fix line 5, then press Run again.");
+    expect(sameErrorLook(5, 4)).toBe("Look closely at line 4.");
+    expect(sameErrorLook(5, null, true)).toBe("Look closely at line 5 and the lines above it.");
+    expect(sameErrorLook(5)).toBe("Look closely at line 5.");
+    expect(sameErrorLook(null)).toBe("Look closely at the line number in Python's last line.");
+  });
+
+  it("names no line for a run that never ended (Unit 6): the loop's question is the place to look", () => {
+    const loop = "Look at the indented lines under your loop's first line. Which one changes the number its question checks?";
+    expect(sameErrorLook(7, null, false, true)).toBe(loop);
+    expect(sameErrorLook(null, 3, true, true)).toBe(loop);
+    expect(endlessRun({ kind: "timeout" })).toBe(true);
+    expect(endlessRun({ kind: "too-much-output" })).toBe(true);
+    expect(endlessRun({ kind: "name-error" })).toBe(false);
+    expect(endlessRun(null)).toBe(false);
+  });
+
+  it("says 'part of this step' only for a line that was there from the start", () => {
+    expect(switchOffLine("Step", 4, true)).toBe(
+      "That's part of this step. Read the box in the Console first: your steps use what it says. Then put # at the very start of line 4 and press Run again.",
+    );
+    expect(switchOffLine("Step", 1, false)).toBe("Read the box in the Console. Then put # at the very start of line 1 and press Run again.");
+    expect(crashLineInStarter('print(mana_cost)\nx = 1\n', 1, "print(mana_cost)\n")).toBe(true);
+    expect(crashLineInStarter("Night watch at the cabin.\n", 1, 'print("Steady.")\n')).toBe(false);
+    expect(crashLineInStarter("", 1, "x = 1\n")).toBe(false);
+  });
+});
+
+describe("withPlannedErrors: a step done by an error made on purpose", () => {
+  const checkpoints = [
+    { id: "press-run" },
+    { id: "break-it", plannedError: { line: 1, error: "SyntaxError" } },
+    { id: "close-the-quote" },
+  ];
+  const crash = { crashed: true, firstFailing: 0, allPassed: false, checkpoints: checkpoints.map(({ id }) => ({ id, passed: false, message: "Missing quote" })) };
+
+  it("counts the planned crash as the step, and only that crash", () => {
+    const done = withPlannedErrors(checkpoints, crash, { line: 1, error: "SyntaxError: unterminated string literal (detected at line 1)" }, ["press-run"]);
+    expect(done.planned).toEqual(["break-it"]);
+    expect(done.grade.checkpoints.map((row) => row.passed)).toEqual([false, true, false]);
+    expect(done.grade.allPassed).toBe(false);
+    expect(withPlannedErrors(checkpoints, crash, { line: 2, error: "SyntaxError: x" }, []).planned).toEqual([]);
+    expect(withPlannedErrors(checkpoints, crash, { line: 1, error: "NameError: name 'x' is not defined" }, []).planned).toEqual([]);
+  });
+
+  it("keeps the step done once it was (no ↺ while the next step puts the line back)", () => {
+    const ran = {
+      crashed: false,
+      firstFailing: 1,
+      allPassed: false,
+      checkpoints: [
+        { id: "press-run", passed: true, message: "" },
+        { id: "break-it", passed: false, message: "Your line still shows `Shield up.`" },
+        { id: "close-the-quote", passed: false, message: "Change the `.` to `!`" },
+      ],
+    };
+    const kept = withPlannedErrors(checkpoints, ran, null, ["press-run", "break-it"]);
+    expect(kept.grade.firstFailing).toBe(2);
+    expect(kept.grade.checkpoints[1].passed).toBe(true);
+    expect(kept.planned).toEqual([]);
+    // Never done before: the step's own check speaks, as before.
+    expect(withPlannedErrors(checkpoints, ran, null, ["press-run"]).grade).toBe(ran);
   });
 });

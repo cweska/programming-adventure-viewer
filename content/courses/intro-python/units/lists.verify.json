@@ -410,6 +410,19 @@
           "messageContains": "one before"
         },
         {
+          "why": "the newest two in the wrong order: [-2] then [-1]",
+          "code": [
+            "chalk_wall = [48, 48, 47, 46, 44, 41, 37]",
+            "# 1. Print the oldest gap.",
+            "print(chalk_wall[0])",
+            "# 2. Newest, then the one before.",
+            "print(chalk_wall[-2])",
+            "print(chalk_wall[-1])"
+          ],
+          "failsAt": 2,
+          "messageContains": "the gap before the newest first"
+        },
+        {
           "why": "-1 written as 1 from the end of the line: [1] and [2]",
           "code": [
             "chalk_wall = [48, 48, 47, 46, 44, 41, 37]",
@@ -771,6 +784,23 @@
           ],
           "failsAt": 2,
           "messageContains": "Old marks go first"
+        },
+        {
+          "why": "square brackets around the join: a list holding one list",
+          "code": [
+            "chalk_wall = [48, 48, 47, 46, 44, 41, 37]",
+            "# 1. Append your guess.",
+            "chalk_wall.append(33)",
+            "print(chalk_wall)",
+            "",
+            "old_marks = [48, 48, 47, 46]",
+            "new_marks = [44, 41, 37]",
+            "# 2. Join both pages with +.",
+            "both_pages = [old_marks + new_marks]",
+            "print(both_pages)"
+          ],
+          "failsAt": 2,
+          "messageContains": "Take off the outer `[ ]`"
         },
         {
           "why": "a list of two lists",
@@ -1638,7 +1668,7 @@
             "print(chalk_wall)"
           ],
           "failsAt": 1,
-          "messageContains": "Leave the wall's line"
+          "messageContains": "Keep Lucky's wall on line 3"
         },
         {
           "why": "the wall retyped, plus a do-nothing change by position",
@@ -1652,7 +1682,7 @@
             "print(chalk_wall)"
           ],
           "failsAt": 1,
-          "messageContains": "Leave the wall's line"
+          "messageContains": "Keep Lucky's wall on line 3"
         }
       ],
       "notes": "meta: starter_level=S4; path=SC; skills=list-index; solo=false; dictates=; foreign_names=party_colors\nSpec flags CP1 [D]; the text gives the goal and the name ('Fix the 74 by its position. Don't retype the list.') but not the position, which is the point of the step, so it is marked dictated=False. Checks: the wall is right (with the off-by-one, `==`, `.append()` and text slips named), an Assign to a Subscript of `chalk_wall` (a retyped list or an edited starter line fails with 'Fix it by position. Lists often come from somewhere you can't retype, like `caster` in the campaign', spec WA; teacher ruling), a rerun with Lucky's line put back (so an edited line 3 plus a do-nothing `chalk_wall[0] = 48` fails), and the print shows the fixed wall. Campaign link: `caster[\"mana\"] = ...` in `cast_spell`, the same name-brackets-equals shape."
@@ -2159,7 +2189,7 @@
             "print(newest_mark([9, 8, 7]))  # This should show 7"
           ],
           "failsAt": 1,
-          "messageContains": "a position the wall does not have"
+          "messageContains": "a position the wall doesn't have"
         },
         {
           "why": "the first item, not the last",
@@ -2212,7 +2242,7 @@
             "print(newest_mark([9, 8, 7]))  # This should show 7"
           ],
           "failsAt": 1,
-          "messageContains": "makes a box, then hands back nothing"
+          "messageContains": "makes a variable, then hands back nothing"
         },
         {
           "why": "the ingredient renamed to the outside name",
@@ -2909,7 +2939,7 @@
             "print(newest_four)"
           ],
           "failsAt": 1,
-          "messageContains": "typed-in gaps"
+          "messageContains": "instead of slicing them"
         },
         {
           "why": "the window moved instead of the end opened: [-5:-1]",
@@ -4165,7 +4195,7 @@
             "#    are, with len()."
           ],
           "failsAt": 2,
-          "messageContains": "other way round"
+          "messageContains": "other way around"
         },
         {
           "why": "the new score in quotes",
@@ -5062,7 +5092,7 @@
             "#    are, with len()."
           ],
           "failsAt": 5,
-          "messageContains": "as task 5 asks"
+          "messageContains": "as Task 5 asks"
         },
         {
           "why": "the recipe called, but its answer thrown away (the line still reads the list)",
@@ -6257,7 +6287,7 @@
             "print(\"Longest: \" + str(longest))"
           ],
           "failsAt": 1,
-          "messageContains": "The longest gap was typed in"
+          "messageContains": "You typed in the longest gap"
         },
         {
           "why": "the first gap read instead",
@@ -6297,7 +6327,7 @@
             "print(52)"
           ],
           "failsAt": 1,
-          "messageContains": "typed in for each wall"
+          "messageContains": "typed an answer for each wall"
         },
         {
           "why": "a dot instead of a call",
@@ -9434,7 +9464,7 @@
             "print(\"Shrink:\", oldest - newest)"
           ],
           "failsAt": 1,
-          "messageContains": "tuple"
+          "messageContains": "parentheses don't make a list"
         },
         {
           "why": "a gap missing from the list",
@@ -9691,7 +9721,7 @@
             "print(marks[-1])"
           ],
           "failsAt": 1,
-          "messageContains": "tuple"
+          "messageContains": "parentheses don't make a list"
         },
         {
           "why": "missing commas",
@@ -9931,7 +9961,7 @@
             "print(marks[-1])"
           ],
           "failsAt": 3,
-          "messageContains": "`==` only asks"
+          "messageContains": "yes-or-no question with `==`"
         },
         {
           "why": "the fix appended",
@@ -9996,7 +10026,7 @@
             "print(33)"
           ],
           "failsAt": 4,
-          "messageContains": "typed in, not read"
+          "messageContains": "instead of reading it"
         },
         {
           "why": "a position from the start only fits this length",
@@ -10077,7 +10107,7 @@
             ""
           ],
           "failsAt": 4,
-          "messageContains": "above the append"
+          "messageContains": "runs before the append"
         },
         {
           "why": "min() finds the guess here, but it is not the last item in every list",
@@ -10301,7 +10331,7 @@
             "print(newest_three([9, 8, 7, 6]))  # This should show [8, 7, 6]"
           ],
           "failsAt": 1,
-          "messageContains": "tuple"
+          "messageContains": "three items, not one list"
         },
         {
           "why": "three reads in a list: right values, but no slice",
@@ -10425,7 +10455,7 @@
             "print(ordered)"
           ],
           "failsAt": 2,
-          "messageContains": "nothing came back"
+          "messageContains": "hands back nothing"
         },
         {
           "why": "the row counted from 1",
@@ -10444,7 +10474,7 @@
             "print(ordered)"
           ],
           "failsAt": 1,
-          "messageContains": "Rows start at 0"
+          "messageContains": "wrong row"
         },
         {
           "why": "the whole row printed",
@@ -10482,7 +10512,7 @@
             "print(ordered)"
           ],
           "failsAt": 1,
-          "messageContains": "`[0]` is the name"
+          "messageContains": "shows the name, not"
         },
         {
           "why": "the mana typed by hand",
@@ -10501,7 +10531,7 @@
             "print(ordered)"
           ],
           "failsAt": 1,
-          "messageContains": "typed in, not read"
+          "messageContains": "instead of reading it"
         },
         {
           "why": "the inner position still 2 (IndexError)",
@@ -10599,7 +10629,7 @@
             "print(ordered)"
           ],
           "failsAt": 2,
-          "messageContains": "was typed"
+          "messageContains": "typed the sorted numbers"
         },
         {
           "why": "sorted with square brackets",
@@ -10757,7 +10787,7 @@
             "print(ore_used[-1])"
           ],
           "failsAt": 1,
-          "messageContains": "tuple"
+          "messageContains": "parentheses don't make a list"
         },
         {
           "why": "missing commas",
@@ -11027,7 +11057,7 @@
             "print(ore_used[-1])"
           ],
           "failsAt": 3,
-          "messageContains": "`==` only asks"
+          "messageContains": "yes-or-no question with `==`"
         },
         {
           "why": "the fix appended",
@@ -11100,7 +11130,7 @@
             "print(9)"
           ],
           "failsAt": 4,
-          "messageContains": "typed in, not read"
+          "messageContains": "instead of reading it"
         },
         {
           "why": "a position from the start only fits this length",
@@ -11191,7 +11221,7 @@
             ""
           ],
           "failsAt": 4,
-          "messageContains": "above the append"
+          "messageContains": "runs before the append"
         },
         {
           "why": "max() finds the guess here, but it is not the last item in every list",
@@ -11447,7 +11477,7 @@
             "print(newest_three([1, 2, 4, 8]))  # This should show [2, 4, 8]"
           ],
           "failsAt": 1,
-          "messageContains": "tuple"
+          "messageContains": "three items, not one list"
         },
         {
           "why": "three reads in a list: right values, but no slice",
@@ -11581,7 +11611,7 @@
             "print(ordered)"
           ],
           "failsAt": 2,
-          "messageContains": "nothing came back"
+          "messageContains": "hands back nothing"
         },
         {
           "why": "the row counted from 1",
@@ -11600,7 +11630,7 @@
             "print(ordered)"
           ],
           "failsAt": 1,
-          "messageContains": "Rows start at 0"
+          "messageContains": "wrong row"
         },
         {
           "why": "the whole row printed",
@@ -11638,7 +11668,7 @@
             "print(ordered)"
           ],
           "failsAt": 1,
-          "messageContains": "`[0]` is the name"
+          "messageContains": "shows the name, not"
         },
         {
           "why": "the score typed by hand",
@@ -11657,7 +11687,7 @@
             "print(ordered)"
           ],
           "failsAt": 1,
-          "messageContains": "typed in, not read"
+          "messageContains": "instead of reading it"
         },
         {
           "why": "the inner position still 2 (IndexError)",
@@ -11755,7 +11785,7 @@
             "print(ordered)"
           ],
           "failsAt": 2,
-          "messageContains": "was typed"
+          "messageContains": "typed the sorted numbers"
         },
         {
           "why": "sorted with square brackets",

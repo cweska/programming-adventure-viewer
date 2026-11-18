@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { isDebugExercise } from "../../components/course/exercise-logic";
 import {
   closeName,
   definedNames,
@@ -385,7 +386,7 @@ describe("explainCourseError: starting-from-zero slips", () => {
     expect(result.hint).toContain("5 * P");
     // With variables already made, it points at them.
     const own = explainRun("pizza_cost = 4\nsoda_cost = 2\ntotal_cost = 5P + 2S\n");
-    expect(own.hint).toContain('use them, like `pizza_cost` and `soda_cost`');
+    expect(own.hint).toContain("Use the boxes for these numbers: `pizza_cost` and `soda_cost`.");
     // A real variable after the number: just put * in.
     const times = explainRun("pizzas = 4\ntotal_cost = 5pizzas\n");
     expect(times.hint).toBe("Python can't read `5pizzas`. In algebra, 5pizzas means 5 times pizzas, but Python needs the `*` sign for times: `5 * pizzas`");
@@ -412,6 +413,34 @@ describe("explainCourseError: starting-from-zero slips", () => {
     expect(explainRun("Print\n").hint).toContain('Did you mean `print`? To show words in the Console, write `print("your words")`.');
     // A lone name with a comment after it is still alone.
     expect(explainRun("canes_women  # the order\n").kind).toBe("lone-name");
+  });
+
+  it("sends a lone word to the step's own box when a later line uses that box (Broken spell 1B, guide §9, S5)", () => {
+    const names = { names: ["weapon", "companion", "glug_sips", "hero"] };
+    const spell = 'weapon = "Telegun"\ncompanion = "Gearshift"\nglug_sips = 3\nLucky\nprint(hero)\nprint(weapon)\n';
+    const lone = explainRun(spell, [], names);
+    expect(lone.kind).toBe("lone-name");
+    expect(lone.hint).toBe(
+      'Line 4 is only the word `Lucky`. With no quotes, Python looks for a box named `Lucky`, and no line makes one. `Lucky` is text, so it needs quotes, and your step\'s box `hero` needs a line that makes it. Write: `hero = "Lucky"`',
+    );
+    // Never a box named after the word itself.
+    expect(lone.hint).not.toContain("Lucky =");
+    // No step box left to make, or no later line that uses one: the quotes alone, as before.
+    expect(explainRun('hero = "Lucky"\nLucky\nprint(hero)\n', [], names).hint).toContain('If `Lucky` is text, it needs quotes: `"Lucky"`');
+    expect(explainRun("Lucky\n", [], names).hint).toContain('If `Lucky` is text, it needs quotes: `"Lucky"`');
+    // Python's tools are never the box (`str` is in the names of a glue step).
+    expect(explainRun("Lucky\nprint(str(3))\n", [], { names: ["str"] }).hint).toContain('If `Lucky` is text, it needs quotes: `"Lucky"`');
+  });
+
+  it("puts a mark like █ in quotes on the student's own line: the real fix is quotes (guide §9, S5)", () => {
+    const ink = explainRun("ink = █\nprint(ink * 5)\n");
+    expect(ink.kind).toBe("odd-character");
+    expect(ink.hint).toBe("Line 1 has █ outside of quotes, where Python can't read it. A mark like █ is text, so it goes inside quotes: `ink = \"█\"`");
+    expect(ink.hint).not.toMatch(/type .* again/);
+    expect(explainRun("print(█ * 5)\n").hint).toContain('`print("█" * 5)`');
+    expect(explainRun("print(███)\n").hint).toContain('`print("███")`');
+    // Other quotes on the line: only the mark, in quotes.
+    expect(explainRun('print("[" + █)\n').hint).toContain('it goes inside quotes: `"█"`');
   });
 
   it("explains def: and def ( ) used to make a variable, with the student's own name and value", () => {
@@ -584,7 +613,14 @@ describe("explainCourseError: Unit 1 play-through findings", () => {
     expect(dash.hint).not.toMatch(/variable|oogrish =/);
     const bare = explainQuietSlip('"_ - ="\n', { context: printOnly });
     expect(bare?.kind).toBe("bare-value");
+    // Lesson 1A has not met values or names: the title says what is missing, `print` (guide §3.6).
+    expect(bare?.title).toBe("Missing print");
     expect(bare?.hint).toBe('Line 1 is words in quotes with no `print`, so Python reads it and throws it away. To show it in the Console, write `print("_ - =")`');
+    expect(explainQuietSlip("37\n", { context: printOnly })?.hint).toBe(
+      "Line 1 is a number with no `print`, so Python reads it and throws it away. To show it in the Console, write `print(37)`",
+    );
+    // Once the task makes boxes, the value has a name to go with.
+    expect(explainQuietSlip('"Zelda"\n', { context: { names: ["character"], solution: 'character = "Zelda"\n' } })?.title).toBe("A value with no name");
     expect(explainRun("Steady\n", [], words).hint).toContain('`print("Steady")`');
     // Once the task makes boxes, the variable advice is right again.
     expect(explainRun('def ("character")\n', [], { names: ["character"], solution: 'character = "Kratos"\nprint(character)\n' }).hint).toContain(
@@ -595,7 +631,10 @@ describe("explainCourseError: Unit 1 play-through findings", () => {
   it("reads a quoted box name as quotes on a name, and keeps Name goes first for a real swap", () => {
     const quoted = explainRun('"weapon" = "Telegun"\n', [], { names: ["weapon", "companion", "glug_sips", "hero"] });
     expect(quoted.kind).toBe("quoted-name");
-    expect(quoted.hint).toBe('Line 1 has quotes around a box\'s name. Quotes mean these exact letters, so a name never gets them. Take the quotes off `weapon`: `weapon = "Telegun"`');
+    // Python's last line guesses `==` here: the box says that guess is wrong, and the fixed line stays last.
+    expect(quoted.hint).toBe(
+      'Line 1 has quotes around a box\'s name. Python\'s last line guesses `==`, but that guess is wrong here. Quotes mean these exact letters, so a name never gets them. Take the quotes off `weapon`: `weapon = "Telegun"`',
+    );
     expect(quoted.hint).not.toContain("Kratos");
     const swap = explainRun('"Lucky" = hero\n');
     expect(swap.kind).toBe("name-goes-first");
@@ -1066,7 +1105,7 @@ type RawExercise = {
   starter?: RawCode;
   example?: { code: RawCode };
   explainer?: "full" | "lean";
-  checkpoints?: { hints: string[] }[];
+  checkpoints?: { text?: string; hints: string[] }[];
   bonus?: { solution?: RawCode };
 };
 
@@ -1758,7 +1797,7 @@ function unitWrongAnswers(unitId: string) {
     example: exercise.example ? text(exercise.example.code) : undefined,
     explainer: exercise.explainer,
     setup: exercise.setup ? text(exercise.setup) : undefined,
-    debugging: ((exercise.checkpoints ?? []) as { text?: string }[]).some((checkpoint) => /\bmend\b/i.test(checkpoint.text ?? "")),
+    debugging: isDebugExercise({ checkpoints: (exercise.checkpoints ?? []).map((checkpoint) => ({ text: checkpoint.text ?? "" })) }),
     foreign: foreignNames({
       hints: (exercise.checkpoints ?? []).flatMap((checkpoint) => checkpoint.hints),
       solution: [text(exercise.solution), text(exercise.bonus?.solution)].join("\n"),
@@ -1807,7 +1846,7 @@ describe("explainCourseError: Unit 5's slips (dictionaries), from the unit's own
   const rows: [string, string, string, string, string][] = [
     // (0) `=` inside a sheet: a colon, and the key keeps its quotes (never "take the quotes off").
     ["stat-sheets/make-a-sheet", "= for : inside the sheet (the box habit)", "cannot assign to literal", "equals-in-sheet",
-      'Line 2 has `=` inside a sheet. Inside a dictionary `{ }`, a colon goes between a key and its value, like a word and its meaning in a glossary: `"name": "Gearshift",`. The key keeps its quotes.'],
+      'Line 2 has `=` inside a sheet. Python\'s last line guesses `==`, but that guess is wrong here. Inside a dictionary `{ }`, a colon goes between a key and its value, like a word and its meaning in a glossary: `"name": "Gearshift",`. The key keeps its quotes.'],
     ["stat-sheets/broken-spell-4a", "the starter: = for : inside the sheet first", "cannot assign to literal", "equals-in-sheet",
       '`"name": "Lucky",`. The key keeps its quotes.'],
     ["stat-sheets/broken-spell-4a", "the colon slip 'mended' by taking the key's quotes off", "Maybe you meant '==' or ':='", "equals-in-sheet",
@@ -1947,7 +1986,7 @@ describe("explainCourseError: Unit 5's slips (dictionaries), from the unit's own
       'The text on line 2 is missing a quote. Text keeps both quotes, and the closing quote goes before the comma: `"name": "Gearshift",`'],
     // (16) a key written with no sheet before it: the key keeps its quotes and goes inside its sheet.
     ["stat-sheets/write-by-key", "the key kept, the sheet left off: \"fuel\"", "cannot assign to literal", "key-outside-sheet",
-      'Line 11 writes the key `"fuel"` with no sheet before it, so Python reads it as text, and text can\'t store a value. A key lives inside its sheet: `gearshift["fuel"] = "starlode"`. The key keeps its quotes.'],
+      'Line 11 writes the key `"fuel"` with no sheet before it, so Python reads it as text, and text can\'t store a value. Python\'s last line guesses `==`, but that guess is wrong here. A key lives inside its sheet: `gearshift["fuel"] = "starlode"`. The key keeps its quotes.'],
     ["stat-sheets/write-by-key", "the mana key kept, the sheet left off on the left", "cannot assign to literal", "key-outside-sheet",
       'A key lives inside its sheet: `gearshift["mana"] = gearshift["mana"] - fire_bolt_cost`.'],
     // (17) a variable that holds a number, read as a key: the variable on its own.
@@ -2556,11 +2595,125 @@ describe("explainCourseError: Unit 6's slips (loops), from the unit's own wrong 
     const recipe = explainRun("def average(values):\n    for value in values:\n        total = total + value\n    return total\nprint(average([1, 2]))\n", [], unit6Context);
     expect(recipe.kind).toBe("no-starting-value");
     expect(recipe.hint).toContain("Above line 2, where the loop starts, put `total = 0`");
+    // The fix goes above the loop, not on line 3: the crash banner says "line 3 or a line above it" (fixAbove).
+    expect(recipe.fixAbove).toBe(true);
     expect(explainRun("total = 0\nfor value in [1, 2]:\n    totl = totl + value\n", [], unit6Context).kind).not.toBe("no-starting-value");
     // Outside a loop, `[gap]` and `[i + 1]` keep Unit 4's words.
     expect(explainRun("wall = [48, 44]\ngap = 48\nprint(wall[gap])\n", [], unit6Context).kind).toBe("nothing-at-position");
     // Below Unit 6, the same code keeps the older advice.
     const older = explainRun(`${roster}for member in roster:\n    if mana < 10:\n        print(member["name"])\n`, [], { unitOrder: 5 });
     expect(older.kind).toBe("unknown-name");
+  });
+});
+
+describe("explainCourseError: the second plain-language read-through (two student reps)", () => {
+  const unit1: ExplainContext = { unitOrder: 1 };
+  const unit4: ExplainContext = { unitOrder: 4 };
+  const wall = "chalk_wall = [48, 48, 74, 46, 44, 41, 37]\n# Fix it by position here:\n";
+
+  it("names two boxes made on one line, and says Python's == guess is wrong (never `hour_3 == 47`)", () => {
+    const result = explainRun("hour_1 = 48\nhour_2 = 48, hour_3 = 47\n", [], unit4);
+    expect(result.kind).toBe("one-box-per-line");
+    expect(result.hint).toBe(
+      "Line 2 makes two boxes on one line. Python's last line guesses `==`, but that guess is wrong here. Python makes one box per line: put `hour_3 = 47` on a new line of its own, under `hour_2 = 48`.",
+    );
+    expect(result.hint).not.toContain("hour_3 == 47");
+  });
+
+  it("sends a number on the left of = to the list's position, never `chalk_wall = \"value\"`", () => {
+    const listed = explainRun(`${wall}74 = 47\n`, [], { ...unit4, names: ["chalk_wall"] });
+    expect(listed.kind).toBe("name-goes-first");
+    expect(listed.hint).toContain("Line 3 has the number 74 on the left of `=`");
+    expect(listed.hint).toContain("The 74 is at position 2 in `chalk_wall` (count from 0), so write: `chalk_wall[2] = 47`");
+    expect(listed.hint).not.toContain('"value"');
+    // Before lists, and with no list holding the number: the rule, with no made-up line to copy.
+    const plain = explainRun("74 = 47\n", [], { ...unit1, names: ["armor_bonus"] });
+    expect(plain.hint).toContain("Line 1 has `74` on the left of `=`.");
+    expect(plain.hint).not.toContain('"value"');
+  });
+
+  it("puts the list's name and a dot in front of a list tool (Unit 4), never `def`", () => {
+    const result = explainRun("chalk_wall = [48, 48, 47]\nappend(33)\n", [], { ...unit4, names: ["chalk_wall"] });
+    expect(result.kind).toBe("list-tool-without-dot");
+    expect(result.hint).toBe("`.append()` needs the list's name and a dot in front of it, so Python knows which list to add to: `chalk_wall.append(33)`");
+    expect(result.hint).not.toContain("def");
+  });
+
+  it("names two boxes side by side (the algebra habit) with the sign from Mar'tu's version", () => {
+    const code = "lantern_count = 3\nlantern_price = 4\nlantern_cost = lantern_count lantern_price\n";
+    const result = explainRun(code, [], { ...unit1, solution: "lantern_cost = lantern_count * lantern_price\n" });
+    expect(result.kind).toBe("names-side-by-side");
+    expect(result.hint).toContain("In algebra, LP means L times P, but Python needs the `*` sign for times: `lantern_cost = lantern_count * lantern_price`");
+    expect(explainRun(code, [], unit1).hint).toContain("a math sign between them");
+  });
+
+  it("puts items typed after the empty brackets between them (Unit 4)", () => {
+    const result = explainRun("chalk_wall = [] 48, 48, 47\nprint(chalk_wall)\n", [], unit4);
+    expect(result.kind).toBe("items-after-brackets");
+    expect(result.hint).toBe("Line 1 has numbers after the `]`, outside the list. The numbers go between the square brackets: `chalk_wall = [48, 48, 47]`");
+  });
+
+  it("puts marks on a line of their own in quotes inside print, never 'a missing quote or parenthesis'", () => {
+    const result = explainRun("# Your line goes here:\n_ - =\n", [], { ...unit1, names: ["print"], solution: '# Your line goes here:\nprint("_ - =")\n' });
+    expect(result.kind).toBe("unquoted-words");
+    expect(result.hint).toContain('To show marks, put them in quotes inside `print( )`: `print("_ - =")`');
+  });
+
+  it("gives plain words one fix: a note on a note step, words to show on a print step", () => {
+    const note = explainRun("Night watch at the cabin.\nprint(\"Steady.\")\n", [], { ...unit1, solution: '# Night watch at the cabin.\nprint("Steady.")\n' });
+    expect(note.hint).toContain("`# Night watch at the cabin.`");
+    expect(note.hint).not.toContain("print(\"Night watch");
+    const shown = explainRun("Steady everyone\n", [], { ...unit1, solution: 'print("Steady, now.")\n' });
+    expect(shown.hint).toContain('`print("Steady everyone")`');
+    expect(shown.hint).not.toContain("#");
+  });
+
+  it("points at the value with no name (slipLine), or says the fix is above, so the banner never says only 'Fix line 5'", () => {
+    const names = { ...unit1, names: ["weapon", "hero"] };
+    const bare = explainRun('weapon = "Telegun"\n"Lucky"\nprint(hero)\n', [], names);
+    expect(bare.kind).toBe("not-made-yet");
+    expect(bare.slipLine).toBe(2);
+    const missing = explainRun('weapon = "Telegun"\nprint(hero)\n', [], names);
+    expect(missing.slipLine).toBeUndefined();
+    expect(missing.fixAbove).toBe(true);
+  });
+
+  it("moves the ) that closes print too early to the end of the line (never 'NoneType')", () => {
+    const result = explainRun('name = "Lucky"\nmana = 26\nprint(name + " has ") + str(mana) + " mana."\n', [], unit1);
+    expect(result.kind).toBe("outside-print");
+    expect(result.hint).toContain('Move that `)` to the very end of the line: `print(name + " has " + str(mana) + " mana.")`');
+    expect(result.hint).not.toContain("NoneType");
+  });
+
+  it("names a # inside the parentheses, with the note fix from Mar'tu's version", () => {
+    const code = 'print("Steady.")\nprint(#"I am keeping the glug.")\n';
+    const result = explainRun(code, [], { ...unit1, solution: 'print("Steady.")\n# print("I am keeping the glug.")\n' });
+    expect(result.kind).toBe("never-closed");
+    expect(result.hint).toBe(
+      'The `#` on line 2 is inside the parentheses, so Python skips the rest of the line, `)` too. Put `#` at the very start of line 2, before `print`: `# print("I am keeping the glug.")`',
+    );
+    expect(explainRun(code, [], unit1).hint).toContain('Take the `#` out of the parentheses: `print("I am keeping the glug.")`');
+  });
+
+  it("names the line's own boxes for a number stuck to letters, never the boxes made just above", () => {
+    const code = "lantern_count = 3\nlantern_price = 4\nrope_count = 5\nrope_price = 2\nlantern_cost = 3L\n";
+    const result = explainRun(code, [], unit1);
+    expect(result.hint).toContain("Use the boxes for these numbers: `lantern_count` and `lantern_price`.");
+    expect(result.hint).not.toContain("rope_");
+  });
+
+  it("puts quotes on a one-word value when Mar'tu's box holds text, never another step's box", () => {
+    const code = "# Lucky's armor bonus (a number):\narmor_bonus = 3\n# Any weapon name (text):\nweapon = sword\n";
+    const result = explainRun(code, [], { ...unit1, names: ["armor_bonus", "weapon"], solution: 'armor_bonus = 3\nweapon = "a brass rune-axe"\n' });
+    expect(result.kind).toBe("unquoted-word");
+    expect(result.hint).toBe('`sword` has no quotes, so Python looks for a box named `sword` and finds none. `weapon` holds words, and words need quotes: `weapon = "sword"`');
+    expect(result.hint).not.toContain("armor_bonus");
+  });
+
+  it("says Python's == guess is wrong for = inside a sheet", () => {
+    const result = explainRun('gearshift = {\n    "name" = "Gearshift",\n}\n', [], { unitOrder: 5 });
+    expect(result.kind).toBe("equals-in-sheet");
+    expect(result.hint).toContain("Python's last line guesses `==`, but that guess is wrong here.");
+    expect([...result.hint.matchAll(/`([^`]+)`/g)].at(-1)?.[1]).toBe('"name": "Gearshift",');
   });
 });

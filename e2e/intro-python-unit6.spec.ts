@@ -214,7 +214,7 @@ test.describe("Intro to Python, Unit 6: Loops", () => {
     await expect(page.getByTestId("explainer").locator(".ex-explainer-title")).toHaveText("Printing forever?");
     await expect(page.getByTestId("explainer-hint")).toContainText("Your code printed so much that it was stopped. Look for a part of your code that repeats and never ends.");
     await expect(page.getByTestId("python-last-line")).toContainText("TooMuchOutput: This program printed more than 200,000 characters, so it was stopped.");
-    // The line it was stopped on (the print) is right: no "First, fix line 3", and Help stays on the step.
+    // The line it was stopped on (the print) is right: no "Fix line 3", and Help stays on the step.
     const task = page.getByTestId("task-line");
     await expect(task).toHaveAttribute("data-endless", "true");
     await expect(task).toContainText("Your loop never ended. Python stopped your code, so it couldn't check your steps yet. Read the box in the Console, then change the loop so it can end.");
@@ -270,10 +270,10 @@ test.describe("Intro to Python, Unit 6: Loops", () => {
     await expect(task).toHaveAttribute("data-parts", "true");
     await expect(task.locator("li")).toHaveCount(2);
     await expect(task.locator(".ex-task-lead")).toContainText("Your task (step 1 of 1):");
-    // Start me off replaces the `pass` line, and says so.
+    // Start me off replaces the `pass` line, and says so (which line, too).
     await runAndWait(page, 1);
     await page.getByTestId("help-button").click();
-    await expect(page.getByTestId("help-start-note")).toHaveText("It replaces pass.");
+    await expect(page.getByTestId("help-start-note")).toHaveText("It replaces pass on line 4.");
     // The item used as a position: use the item itself, never `[-1]`.
     const item = await runWrong(page, "for-each-yes/each-mark", "the item used as an index", 2);
     await expect(item).toHaveAttribute("data-kind", "item-as-position");
@@ -284,7 +284,9 @@ test.describe("Intro to Python, Unit 6: Loops", () => {
     await open(page, "for-each-yes", "bars-for-everyone");
     const handed = await runWrong(page, "for-each-yes/bars-for-everyone", "the roster handed to the recipe (TypeError)", 1);
     await expect(handed).toHaveAttribute("data-kind", "list-to-recipe");
-    await expect(page.getByTestId("task-line")).toContainText("First, fix line 13. Python stopped on line 6");
+    await expect(page.getByTestId("task-line")).toContainText(
+      "Python stopped at line 6, so it couldn't finish your code. The mistake is on line 13. Fix line 13, then press Run again.",
+    );
     await expect(page.getByTestId("explainer-hint")).toContainText("Hand it this pass's sheet, the loop variable: mana_bar(member)");
   });
 

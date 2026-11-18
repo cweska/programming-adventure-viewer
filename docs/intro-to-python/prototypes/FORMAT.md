@@ -195,6 +195,7 @@ dict(
     checks=[("caster holds Gearshift", "assert caster == 'Gearshift', 'Store the text Gearshift in caster.'")],
     pass_line="Gearshift: Visor dims. Name logged.",   # optional, shown when it turns green
     dictated=True,                          # optional: the text spells out the code to type
+    planned_error=dict(line=1, error="SyntaxError"),   # optional: an error made on purpose does this step
 )
 ```
 
@@ -205,6 +206,7 @@ dict(
 | `hints` | `hints` | the hint ladder, 2 to 5 rungs: point, teach, show. The site's Help control shows them as "Where to look" (the first), "Teach me" (the middle ones) and "Show me how" (the last), with "Another way" and "More structure" (Assemble it) in between, then "Compare with Mar'tu's version". Write the last hint with the step's own line in backticks (``Write `mana = 20` on its own line.``): its start up to the first `(` or `=` becomes "Start me off" (`mana =`), but only if the solution uses it. A list read runs on to its bracket when the solution uses that: `print(chalk_wall[`, and `return wall[` rather than `return wall[len(`. Never show an example's names there. Say where the line goes in the same hint, after the line, so Start me off lands there before the student has clicked into the code: "in place of `print(lucky[2])`" (replaces that line), "on the line after `total = affinity * 2`", "under `# 2.`" (under the whole note, when it goes on over `#    ...` lines), or "above `print(caster[\"mana\"])`" (a new line over it, with its indent). With none of these, Start me off goes at the end of the code. From Unit 2 on, the harness warns when the first hint starts with "Start like this", or when the last hint's start is not in the solution (Start me off is then dropped). |
 | `checks` | `checks` | `(name, code)` pairs (or `dict(name=..., code=...)`) |
 | `pass_line` | `passLine` | optional in-world line (prose on one line: `code` shows as code; a `[[link]]` shows as plain words, and the harness warns) |
+| `planned_error` | `plannedError` | optional `dict(line=1, error="SyntaxError")`, for a step that asks for an error on purpose ("Delete the `"` right after `Shield up.` and press Run"). A crash checks nothing, so without it the step could only turn green with the next one. With it, a run that stops on `line` with an error whose name starts with `error` marks the step done, and the step stays done (no ↺) while the next step puts the line back. The task line then says "Python stopped at line 1, as planned." The harness wants a `fails_at=0` wrong answer that shows the error. |
 | `dictated` | `dictated` | optional bool. `True` when the text spells out the code to type ("Write `mana = 20`"); `False` for a goal-only step that gives the goal and the names, never the code ("Print a greeting that uses `name`."). The curriculum asks for at least one `dictated=False` step in every lesson (§2.1, lint g). Left out: not marked either way. |
 
 **Checks** run after the student's code, in the same namespace, only if the code ran without an error.

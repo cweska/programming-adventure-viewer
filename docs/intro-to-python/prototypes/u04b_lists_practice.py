@@ -173,7 +173,7 @@ def _stop(_vals, _apps, _err, _fix='Make your code work for any list, not only y
     _what = 'Python stopped with ' + _an(_err) + ' on the test ' + _noun(_vals) + '.'
     if _err.startswith('IndexError'):
         _fix = _ifix or ('Count from the end with `[-1]`, so it works for a ' + _noun(_vals) + ' of any length.')
-        _what = ('Your code asked for a position the test ' + _noun(_vals) + ' does not have, so Python stopped.')
+        _what = ('Your code asked for a position the test ' + _noun(_vals) + ' doesn' + chr(39) + 't have, so Python stopped.')
     return _what + ' ' + _fix + _ev(_vals, _apps)
 def _handback(_name, _uses):
     # `name = name.tool(...)` at the top level: the tool changed the list and handed back something else.
@@ -243,18 +243,18 @@ UNIT = dict(
     subtitle="The Chalk Wall",
     published=True,
     martu_intro=(
-        "Seven numbers on my wall. I could give each one its own box. I could also lose my mind. A list keeps "
-        "them together, in order, yes?\n"
-        "You have met lists already. `party.members` was one: the four of you, in order, under one name. "
+        "A [[list]] keeps many values under one name, in order, like a data set in math class.\n"
+        "My chalk wall holds seven numbers. I could give each one its own box. I could also lose my mind, yes?\n"
+        "You have met a list already: `party.members` held the four of you, in order, under one name. "
         "Tonight we read a list closely, one position at a time."
     ),
     goals=[
-        "Make a [[list]] with square brackets and commas",
-        "Read an item by its [[index|position]], counting from 0, and from the end with `-1`",
-        "Change an item by its position, grow a list with `.append()`, and join two lists with `+`",
-        "Count items with `len()`, and know the last position is `len - 1`",
-        "Read a list inside a list, like `roster[3][1]`",
-        "Count with `range()`, cut a [[slice]] like `[-3:]`, and sort with `sorted()`",
+        "Keep many values in one [[list]], in order, with square brackets and commas",
+        "Read an item by its [[index|position]], counting from 0 like a ruler, or counting from the end",
+        "Change one item by its position, add an item to the end, and join two lists",
+        "Count the items in a list, and find the last one",
+        "Read a list inside a list: the row first, then the item in that row",
+        "Count with `range()`, copy part of a list with a [[slice]], and make a sorted copy",
     ],
     campaign_links=["leylines-awaken", "friends-in-low-places"],
 )
@@ -448,8 +448,8 @@ HOW_MANY_TIMES = dict(
         "The dot works the way it did for `.append()`: it asks the list to do something. `bells.count(3)` means "
         "*bells, count your 3s*. The value goes inside the parentheses `( )`, and a number gets no "
         "quotes.\n"
-        "Oogrish ran a finger down my wall: *every forty-eight hours, at first.* On a long wall you'd lose count "
-        "by eye, yes? Ask the list instead."
+        "Each number on my chalk wall is a *gap*: the hours between two bursts. Oogrish ran a finger down my wall: "
+        "*every forty-eight hours, at first.* On a long wall you'd lose count by eye, yes? Ask the list instead."
     ),
     introduces=["attr:count"],
     example="bells = [3, 5, 3, 3]\nprint(bells.count(3))\n",
@@ -541,7 +541,7 @@ HOW_MANY_TIMES = dict(
     ],
     bonus=dict(
         by="lucky",
-        title="Lucky's bet",
+        title="More than one 48?",
         text=(
             "Lucky bets that 48 shows up on the wall more than once. On a new line at the bottom, print whether "
             "`chalk_wall.count(48)` is more than 1. Python answers `True` or `False`."
@@ -718,7 +718,7 @@ BROKEN_SPELL_3B = dict(
     title="Broken spell",
     martu=(
         "This spell has two [[bug|bugs]]. A loud bug makes Python stop with an error. A quiet bug runs, but "
-        "gives a wrong answer. *Mend* means fix: find each bug and fix it, one at a time.\n"
+        "gives a wrong answer. Find each bug and fix it, one at a time.\n"
         "The loud one first. Press Run and read the box in the Console. Its title says what went wrong, then "
         "*Python's last line* says it in Python's words. Find the line number, and fix that line.\n"
         "Then the quiet one: read what the program prints, and count the gaps. Both tools are from Reading the "
@@ -744,7 +744,7 @@ BROKEN_SPELL_3B = dict(
     checkpoints=[
         dict(
             id="sort-a-copy",
-            text="Mend line 2 so `shortest` holds the shortest gap. Keep `chalk_wall` in its order, oldest first.",
+            text="Fix line 2 so `shortest` holds the shortest gap. Keep `chalk_wall` in its order, oldest first.",
             dictated=False,
             hints=[
                 "Read the box in the Console: the title, then *Python's last line*. It names line 2. Which value on "
@@ -760,7 +760,7 @@ BROKEN_SPELL_3B = dict(
         ),
         dict(
             id="three-not-two",
-            text="Mend the slice on line 4 so `newest_three` holds the three newest gaps.",
+            text="Fix the slice on line 4 so `newest_three` holds the three newest gaps.",
             dictated=False,
             hints=[
                 "This bug is quiet: no error box. Read the last line in the Console. How many gaps are in that "
@@ -991,7 +991,7 @@ assert type(_first).__name__ == 'list', ('`log` is not a list yet. Put square br
 _built = globals().get('log')
 assert _first or not (type(_built).__name__ == 'list' and _built), (
     'Your first pairs went in with `.append()`, so the line `log = []` is still empty. Type 3 pairs inside the '
-    'square brackets of `log = []` itself, like `log = [["kick", 3], ...]`. Save `.append()` for task 2.')
+    'square brackets of `log = []` itself, like `log = [["kick", 3], ...]`. Save `.append()` for Task 2.')
 assert _first, ('`log` is still empty. Put 3 pairs inside its square brackets, like `["kick", 3]`: a drill, then its '
                 'score.')
 for _p in _first:
@@ -1072,7 +1072,7 @@ if (type(_mine).__name__ == 'list' and _lits and _B.len(_mine) == _B.len(_lits[-
         and type(_mine[-1]).__name__ == 'list' and _B.len(_mine[-1]) == 2):
     _d, _s = _mine[-1][0], _mine[-1][1]
     assert not (_is_num(_d) and type(_s).__name__ == 'str'), (
-        'Your new pair is the other way round: its score comes first. Put the drill first, then its score: '
+        'Your new pair is the other way around: its score comes first. Put the drill first, then its score: '
         '`log.append(["swim", 6])`.')
     assert type(_s).__name__ != 'str', ('The new score is in quotes, so it is text. Take the quotes off the new '
                                         'score: scores are numbers.')
@@ -1336,7 +1336,7 @@ if _defs and _d:
         _sys.stdout = _keep_out
     _rows = [_l.strip() for _l in _buf.getvalue().splitlines() if _l.strip()]
     assert [_l for _l in _rows if _d in _l and _mark in _nums(_l)], (
-        "Your line gets the score another way, not from `last_score(log)`. Call the recipe, as task 5 asks: "
+        "Your line gets the score another way, not from `last_score(log)`. Call the recipe, as Task 5 asks: "
         "`str(last_score(log))`. Mar'tu tested your code with a test recipe that hands back " + _B.str(_mark)
         + ', and your line did not show it.')
 ''',
@@ -1411,7 +1411,7 @@ PROJECT_3P1 = dict(
     names=["log", "last_score", "training", "len", "str"],
     pick=LOG_PICK,
     pair_talk=(
-        "Pair talk: before task 3, tell your partner which two positions reach the first drill's score, and why "
+        "Pair talk: before Task 3, tell your partner which two positions reach the first drill's score, and why "
         "the first one is 0. Then each of you types it on your own screen."
     ),
     starter=LOG_STARTER,
@@ -1513,7 +1513,7 @@ PROJECT_3P1 = dict(
             hints=[
                 "Look under `# 6.` `len()` counts the items in a list, and each item in `log` is one pair. How do "
                 "you show that number?",
-                "Print the number on its own, or glue it after a label with `str()`. With other names: "
+                "Print the number on its own, or glue it after some words with `str()`, as in Unit 1. With other names: "
                 "`print(len(menu))` shows how many dishes `menu` has.",
                 "Write `print(\"Drills: \" + str(len(log)))` under `# 6.`, at the bottom.",
             ],
@@ -1647,7 +1647,7 @@ PROJECT_3P1 = dict(
              code=_log(LOG_LITERAL, "log.append(\"roll and rise\")\nlog.append(6)\n"), fails_at=2,
              message_contains="two loose items"),
         dict(why="the new pair the other way round (the reruns swap the pair, so the own run is read)",
-             code=_log(LOG_LITERAL, "log.append([6, \"roll and rise\"])\n"), fails_at=2, message_contains="other way round"),
+             code=_log(LOG_LITERAL, "log.append([6, \"roll and rise\"])\n"), fails_at=2, message_contains="other way around"),
         dict(why="the new score in quotes", code=_log(LOG_LITERAL, "log.append([\"roll and rise\", \"6\"])\n"), fails_at=2,
              message_contains="quotes off the new score"),
         dict(why="the append above the list (top to bottom)",
@@ -1711,7 +1711,7 @@ PROJECT_3P1 = dict(
         dict(why="task 5 done without the recipe: the score read from the list (log[-1][1])",
              code=_log(LOG_LITERAL, LOG_APPEND, LOG_FIX, LOG_RETURN,
                        "newest = log[-1]\nprint(newest[0] + \": \" + str(newest[1]))\n"), fails_at=5,
-             message_contains="as task 5 asks"),
+             message_contains="as Task 5 asks"),
         dict(why="the recipe called, but its answer thrown away (the line still reads the list)",
              code=_log(LOG_LITERAL, LOG_APPEND, LOG_FIX, LOG_RETURN,
                        "score = str(last_score(log))\nprint(log[-1][0] + \": \" + str(log[-1][1]))\n"), fails_at=5,
@@ -1914,7 +1914,8 @@ INSERT_AND_POP = dict(
         "anywhere.\n"
         "[[.pop()]] does the opposite: it takes the last item off the list and hands it back, so you can keep it "
         "in a variable. `last = marks.pop()` takes the 7 off and keeps it in `last`.\n"
-        "Lucky leaned on my wall, and one mark rubbed off: the 47. Put it back, with no retyping."
+        "Each mark on my chalk wall is a *gap*: the hours between two bursts. Lucky leaned on my wall, and one "
+        "mark rubbed off: the 47. Put it back, with no retyping."
     ),
     introduces=["attr:insert", "attr:pop"],
     example=(
@@ -2536,7 +2537,7 @@ BIGGEST_AND_SMALLEST = dict(
     id="biggest-and-smallest",
     title="Biggest and smallest",
     martu=(
-        "[[max() and min()|max()]] hands back the biggest number in a list, and `min()` hands back the smallest, "
+        "[[max() and min()|`max()`]] hands back the biggest number in a list, and `min()` hands back the smallest, "
         "wherever they are. In math class, that's the maximum and the minimum of a data set: same words, same "
         "idea. `max([41, 46, 39])` is 46.\n"
         "[[sum()]] adds up every number in the list: `sum([5, 10])` is 15.\n"
@@ -2762,8 +2763,8 @@ for _vals in (None, {'chalk_wall': [41, 39, 46, 44]}, {'chalk_wall': [30, 52]}):
         'Your line reads the first gap, and the longest gap is not always the first.' + _ev(_vals))
     assert not (_vals is not None and _got in _start), (
         'Your line picked a gap by its position, and the longest gap is not always there.' + _ev(_vals))
-    assert not _hits, 'An answer is typed in for each wall, so a new wall gets no right answer.' + _ev(_vals)
-    assert False, 'The longest gap was typed in, so the line does not change to match the test wall.' + _ev(_vals)
+    assert not _hits, 'You typed an answer for each wall, so a new wall gets a wrong answer.' + _ev(_vals)
+    assert False, 'You typed in the longest gap, so your line does not change to match the test wall.' + _ev(_vals)
 ''',
 )
 
@@ -2775,7 +2776,7 @@ SOLO_3C = dict(
     title="Show Mar'tu",
     martu=(
         "A short one, on your own. One bug. Press Run and read the box in the Console: the title, then *Python's "
-        "last line*. Then fix the line it names."
+        "last line*. Then fix the line number it gives."
     ),
     solo=True,
     explainer="lean",
@@ -2784,7 +2785,7 @@ SOLO_3C = dict(
     checkpoints=[
         dict(
             id="make-it-print",
-            text="Mend line 2 so the program prints the longest gap.",
+            text="Fix line 2 so the program prints the longest gap.",
             dictated=False,
             hints=[
                 "Read the box in the Console: the title, then *Python's last line*. *Not subscriptable* means this "
@@ -2813,7 +2814,7 @@ SOLO_3C = dict(
         dict(why="the starter (square brackets after max)", code=SOLO_3C_STARTER, fails_at=0,
              message_contains="not subscriptable"),
         dict(why="the longest typed by hand", code=WALL_LINE + "longest = 48\nprint(\"Longest: \" + str(longest))\n",
-             fails_at=1, message_contains="The longest gap was typed in"),
+             fails_at=1, message_contains="You typed in the longest gap"),
         dict(why="the first gap read instead", code=WALL_LINE + "longest = chalk_wall[0]\nprint(\"Longest: \" + str(longest))\n",
              fails_at=1, message_contains="reads the first gap, and the longest gap is not always the first"),
         dict(why="the line typed by hand", code=WALL_LINE + "print(\"Longest: 48\")\n", fails_at=1,
@@ -2823,7 +2824,7 @@ SOLO_3C = dict(
              message_contains="by its position"),
         dict(why="an answer typed for each wall the check showed",
              code=WALL_LINE + "print(\"Longest: 48\")\nprint(46)\nprint(52)\n", fails_at=1,
-             message_contains="typed in for each wall"),
+             message_contains="typed an answer for each wall"),
         dict(why="a dot instead of a call", code=WALL_LINE + "longest = chalk_wall.max()\nprint(\"Longest: \" + str(longest))\n",
              fails_at=0, message_contains="no attribute"),
     ],

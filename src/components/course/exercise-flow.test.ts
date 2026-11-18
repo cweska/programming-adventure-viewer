@@ -14,7 +14,7 @@ import { exerciseSchema, playablesOf, type Checkpoint, type Playable } from "../
 import { CompareView } from "./CompareView";
 import { applyRun, assembledCode, assemblesBySteps, helpRungs, helpState, isBlankOrStarter, runOutcome, stepAssemble } from "./exercise-logic";
 import { ExercisePlayer } from "./ExercisePlayer";
-import { HelpStack } from "./HelpStack";
+import { HelpLocked, HelpStack } from "./HelpStack";
 import { LessonPlayer } from "./LessonPlayer";
 import { NamesChips } from "./NamesChips";
 import { ParsonsBoard } from "./ParsonsBoard";
@@ -167,6 +167,16 @@ describe("server render", () => {
     expect(html).not.toContain('data-testid="item-continue"');
   });
 
+  it("titles the campaign box \"Where you saw this in the game\", apart from the side quests (guide §9, S9)", () => {
+    const entry = allUnits
+      .flatMap((unit) => unit.items.map((item) => ({ unit, item })))
+      .find(({ item }) => item.kind === "lesson" && item.exercises[0]?.campaignLink !== undefined);
+    expect(entry).toBeDefined();
+    const html = renderToString(createElement(LessonPlayer, itemPageProps(entry!.unit.id, entry!.item.id)!));
+    expect(html).toMatch(/data-testid="campaign-link"><summary>.*?<span>Where you saw this in the game<\/span><\/summary>/);
+    expect(html).not.toMatch(/data-testid="campaign-link"><summary>.*?in it for me/);
+  });
+
   it("renders one Help control (not per-step hint lists) on a full-support lesson", () => {
     const entry = items.find(({ item }) => item.kind === "lesson");
     if (!entry) return;
@@ -270,17 +280,20 @@ describe("server render", () => {
     expect(html).toContain('data-testid="help-rung-3"');
     expect(html).toContain('data-kind="teach"');
     expect(html).toContain('data-testid="help-offer"');
-    expect(html).toContain("Read the title of the box in the Console");
+    expect(html).toContain("Read the title of the box in the Console, then Python’s last line. Then find the line number and fix that line.");
     expect(html).toContain('data-testid="help-show-locked"');
     expect(html).toContain('aria-disabled="true"');
     expect(html).toContain("ex-help is-offered");
-    // Right after a crash, Help first names the line to mend (a crash checks no step).
+    // Right after a crash, Help first names the line to fix (a crash checks no step), in the guide's words (§9, S2).
     expect(html).toContain('data-testid="help-crash"');
-    expect(html).toContain("Fix line 2 first.");
+    expect(html).toContain(
+      "<strong>Python stopped at line 2</strong>, so it couldn&#x27;t finish your code. Fix line 2, then press Run again. The box in the Console says what&#x27;s wrong.",
+    );
+    expect(html).not.toContain("check your steps");
   });
 
   it("after a crash on a line no step names, holds the step's rungs back and names the line", () => {
-    const checkpoint = { id: "line-1", text: "Mend line 1.", hints: ["Look.", "Teach.", 'Write `weapon = "Telegun"`.'], checks: [{ name: "c", code: "assert True" }] };
+    const checkpoint = { id: "line-1", text: "Fix line 1.", hints: ["Look.", "Teach.", 'Write `weapon = "Telegun"`.'], checks: [{ name: "c", code: "assert True" }] };
     const rungs = helpRungs(checkpoint, { anotherWayCount: 0, hasAssemble: false, solo: false });
     const html = renderToString(
       createElement(HelpStack, {
@@ -304,7 +317,7 @@ describe("server render", () => {
         onInsertStart: () => undefined,
       }),
     );
-    expect(html).toContain("Fix line 5 first.");
+    expect(html).toContain("<strong>Python stopped at line 5</strong>, so it couldn&#x27;t finish your code. Fix line 5, then press Run again.");
     expect(html).toContain('data-testid="help-crash-wait"');
     expect(html).not.toContain('data-testid="help-button"');
     expect(html).not.toContain('data-testid="help-rung-1"');
@@ -398,6 +411,22 @@ describe("server render", () => {
       createElement(NamesChips, { names: [], pick: "Zelda", prominent: false, onInsertName: () => undefined, onPick: () => undefined }),
     );
     expect(chips).toContain("Mar&#x27;tu&#x27;s pick");
+    // Python's tools get a row of their own, apart from the boxes (guide §9, S7).
+    const withTools = renderToString(
+      createElement(NamesChips, { names: ["mana"], tools: ["str"], prominent: false, onInsertName: () => undefined, onPick: () => undefined }),
+    );
+    expect(withTools).toMatch(/data-testid="names"[^>]*>.*Names to use:.*data-testid="name-chip-mana"/);
+    expect(withTools).toMatch(/data-testid="tools"[^>]*>.*Tools to use:.*class="ex-name-chip is-tool" data-testid="name-chip-str" data-tool="true"/);
+    expect(withTools.indexOf('data-testid="name-chip-str"')).toBeGreaterThan(withTools.indexOf('data-testid="tools"'));
+    expect(withTools).toContain('aria-label="Put the tool str in your code"');
+    // Lesson 1A's only name is `print`: a row of tools, and no "Names to use" (no names yet).
+    const printOnly = renderToString(
+      createElement(NamesChips, { names: [], tools: ["print"], prominent: false, onInsertName: () => undefined, onPick: () => undefined }),
+    );
+    expect(printOnly).toContain("Tools to use:");
+    expect(printOnly).not.toContain("Names to use:");
+    // Help before the first Run (light support): running unfinished code is fine.
+    expect(renderToString(createElement(HelpLocked))).toContain("Help opens after you press Run once. Running code that isn&#x27;t finished yet is fine.");
     const tray = renderToString(createElement(SymbolTray, { onInsert: () => undefined, names: ["hero"] }));
     expect(tray).toContain('aria-label="Type double quote"');
     expect(tray).toContain('data-testid="tray-name-hero"');

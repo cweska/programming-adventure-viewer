@@ -5,7 +5,7 @@
       "notes": "meta: path=CC; kind=card; words<=60. Draft text from the curriculum (49 words) plus the checkpoint legend line. Still needed from the site: the three pictures (Run button -> console; the Help control under a checkpoint; the checkpoint list) and the [Start 1A] button. The lessons are the main path. The Quick Check is not a button on this card: the site's unit page already shows its offer to everyone as a quieter secondary choice ('Already know this? About 12 minutes, no hints'). The article schema has no image or button fields, so they are not in this prototype. Every other feature is introduced by just-in-time coach marks (2.2). Body unchanged (words<=60)."
     },
     "before-the-first-spell": {
-      "notes": "1W: contingent (K), on under 'Show me more', off under 'Keep it short' and instructions-light. In the prototype it is an ordinary lesson (curriculum section 7 note). A warm-up, so it has no SOLO item (lint g applies to 1A)."
+      "notes": "1W: contingent (K), on under 'Show me more', off under 'Keep it short' and instructions-light. In the prototype it is an ordinary lesson (curriculum section 7 note). A warm-up, so it has no SOLO item (lint g applies to 1A). Structure pass (guide 9, S12): keyboard-symbols moved to the start of Boxes With Labels (u01b), after print and # are taught and right before `=` and `_` are used."
     },
     "words-in-quotes": {
       "notes": "1A: CC (1A-06 is SC). No warm-up item (first lesson); the preset question already happened on the course map. 1A-07 (triple quotes) is in the 1X-AB pool (u01b). Non-dictated checkpoints: 1A-02, 1A-03 CP2, 1A-04 CP2, 1A-06 CP2, 1A-S. One SOLO: solo-1a."
@@ -14,7 +14,7 @@
       "notes": "meta: path=CC; unscored warm-up shown inline before Lesson 1B; recall from 1A. A miss shows the answer and a one-line why, with no red X."
     },
     "boxes-with-labels": {
-      "notes": "Lesson 1B (CC). Preceded by 1b-remembers. Exactly one SOLO (solo-1b); non-dictated checkpoints in 1B-02, 1B-03, 1B-04, 1B-06, 1B-S."
+      "notes": "Lesson 1B (CC). Preceded by 1b-remembers. Exactly one SOLO (solo-1b); non-dictated checkpoints in 1B-02, 1B-03, 1B-04, 1B-06, 1B-S. Structure pass (guide 9, S12): opens with keyboard-symbols (1W-04), moved here from the 1W warm-ups so it comes after print and # are taught (two more minutes)."
     },
     "extra-words-and-boxes": {
       "notes": "1X-AB pool (1A-07, 1B-T). Optional; feeds twins, the spaced queue and early finishers."
@@ -47,7 +47,7 @@
       "notes": "meta: path=optional. Intro call:input call:int. Campaign link: user.clicked() also hands back text, compared with ==. The console shows prompt + answer on one line, as a terminal would."
     },
     "qc1-a": {
-      "notes": "Quick Check 1, form A (code tasks). Questions live in qc1-a-questions. Pass = every code task plus 2 of the 3 questions; a retake draws form B. The site currently gates on the code tasks only; question scoring joins when QC scoring ships. Form A uses names and numbers no lesson uses, so it can't be passed from memory: party_leader (example: guide), bandages 7 x 2 + torches 3 x 5 = 29 for Oogrish, scout Gearshift 10 -> 14/20 mana, the Shield bar 4 of 7, and 'The fire is low.' / stamina 15 - 4 / Max_Stamina. Coverage (lint d): make-variable, exact-names, quote-text -> C1 (WA: example's name, lone value, unquoted text) and C5; combine-values -> C2, C3 (WA: typed totals); concat-str -> C3 (WA: typed line, str missing); reassign -> C3 (WA: mana typed, subtraction not put back) and Q2; repeat-string -> C4 (WA: no brackets, typed gap) and Q1; numbers-vs-text -> C2, C5; read-traceback -> C5. support='none' everywhere: no hints, tracer or compare; glossary, read-aloud, DF and the explainer stay on."
+      "notes": "Reconciler pass: every lean message here mirrors the lesson's message for the same mistake, minus the fix (box_check, print_check, num_story_check and the reruns use the lesson's sentences: 'Your box is named `x`, but this step needs `y`', '`total_cost` has a typed-in number. Mar'tu tested your code with ...'), and a rerun that stops says what stopped it in plain words (_plain, S8). Task 5 says Fix, not Mend (the site reads both, S1). Quick Check 1, form A (code tasks). Questions live in qc1-a-questions. Pass = every code task plus 2 of the 3 questions; a retake draws form B. The site currently gates on the code tasks only; question scoring joins when QC scoring ships. Form A uses names and numbers no lesson uses, so it can't be passed from memory: party_leader (example: guide), bandages 7 x 2 + torches 3 x 5 = 29 for Oogrish, scout Gearshift 10 -> 14/20 mana, the Shield bar 4 of 7, and 'The fire is low.' / stamina 15 - 4 / Max_Stamina. Coverage (lint d): make-variable, exact-names, quote-text -> C1 (WA: example's name, lone value, unquoted text) and C5; combine-values -> C2, C3 (WA: typed totals); concat-str -> C3 (WA: typed line, str missing); reassign -> C3 (WA: mana typed, subtraction not put back) and Q2; repeat-string -> C4 (WA: no brackets, typed gap) and Q1; numbers-vs-text -> C2, C5; read-traceback -> C5. support='none' everywhere: no hints, tracer or compare; glossary, read-aloud, DF and the explainer stay on."
     },
     "qc1-a-questions": {
       "notes": "Quick Check 1, form A questions (scored with qc1-a: every code task plus 2 of the 3 questions). The site currently gates on the code tasks only; question scoring joins when QC scoring ships. No hints; read-aloud and glossary stay on."
@@ -71,7 +71,7 @@
       ],
       "wrongAnswers": [
         {
-          "why": "broken on purpose and not mended yet: the quote is still open",
+          "why": "broken on purpose and not put back yet: the quote is still open",
           "code": [
             "print(\"Shield up.)"
           ],
@@ -115,7 +115,7 @@
           "code": [
             "print(\"Shield up\")"
           ],
-          "failsAt": 2,
+          "failsAt": 3,
           "messageContains": "`!` at the end"
         },
         {
@@ -123,7 +123,7 @@
           "code": [
             "print(\"shield up!\")"
           ],
-          "failsAt": 2,
+          "failsAt": 3,
           "messageContains": "Capitals"
         },
         {
@@ -133,6 +133,12 @@
           ],
           "failsAt": 1,
           "messageContains": "Press Run"
+        },
+        {
+          "why": "the whole line deleted",
+          "code": [],
+          "failsAt": 1,
+          "messageContains": "Reset code"
         },
         {
           "why": "check-breaker: old line kept, new words added with no print (BARE)",
@@ -148,7 +154,7 @@
           "code": [
             "print(\"Shieldup!\")"
           ],
-          "failsAt": 2,
+          "failsAt": 3,
           "messageContains": "Spaces, marks and capitals"
         },
         {
@@ -156,50 +162,11 @@
           "code": [
             "print(\"Ready.\")"
           ],
-          "failsAt": 2,
+          "failsAt": 3,
           "messageContains": "Reset code"
         }
       ],
-      "notes": "meta: starter_level=S4; path=CC; contingent=show-me-more (K); skills=print-text,read-traceback; solo=false; dictates=1,2; foreign_names=. Teaches the explainer footer ('Read the last line first. Then look at the line it names.'), which the site shows on every crash from here on. Teacher ruling: the starter is valid and the first Run is a win for a Show-me-more student (G1: a success in the first two minutes): it turns CP1 green (proven by partial 1, which is the starter). CP2 then has them break the quote on purpose, read 'unterminated', and mend it. starter_passes stays False on purpose: that field means the starter passes EVERY checkpoint (harness rule, the site's exercise-flow test, and the 'Run it and read the output' heading), and here the starter passes CP1 only. CP2 checks for exactly `Shield up!` (the `.` to `!` change proves they edited and re-ran; shows() would treat the end mark as optional, so the check is written directly). Checkpoint passes are a union across runs, so CP1 stays green while the line is broken; the deliberate crash is the point of CP2 and never blocks the exercise. A bare `\"Shield up!\"` fails CP1 in a single run (nothing printed); the site shows CP2's message, which names the missing print (proven by the check-breaker WA). Hint 1 says `Shield up.\"` (with the quote) so clicking there and pressing Backspace deletes the quote, not the period. Evidence: unclosed quotes on A-02 ('Fire Ball'), A-03 ('Fierball.'), A-04 ('Fireball'). No Assemble: the whole answer is one line. WAs: open quote (crash), starter unchanged, other quote mark, quote put back after the bracket, the period deleted instead of the quote, lower case, no print, a space lost, other words (points to Reset code)."
-    },
-    "before-the-first-spell/keyboard-symbols": {
-      "wrongAnswers": [
-        {
-          "why": "starter unchanged: only the note, nothing printed",
-          "code": [
-            "# Print a line that has _ and - and = in it."
-          ],
-          "failsAt": 1,
-          "messageContains": "Nothing shows"
-        },
-        {
-          "why": "symbols with no quotes",
-          "code": [
-            "print(_ - =)"
-          ],
-          "failsAt": 0,
-          "messageContains": "invalid syntax"
-        },
-        {
-          "why": "leaves one symbol out",
-          "code": [
-            "print(\"_ -\")"
-          ],
-          "failsAt": 1,
-          "messageContains": "missing `=`"
-        },
-        {
-          "why": "check-breaker: each symbol on its own line, not one line with all three",
-          "code": [
-            "print(\"_\")",
-            "print(\"-\")",
-            "print(\"=\")"
-          ],
-          "failsAt": 1,
-          "messageContains": "missing"
-        }
-      ],
-      "notes": "meta: starter_level=S2; path=CC; contingent=show-me-more (K); skills=print-text; solo=false; dictates=; foreign_names=. G1 R30 (dash for =: A-04 `chicken_sandwich - \"Fireball`). Any line with all three symbols passes; Mar'tu's pick is the solution's line. Check-breaker: WA for one symbol per line."
+      "notes": "meta: starter_level=S4; path=CC; contingent=show-me-more (K); skills=print-text,read-traceback; solo=false; dictates=1,2,3; foreign_names=. Teaches the reading routine (the error box's title, then Python's last line, then the line number), which the site's error box shows on every crash from here on. Teacher ruling: the starter is valid and the first Run is a win for a Show-me-more student (G1: a success in the first two minutes): it turns step 1 green (proven by partial 1, which is the starter). Structure pass (guide 9, S12): the old step 2 held three moves; it is now two steps. Step 2 (break-it) breaks the quote on purpose and reads the error box; step 3 (close-the-quote, the old id, so a pass already saved still counts) puts the quote back and changes the `.` to `!`. A crash can't be checked, so step 2's check passes on any run that no longer shows the starter's exact `Shield up.`: steps 2 and 3 turn green together on the run that shows `Shield up!`, as a Broken spell's steps do. Until then, running the starter shows step 2's message, which is step 2's instruction again (and, for a student who broke it and put the quote back, the pointer to step 3). Its text says 'go on to step 3', so a literal reader doesn't wait for a green tick that only comes with step 3. No partial 2: the state after step 2 is a crash, which passes nothing. starter_passes stays False on purpose: that field means the starter passes EVERY checkpoint. Step 3 checks for exactly `Shield up!` (the `.` to `!` change proves they edited and re-ran; shows() would treat the end mark as optional, so the check is written directly). A bare `\"Shield up!\"` fails step 1 in a single run (nothing printed). Hint 1 of step 2 says `Shield up.\"` (with the quote) so clicking there and pressing Backspace deletes the quote, not the period. Evidence: unclosed quotes on A-02 ('Fire Ball'), A-03 ('Fierball.'), A-04 ('Fireball'). No Assemble: the whole answer is one line. WAs: open quote (crash), starter unchanged, other quote mark, quote put back after the bracket, the period deleted instead of the quote, lower case, no print, the line deleted, a space lost, other words (points to Reset code)."
     },
     "words-in-quotes/press-run": {
       "wrongAnswers": [
@@ -559,7 +526,7 @@
             "print(\"I will take first watch.\")"
           ],
           "failsAt": 1,
-          "messageContains": "switch it off"
+          "messageContains": "isn't all there"
         },
         {
           "why": "switches off the wrong line",
@@ -611,7 +578,7 @@
             "print(\"I will take first watch.\")"
           ],
           "failsAt": 1,
-          "messageContains": "`print` and all"
+          "messageContains": "isn't all there"
         },
         {
           "why": "check-breaker: deletes the line and writes a note about it",
@@ -621,7 +588,7 @@
             "print(\"I will take first watch.\")"
           ],
           "failsAt": 1,
-          "messageContains": "`print` and all"
+          "messageContains": "isn't all there"
         }
       ],
       "notes": "meta: starter_level=S4; path=SC; skills=print-text; solo=false; dictates=1; foreign_names=; stages=I,M. SC inside a CC lesson (deferrable by the teacher's switch). Notes are found with the tokenizer, so a `#` inside quotes is not a note. Any note text passes (lint e); Mar'tu's pick is the solution's note. Starter lines avoid the red-clock spoiler. Check-breaker pass: the switched-off note must still hold `print`, so deleting the line and writing a note about it, or swapping `print(` for `#`, no longer passes CP1."
@@ -782,6 +749,55 @@
         }
       ],
       "notes": "meta: starter_level=S4; path=CC; skills=quote-text,read-traceback; solo=true; dictates=; foreign_names=; one-bug SOLO (C6). Two hints only (schema minimum); using one records the pass 'with structure'. No Assemble or another_way, on purpose: this one is theirs. Seat B variant for when pair mode ships: starter `print(The lantern is lit)` (no quotes, C13 row), same check. Every student has their own device, so everyone gets seat A's starter. Check-breaker pass: shows() names the nearest slip (words with no print, capitals, spaces or marks, a longer line, a letter or two) and accepts a curly apostrophe from tablet keyboards."
+    },
+    "boxes-with-labels/keyboard-symbols": {
+      "wrongAnswers": [
+        {
+          "why": "starter unchanged: only the note, nothing printed",
+          "code": [
+            "# Your line goes here:",
+            ""
+          ],
+          "failsAt": 1,
+          "messageContains": "Nothing shows"
+        },
+        {
+          "why": "symbols with no quotes",
+          "code": [
+            "print(_ - =)"
+          ],
+          "failsAt": 0,
+          "messageContains": "invalid syntax"
+        },
+        {
+          "why": "leaves one symbol out",
+          "code": [
+            "print(\"_ -\")"
+          ],
+          "failsAt": 1,
+          "messageContains": "missing `=`"
+        },
+        {
+          "why": "the marks typed into the note, not shown",
+          "code": [
+            "# Your line goes here: _ - =",
+            ""
+          ],
+          "failsAt": 1,
+          "messageContains": "Nothing shows"
+        },
+        {
+          "why": "check-breaker: each symbol on its own line, not one line with all three",
+          "code": [
+            "print(\"_\")",
+            "print(\"-\")",
+            "print(\"=\")"
+          ],
+          "failsAt": 1,
+          "messageContains": "missing"
+        }
+      ],
+      "notes": "meta: starter_level=S2; path=CC; contingent=show-me-more (K); skills=print-text; solo=false; dictates=; foreign_names=. G1 R30 (dash for =: A-04 `chicken_sandwich - \"Fireball`). Any line with all three symbols passes; Mar'tu's pick is the solution's line. Check-breaker: WA for one symbol per line. Structure pass (guide 9, S12): moved from the 1W warm-ups (before print and # were taught) to the start of Boxes With Labels, right before `=` and `_` are used; print and # are known by now, so Mar'tu no longer explains them. The starter note was `# Print a line that has _ and - and = in it.`: it held the marks themselves (a literal reader could think line 1 was already done) and used print before 1B's plain word show. It is now a place note in the shape of name-and-value's, `# Your line goes here:`, with an empty line 2 to type on."
     },
     "boxes-with-labels/label-a-box": {
       "wrongAnswers": [
@@ -1135,11 +1151,29 @@
         {
           "why": "the example's name",
           "code": [
+            "points = 3",
+            "weapon = \"Telegun\""
+          ],
+          "failsAt": 1,
+          "messageContains": "Example"
+        },
+        {
+          "why": "the example's text box for the weapon",
+          "code": [
+            "armor_bonus = 3",
+            "jersey = \"Telegun\""
+          ],
+          "failsAt": 2,
+          "messageContains": "Example"
+        },
+        {
+          "why": "an earlier step's name (max_mana, from the keyboard warm-up)",
+          "code": [
             "max_mana = 3",
             "weapon = \"Telegun\""
           ],
           "failsAt": 1,
-          "messageContains": "example"
+          "messageContains": "earlier step"
         },
         {
           "why": "weapon text with no quotes",
@@ -1206,7 +1240,7 @@
           "messageContains": "invalid syntax"
         }
       ],
-      "notes": "meta: starter_level=S3; path=CC; skills=numbers-vs-text,make-variable; solo=false; dictates=; foreign_names=max_mana,dice,snack,character; twin=dice_count = 2\nCP1 accepts armor_bonus == 3 (so `+3` passes too), or 3 followed by the side quest's `armor_bonus = 4`, so doing the side quest keeps CP1 green; 3 then 30 fails. WT 'Why \"3\" isn't 3' is the `why` angle. WA evidence: quoting numbers; lone values (A-04, B-02, B-03); Pizza/pizzas case (B-02, B-03)."
+      "notes": "meta: starter_level=S3; path=CC; skills=numbers-vs-text,make-variable; solo=false; dictates=; foreign_names=points,jersey,max_mana,dice,snack,character; twin=dice_count = 2\nStructure pass (guide 9, S12): the Example was a box versus a word (`print(max_mana)` and `print(\"max_mana\")`, the quotes rule again), not a number versus text. It now puts 3 and `\"3\"` in two boxes and adds each to itself: 6 and 33, the jersey picture from Mar'tu's text. That needs `+`, so the exercise previews op:Add (plus, as in math class; gluing text is taught in 1C). The predict asks about the new Example. CP1 accepts armor_bonus == 3 (so `+3` passes too), or 3 followed by the side quest's `armor_bonus = 4`, so doing the side quest keeps CP1 green; 3 then 30 fails. WT 'Why \"3\" isn't 3' is the `why` angle. WA evidence: quoting numbers; lone values (A-04, B-02, B-03); Pizza/pizzas case (B-02, B-03)."
     },
     "boxes-with-labels/exact-names": {
       "wrongAnswers": [
@@ -1737,7 +1771,7 @@
           "messageContains": "unterminated string"
         }
       ],
-      "notes": "meta: starter_level=S2; path=CC; skills=make-variable,exact-names,quote-text; solo=true; dictates=; foreign_names=companion,character,hero,snack; seat_b=lantern_name (same checks, starter says lantern_name)\nSOLO make-twin. Seat A (and anyone solo) gets familiar; seat B would get lantern_name once pair mode ships. Recorded, never blocking, never shown to a partner. Two hints only (schema); using one records the pass 'with structure'. Teacher ruling: the solo reads as showing off, not being watched, so Learn drops 'Nobody helps on this one' and the pass line ticks the skill on the student's map."
+      "notes": "meta: starter_level=S2; path=CC; skills=make-variable,exact-names,quote-text; solo=true; dictates=; foreign_names=companion,character,hero,snack; seat_b=lantern_name (same checks, starter says lantern_name)\nSOLO make-twin. Seat A (and anyone solo) gets familiar; seat B would get lantern_name once pair mode ships. Recorded, never blocking, never shown to a partner. Two hints only (schema); using one records the pass 'with structure'. Teacher ruling: the solo reads as showing off, not being watched, so Learn drops 'Nobody helps on this one'. The pass line keeps 'You did that on your own.' and says what they did (no 'On your map:': no skills map is on screen yet, guide 4.6 and S10)."
     },
     "extra-words-and-boxes/many-lines-at-once": {
       "wrongAnswers": [
@@ -1810,6 +1844,13 @@
           "# 1. A box named satchel (text):",
           "satchel = \"three candles and a map\"",
           "# 2. A box named coins (a number):",
+          "",
+          "# 3. Print both boxes:"
+        ],
+        [
+          "# 1. A box named satchel (text):",
+          "satchel = \"three candles and a map\"",
+          "# 2. A box named coins (a number):",
           "coins = 7",
           "# 3. Print both boxes:"
         ]
@@ -1823,8 +1864,28 @@
             "print(satchel)",
             "print(coins)"
           ],
-          "failsAt": 1,
+          "failsAt": 2,
           "messageContains": "quotes"
+        },
+        {
+          "why": "a lone number for coins",
+          "code": [
+            "satchel = \"rope\"",
+            "7",
+            "print(satchel)",
+            "print(7)"
+          ],
+          "failsAt": 2,
+          "messageContains": "Put `coins = ` in front"
+        },
+        {
+          "why": "coins left out",
+          "code": [
+            "satchel = \"rope\"",
+            "print(satchel)"
+          ],
+          "failsAt": 2,
+          "messageContains": "Make a box named `coins`"
         },
         {
           "why": "a lone value for satchel",
@@ -1845,7 +1906,7 @@
             "print(\"satchel\")",
             "print(coins)"
           ],
-          "failsAt": 2,
+          "failsAt": 3,
           "messageContains": "word"
         },
         {
@@ -1889,7 +1950,7 @@
             "print(\"rope\")",
             "print(7)"
           ],
-          "failsAt": 2,
+          "failsAt": 3,
           "messageContains": "Print the box instead"
         },
         {
@@ -1915,7 +1976,7 @@
           "messageContains": "words in quotes"
         }
       ],
-      "notes": "meta: starter_level=S2; path=pool; skills=make-variable,numbers-vs-text,exact-names; solo=false; dictates=2; foreign_names=backpack,gems,armor_bonus,weapon\n1B-T: the twin for deferral time (and a spaced twin for 1B-02/1B-03)."
+      "notes": "meta: starter_level=S2; path=pool; skills=make-variable,numbers-vs-text,exact-names; solo=false; dictates=2; foreign_names=backpack,gems,armor_bonus,weapon\n1B-T: the twin for deferral time (and a spaced twin for 1B-02/1B-03). Structure pass (guide 9, S12): the old step 1 made both boxes; it is now one step per box (satchel-box, then coins under the old id two-boxes, so a pass already saved still counts), each with its own hints and checks. The BARE check is split by kind, so a lone 7 for coins gets coins' own message (put `coins = ` in front), not satchel's."
     },
     "math-and-glue/chalk-math": {
       "wrongAnswers": [
@@ -2769,6 +2830,17 @@
           "messageContains": "space is missing"
         },
         {
+          "why": "step 1 done, step 2 not started: the line stops early (never 'a space is missing')",
+          "code": [
+            "name = \"Lucky\"",
+            "mana = 26",
+            "# Print: Lucky has 26 mana.  Build it from the boxes.",
+            "print(name + \" has \")"
+          ],
+          "failsAt": 2,
+          "messageContains": "Your line stops after `Lucky has`. Now add the mana"
+        },
+        {
           "why": "CP1: the box name in quotes",
           "code": [
             "name = \"Lucky\"",
@@ -2818,14 +2890,14 @@
           "hero_name = \"Oogrish\"",
           "magical_affinity = 9",
           "max_mana = magical_affinity * 2  # twice the affinity",
-          "mana = 0  # starts full",
+          "mana = 0  # full: the same as max_mana",
           "# Print: Oogrish: 18/18 mana"
         ],
         [
           "hero_name = \"Oogrish\"",
           "magical_affinity = 9",
           "max_mana = magical_affinity * 2  # twice the affinity",
-          "mana = max_mana  # starts full",
+          "mana = max_mana  # full: the same as max_mana",
           "# Print: Oogrish: 18/18 mana"
         ]
       ],
@@ -2836,7 +2908,7 @@
             "hero_name = \"Oogrish\"",
             "magical_affinity = 9",
             "max_mana = 18  # twice the affinity",
-            "mana = max_mana  # starts full",
+            "mana = max_mana  # full: the same as max_mana",
             "# Print: Oogrish: 18/18 mana",
             "print(hero_name + \": \" + str(mana) + \"/\" + str(max_mana) + \" mana\")"
           ],
@@ -2849,7 +2921,7 @@
             "hero_name = \"Oogrish\"",
             "magical_affinity = 9",
             "max_mana = magical_affinity * 2  # twice the affinity",
-            "mana = 18  # starts full",
+            "mana = 18  # full: the same as max_mana",
             "# Print: Oogrish: 18/18 mana",
             "print(hero_name + \": \" + str(mana) + \"/\" + str(max_mana) + \" mana\")"
           ],
@@ -2862,7 +2934,7 @@
             "hero_name = \"Oogrish\"",
             "magical_affinity = 9",
             "max_mana = magical_affinity * 2  # twice the affinity",
-            "mana = max_mana  # starts full",
+            "mana = max_mana  # full: the same as max_mana",
             "# Print: Oogrish: 18/18 mana",
             "print(\"Oogrish: 18/18 mana\")"
           ],
@@ -2875,7 +2947,7 @@
             "hero_name = \"Oogrish\"",
             "magical_affinity = 9",
             "max_mana = magical_affinity * 2  # twice the affinity",
-            "mana = max_mana  # starts full",
+            "mana = max_mana  # full: the same as max_mana",
             "# Print: Oogrish: 18/18 mana",
             "print(hero_name + \": \" + mana + \"/\" + max_mana + \" mana\")"
           ],
@@ -2888,7 +2960,7 @@
             "hero_name = \"Oogrish\"",
             "magical_affinity = 9",
             "max_mana = magical_affinity + 2  # twice the affinity",
-            "mana = max_mana  # starts full",
+            "mana = max_mana  # full: the same as max_mana",
             "# Print: Oogrish: 18/18 mana",
             "print(hero_name + \": \" + str(mana) + \"/\" + str(max_mana) + \" mana\")"
           ],
@@ -2901,7 +2973,7 @@
             "hero_name = \"Oogrish\"",
             "magical_affinity = 9",
             "max_mana = magical_affinity * 2  # twice the affinity",
-            "mana = max_mana  # starts full",
+            "mana = max_mana  # full: the same as max_mana",
             "# Print: Oogrish: 18/18 mana",
             "print(hero_name + \":\" + str(mana) + \"/\" + str(max_mana) + \" mana\")"
           ],
@@ -2914,7 +2986,7 @@
             "hero_name = \"Oogrish\"",
             "magical_affinity = 9",
             "max_mana = magical_affinity * 2  # twice the affinity",
-            "mana = max_mana  # starts full",
+            "mana = max_mana  # full: the same as max_mana",
             "# Print: Oogrish: 18/18 mana",
             "print(\"Oogrish: 18/18 mana\")",
             "print(\"Tester: 26/26 mana\")"
@@ -2928,7 +3000,7 @@
             "hero_name = \"Oogrish\"",
             "magical_affinity = 9",
             "max_mana = magical_affinity * 2  # twice the affinity",
-            "mana = max_mana  # starts full",
+            "mana = max_mana  # full: the same as max_mana",
             "# Print: Oogrish: 18/18 mana",
             "print(hero_name + \": \" + str(max_mana) + \"/\" + str(max_mana) + \" mana\")"
           ],
@@ -2942,7 +3014,7 @@
             "magical_affinity = 9",
             "max_mana = 0",
             "Max_mana = magical_affinity * 2  # twice the affinity",
-            "mana = Max_mana  # starts full",
+            "mana = Max_mana  # full: the same as max_mana",
             "# Print: Oogrish: 18/18 mana",
             "print(hero_name + \": \" + str(mana) + \"/\" + str(max_mana) + \" mana\")"
           ],
@@ -2955,7 +3027,7 @@
             "hero_name = Kratos",
             "magical_affinity = 9",
             "max_mana = magical_affinity * 2  # twice the affinity",
-            "mana = max_mana  # starts full",
+            "mana = max_mana  # full: the same as max_mana",
             "# Print: Oogrish: 18/18 mana",
             "print(hero_name + \": \" + str(mana) + \"/\" + str(max_mana) + \" mana\")"
           ],
@@ -2968,7 +3040,7 @@
             "hero_name = \"Tester\"",
             "magical_affinity = 13",
             "max_mana = magical_affinity * 2  # twice the affinity",
-            "mana = max_mana  # starts full",
+            "mana = max_mana  # full: the same as max_mana",
             "# Print: Oogrish: 18/18 mana",
             "print(hero_name + \": \" + str(mana) + \"/26 mana\")"
           ],
@@ -2982,7 +3054,7 @@
             "magical_affinity = 9",
             "max_mana = 0",
             "magical_affinity * 2  # twice the affinity",
-            "mana = max_mana  # starts full",
+            "mana = max_mana  # full: the same as max_mana",
             "# Print: Oogrish: 18/18 mana",
             "print(hero_name + \": \" + str(mana) + \"/\" + str(max_mana) + \" mana\")"
           ],
@@ -2990,7 +3062,7 @@
           "messageContains": "no box keeps the answer"
         }
       ],
-      "notes": "meta: starter_level=S3; path=CC; skills=combine-values,concat-str,reassign; solo=false; dictates=2; foreign_names=power,double,spare,backpack,pet,hp,max_hp\nLint (e): the solution uses another hero (Captain Glug) and passes; the assemble lines use Mar'tu's pick (Oogrish). The status-line check never echoes the student's hero: its message uses Tester / Zelda, and the side quest's diffs hide lines holding the hero (own('hero_name')). CP3 also needs `mana` read somewhere, so `str(max_mana)` twice (same output while mana starts full) is caught. More structure (G1 R13): the Teach hint shows the same beads with other names (pet / hp / max_hp, `Moth: 3/5 hp`), then the student's frame with ___ blanks. Lucky's side quest uses new lucky_* boxes so it never turns a finished checkpoint red."
+      "notes": "meta: starter_level=S3; path=CC; skills=combine-values,concat-str,reassign; solo=false; dictates=2; foreign_names=power,double,spare,backpack,pet,hp,max_hp\nLint (e): the solution uses another hero (Captain Glug) and passes; the assemble lines use Mar'tu's pick (Oogrish). The status-line check never echoes the student's hero: its message uses Tester / Zelda, and the side quest's diffs hide lines holding the hero (own('hero_name')). CP3 also needs `mana` read somewhere, so `str(max_mana)` twice (same output while mana starts full) is caught. More structure (G1 R13): the Teach hint shows the same beads with other names (pet / hp / max_hp, `Moth: 3/5 hp`), then the student's frame with ___ blanks. Lucky's side quest uses new lucky_* boxes so it never turns a finished checkpoint red. Structure pass (guide 9, S12): line 4's note was `# starts full` on a line that holds 0, which a literal reader takes as 'full is 0'. Like line 3's note, it now says what goes there: `# full: the same as max_mana`. Mar'tu's 'Twice means times 2.' moved out of his text (the step and its Teach hint say it) to keep him under 60 words."
     },
     "math-and-glue/repeat-a-mark": {
       "partials": [
@@ -3448,7 +3520,7 @@
           "messageContains": "already the cost of all 4 candles"
         }
       ],
-      "notes": "meta: starter_level=S3; path=CC; skills=combine-values; solo=true; dictates=; foreign_names=lantern_count,lantern_price,lantern_cost,map_cost,a,b,c; seat_b=Arrows cost 3 coins each, and Lucky wants 6 (price-first; arrow_count, arrow_price, arrow_cost)\nSOLO make-twin. Seat A (and anyone solo) gets candles; seat B would get arrows (price-first) once pair mode ships. Recorded, never blocking, never shown to a partner. Left sides are given (S3) with 0 placeholders so the starter runs (`candle_cost = 0` stays). The pass line reads as showing off a skill on the map, not as being watched. LINE-TOTAL (`candle_count * 8`) gets its own message."
+      "notes": "meta: starter_level=S3; path=CC; skills=combine-values; solo=true; dictates=; foreign_names=lantern_count,lantern_price,lantern_cost,map_cost,a,b,c; seat_b=Arrows cost 3 coins each, and Lucky wants 6 (price-first; arrow_count, arrow_price, arrow_cost)\nSOLO make-twin. Seat A (and anyone solo) gets candles; seat B would get arrows (price-first) once pair mode ships. Recorded, never blocking, never shown to a partner. Left sides are given (S3) with 0 placeholders so the starter runs (`candle_cost = 0` stays). The pass line reads as showing off a skill, not as being watched (no 'On your map:': no skills map is on screen yet, guide 4.6 and S10). LINE-TOTAL (`candle_count * 8`) gets its own message."
     },
     "extra-math/the-short-way": {
       "partials": [
@@ -3707,6 +3779,21 @@
           "# B. Let the code combine it",
           "mana_needed = hours_until_burst * mana_per_hour",
           "oil_needed = hours_until_burst * oil_per_hour",
+          "oil_cost = 0",
+          "",
+          "# C. Write the ledger",
+          "watch_keeper = \"\"  # any hero, in quotes"
+        ],
+        [
+          "# A. What we know",
+          "hours_until_burst = 37",
+          "mana_per_hour = 2",
+          "oil_per_hour = 1",
+          "oil_price = 3",
+          "",
+          "# B. Let the code combine it",
+          "mana_needed = hours_until_burst * mana_per_hour",
+          "oil_needed = hours_until_burst * oil_per_hour",
           "oil_cost = oil_needed * oil_price",
           "",
           "# C. Write the ledger",
@@ -3744,6 +3831,23 @@
           "print(\"Mana for the barrier: \" + str(mana_needed))",
           "print(\"Lantern oil: \" + str(oil_needed) + \" flasks for \" + str(oil_cost) + \" coins\")",
           "watch_keeper = \"\"  # any hero, in quotes"
+        ],
+        [
+          "# A. What we know",
+          "hours_until_burst = 37",
+          "mana_per_hour = 2",
+          "oil_per_hour = 1",
+          "oil_price = 3",
+          "",
+          "# B. Let the code combine it",
+          "mana_needed = hours_until_burst * mana_per_hour",
+          "oil_needed = hours_until_burst * oil_per_hour",
+          "oil_cost = oil_needed * oil_price",
+          "",
+          "# C. Write the ledger",
+          "print(\"Mana for the barrier: \" + str(mana_needed))",
+          "print(\"Lantern oil: \" + str(oil_needed) + \" flasks for \" + str(oil_cost) + \" coins\")",
+          "watch_keeper = \"Captain Glug\"  # any hero, in quotes"
         ],
         [
           "# A. What we know",
@@ -3807,7 +3911,7 @@
             "watch_keeper = \"Bomb Shell\"  # any hero, in quotes",
             "print(\"First watch: \" + watch_keeper)"
           ],
-          "failsAt": 5,
+          "failsAt": 6,
           "messageContains": "32"
         },
         {
@@ -3830,7 +3934,7 @@
             "watch_keeper = \"Bomb Shell\"  # any hero, in quotes",
             "print(\"First watch: \" + watch_keeper)"
           ],
-          "failsAt": 4,
+          "failsAt": 5,
           "messageContains": "oil_per_hour"
         },
         {
@@ -3947,7 +4051,7 @@
             "\"Bomb Shell\"",
             "print(\"First watch: \" + watch_keeper)"
           ],
-          "failsAt": 7,
+          "failsAt": 8,
           "messageContains": "no name in front"
         },
         {
@@ -3970,7 +4074,7 @@
             "watch_keeper = \"Bomb Shell\"",
             "print(\"First watch: Bomb Shell\")"
           ],
-          "failsAt": 7,
+          "failsAt": 9,
           "messageContains": "Tester"
         },
         {
@@ -3993,7 +4097,7 @@
             "watch_keeper = \"Bomb Shell\"  # any hero, in quotes",
             "print(\"First watch: \" + watch_keeper)"
           ],
-          "failsAt": 6,
+          "failsAt": 7,
           "messageContains": "space"
         },
         {
@@ -4039,7 +4143,7 @@
             "watch_keeper = \"Bomb Shell\"  # any hero, in quotes",
             "print(\"First watch: \" + watch_keeper)"
           ],
-          "failsAt": 4,
+          "failsAt": 5,
           "messageContains": "oil_price = 5"
         },
         {
@@ -4063,7 +4167,7 @@
             "print(\"First watch: Bomb Shell\")",
             "print(\"First watch: Tester\")"
           ],
-          "failsAt": 7,
+          "failsAt": 9,
           "messageContains": "typed in"
         },
         {
@@ -4086,7 +4190,7 @@
             "watch_keeper = \"Tester\"",
             "print(\"First watch: Tester\")"
           ],
-          "failsAt": 7,
+          "failsAt": 9,
           "messageContains": "Zelda"
         },
         {
@@ -4110,7 +4214,7 @@
             "guard = \"Bomb Shell\"",
             "print(\"First watch: \" + guard)"
           ],
-          "failsAt": 7,
+          "failsAt": 8,
           "messageContains": "new box `guard`"
         },
         {
@@ -4134,7 +4238,7 @@
             "Watch_keeper = \"Bomb Shell\"",
             "print(\"First watch: \" + Watch_keeper)"
           ],
-          "failsAt": 7,
+          "failsAt": 8,
           "messageContains": "letter for letter"
         },
         {
@@ -4249,7 +4353,7 @@
             "watch_keeper = \"Bomb Shell\"  # any hero, in quotes",
             "print(\"First watch: \" + watch_keeper)"
           ],
-          "failsAt": 5,
+          "failsAt": 6,
           "messageContains": "mana_per_hour = 3"
         },
         {
@@ -4295,8 +4399,99 @@
             "watch_keeper = \"Bomb Shell\"  # any hero, in quotes",
             "print(\"First watch: \" + watch_keeper)"
           ],
-          "failsAt": 4,
+          "failsAt": 5,
           "messageContains": "price of ONE flask"
+        },
+        {
+          "why": "split task: oil_needed worked out, oil_cost left at its 0",
+          "code": [
+            "# A. What we know",
+            "hours_until_burst = 37",
+            "mana_per_hour = 2",
+            "oil_per_hour = 1",
+            "oil_price = 3",
+            "",
+            "# B. Let the code combine it",
+            "mana_needed = hours_until_burst * mana_per_hour",
+            "oil_needed = hours_until_burst * oil_per_hour",
+            "oil_cost = 0",
+            "",
+            "# C. Write the ledger",
+            "print(\"Mana for the barrier: \" + str(mana_needed))",
+            "print(\"Lantern oil: \" + str(oil_needed) + \" flasks for \" + str(oil_cost) + \" coins\")",
+            "watch_keeper = \"Bomb Shell\"  # any hero, in quotes",
+            "print(\"First watch: \" + watch_keeper)"
+          ],
+          "failsAt": 5,
+          "messageContains": "placeholder"
+        },
+        {
+          "why": "split task: oil_needed typed in as 37",
+          "code": [
+            "# A. What we know",
+            "hours_until_burst = 37",
+            "mana_per_hour = 2",
+            "oil_per_hour = 1",
+            "oil_price = 3",
+            "",
+            "# B. Let the code combine it",
+            "mana_needed = hours_until_burst * mana_per_hour",
+            "oil_needed = 37",
+            "oil_cost = oil_needed * oil_price",
+            "",
+            "# C. Write the ledger",
+            "print(\"Mana for the barrier: \" + str(mana_needed))",
+            "print(\"Lantern oil: \" + str(oil_needed) + \" flasks for \" + str(oil_cost) + \" coins\")",
+            "watch_keeper = \"Bomb Shell\"  # any hero, in quotes",
+            "print(\"First watch: \" + watch_keeper)"
+          ],
+          "failsAt": 4,
+          "messageContains": "typed-in"
+        },
+        {
+          "why": "split task: the hero put in, but no watch line yet",
+          "code": [
+            "# A. What we know",
+            "hours_until_burst = 37",
+            "mana_per_hour = 2",
+            "oil_per_hour = 1",
+            "oil_price = 3",
+            "",
+            "# B. Let the code combine it",
+            "mana_needed = hours_until_burst * mana_per_hour",
+            "oil_needed = hours_until_burst * oil_per_hour",
+            "oil_cost = oil_needed * oil_price",
+            "",
+            "# C. Write the ledger",
+            "print(\"Mana for the barrier: \" + str(mana_needed))",
+            "print(\"Lantern oil: \" + str(oil_needed) + \" flasks for \" + str(oil_cost) + \" coins\")",
+            "watch_keeper = \"Bomb Shell\"  # any hero, in quotes"
+          ],
+          "failsAt": 9,
+          "messageContains": "glued to `watch_keeper`"
+        },
+        {
+          "why": "split task: the watch line glued to the word watch_keeper in quotes",
+          "code": [
+            "# A. What we know",
+            "hours_until_burst = 37",
+            "mana_per_hour = 2",
+            "oil_per_hour = 1",
+            "oil_price = 3",
+            "",
+            "# B. Let the code combine it",
+            "mana_needed = hours_until_burst * mana_per_hour",
+            "oil_needed = hours_until_burst * oil_per_hour",
+            "oil_cost = oil_needed * oil_price",
+            "",
+            "# C. Write the ledger",
+            "print(\"Mana for the barrier: \" + str(mana_needed))",
+            "print(\"Lantern oil: \" + str(oil_needed) + \" flasks for \" + str(oil_cost) + \" coins\")",
+            "watch_keeper = \"Bomb Shell\"",
+            "print(\"First watch: \" + \"watch_keeper\")"
+          ],
+          "failsAt": 9,
+          "messageContains": "because of the quotes. Take the quotes off"
         },
         {
           "why": "the last task not done: the hours still 37",
@@ -4318,7 +4513,7 @@
             "watch_keeper = \"Bomb Shell\"  # any hero, in quotes",
             "print(\"First watch: \" + watch_keeper)"
           ],
-          "failsAt": 8,
+          "failsAt": 10,
           "messageContains": "`hours_until_burst = 32`"
         },
         {
@@ -4411,7 +4606,7 @@
             "watch_keeper = \"Bomb Shell\"  # any hero, in quotes",
             "print(\"First watch: \" + watch_keeper)"
           ],
-          "failsAt": 8,
+          "failsAt": 10,
           "messageContains": "`hours_until_burst = 37`"
         },
         {
@@ -4434,11 +4629,11 @@
             "watch_keeper = \"Bomb Shell\"  # any hero, in quotes",
             "print(\"First watch: \" + watch_keeper)"
           ],
-          "failsAt": 8,
+          "failsAt": 10,
           "messageContains": "Lantern oil: 37 flasks for 111 coins"
         }
       ],
-      "notes": "meta: starter_level=S2; path=SC; skills=combine-values,concat-str,make-variable; solo=false; dictates=1,8; foreign_names=days,meals_per_day,bags,bag_price,guard,steps,sips\nStarter: the task-group headers (always) plus the `= 0` placeholders, because 'Show me more' is the default preset and the prototype has one starter. CMB: every combine task and ledger line is rerun with hours_until_burst = 32 and every other input it reads changed too (mana_per_hour 3; oil_per_hour 2, oil_price 5), so `hours_until_burst * 2` or `oil_needed * 3` fail. C5/C6 diffs hide lines holding the hero. Lint (e): the solution uses Captain Glug, the assemble lines use Mar'tu's pick (Bomb Shell); the watch line check never echoes the hero (Tester only). Echo spot: the site would repeat the hero in the pass line through the blocklist; a static pass_line cannot, so it says 'Noted'. Side quest WA (typed ~~~ divider -> 'repetition') is proven by the u01c self-test, since harness wrong_answers only run against the main checkpoints. Trial mode (after a QC1 pass) is a site feature, not in this prototype. The story numbers (2 mana, 1 flask, 3 coins) are in the intro, so task A2 is not dictated (find them). LINE-TOTAL rules on mana_needed and oil_cost name no numbers, because the hours change in the last task. Last task (thirty-two-hours) mirrors the 1000 ropes: Bomb Shell's 32 hours, change one box, every line follows (64 / 32 / 96). So every task can pass in one run, task 1 accepts 37 or 32, and the solution uses 32 (the ledger at 37 is the last partial). set_once on tasks 3, 4 and 8 gives `hours_until_burst = 32` added at the bottom a top-down message (task 8's copy matters on the site, where task 3 stays green from an earlier run). Task 8 reruns at 37: a line with 32 typed into it cannot follow. The side quest's total reruns at 30 hours (the finished ledger is already at 32)."
+      "notes": "meta: starter_level=S2; path=SC; skills=combine-values,concat-str,make-variable; solo=false; dictates=1,10; foreign_names=days,meals_per_day,bags,bag_price,guard,steps,sips\nStructure pass (guide 9, S12): two packed tasks are now four, each with its own hints and checks. The old task 4 (oil_needed and oil_cost) is task 4 (oil_needed, the old id oil-needed-and-cost, so a pass already saved still counts) and task 5 (oil-cost). The old task 7 (put a hero in, then print the watch line) is task 8 (watch-keeper, the old id) and task 9 (watch-line). Ten tasks, nine partials (B4_HALF and C7_BOX are the new in-between states), and the wrong answers moved to their new task numbers. Ledger slots say 'this task' (the screen says Your tasks). Starter: the task-group headers (always) plus the `= 0` placeholders, because 'Show me more' is the default preset and the prototype has one starter. CMB: every combine task and ledger line is rerun with hours_until_burst = 32 and every other input it reads changed too (mana_per_hour 3; oil_per_hour 2, oil_price 5), so `hours_until_burst * 2` or `oil_needed * 3` fail. C5/C6 diffs hide lines holding the hero. Lint (e): the solution uses Captain Glug, the assemble lines use Mar'tu's pick (Bomb Shell); the watch line check never echoes the hero (Tester only). Echo spot: the site would repeat the hero in the pass line through the blocklist; a static pass_line cannot, so it says 'Noted'. Side quest WA (typed ~~~ divider -> 'repetition') is proven by the u01c self-test, since harness wrong_answers only run against the main checkpoints. Trial mode (after a QC1 pass) is a site feature, not in this prototype. The story numbers (2 mana, 1 flask, 3 coins) are in the intro, so task A2 is not dictated (find them). LINE-TOTAL rules on mana_needed and oil_cost name no numbers, because the hours change in the last task. Last task (thirty-two-hours) mirrors the 1000 ropes: Bomb Shell's 32 hours, change one box, every line follows (64 / 32 / 96). So every task can pass in one run, task 1 accepts 37 or 32, and the solution uses 32 (the ledger at 37 is the last partial). set_once on tasks 3, 4, 5 and 10 gives `hours_until_burst = 32` added at the bottom a top-down message (task 10's copy matters on the site, where task 3 stays green from an earlier run). Task 10 reruns at 37: a line with 32 typed into it cannot follow. The side quest's total reruns at 30 hours (the finished ledger is already at 32)."
     },
     "ward-sign": {
       "partials": [
@@ -4572,6 +4767,67 @@
         ]
       ],
       "wrongAnswers": [
+        {
+          "why": "the starter run as it is: no O yet",
+          "code": [
+            "# The ward sign, painted down the barrier post.",
+            "ink = \"█\"",
+            "",
+            "# A. Top border",
+            "",
+            "# B. The letters, five rows each",
+            "# T",
+            "print(ink * 5)",
+            "print(\"  \" + ink)",
+            "print(\"  \" + ink)",
+            "print(\"  \" + ink)",
+            "print(\"  \" + ink)",
+            "print()",
+            "# O",
+            "",
+            "# R",
+            "",
+            "",
+            "# C. Bottom border",
+            "",
+            "# D. One more letter, in triple quotes"
+          ],
+          "failsAt": 1,
+          "messageContains": "no O yet"
+        },
+        {
+          "why": "the O drawn, the R not started",
+          "code": [
+            "# The ward sign, painted down the barrier post.",
+            "ink = \"█\"",
+            "",
+            "# A. Top border",
+            "",
+            "# B. The letters, five rows each",
+            "# T",
+            "print(ink * 5)",
+            "print(\"  \" + ink)",
+            "print(\"  \" + ink)",
+            "print(\"  \" + ink)",
+            "print(\"  \" + ink)",
+            "print()",
+            "# O",
+            "print(ink * 5)",
+            "print(ink + \"   \" + ink)",
+            "print(ink + \"   \" + ink)",
+            "print(ink + \"   \" + ink)",
+            "print(ink * 5)",
+            "print()",
+            "# R",
+            "",
+            "",
+            "# C. Bottom border",
+            "",
+            "# D. One more letter, in triple quotes"
+          ],
+          "failsAt": 2,
+          "messageContains": "no R yet"
+        },
         {
           "why": "the O typed with blocks instead of ink",
           "code": [
@@ -5124,7 +5380,7 @@
           "messageContains": "five rows"
         }
       ],
-      "notes": "meta: starter_level=S3; path=optional; skills=repeat-string,print-text,make-variable; solo=false; dictates=3,4; foreign_names=chalk; prereq_card=1A-07 many-lines-at-once\nSpec 1P2. Letters go DOWN the post (one under another), so each row is one print and no row needs side-by-side glue. Checks: CP1/CP2 count rows that change between two reruns (ink '#' and ink '@'), so rows typed with █ are caught (CMB with ink); a row with a mark that is the same in both reruns is half typed (caught); the letter's own five ink rows (after the T's five) need a row with a gap between two marks, so a copied T, a column of marks or a filled block fails while any real O or R design passes; CP3 the border is the first line, not an ink row, stamped (a 1-3 character unit repeated), not typed as one literal, and repeated after the last ink row (a later side-quest line under the sign keeps it green); CP4 ink changed (near-miss name caught first) AND the printed letters use the new mark (ink changed after the letters fails). CP4 suggests `#` or `@` (or Mar'tu's pick ▓); any mark passes all five steps, `#`, `@`, `X`, `*` and even `=` (the reruns use their own marks, so the `=` border is never an ink row). CP5 one print with a triple-quoted string of 5+ non-blank rows, drawn with any key. The triple-quoted letter does not follow ink on purpose: CP5's pass line asks the student to notice that (the quotes rule again). Side quest (spec): sign the post in your hero's spell color, checked with a rerun (spell_color 'moth-grey'). Trial mode after a QC1 pass: premise + required output + the check table, from blank (site work)."
+      "notes": "meta: starter_level=S3; path=optional; skills=repeat-string,print-text,make-variable; solo=false; dictates=3,4; foreign_names=chalk; prereq_card=1A-07 many-lines-at-once\nSpec 1P2. Letters go DOWN the post (one under another), so each row is one print and no row needs side-by-side glue. Checks: CP1/CP2 count rows that change between two reruns (ink '#' and ink '@'), so rows typed with █ are caught (CMB with ink); a row with a mark that is the same in both reruns is half typed (caught); the letter's own five ink rows (after the T's five) need a row with a gap between two marks, so a copied T, a column of marks or a filled block fails while any real O or R design passes; CP3 the border is the first line, not an ink row, stamped (a 1-3 character unit repeated), not typed as one literal, and repeated after the last ink row (a later side-quest line under the sign keeps it green); CP4 ink changed (near-miss name caught first) AND the printed letters use the new mark (ink changed after the letters fails). CP4 suggests `#` or `@` (or Mar'tu's pick ▓); any mark passes all five steps, `#`, `@`, `X`, `*` and even `=` (the reruns use their own marks, so the `=` border is never an ink row). CP5 one print with a triple-quoted string of 5+ non-blank rows, drawn with any key. The triple-quoted letter does not follow ink on purpose: CP5's pass line asks the student to notice that (the quotes rule again). Side quest (spec): sign the post in your hero's spell color, checked with a rerun (spell_color 'moth-grey'). Structure pass (guide 9, S12): run untouched, the starter used to get 'So far, 5 rows of your sign change when ink changes', which counts the T Mar'tu drew. With no `print` between `# O` and `# R` (or `# R` and `# C`), the message now says the sign has no O (or R) yet and where to draw it (WAs: the starter, and the O done with the R empty). A sign that stops on a rerun says what stopped it in plain words (_plain, S8). Trial mode after a QC1 pass: premise + required output + the check table, from blank (site work)."
     },
     "clock-math/where-is-the-hand": {
       "partials": [
@@ -5423,7 +5679,7 @@
             "print(hero)"
           ],
           "failsAt": 1,
-          "messageContains": "this step's box"
+          "messageContains": "this step needs"
         },
         {
           "why": "text with no quotes",
@@ -5500,7 +5756,7 @@
             "print(total_cost)"
           ],
           "failsAt": 2,
-          "messageContains": "typed in"
+          "messageContains": "typed-in"
         },
         {
           "why": "the line totals typed in",
@@ -5515,7 +5771,7 @@
             "print(total_cost)"
           ],
           "failsAt": 2,
-          "messageContains": "typed in"
+          "messageContains": "typed-in"
         },
         {
           "why": "the story's numbers typed into the formula",
@@ -5530,7 +5786,7 @@
             "print(total_cost)"
           ],
           "failsAt": 2,
-          "messageContains": "typed in"
+          "messageContains": "typed-in"
         },
         {
           "why": "bandages count and price swapped",
@@ -5813,7 +6069,7 @@
             "print(\"Shield [\" + shield_bar + \"]\")"
           ],
           "failsAt": 1,
-          "messageContains": "typed in"
+          "messageContains": "typed-in"
         },
         {
           "why": "the full part only",
@@ -5965,7 +6221,7 @@
             "print(pet)"
           ],
           "failsAt": 1,
-          "messageContains": "this step's box"
+          "messageContains": "this step needs"
         },
         {
           "why": "text with no quotes",
@@ -6042,7 +6298,7 @@
             "print(supply_cost)"
           ],
           "failsAt": 2,
-          "messageContains": "typed in"
+          "messageContains": "typed-in"
         },
         {
           "why": "the line totals typed in",
@@ -6057,7 +6313,7 @@
             "print(supply_cost)"
           ],
           "failsAt": 2,
-          "messageContains": "typed in"
+          "messageContains": "typed-in"
         },
         {
           "why": "the story's numbers typed into the formula",
@@ -6072,7 +6328,7 @@
             "print(supply_cost)"
           ],
           "failsAt": 2,
-          "messageContains": "typed in"
+          "messageContains": "typed-in"
         },
         {
           "why": "candles count and price swapped",
@@ -6355,7 +6611,7 @@
             "print(\"Glug [\" + meter + \"]\")"
           ],
           "failsAt": 1,
-          "messageContains": "typed in"
+          "messageContains": "typed-in"
         },
         {
           "why": "the full part only",

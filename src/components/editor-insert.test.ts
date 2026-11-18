@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { noteStart, planInsert, type InsertTarget, type InsertText, type InsertWhere } from "./editor-insert";
+import { noteStart, planInsert, replacedLine, type InsertTarget, type InsertText, type InsertWhere } from "./editor-insert";
 
 /** Apply a plan to a document; `|` in the input marks the cursor (a placed cursor). */
 function apply(withCursor: string, text: InsertText, where: InsertWhere, placed = true, target?: InsertTarget): string {
@@ -120,11 +120,22 @@ describe("where buttons put text in the editor", () => {
     expect(apply("# 4. roster = [...]\n# 5. Print\n|", "roster = ", "line", false, { line: "# 4.", how: "after" })).toBe(
       "# 4. roster = [...]\nroster = |\n# 5. Print\n",
     );
-    // No such line: the end of the code, as before. A placed cursor keeps its own place.
+    // No such line: the end of the code, as before. A placed cursor keeps its own place, except for a line the step
+    // replaces while that line is still there ("in place of": "Change line 9 so ..."): never a second line beside it.
     expect(apply(`${STARTER}|`, "caster = ", "line", false, { line: "pass", how: "replace" })).toBe(`${STARTER}caster = |`);
     expect(apply("def warn(x):\n    pass\n\nwarn(1)|\n", "print(", "line", true, { line: "pass", how: "replace" })).toBe(
-      "def warn(x):\n    pass\n\nwarn(1)\nprint(|\n",
+      "def warn(x):\n    print(|\n\nwarn(1)\n",
     );
+    const read = 'print(gearshift["mana"])\nprint("Gearshift: 20 mana")\n|';
+    expect(apply(read, "print(gearshift[", "line", true, { line: 'print("Gearshift: 20 mana")', how: "replace" })).toBe(
+      'print(gearshift["mana"])\nprint(gearshift[|\n',
+    );
+    expect(apply("def warn(x):\n    print(x)\n\nwarn(1)|\n", "print(", "line", true, { line: "pass", how: "replace" })).toBe(
+      "def warn(x):\n    print(x)\n\nwarn(1)\nprint(|\n",
+    );
+    expect(replacedLine(read.replace("|", ""), { line: 'print("Gearshift: 20 mana")', how: "replace" })).toBe(2);
+    expect(replacedLine("print(1)\n", { line: 'print("Gearshift: 20 mana")', how: "replace" })).toBeNull();
+    expect(replacedLine("# 2.\n", { line: "# 2.", how: "after" })).toBeNull();
   });
 
   it("the symbol tray still types exactly at the cursor, even in a note", () => {

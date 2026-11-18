@@ -18,8 +18,8 @@ UNIT is shared by u05a-u05c and the exporter rejects a field that differs betwee
 copied verbatim from u05b's UNIT (written at the same time), so the parts agree.
 
 Help ladder as fields (FORMAT.md, the order the site shows them, as the Unit 2 fix pass set it): hints[0] Where to
-look (point; in a debug step "Read Python's last line first"), the middle hints Teach me (a tiny example with other
-names, listed in foreign_names), the last hint Show me how: the step's own line in backticks ("Write `x = 1`."),
+look (point; in a debug step the reading routine: the box's title, then Python's last line), the middle hints Teach
+me (a tiny example with other names, listed in foreign_names), the last hint Show me how: the step's own line in backticks ("Write `x = 1`."),
 whose start up to its first `(` or `=` becomes Start me off. Then another_way, assemble (More structure), and
 Compare with Mar'tu's version (the solution).
 Terminology (2.9, with the teacher's Unit 5 ruling, which overrides 2.9's "label (key)"): "variable" from Unit 4 on
@@ -65,8 +65,10 @@ check only, with its prints kept private, and puts stdout back:
                   shows the mana left because CP1's checks compare it with the sheet as it is now, before and
                   after the spend. Lean messages: the kind of slip and the line ("Line 8 takes away a typed 4"),
                   never the fix (`follows(..., lead="_wl + ' '")` puts the line in front).
-Messages: the fix first, then what happened, then the evidence in brackets, "(Mar'tu's check tried another sheet,
-name "Pell" and mana 7, only inside the check: the line should show `Pell: 7 mana`.)", as in Units 2-4.
+Messages follow the plain-language guide 4.3 (as Units 1-4 after the plain-language pass): what happened, then the one
+thing to try, then the labelled evidence with no brackets, "Mar'tu tested your code with a test sheet that has name
+`"Pell"`, mana 7 and max mana 31: the line should show `Pell: 7 mana`." Debug step texts say "Fix line N" (the site finds
+debugging exercises by "fix" or the older "mend"); the old word "mend" is gone.
 Invented values only ("Pell", an invented Tor name, as in the Unit 4 ruling; "Moth"); a student's own text is never
 repeated back (2.11). No lesson codes in student-facing text.
 
@@ -177,8 +179,9 @@ def _made():
 def _gone(_k):
     _close = [_m for _m in _made() if _m != _k and _near(_m, _k)]
     if _close:
-        return 'Python matches names letter for letter: you wrote `' + _close[0] + '`, the task needs `' + _k + '`.'
-    return 'Keep the variable `' + _k + '` from the starter: a line that starts `' + _k + ' = `.'
+        return 'You wrote `' + _close[0] + '`, but the task needs `' + _k + '`. Python matches names letter for letter.'
+    return ("Python can't find `" + _k + "`. Put back the line that starts `" + _k + " = `, the way it was at the "
+            "start.")
 
 
 def _nums(_l):
@@ -203,8 +206,8 @@ def _gap(_got, _want):
     if _i < len(_got) and _got[_i + 1:] == _want[_i:]:
         return ('There is an extra space ' + _at + '.') if _got[_i] == ' ' else ('There is an extra mark ' + _at + '.')
     if _got.lower() == _want.lower():
-        return 'Every capital counts: the line should read `' + _want + '`.'
-    return 'Nearly. The line should read `' + _want + '`.'
+        return 'Check the capitals: the line should read `' + _want + '`.'
+    return 'Your line is close, but not the same. It should read `' + _want + '`.'
 
 
 def _lit_key(_var, _key):
@@ -251,12 +254,12 @@ def _rerun(_changes):
 
 def _crash(_e, _ev, _what):
     if _e.startswith('KeyError') and _what == 'sheet':
-        _lead = 'Use keys the sheet really has, spelled the same way, so your code works for any sheet.'
+        _lead = 'Use keys the sheet really has, spelled the same way.'
     elif _e.startswith('KeyError'):
-        _lead = 'Read only keys that are really there, spelled the same way, so your code works for any ' + _what + '.'
+        _lead = 'Read only keys that are really there, spelled the same way.'
     else:
         _lead = 'Make your code work for any ' + _what + '.'
-    return _lead + ' With another ' + _what + ', Python stopped: ' + _e + ' ' + _ev + '.)'
+    return _ev + ', and your code stopped with an error. Python said: ' + _e + '. ' + _lead
 '''
 
 
@@ -278,10 +281,10 @@ def _chain(rules, indent="    "):
 def follows(label, changes, ev, ok, fix, said, rules=(), pre="", what="sheet", lead="''"):
     """CMB: re-run the program with `changes` (name -> value) swapped into its `name = <literal>` lines, inside the
     check only. `ok` is an expression over `_p` (the rerun's printed lines) and `_R` (`.get` on its names).
-    The first matching rule's message (or `fix`) leads; the evidence follows in brackets: "(Mar'tu's check tried
-    <ev>, only inside the check: <said>.)". `said` is an expression (it may use names `pre` computes); so is
-    `lead`, put in front of the message (solo-4a: `_wl + ' '`, the line the slip is on)."""
-    ev_txt = "(Mar'tu's check tried " + ev + ", only inside the check"
+    The first matching rule's message (or `fix`) leads; the labelled evidence follows, with no brackets (plain-language
+    guide 4.3.3): "Mar'tu tested your code with <ev>: <said>.". `said` is an expression (it may use names `pre`
+    computes); so is `lead`, put in front of the message (solo-4a: `_wl + ' '`, the line the slip is on)."""
+    ev_txt = "Mar'tu tested your code with " + ev
     code = (
         "_ch = " + repr(changes) + "\n"
         + pre
@@ -295,7 +298,7 @@ def follows(label, changes, ev, ok, fix, said, rules=(), pre="", what="sheet", l
         "_msg = " + repr(fix) + "\n"
         "if not _ok:\n"
         + (_chain(rules) or "    pass\n")
-        + "assert _ok, (" + lead + ") + _msg + ' ' + _ev + ': ' + (" + said + ") + '.)'\n"
+        + "assert _ok, (" + lead + ") + _msg + ' ' + _ev + ': ' + (" + said + ") + '.'\n"
     )
     return (label, _PRE + code)
 
@@ -326,20 +329,22 @@ _left = [_m for _m in _made() if _m in _foreign]
 _no_keys = type(_v).__name__ in ('set', 'list', 'tuple') and not _try(lambda: any(_k in _v for _k in _want))
 if _name not in _g and _left and not [_m for _m in _made() if _near(_m, _name)]:
     # LEFT: the Example's sheet name copied.
-    _msg = ('`' + _left[0] + '` comes from the Example. This task' + "'" + 's sheet is `' + _name + '`: keep `'
-            + _name + ' = {` from the starter.')
+    _msg = ('`' + _left[0] + '` comes from the Example. This task' + "'" + 's sheet is named `' + _name + '`: keep `'
+            + _name + ' = {` the way it was at the start.')
 elif _name not in _g:
     _msg = _gone(_name)
 elif _no_keys:
-    _msg = 'Each value needs its key in front: `' + _first + '`. Your sheet has values but no keys.'
+    _msg = ('Your sheet has values but no keys. Put each value' + "'" + 's key in front of it, with a colon: `'
+            + _first + '`.')
 elif type(_v).__name__ == 'set':
-    _msg = ('`' + _name + '` has commas but no colons, so it is not a dictionary. Put `:` between each key and its '
-            'value, like `"name": "Bomb Shell"`.')
+    _msg = ('`' + _name + '` has commas but no colons, so it is not a dictionary yet. Put a colon between each key '
+            'and its value: `' + _first + '`.')
 elif type(_v).__name__ in ('list', 'tuple'):
-    _msg = ('`' + _name + '` has square brackets, so it is a list. A sheet is a dictionary: curly brackets, with a '
-            'key and a colon before each value.')
+    _msg = ('`' + _name + '` has square brackets `[ ]`, so it is a list. A sheet is a dictionary: use curly braces '
+            '`{ }`, with a key and a colon in front of each value.')
 elif type(_v).__name__ != 'dict':
-    _msg = '`' + _name + '` should hold a dictionary: curly brackets, with `"key": value` inside.'
+    _msg = ('`' + _name + '` does not hold a dictionary. Use curly braces `{ }`, with a key, a colon and a value on '
+            'each line inside.')
 else:
     for _k in _want:
         if _k in _v:
@@ -348,16 +353,16 @@ else:
         _close = [_x for _x in _v if _near(_x, _k) or (type(_x).__name__ == 'str' and len(_x) >= 4
                                                         and _x not in _want and (_x in _k or _k in _x))]
         if _close:
-            _msg = ('`' + _name + '` has a key `' + _show(_close[0]) + '`. The task spells it `"' + _k + '"`: Python '
-                    'matches keys letter for letter.')
+            _msg = ('`' + _name + '` has a key `' + _show(_close[0]) + '`, but the task spells it `"' + _k + '"`. '
+                    'Python matches keys letter for letter, capitals too.')
         elif _k in _g and not _k.startswith('_'):
-            _msg = ('`' + _k + '` is a variable of its own. Put it inside the sheet as a key instead: `"' + _k
-                    + '": ...`.')
+            _msg = ('`' + _k + '` is a variable of its own, outside the sheet. Put it inside the sheet as a key '
+                    'instead: `"' + _k + '": ...`.')
         elif not _v:
-            _msg = ('The sheet is still empty. Inside the curly brackets, write each key in quotes, a colon, a value '
-                    'and a comma.')
+            _msg = ('The sheet is still empty. Inside the curly braces, write one line for each key: the key in '
+                    'quotes, a colon, a value and a comma.')
         else:
-            _msg = 'Add the key `"' + _k + '"` to `' + _name + '`, with a colon and a value.'
+            _msg = '`' + _name + '` has no key `"' + _k + '"` yet. Add it, with a colon and a value.'
         break
 assert not _msg, _msg
 '''
@@ -380,7 +385,7 @@ _numbers = dict((_k, _w) for _k, _w in _wants if _w != 'text')
 for _k, _w in _wants:
     _at = '`' + _name + '["' + _k + '"]`'
     if type(_v).__name__ != 'dict' or _k not in _v:
-        _msg = 'Keep the key `"' + _k + '"` in `' + _name + '`.'
+        _msg = 'The key `"' + _k + '"` is gone from `' + _name + '`. Put it back, the way step 1 had it.'
         break
     _x = _v[_k]
     _t = type(_x).__name__
@@ -388,12 +393,13 @@ for _k, _w in _wants:
         if _t in ('int', 'float'):
             _msg = _at + ' holds a number. A name is text: put it in quotes.'
         elif _t != 'str':
-            _msg = _at + ' should hold text, in quotes.'
+            _msg = _at + ' does not hold text. Put the name in quotes.'
         elif not _x.strip():
             _msg = _at + ' is empty text. Put the name between the quotes.'
     elif _t == 'str':
         if _x.strip().lstrip('+-').isdigit():
-            _msg = _at + ' holds the text `"' + _x + '"`. Numbers don' + "'" + 't need quotes.'
+            _msg = (_at + ' holds `"' + _x + '"`, which is text because of the quotes. Numbers don' + "'" + 't need '
+                    'quotes: take them off.')
         else:
             _msg = _at + ' holds text. It should hold the number ' + str(_w) + ', with no quotes.'
     elif _t != 'int':
@@ -401,12 +407,12 @@ for _k, _w in _wants:
     elif _x != _w:
         _swap = [_o for _o, _ow in _numbers.items() if _o != _k and _ow == _x]
         if _x == 0:
-            _msg = _at + ' still holds 0. Fill in ' + _owner + ' value from the sheet.'
+            _msg = _at + ' still holds 0. Put in ' + _owner + " number from his sheet, in Mar'tu's words."
         elif _swap:
-            _msg = (_at + ' holds ' + str(_x) + ', which is the `"' + _swap[0] + '"` value. Two lines may be '
+            _msg = (_at + ' holds ' + str(_x) + ', the number for `"' + _swap[0] + '"`. Two numbers may be '
                     'swapped: check each key against the sheet.')
         else:
-            _msg = _at + ' holds ' + str(_x) + '. ' + _owner + ' sheet says ' + str(_w) + '.'
+            _msg = _at + ' holds ' + str(_x) + ', but ' + _owner + ' sheet says ' + str(_w) + '.'
     if _msg:
         break
 assert not _msg, _msg
@@ -452,23 +458,25 @@ UNIT = dict(
     subtitle="Stat Sheets and Spell Books",
     published=True,
     martu_intro=(
-        "A list remembers order. It does not remember *meaning*. Which number is Lucky's armor? Which is his "
-        'mana? A dictionary keeps a tag on every value. At the Institute, every student had a record like '
-        "this. Mine said 'talks too little'.\nYou have seen dictionaries already: the spell book, the mana "
-        'bars, and `caster["abilities"]["magical_affinity"]` when you held the barrier. A lot of that code '
-        'felt like a wall, yes? Tonight we read it one key at a time.'
+        "A list remembers order. It does not remember *meaning*. A [[dictionary]] keeps a tag on every value, and "
+        "Python calls the tag a key.\n"
+        "In `[\"Lucky\", 13, 26, 3]`, which number is Lucky's armor? Which is his mana? At the Institute, every "
+        "student had a record with a tag on every line. Mine said *talks too little*.\n"
+        "You have seen dictionaries already: the spell book, the mana bars, and "
+        "`caster[\"abilities\"][\"magical_affinity\"]` when you held the barrier. A lot of that code felt like a wall, "
+        "yes? Tonight we read it one key at a time."
     ),
     goals=[
-        'Write a dictionary with keys in quotes, `:` and commas, and say why keys have quotes when box names '
-        "don't",
-        'Read a value by its key, and mend a KeyError caused by spelling, capitals or a skipped level',
-        'Change a value and add a key, including `hero["mana"] = hero["mana"] - cost`',
-        'Ask whether a key is in a dictionary with `in` and `not in`',
-        'Use a key kept in a variable: `book[spell_name]`, not `book["spell_name"]`',
-        'Read and change values inside values: `hero["abilities"]["magical_affinity"]`',
-        'Read from a list of sheets, like `roster[2]["name"]`',
-        'Build a spell from variables and store it by name: `spell_book[spell_name] = spell`',
-        'Get a value, compare it, and act on it with `if` / `elif` / `else`, like holding the barrier',
+        "Make a dictionary: a key in quotes, a colon and a value on each line, and say why keys get quotes when "
+        "variable names don't",
+        "Read a value by its key, and fix a KeyError caused by spelling, capitals or a skipped level",
+        "Change a value by its key, like spending a hero's mana, and add a new key",
+        "Ask whether a key is in a dictionary with `in` and `not in`",
+        "Use a key kept in a variable, and know when a key needs quotes",
+        "Read and change a value in a dictionary inside a dictionary",
+        "Read from a list of dictionaries: the position first, then the key",
+        "Build a spell from variables and store it in a spell book under its name",
+        "Read a value, compare it, and act on it with `if`, `elif` and `else`, the way the barrier spell did",
     ],
     campaign_links=["friends-in-low-places"],
 )
@@ -478,25 +486,26 @@ GLOSSARY = [
         term="dictionary",
         aliases=["dictionaries", "dict", "dicts"],
         plain=(
-            "Values kept under keys, in curly brackets. Each key, then a colon, then its value. Commas go between."
+            "Many values, each kept under its own tag (a key), like words in the glossary of a textbook. Curly "
+            "braces `{ }` hold it: a key, a colon, its value, then a comma."
         ),
-        example='{"name": "Lucky", "mana": 26}',
+        example='{"name": "Moth", "glug": 1}',
     ),
     dict(
         term="key",
         aliases=["keys", "tag"],
         plain=(
-            "The tag on one value in a dictionary. A key is text, so it has quotes: `\"mana\"`. Read its value "
-            "with the key in square brackets."
+            "The tag on one value in a dictionary, like the word you look up in a glossary. A key is text, so it "
+            "gets quotes: `\"mana\"`. To read its value, put the key in square brackets."
         ),
-        example='lucky["mana"]',
+        example='moth["glug"]',
     ),
     dict(
         term="KeyError",
         aliases=["key error", "key errors"],
         plain=(
-            "Python's message when a dictionary has no key spelled exactly like that. Check the spelling, the "
-            "capitals and the spaces."
+            "The error Python shows when a dictionary has no key spelled exactly like the one you asked for. "
+            "Check the spelling, the capitals and the spaces."
         ),
         example="KeyError: 'Max_Mana'",
     ),
@@ -504,8 +513,8 @@ GLOSSARY = [
         term="not in",
         aliases=["in (a dictionary)"],
         plain=(
-            "`in` asks whether a key is in a dictionary, and gives `True` or `False`. `not in` asks whether it is "
-            "missing. Both look at the keys only, never the values."
+            "`in` asks a yes-or-no question: is this key in the dictionary? Python answers `True` or `False`. "
+            "`not in` asks the opposite: is it missing? Both look at the keys only, never the values."
         ),
         example='"Glow" not in spell_book',
     ),
@@ -513,8 +522,8 @@ GLOSSARY = [
         term="AttributeError",
         aliases=["attribute error"],
         plain=(
-            "Python's message when a dot asks for something that is not there. Read a dictionary with square "
-            "brackets, not a dot: `lucky[\"mana\"]`, not `lucky.mana`."
+            "The error Python shows when a dot asks for something that isn't there. Read a dictionary with square "
+            "brackets, never a dot: `hero[\"mana\"]`, not `hero.mana`."
         ),
         example="AttributeError: 'dict' object has no attribute 'mana'",
     ),
@@ -522,8 +531,8 @@ GLOSSARY = [
         term=".get()",
         aliases=["get()"],
         plain=(
-            "Reads a key gently. `hero.get(\"glug\", 0)` gives the value, or 0 when the key is missing, with no "
-            "KeyError."
+            "Reads a key without stopping. `hero.get(\"glug\", 0)` gives the value, or 0 when the key is missing, "
+            "instead of a KeyError."
         ),
         example='hero.get("glug", 0)',
     ),
@@ -545,10 +554,10 @@ ROSTER_CODE = (
 REMEMBERS_4A = dict(
     kind="quiz",
     id="4a-remembers",
-    title="Mar'tu remembers…",
+    title="Quick review: 2 questions, not scored",
     optional=True,
     minutes=2,
-    summary="Two quick questions from Units 3 and 4. Nothing is scored.",
+    summary="Two questions from Units 3 and 4, before you start dictionaries. Nothing is scored.",
     notes=(
         "meta: path=CC; unscored warm-up shown inline before Lesson 4A. Q1 is the nested-list read from Unit 4's "
         "lists-inside-lists exercise (`roster[1][1]`, the stepping stone to sheets; distractor 18 is row 0, the "
@@ -566,8 +575,8 @@ REMEMBERS_4A = dict(
             choices=["Gearshift", "18", "['Gearshift', 20]", "20"],
             answer="20",
             explain=(
-                "`roster[1]` is row 1, counting from 0: `[\"Gearshift\", 20]`. Then `[1]` is item 1 of that row: "
-                "20. Outer number first, then inner."
+                "Read it like a theater ticket: the row first, then the seat. `roster[1]` is row 1, counting from "
+                "0: `[\"Gearshift\", 20]`. Then `[1]` is position 1 in that row: 20."
             ),
         ),
         dict(
@@ -578,9 +587,9 @@ REMEMBERS_4A = dict(
             choices=["9", "18", "total", "None"],
             answer="18",
             explain=(
-                "The call hands over 9, so `affinity` is 9 inside the recipe. `total` is 18, and `return` hands "
-                "18 back to the `print`. If the recipe had no `return`, nothing would come back, and `print` would "
-                "show `None`."
+                "The call hands over 9, so inside the recipe `affinity` is 9. `total` gets `9 * 2`, which is 18, "
+                "and `return` hands 18 back to the `print`. With no `return`, nothing would come back, and `print` "
+                "would show `None`."
             ),
         ),
     ],
@@ -606,10 +615,12 @@ WHICH_NUMBER = dict(
     id="which-number-is-which",
     title="Which number is which?",
     martu=(
-        "A list remembers order. It does not remember *meaning*.\n"
-        "Here is Lucky as a [[list]]: his name, his magical affinity, his max mana and his armor bonus, in that "
-        "order.\n"
-        "Print his armor bonus. Which position is it? Count from 0, yes?"
+        "A [[list]] remembers order. It doesn't remember *meaning*. In math class, a table of numbers with no "
+        "column headings is hard to read: is 26 an age or a score? `lucky = [\"Lucky\", 13, 26, 3]` is like that.\n"
+        "Line 3 keeps Lucky as a list: his name, his magical affinity (how strong his magic is), his max mana (the "
+        "most magic power he can hold) and his armor bonus, in that order. The notes on lines 1 and 2 say so.\n"
+        "Change the `print` to show his armor bonus. Which position is it? Positions count from 0, like a ruler, "
+        "yes?"
     ),
     example='drill = ["Run", 12, 9]\nprint(drill[2])\n',
     example_output="9",
@@ -619,56 +630,66 @@ WHICH_NUMBER = dict(
         choices=["13", "3", "26", "Lucky"],
         answer=2,
         explain=(
-            "Positions start at 0. The name is 0, 13 is 1, and 26 is 2: his max mana. Did you have to count? "
-            "That is the trouble with a list of numbers."
+            "Positions count from 0. The name is at 0, 13 is at 1, and 26 is at 2: his max mana. Did you have to "
+            "count? That's the trouble with a list of numbers."
         ),
     ),
     pair_talk=(
-        "Pair talk: each of you guesses the armor bonus's position before you run. Compare guesses, then each of "
-        "you checks on your own screen."
+        "Pair talk: each of you guesses the armor bonus's position before you press Run. Compare your guesses, "
+        "then each of you checks on your own screen."
     ),
     starter=WHICH_STARTER,
     checkpoints=[
         dict(
             id="print-the-armor",
-            text="Change the `print` so it shows Lucky's armor bonus, read from `lucky`.",
+            text=(
+                "On line 4, change the position in `print(lucky[2])` so the line shows Lucky's armor bonus. "
+                "Positions count from 0."
+            ),
             dictated=False,
             hints=[
-                "Count the positions in the list from 0: the name is 0. Which position is the armor bonus?",
-                "Positions start at 0. In `drill = [\"Run\", 12, 9]`, `drill[0]` is `\"Run\"` and `drill[2]` is 9.",
+                "Look at the notes on lines 1 and 2, then at the list on line 3. Count the items from 0: `\"Lucky\"` "
+                "is at position 0. At which position is the armor bonus?",
+                "Positions count from 0, like a ruler. In `drill = [\"Run\", 12, 9]`, `drill[0]` is `\"Run\"` and "
+                "`drill[2]` is 9, the third item.",
                 "Write `print(lucky[3])` in place of `print(lucky[2])`.",
             ],
             checks=[
                 now_check(
                     "the armor bonus shows",
                     ok="_ends_in(_ls, 3)",
-                    fix="Print the armor bonus, read from `lucky` with its position. Count from 0.",
+                    fix="No line shows the armor bonus yet. Read it from `lucky` by its position, counting from 0.",
                     rules=[
                         ("any(_l.startswith('[') for _l in _ls)",
-                         "That prints the whole list. Print one item: its position goes in square brackets after "
-                         "`lucky`."),
+                         "Your line shows the whole list. Show one item: put its position in square brackets right "
+                         "after `lucky`."),
                         ("_ends_in(_ls, 26)",
-                         "26 is at position 2: Lucky's max mana. The armor bonus is the next item along."),
+                         "Your line shows 26, at position 2: Lucky's max mana. The armor bonus is the next item."),
                         ("_ends_in(_ls, 13)",
-                         "13 is at position 1: his magical affinity. The armor bonus is the last item."),
+                         "Your line shows 13, at position 1: his magical affinity. The armor bonus is the last "
+                         "item."),
                         ("'Lucky' in _ls",
-                         "`Lucky` is at position 0: his name. The armor bonus is the last item. Count from 0."),
+                         "Your line shows `Lucky`, at position 0: his name. The armor bonus is the last item. Count "
+                         "from 0."),
                     ],
                 ),
                 follows(
                     "the armor bonus follows the list",
                     {"lucky": ["Pell", 11, 22, 5]},
-                    ev='another list, `["Pell", 11, 22, 5]`',
+                    ev='a test list, `["Pell", 11, 22, 5]`',
                     ok="_ends_in(_p, 5)",
-                    fix="Read the armor bonus from `lucky` with its position, so it follows the list.",
-                    said="'no line ended in its armor bonus, 5'",
+                    fix="Read the armor bonus from `lucky` by its position, so your line works for any list.",
+                    said="'no line ended with its armor bonus, 5'",
                     rules=[("lucky != ['Lucky', 13, 26, 3]",
-                            "Keep the list as the starter has it, `[\"Lucky\", 13, 26, 3]`, and change only the "
-                            "`print`: read the armor bonus by its position.")],
+                            "You changed the list on line 3. Put it back the way it was, `[\"Lucky\", 13, 26, 3]`, "
+                            "and change only the `print` line.")],
                     what="list",
                 ),
             ],
-            pass_line="Mar'tu: You had to remember that position 3 means armor. Python can remember for you.",
+            pass_line=(
+                "You found the armor bonus at position 3. Mar'tu: You had to remember that 3 means armor. Next, you "
+                "make Python remember it for you."
+            ),
         ),
     ],
     solution=_which(),
@@ -688,17 +709,17 @@ WHICH_NUMBER = dict(
         ),
         dict(
             angle="everyday",
-            label="Lockers with no tags",
+            label="Lockers with no name tags",
             text=(
-                "A row of lockers with no tags. You must remember that locker 3 holds the armor. Forget once, and "
-                "you grab the wrong thing."
+                "Picture a row of lockers with no name tags. You have to remember that locker 3 holds the armor. "
+                "Forget once, and you grab the wrong thing."
             ),
         ),
         dict(
             angle="in Tor",
             text=(
-                "My chalk wall is a good list: its order IS its meaning, oldest gap first. A hero's numbers have no "
-                "order like that. They have meanings."
+                "My chalk wall is a good list, because its order is its meaning: oldest gap first. A hero's numbers "
+                "aren't like that. Each one means something different."
             ),
         ),
         dict(angle="shorter", text="Count from 0: name 0, affinity 1, max mana 2, armor 3."),
@@ -708,18 +729,18 @@ WHICH_NUMBER = dict(
         part="mana-bars",
         snippet='filled = "█" * caster["mana"]',
         why=(
-            "In the mana bars you never wrote `caster[2]`. You wrote `caster[\"mana\"]`: a tag, not a position. "
-            "That is a dictionary. You make one next."
+            "You've seen this. In the mana bars, you never wrote `caster[2]`. You wrote `caster[\"mana\"]`: a tag, "
+            "not a position. That's a dictionary. You make one in the next exercise."
         ),
     ),
-    takeaway="A list keeps order, so you must remember what each position means: `lucky[3]` is the armor only because you counted.",
+    takeaway="A list keeps order, not meaning: `lucky[3]` is the armor bonus only because you counted to it.",
     wrong_answers=[
         dict(why="starter unchanged: position 2 is the max mana", code=WHICH_STARTER, fails_at=1,
              message_contains="max mana"),
         dict(why="counting from 1: position 4 does not exist", code=_which("print(lucky[4])"), fails_at=0,
              message_contains="list index out of range"),
         dict(why="the armor bonus typed by hand (CMB)", code=_which("print(3)"), fails_at=1,
-             message_contains="follows the list"),
+             message_contains="works for any list"),
         dict(why="position 1 (the affinity)", code=_which("print(lucky[1])"), fails_at=1, message_contains="affinity"),
         dict(why="position 0 (the name)", code=_which("print(lucky[0])"), fails_at=1, message_contains="position 0"),
         dict(why="the whole list printed (its last number is 3, but it is not one item)", code=_which("print(lucky)"),
@@ -731,9 +752,9 @@ WHICH_NUMBER = dict(
              message_contains="not callable"),
         dict(why="the list reordered so position 2 holds the 3 (the list changed to fit the read)",
              code=WHICH_HEAD.replace("13, 26, 3]", "13, 3, 26]") + "print(lucky[2])\n", fails_at=1,
-             message_contains="Keep the list as the starter has it"),
+             message_contains="Put it back the way it was"),
         dict(why="worked out from the list's length, not read (len(lucky) - 1 is 3 too)",
-             code=_which("print(len(lucky) - 1)"), fails_at=1, message_contains="follows the list"),
+             code=_which("print(len(lucky) - 1)"), fails_at=1, message_contains="works for any list"),
     ],
     notes=(
         meta(starter_level="S4", path="SC", skills="list-index", solo="false", dictates="", foreign_names="drill")
@@ -781,11 +802,14 @@ MAKE_A_SHEET = dict(
     id="make-a-sheet",
     title="Make a sheet",
     martu=(
-        "A [[dictionary]] keeps a tag on every value. Python calls the tag a [[key]]. Run the Example: Bomb "
-        "Shell's sheet.\n"
-        "Curly brackets hold the sheet. Each line inside is a key, a colon, its value, then a comma.\n"
-        "Wait: quotes on a name? A box's name never has quotes: `mana = 26`. A key is text inside the sheet, so it "
-        "does: `{\"mana\": 26}`. " + QUOTES_RULE + " " + BOX_NOTE + "\n"
+        "A [[dictionary]] keeps a tag on every value. Python calls the tag a [[key]]. It's like a textbook's "
+        "glossary: you look up a word, not entry number 3. In `{\"mana\": 26}`, the key `\"mana\"` holds 26. I "
+        "call a dictionary a *sheet*.\n"
+        "Curly braces `{ }` hold the sheet. Each line inside is a key in quotes, a colon, its value and a comma. "
+        "Read the Example: Bomb Shell's sheet. It prints 6.\n"
+        "Why do keys get quotes? A variable's name never has them: `mana = 26`. A key is text, so it does: "
+        "`\"mana\": 26`. "
+        + QUOTES_RULE + " " + BOX_NOTE + "\n"
         "Gearshift's sheet. Copy the keys exactly:\n"
         "```text\nGEARSHIFT\nname               Gearshift\nmagical_affinity   10\nmax_mana           20\n"
         "armor_bonus        3\n```"
@@ -801,8 +825,9 @@ MAKE_A_SHEET = dict(
         choices=["26", "mana", "ERROR: name 'mana' is not defined"],
         answer=2,
         explain=(
-            "No quotes means look inside the box with this label. There is no box called `mana`, only a key "
-            "inside `hero`, so Python stops: *not defined*. With quotes, `hero[\"mana\"]` reads the key: 26."
+            "No quotes means look inside the box with this label. There is no box (variable) called `mana`, only "
+            "a key inside `hero`, so Python stops with an error: *not defined*. With quotes, `hero[\"mana\"]` reads "
+            "the key: 26."
         ),
     ),
     pair_talk=(
@@ -814,27 +839,33 @@ MAKE_A_SHEET = dict(
         dict(
             id="four-keys",
             text=(
-                "Make `gearshift` with the keys `\"name\"`, `\"magical_affinity\"`, `\"max_mana\"` and "
-                "`\"armor_bonus\"`. Any value is fine for now, like 0."
+                "Between `gearshift = {` and `}`, write one line for each key in the notes, shaped like the Example's "
+                "`\"dexterity\": 6,`: `\"name\"`, `\"magical_affinity\"`, `\"max_mana\"` and `\"armor_bonus\"`. Any "
+                "value is fine for now, like 0."
             ),
             dictated=False,
             hints=[
-                "Each line inside the curly brackets is a key in quotes, a colon, a value, then a comma. Copy each "
-                "key from the comment, letter for letter.",
-                "In the Example, `\"dexterity\": 6,` is one line: the key in quotes, `:`, the value, a comma.",
+                "Look at the notes on lines 2 and 3: they list the four keys. Each key gets its own line between `{` "
+                "and `}`. What goes between a key and its value?",
+                "In the Example, `\"dexterity\": 6,` is one line. It has the key in quotes, a colon, the value, then "
+                "a comma.",
                 "Write one line for each key, like `\"max_mana\": 0,`, under `gearshift = {`.",
             ],
             checks=[sheet_keys("gearshift has the four keys", "gearshift", SHEET_KEYS, foreign=["bomb_shell"])],
         ),
         dict(
             id="fill-the-values",
-            text="Fill in Gearshift's values from his sheet: his name as text, then three numbers.",
+            text=(
+                "Change each value to Gearshift's own, from the GEARSHIFT table at the end of Mar'tu's words. His "
+                "name goes in quotes. The three numbers get no quotes."
+            ),
             dictated=False,
             hints=[
-                "Look at Gearshift's sheet in the Learn pane. Text goes in quotes. Numbers have no quotes.",
+                "Look at Gearshift's sheet in Mar'tu's words. Which value goes with each key? Text goes in quotes. "
+                "Numbers get no quotes.",
                 "`\"dexterity\": 6,` holds a number, with no quotes. `\"name\": \"Bomb Shell\",` holds text, in quotes.",
                 "Write `\"name\": \"Gearshift\",` first, then `\"magical_affinity\": 10,`, `\"max_mana\": 20,` and "
-                "`\"armor_bonus\": 3,`.",
+                "`\"armor_bonus\": 3,`, one on each line.",
             ],
             checks=[
                 sheet_values(
@@ -843,7 +874,7 @@ MAKE_A_SHEET = dict(
                     "Gearshift's",
                 ),
             ],
-            pass_line="Gearshift: Visor dims. Sheet logged.",
+            pass_line="Your sheet holds Gearshift's four values. Gearshift: Visor dims. Sheet logged.",
         ),
     ],
     solution=SHEET_SOLUTION,
@@ -856,7 +887,7 @@ MAKE_A_SHEET = dict(
     another_way=[
         dict(
             angle="why",
-            label="Wait, quotes on names?",
+            label="Why do keys get quotes?",
             text=(
                 "A box's name (a variable) never has quotes: `mana = 26`. A key inside a dictionary is a piece of "
                 "text, so it does: `{\"mana\": 26}`.\n" + QUOTES_RULE + " " + BOX_NOTE
@@ -875,8 +906,8 @@ MAKE_A_SHEET = dict(
             angle="everyday",
             label="A stat sheet",
             text=(
-                "A stat sheet names every line: *armor bonus: 3*. You find a line by its name, not its number. A "
-                "dictionary works the same way."
+                "A stat sheet names every line: *armor bonus: 3*. You find a line by its name, not by counting "
+                "lines. A dictionary works the same way."
             ),
         ),
         dict(
@@ -897,8 +928,18 @@ MAKE_A_SHEET = dict(
         dict(
             angle="from the campaign",
             text=(
-                "In the spell book part, `spell = {...}` held three keys: `\"mana_cost\"`, `\"required_affinity\"` "
-                "and `\"spell_function\"`. Each key had quotes, a colon and a value. That was a dictionary."
+                "You've seen this. In the spell book part, `spell = {...}` held three keys: `\"mana_cost\"`, "
+                "`\"required_affinity\"` and `\"spell_function\"`. Each key had quotes, a colon and a value. That "
+                "was a dictionary."
+            ),
+        ),
+        dict(
+            angle="math class",
+            label="From math class",
+            text=(
+                "In math class, an input–output table has two columns. Each input appears once. A dictionary is like "
+                "that: the keys are the left column, and the values are the right column.\n"
+                "```text\nkey          value\n\"name\"       \"Gearshift\"\n\"max_mana\"   20\n```"
             ),
         ),
     ],
@@ -906,14 +947,18 @@ MAKE_A_SHEET = dict(
         by="lucky",
         title="Let the recipe do it",
         text=(
-            "What's in it for me? Less math. Above the sheet, write Unit 3's recipe `max_mana_for(affinity)`: it "
-            "hands back twice the affinity. Then put `max_mana_for(10)` in the sheet in place of the 20."
+            "Two moves:\n"
+            "1. Above `gearshift = {`, write Unit 3's recipe `max_mana_for(affinity)`. It hands back twice the "
+            "affinity.\n"
+            "2. In the sheet, put `max_mana_for(10)` in place of the 20.\n"
+            "What's in it for me? Less math."
         ),
         hints=[
-            "A recipe call can sit where a value goes. Python works it out first, then stores what it hands back.",
-            "`def double(n):` with `return n * 2` indented under it hands back twice whatever comes in.",
-            "Write `def max_mana_for(affinity):` with `return affinity * 2` under it, above the sheet. Then change "
-            "the max mana line to `\"max_mana\": max_mana_for(10),`.",
+            "Look at the `\"max_mana\"` line in the sheet. A recipe call can go where a value goes: Python works out "
+            "the call first, then keeps what it hands back.",
+            "Look at `def double(n):` with `return n * 2` indented under it. It hands back twice what comes in.",
+            "Write `def max_mana_for(affinity):` with `return affinity * 2` indented under it, above the sheet. Then "
+            "change the max mana line to `\"max_mana\": max_mana_for(10),`.",
         ],
         checks=[
             (
@@ -923,17 +968,17 @@ MAKE_A_SHEET = dict(
 _defs = [_n.name for _n in _ast.walk(_tree) if type(_n).__name__ == 'FunctionDef']
 _f = _g.get('max_mana_for')
 _close = [_d for _d in _defs if _d != 'max_mana_for' and _near(_d, 'max_mana_for')]
-assert callable(_f) or not _close, ('Python matches names letter for letter: you wrote `' + (_close[0] if _close
-                                    else '') + '`, the task needs `max_mana_for`.')
-assert callable(_f), ('Write the recipe above the sheet first: `def max_mana_for(affinity):`, with '
-                      '`return affinity * 2` indented under it.')
+assert callable(_f) or not _close, ('You wrote `' + (_close[0] if _close else '') + '`, but the task needs '
+                                    '`max_mana_for`. Python matches names letter for letter.')
+assert callable(_f), ("Python can't find the recipe `max_mana_for` yet. Write it above the sheet: "
+                      '`def max_mana_for(affinity):`, with `return affinity * 2` indented under it.')
 _keep = _sys.stdout
 _sys.stdout = _io.StringIO()
 try:
     _twice = _try(lambda: _f(7) == 14)
 finally:
     _sys.stdout = _keep
-assert _twice, 'The recipe should hand back twice the affinity: end it with `return affinity * 2`.'
+assert _twice, "Your recipe doesn't hand back twice the affinity. End it with `return affinity * 2`."
 _calls = []
 for _n in _tree.body:
     if (type(_n).__name__ == 'Assign' and getattr(_n.targets[0], 'id', '') == 'gearshift'
@@ -942,8 +987,9 @@ for _n in _tree.body:
             if (type(_k).__name__ == 'Constant' and _k.value == 'max_mana' and type(_x).__name__ == 'Call'
                     and getattr(_x.func, 'id', '') == 'max_mana_for'):
                 _calls.append(_x)
-assert _calls, 'Set `"max_mana"` with the recipe: write `max_mana_for(10)` where the 20 is.'
-assert gearshift.get('max_mana') == 20, "Hand the recipe Gearshift's magical affinity, 10."
+assert _calls, "The `\"max_mana\"` line doesn't call the recipe yet. Write `max_mana_for(10)` in place of the 20."
+assert gearshift.get('max_mana') == 20, ("The max mana comes out wrong. Hand the recipe Gearshift's magical "
+                                         "affinity, 10: `max_mana_for(10)`.")
 ''',
             ),
         ],
@@ -954,11 +1000,14 @@ assert gearshift.get('max_mana') == 20, "Hand the recipe Gearshift's magical aff
         part="spell-book",
         snippet='spell = {\n    "mana_cost": 0,\n    "required_affinity": 0,\n}',
         why=(
-            "You filled in a dictionary like this in the spell book part. Every key had quotes, a colon and a "
-            "value. Now you know why the keys had quotes."
+            "You've seen this. In the spell book part, you filled in a dictionary like this one. Every key had "
+            "quotes, a colon and a value. Now you know why the keys had quotes."
         ),
     ),
-    takeaway="A dictionary is `{ }` holding `\"key\": value` lines with commas. Keys are text, so they have quotes.",
+    takeaway=(
+        "A dictionary is curly braces `{ }` around `\"key\": value` lines, with commas. Keys are text, so they get "
+        "quotes."
+    ),
     wrong_answers=[
         dict(why="starter unchanged (the empty sheet)", code=SHEET_STARTER, fails_at=1, message_contains="empty"),
         dict(why="a key with no quotes (G1 R6: box names have no quotes, keys do)",
@@ -1070,16 +1119,20 @@ def _read(line=READ_LINE):
 
 
 OTHER_SHEET = {"name": "Pell", "mana": 7, "max_mana": 31}
-OTHER_EV = 'another sheet, name `"Pell"`, mana 7 and max mana 31'
+OTHER_EV = 'a test sheet that has name `"Pell"`, mana 7 and max mana 31'
 
 READ_BY_KEY = dict(
     id="read-by-key",
     title="Read by key",
     martu=(
-        "To read a value, write the sheet's name, then the key in square brackets: `gearshift[\"mana\"]`. Python "
-        "finds the key and hands you its value.\n"
-        "The brackets look like a list's. Inside, a list wants a position. A dictionary wants a key.\n"
-        "Then let the code build the line, the way you did in Unit 1."
+        "To read a value, write the sheet's name, then the key in square brackets: `gearshift[\"mana\"]`. It's "
+        "like looking up a word in a glossary: Python finds the key and hands you its value, 20. Read it as "
+        "*gearshift, look up mana*.\n"
+        "The square brackets look like a list's. But a list wants a position number inside them, like "
+        "`lucky[3]`. A dictionary wants a key, in quotes.\n"
+        "Line 9 has `Gearshift: 20 mana` typed in. Build that line from the sheet instead. Glue the pieces with "
+        "`+`, as in Unit 1, and turn the number into text with `str()`. Then the line changes to match the sheet "
+        "each time you press Run."
     ),
     example='bomb_shell = {"mana": 24}\nmana_now = bomb_shell["mana"]\nprint("Mana: " + str(mana_now))\n',
     example_output="Mana: 24",
@@ -1097,12 +1150,16 @@ READ_BY_KEY = dict(
     checkpoints=[
         dict(
             id="build-the-line",
-            text="Change the last line so `Gearshift: 20 mana` is built from `gearshift`, with `+` and `str()`.",
+            text=(
+                "Change line 9 so it builds `Gearshift: 20 mana` from `gearshift`. Glue four pieces with `+`: the "
+                "name by its key, the text `\": \"`, the mana by its key inside `str()`, then the text `\" mana\"`."
+            ),
             dictated=False,
             hints=[
-                "Read two keys: `\"name\"` and `\"mana\"`. The mana is a number, so it needs `str()` before it is "
-                "glued to text.",
-                "`shell[\"name\"] + \" has \" + str(shell[\"ore\"])` glues text, text, and a number turned into text.",
+                "Look at line 9: every part of `Gearshift: 20 mana` is typed in. Which two parts can you read from "
+                "the sheet, and with which keys?",
+                "`shell[\"name\"] + \" has \" + str(shell[\"ore\"])` glues three pieces: a name read from the sheet, "
+                "the text ` has `, and a number turned into text. `+` can glue a number only after `str()`.",
                 "Glue four pieces with `+`: `gearshift[\"name\"]`, `\": \"`, `str(gearshift[\"mana\"])` and "
                 "`\" mana\"`. Or work in two steps, like the Example: `now = gearshift[\"mana\"]` first, then glue "
                 "`str(now)`.",
@@ -1114,31 +1171,33 @@ READ_BY_KEY = dict(
                     "the keys are read, not printed",
                     ok="'Gearshift: 20 mana' in _ls or not any(_l.split(':')[0].strip() == 'name' "
                        "or _l.endswith('mana mana') for _l in _ls)",
-                    fix="`\"name\"` on its own is only the text *name*. To read what the sheet holds, put the key "
-                        "after the sheet: `gearshift[\"name\"]`.",
+                    fix="Your line shows the word name. `\"name\"` on its own is only the text *name*. To read what "
+                        "the sheet holds, put the key after the sheet: `gearshift[\"name\"]`.",
                     rules=[("any(_l.endswith('mana mana') for _l in _ls)",
-                            "`\"mana\"` on its own is only the text *mana*. To read his mana, put the key after the "
-                            "sheet: `gearshift[\"mana\"]`.")],
+                            "Your line shows the word mana twice. `\"mana\"` on its own is only the text *mana*. To "
+                            "read his mana, put the key after the sheet: `gearshift[\"mana\"]`.")],
                 ),
                 out_line("the line reads Gearshift: 20 mana", "Gearshift: 20 mana",
-                         "Print the line `Gearshift: 20 mana`: the name, a colon and a space, the mana, a space, then "
-                         "`mana`.", comma_line="Gearshift : 20 mana"),
+                         "No line shows `Gearshift: 20 mana` yet. Glue the name, a colon and a space, the mana, then "
+                         "a space and `mana`.", comma_line="Gearshift : 20 mana"),
                 follows(
                     "the line follows the sheet",
                     {"gearshift": OTHER_SHEET},
                     ev=OTHER_EV,
                     ok="'Pell: 7 mana' in _p",
-                    fix="Build the line from `gearshift`, so it follows the sheet.",
+                    fix="Build the whole line from `gearshift`, so it works for any sheet.",
                     said="'the line should show `Pell: 7 mana`'",
                     rules=[
                         ("'Pell: 31 mana' in _p",
-                         "That reads `\"max_mana\"`. This line wants `\"mana\"`: what he has now."),
-                        ("'Gearshift: 7 mana' in _p", "Read the name from the sheet too: `gearshift[\"name\"]`."),
-                        ("'Pell: 20 mana' in _p", "Read the mana from the sheet too: `gearshift[\"mana\"]`."),
+                         "Your line reads `\"max_mana\"`. This line wants `\"mana\"`: the mana he has now."),
+                        ("'Gearshift: 7 mana' in _p",
+                         "Your line has the name typed in. Read the name from the sheet too: `gearshift[\"name\"]`."),
+                        ("'Pell: 20 mana' in _p",
+                         "Your line has the mana typed in. Read the mana from the sheet too: `gearshift[\"mana\"]`."),
                     ],
                 ),
             ],
-            pass_line="Gearshift: Math checks out. Sheet reads true.",
+            pass_line="Your line is built from the sheet. Gearshift: Math checks out. Sheet reads true.",
         ),
     ],
     solution=_read(),
@@ -1168,8 +1227,8 @@ READ_BY_KEY = dict(
         dict(
             angle="everyday",
             text=(
-                "Reading a key is like finding *armor bonus* on a stat sheet and reading across. You look for the "
-                "key, not the line number."
+                "Reading a key is like finding *armor bonus* on a stat sheet and reading across to its number. You "
+                "look for the key, not the line number."
             ),
         ),
         dict(angle="shorter", text="The sheet's name, then the key in square brackets: `gearshift[\"name\"]`."),
@@ -1178,24 +1237,25 @@ READ_BY_KEY = dict(
         by="gearshift",
         title="The full gauge",
         text=(
-            "Gearshift wants the full gauge. On a new line, print `Gearshift: 20/20 mana`, built from `\"mana\"` and "
-            "`\"max_mana\"`."
+            "On a new line at the bottom, show `Gearshift: 20/20 mana`, built from the keys `\"name\"`, `\"mana\"` "
+            "and `\"max_mana\"`. Gearshift wants the full gauge."
         ),
         hints=[
-            "Two numbers, so two `str()` calls, with `\"/\"` glued between them.",
+            "Two numbers, so two `str()` calls, with the text `\"/\"` glued between them.",
             "`str(have) + \"/\" + str(most)` glues two numbers with a `/` between them.",
             "Write `print(gearshift[\"name\"] + \": \" + str(gearshift[\"mana\"]) + \"/\" + "
             "str(gearshift[\"max_mana\"]) + \" mana\")`.",
         ],
         checks=[
             out_line("the gauge line reads Gearshift: 20/20 mana", "Gearshift: 20/20 mana",
-                     "Print `Gearshift: 20/20 mana`: the mana, then `/`, then the max mana."),
+                     "No line shows `Gearshift: 20/20 mana` yet. Glue the name, `: `, the mana, `/`, the max mana, "
+                     "then ` mana`."),
             follows(
                 "the gauge follows the sheet",
                 {"gearshift": OTHER_SHEET},
                 ev=OTHER_EV,
                 ok="'Pell: 7/31 mana' in _p",
-                fix="Build the gauge from the sheet's keys, so it follows the sheet.",
+                fix="Build the gauge from the sheet's keys, so it works for any sheet.",
                 said="'the gauge should show `Pell: 7/31 mana`'",
             ),
         ],
@@ -1206,8 +1266,8 @@ READ_BY_KEY = dict(
         part="mana-bars",
         snippet='str(caster["mana"]) + "/" + str(caster["max_mana"])',
         why=(
-            "The mana bar's last part read two keys and glued them with `str()`, the same as your line. `caster` "
-            "was a sheet like `gearshift`."
+            "You've seen this. The end of the mana bar read two keys and glued them with `str()`, the same as your "
+            "line. `caster` was a sheet like `gearshift`."
         ),
     ),
     takeaway="Read a value with its key: `gearshift[\"mana\"]`. Glue a number to text with `str()`.",
@@ -1288,38 +1348,45 @@ def _keys(first='print(gearshift["max_mana"])', second='used = gearshift["max_ma
 
 KEYS_STARTER = _keys('print(gearshift["Max_Mana"])', 'used = gearshift["max mana"] - gearshift["mana"]')
 KEYS_OTHER = {"name": "Pell", "mana": 7, "max_mana": 31}
-KEYS_EV = "another sheet, mana 7 and max mana 31"
+KEYS_EV = "a test sheet that has mana 7 and max mana 31"
 
 KEYS_KEPT = (
     "_v = _g.get('gearshift')\n"
     "assert type(_v).__name__ == 'dict', _gone('gearshift')\n"
     "_odd = [_k for _k in _v if _k not in ('name', 'mana', 'max_mana')]\n"
-    "assert 'max_mana' in _v and not _odd, ('Mend the lines that read the sheet, not the sheet. The sheet spells "
-    "the key `\"max_mana\"`: keep it as it is.')\n"
-    "assert _lit_key('gearshift', 'mana') == 14 and _lit_key('gearshift', 'max_mana') == 20, ('Keep the sheet as it "
-    "is, with `\"mana\": 14` and `\"max_mana\": 20`. Mend only the lines that read it.')\n"
+    "assert 'max_mana' in _v and not _odd, ('You changed the keys in the sheet. Fix the lines that read the sheet, "
+    "not the sheet: keep the key `\"max_mana\"` the way it was.')\n"
+    "assert _lit_key('gearshift', 'mana') == 14 and _lit_key('gearshift', 'max_mana') == 20, ('You changed a number "
+    "in the sheet. Keep the sheet as it is, with `\"mana\": 14` and `\"max_mana\": 20`, and fix only the lines that "
+    "read it.')\n"
 )
 
 KEY_ERRORS = dict(
     id="key-errors",
     title="Key errors",
     martu=(
-        "A [[KeyError]] means the sheet has no key spelled exactly like that. Capitals count. Spaces count. "
-        "`\"Max_Mana\"` and `\"max_mana\"` are two different keys to Python.\n"
-        "Read the last line of the message. It names the key Python could not find. Then look at how the sheet "
-        "spells it. Python shows keys in `'` marks, like `KeyError: 'Max_Mana'`. Same text."
+        "A [[KeyError]] means the sheet has no key spelled exactly like the one you asked for. It's like a "
+        "password: one wrong capital, and it doesn't work. Capitals count, and so do spaces: `\"Max_Mana\"` and "
+        "`\"max_mana\"` are two different keys to Python.\n"
+        "When Python stops, read the box in the Console, in this order:\n"
+        "1. Read its title. It says what went wrong.\n"
+        "2. Read *Python's last line*. It names the key Python couldn't find, like `KeyError: 'Max_Mana'`. "
+        "Python shows the key in `'` marks instead of `\"`. Same text.\n"
+        "3. Find the line number. Fix that line: spell the key the way the sheet does."
     ),
     names=["gearshift", "used"],
-    pair_talk="Pair talk: tell your partner which key each message names, and how the sheet spells it.",
+    pair_talk="Pair talk: tell your partner which key each error box names, and how the sheet spells it.",
     starter=KEYS_STARTER,
     checkpoints=[
         dict(
             id="mend-max-mana",
-            text="Mend line 6 so it prints Gearshift's max mana, read with the key the sheet really has.",
+            text="Fix line 6 so it shows Gearshift's max mana. Use the key exactly as the sheet spells it on line 4.",
             dictated=False,
             hints=[
-                "Read Python's last line first. Which key does it name?",
-                "Python says `KeyError: 'Max_Mana'`. Now look at the sheet: how does it spell that key?",
+                "Read the box in the Console: first its title, then Python's last line, `KeyError: 'Max_Mana'`. "
+                "Which key does it name?",
+                "Now look at line 4, inside the sheet. How does the sheet spell that key? Compare it with line 6, "
+                "letter by letter.",
                 "A key must match letter for letter. With `{\"dexterity\": 6}`, `[\"Dexterity\"]` is a KeyError and "
                 "`[\"dexterity\"]` works.",
                 "Write `print(gearshift[\"max_mana\"])` in place of `print(gearshift[\"Max_Mana\"])`.",
@@ -1329,28 +1396,31 @@ KEY_ERRORS = dict(
                 now_check(
                     "the max mana shows",
                     ok="_ends_in(_ls, 20)",
-                    fix="Keep line 6 printing the max mana, and mend only its key.",
+                    fix="No line shows the max mana. Keep line 6 printing it, and fix only its key.",
                     rules=[("_ends_in(_ls, 14)",
-                            "14 is his `\"mana\"`, what he has now. Line 6 wants his max mana.")],
+                            "Line 6 shows 14, his `\"mana\"`: what he has now. Line 6 wants his max mana.")],
                 ),
                 follows(
                     "the max mana follows the sheet",
                     {"gearshift": KEYS_OTHER},
                     ev=KEYS_EV,
                     ok="_ends_in(_p, 31)",
-                    fix="Read the max mana from the sheet with its key, so line 6 follows the sheet.",
+                    fix="Read the max mana from the sheet with its key, so line 6 works for any sheet.",
                     said="'no line showed its max mana, 31'",
                 ),
             ],
         ),
         dict(
             id="mend-mana-used",
-            text="Mend the next `KeyError`, on line 7.",
+            text="Fix the next `KeyError`, on line 7. Spell the key the way the sheet does on line 4.",
             dictated=False,
             hints=[
-                "Read Python's last line first. Which key does it name now?",
-                "`'max mana'` has a space in it. What does the sheet's key have between the two words?",
-                "In `{\"armor_bonus\": 3}`, the key has `_`, so `[\"armor bonus\"]` is a KeyError.",
+                "Press Run again and read the new box: first its title, then Python's last line, "
+                "`KeyError: 'max mana'`. Which key does it name now?",
+                "`'max mana'` has a space in it. Look at line 4: what does the sheet's key have between the two "
+                "words?",
+                "In `{\"armor_bonus\": 3}`, the key has `_` (the underscore), so `[\"armor bonus\"]`, with a space, "
+                "is a KeyError.",
                 "Write `used = gearshift[\"max_mana\"] - gearshift[\"mana\"]` in place of "
                 "`used = gearshift[\"max mana\"] - gearshift[\"mana\"]`.",
             ],
@@ -1358,10 +1428,12 @@ KEY_ERRORS = dict(
                 now_check(
                     "the mana used shows",
                     ok="'Used: 6' in _ls",
-                    fix="Keep the last two lines, and mend the key on line 7 so `used` is worked out from the sheet.",
+                    fix="No line shows `Used: 6` yet. Fix the key on line 7 so Python works out `used` from the "
+                        "sheet, and keep line 8 as it is.",
                     rules=[
-                        ("'Used: -6' in _ls", "That is the wrong way round: the max mana comes first, then `-`, then the mana."),
-                        ("'Used: 0' in _ls", "That reads `\"mana\"` twice. The first key should be the max mana."),
+                        ("'Used: -6' in _ls",
+                         "Line 7 subtracts the wrong way round. The max mana comes first, then `-`, then the mana."),
+                        ("'Used: 0' in _ls", "Line 7 reads `\"mana\"` twice. The first key should be the max mana."),
                     ],
                 ),
                 follows(
@@ -1369,20 +1441,24 @@ KEY_ERRORS = dict(
                     {"gearshift": KEYS_OTHER},
                     ev=KEYS_EV,
                     ok="'Used: 24' in _p",
-                    fix="Work out `used` from the sheet's two keys, so it follows the sheet.",
+                    fix="Work out `used` from the sheet's two keys, so it works for any sheet.",
                     said="'the line should show `Used: 24`'",
                     rules=[
                         ("'Used: 6' in _p and 'str(used)' not in _source.replace(' ', '')",
-                         "Keep the last line as it was, `print(\"Used: \" + str(used))`, so it shows whatever `used` "
-                         "holds. That line is typed by hand now."),
-                        ("'Used: 6' in _p", "Work out `used` from the sheet's two keys, not a number you typed."),
-                        ("'Used: 13' in _p", "Read the max mana from the sheet too, not a number you typed."),
+                         "Your last line has `Used: 6` typed in. Put it back the way it was, "
+                         "`print(\"Used: \" + str(used))`, so it shows whatever `used` holds."),
+                        ("'Used: 6' in _p",
+                         "You typed the answer, 6, instead of the math. Work out `used` from the sheet's two keys."),
+                        ("'Used: 13' in _p",
+                         "Line 7 has the max mana typed in. Read the max mana from the sheet too: "
+                         "`gearshift[\"max_mana\"]`."),
                         # 31 - 14: the mana typed by hand.
-                        ("'Used: 17' in _p", "Read the mana from the sheet too, not a number you typed."),
+                        ("'Used: 17' in _p",
+                         "Line 7 has the mana typed in. Read the mana from the sheet too: `gearshift[\"mana\"]`."),
                     ],
                 ),
             ],
-            pass_line="Mar'tu: Two keys, spelled exactly. That is all a KeyError ever asks.",
+            pass_line="Both keys now match the sheet. Mar'tu: Spell the key exactly. That's all a KeyError ever asks.",
         ),
     ],
     solution=_keys(),
@@ -1398,7 +1474,7 @@ KEY_ERRORS = dict(
             text=(
                 "1. Python takes the key you wrote, letter by letter.\n"
                 "2. It looks for a key in the sheet spelled exactly the same.\n"
-                "3. None? It stops with `KeyError` and the key you wrote."
+                "3. If there is none, it stops with a `KeyError` and shows the key you wrote."
             ),
         ),
         dict(
@@ -1412,8 +1488,8 @@ KEY_ERRORS = dict(
         dict(
             angle="everyday",
             text=(
-                "A locker tagged *Max_Mana* and a locker tagged *max_mana* are two lockers. Ask for the wrong "
-                "one and nobody is home."
+                "A locker tagged *Max_Mana* and a locker tagged *max_mana* are two different lockers. Ask for one "
+                "that isn't there, and you get nothing but an error."
             ),
         ),
         dict(angle="shorter", text="KeyError: no key spelled exactly like that. Copy the key from the sheet."),
@@ -1423,8 +1499,8 @@ KEY_ERRORS = dict(
         part="mana-bars",
         snippet='caster["max_mana"] - caster["mana"]',
         why=(
-            "This line from the mana bars worked out the mana used. It spelled both keys exactly as the sheet did. "
-            "One capital off, and it was a KeyError."
+            "You've seen this. This line from the mana bars worked out the mana used. It spelled both keys exactly "
+            "as the sheet did. One capital off, and it would have been a KeyError."
         ),
     ),
     takeaway="A KeyError means no key spelled exactly like that: copy the key from the sheet, capitals and `_` too.",
@@ -1456,7 +1532,7 @@ KEY_ERRORS = dict(
              code=_keys(second='used = gearshift["max_mana"] - 14'), fails_at=2, message_contains="mana from the sheet"),
         dict(why="the Used line typed by hand (used is worked out, but the print is not built from it)",
              code=_keys().replace('print("Used: " + str(used))', 'print("Used: 6")'), fails_at=2,
-             message_contains="typed by hand"),
+             message_contains="has `Used: 6` typed in"),
         dict(why="the sheet's mana changed to fit (mana 20), then the reads work but the answer is 0",
              code=_keys(head=KEYS_HEAD.replace('"mana": 14,', '"mana": 20,')), fails_at=1,
              message_contains="Keep the sheet as it is"),
@@ -1471,7 +1547,7 @@ KEY_ERRORS = dict(
         "`\"max mana\"` (a space for `_`). The KeyError row: 'The dictionary has no key spelled exactly ...' "
         "(site request: the spec's row, which also says 'or whether it lives one level deeper', for 4B). Each "
         "check is CMB with another sheet, so typing 20 or 6 fails, and a sheet changed to fit the slip fails "
-        "('Mend the lines that read the sheet, not the sheet'; its values must stay 14 and 20 too). A typed "
+        "('Fix the lines that read the sheet, not the sheet'; its values must stay 14 and 20 too). A typed "
         "`Used:` line and the mana typed into line 7 (31 - 14 = 17 in the rerun) get their own messages. Line 7 is "
         "the mana-bars subtraction (mana used). "
         "No partials: a crash fails every checkpoint on the site."
@@ -1505,12 +1581,13 @@ WRITE_STARTER = _write(cast="", fuel="")
 _SPENT = r'''
 _v = _g.get('gearshift')
 assert type(_v).__name__ == 'dict', _gone('gearshift')
-assert 'mana' in _v, ('`gearshift` has no key `"mana"` now. Keep the starter' + "'" + 's sheet, and change one key at '
-                      'a time: `gearshift["mana"] = ...`.')
+assert 'mana' in _v, ('`gearshift` has no key `"mana"` now. Keep the sheet that was there at the start, and change '
+                      'the mana with a `gearshift["mana"] = ...` line.')
 _start = _lit_key('gearshift', 'mana')
 _cost = _g.get('fire_bolt_cost')
-assert type(_start).__name__ == 'int', 'Keep the sheet' + "'" + 's `"mana": 20` line as a number.'
-assert type(_cost).__name__ == 'int', 'Keep `fire_bolt_cost = 6` from the starter, as a number.'
+assert type(_start).__name__ == 'int', ('The sheet' + "'" + 's `"mana": 20` line no longer holds a number. Put it '
+                                        'back the way it was.')
+assert type(_cost).__name__ == 'int', '`fire_bolt_cost = 6` is gone or no longer a number. Put it back the way it was.'
 _want = _start - _cost
 _m = _v['mana']
 _close = [_k for _k in _v if _k != 'mana' and _near(_k, 'mana')]
@@ -1520,24 +1597,25 @@ _boxes = [_t.id for _n in _tree.body if type(_n).__name__ == 'Assign' for _t in 
 _msg = ''
 if _m == _start:
     if _close:
-        _msg = ('`gearshift` has a new key `' + _show(_close[0]) + '`. The sheet' + "'" + 's key is `"mana"`: Python '
+        _msg = ('Your line made a new key, `' + _show(_close[0]) + '`. The sheet' + "'" + 's key is `"mana"`: Python '
                 'matches keys letter for letter.')
     elif _bare:
-        _msg = ('Line ' + str(_bare[0]) + ' works out the new mana but keeps it nowhere. Put `gearshift["mana"] = ` '
-                'in front of it.')
+        _msg = ('Line ' + str(_bare[0]) + ' works out the new mana but keeps it nowhere, so Python throws it away. '
+                'Put `gearshift["mana"] = ` in front of it.')
     elif _boxes:
         _msg = ('Your new variable `' + _boxes[0] + '` holds the new mana, but `gearshift["mana"]` still holds '
-                + str(_start) + '. Put it in the sheet: `gearshift["mana"] = ...`.')
+                + str(_start) + '. Store it in the sheet instead: start the line with `gearshift["mana"] = `.')
     else:
-        _msg = ('`gearshift["mana"]` still holds ' + str(_start) + '. Under comment 1, spend the cost: '
+        _msg = ('`gearshift["mana"]` still holds ' + str(_start) + '. Under `# 1.`, write '
                 '`gearshift["mana"] = gearshift["mana"] - fire_bolt_cost`.')
 elif _m == -_want:
-    _msg = 'That takes the mana away from the cost. Start from the old mana: `gearshift["mana"] - fire_bolt_cost`.'
+    _msg = ('Your line takes the mana away from the cost: the wrong way round. Start from the old mana: '
+            '`gearshift["mana"] - fire_bolt_cost`.')
 elif _m in (_cost, -_cost):
-    _msg = ('`gearshift["mana"]` holds just the cost now. Start the right side from the old mana: '
+    _msg = ('`gearshift["mana"]` holds only the cost now. Start the right side of `=` with the old mana: '
             '`gearshift["mana"] - fire_bolt_cost`.')
 elif _m == _start + _cost:
-    _msg = 'That adds the cost. Casting spends mana: use `-`.'
+    _msg = 'Your line adds the cost. Casting a spell spends mana, so use `-`.'
 elif _m != _want:
     _msg = ('`gearshift["mana"]` holds ' + str(_m) + '. After one Fire Bolt it should hold ' + str(_want)
             + ': the old mana minus `fire_bolt_cost`, once.')
@@ -1551,17 +1629,18 @@ _close = [_k for _k in _v if _near(_k, 'fuel')]
 _msg = ''
 if 'fuel' not in _v:
     if _close:
-        _msg = '`gearshift` has a key `' + _show(_close[0]) + '`. The task spells it `"fuel"`: Python matches keys letter for letter.'
+        _msg = ('`gearshift` has a key `' + _show(_close[0]) + '`, but the task spells it `"fuel"`. Python matches '
+                'keys letter for letter.')
     elif 'fuel' in _g:
-        _msg = ('Your new variable `fuel` holds the fuel, but `gearshift` has no key `"fuel"`. Put it in the sheet: '
-                '`gearshift["fuel"] = ...`.')
+        _msg = ('Your new variable `fuel` holds the fuel, but `gearshift` has no key `"fuel"`. Store it in the sheet '
+                'instead: start the line with `gearshift["fuel"] = `.')
     else:
-        _msg = ('Under comment 2, add the key `"fuel"` to `gearshift`: the key in square brackets on the left of '
-                '`=`, its text on the right.')
+        _msg = ('`gearshift` has no key `"fuel"` yet. Under `# 2.`, add the key: put it in square brackets on the '
+                'left of `=`, and its text on the right.')
 elif type(_v['fuel']).__name__ != 'str' or not _v['fuel'].strip():
-    _msg = '`gearshift["fuel"]` should hold text, in quotes: the name of his fuel.'
+    _msg = '`gearshift["fuel"]` does not hold text. Put the name of his fuel in quotes.'
 elif not all(_k in _v for _k in ('name', 'mana', 'max_mana')):
-    _msg = ('Keep the rest of the sheet. One new line, `gearshift["fuel"] = ...`, adds a key and keeps every '
+    _msg = ('Your sheet lost some of its keys. One new line, `gearshift["fuel"] = ...`, adds a key and keeps every '
             'other key.')
 assert not _msg, _msg
 '''
@@ -1582,11 +1661,13 @@ WRITE_BY_KEY = dict(
     id="write-by-key",
     title="Write by key",
     martu=(
-        "A sheet can change. Put the key on the left of `=`, and that key gets a new value.\n"
-        "`gearshift[\"mana\"] = gearshift[\"mana\"] - fire_bolt_cost`\n"
-        "Python works out the right side first: it reads the old mana and takes the cost away. Then the key gets "
-        "the answer.\n"
-        "A key that is not there yet? The same kind of line adds it."
+        "A sheet can change. Put the key on the left of `=`, and that key gets a new value. It's like a "
+        "whiteboard: wipe the old number, write the new one. `shell[\"mana\"] = 19` gives the key `\"mana\"` the "
+        "value 19.\n"
+        "To cast a spell is to use it once, and it costs mana. Spending works like `mana = mana - 3` in Unit 1: "
+        "`gearshift[\"mana\"] = gearshift[\"mana\"] - fire_bolt_cost`. Python works out the right side first, "
+        "with what the sheet holds now: 20 − 6 is 14. Then the key `\"mana\"` gets 14, in place of the 20.\n"
+        "A key that isn't there yet? The same kind of line adds it: `shell[\"ore\"] = \"Velocite\"`."
     ),
     example='shell = {"mana": 24}\nshell["mana"] = shell["mana"] - 5\nshell["ore"] = "Velocite"\nprint(shell)\n',
     example_output="{'mana': 19, 'ore': 'Velocite'}",
@@ -1607,13 +1688,13 @@ WRITE_BY_KEY = dict(
         dict(
             id="cast-fire-bolt",
             text=(
-                "Gearshift casts Fire Bolt. Under comment 1, write "
-                "`gearshift[\"mana\"] = gearshift[\"mana\"] - fire_bolt_cost`."
+                "On line 8, under `# 1. Gearshift casts Fire Bolt:`, write "
+                "`gearshift[\"mana\"] = gearshift[\"mana\"] - fire_bolt_cost`. You should see 14 in the Console."
             ),
             dictated=True,
             hints=[
-                "The right side reads the old mana, then takes away the cost. Use the variable `fire_bolt_cost`, not "
-                "a number.",
+                "Look at line 8, under `# 1.`: your line goes there. It reads the old mana on the right of `=`, takes "
+                "away `fire_bolt_cost`, and stores the answer on the left.",
                 "`shell[\"mana\"] = shell[\"mana\"] - 5` reads 24, takes 5 away, and puts 19 back under the key.",
                 "Write `gearshift[\"mana\"] = gearshift[\"mana\"] - fire_bolt_cost` under `# 1.`",
             ],
@@ -1622,15 +1703,16 @@ WRITE_BY_KEY = dict(
                 follows(
                     "the mana follows the cost",
                     {"fire_bolt_cost": 4},
-                    ev="`fire_bolt_cost = 4`",
+                    ev="a test cost, `fire_bolt_cost = 4`",
                     ok="_R('gearshift')['mana'] == _start - 4",
-                    fix="Use the variable `fire_bolt_cost` on the right side, not a number, so the cost can change.",
+                    fix="Use the variable `fire_bolt_cost` on the right of `=`, not a number, so your line works for "
+                        "any cost.",
                     said="'the mana should become ' + str(_start - 4)",
                     rules=[("len(_sheets) > 1",
-                            "Keep one `gearshift = {...}`, the starter's. Change the mana with a "
-                            "`gearshift[\"mana\"] = ...` line, not a new sheet."),
-                           ("_typed", "Work the new mana out on the right side, from `gearshift[\"mana\"]` and "
-                                      "`fire_bolt_cost`, not a number you typed.")],
+                            "Your code types a second sheet. Keep one `gearshift = {...}`, the one from the start, "
+                            "and change the mana with a `gearshift[\"mana\"] = ...` line."),
+                           ("_typed", "You typed the new mana instead of the math. Work it out on the right of `=`, "
+                                      "from `gearshift[\"mana\"]` and `fire_bolt_cost`.")],
                     pre=WRITE_START,
                     what="cost",
                 ),
@@ -1638,31 +1720,35 @@ WRITE_BY_KEY = dict(
                     "the mana follows the sheet",
                     # mana and max mana differ here, so reading "max_mana" for "mana" shows.
                     {"gearshift": {"name": "Pell", "mana": 31, "max_mana": 40}, "fire_bolt_cost": 4},
-                    ev="another sheet with mana 31 and max mana 40, and `fire_bolt_cost = 4`",
+                    ev="a test sheet that has mana 31 and max mana 40, and a test cost, `fire_bolt_cost = 4`",
                     ok="_R('gearshift')['mana'] == 27",
-                    fix="Read the old mana from the sheet, `gearshift[\"mana\"]`, not a number you typed.",
+                    fix="Read the old mana from the sheet, `gearshift[\"mana\"]`, so your line works for any sheet.",
                     said="'the mana should become 27'",
                     rules=[("_R('gearshift')['mana'] == 36",
-                            "That reads `\"max_mana\"`. Spend from `\"mana\"`, what he has now: "
+                            "Your line reads `\"max_mana\"`. Spend from `\"mana\"`, the mana he has now: "
                             "`gearshift[\"mana\"] - fire_bolt_cost`.")],
                 ),
             ],
             pass_line=(
-                "Mar'tu: Which part reads the old mana? Point at it. Yes: the `gearshift[\"mana\"]` on the right "
-                "side."
+                "You spent the cost from Gearshift's sheet. Mar'tu: Which part reads the old mana? Point at it. Yes: "
+                "the `gearshift[\"mana\"]` on the right of `=`."
             ),
         ),
         dict(
             id="add-fuel",
-            text="Under comment 2, give Gearshift a new key `\"fuel\"` that holds `\"starlode\"`.",
+            text=(
+                "On line 11, under `# 2. Add the key \"fuel\":`, give `gearshift` a new key `\"fuel\"` that holds "
+                "the text `\"starlode\"`."
+            ),
             dictated=False,
             hints=[
-                "A new key is made the same way a value is changed: the key on the left of `=`. Text goes in quotes.",
+                "Look at line 11, under `# 2.`. A new key is made the same way a value is changed: the key in square "
+                "brackets on the left of `=`. Text goes in quotes.",
                 "`shell[\"ore\"] = \"Velocite\"` adds the key `\"ore\"` to `shell`.",
                 "Write `gearshift[\"fuel\"] = \"starlode\"` under `# 2.`",
             ],
             checks=[("gearshift has a fuel key", _PRE + _FUEL)],
-            pass_line="Gearshift: Starlode logged. Tank's full.",
+            pass_line="Your sheet has a new key, `\"fuel\"`. Gearshift: Starlode logged. Tank's full.",
         ),
     ],
     solution=_write(),
@@ -1699,32 +1785,42 @@ WRITE_BY_KEY = dict(
             angle="from Unit 1",
             text="In Unit 1 you wrote `mana = mana - 3`. This is the same move, with a key in place of the box.",
         ),
+        dict(
+            angle="math class",
+            label="From math class",
+            text=(
+                "In math class, m = m − 6 has no answer: no number is equal to itself minus 6. In Python, `=` isn't "
+                "a math statement. Read it as *gets*: the key `\"mana\"` gets its old value minus the cost."
+            ),
+        ),
     ],
     bonus=dict(
         by="lucky",
         title="Show me the bar",
         text=(
-            "What's in it for me? A picture. At the bottom, print Gearshift's mana bar: a `\"█\"` for each point of "
-            "mana he has, then a `\"░\"` for each point he used."
+            "At the bottom, show Gearshift's mana bar: a `\"█\"` for each point of mana he has, then a `\"░\"` for "
+            "each point he has used. What's in it for me? A picture."
         ),
         hints=[
-            "The points used are `gearshift[\"max_mana\"] - gearshift[\"mana\"]`. Put that in brackets after "
+            "The points used are `gearshift[\"max_mana\"] - gearshift[\"mana\"]`. Put that in parentheses after "
             "`\"░\" * `.",
-            "`\"█\" * 3 + \"░\" * (5 - 3)` makes 3 full blocks and 2 light ones. The brackets are worked out first.",
+            "`\"█\" * 3 + \"░\" * (5 - 3)` makes 3 full blocks and 2 light ones. As in PEMDAS, the parentheses are "
+            "worked out first.",
             "Write `print(\"█\" * gearshift[\"mana\"] + \"░\" * (gearshift[\"max_mana\"] - gearshift[\"mana\"]))`.",
         ],
         checks=[
             now_check(
                 "the bar shows",
                 ok="'█' * gearshift['mana'] + '░' * (gearshift['max_mana'] - gearshift['mana']) in _ls",
-                fix="Print the bar: `\"█\"` times the mana, then `\"░\"` times the max mana minus the mana.",
+                fix="No line shows the bar yet. Use `\"█\"` times the mana, then `\"░\"` times the max mana minus the "
+                    "mana.",
             ),
             follows(
                 "the bar follows the sheet",
                 {"gearshift": {"name": "Pell", "mana": 9, "max_mana": 12}, "fire_bolt_cost": 4},
-                ev="another sheet, mana 9 of 12, and `fire_bolt_cost = 4`",
+                ev="a test sheet with mana 9 of 12, and a test cost, `fire_bolt_cost = 4`",
                 ok="'█' * 5 + '░' * 7 in _p",
-                fix="Build the bar from the sheet's keys, so it follows the sheet.",
+                fix="Build the bar from the sheet's keys, so it works for any sheet.",
                 said="'the bar should be 5 full blocks and 7 light ones'",
             ),
         ],
@@ -1735,8 +1831,8 @@ WRITE_BY_KEY = dict(
         part="hold-the-barrier",
         snippet='caster["mana"] = caster["mana"] - spell["mana_cost"]',
         why=(
-            "This line paid for holding the barrier. The right side read the caster's old mana and took the "
-            "spell's cost away. Same shape as your line."
+            "You've seen this. This line paid for holding the barrier. The right side read the caster's old mana "
+            "and took the spell's cost away. It's the same shape as your line."
         ),
     ),
     takeaway="Change a value by its key: `gearshift[\"mana\"] = gearshift[\"mana\"] - cost`. A new key is added the same way.",
@@ -1745,12 +1841,12 @@ WRITE_BY_KEY = dict(
         dict(why="subtracting a typed 6 (CMB, spec)", code=_write(cast='gearshift["mana"] = gearshift["mana"] - 6'),
              fails_at=1, message_contains="fire_bolt_cost = 4"),
         dict(why="the new mana typed by hand: hero[\"mana\"] = 7 style (CMB)", code=_write(cast='gearshift["mana"] = 14'),
-             fails_at=1, message_contains="not a number you typed"),
+             fails_at=1, message_contains="instead of the math"),
         dict(why="the old mana typed by hand: 20 - cost (CMB on the sheet)",
              code=_write(cast='gearshift["mana"] = 20 - fire_bolt_cost'), fails_at=1, message_contains="mana 31"),
         dict(why="the max mana read for the mana (both are 20 in the starter, so only another sheet shows it)",
              code=_write(cast='gearshift["mana"] = gearshift["max_mana"] - fire_bolt_cost'), fails_at=1,
-             message_contains='That reads `"max_mana"`'),
+             message_contains='Your line reads `"max_mana"`'),
         dict(why="a new sheet typed with the new mana, instead of writing by key",
              code=_write(fuel='gearshift = {"name": "Gearshift", "mana": 14, "max_mana": 20, "fuel": "starlode"}'),
              fails_at=1, message_contains="Keep one `gearshift = {...}`"),
@@ -1766,7 +1862,7 @@ WRITE_BY_KEY = dict(
         dict(why="the cost added", code=_write(cast='gearshift["mana"] = gearshift["mana"] + fire_bolt_cost'), fails_at=1,
              message_contains="adds the cost"),
         dict(why="only the cost stored", code=_write(cast='gearshift["mana"] = fire_bolt_cost'), fails_at=1,
-             message_contains="just the cost"),
+             message_contains="only the cost"),
         dict(why="dot access on the right", code=_write(cast='gearshift["mana"] = gearshift.mana - fire_bolt_cost'),
              fails_at=0, message_contains="has no attribute 'mana'"),
         dict(why="round brackets", code=_write(cast='gearshift["mana"] = gearshift("mana") - fire_bolt_cost'),
@@ -1841,7 +1937,7 @@ def _in(block=IN_IF):
 _IN_CHECK = r'''
 _A = {'Glow': 2, 'Warm Hands': 3}
 _B = {'Glow': 2, 'Warm Hands': 3, 'Fire Bolt': 6}
-_ev = "(Mar'tu's check ran your code with and without \"Fire Bolt\" in the book, only inside the check"
+_ev = "Mar'tu tested your code with a test book that has \"Fire Bolt\" and one that doesn't"
 _ra, _pa, _fa, _ea = _rerun({'spell_book': _A})
 _rb, _pb, _fb, _eb = _rerun({'spell_book': _B})
 assert _fa, _gone('spell_book')
@@ -1876,59 +1972,64 @@ _both = [_l for _l in _pb if _l not in ('True', 'False')]
 _stuck = [_n for _n in _ifs if type(_n.test).__name__ == 'Constant']
 _msg = ''
 if _odd:
-    _msg = '`"' + _odd[0] + '"` and `"Fire Bolt"` are different text to Python: every letter, space and capital counts.'
+    _msg = ('`"' + _odd[0] + '"` and `"Fire Bolt"` are different text to Python: every letter, space and capital '
+            'counts. Copy the name exactly.')
 elif not _only_a:
     if _numbers:
-        _msg = ('`in` checks keys, never values. A cost is a value. Ask about the spell' + "'" + 's name, '
-                '`"Fire Bolt"`, which would be a key.')
+        _msg = ('Your `if` asks about a number, a cost. But `in` checks keys, never values. Ask about the spell'
+                + "'" + 's name, `"Fire Bolt"`, which would be a key.')
     elif _quoted and not any(_x == 'Fire Bolt' for _x in _words):
         _msg = ('`"' + _quoted[0] + '"` has quotes, so Python asks about those exact letters, not what the variable `'
                 + _quoted[0] + '` holds. Take the quotes off.')
     elif _others and not any(_x == 'Fire Bolt' for _x in _words):
         _msg = 'Your `if` asks about another key. This step asks about `"Fire Bolt"`, letter for letter.'
     elif _stuck and not _asks:
-        _msg = ('Replace `' + str(_stuck[0].test.value) + '` with a question: `not in` asks whether a key is '
-                'missing.')
+        _msg = ('Your `if` says `' + str(_stuck[0].test.value) + '`, so it never asks about the book. Replace `'
+                + str(_stuck[0].test.value) + '` with a question: `not in` asks whether a key is missing.')
     elif _only_b:
-        _msg = ('Your message shows only when "Fire Bolt" IS in the book. Ask the other question, with `not in`. '
-                + _ev + '.)')
+        _msg = ('Your message shows only when "Fire Bolt" IS in the book. Ask the opposite question, with '
+                '`not in`. ' + _ev + '.')
     elif _both:
-        _msg = ('Your message also shows when "Fire Bolt" is in the book. Put the `print` under an `if` that asks '
-                '`not in`, indented. ' + _ev + '.)')
+        _msg = ('Your message also shows when "Fire Bolt" is in the book. Indent the `print` under an `if` that '
+                'asks `not in`. ' + _ev + '.')
     elif _ifs and len(_pa) > len(_pb):
-        _msg = ('Your `if` prints `True` or `False`, the answer to the question. Print a message of your own '
-                'instead, in quotes, like `print("Learn Fire Bolt first.")`.')
+        _msg = ('Your `if` prints `True` or `False`, the answer to the question. Show a message in quotes '
+                'instead: `print("Learn Fire Bolt first.")`.')
     elif _ifs:
-        _msg = ('Nothing new printed when "Fire Bolt" was missing. Ask `"Fire Bolt" not in spell_book`, and indent '
-                'a `print` under the `if`. ' + _ev + '.)')
+        _msg = ('Nothing new showed when "Fire Bolt" was missing. Ask `"Fire Bolt" not in spell_book`, and indent '
+                'a `print` under the `if`. ' + _ev + '.')
     else:
-        _msg = 'Add an `if` that asks whether "Fire Bolt" is not in `spell_book`, and print a message under it.'
+        _msg = ('Your code has no `if` yet. Add an `if` that asks whether "Fire Bolt" is not in `spell_book`, '
+                'with a `print` indented under it.')
 assert not _msg, _msg
 '''
 
 _GLOW_CHECK = r'''
-_ev = "(Mar'tu's check tried a book where Glow costs 5, and a book with no Glow, only inside the check"
+_ev = "Mar'tu tested your code with a test book where Glow costs 5, and a test book with no Glow"
 _ra, _pa, _fa, _ea = _rerun({'spell_book': {'Glow': 5, 'Warm Hands': 3}})
 _rb, _pb, _fb, _eb = _rerun({'spell_book': {'Warm Hands': 3}})
-assert 'Glow costs 2' in _lines(), 'Print `Glow costs 2`, built from the book: `str(spell_book["Glow"])`.'
+assert 'Glow costs 2' in _lines(), ('No line shows `Glow costs 2` yet. Build it from the book: '
+                                    '`"Glow costs " + str(spell_book["Glow"])`.')
 assert not _ea, _crash(_ea, _ev, 'book')
-assert not _eb, ('Put the read under an `if` that asks `"Glow" in spell_book`, so a book with no Glow does not stop. '
-                 + _ev + '.)')
-assert 'Glow costs 5' in _pa, 'Read the cost from the book, so it follows the book. ' + _ev + '.)'
-assert not any(_l.startswith('Glow costs') for _l in _pb), ('Print the cost only when `"Glow" in spell_book`. '
-                                                             + _ev + ': the line still showed.)')
+assert not _eb, ('Your code stopped when the book had no Glow. Put the read under an `if` that asks '
+                 '`"Glow" in spell_book`. ' + _ev + '.')
+assert 'Glow costs 5' in _pa, 'Read the cost from the book, so your line works for any book. ' + _ev + '.'
+assert not any(_l.startswith('Glow costs') for _l in _pb), ('Your line showed even when the book had no Glow. '
+                                                             'Show the cost only when `"Glow" in spell_book`. '
+                                                             + _ev + '.')
 '''
 
 IS_IT_IN = dict(
     id="is-it-in",
     title="Is it in the book?",
     martu=(
-        "`in` asks a yes/no question: is this key in the dictionary? `\"Glow\" in spell_book` gives `True` or "
-        "`False`.\n"
-        "`in` looks at the keys only, never the values.\n"
-        "[[not in|`not in`]] asks the opposite: is it missing? Put it in an `if`, and Python acts only when the key is "
-        "missing.\n"
-        "After you run, try it: change the `2` to `3`. Still `False`, yes? 3 is a value too."
+        "`in` asks a yes-or-no question: is this key in the dictionary? It's like checking a glossary for a word: "
+        "you read the words, not their meanings. `\"Glow\" in spell_book` gives `True`. `in` looks at the keys "
+        "only, never the values.\n"
+        "[[not in|`not in`]] asks the opposite: is it missing? Put it in an `if`, as in Unit 2, and the indented "
+        "line runs only when the key is missing: `if \"map\" not in pack:`.\n"
+        "Try it if you like (it's not a step): after you press Run, change the `2` on line 6 to `3` and press Run "
+        "again. Still `False`, yes? 3 is a value too, not a key."
     ),
     introduces=["op:In", "op:NotIn"],
     example='pack = {"rope": 1, "lamp": 2}\nprint("rope" in pack)\nif "map" not in pack:\n    print("No map.")\n',
@@ -1947,18 +2048,19 @@ IS_IT_IN = dict(
         dict(
             id="if-not-in",
             text=(
-                "Replace `False` with a `not in` test, so the message shows only when `\"Fire Bolt\"` is missing. "
-                "Change the message to your own if you like."
+                "On line 9, replace `False` with a question that uses `not in`. Then the message shows only when "
+                "`\"Fire Bolt\"` is missing from `spell_book`."
             ),
             dictated=False,
             hints=[
-                "Look at `if False:`. Its test should ask whether `\"Fire Bolt\"` is missing from `spell_book`.",
+                "Look at line 9, `if False:`. `False` never changes, so the message never shows. What question should "
+                "the `if` ask about `\"Fire Bolt\"` and `spell_book`?",
                 "`if \"map\" not in pack:` with `print(\"No map.\")` indented under it prints only when the key is "
                 "missing.",
                 "Replace `False` with `\"Fire Bolt\" not in spell_book`.",
             ],
             checks=[("the message shows only when Fire Bolt is missing", _PRE + _IN_CHECK)],
-            pass_line="Bomb Shell: Not in the book. Noted.",
+            pass_line="Your message shows only when Fire Bolt is missing. Bomb Shell: Not in the book. Noted.",
         ),
     ],
     solution=_in(),
@@ -1988,8 +2090,8 @@ IS_IT_IN = dict(
         dict(
             angle="everyday",
             text=(
-                "Is *Fire Bolt* in the book's contents page? You read the titles, not the page numbers. Titles are "
-                "the keys."
+                "Is Zelda on the class list? You read down the names, not the grades written next to them. "
+                "The names are the keys."
             ),
         ),
         dict(
@@ -2005,8 +2107,8 @@ IS_IT_IN = dict(
         by="lucky",
         title="Only if I know it",
         text=(
-            "What's in it for me? Under your `if`, add a second `if`: when `\"Glow\"` is in `spell_book`, print "
-            "`Glow costs 2`, built from the book."
+            "Under your `if`, add a second `if`: when `\"Glow\"` is in `spell_book`, show `Glow costs 2`, built from "
+            "the book. What's in it for me? I only hear about spells I know."
         ),
         hints=[
             "A second `if`, asking with `in`. The cost is a number, so wrap it in `str()`.",
@@ -2021,8 +2123,8 @@ IS_IT_IN = dict(
         part="hold-the-barrier",
         snippet='if spell_name not in caster["spell_book"]:',
         why=(
-            "The barrier spell started with this line. It asked: is this spell's name a key in the caster's spell "
-            "book? If not, the caster didn't know it. Now you can read it."
+            "You've seen this. The barrier spell started with this line. It asked: is this spell's name a key in "
+            "the caster's spell book? If not, the caster didn't know the spell. Now you can read it."
         ),
     ),
     takeaway="`in` and `not in` ask about keys, never values: `if \"Fire Bolt\" not in spell_book:`.",
@@ -2104,9 +2206,10 @@ KEY_FROM_A_BOX = dict(
     title="A key from a box",
     martu=(
         "A key can come from a variable. `spell_book[spell_name]` has no quotes, so Python opens the box "
-        "`spell_name` first. It finds `\"Warm Hands\"`, then reads that key.\n"
-        "`spell_book[\"spell_name\"]` has quotes, so Python looks for a key spelled s-p-e-l-l-_-n-a-m-e. There is "
-        "none: a KeyError.\n" + QUOTES_RULE
+        "`spell_name` first, finds `\"Warm Hands\"`, and then looks up that key. In English class, quotes mark a "
+        "word talked about as a word: *\"Lucky\" has five letters*. Python's quotes work the same way.\n"
+        "`spell_book[\"spell_name\"]` has quotes, so Python looks for a key spelled s-p-e-l-l-_-n-a-m-e, those "
+        "exact letters. The book has no such key, so Python stops with a KeyError.\n" + QUOTES_RULE
     ),
     example='pack = {"rope": 1, "lamp": 2}\nitem = "lamp"\nprint(pack[item])\n',
     example_output="2",
@@ -2129,11 +2232,14 @@ KEY_FROM_A_BOX = dict(
     checkpoints=[
         dict(
             id="cost-of-the-named-spell",
-            text="Print the cost of whichever spell `spell_name` names, read from `spell_book`.",
+            text=(
+                "On line 8, under the two notes, show the cost of the spell that `spell_name` holds. Read it from "
+                "`spell_book`."
+            ),
             dictated=False,
             hints=[
-                "Which goes in the square brackets: the box `spell_name`, or the letters `\"spell_name\"`? Only one "
-                "finds the cost.",
+                "Look at line 5: `spell_name` holds `\"Warm Hands\"`. Which goes in the square brackets: the box "
+                "`spell_name`, or the letters `\"spell_name\"`? Only one finds the cost.",
                 "`pack[item]` opens the box `item`, finds `\"lamp\"`, then reads the key `\"lamp\"`: 2.",
                 "Write `print(spell_book[spell_name])`.",
             ],
@@ -2141,27 +2247,33 @@ KEY_FROM_A_BOX = dict(
                 now_check(
                     "the cost shows",
                     ok="_ends_in(_ls, 3)",
-                    fix="Print the spell's cost: read `spell_book` with the variable `spell_name` as the key.",
+                    fix="No line shows the spell's cost yet. Read `spell_book` with the variable `spell_name` as the "
+                        "key.",
                     rules=[
                         ("spell_name != 'Warm Hands'",
-                         "Keep `spell_name = \"Warm Hands\"` from the starter. Mar'tu's check changes it for you, to "
-                         "see your line follow."),
+                         "Keep `spell_name = \"Warm Hands\"` as it was on line 5. Mar'tu tests your line with other "
+                         "spell names himself."),
                         ("'Warm Hands' in _ls",
-                         "That prints the spell's name. Put `spell_name` inside `spell_book[...]` to read its cost."),
-                        ("_ends_in(_ls, 2)", "2 is Glow's cost. Read the spell that `spell_name` names."),
+                         "Your line shows the spell's name. Put `spell_name` inside `spell_book[...]` to read its "
+                         "cost."),
+                        ("_ends_in(_ls, 2)", "Your line shows 2, Glow's cost. Read the spell that `spell_name` holds."),
                     ],
                 ),
                 follows(
                     "the cost follows spell_name",
                     {"spell_name": "Glow"},
-                    ev='`spell_name = "Glow"`',
+                    ev='a test spell name, `spell_name = "Glow"`',
                     ok="_ends_in(_p, 2)",
-                    fix="Use the variable `spell_name` as the key, so the line follows it.",
+                    fix="Your line doesn't use `spell_name` yet. Put the variable `spell_name` in the square brackets, "
+                        "with no quotes, so your line works for any spell name.",
                     said="'the line should end in 2, the cost of Glow'",
                     what="spell name",
                 ),
             ],
-            pass_line="Mar'tu: No quotes, so Python looked inside the box first. Good.",
+            pass_line=(
+                "You read the cost of the spell in `spell_name`. Mar'tu: No quotes, so Python looked inside the box "
+                "first. Good."
+            ),
         ),
     ],
     solution=_named(),
@@ -2211,8 +2323,8 @@ KEY_FROM_A_BOX = dict(
         dict(
             angle="from the campaign",
             text=(
-                "The barrier spell read `caster[\"spell_book\"][spell_name]`: no quotes on `spell_name`, so the key "
-                "came from the variable. Any spell name worked."
+                "You've seen this. The barrier spell read `caster[\"spell_book\"][spell_name]`: no quotes on "
+                "`spell_name`, so the key came from the variable. Any spell name worked."
             ),
         ),
     ],
@@ -2220,8 +2332,8 @@ KEY_FROM_A_BOX = dict(
         by="lucky",
         title="Say it properly",
         text=(
-            "What's in it for me? A proper line. On a new line, print `Warm Hands costs 3`, built from `spell_name` "
-            "and the book."
+            "On a new line at the bottom, show `Warm Hands costs 3`, built from `spell_name` and the book. What's in "
+            "it for me? A proper line."
         ),
         hints=[
             "The cost is a number: wrap `spell_book[spell_name]` in `str()`.",
@@ -2229,13 +2341,13 @@ KEY_FROM_A_BOX = dict(
         ],
         checks=[
             out_line("the line reads Warm Hands costs 3", "Warm Hands costs 3",
-                     "Print `Warm Hands costs 3`: the spell's name, ` costs `, then its cost."),
+                     "No line shows `Warm Hands costs 3` yet. Glue the spell's name, ` costs `, then its cost."),
             follows(
                 "the line follows spell_name",
                 {"spell_name": "Glow"},
-                ev='`spell_name = "Glow"`',
+                ev='a test spell name, `spell_name = "Glow"`',
                 ok="'Glow costs 2' in _p",
-                fix="Build the line from `spell_name` and the book, so it follows `spell_name`.",
+                fix="Build the line from `spell_name` and the book, so it works for any spell name.",
                 said="'the line should show `Glow costs 2`'",
                 what="spell name",
             ),
@@ -2247,20 +2359,22 @@ KEY_FROM_A_BOX = dict(
         part="hold-the-barrier",
         snippet='spell = caster["spell_book"][spell_name]',
         why=(
-            "The barrier spell read the spell with `[spell_name]`, no quotes: the key came from the variable. Next "
-            "lesson you read those two brackets one at a time."
+            "You've seen this. The barrier spell read the spell with `[spell_name]`, no quotes, so the key came from "
+            "the variable. In the next lesson, you read its two pairs of square brackets one at a time."
         ),
     ),
     takeaway="`book[spell_name]` opens the variable first; `book[\"spell_name\"]` looks for those exact letters.",
     wrong_answers=[
-        dict(why="starter unchanged (nothing printed)", code=NAME_STARTER, fails_at=1, message_contains="Print the spell's cost"),
+        dict(why="starter unchanged (nothing printed)", code=NAME_STARTER, fails_at=1,
+             message_contains="No line shows the spell's cost"),
         dict(why="the variable's name in quotes (spec)", code=_named('print(spell_book["spell_name"])'), fails_at=0,
              message_contains="KeyError: 'spell_name'"),
         dict(why="the spell's name printed, not its cost", code=_named("print(spell_name)"), fails_at=1,
              message_contains="spell's name"),
         dict(why="the spell typed in as text (CMB)", code=_named('print(spell_book["Warm Hands"])'), fails_at=1,
              message_contains='spell_name = "Glow"'),
-        dict(why="the cost typed by hand (CMB)", code=_named("print(3)"), fails_at=1, message_contains="follows it"),
+        dict(why="the cost typed by hand (CMB)", code=_named("print(3)"), fails_at=1,
+             message_contains="works for any spell name"),
         dict(why="the spell's name with no quotes and a space", code=_named("print(spell_book[Warm Hands])"), fails_at=0,
              message_contains="invalid syntax"),
         dict(why="the other spell's cost", code=_named('print(spell_book["Glow"])'), fails_at=1,
@@ -2308,14 +2422,15 @@ BROKEN_STARTER = _broken('"name" = "Lucky",', "print(lucky[name])", 'print("Mana
                          'lucky["mana"] = lucky.mana - 2')
 BROKEN_SOLUTION = _broken()
 LUCKY_OTHER = {"name": "Pell", "mana": 31}
-LUCKY_EV = 'another sheet, name `"Pell"` and mana 31'
+LUCKY_EV = 'a test sheet that has name `"Pell"` and mana 31'
 
 _LUCKY_SHEET = r'''
 _v = _g.get('lucky')
 assert type(_v).__name__ == 'dict', _gone('lucky')
-assert type(_v.get('name')).__name__ == 'str' and _v['name'].strip(), ('Keep the key `"name"` in the sheet, holding '
-                                                                       "Lucky's name as text: a colon, then the name in quotes.")
-assert 'mana' in _v, 'Keep the key `"mana"` in the sheet as it is.'
+assert type(_v.get('name')).__name__ == 'str' and _v['name'].strip(), ('The sheet has no key `"name"` that holds '
+                                                                       "text. On line 2, write the key, a colon, then "
+                                                                       "Lucky's name in quotes.")
+assert 'mana' in _v, 'The sheet has lost its key `"mana"`. Put line 3 back the way it was.'
 '''
 
 # A key added to fit a read (`"Name": "Lucky"` beside `"name"`, for `lucky["Name"]`): the read works, but the
@@ -2324,31 +2439,39 @@ _LUCKY_EXTRA = r'''
 _v = _g.get('lucky')
 assert type(_v).__name__ == 'dict', _gone('lucky')
 _odd = [_k for _k in _v if _k not in ('name', 'mana') and (_near(_k, 'mana') or _near(_k, 'name'))]
-assert not _odd, ('Mend the read, not the sheet: `lucky` now has an extra key, `' + (_show(_odd[0]) if _odd else '')
-                  + '`. Read with the key the sheet already had, spelled the same way.')
+assert not _odd, ('`lucky` now has an extra key, `' + (_show(_odd[0]) if _odd else '') + '`. Fix the read, not the '
+                  'sheet: read with the key the sheet already had, spelled the same way.')
 '''
 
 BROKEN_SPELL_4A = dict(
     id="broken-spell-4a",
     title="Broken spell",
     martu=(
-        "Lucky's sheet has three slips. Python reports them one at a time. Read the last line of each message first, "
-        "then go to the line it names.\n"
-        "Mend one, run again, and Python shows you the next. Normal. That is how everyone debugs, yes?"
+        "Lucky's code has three [[bug|bugs]], all loud: each one makes Python stop with an error. "
+        "Python shows one error at a time, so fix one, press Run again, and see what Python finds next. A new "
+        "error is good news: Python got further.\n"
+        "When Python stops, read the box in the Console, in this order:\n"
+        "1. Read its title. It says what went wrong.\n"
+        "2. Read *Python's last line*. It says the same thing in Python's words.\n"
+        "3. Find the line number, and fix that line.\n"
+        "That's how everyone fixes code, yes?"
     ),
     names=["lucky"],
-    pair_talk="Pair talk: compare which line each message names, and why. Each of you mends your own screen.",
+    pair_talk=(
+        "Pair talk: compare which line each error box names, and why. Each of you fixes the code on your own "
+        "screen."
+    ),
     starter=BROKEN_STARTER,
     checkpoints=[
         dict(
             id="colon-not-equals",
-            text="Mend the sheet line Python names first.",
+            text="Fix line 2, inside the sheet. Python names that line first.",
             dictated=False,
             hints=[
-                "Read Python's last line first. Which line does it name?",
+                "Read the box in the Console: first its title, then Python's last line. Which line does it name?",
                 "Python points at line 2, inside the sheet. What goes between a key and its value?",
-                "`{\"dexterity\": 6}`: a key in quotes, a colon, then the value. Inside a sheet the key keeps its "
-                "quotes; `=` is for variables.",
+                "In `{\"dexterity\": 6}`, the key keeps its quotes, then a colon, then the value. Inside a sheet, a "
+                "colon goes between a key and its value. `=` is for variables.",
                 "Change line 2 to `\"name\": \"Lucky\",`.",
             ],
             checks=[("the sheet has a name and a mana", _PRE + _LUCKY_SHEET),
@@ -2356,54 +2479,57 @@ BROKEN_SPELL_4A = dict(
         ),
         dict(
             id="quote-the-key",
-            text="Mend the line that prints Lucky's name.",
+            text="Fix line 5 so it shows Lucky's name, read from the sheet.",
             dictated=False,
             hints=[
-                "Read Python's last line first. Which name is not defined?",
-                "`name` has no quotes, so Python looks for a box called `name`. The sheet has a key `\"name\"`.",
+                "Press Run again and read the new box: first its title, then Python's last line. Which name is not "
+                "defined?",
+                "Look at line 5. `name` has no quotes, so Python looks for a box (a variable) called `name`. The "
+                "sheet has a key `\"name\"`.",
                 QUOTES_RULE + " `hero[\"glug\"]` reads the key `\"glug\"`.",
                 "Write `print(lucky[\"name\"])` in place of `print(lucky[name])`.",
             ],
             checks=[
                 now_check("the name shows", ok="any(_l.endswith(str(lucky['name'])) for _l in _ls)",
-                          fix="Keep the line that prints Lucky's name, and read it from the sheet with its key."),
+                          fix="No line shows Lucky's name. Keep the line that prints it, and read the name from the "
+                              "sheet with its key."),
                 follows("the name follows the sheet", {"lucky": LUCKY_OTHER}, ev=LUCKY_EV,
                         ok="any(_l.endswith('Pell') for _l in _p)",
-                        fix="Read the name from the sheet with its key, so the line follows the sheet.",
+                        fix="Read the name from the sheet with its key, so your line works for any sheet.",
                         said="'no line showed `Pell`'"),
             ],
         ),
         dict(
             id="brackets-not-a-dot",
-            text="Mend the line that spends 2 mana on Glow.",
+            text="Fix line 7 so it spends 2 mana on Glow, reading the old mana from the sheet.",
             dictated=False,
             hints=[
-                "Read Python's last line first. What does it say has no attribute?",
-                "A dot is for things like `.lower()`. A dictionary is read another way.",
+                "Press Run again and read the new box: first its title, then Python's last line, `AttributeError: "
+                "'dict' object has no attribute 'mana'`. Which line has a dot?",
+                "Look at line 7. A dot is for tools like `.lower()`. A dictionary is read another way: by its key.",
                 "Read a dictionary with square brackets: `hero[\"glug\"]`, never `hero.glug`.",
                 "Write `lucky[\"mana\"] = lucky[\"mana\"] - 2` in place of `lucky[\"mana\"] = lucky.mana - 2`.",
             ],
             checks=[
                 now_check("the after-Glow line shows", ok="any(_l.startswith('After Glow: ') for _l in _ls)",
-                          fix="Keep the last line, which prints `After Glow: ` and his mana."),
+                          fix="No line shows `After Glow: ` and his mana. Keep the last line as it was."),
                 follows("the mana is spent from the sheet", {"lucky": LUCKY_OTHER}, ev=LUCKY_EV,
                         ok="'After Glow: 29' in _p and _R('lucky')['mana'] == 29",
-                        fix="Read the old mana from the sheet with square brackets, so the cost comes off whatever he "
-                            "has.",
-                        said="'the last line should show `After Glow: 29`, and the sheet should hold 29'",
+                        fix="Read the old mana from the sheet with square brackets, so your line works for any "
+                            "sheet.",
+                        said="'the last line should show `After Glow: 29`'",
                         rules=[("'After Glow: 29' in _p",
-                                "Keep line 7 as a write: `lucky[\"mana\"] = ...` stores the new mana in the sheet, "
-                                "then the last line shows it."),
+                                "Line 7 no longer stores the new mana in the sheet. Keep line 7 as a write: "
+                                "`lucky[\"mana\"] = ...`."),
                                ("'After Glow: 24' in _p and _R('lucky')['mana'] == 29",
-                                "The last line is typed by hand. Keep `print(\"After Glow: \" + "
+                                "Your last line has the mana typed in. Put back `print(\"After Glow: \" + "
                                 "str(lucky[\"mana\"]))`, so it shows what the sheet holds."),
                                ("'After Glow: 31' in _p",
-                                "Keep the cost: the line takes 2 away from the old mana."),
+                                "Nothing took the cost away. Keep the cost: line 7 takes 2 away from the old mana."),
                                ("lucky['mana'] not in (24, 26) and _R('lucky')['mana'] == 31 - (26 - lucky['mana'])",
-                                "Glow costs 2. Keep `- 2` on line 7, so the line takes 2 away from the old "
-                                "mana.")]),
+                                "Line 7 takes away the wrong amount. Glow costs 2: keep `- 2` on line 7.")]),
             ],
-            pass_line="Bomb Shell: Three slips. Three mends. Works.",
+            pass_line="All three bugs fixed. Bomb Shell: Three bugs, three fixes. Works.",
         ),
     ],
     solution=BROKEN_SOLUTION,
@@ -2414,21 +2540,21 @@ BROKEN_SPELL_4A = dict(
     another_way=[
         dict(
             angle="step-by-step",
-            label="One slip at a time",
+            label="One bug at a time",
             text=(
-                "1. Run. Read the last line of the message.\n"
-                "2. Go to the line it names. Mend it.\n"
-                "3. Run again. A new message? Good: that is the next slip.\n"
-                "4. No message? The checks tell you what is left."
+                "1. Press Run. Read the box in the Console: its title, then Python's last line.\n"
+                "2. Find the line number. Fix that line.\n"
+                "3. Press Run again. A new error? Good: Python got further. That's the next bug.\n"
+                "4. No error? Your steps show what's left."
             ),
         ),
         dict(
             angle="picture",
-            label="Where each slip is",
+            label="Where each bug is",
             text=(
                 "```text\nline 2  \"name\" = \"Lucky\"\n  a key needs :\nline 5  lucky[name]\n"
-                "  a key needs quotes\nline 7  lucky.mana\n  square brackets\n```\nThe line numbers are the "
-                "starter's."
+                "  a key needs quotes\nline 7  lucky.mana\n  square brackets\n```\nThese are the line numbers in "
+                "the code you started with."
             ),
         ),
         dict(
@@ -2436,7 +2562,7 @@ BROKEN_SPELL_4A = dict(
             text="Colon between key and value. Quotes on keys. Square brackets, no dots.",
         ),
     ],
-    takeaway="Read the last line, go to the line it names, mend one slip, run again.",
+    takeaway="Read the box's title and Python's last line, fix the line it names, then press Run again.",
     wrong_answers=[
         dict(why="the starter: = for : inside the sheet first (a SyntaxError beats the runtime slips)",
              code=BROKEN_STARTER, fails_at=0, message_contains="cannot assign to literal"),
@@ -2465,14 +2591,14 @@ BROKEN_SPELL_4A = dict(
              fails_at=1, message_contains="extra key"),
         dict(why="the name slip 'mended' by writing a key to fit the read: lucky[\"Name\"] = lucky[\"name\"]",
              code=_broken(name_line='lucky["Name"] = lucky["name"]\nprint(lucky["Name"])'),
-             fails_at=1, message_contains="Mend the read, not the sheet"),
+             fails_at=1, message_contains="Fix the read, not the sheet"),
         dict(why="the spend line dropped, the cost taken off inside the print: nothing is stored in the sheet",
              code=_broken(spend="").replace('print("After Glow: " + str(lucky["mana"]))',
                                             'print("After Glow: " + str(lucky["mana"] - 2))'),
              fails_at=3, message_contains="Keep line 7 as a write"),
         dict(why="the last line typed by hand", code=_broken().replace('"After Glow: " + str(lucky["mana"])',
                                                                         '"After Glow: 24"'),
-             fails_at=3, message_contains="typed by hand"),
+             fails_at=3, message_contains="last line has the mana typed in"),
         dict(why="the cost changed (3 for Glow's 2)", code=_broken(spend='lucky["mana"] = lucky["mana"] - 3'),
              fails_at=3, message_contains="Glow costs 2"),
     ],
@@ -2489,7 +2615,7 @@ BROKEN_SPELL_4A = dict(
         "order: `lucky[name]` (NameError, rule 9), `lucky.mana` (AttributeError; site request: the spec's row 'Read "
         "a dictionary with square brackets: `hero[\"mana\"]`'). Each slip left fails at 0 with its own message "
         "(WA). Each mend is CMB with another sheet (name \"Pell\", mana 31), so typed values fail. A key added to "
-        "fit a read (`\"Name\": \"Lucky\"` in the sheet, or `lucky[\"Name\"] = lucky[\"name\"]`) fails CP1, 'Mend "
+        "fit a read (`\"Name\": \"Lucky\"` in the sheet, or `lucky[\"Name\"] = lucky[\"name\"]`) fails CP1, 'Fix "
         "the read, not the sheet'. CP3 also reads the sheet after the rerun, so the cost taken off inside the last "
         "`print` (nothing stored) fails, and a changed cost or a typed last line get their own messages. No "
         "partials: a crash fails every checkpoint on the site. About 2 minutes (one slip fewer: -1)."
@@ -2520,7 +2646,7 @@ SOLO_STARTER = _solo('print(oogrish["name"] + ": " + str(oogrish["Mana"]))', spe
 # mana and max mana differ, so "reads the max mana" and "the spell is not spent" show as different lines.
 SOLO_OTHER = {"name": "Pell", "mana": 30, "max_mana": 35}
 
-# Mend the read, not the sheet: the sheet keeps "mana", and no key the code READS was added to fit the slip. (A write
+# Fix the read, not the sheet: the sheet keeps "mana", and no key the code READS was added to fit the slip. (A write
 # to a near-miss key, `oogrish["Mana"] = ...`, is CP2's slip, so a key that is only written does not count here.)
 _SOLO_SHEET = r'''
 _v = _g.get('oogrish')
@@ -2529,7 +2655,8 @@ _read = [_n.slice.value for _n in _ast.walk(_tree) if type(_n).__name__ == 'Subs
          and type(_n.ctx).__name__ == 'Load' and type(_n.slice).__name__ == 'Constant']
 _odd = [_k for _k in _v if _k not in ('name', 'mana', 'max_mana') and (_near(_k, 'mana') or _near(_k, 'name'))
         and _k in _read]
-assert 'mana' in _v and not _odd, 'Mend the read, not the sheet: keep the sheet' + "'" + 's keys as they are.'
+assert 'mana' in _v and not _odd, ('The sheet' + "'" + 's keys were changed to fit the read. Fix the read, not the '
+                                   'sheet.')
 '''
 
 # The keys the code's prints read, and the sheet's own mana (from the code), for CP1's diagnoses.
@@ -2561,7 +2688,7 @@ assert type(_v).__name__ == 'dict', _gone('oogrish')
 _start = _lit_key('oogrish', 'mana')
 _cost = _g.get('glow_cost')
 assert type(_start).__name__ == 'int', 'The sheet' + "'" + 's `"mana"` line no longer holds a number.'
-assert type(_cost).__name__ == 'int', '`glow_cost = 4` from the starter is gone or no longer a number.'
+assert type(_cost).__name__ == 'int', '`glow_cost = 4` is gone or no longer a number.'
 _want = _start - _cost
 _m = _v.get('mana')
 _close = [_k for _k in _v if _k != 'mana' and _near(_k, 'mana')]
@@ -2583,12 +2710,11 @@ if _m == _start:
 elif _m == -_want:
     _msg = _wl + ' takes the mana away from the cost: the wrong way round.'
 elif _m in (_cost, -_cost):
-    _msg = _wl + ' stores just the cost in `oogrish["mana"]`.'
+    _msg = _wl + ' stores only the cost in `oogrish["mana"]`.'
 elif _m == _start + _cost:
-    _msg = _wl + ' adds the cost. Casting spends mana.'
+    _msg = _wl + ' adds the cost. Casting a spell spends mana.'
 elif _m != _want:
-    _msg = ('`oogrish["mana"]` holds ' + str(_m) + '. After Glow it should hold ' + str(_want) + ': the old mana '
-            'minus `glow_cost`, once.')
+    _msg = '`oogrish["mana"]` holds ' + str(_m) + '. After Glow it should hold ' + str(_want) + '.'
 assert not _msg, _msg
 '''
 
@@ -2596,8 +2722,8 @@ SOLO_4A = dict(
     id="solo-4a",
     title="Show Mar'tu",
     martu=(
-        "A short one, just for you. Oogrish's last line should show his name and his mana, but one slip stops "
-        "it. Mend it. Then Oogrish casts Glow: spend `glow_cost` from his sheet, by key."
+        "A short one, on your own. Line 9 should show Oogrish's name and his mana, but one mistake stops it. Find "
+        "it and fix it. Then Oogrish casts Glow (he uses the spell once): spend `glow_cost` from his sheet, by key."
     ),
     solo=True,
     # Teacher ruling (FORMAT.md, from Unit 2 on): every SOLO item is lean. The crash explainer names the kind of
@@ -2608,11 +2734,11 @@ SOLO_4A = dict(
     checkpoints=[
         dict(
             id="oogrish-mana-left",
-            text="Mend the last line so it shows Oogrish's name and his mana.",
+            text="Fix line 9 so it shows Oogrish's name and his mana.",
             dictated=False,
             hints=[
-                "Read Python's last line first.",
-                "The message names a key. Compare it with the keys in the sheet, letter for letter.",
+                "Read the box in the Console: first its title, then Python's last line.",
+                "Python's last line names a key. Compare it with the keys in the sheet, letter for letter.",
                 "Keys match letter for letter: `[\"Glug\"]` and `[\"glug\"]` are two different keys.",
                 "Copy each key from the sheet, as the sheet spells it: when a sheet says `\"gold\": 5`, the read "
                 "is `pouch[\"gold\"]`, never `pouch[\"Gold\"]`.",
@@ -2623,9 +2749,9 @@ SOLO_4A = dict(
                 now_check(
                     "the line shows",
                     ok="str(oogrish['name']) + ': ' + str(oogrish['mana']) in _ls",
-                    fix="Keep the last line: his name, `: `, then his mana, read from the sheet.",
+                    fix="No line shows his name, `: `, then his mana, read from the sheet.",
                     rules=[("'max_mana' in _printed_keys",
-                            "That reads the max mana. The line wants his mana."),
+                            "The last line reads the max mana, not his mana."),
                            ("_start != oogrish['mana'] and str(oogrish['name']) + ': ' + str(_start) in _ls",
                             "The last line shows the mana from before Glow: it runs before the spend line.")],
                     pre=SOLO_PRINTS,
@@ -2633,20 +2759,21 @@ SOLO_4A = dict(
                 follows(
                     "the line follows the sheet",
                     {"oogrish": SOLO_OTHER},
-                    ev='another sheet, name `"Pell"`, mana 30 and max mana 35',
+                    ev='a test sheet that has name `"Pell"`, mana 30 and max mana 35',
                     ok="'Pell: ' + str(_R('oogrish')['mana']) in _p",
-                    fix="Read the name and the mana from the sheet, so the line follows it.",
+                    fix="The last line does not change to match the sheet.",
                     said="'the line should show `Pell: ' + str(_R('oogrish')['mana']) + '`'",
-                    rules=[("'Pell: 35' in _p", "That reads the max mana. The line wants his mana.")],
+                    rules=[("'Pell: 35' in _p", "The last line reads the max mana, not his mana.")],
                 ),
             ],
         ),
         dict(
             id="spend-glow-cost",
-            text="Oogrish casts Glow: under the comment, take `glow_cost` from his mana, by key.",
+            text="On line 8, under `# Oogrish casts Glow:`, take `glow_cost` away from his mana, by key.",
             dictated=False,
             hints=[
-                "Read the old mana on the right, take away `glow_cost`, store it on the left.",
+                "Look at line 8, under `# Oogrish casts Glow:`. The new line reads the old mana on the right of `=`, "
+                "takes away `glow_cost`, and stores the answer on the left.",
                 "`hero[\"mana\"] = hero[\"mana\"] - cost` reads the old value and stores the new one.",
                 "The same shape spends from any sheet: `pouch[\"gold\"] = pouch[\"gold\"] - price` takes `price` "
                 "from the gold and keeps the new gold on the sheet.",
@@ -2656,42 +2783,42 @@ SOLO_4A = dict(
                 follows(
                     "the mana follows the sheet and the cost",
                     {"oogrish": SOLO_OTHER, "glow_cost": 3},
-                    ev='another sheet, name `"Pell"`, mana 30 and max mana 35, and `glow_cost = 3`',
+                    ev=('a test sheet that has name `"Pell"`, mana 30 and max mana 35, and a test cost, '
+                        '`glow_cost = 3`'),
                     ok="_R('oogrish')['mana'] == 27",
-                    fix="does not follow the sheet and the cost.",
+                    fix="does not work for other sheets and costs.",
                     said="'the mana should become 27'",
                     rules=[("len(_sheets) > 1", "types a second `oogrish = {...}` sheet."),
                            ("_typed", "has the new mana typed in."),
-                           ("_R('oogrish')['mana'] == 30 - 4", "takes away a typed 4, not `glow_cost`."),
-                           ("_R('oogrish')['mana'] == 18 - 3", "starts from a typed 18, not the sheet's mana."),
+                           ("_R('oogrish')['mana'] == 30 - 4", "takes away a typed 4."),
+                           ("_R('oogrish')['mana'] == 18 - 3", "starts from a typed 18."),
                            ("_R('oogrish')['mana'] == 35 - 3", "reads the max mana, not the mana.")],
                     pre=SOLO_WRITES,
                     lead="_wl + ' '",
                 ),
             ],
             pass_line=(
-                "Mar'tu: You did that alone. I saw. On your map: ✓ read a value by its key, ✓ change a value by its "
-                "key."
+                "Mar'tu: You did that on your own. You read a value by its key, and you changed a value by its key."
             ),
         ),
     ],
     solution=_solo(),
     partials=[_solo(spend="")],
     another_way=[
-        dict(angle="step-by-step", text="1. Read the last line of the message. 2. Find that key in the sheet. "
-                                        "3. Spell it the same way."),
+        dict(angle="step-by-step", text="1. Read the box's title, then Python's last line. 2. Find that key in the "
+                                        "sheet. 3. Spell it the same way."),
         dict(angle="shorter", text="A KeyError names the key Python could not find. Copy the key from the sheet."),
         dict(
             angle="from earlier",
             label="Spending, by key",
             text=(
                 "Spending is one line: the key on the left of `=` gets the old mana minus the cost, read on the "
-                "right. Same move as Gearshift's Fire Bolt."
+                "right. It's the same move as Gearshift's Fire Bolt."
             ),
         ),
     ],
     takeaway=(
-        "On your own: a KeyError names the key, so spell it as the sheet does; spend by key with "
+        "On your own: a KeyError names the key, so spell it the way the sheet does. Spend by key: "
         "`oogrish[\"mana\"] = oogrish[\"mana\"] - glow_cost`."
     ),
     wrong_answers=[
@@ -2705,21 +2832,21 @@ SOLO_4A = dict(
              fails_at=1, message_contains="max mana"),
         dict(why="the max mana read before the spend (18 = 18 now; only another sheet shows it)",
              code=_solo('print(oogrish["name"] + ": " + str(oogrish["max_mana"]))', spend=""), fails_at=1,
-             message_contains="That reads the max mana"),
+             message_contains="reads the max mana, not his mana"),
         dict(why="a key added to fit the slip: the rerun's sheet has no Mana",
              code=_solo('print(oogrish["name"] + ": " + str(oogrish["Mana"]))',
                         head='oogrish = {\n    "name": "Oogrish",\n    "mana": 18,\n    "Mana": 14,\n    "max_mana": 18,\n}\n'),
-             fails_at=1, message_contains="Mend the read, not the sheet"),
+             fails_at=1, message_contains="Fix the read, not the sheet"),
         dict(why="no str()", code=_solo('print(oogrish["name"] + ": " + oogrish["mana"])'), fails_at=0,
              message_contains="can only concatenate str"),
         dict(why="a key written to fit the slip: oogrish[\"Mana\"] = oogrish[\"mana\"] above the line",
              code=_solo('oogrish["Mana"] = oogrish["mana"]\nprint(oogrish["name"] + ": " + str(oogrish["Mana"]))'),
-             fails_at=1, message_contains="Mend the read, not the sheet"),
+             fails_at=1, message_contains="Fix the read, not the sheet"),
         dict(why="the sheet's key renamed to Mana everywhere, so the read matches a changed sheet",
              code=_solo('print(oogrish["name"] + ": " + str(oogrish["Mana"]))',
                         spend='oogrish["Mana"] = oogrish["Mana"] - glow_cost',
                         head='oogrish = {\n    "name": "Oogrish",\n    "Mana": 18,\n    "max_mana": 18,\n}\n'),
-             fails_at=1, message_contains="Mend the read, not the sheet"),
+             fails_at=1, message_contains="Fix the read, not the sheet"),
         dict(why="the spend written below the print: the line shows the mana from before Glow",
              code=_solo(SOLO_LINE + "\n" + SOLO_SPEND, spend=""), fails_at=1, message_contains="before Glow"),
         dict(why="CP2 not done: Glow not spent yet", code=_solo(spend=""), fails_at=2, message_contains="not spent yet"),
@@ -2751,7 +2878,7 @@ SOLO_4A = dict(
         dict(why="the cost added", code=_solo(spend='oogrish["mana"] = oogrish["mana"] + glow_cost'), fails_at=2,
              message_contains="adds the cost"),
         dict(why="only the cost stored", code=_solo(spend='oogrish["mana"] = glow_cost'), fails_at=2,
-             message_contains="just the cost"),
+             message_contains="only the cost"),
         dict(why="dot access on the right of the spend", code=_solo(spend='oogrish["mana"] = oogrish.mana - glow_cost'),
              fails_at=0, message_contains="has no attribute 'mana'"),
     ],
@@ -2764,7 +2891,7 @@ SOLO_4A = dict(
         "per seat (seat B: Oogrish casts for 5, so seat B's spend uses its own cost, `glow_cost = 5`). CP1's "
         "checks hold before and after CP2: the line must show whatever the sheet holds now (own run, then CMB with "
         "another sheet, \"Pell\", mana 30, max mana 35). The sheet must keep its keys: a key the code reads, added "
-        "or renamed to fit the slip, fails 'Mend the read, not the sheet' (a write to a near-miss key is CP2's "
+        "or renamed to fit the slip, fails 'Fix the read, not the sheet' (a write to a near-miss key is CP2's "
         "slip). A typed line, the max mana read and the line run before the spend each get their own message. "
         "CP2 [ND] (teacher ruling: a write by key checked solo, which the cut of 4A-08's KeyError pays for): "
         "write-by-key's SPENT pattern on `oogrish` and `glow_cost` (BARE, NEWBOX, a near-miss key, the sign, the "
@@ -2781,7 +2908,7 @@ LESSON_4A = dict(
     title="Stat Sheets",
     minutes=32,
     summary=(
-        "Make hero stat sheets with dictionaries, read and change values by key, mend KeyErrors, ask `in` and "
+        "Make stat sheets with dictionaries. Read and change values by their keys, fix KeyErrors, ask `in` and "
         "`not in`, and use a key kept in a variable."
     ),
     notes=(
@@ -2813,8 +2940,11 @@ CANTEEN = dict(
     id="lucky-canteen",
     title="Lucky's canteen",
     martu=(
-        "Lucky's sheet has no `\"glug\"` key yet, so `lucky[\"glug\"]` stops with a KeyError. Run it and see.\n"
-        "[[.get()|`.get()`]] can give 0 instead."
+        "[[.get()|`.get()`]] reads a key without stopping. It's like asking `in` first, as you did with Fire "
+        "Bolt: if the key is there, you get its value, and if not, you get the default you chose. "
+        "`hero.get(\"ore\", 0)` gives the ore, or 0 when there is no `\"ore\"` key.\n"
+        "Lucky's sheet on line 1 has no `\"glug\"` key yet. (Glug is Lucky's drink.) So `lucky[\"glug\"]` on "
+        "line 2 stops with a KeyError. Press Run and see."
     ),
     example='hero = {"mana": 7}\nprint(hero.get("mana", 0))\nprint(hero.get("ore", 0))\n',
     example_output="7\n0",
@@ -2823,11 +2953,11 @@ CANTEEN = dict(
     checkpoints=[
         dict(
             id="get-with-a-default",
-            text="Change the last line so it shows 0 when there is no `\"glug\"` key, using `.get()`.",
+            text="Change line 2 so it uses `.get()` and shows 0 when there is no `\"glug\"` key.",
             dictated=False,
             hints=[
-                "`.get()` takes two things, with a comma between: the key in quotes, then what to give back when "
-                "the key is missing.",
+                "Look at line 2, `print(lucky[\"glug\"])`. `.get()` takes two things, with a comma between: the key "
+                "in quotes, then what to give back when the key is missing.",
                 "`hero.get(\"ore\", 0)` gives the ore, or 0 if there is no `\"ore\"` key.",
                 "Write `print(lucky.get(\"glug\", 0))` in place of `print(lucky[\"glug\"])`.",
             ],
@@ -2835,18 +2965,20 @@ CANTEEN = dict(
                 now_check(
                     "0 shows with no glug",
                     ok="_ends_in(_ls, 0) and _uses('attr:get')",
-                    fix="Use `.get()` with the key and a default of 0, so the line shows 0 when there is no glug.",
+                    fix="No line shows 0 yet. Use `.get()` with the key and a default of 0.",
                     rules=[
                         ("any(_l.endswith('None') for _l in _ls)",
-                         "`.get(\"glug\")` with only the key gives back `None` when the key is missing. Add the "
-                         "default after a comma: `, 0`."),
-                        ("not _uses('attr:get')", "Use `.get()`: it gives a default instead of a KeyError."),
+                         "Your line shows `None`: `.get(\"glug\")` with only the key gives back `None` when the key "
+                         "is missing. Add the default after a comma: `, 0`."),
+                        ("not _uses('attr:get')",
+                         "Your line doesn't use `.get()` yet. Use `.get()`: it gives a default instead of a "
+                         "KeyError."),
                     ],
                 ),
                 follows(
                     "the glug shows when there is some",
                     {"lucky": {"name": "Lucky", "mana": 26, "glug": 2}},
-                    ev='a sheet with `"glug": 2`',
+                    ev='a test sheet that has `"glug": 2`',
                     ok="_ends_in(_p, 2)",
                     fix="Read the key with `.get()`, so the line shows the glug when Lucky has some.",
                     said="'the line should show 2'",
@@ -2855,11 +2987,11 @@ CANTEEN = dict(
                          "       and getattr(_c.func, 'attr', '') == 'get' and _c.args\n"
                          "       and type(_c.args[0]).__name__ == 'Constant']\n"),
                     rules=[("any(_near(_k, 'glug') for _k in _gk) and 'glug' not in _gk",
-                            "Spell the key exactly like the sheet's: `\"glug\"`, all small letters. Python matches "
-                            "keys letter for letter, so a near miss always gives the 0.")],
+                            "Your key is spelled differently from the sheet's `\"glug\"`, so `.get()` always gives "
+                            "the 0. Python matches keys letter for letter.")],
                 ),
             ],
-            pass_line="Lucky: Zero glug. Typical.",
+            pass_line="Your line shows 0 instead of stopping. Lucky: Zero glug. Typical.",
         ),
     ],
     solution=_canteen(),
@@ -2907,23 +3039,24 @@ ARTICLE_4A1 = dict(
     title="Why Does This Work? Keys and .get()",
     optional=True,
     minutes=8,
-    summary="Why a key can only appear once, how `.get()` avoids a KeyError, and why `in` is fast.",
+    summary="Optional reading. Why each key appears only once, how `.get()` stops a KeyError, and why `in` is fast.",
     introduces=["attr:get"],
     body=(
         "Three things that make dictionaries work. Read them when you like. Nothing here is scored.\n"
-        "*Keys are unique.* A sheet has only one of each key. Give a key a value again, and the new value takes "
-        "the old one's place:\n"
+        "*Each key appears once.* A sheet has only one of each key, the way a glossary lists each word once. Give "
+        "a key a value again, and the new value takes the old one's place, like a new number written over the "
+        "old one on a whiteboard:\n"
         "```python\nhero = {\"name\": \"Moth\", \"glug\": 1}\nhero[\"glug\"] = 3\nprint(hero)\n```\n"
-        "It prints `{'name': 'Moth', 'glug': 3}`. There is still only one `\"glug\"`. When Python prints a whole "
-        "sheet it uses `'` marks. Same text.\n"
-        "*A default instead of an error.* Reading a key that is not there stops the program with a [[KeyError]]. "
-        "[[.get()|`.get()`]] asks more gently. `hero.get(\"glug\", 0)` gives the value when the key is there, and 0 when "
-        "it is not:\n"
+        "It prints `{'name': 'Moth', 'glug': 3}`. There is still only one `\"glug\"`. When Python shows a whole "
+        "sheet, it uses `'` marks instead of `\"`. Same text.\n"
+        "*A default instead of an error.* Reading a key that isn't there stops your code with a [[KeyError]]. "
+        "[[.get()|`.get()`]] reads without stopping. `hero.get(\"glug\", 0)` gives the value when the key is there, "
+        "and the default, 0, when it isn't. A *default* is what you get when nothing else is there:\n"
         "```python\nhero = {\"name\": \"Moth\", \"mana\": 7}\nprint(hero.get(\"mana\", 0))\n"
         "print(hero.get(\"glug\", 0))\n```\n"
         "It prints 7, then 0. No KeyError.\n"
         "*Fast questions.* To find a value in a list, Python checks the items one by one, like opening a row of "
-        "lockers. A dictionary works like the index at the back of a book: Python jumps straight to the key. So "
+        "lockers. A dictionary works like the glossary at the back of a textbook: Python jumps straight to the key. So "
         "`\"Glow\" in spell_book` takes about the same time for 3 spells or 3,000."
     ),
     examples=[

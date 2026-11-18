@@ -519,6 +519,13 @@
   border-color: var(--metal, #b8925a);
 }
 
+/* Python's own tools (str, print, len) sit in a row of their own, as dashed, less rounded chips, apart from the boxes. */
+.ex-name-chip.is-tool,
+.course-page .ex-name-chip.is-tool {
+  border-style: dashed;
+  border-radius: 6px;
+}
+
 .ex-extras.is-prominent .ex-names {
   padding: 8px 10px;
   background: var(--course-panel-raised, #2e2720);

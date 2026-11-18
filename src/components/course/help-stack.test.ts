@@ -6,6 +6,7 @@ import {
   compareLines,
   countInputCalls,
   countsAsAttempt,
+  crashFixLine,
   crashTarget,
   firstParagraph,
   helpOffer,
@@ -27,6 +28,8 @@ import {
   soloPassLine,
   soloUnaided,
   solutionUnlocked,
+  splitNames,
+  startInStarter,
   startOfLine,
 } from "./exercise-logic";
 import { coursePreset as presetOf } from "../../lib/course/progress";
@@ -181,8 +184,47 @@ describe("the Help rungs", () => {
     expect(codeHasStart("w = [1, 2]\nprint(len(w))\nprint(w[0])\n", "print(w[", step)).toBe(false);
     expect(codeHasStart("w = [1, 2]\nprint(w[0])\nprint(w[\n", "print(w[", step)).toBe(true);
     expect(codeHasStart("w = [1, 2]\nprint(w[0])\nprint(w[-1])\n", "print(w[", step)).toBe(true);
-    // A Broken spell's line is not in Mar'tu's version: it is still the line to mend.
+    // A Broken spell's line is not in Mar'tu's version: it is still the line to fix.
     expect(codeHasStart("print(Steady)\n", "print(", { solution: 'print("Steady")\n', line: 'print("Steady")' })).toBe(true);
+  });
+
+  it("hides Start me off on a step that only edits a line the starter already has (guide §9, S3)", () => {
+    // A start that names its box: the starter's `hand = 0` is the step's line, wherever it is.
+    const hand = { solution: "hours = 50\nhand = hours % 12\n", line: "hand = hours % 12", text: "Replace the `0` so `hand` finds the mark." };
+    expect(startInStarter("hand =", "hours = 50\nhand = 0\n", hand)).toBe(true);
+    // A bare `print(`: the step must point at the starter's line, by its number or by quoting it.
+    const spell = { solution: 'print("Shield up.")\nprint("Steady")\n', line: 'print("Steady")' };
+    const starter = 'print("Shield up.)\nprint(Steady)\n';
+    expect(startInStarter("print(", starter, { ...spell, text: "Fix line 2 so it shows `Steady` in the Console." })).toBe(true);
+    expect(startInStarter("print(", "x = 1\nprint(___ + ___)\n", { solution: "x = 1\nprint(x + x)\n", line: "print(x + x)", text: "In `print(___ + ___)`, replace each `___` with `x`." })).toBe(true);
+    // "Make a new line 2": the starter's only line is step 1's broken one, so this step's Start me off stays.
+    const fireball = { solution: 'print("Fireball")\nprint("Get inside")\n', line: 'print("Get inside")', text: "Make a new line 2 that shows the words `Get inside` in the Console." };
+    expect(startInStarter("print(", "print(Fireball)\n", fireball)).toBe(false);
+    // A step that adds a new line keeps Start me off: the starter has only Mar'tu's other finished lines, or nothing.
+    const wall = { solution: "w = [1, 2]\nprint(len(w))\nprint(w[-1])\n", line: "print(w[-1])" };
+    expect(startInStarter("print(w[", "w = [1, 2]\nprint(len(w))\n", wall)).toBe(false);
+    expect(startInStarter("caster =", "# 1. Make caster\n", { solution: 'caster = "Gearshift"\n', line: 'caster = "Gearshift"' })).toBe(false);
+    expect(startInStarter(undefined, starter, spell)).toBe(false);
+    expect(startInStarter("print(", undefined, spell)).toBe(false);
+
+    // Hidden: never climbed, never open, never under More options; the saved count still runs over it.
+    const rungs = helpRungs({ hints: ["point", "teach", 'Write `print("Steady")`.'] }, full);
+    expect(rungs[0].kind).toBe("start");
+    const hide = (rung: { kind: string }) => rung.kind === "start";
+    let state = helpState(rungs, 0, false, { hide });
+    expect(state.next?.kind).toBe("point");
+    expect(state.nextIndex).toBe(1);
+    expect(state.left).toBe(rungs.length - 2);
+    // A count saved before (Start me off opened, then Where to look) shows only Where to look.
+    state = helpState(rungs, 2, false, { hide });
+    expect(state.open.map((rung) => rung.kind)).toEqual(["point"]);
+    expect(state.opened).toBe(2);
+    expect(state.next?.kind).toBe("another");
+    state = helpState(rungs, 0, false, { preset: "short", hide });
+    expect(state.extras.map((rung) => rung.kind)).toEqual(["another", "structure"]);
+    expect(state.open).toEqual([]);
+    // Without `hide`, Keep it short still lists Start me off under More options.
+    expect(helpState(rungs, 0, false, { preset: "short" }).extras.map((rung) => rung.kind)).toEqual(["start", "another", "structure"]);
   });
 
   it("paces rungs: a Run or a few seconds opens the next one", () => {
@@ -195,28 +237,69 @@ describe("the Help rungs", () => {
 
 describe("Help after a crash", () => {
   const brokenSpell = [
-    { text: "Mend line 1 so it shows `Shield up.`" },
-    { text: "Mend line 2 so it shows `Barrier's holding.`" },
-    { text: "Mend line 3 so it shows `Steady`." },
+    { text: "Fix line 1 so it shows `Shield up.`" },
+    { text: "Fix line 2 so it shows `Barrier's holding.`" },
+    { text: "Fix line 3 so it shows `Steady`." },
   ];
 
-  it("aims at the step that names the crash line, never at step 1 under \"Mend line 3 first.\"", () => {
+  it("aims at the step that names the crash line, never at step 1 under \"Fix line 3\"", () => {
     expect(crashTarget(brokenSpell, 3)).toBe(2);
     expect(crashTarget(brokenSpell, 1)).toBe(0);
     expect(crashTarget(brokenSpell, 5)).toBe(-1);
     expect(crashTarget(brokenSpell, null)).toBe(-1);
     // "line 1" is not "line 12".
-    expect(crashTarget([{ text: "Mend line 12." }, { text: "Mend line 1." }], 1)).toBe(1);
+    expect(crashTarget([{ text: "Fix line 12." }, { text: "Fix line 1." }], 1)).toBe(1);
     expect(namesALine("Line 2 is Lucky's secret.")).toBe(true);
     expect(namesALine("Print a line that has `_`, `-` and `=` in it.")).toBe(false);
   });
 
-  it("knows a debugging exercise by its \"Mend ...\" steps (it gets the \"Python got further\" line)", () => {
+  it("says where Python stopped and what to fix, in the banner's words (guide §9, S2)", () => {
+    expect(crashFixLine(3)).toBe("Fix line 3, then press Run again.");
+    // The mistake is on the line above the one Python stopped at (a sheet's missing comma).
+    expect(crashFixLine(13, 12)).toBe("The mistake is on line 12. Fix line 12, then press Run again.");
+    expect(crashFixLine(3, 3)).toBe("Fix line 3, then press Run again.");
+    expect(crashFixLine(null, 12)).toBe("The mistake is on line 12. Fix line 12, then press Run again.");
+    expect(crashFixLine(null)).toBe("Fix the error, then press Run again.");
+  });
+
+  it("knows a debugging exercise by its \"Fix ...\" steps, and still by the older \"Mend ...\" (it gets the \"Python got further\" line)", () => {
     expect(isDebugExercise({ checkpoints: brokenSpell })).toBe(true);
+    expect(isDebugExercise({ checkpoints: [{ text: "Make `hero` a box." }, { text: "Fix the `if` line." }] })).toBe(true);
+    expect(isDebugExercise({ checkpoints: [{ text: "The last bug is quiet. Then fix line 3 so 12 passes." }] })).toBe(true);
+    // The older word still works, so content can move to "fix" a unit at a time.
     expect(isDebugExercise({ checkpoints: [{ text: "Make `hero` a box." }, { text: "Mend the `if` line." }] })).toBe(true);
+    expect(isDebugExercise({ checkpoints: [{ text: "Mend line 3 so it shows `Steady`." }] })).toBe(true);
     expect(isDebugExercise({ checkpoints: [{ text: "Make `hero` a box that holds `\"Lucky\"`." }] })).toBe(false);
-    // "amend" or "mended" in other words is not the debugging verb.
+    // "amend", "mended", "fixed", "prefix" in other words are not the debugging verb.
     expect(isDebugExercise({ checkpoints: [{ text: "Print the amended total." }] })).toBe(false);
+    expect(isDebugExercise({ checkpoints: [{ text: "Print the fixed total, with its prefix `Total: `." }] })).toBe(false);
+    // Only the step's own words count, never its code: the starter's `# Fix it by position here:` note.
+    expect(isDebugExercise({ checkpoints: [{ text: "On line 5, the empty line under `# Fix it by position here:`, change the 74 to 47." }] })).toBe(false);
+    expect(isDebugExercise({ checkpoints: [{ text: "Type this:\n```text\n# Fix the wall\n```" }] })).toBe(false);
+  });
+});
+
+describe("Names to use, and Python's tools apart (guide §9, S7)", () => {
+  it("shows str, print, len and the dot tools as tools, and keeps the boxes as names", () => {
+    expect(splitNames(["mana", "max_mana", "str"], 'mana = 26\nprint("Mana: " + str(mana))\n')).toEqual({ names: ["mana", "max_mana"], tools: ["str"] });
+    expect(splitNames(["print"], 'print("Shield up.")\n')).toEqual({ names: [], tools: ["print"] });
+    expect(splitNames(["chalk_wall", "append"], "chalk_wall = [48]\nchalk_wall.append(33)\n")).toEqual({ names: ["chalk_wall"], tools: ["append"] });
+    expect(splitNames(["random", "roll"], "import random\nroll = random.randint(1, 6)\n")).toEqual({ names: ["roll"], tools: ["random"] });
+    expect(splitNames(["total", "len"], "total = len(wall)\n")).toEqual({ names: ["total"], tools: ["len"] });
+  });
+
+  it("keeps a tool's name that Mar'tu's version makes itself as a name (an ingredient, a box, a loop's name)", () => {
+    const supply = "def item_cost(count, price):\n    return count * price\n\nlantern_cost = item_cost(3, 4)\n";
+    expect(splitNames(["item_cost", "count", "price"], supply)).toEqual({ names: ["item_cost", "count", "price"], tools: [] });
+    expect(splitNames(["title"], 'title = "The Ward"\nprint(title)\n')).toEqual({ names: ["title"], tools: [] });
+    expect(splitNames(["across", "down", "max"], "across, down = cabin\nprint(max(across, down))\n")).toEqual({ names: ["across", "down"], tools: ["max"] });
+    expect(splitNames(["count"], "for count in range(3):\n    print(count)\n")).toEqual({ names: ["count"], tools: [] });
+    expect(splitNames(["count"], "count += 1\n")).toEqual({ names: ["count"], tools: [] });
+    // A comparison or a call is not making it.
+    expect(splitNames(["len"], "if len(wall) == 7:\n    print(len(wall))\n")).toEqual({ names: [], tools: ["len"] });
+    // The game's own recipes stay names: they are not Python's tools.
+    expect(splitNames(["mar_tu_says"], 'mar_tu_says("Steady")\n')).toEqual({ names: ["mar_tu_says"], tools: [] });
+    expect(splitNames([], "")).toEqual({ names: [], tools: [] });
   });
 });
 
@@ -258,8 +341,12 @@ describe("proactive Help offers", () => {
     expect(helpOffer({ ...ready, rungsLeft: 0 })).toBeNull();
   });
 
-  it("says one kind line, and \"read the last line\" only after a crash (there is an error message to read)", () => {
-    expect(helpOfferLine("misses", true)).toContain("Read the title of the box in the Console");
+  it("says one kind line, and the reading routine only after a crash (there is an error box to read)", () => {
+    // The guide's reading routine (§4.2), in order: the title, Python's last line, then the line number and that line.
+    expect(helpOfferLine("misses", true)).toBe(
+      "Oogrish: \u201cSteady, now. Read the title of the box in the Console, then Python\u2019s last line. Then find the line number and fix that line. Want a nudge?\u201d",
+    );
+    expect(helpOfferLine("misses", true)).not.toContain("last line first");
     expect(helpOfferLine("misses")).not.toContain("last line");
     expect(helpOfferLine("misses")).toContain("Steady, now. Want a nudge?");
     expect(helpOfferLine("time")).toMatch(/nudge/);

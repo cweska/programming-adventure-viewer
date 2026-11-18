@@ -219,9 +219,22 @@ def checks_list(value: Any, where: str, ctx: Ctx) -> list:
     return out
 
 
+def planned_error(value: Any, where: str, ctx: Ctx) -> dict:
+    """A step done by an error made on purpose: dict(line=1, error="SyntaxError"). A run that stops on that line with
+    that error (Python's last line starts with it) counts the step as done, and it stays done."""
+    value = as_dict(value, where, ctx)
+    unknown_keys(value, {"line", "error"}, where, ctx)
+    out: dict = {}
+    put(out, "line", value, "line", integer, where, ctx, required=True)
+    put(out, "error", value, "error", text, where, ctx, required=True)
+    if out.get("line", 1) < 1:
+        ctx.error(f"{where}.line", "a line number starts at 1")
+    return out
+
+
 def checkpoint(cp: Any, index: int, where: str, ctx: Ctx) -> dict:
     cp = as_dict(cp, where, ctx)
-    unknown_keys(cp, {"id", "text", "hints", "checks", "pass_line", "dictated"}, where, ctx)
+    unknown_keys(cp, {"id", "text", "hints", "checks", "pass_line", "dictated", "planned_error"}, where, ctx)
     out: dict = {"id": slug(cp["id"], f"{where}.id", ctx) if "id" in cp else f"step-{index}"}
     if "text" in cp:
         out["text"] = LEADING_NUMBER.sub("", text(cp["text"], f"{where}.text", ctx), count=1)
@@ -231,6 +244,7 @@ def checkpoint(cp: Any, index: int, where: str, ctx: Ctx) -> dict:
     put(out, "checks", cp, "checks", checks_list, where, ctx, required=True)
     put(out, "passLine", cp, "pass_line", text, where, ctx)
     put(out, "dictated", cp, "dictated", boolean, where, ctx)
+    put(out, "plannedError", cp, "planned_error", planned_error, where, ctx)
     return out
 
 

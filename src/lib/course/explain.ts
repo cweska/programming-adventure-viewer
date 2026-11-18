@@ -99,6 +99,8 @@ export type CourseErrorKind =
   | "missing-comma-in-list"
   | "print-needs-brackets"
   | "compare-with-double-equals"
+  | "one-box-per-line"
+  | "names-side-by-side"
   | "def-needs-brackets"
   | "missing-colon"
   | "indent"
@@ -135,6 +137,8 @@ export type CourseErrorKind =
   | "call-needs-round-brackets"
   | "comma-in-brackets"
   | "list-plus-item"
+  | "list-tool-without-dot"
+  | "items-after-brackets"
   | "tool-after-dot"
   | "not-on-the-list"
   | "read-from-none"
@@ -170,6 +174,7 @@ export type CourseErrorKind =
   | "not-a-function"
   | "wrong-number-of-values"
   | "wrong-kind-of-value"
+  | "outside-print"
   | "divide-by-zero"
   | "out-of-answers"
   | "not-a-number"
@@ -213,6 +218,11 @@ export type CourseExplanation = Explanation & {
    * positions, not tags."). Never the fix.
    */
   lean?: string;
+  /**
+   * The fix goes on a line above the one Python stopped at, but the explainer can't say which (a box no line makes
+   * yet): the crash banner says "the mistake is on line 5 or a line above it", never only "Fix line 5".
+   */
+  fixAbove?: boolean;
 };
 
 /** The line a debugging exercise shows when a run gets further than the one before (ExercisePlayer). */
@@ -277,7 +287,7 @@ export type ExplainContext = {
    */
   unitOrder?: number;
   /**
-   * A debugging exercise (a Broken spell: "Mend line 3 ..."). A run that got further is marked `gotFurther`
+   * A debugging exercise (a Broken spell: "Fix line 3 ...", or the older "Mend line 3 ..."). A run that got further is marked `gotFurther`
    * with no "One fixed!" prefix in the hint: the player shows its own line, GOT_FURTHER_LINE, instead.
    */
   debugging?: boolean;
@@ -815,6 +825,70 @@ function explain(kind: CourseErrorKind, title: string, hint: string, raw: string
   return { title, hint, raw, kind };
 }
 
+/**
+ * Python's last line guesses `==` ("Maybe you meant '==' instead of '='?") on slips that have nothing to do with a
+ * question (`74 = 47`, `"name" = "Lucky"` in a sheet, two boxes on one line). The reading routine says Python's last
+ * line says the same thing in Python's words, so a literal reader would type `==`: the box says the guess is wrong,
+ * right after what happened (the fixed line stays last). "" when Python made no such guess.
+ */
+function wrongGuess(message: string): string {
+  return /maybe you meant '=='/i.test(message) ? " Python's last line guesses `==`, but that guess is wrong here." : "";
+}
+
+const COUNT_WORDS = ["", "one", "two", "three", "four", "five", "six", "seven"];
+
+/**
+ * `hour_2 = 48, hour_3 = 47`: two boxes made on one line, with a comma between them. Python reads it as a question
+ * ("Maybe you meant '=='"), and the `==` advice would write nonsense (`hour_2 = 48, hour_3 == 47`): one box per line.
+ */
+function explainBoxesOnOneLine(message: string, text: string, line: number | null, raw: string): CourseExplanation | null {
+  if (!/invalid syntax|cannot assign/i.test(message)) return null;
+  const body = codePart(text);
+  const mask = maskStrings(body);
+  const parts: string[] = [];
+  let depth = 0;
+  let from = 0;
+  for (let at = 0; at < mask.length; at += 1) {
+    const char = mask[at];
+    if ("([{".includes(char)) depth += 1;
+    else if (")]}".includes(char)) depth -= 1;
+    else if (char === "," && depth === 0) {
+      parts.push(body.slice(from, at));
+      from = at + 1;
+    }
+  }
+  parts.push(body.slice(from));
+  if (parts.length < 2) return null;
+  const made = parts.map((part) => part.trim().match(/^([A-Za-z_]\w*)\s*=(?!=)\s*(\S.*)$/));
+  if (made.some((found) => !found || KEYWORDS.has(found[1]))) return null;
+  const lines = made.map((found) => `${found?.[1]} = ${found?.[2].trim()}`);
+  const fix = lines.length === 2
+    ? `put \`${lines[1]}\` on a new line of its own, under \`${lines[0]}\``
+    : `put each one on a line of its own: ${codeList(lines)}`;
+  return explain(
+    "one-box-per-line",
+    "One box per line",
+    `${lineWord(line)} makes ${COUNT_WORDS[lines.length] ?? lines.length} boxes on one line.${wrongGuess(message)} Python makes one box per line: ${fix}.`,
+    raw,
+  );
+}
+
+/**
+ * The list the code makes above `line` (one line, `chalk_wall = [48, 48, 74, ...]`) that holds the number `item`, and
+ * its position there, or null. The last such list wins: it is the one the line is about.
+ */
+function listHolding(code: string, line: number | null, item: string): { list: string; position: number } | null {
+  let found: { list: string; position: number } | null = null;
+  (code ?? "").split("\n").forEach((text, index) => {
+    if (line !== null && index + 1 >= line) return;
+    const made = codePart(text).match(/^\s*([A-Za-z_]\w*)\s*=\s*\[([^\][]*)\]\s*$/);
+    if (!made) return;
+    const position = made[2].split(",").map((piece) => piece.trim()).indexOf(item);
+    if (position >= 0) found = { list: made[1], position };
+  });
+  return found;
+}
+
 /** `name - "value"` (a dash where `=` belongs): returns `name = "value"`. */
 function dashFix(text: string, name?: string): string | null {
   const who = name ? escapeRegExp(name) : "[A-Za-z_]\\w*";
@@ -1239,7 +1313,14 @@ function explainStuckNumber(text: string, code: string, line: number | null, raw
       raw,
     );
   }
-  const known = namesBefore(code, line).filter((name) => name !== body.match(/^\s*([A-Za-z_]\w*)\s*=/)?.[1]);
+  const target = body.match(/^\s*([A-Za-z_]\w*)\s*=/)?.[1];
+  const known = namesBefore(code, line).filter((name) => name !== target);
+  // The boxes this line is about: `lantern_cost = 3L` wants `lantern_count` and `lantern_price`, never the rope boxes
+  // made just above it. Same first word as the box being made, else the letter typed, else the last two made.
+  const head = (name: string) => name.split("_")[0]?.toLowerCase() ?? "";
+  const sameWord = target ? known.filter((name) => head(name) === head(target) && head(name) !== "") : [];
+  const sameLetter = known.filter((name) => name.toLowerCase().startsWith(word.charAt(0).toLowerCase()));
+  const these = sameWord.length >= 2 ? sameWord.slice(0, 2) : sameLetter.length === 2 ? sameLetter : known.slice(-2);
   const times = `${number} * ${word}`;
   const algebra = `Python can't read \`${token}\`. In algebra, ${token} means ${number} times ${word}, but Python needs the \`*\` sign for times`;
   return explain(
@@ -1248,7 +1329,7 @@ function explainStuckNumber(text: string, code: string, line: number | null, raw
     known.includes(word)
       ? `${algebra}: \`${times}\``
       : known.length >= 2
-        ? `${algebra}, and only names of boxes you made. You already made boxes for these numbers: use them, like ${codeList(known.slice(-2))}.`
+        ? `${algebra}, and only names of boxes you made. Use the boxes for these numbers: ${codeList(these)}.`
         : `${algebra}: \`${times}\`. \`${word}\` must also be a box you made first.`,
     raw,
   );
@@ -2206,12 +2287,16 @@ function explainSyntax(
   const odd = message.match(/invalid character '(.)'/);
   if (odd) {
     const sign = TYPED_SIGNS[odd[1]];
+    // `ink = █`: the mark is text, so the fix is quotes around it, on the student's own line when the line has no
+    // other quotes to get in the way (`print(█ * 5)` -> `print("█" * 5)`).
+    const plain = codePart(text).trim();
+    const quoted = !/["']/.test(plain) && plain.includes(odd[1]) ? plain.replace(new RegExp(`${escapeRegExp(odd[1])}+`), (run) => `"${run}"`) : null;
     return explain(
       "odd-character",
       "Odd character",
       sign
         ? `${lineWord(line)} has ${odd[1]}, which Python can't read. The keyboard has no ${odd[1]} key, so for ${sign[1]} Python uses \`${sign[0]}\`.`
-        : `${lineWord(line)} has ${odd[1]} outside of quotes, where Python can't read it. To show a mark like ${odd[1]}, put it inside quotes as text: \`"${odd[1]}"\`.`,
+        : `${lineWord(line)} has ${odd[1]} outside of quotes, where Python can't read it. A mark like ${odd[1]} is text, so it goes inside quotes: \`${quoted ?? `"${odd[1]}"`}\``,
       raw,
     );
   }
@@ -2288,6 +2373,10 @@ function explainSyntax(
     if (list) return list;
   }
 
+  // `hour_2 = 48, hour_3 = 47`: two boxes made on one line (never "use ==": nothing asks a question here).
+  const boxes = explainBoxesOnOneLine(message, text, line, raw);
+  if (boxes) return boxes;
+
   // `said_yes = answer.lower() = "yes"`, `assert passed = False`: one `=` where a question needs `==`.
   if (/^invalid syntax|cannot assign to (function call|expression|comparison|attribute)/.test(lower) && !/forgot a comma/.test(lower)) {
     const asked = /maybe you meant '=='/.test(lower) || /^\s*(if|elif|while|assert)\b/.test(text) || /cannot assign/.test(lower)
@@ -2311,17 +2400,36 @@ function explainSyntax(
       return explain(
         "quoted-name",
         "No quotes on a name",
-        `${lineWord(line)} has quotes around a box's name. Quotes mean these exact letters, so a name never gets them. Take the quotes off \`${quotedName[2]}\`: \`${quotedName[2]} = ${right}\``,
+        `${lineWord(line)} has quotes around a box's name.${wrongGuess(message)} Quotes mean these exact letters, so a name never gets them. Take the quotes off \`${quotedName[2]}\`: \`${quotedName[2]} = ${right}\``,
         raw,
       );
     }
     const swap = text.match(/^\s*(.+?)\s*=(?!=)\s*([A-Za-z_]\w*)\s*$/);
-    const taskName = (context?.names ?? []).find((name) => !COMMON_BUILTINS.includes(name)) ?? "name";
-    const example = swap ? `${swap[2]} = ${swap[1]}` : `${taskName} = "value"`;
+    if (swap) {
+      return explain(
+        "name-goes-first",
+        "Name goes first",
+        `In Python, \`=\` works one way: the box's name goes on the left, and the value goes on the right.${wrongGuess(message)} Unlike math, you can't flip the sides: \`${swap[2]} = ${swap[1]}\``,
+        raw,
+      );
+    }
+    // Unit 4: `74 = 47`, a list's item on the left: the list's name and the item's position say where 47 goes.
+    // Never `chalk_wall = "value"`: copied as it reads, that would replace the whole list.
+    const left = codePart(text).trim().match(/^(-?\d+(?:\.\d+)?)\s*=(?!=)\s*(.+)$/);
+    const item = left && unitAtLeast(context, LISTS_UNIT_ORDER) ? listHolding(code, line, left[1]) : null;
+    if (left && item) {
+      return explain(
+        "name-goes-first",
+        "Name goes first",
+        `${lineWord(line)} has the number ${left[1]} on the left of \`=\`, but the left side says where the value goes.${wrongGuess(message)} The ${left[1]} is at position ${item.position} in \`${item.list}\` (count from 0), so write: \`${item.list}[${item.position}] = ${left[2].trim()}\``,
+        raw,
+      );
+    }
+    const shown = codePart(text).trim().match(/^(.+?)\s*=(?!=)/)?.[1]?.trim();
     return explain(
       "name-goes-first",
       "Name goes first",
-      `In Python, \`=\` works one way: the box's name goes on the left, and the value goes on the right. Unlike math, you can't flip the sides: \`${example}\``,
+      `${shown ? `${lineWord(line)} has \`${shown}\` on the left of \`=\`.${wrongGuess(message)} ` : ""}In Python, \`=\` works one way: the left side is the box's name, where the value goes, and the value goes on the right. Unlike math, you can't flip the sides.${shown ? "" : wrongGuess(message)}`,
       raw,
     );
   }
@@ -2421,6 +2529,22 @@ function explainSyntax(
         raw,
       );
     }
+    // `print(#"I am keeping the glug.")`: a `#` inside the parentheses makes the rest of the line a note, `)` too.
+    if (scan.comment >= 0 && !scan.unterminated && scan.open.length > 0) {
+      const unswitched = `${text.slice(0, scan.comment)}${text.slice(scan.comment + 1)}`.trim();
+      const switchOff = (context?.solution ?? "").split("\n").some((row) => row.trim().replace(/^#\s*/, "# ") === `# ${unswitched}`);
+      const where = line ? `line ${line}` : "the line";
+      return explain(
+        "never-closed",
+        `Missing ${closing}`,
+        `The \`#\`${onLine(line)} is inside the parentheses, so Python skips the rest of the line, \`${closing}\` too. ${
+          switchOff
+            ? `Put \`#\` at the very start of ${where}, before \`${unswitched.match(/^[A-Za-z_]\w*/)?.[0] ?? unswitched}\`: \`# ${unswitched}\``
+            : `Take the \`#\` out of the parentheses: \`${unswitched}\``
+        }`,
+        raw,
+      );
+    }
     if (/[([{]$/.test(body)) {
       return explain(
         "never-closed",
@@ -2470,11 +2594,15 @@ function explainSyntax(
     return explainIndent(message, line, raw, unitAtLeast(context, FUNCTIONS_UNIT_ORDER) ? code : "");
   }
   if (/^invalid syntax/.test(lower)) {
-    // Unit 4: the wall's row copied as it looks (`hours = 48 48 47`), and `chalk_wall.pop[]`.
+    // Unit 4: the wall's row copied as it looks (`hours = 48 48 47`), `chalk_wall.pop[]`, and the items typed after
+    // the starter's empty brackets (`chalk_wall = [] 48, 48, 47`).
     if (unitAtLeast(context, LISTS_UNIT_ORDER)) {
-      const list = explainNumbersSideBySide(text, line, raw) ?? explainEmptySquareCall(code, text, line, raw);
+      const list = explainNumbersSideBySide(text, line, raw) ?? explainEmptySquareCall(code, text, line, raw) ?? explainItemsAfterBrackets(text, line, raw);
       if (list) return list;
     }
+    // `lantern_cost = lantern_count lantern_price`: two of the code's names side by side, the algebra habit (5P).
+    const sideBySide = explainNamesSideBySide(code, text, line, raw, context);
+    if (sideBySide) return sideBySide;
     // `if hours_left < 3;`: a semicolon typed for the colon.
     if (/;\s*$/.test(codePart(text)) && headerWithColon(code, text, line)) return explainMissingColon(code, text, line, raw);
     const option = explainUnquotedOption(text, line, raw);
@@ -2482,12 +2610,27 @@ function explainSyntax(
     const unquoted = explainUnquoted(text, code, line, raw);
     if (unquoted) return unquoted;
     const body = codePart(text).trim();
-    // `Night watch`: plain words on a line, meant as a note or as words to show.
+    // `Night watch`: plain words on a line. One fix, from Mar'tu's version: a note where his line is a note (the
+    // note step), else words to show (a step that shows words). Both only when there is no version to read.
     if (/^[A-Za-z][A-Za-z0-9 ,.!?;:-]*$/.test(body) && /\s/.test(body) && !KEYWORDS.has(body.split(/\s+/)[0] ?? "")) {
+      const solution = context?.solution;
+      const asNote = solution !== undefined && line !== null && /^\s*#/.test(solution.split("\n")[line - 1] ?? "");
+      const asShown = solution !== undefined && !asNote && /(^|[^\w.])print\s*\(/.test(solution);
+      const note = `A note for people starts with \`#\`, like a stage direction: \`# ${body}\``;
+      const shown = `Words to show go in quotes inside \`print( )\`: \`print("${body}")\``;
       return explain(
         "unquoted-words",
         "Words with no quotes",
-        `${lineWord(line)} is plain words, so Python tries to read them as code. A note for people starts with \`#\`, like a stage direction: \`# ${body}\`. Words to show go in quotes inside \`print( )\`: \`print("${body}")\``,
+        `${lineWord(line)} is plain words, so Python tries to read them as code. ${asNote ? note : asShown ? shown : `${note}. ${shown}`}`,
+        raw,
+      );
+    }
+    // `_ - =`: marks on a line with no `print` and no quotes.
+    if (/^[^A-Za-z0-9"'()[\]{}#\s]+(?:\s+[^A-Za-z0-9"'()[\]{}#\s]+)*$/.test(body)) {
+      return explain(
+        "unquoted-words",
+        "Missing quotes?",
+        `${lineWord(line)} has marks with no \`print\` and no quotes, so Python tries to read them as code. To show marks, put them in quotes inside \`print( )\`: \`print("${body}")\``,
         raw,
       );
     }
@@ -2621,6 +2764,23 @@ function explainName(
     );
   }
 
+  // Unit 4: `append(33)`: a list tool with no list's name and dot in front (never "write the recipe with def").
+  const toolLine = codePart(text).trim();
+  const listTool = LIST_TOOLS.has(name) && unitAtLeast(context, LISTS_UNIT_ORDER)
+    ? toolLine.match(new RegExp(`(^|[^\\w.])${name}\\s*\\(`))
+    : null;
+  const toolList = listTool ? listAbove(code, line, context) : null;
+  if (listTool && toolList) {
+    const at = (listTool.index ?? 0) + listTool[1].length;
+    const fixed = `${toolLine.slice(0, at)}${toolList}.${toolLine.slice(at)}`;
+    return explain(
+      "list-tool-without-dot",
+      `${name} goes after a dot`,
+      `\`.${name}()\` needs the list's name and a dot in front of it, so Python knows which list to ${name === "append" ? "add to" : "use"}: \`${fixed}\``,
+      raw,
+    );
+  }
+
   // `hero == "Lucky"` on a line of its own: `==` only asks, so `hero` was never made.
   const alone = comparisonAlone(text);
   if (alone && alone.op === "==" && alone.left === name) {
@@ -2711,6 +2871,17 @@ function explainName(
         raw,
       );
     }
+    // `Lucky` alone on line 4, and a later line uses the step's box `hero` that no line makes: the word is that box's
+    // value (Broken spell 1B), so the fix is quotes and the step's own box, never a box named `Lucky`.
+    const box = line !== null ? boxStillToMake(code, line, context) : null;
+    if (box) {
+      return explain(
+        "lone-name",
+        "A name on its own",
+        `${lineWord(line)} is only the word \`${name}\`. With no quotes, Python looks for a box named \`${name}\`, and no line makes one. \`${name}\` is text, so it needs quotes, and your step's box \`${box}\` needs a line that makes it. Write: \`${box} = "${name}"\``,
+        raw,
+      );
+    }
     return explain(
       "lone-name",
       "A name on its own",
@@ -2763,12 +2934,15 @@ function explainName(
 
   const grow = text.match(new RegExp(`^\\s*${escapeRegExp(name)}\\s*([-+*/%]|//|\\*\\*)=`));
   if (grow) {
-    return explain(
-      "make-it-first",
-      "Make it first",
-      `${lineWord(line)} changes \`${name}\`, but \`${name}\` has no value yet. Give it a starting value on a line above, like \`${name} = 0\``,
-      raw,
-    );
+    return {
+      ...explain(
+        "make-it-first",
+        "Make it first",
+        `${lineWord(line)} changes \`${name}\`, but \`${name}\` has no value yet. Give it a starting value on a line above, like \`${name} = 0\``,
+        raw,
+      ),
+      fixAbove: true,
+    };
   }
 
   const later = defined.find((entry) => entry.name === name && line !== null && entry.line > line);
@@ -2786,19 +2960,26 @@ function explainName(
     const bare = line !== null ? explainQuietSlip((code ?? "").split("\n").slice(0, line - 1).join("\n")) : null;
     if (bare && bare.kind === "bare-value") {
       const value = codePart(sourceLine(code, bare.line)).trim();
-      return explain(
+      return {
+        ...explain(
+          "not-made-yet",
+          "Not made yet",
+          `\`${name}\` is one of your step's boxes, but no line makes it yet. Line ${bare.line} has the value \`${value}\` on its own: put \`${name} = \` in front of it, so it reads \`${name} = ${value}\``,
+          raw,
+        ),
+        // The fix is on the value's line, not the line Python stopped at: the crash banner says so.
+        slipLine: bare.line,
+      };
+    }
+    return {
+      ...explain(
         "not-made-yet",
         "Not made yet",
-        `\`${name}\` is one of your step's boxes, but no line makes it yet. Line ${bare.line} has the value \`${value}\` on its own: put \`${name} = \` in front of it, so it reads \`${name} = ${value}\``,
+        `\`${name}\` is one of your step's boxes, but no line makes it yet. Make it ${line ? `above line ${line}` : "first"}, on a line that starts with \`${name} = \``,
         raw,
-      );
-    }
-    return explain(
-      "not-made-yet",
-      "Not made yet",
-      `\`${name}\` is one of your step's boxes, but no line makes it yet. Make it ${line ? `above line ${line}` : "first"}, on a line that starts with \`${name} = \``,
-      raw,
-    );
+      ),
+      fixAbove: true,
+    };
   }
 
   // `if choice == yes:`: one word with no quotes after `==`, and no box by that name anywhere.
@@ -2846,6 +3027,17 @@ function explainName(
       ? `Its ingredient is \`${likeIngredient}\`: use it letter for letter.`
       : `Its ingredients are ${ingredients.map((entry) => `\`${entry}\``).join(ingredients.length === 2 ? " and " : ", ")}: use \`${likeIngredient}\`, letter for letter.`;
     return explain("unknown-name", "Not an ingredient", `\`${name}\` is not an ingredient of \`${kitchen.recipe}\`. ${its}`, raw);
+  }
+  // `weapon = sword`: the whole value is one bare word, and Mar'tu's version keeps text in that box. One fix, the
+  // quotes: never "use one of your step's names" (`weapon = armor_bonus`, another step's box).
+  const wholeValue = assignedHere !== undefined && new RegExp(`^\\s*${escapeRegExp(assignedHere)}\\s*=(?!=)\\s*${escapeRegExp(name)}\\s*$`).test(codePart(text));
+  if (wholeValue && new RegExp(`^\\s*${escapeRegExp(assignedHere ?? "")}\\s*=(?!=)\\s*["']`, "m").test(context?.solution ?? "")) {
+    return explain(
+      "unquoted-word",
+      "Missing quotes?",
+      `\`${name}\` has no quotes, so Python looks for a box named \`${name}\` and finds none. \`${assignedHere}\` holds words, and words need quotes: \`${assignedHere} = "${name}"\``,
+      raw,
+    );
   }
   const earlier = taskNamesInstead(code, line, context, [name, ...(assignedHere ? [assignedHere] : [])]);
   if (/^[a-z][a-z0-9_]*$/.test(name) && earlier.length > 0) {
@@ -2977,6 +3169,28 @@ function inputNames(code: string): string[] {
 }
 
 /**
+ * The one box of the step's names (not one of Python's tools) that no line makes, but a line below `line` uses: the
+ * box a lone value on `line` was meant for (`Lucky` alone on line 4, `print(hero)` on line 5). Null when there is
+ * not exactly one.
+ */
+function boxStillToMake(code: string, line: number, context?: ExplainContext): string | null {
+  const defined = new Set(definedNames(code).map((entry) => entry.name));
+  const below = (code ?? "")
+    .split("\n")
+    .slice(line)
+    .map((row) => maskStrings(codePart(row)));
+  const boxes = (context?.names ?? []).filter(
+    (name) =>
+      /^[A-Za-z_]\w*$/.test(name) &&
+      !COMMON_BUILTINS.includes(name) &&
+      !CALLED_TOOLS.has(name) &&
+      !defined.has(name) &&
+      below.some((row) => new RegExp(`(^|[^\\w.])${name}\\b`).test(row)),
+  );
+  return boxes.length === 1 ? boxes[0] : null;
+}
+
+/**
  * `def hero(): "Lucky"` (the student followed Python's "expected '('"), then `print(hero + " is ready.")`: a
  * TypeError about a 'function'. The slip is the def line, so it gets the def-for-variable advice.
  */
@@ -3019,6 +3233,24 @@ const CALLED_TOOLS = new Set([
   "append", "count", "remove", "insert", "pop", "sort", "index", "extend", "copy", "clear", "reverse",
   "lower", "upper", "capitalize", "title", "strip", "randint",
 ]);
+
+/** The list tools a student calls after a list's name and a dot (`chalk_wall.append(33)`). */
+const LIST_TOOLS: ReadonlySet<string> = new Set(["append", "insert", "pop", "remove", "sort", "extend", "index", "count", "clear", "reverse"]);
+
+/**
+ * The list a line is about: of the lists made above `line` (`chalk_wall = [...]`), a task name first, then the nearest
+ * one above. Null when no line above makes a list.
+ */
+function listAbove(code: string, line: number | null, context?: ExplainContext): string | null {
+  const lists: string[] = [];
+  (code ?? "").split("\n").forEach((text, index) => {
+    if (line !== null && index + 1 >= line) return;
+    const made = codePart(text).match(/^\s*([A-Za-z_]\w*)\s*=(?!=)\s*\[/)?.[1];
+    if (made) lists.push(made);
+  });
+  const task = new Set(context?.names ?? []);
+  return [...lists].reverse().find((name) => task.has(name)) ?? lists.at(-1) ?? null;
+}
 
 /** Unit 5: a sheet's own tools, called with round brackets (`lucky.get("glug", 0)`). */
 const SHEET_TOOLS: ReadonlySet<string> = new Set(["get", "keys", "values", "items"]);
@@ -3630,6 +3862,49 @@ function explainNumbersSideBySide(text: string, line: number | null, raw: string
   );
 }
 
+/**
+ * Unit 4: `chalk_wall = [] 48, 48, 47`: the items typed after the starter's empty brackets, outside the list. They go
+ * between the square brackets.
+ */
+function explainItemsAfterBrackets(text: string, line: number | null, raw: string): CourseExplanation | null {
+  const made = codePart(text).trim().match(/^([A-Za-z_]\w*)\s*=(?!=)\s*\[\s*\]\s*,?\s*([^\s,].*)$/);
+  if (!made) return null;
+  const items = made[2].replace(/,\s*$/, "").trim();
+  const numbers = /^-?\d+(?:\.\d+)?(?:\s*,?\s*-?\d+(?:\.\d+)?)*$/.test(items);
+  const listed = numbers ? items.split(/\s*,\s*|\s+/).join(", ") : items;
+  return explain(
+    "items-after-brackets",
+    "Inside the brackets",
+    `${lineWord(line)} has ${numbers ? "numbers" : "items"} after the \`]\`, outside the list. The ${numbers ? "numbers" : "items"} go between the square brackets: \`${made[1]} = [${listed}]\``,
+    raw,
+  );
+}
+
+/**
+ * `lantern_cost = lantern_count lantern_price`: two names the code made, side by side with no sign. In algebra LP means
+ * L times P, but Python needs a sign. The sign comes from Mar'tu's version when it joins the same two names.
+ */
+function explainNamesSideBySide(code: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  const body = codePart(text);
+  const mask = maskStrings(body);
+  const known = new Set(namesBefore(code, line));
+  for (const found of mask.matchAll(/(?<![\w.])([A-Za-z_]\w*)[ \t]+([A-Za-z_]\w*)(?![\w.([])/g)) {
+    const [pair, first, second] = found;
+    if (KEYWORDS.has(first) || KEYWORDS.has(second) || !known.has(first) || !known.has(second)) continue;
+    const between = (context?.solution ?? "").match(new RegExp(`(?<![\\w.])${escapeRegExp(first)}\\s*(\\*\\*|//|[-+*/%])\\s*${escapeRegExp(second)}(?![\\w.])`))?.[1];
+    const at = found.index ?? 0;
+    const fixed = between ? `${body.slice(0, at)}${first} ${between} ${second}${body.slice(at + pair.length)}`.trim() : "";
+    const sign = between === "*" ? "the `*` sign for times" : between ? `a sign between them, \`${between}\`` : "a math sign between them, like `*` for times";
+    return explain(
+      "names-side-by-side",
+      "Missing math sign",
+      `${lineWord(line)} has two names side by side, \`${first}\` and \`${second}\`, with nothing between them. In algebra, LP means L times P, but Python needs ${sign}${fixed ? `: \`${fixed}\`` : "."}`,
+      raw,
+    );
+  }
+  return null;
+}
+
 /** Unit 4: `newest = chalk_wall.pop[]`, `sorted[]`: empty square brackets after a tool that is called (a SyntaxError). */
 function explainEmptySquareCall(code: string, text: string, line: number | null, raw: string): CourseExplanation | null {
   const recipes = new Set(recipeBlocks(code).map((block) => block.recipe));
@@ -4224,7 +4499,7 @@ function explainSheetSyntax(message: string, code: string, text: string, line: n
     return explain(
       "equals-in-sheet",
       "A colon in a sheet",
-      `${lineWord(line)} has \`=\` inside a sheet. Inside a dictionary \`{ }\`, a colon goes between a key and its value, like a word and its meaning in a glossary: \`${fixed}\`. The key keeps its quotes.`,
+      `${lineWord(line)} has \`=\` inside a sheet.${wrongGuess(message)} Inside a dictionary \`{ }\`, a colon goes between a key and its value, like a word and its meaning in a glossary: \`${fixed}\`. The key keeps its quotes.`,
       raw,
     );
   }
@@ -4236,7 +4511,7 @@ function explainSheetSyntax(message: string, code: string, text: string, line: n
       return explain(
         "key-outside-sheet",
         "A key lives in its sheet",
-        `${lineWord(line)} writes the key \`"${outside.key}"\` with no sheet before it, so Python reads it as text, and text can't store a value. A key lives inside its sheet: \`${outside.fixed}\`. The key keeps its quotes.`,
+        `${lineWord(line)} writes the key \`"${outside.key}"\` with no sheet before it, so Python reads it as text, and text can't store a value.${wrongGuess(message)} A key lives inside its sheet: \`${outside.fixed}\`. The key keeps its quotes.`,
         raw,
       );
     }
@@ -5422,6 +5697,9 @@ function explainNoStartingValue(name: string, code: string, text: string, line: 
       raw,
     ),
     lean,
+    // The fix is a new line above the loop, not the line Python stopped at: the crash banner says "line 9 or a line
+    // above it" (crashFixLine), as for a box no line makes yet.
+    fixAbove: true,
   };
 }
 
@@ -5693,6 +5971,38 @@ function loopSheetNames(code: string, context?: ExplainContext): string[] {
   });
 }
 
+/**
+ * "unsupported operand type(s) for +: 'NoneType' and 'str'" on `print(name + " has ") + str(mana)`: the `)` that closes
+ * `print( )` came too early, so the rest is outside it. Move that `)` to the very end of the line.
+ */
+function explainOutsidePrint(message: string, text: string, line: number | null, raw: string): CourseExplanation | null {
+  if (!/unsupported operand type\(s\) for [^:]+: 'NoneType' and/.test(message)) return null;
+  const body = codePart(text).trim();
+  const mask = maskStrings(body);
+  const open = mask.match(/^print\s*\(/);
+  if (!open) return null;
+  let depth = 0;
+  let close = -1;
+  for (let at = open[0].length - 1; at < mask.length; at += 1) {
+    if (mask[at] === "(") depth += 1;
+    else if (mask[at] === ")") {
+      depth -= 1;
+      if (depth === 0) {
+        close = at;
+        break;
+      }
+    }
+  }
+  if (close < 0 || !/^\s*[-+*/%]/.test(mask.slice(close + 1))) return null;
+  const fixed = `${body.slice(0, close).trimEnd()}${body.slice(close + 1).replace(/^\s*/, " ").trimEnd()})`;
+  return explain(
+    "outside-print",
+    "Outside print( )",
+    `${lineWord(line)} adds more pieces after the \`)\` that closes \`print( )\`, so they are outside it. Everything to show goes inside print's parentheses. Move that \`)\` to the very end of the line: \`${fixed}\``,
+    raw,
+  );
+}
+
 function explainType(
   message: string,
   code: string,
@@ -5701,6 +6011,10 @@ function explainType(
   raw: string,
   context?: ExplainContext,
 ): CourseExplanation {
+  // `print(name + " has ") + str(mana) + " mana."`: the pieces after the `)` that closes print are outside it, and
+  // print hands back `None`. Never "values of kinds that don't go together" with Python's 'NoneType'.
+  const outside = explainOutsidePrint(message, text, line, raw);
+  if (outside) return outside;
   const fromInput = inputNames(code).find((name) => new RegExp(`\\b${escapeRegExp(name)}\\b`).test(text));
   const joinText = /can only concatenate str \(not "(int|float)"\) to str/.test(message);
   const addToNumber = /unsupported operand type\(s\) for \+: '(int|float)' and 'str'/.test(message);
@@ -6186,6 +6500,8 @@ const SLIP_NAMES: Record<CourseErrorKind, string> = {
   "missing-comma-in-list": "a missing comma in a list",
   "print-needs-brackets": "print without parentheses",
   "compare-with-double-equals": "one `=` where a question needs two",
+  "one-box-per-line": "two boxes made on one line",
+  "names-side-by-side": "two names with no math sign between them",
   "def-needs-brackets": "a def line without ( )",
   "missing-colon": "a missing colon",
   indent: "spaces at the start of a line",
@@ -6219,6 +6535,8 @@ const SLIP_NAMES: Record<CourseErrorKind, string> = {
   "call-needs-round-brackets": "square brackets where a call needs parentheses",
   "comma-in-brackets": "a comma inside [ ] where one position goes",
   "list-plus-item": "one item joined to a list with `+`",
+  "list-tool-without-dot": "a list tool used without the list's name and a dot",
+  "items-after-brackets": "items outside the list's square brackets",
   "tool-after-dot": "a tool written after a dot",
   "not-on-the-list": "a value the list does not hold",
   "read-from-none": "a position read from `None`",
@@ -6251,6 +6569,7 @@ const SLIP_NAMES: Record<CourseErrorKind, string> = {
   "not-a-function": "parentheses after something that can't use them",
   "wrong-number-of-values": "the wrong number of values handed over",
   "wrong-kind-of-value": "values of kinds that don't go together",
+  "outside-print": "pieces outside `print( )`",
   "divide-by-zero": "a divide by zero",
   "out-of-answers": "more questions than answers",
   "not-a-number": "text that is not a number",
@@ -6395,14 +6714,15 @@ function findQuietSlip(code: string, options: { missingName?: string; context?: 
       const hint = missing
         ? `${lost} Put \`${keep} = \` in front of it: \`${keep} = ${body}\``
         : printOnly
-          ? `${where} is ${STRING_LITERAL.test(body) ? "words in quotes" : "a value"} with no \`print\`, so Python reads it and throws it away. To show it in the Console, write \`print(${body})\``
+          ? `${where} is ${STRING_LITERAL.test(body) ? "words in quotes" : NUMBER_LITERAL.test(body) ? "a number" : "a word"} with no \`print\`, so Python reads it and throws it away. To show it in the Console, write \`print(${body})\``
           : keep
             ? `${lost} Put \`${keep} = \` in front of it: \`${keep} = ${body}\``
             : keep === undefined
               ? `${lost} To keep it, put the box's name from your step and \`=\` in front of it.`
               : `${lost} To keep it, put a box's name and \`=\` in front of it. To show it instead, put it inside \`print( )\`: \`print(${body})\``;
+      // Lesson 1A has not met boxes, values or names yet: its title says what is missing there, `print`.
       return {
-        ...explain("bare-value", "A value with no name", hint, raw),
+        ...explain("bare-value", printOnly && !missing ? "Missing print" : "A value with no name", hint, raw),
         kind: "bare-value",
         line,
       };

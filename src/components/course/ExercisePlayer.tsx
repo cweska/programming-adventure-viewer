@@ -32,9 +32,12 @@ import {
   codeHasStart,
   countsAsAttempt,
   crashAim,
+  crashFixLine,
+  crashLineInStarter,
   crashLineSwitchedOff,
   crashTarget,
   effectiveSupport,
+  endlessRun,
   firstParagraph,
   helpOffer,
   helpRungs,
@@ -52,9 +55,12 @@ import {
   rungPaced,
   rungsShown,
   runOutcome,
+  sameErrorLook,
   soloPassLine,
   soloUnaided,
   solutionUnlocked,
+  splitNames,
+  startInStarter,
   startNote,
   startTarget,
   stepAssemble,
@@ -62,9 +68,11 @@ import {
   stdinBoxText,
   stepNoun,
   stuckCheckpointId,
+  switchOffLine,
   taskLineParts,
   titleFromId,
   usesInput,
+  withPlannedErrors,
   type CrashAim,
   type FailStreak,
   type PlayerMode,
@@ -153,12 +161,16 @@ type RunView = {
   /** This run passed with Mar'tu's version, copied in with "Copy into my editor". */
   revealPass?: boolean;
   /**
-   * A debugging exercise's crash: the step Help aims at (crashAim), or null for "only say which line to mend".
+   * A debugging exercise's crash: the step Help aims at (crashAim), or null for "only say which line to fix".
    * Undefined outside debugging exercises and for runs that did not crash.
    */
   crashStep?: number | null;
   /** The crash is part of the task: Mar'tu's version switches that line off with `#` (crashLineSwitchedOff). */
   crashSwitchOff?: boolean;
+  /** With crashSwitchOff: the line was in the code from the start (Anatomy of a fizzle), not one the student typed. */
+  crashInStarter?: boolean;
+  /** The step this crash finished on purpose (a checkpoint's `plannedError`), when it was newly done by it. */
+  plannedStep?: number;
 };
 
 /** The last line of Python's message ("SyntaxError: unterminated string literal ..."), or "" when there is none. */
@@ -623,10 +635,10 @@ export function ExercisePlayer({
   const crashed = view?.grade?.crashed === true;
   /*
    * A run that never ended (a loop that printed forever, or ran past the time limit): Python was stopped wherever the
-   * loop happened to be, often a line that is right (`print(hours_left)`), so there is no line to mend first. The
+   * loop happened to be, often a line that is right (`print(hours_left)`), so there is no line to fix first. The
    * task line says so, and Help stays on the step (Unit 6).
    */
-  const endless = crashed && (view?.explanation?.kind === "timeout" || view?.explanation?.kind === "too-much-output");
+  const endless = crashed && endlessRun(view?.explanation);
   const lineCrash = crashed && !endless;
   const crashAt = lineCrash && view?.explanation ? crashLine(view.explanation.raw) : null;
   /*
@@ -634,6 +646,8 @@ export function ExercisePlayer({
    * comma Python reports on the next line, a whole card read on the line above the comparison).
    */
   const slipAt = lineCrash && view?.explanation?.slipLine && view.explanation.slipLine !== crashAt ? view.explanation.slipLine : null;
+  /* A box no line makes yet: the fix goes on a line above the one Python stopped at (crashFixLine). */
+  const fixAbove = lineCrash && view?.explanation?.fixAbove === true;
   /* Steps that passed before, failing on the latest run that Python finished (a crash checks nothing). */
   const slippedSteps =
     view?.grade && !view.grade.crashed && !view.revealPass
@@ -641,8 +655,8 @@ export function ExercisePlayer({
       : [];
   /** Done before, but the latest run is not right now: the done panel stays, softer, without the celebration. */
   const slippedSinceDone = done && view?.grade != null && !view.grade.allPassed && !view.revealPass;
-  // While a crash stands, Help aims at the line Python stopped on, never at step 1 under "Fix line 3 first.":
-  // a step that names that line ("Mend line 3 ...") gets the Help. When the steps name other lines and none
+  // While a crash stands, Help aims at the line Python stopped on, never at step 1 under "Fix line 3":
+  // a step that names that line ("Fix line 3 ...") gets the Help. When the steps name other lines and none
   // names this one, their Help would talk about a different line, so it waits until the code runs. In a
   // debugging exercise, a crash that got further than the last one aims past the slip just mended (crashAim).
   const aimStep = lineCrash && view?.crashStep !== undefined ? view.crashStep : undefined;
@@ -681,15 +695,19 @@ export function ExercisePlayer({
     return lightBeforeRun && point >= 0 ? all.slice(0, point + 1) : all;
   }, [helpCheckpoint, exercise.anotherWay.length, exercise.assemble, exercise.solo, exercise.solution, lightBeforeRun]);
   /**
-   * Start me off has nothing to give when the step's line is already begun, or right after a crash (mend that first).
-   * Mar'tu's other finished lines (the starter's, an earlier step's) are not this step's line begun.
+   * Start me off has nothing to give when the step's line is already begun, or right after a crash (fix that first).
+   * Mar'tu's other finished lines (the starter's, an earlier step's) are not this step's line begun. On a step that
+   * only edits a line the starter already has ("Fix line 1 so ...", "Replace the `0` ..."), it never shows at all.
    */
   const startStep = { solution: exercise.solution, line: helpCheckpoint ? stepLine(helpCheckpoint.hints) : null };
   const startInCode = (start: string) => codeHasStart(code, start, startStep);
   const skipRung = (rung: Rung) => rung.kind === "start" && (lineCrash || startInCode(rung.start ?? ""));
+  const hideRung = (rung: Rung) =>
+    rung.kind === "start" && startInStarter(rung.start, exercise.starter, { ...startStep, text: helpCheckpoint?.text });
   const climbed = helpState(rungs, helpCheckpoint ? rungsShown(saved?.hintsUsed, helpCheckpoint.id, rungs.length) : 0, showUnlocked, {
     preset,
     skip: skipRung,
+    hide: hideRung,
   });
   // A Start me off that Help stepped over was never shown: it stays out of the open rungs (it would only say
   // "Your code already starts this line" above Where to look).
@@ -719,7 +737,7 @@ export function ExercisePlayer({
   const names = exercise.names ?? [];
   /** The task only prints (Lesson 1A): a pick on a line of its own goes in as `print("...")`. */
   const printOnly = isPrintOnlyTask({ names, solution: exercise.solution });
-  /** A Broken spell ("Mend line 3 ..."): a run that gets further shows its own progress line. */
+  /** A Broken spell ("Fix line 3 ..."): a run that gets further shows its own progress line. */
   const debugging = isDebugExercise(exercise);
 
   function openCompare() {
@@ -832,14 +850,21 @@ export function ExercisePlayer({
         // The game's hidden sheets (`caster`) count as the program's own, so a KeyError can name the level a key is on.
         setup: exercise.setup,
       };
-      const grade = gradeCheckpoints(exercise.checkpoints, result, source, context);
+      const savedBefore = getCourseProgress().exercises[key];
+      const before = savedBefore?.passed ?? [];
+      // A step done by an error made on purpose (the first lesson's break): the planned crash does it, and it stays done.
+      const crashRaw = result.traceback || result.stderr || "";
+      const { grade, planned } = withPlannedErrors(
+        exercise.checkpoints,
+        gradeCheckpoints(exercise.checkpoints, result, source, context),
+        result.ok ? null : { line: crashLine(crashRaw), error: pythonLastLine(crashRaw) },
+        before,
+      );
       // The side quest's checks come after the main ones: grade them from their own slice, by position.
       const bonusGrade =
         bonusCp && !grade.crashed
           ? gradeCheckpoints([bonusCp], { ...result, checks: (result.checks ?? []).slice(mainChecks.length) }, source, context)
           : null;
-      const savedBefore = getCourseProgress().exercises[key];
-      const before = savedBefore?.passed ?? [];
       const wasDone = savedBefore?.done === true;
       // A pass with Mar'tu's version, copied in: it shows the code works, but it does not finish the exercise
       // (or tick any step) until the student writes it themselves (curriculum §2.2, the immediate typed twin).
@@ -866,11 +891,11 @@ export function ExercisePlayer({
       setStreak(nextStreak);
       activityAt.current = sessionNow.current;
       if (!grade.allPassed) setMissedThisVisit(true);
-      const crashText = result.traceback || result.stderr || "";
+      const crashText = crashRaw;
       const explanation = grade.crashed ? explainCourseError(crashText, source, context) : null;
       // A debugging exercise's crash: which step Help aims at, past the slips already mended this visit.
       let aim: CrashAim | null = null;
-      if (debugging && grade.crashed && explanation && explanation.kind !== "timeout" && explanation.kind !== "too-much-output") {
+      if (debugging && grade.crashed && explanation && !endlessRun(explanation)) {
         const line = crashLine(explanation.raw);
         const signature = `${line ?? "?"}:${pythonLastLine(explanation.raw)}`;
         const passedIds = [...before, ...outcome.passedNow];
@@ -933,8 +958,11 @@ export function ExercisePlayer({
           newlyPassed: outcome.newlyPassed,
           revealPass,
           ...(aim ? { crashStep: aim.step } : {}),
+          ...(planned.some((id) => outcome.newlyPassed.includes(id))
+            ? { plannedStep: exercise.checkpoints.findIndex((checkpoint) => planned.includes(checkpoint.id)) }
+            : {}),
           ...(grade.crashed && explanation && crashLineSwitchedOff(source, crashLine(explanation.raw), exercise.solution)
-            ? { crashSwitchOff: true }
+            ? { crashSwitchOff: true, crashInStarter: crashLineInStarter(source, crashLine(explanation.raw), exercise.starter) }
             : {}),
         };
       });
@@ -1075,6 +1103,8 @@ export function ExercisePlayer({
 
   const pairTalkText = exercise.pairTalk ? exercise.pairTalk.replace(/^\s*pair talk\s*:?\s*/i, "") : "";
   const showNames = names.length > 0 || Boolean(exercise.pick);
+  // Python's own tools (`str`, `print`) get their own row, apart from the boxes (plain-language guide §9, S7).
+  const chips = splitNames(names, exercise.solution);
 
   const checkpointList = (
     <section className="ex-checkpoints" aria-labelledby={`${inputId}-steps`}>
@@ -1083,7 +1113,8 @@ export function ExercisePlayer({
       </h3>
       {showNames ? (
         <NamesChips
-          names={names}
+          names={chips.names}
+          tools={chips.tools}
           pick={exercise.pick}
           prominent={activeCheckpoint?.dictated === false}
           onInsertName={(name) => insertInCode(name, name, "code")}
@@ -1165,11 +1196,16 @@ export function ExercisePlayer({
               <Prose inline text={exercise.title} />
             </h2>
           ) : null}
-          {activeCheckpoint && !done && crashed && view?.crashSwitchOff && crashAt ? (
+          {activeCheckpoint && !done && crashed && view?.plannedStep !== undefined && crashAt ? (
+            // The error was the step (the first lesson's break): say so, and what comes next.
+            <p className="ex-task-line" data-testid="task-line" data-crash="true" data-planned="true">
+              <span className="ex-task-label">{`Python stopped at line ${crashAt}, as planned.`}</span>{" "}
+              {`${noun} ${view.plannedStep + 1} is done. Read the title of the box in the Console. Then do ${noun.toLowerCase()} ${firstOpen + 1}.`}
+            </p>
+          ) : activeCheckpoint && !done && crashed && view?.crashSwitchOff && crashAt ? (
             // The crash is part of the task (Anatomy of a fizzle): read the message first, then switch the line off.
             <p className="ex-task-line" data-testid="task-line" data-crash="true" data-switch-off="true">
-              <span className="ex-task-label">{`Python stopped on line ${crashAt}.`}</span>{" "}
-              {`That's part of this ${noun.toLowerCase()}. First read the box in the Console: your ${noun.toLowerCase()}s come from it. Then put # at the start of line ${crashAt} and press Run again.`}
+              <span className="ex-task-label">{`Python stopped at line ${crashAt}.`}</span> {switchOffLine(noun, crashAt, view.crashInStarter === true)}
             </p>
           ) : activeCheckpoint && !done && endless ? (
             // A run that never ended checks nothing either, but the line it was stopped on is no slip: the loop is.
@@ -1180,9 +1216,9 @@ export function ExercisePlayer({
           ) : activeCheckpoint && !done && crashed ? (
             // A crash checks nothing, so "step 1" may already be right: the line Python stopped at comes first.
             <p className="ex-task-line" data-testid="task-line" data-crash="true">
-              <span className="ex-task-label">{`First, fix ${slipAt ? `line ${slipAt}` : crashAt ? `line ${crashAt}` : "the error"}.`}</span>{" "}
-              {`${slipAt && crashAt ? `Python stopped on line ${crashAt}` : "Python stopped there"}, so it couldn't check your ${noun.toLowerCase()}s yet. ${
-                // A lean explainer names the slip, not the fix: the line promises only what the message gives.
+              <span className="ex-task-label">{crashAt ? `Python stopped at line ${crashAt}` : "Python stopped"}</span>
+              {`, so it couldn't finish your code. ${crashFixLine(crashAt, slipAt, fixAbove)} ${
+                // A lean explainer names the mistake, not the fix: the line promises only what the message gives.
                 exercise.explainer === "lean" ? "The box in the Console names the mistake." : "The box in the Console says how to fix it."
               }`}
             </p>
@@ -1483,11 +1519,13 @@ export function ExercisePlayer({
               crashed={lineCrash}
               crashLine={crashAt}
               slipLine={slipAt}
+              fixAbove={fixAbove}
               crashOnly={crashOnlyHelp}
               moreAfterRun={lightBeforeRun}
               crashIsTask={view?.crashSwitchOff === true}
+              crashInStarter={view?.crashInStarter === true}
               startInCode={startInCode}
-              startNote={startNote(code, "", startTarget(helpCheckpoint), editorPlaced)}
+              startNote={(start) => startNote(code, start, startTarget(helpCheckpoint), editorPlaced)}
               onReveal={revealRung}
               onDismissOffer={() => {
                 setOfferDismissed(true);
@@ -1634,13 +1672,7 @@ function ExerciseConsole({
             {view.sameError ? (
               <p className="ex-same-error" data-testid="same-error">
                 Same error as last time.{" "}
-                {/* A run that never ended stops wherever the loop happens to be (often a right `print`): the fix is the
-                    line inside the loop that changes its question, so no line number is named (Unit 6). */}
-                {view.explanation.kind === "timeout" || view.explanation.kind === "too-much-output"
-                  ? "Look at the indented lines under your loop's first line. Which one changes the number its question checks?"
-                  : crashLine(view.explanation.raw)
-                    ? `Look closely at line ${crashLine(view.explanation.raw)}.`
-                    : "Look closely at the line number in Python's last line."}
+                {sameErrorLook(crashLine(view.explanation.raw), view.explanation.slipLine ?? null, view.explanation.fixAbove === true, endlessRun(view.explanation))}
               </p>
             ) : null}
             <p className="ex-explainer-title">{view.explanation.title}</p>

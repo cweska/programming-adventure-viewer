@@ -210,8 +210,8 @@ def _why(_err):
     # What stopped Python on the test run, in plain words (plain-language guide 4.3.6), never the raw error.
     _k = _err.split(':')[0]
     if _k == 'IndexError':
-        return "On Mar'tu's test, Python stopped: your code asks for a position the list doesn't have."
-    return "On Mar'tu's test, Python stopped with " + ('an ' if _k[:1] in 'AEIOU' else 'a ') + _k + '.'
+        return "Your code asked for a position the test list doesn't have, so Python stopped."
+    return "Python stopped with " + ('an ' if _k[:1] in 'AEIOU' else 'a ') + _k + " on Mar'tu's test."
 def _stop(_vals, _apps, _err, _fix='Read every value from the list, so your code works for any list.', _only=None):
     if _err.startswith('IndexError'):
         _fix = 'Count from the end with `[-1]`, so it works for a list of any length.'
@@ -368,18 +368,18 @@ UNIT = dict(
     subtitle="The Chalk Wall",
     published=True,
     martu_intro=(
-        "Seven numbers on my wall. I could give each one its own box. I could also lose my mind. A list keeps "
-        "them together, in order, yes?\n"
-        "You have met lists already. `party.members` was one: the four of you, in order, under one name. "
+        "A [[list]] keeps many values under one name, in order, like a data set in math class.\n"
+        "My chalk wall holds seven numbers. I could give each one its own box. I could also lose my mind, yes?\n"
+        "You have met a list already: `party.members` held the four of you, in order, under one name. "
         "Tonight we read a list closely, one position at a time."
     ),
     goals=[
-        "Make a [[list]] with square brackets and commas",
-        "Read an item by its [[index|position]], counting from 0, and from the end with `-1`",
-        "Change an item by its position, grow a list with `.append()`, and join two lists with `+`",
-        "Count items with `len()`, and know the last position is `len - 1`",
-        "Read a list inside a list, like `roster[3][1]`",
-        "Count with `range()`, cut a [[slice]] like `[-3:]`, and sort with `sorted()`",
+        "Keep many values in one [[list]], in order, with square brackets and commas",
+        "Read an item by its [[index|position]], counting from 0 like a ruler, or counting from the end",
+        "Change one item by its position, add an item to the end, and join two lists",
+        "Count the items in a list, and find the last one",
+        "Read a list inside a list: the row first, then the item in that row",
+        "Count with `range()`, copy part of a list with a [[slice]], and make a sorted copy",
     ],
     campaign_links=["leylines-awaken", "friends-in-low-places"],
 )
@@ -390,9 +390,8 @@ GLOSSARY = [
         term="tuple",
         aliases=["tuples"],
         plain=(
-            "A few values that stay together, in order, and can't change, like a point (3, 8) in math class. It "
-            "uses parentheses `( )`, not square brackets. You read it by position, like a list, but you can't add, "
-            "remove or swap its items."
+            "A few values that stay together, in order, like a point (3, 8) in math class. It uses parentheses "
+            "`( )`, and you read it like a list, but you can't change it."
         ),
         example='hero = ("Lucky", 26)',
     ),
@@ -400,8 +399,8 @@ GLOSSARY = [
         term="zip()",
         aliases=["zip"],
         plain=(
-            "A tool that pairs up two lists, item by item, like the teeth of a zipper: first with first, second with "
-            "second. Each pair is a tuple. Put it inside `list()` to see the pairs."
+            "A tool that pairs up two lists like the teeth of a zipper: first with first, second with second. Put "
+            "it inside `list()` to see the pairs, each one a tuple."
         ),
         example="list(zip(fruits, prices))",
     ),
@@ -569,7 +568,7 @@ CABIN_ON_THE_MAP = dict(
             ),
             dictated=True,
             hints=[
-                "Look at line 4, `cabin = [12, 5]`. Square brackets `[ ]` make a list. Which marks make a tuple?",
+                "Look at line 4, `cabin = [12, 5]`. Square brackets `[ ]` make a list. What makes a tuple?",
                 "A tuple uses parentheses. `door = (3, 8)` is a tuple of two numbers. Keep the comma between them.",
                 "Type `(` in place of `[`, and `)` in place of `]`. Line 4 becomes `cabin = (12, 5)`.",
             ],
@@ -744,12 +743,12 @@ TUPLES_ARTICLE = dict(
         "```python\nspot = (12, 5)\n```\n"
         "You read a tuple the same way you read a list. `spot[0]` is 12, `spot[-1]` is 5, and `len(spot)` is 2.\n"
         "But a tuple can't change. `spot[0] = 3` makes Python stop with a [[TypeError]] that says a tuple *does "
-        "not support item assignment*: you can't put a new item in. A tuple has no `.append()` either.\n"
-        "Why use a list you can't change? A tuple says: these values belong together, in this order. Nobody "
+        "not support item assignment*: you can't swap an item for a new one. A tuple has no `.append()` either.\n"
+        "Why use something that can't change? A tuple says: these values belong together, in this order. Nobody "
         "changes one by mistake.\n"
-        "Check which marks you typed. `[48, 47]` is a list. `(48, 47)` is a tuple. If Python says a tuple *has no "
-        "attribute 'append'*, you typed parentheses where square brackets belong. Here, parentheses make a tuple. "
-        "They don't group math, the way they do in PEMDAS.\n"
+        "Look at what you typed around the items. `[48, 47]` is a list. `(48, 47)` is a tuple. If Python says a "
+        "tuple *has no attribute 'append'*, you typed parentheses where square brackets belong. Here, parentheses "
+        "make a tuple. They don't group math, the way they do in PEMDAS.\n"
         "One more trick: *unpacking*. It gives each item its own name, in one line. Put two names on the left of "
         "`=`, and they get the items in order:\n"
         "```python\nname, mana = (\"Lucky\", 26)\n```\n"
@@ -811,9 +810,9 @@ for _vals in (None, __OTHER__):
     _p = _ns.get('pairs')
     if _lists and _p == _B.list(_B.zip(_h, _c)):
         continue
-    assert not (_err and not _uses('call:zip')), ('Python stopped on test lists of another length. Make the pairs '
-                                                 'with `zip()`, which works for lists of any length: '
-                                                 '`list(zip(heroes, colors))`.' + __EV__)
+    assert not (_err and not _uses('call:zip')), ("Python stopped on Mar'tu's test lists, which are a different "
+                                                 'length. Make the pairs with `zip()`, which works for lists of any '
+                                                 'length: `list(zip(heroes, colors))`.' + __EV__)
     assert not _err, _stop(None, None, _err) + __EV__
     assert 'pairs' in _ns, ("Python can't find `pairs`. Put back line 6, `pairs = []`, and change it to "
                             '`pairs = list(zip(heroes, colors))`.')
@@ -875,8 +874,9 @@ SPELL_COLORS = dict(
     title="Spell colors",
     martu=(
         "[[zip()]] pairs up two lists, item by item, like the zipper on a coat: the first tooth on one side meets "
-        "the first tooth on the other. Each pair is a tuple. Put `zip()` inside `list()` to see the pairs, the way "
-        "you did with `list(range(1, 7))`: `list(zip(coins, values))` gives `[('copper', 1), ('brass', 5)]`.\n"
+        "the first tooth on the other. Each pair is a [[tuple]]: two values in parentheses that stay together. Put "
+        "`zip()` inside `list()` to see the pairs, the way you did with `list(range(1, 7))`: "
+        "`list(zip(coins, values))` gives `[('copper', 1), ('brass', 5)]`.\n"
         "Every hero's magic has a color. Oogrish's is gold, and Gearshift's is fire orange. Your `heroes` and "
         "`colors` lists are in the same order, so the first hero goes with the first color, yes?"
     ),
@@ -1003,8 +1003,8 @@ for _vals in (None, __OTHER__):
         snippet='option_1 = "We will help you."\noption_2 = "What is the decay?"',
         why=(
             "You wrote four replies in four boxes, `option_1` to `option_4`, and the game matched `\"option 1\"` to "
-            "the first reply. With two lists, one of labels and one of replies, `zip()` would pair each label with "
-            "its reply."
+            "the first reply. With two lists, one of option names and one of replies, `zip()` would pair each "
+            "option with its reply."
         ),
     ),
     takeaway="`list(zip(heroes, colors))` pairs two lists, first with first. `pairs[-1]` is the last pair.",
@@ -1227,8 +1227,8 @@ assert _v, '`parts` is still empty. Put 4 or more part names between the square 
 for _x in _v:
     _k = type(_x).__name__
     assert _k not in ('list', 'tuple'), ('`parts` holds pairs or lists. Keep only names in `parts`, like `"lens"`. The '
-                                         'counts get their own list in task 2.')
-    assert _k != 'int', '`parts` has a number in it. It holds only names, each in quotes. The numbers go in `counts`, in task 2.'
+                                         'counts get their own list in Task 2.')
+    assert _k != 'int', '`parts` has a number in it. It holds only names, each in quotes. The numbers go in `counts`, in Task 2.'
     assert _k == 'str' and _x.strip(), ("One item in `parts` isn't a part name. Put each part's name in quotes, like "
                                         '`"brass lens"`.')
 assert _B.len(_v) >= 4, '`parts` has ' + _B.str(_B.len(_v)) + ' names. Put at least 4 parts in it.'
@@ -1279,7 +1279,7 @@ for _vals in __CASES__:
     assert not _miss, _keep(_miss[0] if _miss else 'parts')
     _P, _C = _orig(_vals)
     if not (_is_list(_P) and _is_list(_C)):
-        assert False, "`parts` or `counts` isn't a list yet. Finish tasks 1 and 2 first."
+        assert False, "`parts` or `counts` isn't a list yet. Finish Tasks 1 and 2 first."
     _kp = [_ins_at(_s['parts'], _P) for _s in _snaps]
     _kc = [_ins_at(_s['counts'], _C) for _s in _snaps]
     _okp = [_s['parts'][1] for _s, _k in _B.zip(_snaps, _kp) if _k == 1 and type(_s['parts'][1]).__name__ == 'str']
@@ -1304,7 +1304,7 @@ for _vals in __CASES__:
         assert not (_calls_of('append', 'parts') and not _calls_of('insert', 'parts')), (
             '`.append()` adds at the end, but the new part goes second. Use `parts.insert(1, ...)`.')
         assert not _pop_first('parts'), ('Your pop ran before your insert, because Python reads top to bottom, like a '
-                                         'page. Do task 3 before task 4: insert first, then pop.')
+                                         'page. Do Task 3 before Task 4: insert first, then pop.')
         _ks = [_k for _k in _kp if _k >= 0]
         if _ks:
             _new = [_s['parts'][_k] for _s, _k in _B.zip(_snaps, _kp) if _k >= 0][0]
@@ -1321,7 +1321,7 @@ for _vals in __CASES__:
     assert not (_calls_of('append', 'counts') and not _calls_of('insert', 'counts')), (
         '`.append()` adds at the end, but the new count goes second, next to its part. Use `counts.insert(1, ...)`.')
     assert not _pop_first('counts'), ('Your pop ran before your insert, because Python reads top to bottom, like a '
-                                      'page. Do task 3 before task 4: insert first, then pop.')
+                                      'page. Do Task 3 before Task 4: insert first, then pop.')
     _ks = [_k for _k in _kc if _k >= 0]
     if _ks:
         _new = [_s['counts'][_k] for _s, _k in _B.zip(_snaps, _kc) if _k >= 0][0]
@@ -1343,7 +1343,7 @@ for _vals in __CASES__:
     _P, _C = _orig(_vals)
     _IP, _IC = _inserted(_snaps, _P, _C)
     assert _IP is not None and _IC is not None, ("The new part and its count aren't second in both lists yet. Finish "
-                                                 'task 3 first.')
+                                                 'Task 3 first.')
     # Seen right after the pop, and still one shorter at the end (a second pop would hide behind the first).
     _fp, _fcn = _ns.get('parts'), _ns.get('counts')
     _okp = _seen_list(_snaps, 'parts', _IP[:-1]) and _is_list(_fp) and _B.len(_fp) == _B.len(_IP) - 1
@@ -1362,7 +1362,7 @@ for _vals in __CASES__:
                                                            '`counts`. Pop once.' + _evp)
         assert not _seen_list(_snaps, 'parts', _IP[:-1]), ('`parts` changed again after the pop. Pop once, then leave '
                                                            '`parts` alone: it should end one part shorter than after '
-                                                           'task 3.' + _evp)
+                                                           'Task 3.' + _evp)
         assert not (_b == _IP[-1]), ('`parts[-1]` only reads the last part, so it stays in the list. Use `.pop()`: it '
                                      'reads the last part *and* takes it off.' + _evp)
         assert not _calls_of('pop', 'parts'), '`parts` still has its last part. Pop it off: `borrowed = parts.pop()`.' + _evp
@@ -1377,7 +1377,7 @@ for _vals in __CASES__:
                                                             'with `parts`. Pop once.' + _evc)
         assert not _seen_list(_snaps, 'counts', _IC[:-1]), ('`counts` changed again after the pop. Pop once, then '
                                                             'leave `counts` alone: it should end one count shorter '
-                                                            'than after task 3.' + _evc)
+                                                            'than after Task 3.' + _evc)
         assert False, ('`counts` still has its last count, so it no longer lines up with `parts`. Pop `counts` too: '
                        '`counts.pop()`.' + _evc)
     assert not ('taken' in _ns and 'borrowed' not in _ns), ('`taken` is the name from the hint. This task keeps the '
@@ -1426,7 +1426,7 @@ for _vals in __CASES__:
                                    'so sorting one sorts both. Use `sorted(counts)`: a real copy.' + _evc)
         assert _fc != _B.sorted(_PC), ('`.sort()` sorted `counts` itself, so the counts no longer line up with their '
                                        'parts. Sort a copy instead: `sorted(counts)`.' + _evc)
-        assert False, '`counts` changed in task 5. Leave it as it was after task 4: only `top_three` should change.' + _evc
+        assert False, '`counts` changed in Task 5. Leave it as it was after Task 4: only `top_three` should change.' + _evc
     assert _t != [], '`top_three` is still the empty list `[]`. Make it the 3 biggest counts: `sorted(counts)[-3:]`.'
     assert not _is_int(_t), '`top_three` holds one count, not three. A slice needs a colon: `sorted(counts)[-3:]`.' + _evc
     assert _is_list(_t), "`top_three` isn't a list. Make it a slice of a sorted copy: `sorted(counts)[-3:]`."
@@ -1465,7 +1465,7 @@ for _vals in __CASES__:
     _evc = _ev(_vals, None, ('counts',))
     assert not _calls_of('count', 'parts'), ('`parts` holds names, so it has no 0s to count. Count in `counts`, where '
                                              'the numbers are: `counts.count(0)`.')
-    assert _got, 'No number shows in the Console for task 6. Print how many counts are 0: `print(counts.count(0))`.'
+    assert _got, 'No number shows in the Console for Task 6. Print how many counts are 0: `print(counts.count(0))`.'
     assert not (_is_list(_fc) and _B.len(_fc) in _got), ('Your line shows how many parts there are in all, because '
                                                        '`len()` counts every item. Use `.count(0)`, which counts only '
                                                        'the 0s.' + _evc)
@@ -1503,8 +1503,9 @@ for _vals in __CASES__:
                                                          'both lists: `zip(parts, counts)`.')
     _early = [_s for _s in _snaps if _is_list(_s['parts']) and _is_list(_s['counts'])
               and _i == _B.list(_B.zip(_s['parts'], _s['counts']))]
-    assert not _early, ('`inventory` was made before the insert and the pop, so it pairs the old lists. Python reads '
-                        'top to bottom, so make `inventory` at the bottom, under `# 7.`' + _ev(_vals))
+    assert not _early, ('`inventory` is made above the insert and the pop, so it pairs the lists as they were before '
+                        'Tasks 3 and 4. Python reads top to bottom, like a page. Make `inventory` at the bottom, '
+                        'under the `# 7.` note.' + _ev(_vals))
     assert not _typed_list('inventory'), (
         "The pairs in `inventory` are typed in, so they won't change to match the lists. Zip them from the lists: "
         '`list(zip(parts, counts))`.')
@@ -1653,7 +1654,7 @@ PROJECT_3P2 = dict(
                 "Look at `top_three = []`, under the `# 5.` note. In a sorted copy, smallest first, where do the 3 "
                 "biggest sit?",
                 "`sorted(stock)` is a sorted copy, like a photocopy you put in order. A slice from `-2` to the end "
-                "cuts off the last 2: `sorted(stock)[-2:]` is the 2 biggest, and `stock` keeps its order.",
+                "copies the last 2: `sorted(stock)[-2:]` is the 2 biggest, and `stock` keeps its order.",
                 "Write `top_three = sorted(counts)[-3:]` in place of `top_three = []`.",
             ],
             checks=[INV_TOPPED],
@@ -1975,7 +1976,8 @@ if _kind == 'missing':
     assert not _n, 'You wrote `' + _n[0] + '`, but the task needs `chalk_wall`. Python matches names letter for letter.'
     assert 'nights' not in _made, ("`nights` is the name from the Example. This task's list is named `chalk_wall`.")
     assert False, "Python can't find `chalk_wall`. Make one list named `chalk_wall` for the seven gaps, oldest first."
-assert _kind != 'Tuple', '`chalk_wall` has parentheses, so it is a tuple. A list uses square brackets `[ ]`.'
+assert _kind != 'Tuple', ('Your gaps are inside parentheses `( )`, and parentheses don' + chr(39) + 't make a list. '
+                          'Use square brackets `[ ]`.')
 assert _is_list(_v), ("`chalk_wall` isn't a list yet. Put the seven gaps between square brackets, with a comma "
                       'between each two.')
 assert not [_x for _x in _v if type(_x).__name__ == 'str'], ('The gaps have quotes, so they are text. Take the quotes '
@@ -2005,7 +2007,8 @@ for _w in __WANT__:
         _shown = _B.str(_n[-1]) if _n else 'something else'
         assert _shown != '-11', ('The shrink shows a minus number, because your subtraction is the wrong way around. '
                                  'Put the oldest gap first: the oldest minus the newest.')
-        assert False, ('Your `' + _label + '` line shows ' + _shown + ', but the old program showed `' + _w + '`.')
+        assert False, ('Your `' + _label + '` line shows ' + _shown + ', but the old program showed `' + _w + '`. '
+                       'Check which positions you read from `chalk_wall`.')
     assert False, ('The old program printed `' + _w + '`, and yours has no line like it. Keep the words the same, and '
                    'read the number from the list.')
 ''',
@@ -2093,8 +2096,8 @@ CHALLENGE_ONE_LIST = dict(
     example_output="First: 9\nDrop: 3",
     names=["chalk_wall"],
     pair_talk=(
-        "Pair talk: before you start, tell your partner which box holds the oldest gap and which holds the newest, "
-        "and which position of a list reads each one."
+        "Pair talk: before you start, tell your partner which box holds the oldest gap and which holds the newest. "
+        "Then say which position in the list will hold each one."
     ),
     starter=REFACTOR_STARTER,
     checkpoints=[
@@ -2180,8 +2183,8 @@ CHALLENGE_ONE_LIST = dict(
         ),
     ),
     takeaway=(
-        "One list in place of seven boxes: `[0]` is the oldest, `[-1]` the newest, and the code works out the "
-        "shrink, so it changes to match a new wall."
+        "One list can do the job of seven boxes. Read the oldest gap with `[0]` and the newest with `[-1]`, and let "
+        "the code work out the shrink, so it changes to match a new wall."
     ),
     wrong_answers=[
         dict(why="the starter (seven boxes, the shrink typed)", code=REFACTOR_STARTER, fails_at=1,
@@ -2195,7 +2198,8 @@ CHALLENGE_ONE_LIST = dict(
                                                          REFACTOR_READS.replace("chalk_wall", "chalk_wal")),
              fails_at=1, message_contains="letter for letter"),
         dict(why="round brackets (square brackets vs parentheses for a list)",
-             code=_refactor("chalk_wall = (48, 48, 47, 46, 44, 41, 37)\n"), fails_at=1, message_contains="tuple"),
+             code=_refactor("chalk_wall = (48, 48, 47, 46, 44, 41, 37)\n"), fails_at=1,
+             message_contains="parentheses don't make a list"),
         dict(why="a gap missing from the list", code=_refactor("chalk_wall = [48, 48, 47, 46, 44, 37]\n"),
              fails_at=1, message_contains="seven gaps"),
         dict(why="quoted numbers (the shrink crashes on text)",
@@ -2280,7 +2284,7 @@ _eqs = [_n for _n in _ast.walk(_tree3) if type(_n).__name__ == 'Compare' and typ
 
 # ---- C1: make a list, append a guess, fix one item by position, print the last item through the list ----
 
-def _qc_make(form, name, start, rule, guess, fix, other, other_guess, story="", lead="", copied="three marks",
+def _qc_make(form, name, start, rule, guess, fix, other, other_guess, story="", lead="", copied="three numbers",
              lesson="Many Values, One Name"):
     """rule = ("below", 41) or ("above", 7): the guess the task asks for (any value on that side passes).
     fix: the right value at position 1 (Lucky miscopied start[1]). story / lead: form B's starter comment and
@@ -2316,12 +2320,13 @@ _kind, _v = _first_lit(__NAME__)
 assert not ('steps' in globals() and (_kind == 'missing' or not _v)), (
     "`steps` is a name from a hint. This task's list is named `" + __NAME__ + '`.')
 assert _kind != 'missing', _lost(__NAME__)
-assert _kind != 'Tuple', '`' + __NAME__ + '` has parentheses, so it is a tuple, not a list.'
-assert _is_list(_v), '`' + __NAME__ + "` isn't a list."
+assert _kind != 'Tuple', ('Your numbers are inside parentheses `( )`, and parentheses don' + chr(39) + 't make a '
+                          'list.')
+assert _is_list(_v), '`' + __NAME__ + "` doesn't hold a list."
 assert _v or not _near(__NAME__), _lost(__NAME__)
-assert _v, '`' + __NAME__ + '` is still empty.'
+assert _v, '`' + __NAME__ + '` is still empty: `[]`.'
 _txt = [_x for _x in _v if type(_x).__name__ == 'str']
-assert not _txt, 'The numbers have quotes, so they are text.'
+assert not _txt, 'The numbers in `' + __NAME__ + '` are text, because of the quotes.'
 # Lucky's fixed copy is let through here, so a retyped first line gets task 3's message, not this one.
 _fine = (__WANT__, __FIXED__)
 assert not (_v[:3] in _fine and _B.len(_v) > 3), 'Your guess is typed into the first list, so nothing is appended.'
@@ -2362,17 +2367,20 @@ for _vals in (None, {__NAME__: __OTHER__}):
     assert not _ok, 'Your guess, ' + _B.str(_g[-1]) + ', is not ' + __SIDE__ + ' ' + _B.str(__EDGE__) + '.'
     assert not _err, _lstop(_vals, None, _err)
     if _is_list(_g) and _B.len(_g) == _B.len(_start):
-        assert not _bare, '`+` makes a new, longer list, but nothing keeps it, so Python throws it away.'
-        assert not _early, ('The append is above the line that makes `' + __NAME__ + '`, and Python reads top to '
-                            'bottom.')
-        assert _B.len(_lits) < 2, 'A second `' + __NAME__ + ' = [...]` line makes a brand-new list.' + _ev(_vals)
+        assert not _bare, ('Your line makes a joined list with no name in front, so Python reads it and throws it '
+                          'away.')
+        assert not _early, ('Your append runs above the line that makes `' + __NAME__ + '`, so that line wipes it '
+                            'out. Python reads top to bottom, like a page.')
+        assert _B.len(_lits) < 2, ('A second `' + __NAME__ + ' = [...]` line makes a brand-new list, and the old numbers '
+                                   'are gone.' + _ev(_vals))
         assert False, 'Nothing was added to the end of `' + __NAME__ + '`.' + _ev(_vals)
     assert _is_list(_g), '`' + __NAME__ + '` is no longer a list.'
     assert _B.len(_g) == _B.len(_start) + 1, ('`' + __NAME__ + '` grew by ' + _B.str(_B.len(_g) - _B.len(_start))
                                               + ' items, not by one guess.' + _ev(_vals))
     _new = _g[-1]
-    assert type(_new).__name__ != 'str', 'The guess has quotes, so it is text, not a number.'
-    assert type(_new).__name__ != 'list', 'The guess went in with square brackets, so a whole list was appended.'
+    assert type(_new).__name__ != 'str', 'Your guess is text, because of the quotes.'
+    assert type(_new).__name__ != 'list', ('Your guess went in as a list inside the list, because of its square '
+                                           'brackets.')
     assert False, 'The new last item of `' + __NAME__ + "` isn't one whole number." + _ev(_vals)
 ''',
         NAME=name, WANT=start, OTHER=other[:len(start)], OKRULE=ok_rule, SIDE=side, EDGE=edge,
@@ -2387,15 +2395,19 @@ _want = __FIXED__
 if not (_is_list(_g) and _B.len(_g) == _B.len(_want) + 1 and _g[:-1] == _want):
     assert _is_list(_g), '`' + __NAME__ + '` is no longer a list.'
     _top = _g[:_B.len(_want)]
-    assert not (_eqs and not _subs), ('`==` only asks whether two things are the same. It changes nothing, so the '
+    assert not (_eqs and not _subs), ('Your line asks a yes-or-no question with `==`, so nothing changes. The '
                                       + __OLD__ + ' is still there.')
     assert not (_calls_of('append', __NAME__) and _B.len(_g) > _B.len(_want) + 1 and _g[-1] == __FIXV__
                 and _g[1] == __OLDV__), '`.append()` adds ' + __FIX__ + ' at the end, so the ' + __OLD__ + ' is still there.'
     assert not (_B.len(_g) > 1 and _g[1] == __OLDV__ and __FIXV__ in _top), (
-        'Positions start at 0, so that changed the wrong item.')
-    assert not (_B.len(_g) > 1 and _g[1] == __OLDV__ and _subs), 'Positions start at 0, so that changed the wrong item.'
+        'Positions start at 0, like a ruler, so that changed the wrong item. The ' + __OLD__ + ' is still in `'
+        + __NAME__ + '`.')
+    assert not (_B.len(_g) > 1 and _g[1] == __OLDV__ and _subs), (
+        'Positions start at 0, like a ruler, so that changed the wrong item. The ' + __OLD__ + ' is still in `'
+        + __NAME__ + '`.')
     assert not (_B.len(_g) > 1 and _g[1] == __OLDV__), 'The ' + __OLD__ + ' is still in `' + __NAME__ + '`.'
-    assert not (_B.len(_g) > 1 and type(_g[1]).__name__ == 'str'), 'The new number has quotes, so it is text.'
+    assert not (_B.len(_g) > 1 and type(_g[1]).__name__ == 'str'), ('The new number at position 1 is text, because '
+                                                                  'of the quotes.')
     assert _B.len(_g) > 1 and _g[1] == __FIXV__, 'Position 1 now holds ' + _shn(_g[1] if _g[1:] else None) + ', not ' + __FIX__ + '.'
     assert _top == _want, 'Another item changed too: `' + __NAME__ + '` holds ' + _shn(_g) + '.'
     assert False, ('`' + __NAME__ + '` ends with ' + _B.str(_B.len(_g)) + ' items, not the three numbers and one '
@@ -2438,7 +2450,7 @@ if not (_is_list(_g) and _g[:_B.len(_want)] == _want) and not _moved:
     fix_by_position = chk(
         f"the change is made by position: {name}[...] = ...",
         _SUBS + r'''
-assert _subs, 'That changed the list another way. This task changes the one item by its position.'
+assert _subs, 'Your code changed the list another way, not by position. This task changes one item by its position.'
 ''',
         NAME=name,
     )
@@ -2465,13 +2477,13 @@ for _vals, _apps in ((None, None), ({__NAME__: __OTHER__}, {__NAME__: __OTHERGUE
     _early = [_n for _n in _ast.parse(_source).body if type(_n).__name__ == 'Expr' and type(_n.value).__name__ == 'Call'
               and type(_n.value.func).__name__ == 'Name' and _n.value.func.id == 'print' and _apl
               and _n.lineno < _B.min(_apl)]
-    assert not _early, 'The print is above the append, so it ran before the guess was added.'
+    assert not _early, 'Your print runs before the append, so it shows the last item from before your guess.'
     assert not (_vals is not None and _got == _own and _typed_print()), (
-        'That number was typed in, not read from the list.' + _ev(_vals, _apps))
+        'You typed the number instead of reading it from the list.' + _ev(_vals, _apps))
     assert not (_vals is not None and _got == _own), ('Your line shows ' + _B.str(_got[-1]) + ' even when the list '
                                                      'holds other numbers.' + _ev(_vals, _apps))
-    assert not _front, ('A position counted from the front fits one length only, so it misses the last item of a '
-                        'longer list.' + _ev(_vals, _apps))
+    assert not _front, ('A position counted from the front fits only one length of list. On a longer list, it '
+                        'misses the last item.' + _ev(_vals, _apps))
     assert False, "That read doesn't find the last item of every list." + _ev(_vals, _apps)
 ''',
         NAME=name, OTHER=other, OTHERGUESS=other_guess,
@@ -2482,9 +2494,9 @@ for _vals, _apps in ((None, None), ({__NAME__: __OTHER__}, {__NAME__: __OTHERGUE
         title="Make, append, fix, read",
         martu=(
             lead
-            + f"Lucky copied {copied} for you. Four steps: make the list, append your guess, fix Lucky's mistake by "
-            "its position, and print the last item. I test your code with another list, so read every number from "
-            "the list. Don't type in a number you can see.\n"
+            + f"Lucky copied {copied} for you, and he got one wrong. Four steps: make the list, append your guess "
+            "for the next number, fix Lucky's mistake by its position, and print the last item. I test your code "
+            "with another list, so read every number from the list. Don't type in a number you can see.\n"
             f"Stuck? Skip this task, or go back to the lesson {lesson}. Tasks you pass here stay ✓ done."
         ),
         names=[name, "append"],
@@ -2495,12 +2507,13 @@ for _vals, _apps in ((None, None), ({__NAME__: __OTHER__}, {__NAME__: __OTHERGUE
         checkpoints=[
             dict(
                 id="make-the-list",
-                text=f"Under the `# 1.` note, make `{name}` a list that holds {nums}, in that order.",
+                text=f"Under the `# 1.` note, fill in `{name} = []` so `{name}` holds {nums}, in that order.",
                 dictated=False,
                 hints=[
-                    f"Look at `{name} = []`. The numbers go between the square brackets, with a comma between each "
-                    "two, and no quotes.",
-                    "`steps = [9, 8, 6]` is a list of three numbers.",
+                    f"Look at `{name} = []`, under the `# 1.` note. What goes between the square brackets, and what "
+                    "goes between each two numbers?",
+                    "A list of numbers has square brackets and a comma between each two items. Numbers get no "
+                    "quotes: `steps = [9, 8, 6]`.",
                     f"Write `{name} = {start!r}` in place of `{name} = []`.",
                 ],
                 checks=[made],
@@ -2513,8 +2526,9 @@ for _vals, _apps in ((None, None), ({__NAME__: __OTHER__}, {__NAME__: __OTHERGUE
                 ),
                 dictated=False,
                 hints=[
-                    "`.append()` adds one item to the end of the list itself. The number goes inside the parentheses.",
-                    "`steps.append(5)` adds 5 to the end of `steps`.",
+                    "Look under the `# 2.` note. Which tool adds one item to the end of a list?",
+                    "`.append()` adds one item to the end of the list itself. The item goes inside its "
+                    "parentheses: `steps.append(5)` adds 5 to the end of `steps`.",
                     f"Write `{name}.append({guess})` under the `# 2.` note, with your own guess.",
                 ],
                 checks=[appended],
@@ -2522,13 +2536,14 @@ for _vals, _apps in ((None, None), ({__NAME__: __OTHER__}, {__NAME__: __OTHERGUE
             dict(
                 id="fix-by-position",
                 text=(
-                    f"Lucky copied one number wrong. Under the `# 3.` note, change the {old} to {fix} by its "
-                    "position. Don't type the whole list again."
+                    f"Under the `# 3.` note, change the {old} to {fix} by its position: Lucky copied it wrong. "
+                    "Don't type the whole list again."
                 ),
                 dictated=False,
                 hints=[
-                    f"Positions start at 0, like a ruler, so the {old} is at position 1. One `=` puts a new item there.",
-                    "`steps[0] = 10` changes the first item of `steps` and keeps the rest.",
+                    f"Look under the `# 3.` note. Positions start at 0, like a ruler. Which position holds the {old}?",
+                    "One `=` puts a new item at a position. The other items don't change: `steps[0] = 10` changes "
+                    "the first item of `steps`.",
                     f"Write `{name}[1] = {fix}` under the `# 3.` note.",
                 ],
                 checks=[fix_value, fix_line, fix_by_position],
@@ -2538,7 +2553,7 @@ for _vals, _apps in ((None, None), ({__NAME__: __OTHER__}, {__NAME__: __OTHERGUE
                 text=f"Under the `# 4.` note, print the last item of `{name}`, read from the list.",
                 dictated=False,
                 hints=[
-                    "Count from the end, so it works for a list of any length.",
+                    "Look under the `# 4.` note. Which position is the last item, however long the list is?",
                     "A minus counts from the end: `print(steps[-1])` shows the last item of `steps`.",
                     f"Write `print({name}[-1])` under the `# 4.` note.",
                 ],
@@ -2553,13 +2568,15 @@ for _vals, _apps in ((None, None), ({__NAME__: __OTHER__}, {__NAME__: __OTHERGUE
         ),
         another_way=[
             dict(angle="step-by-step", text=(
-                f"1. `{name} = {start!r}`. 2. `.append()` adds your guess at the end. 3. Position 1 is the second "
-                f"item: one `=` swaps out the {old}. 4. `[-1]` reads the last item, however long the list is.")),
+                f"1. `{name} = {start!r}`: square brackets, commas, no quotes.\n"
+                "2. `.append()` adds your guess at the end.\n"
+                f"3. Position 1 is the second item: one `=` swaps out the {old}.\n"
+                "4. `[-1]` reads the last item, however long the list is.")),
             dict(angle="shorter", text="Square brackets and commas, `.append()`, a change by position, then `[-1]`."),
         ],
         takeaway=(
-            f"`.append()` adds to the list itself; `{name}[1] = {fix}` changes one item by position; `{name}[-1]` "
-            "reads the last item of a list of any length."
+            f"`.append()` adds to the end of the list itself. `{name}[1] = {fix}` changes one item by its position. "
+            f"`{name}[-1]` reads the last item of a list of any length."
         ),
         wrong_answers=[
             dict(why="the starter (empty list)", code=starter, fails_at=1, message_contains="still empty"),
@@ -2567,7 +2584,7 @@ for _vals, _apps in ((None, None), ({__NAME__: __OTHER__}, {__NAME__: __OTHERGUE
                  fails_at=1, message_contains="quotes"),
             dict(why="round brackets (square brackets vs parentheses)",
                  code=program(make=f"{name} = ({', '.join(str(x) for x in start)})", app=None, mend=None),
-                 fails_at=1, message_contains="tuple"),
+                 fails_at=1, message_contains="parentheses don't make a list"),
             dict(why="missing commas", code=program(make=f"{name} = [{' '.join(str(x) for x in start)}]"), fails_at=0,
                  message_contains="invalid syntax"),
             dict(why="the guess typed into the list (a new list, not an append)",
@@ -2604,7 +2621,7 @@ for _vals, _apps in ((None, None), ({__NAME__: __OTHER__}, {__NAME__: __OTHERGUE
             dict(why="the fix one position off (index from 1)", code=program(mend=f"{name}[2] = {fix}"), fails_at=3,
                  message_contains="Positions start at 0"),
             dict(why="the fix with == (a question, not a change)", code=program(mend=f"{name}[1] == {fix}"),
-                 fails_at=3, message_contains="`==` only asks"),
+                 fails_at=3, message_contains="yes-or-no question with `==`"),
             dict(why="the fix appended", code=program(mend=f"{name}.append({fix})"), fails_at=3,
                  message_contains="adds " + str(fix) + " at the end"),
             dict(why="the fix made another way (insert and pop, not by position)",
@@ -2613,7 +2630,7 @@ for _vals, _apps in ((None, None), ({__NAME__: __OTHER__}, {__NAME__: __OTHERGUE
             dict(why="the fix in quotes", code=program(mend=f'{name}[1] = "{fix}"'), fails_at=3,
                  message_contains="quotes"),
             dict(why="the last item typed by hand", code=program(show=f"print({guess})"), fails_at=4,
-                 message_contains="typed in, not read"),
+                 message_contains="instead of reading it"),
             dict(why="a position from the start only fits this length", code=program(show=f"print({name}[3])"),
                  fails_at=4, message_contains="counted from the front"),
             dict(why="len used as a position (IndexError)", code=program(show=f"print({name}[len({name})])"),
@@ -2624,7 +2641,7 @@ for _vals, _apps in ((None, None), ({__NAME__: __OTHER__}, {__NAME__: __OTHERGUE
                  message_contains="whole list"),
             dict(why="printed above the append (top to bottom)",
                  code=program(app=f"print({name}[-1])\n{name}.append({guess})", show=""), fails_at=4,
-                 message_contains="above the append"),
+                 message_contains="runs before the append"),
             dict(why=f"{extreme}() finds the guess here, but it is not the last item in every list",
                  code=program(show=f"print({extreme}({name}))"), fails_at=4, message_contains="every list"),
             dict(why="the guess's own name printed, not read from the list",
@@ -2681,8 +2698,7 @@ assert _B.callable(_fn) and _defs, (
     ('You wrote `' + _nm[0] + '`, but the task needs `newest_three`. Python matches names letter for letter.') if _nm
     else ("The recipe `newest_three` is gone, so Mar'tu has nothing to test."))
 _args = [_a.arg for _a in _defs[-1].args.args]
-assert _args == [__PARAM__], ("The ingredient's name changed: it was `" + __PARAM__ + '` in the code you started '
-                              'with.')
+assert _args == [__PARAM__], ('The ingredient on the `def` line is no longer named `' + __PARAM__ + '`.')
 '''
     ret = chk(
         "newest_three hands its answer back with return (RET)",
@@ -2713,7 +2729,7 @@ if _bad:
     _both = (" Mar'tu tested your recipe with two test calls, `newest_three(" + _sh(_cases[0]) + ")` and "
              "`newest_three(" + _sh(_cases[1]) + ")`: both handed back " + _shn(_got[0][0]) + '.')
     if __OUTER__ in _inner:
-        _msg = 'The recipe reads the list from outside, not the one it is handed.' + _ev1 + _back
+        _msg = 'The recipe reads `' + __OUTER__ + '` from outside, not the list it is handed.' + _ev1 + _back
     elif _err.startswith('IndexError'):
         _msg = ("The recipe asks for a position the list doesn't have." + _ev1
                 + ': Python stopped with an IndexError.')
@@ -2728,9 +2744,9 @@ if _bad:
     elif _out == []:
         _msg = 'The recipe still hands back the empty list `[]`.' + _ev1 + _back
     elif _got[0][0] == _got[1][0]:
-        _msg = 'That list was typed in, not cut from the list the recipe is handed.' + _both
+        _msg = 'That list was typed in, not sliced from the list the recipe is handed.' + _both
     elif type(_out).__name__ == 'tuple':
-        _msg = 'That hands back a tuple, in parentheses, not one list.' + _ev1 + _back
+        _msg = 'That hands back three items, not one list.' + _ev1 + _back
     elif type(_out).__name__ == 'str':
         _msg = 'The recipe hands back text, not the items.' + _ev1 + '.'
     elif _is_int(_out):
@@ -2738,7 +2754,7 @@ if _bad:
     elif _out == _a:
         _msg = 'That is the whole list, not the newest three.' + _ev1 + _back
     elif _out == _a[-3:-1]:
-        _msg = 'A slice stops before its end, so the newest is missing.' + _ev1 + _back
+        _msg = 'A slice stops before its end number, so the newest item is missing.' + _ev1 + _back
     elif _out == _a[__COUNTED__:]:
         _msg = ('That start was counted for a list of ' + _B.str(__LEN__) + ', so other lists get the wrong items.'
                 + _ev1 + _back)
@@ -2759,7 +2775,7 @@ if _bad:
         "newest_three cuts them with one slice",
         defs + r'''
 _sl = [_n for _n in _ast.walk(_defs[-1]) if type(_n).__name__ == 'Slice']
-assert _sl, 'The right three, but read one by one. This task cuts them with one slice.'
+assert _sl, 'The right three, but read one at a time, not with one slice.'
 ''',
         PARAM=param,
     )
@@ -2768,8 +2784,9 @@ assert _sl, 'The right three, but read one by one. This task cuts them with one 
         title="The three newest",
         martu=(
             lead
-            + f"Finish the recipe `newest_three` so it hands back the three newest items of a {what} of any length. "
-            f"I test it by handing it a shorter {what} and a longer one, so work with the {what} it is handed, yes?\n"
+            + f"Finish the recipe `newest_three` so it hands back the three newest items of a {what}: the last three, "
+            f"however long the {what} is. I test it by handing it a shorter {what} and a longer one, so work with the "
+            f"{what} it is handed, its ingredient `{param}`.\n"
             "Stuck? Skip this task, or go back to the lessons Many Values, One Name and Reading the Wall Closely. "
             "Tasks you pass here stay ✓ done."
         ),
@@ -2781,13 +2798,14 @@ assert _sl, 'The right three, but read one by one. This task cuts them with one 
             dict(
                 id="slice-the-newest",
                 text=(
-                    f"Change `return []` so `newest_three({param})` hands back the three newest items, the last "
-                    f"three, of any {what} it is handed. Use one slice."
+                    f"On line {story.count(chr(10)) + 3}, change `return []` so `newest_three({param})` hands back "
+                    f"the three newest items, the last three, of any {what} it is handed. Use one slice."
                 ),
                 dictated=False,
                 hints=[
-                    f"Inside the recipe, the {what} it is handed is called `{param}`. Slice that: start 3 from the "
-                    "end, and leave the end empty.",
+                    f"Look at `return []`, inside the recipe. The {what} it is handed is called `{param}`. Which "
+                    "slice gives its last three items?",
+                    "A slice that starts with a minus counts from the end. With no end number, it runs to the end: "
                     "`return steps[-2:]` hands back the last two items of `steps`.",
                     f"Write `return {param}[-3:]` in place of `return []`.",
                 ],
@@ -2841,7 +2859,7 @@ assert _sl, 'The right three, but read one by one. This task cuts them with one 
                  message_contains="whole list"),
             dict(why="three reads with commas (a tuple)",
                  code=program(f"    return {param}[-3], {param}[-2], {param}[-1]"), fails_at=1,
-                 message_contains="tuple"),
+                 message_contains="three items, not one list"),
             dict(why="three reads in a list: right values, but no slice",
                  code=program(f"    return [{param}[-3], {param}[-2], {param}[-1]]"), fails_at=1,
                  message_contains="one slice"),
@@ -2907,10 +2925,10 @@ for _vals in (None, {__TABLE__: __OTHER__}):
     assert not _err, _why(_err) + _ev_t
     assert not [_l for _l in _rows if _l == _B.str(_T[__ROW__])], 'Your line shows the whole row, not one item in it.'
     assert not [_l for _l in _plain(_rows) if _B.str(_T[__ROW__][0]) in _l and not _nums(_l)], (
-        '`[0]` is the name, not the ' + __WHAT__ + '.')
-    assert not (_T[__ROW__ + 1][1] in _got), 'Rows start at 0, so that is the wrong row.' + _ev_t
+        'Your line shows the name, not the ' + __WHAT__ + '.')
+    assert not (_T[__ROW__ + 1][1] in _got), 'Your line reads the wrong row, because rows count from 0.' + _ev_t
     assert not (_vals is not None and _got == _own and _typed_print()), (
-        'That number was typed in, not read from `' + __TABLE__ + '`.' + _ev_t)
+        'You typed the number instead of reading it from `' + __TABLE__ + '`.' + _ev_t)
     assert not (_vals is not None and _got == _own), ('Your line shows ' + _B.str(_got[-1]) + ' even with another `'
                                                      + __TABLE__ + '`.' + _ev_t)
     assert False, "That isn't " + __LABEL__ + ' on every `' + __TABLE__ + '`.' + _ev_t
@@ -2934,15 +2952,16 @@ for _vals in (None, {__NUMS__: __OTHERNUMS__}):
     assert 'ordered' in _ns or not _nm, ('You wrote `' + (_nm or [''])[0] + '`, but the task needs `ordered`. Python '
                                          'matches names letter for letter.')
     assert 'ordered' in _ns, 'The line that makes `ordered` is gone.'
-    assert type(_o).__name__ != 'NoneType', '`.sort()` hands back `None`, so `ordered` holds `None`: nothing came back.'
+    assert type(_o).__name__ != 'NoneType', ('`ordered` holds `None`, Python' + chr(39) + 's word for nothing, because '
+                                             '`.sort()` hands back nothing.')
     if _m != _start or _o is _m:
         assert not (_alias and not _calls_of('sort', __NUMS__)), ('`ordered = ' + __NUMS__ + '` gives the same list '
                                                                   'a second name, like a nickname, so sorting one '
                                                                   'sorts both.')
         assert False, '`.sort()` sorted `' + __NUMS__ + '` itself, so `' + __NUMS__ + '` lost its order.' + _ev(_vals)
     assert not _is_int(_o), '`ordered` holds one number, not a sorted copy.' + _ev(_vals)
-    assert not (_vals is not None and _o == _own), ('`ordered` was typed in, not sorted from `' + __NUMS__ + '`.'
-                                                   + _ev(_vals))
+    assert not (_vals is not None and _o == _own), ('You typed the sorted numbers into `ordered`, instead of '
+                                                   'sorting `' + __NUMS__ + '`.' + _ev(_vals))
     assert False, '`ordered` holds ' + _shn(_o) + ', not a sorted copy of `' + __NUMS__ + '`.' + _ev(_vals)
 ''',
         NUMS=nums_name, OTHERNUMS=other_nums, START=nums,
@@ -2952,10 +2971,10 @@ for _vals in (None, {__NUMS__: __OTHERNUMS__}):
         id="mend-the-reads",
         title="Fix two bugs",
         martu=(
-            "This code has two [[bug|bugs]]: one loud, one quiet. *Mend* means fix. For the loud one, Python stops: "
-            "read the title of the error box, then *Python's last line*, then fix the line number it gives. For the "
-            "quiet one, Python runs, so press Run and read what the Console shows. I test your code with another "
-            f"`{table}` and other numbers.\n"
+            "This code has two [[bug|bugs]]. A loud bug makes Python stop with an error. A quiet bug runs, but gives "
+            "a wrong answer. For the loud one, read the box in the Console: its title, then "
+            "*Python's last line*. Then fix the line number it gives. For the quiet one, press Run and read what the "
+            f"Console shows. I test your code with another `{table}` and other numbers.\n"
             "Stuck? Skip this task, or go back to the lessons Many Values, One Name and Reading the Wall Closely. "
             "Tasks you pass here stay ✓ done."
         ),
@@ -2967,11 +2986,11 @@ for _vals in (None, {__NUMS__: __OTHERNUMS__}):
             dict(
                 id="mend-the-read",
                 text=(
-                    f"Mend line {table_code.count(chr(10)) + 2} so it prints {label}, read from `{table}`."
+                    f"Fix line {table_code.count(chr(10)) + 2} so it prints {label}, read from `{table}`."
                 ),
                 dictated=False,
                 hints=[
-                    "Read the error box in the Console: first its title, then *Python's last line*. Which line number "
+                    "Read the box in the Console: first its title, then *Python's last line*. Which line number "
                     "does it give?",
                     "Read it like a theater ticket: the first number is the row, and rows start at 0. The second "
                     f"number is the seat in that row: `[1]` is the {what}.",
@@ -2983,7 +3002,7 @@ for _vals in (None, {__NUMS__: __OTHERNUMS__}):
             dict(
                 id="mend-the-sort",
                 text=(
-                    f"Mend line {table_code.count(chr(10)) + 5} so `ordered` holds a sorted copy, and `{nums_name}` "
+                    f"Fix line {table_code.count(chr(10)) + 5} so `ordered` holds a sorted copy, and `{nums_name}` "
                     "keeps its order."
                 ),
                 dictated=False,
@@ -3007,23 +3026,30 @@ for _vals in (None, {__NUMS__: __OTHERNUMS__}):
         ),
         another_way=[
             dict(angle="step-by-step", text=(
-                f"1. Press Run and read the error box: an IndexError. 2. Fix the read: row {row}, then `[1]`. 3. Press "
-                f"Run again: the Console shows `None`, because nothing came back. 4. Use `sorted({nums_name})`.")),
-            dict(angle="shorter", text=f"`{table}[{row}][1]`: row first, then item. `sorted()` copies; `.sort()` hands back `None`."),
+                "1. Press Run and read the box in the Console: an IndexError.\n"
+                f"2. Fix the read: row {row}, then `[1]`.\n"
+                "3. Press Run again: the Console shows `None`, because nothing came back.\n"
+                f"4. Use `sorted({nums_name})`.")),
+            dict(angle="shorter", text=(
+                f"`{table}[{row}][1]`: the row first, then the item. `sorted()` makes a copy, and `.sort()` hands "
+                "back `None`.")),
         ],
-        takeaway=f"`{table}[{row}][1]`: row first, from 0, then the item. `sorted()` hands back a copy; `.sort()` hands back `None`.",
+        takeaway=(
+            f"`{table}[{row}][1]` reads row {row} first, counting from 0, then the item. `sorted()` hands back a "
+            "copy, but `.sort()` hands back `None`."
+        ),
         wrong_answers=[
             dict(why="the starter (IndexError on the read)", code=starter, fails_at=0, message_contains="out of range"),
             dict(why="the read mended, the sort still hands back None (quiet slip)", code=program(fixed), fails_at=2,
-                 message_contains="nothing came back"),
+                 message_contains="hands back nothing"),
             dict(why="the row counted from 1", code=program(f"print({table}[{row + 1}][1])"), fails_at=1,
-                 message_contains="Rows start at 0"),
+                 message_contains="wrong row"),
             dict(why="the whole row printed", code=program(f"print({table}[{row}])"), fails_at=1,
                  message_contains="whole row"),
             dict(why="the name printed", code=program(f"print({table}[{row}][0])"), fails_at=1,
-                 message_contains="`[0]` is the name"),
+                 message_contains="shows the name, not"),
             dict(why=f"the {what} typed by hand", code=program(f"print({want})"), fails_at=1,
-                 message_contains="typed in, not read"),
+                 message_contains="instead of reading it"),
             dict(why="the inner position still 2 (IndexError)", code=program(f"print({table}[{row}][2])"), fails_at=0,
                  message_contains="out of range"),
             dict(why="sorted the original (a copy versus the original)",
@@ -3036,7 +3062,7 @@ for _vals in (None, {__NUMS__: __OTHERNUMS__}):
                  code=program(fixed, f"{nums_name}.sort()\nordered = sorted({nums_name})"), fails_at=2,
                  message_contains="lost its order"),
             dict(why="the sorted list typed by hand", code=program(fixed, f"ordered = {plain_print!r}"), fails_at=2,
-                 message_contains="was typed"),
+                 message_contains="typed the sorted numbers"),
             dict(why="sorted with square brackets", code=program(fixed, f"ordered = sorted[{nums_name}]"), fails_at=0,
                  message_contains="not subscriptable"),
             dict(why="a near-miss name for ordered",
@@ -3124,7 +3150,7 @@ QC3_B = dict(
     questions_to_pass=2,
     exercises=[
         _qc_make("B", "ore_used", [4, 5, 7], ("above", 7), 9, 6, [2, 3, 6, 8], 5, story=ORE_STORY, lead=ORE_LEAD,
-                 copied="three of the days"),
+                 copied="three of those days"),
         _qc_newest("B", "ore_used", "days", ORE_LINE, [[1, 2, 2, 4, 6], [1, 1, 2, 7, 3, 3, 6, 8, 5]],
                    [1, 2, 4, 8], story=ORE_STORY, lead="Bomb Shell's ore list again. ", what="list"),
         _qc_mend("B", "drills", DRILLS_CODE, 1, "shield wall", "score", "scores", [6, 9, 5, 7], DRILLS_OTHER,
@@ -3292,8 +3318,8 @@ CHALK_NOTES_3 = dict(
              code=("def newest_mark(wall):\n    return wall[len(wall) - 1]\n\nprint(newest_mark([9, 8, 7]))\n"
                    "print(newest_mark([48, 41]))\n"),
              output="7\n41",
-             note="Use the ingredient `wall`, so it works for any list it is handed. `wall[-1]` is the short way. "
-             "(Lesson: Many Values, One Name)"),
+             note="Inside the recipe, use the ingredient `wall`, so it works for any list it is handed. `wall[-1]` "
+             "reads the same last item, the short way. (Lesson: Many Values, One Name)"),
         dict(concept="A list inside a list: `roster[3][1]`",
              code='roster = [\n    ["Oogrish", 18],\n    ["Gearshift", 20],\n    ["Bomb Shell", 24],\n'
                   '    ["Lucky", 26],\n]\nprint(roster[3][1])\n',
@@ -3319,13 +3345,14 @@ CHALK_NOTES_3 = dict(
              note="TypeError: 'list' object is not callable means Python tried to run the list like a recipe. "
              "Read a list with square brackets: `wall[0]`."),
         dict(concept="Error: a missing comma", code="wall = [48 47]\n",
-             note="SyntaxError: invalid syntax means Python can't read the line, like a sentence with broken "
-             "grammar. Perhaps you forgot a comma? Inside a list, a comma goes between each two items."),
+             note="SyntaxError: invalid syntax means Python can't read the line. *Syntax* means grammar, as in "
+             "English class. Perhaps you forgot a comma? Inside a list, a comma goes between each two items."),
         dict(concept="Error: `.sort()` handed back nothing", code="wall = [46, 41]\nx = wall.sort()\nprint(x[0])\n",
              note="TypeError: 'NoneType' object is not subscriptable means you used `[ ]` on `None`. `x` holds "
              "`None`, because nothing came back. Use `sorted(wall)`."),
         dict(concept="(extra) `.count()`", code="wall = [48, 48, 47]\nprint(wall.count(48))\n", output="2",
-             note="Counts how many items are 48. `len()` counts every item. (Extra practice: Reading the Wall)"),
+             note="`wall.count(48)` counts how many items are 48, like a tally chart. `len()` counts every item. "
+             "(Extra practice: Reading the Wall)"),
         dict(concept="(extra) `.insert()` and `.pop()`",
              code="wall = [48, 46]\nwall.insert(1, 47)\nnewest = wall.pop()\nprint(wall)\nprint(newest)\n",
              output="[48, 47]\n46", note="`.insert(position, value)` squeezes an item in. `.pop()` takes the last item "
