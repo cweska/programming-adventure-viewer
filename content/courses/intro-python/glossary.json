@@ -17,6 +17,14 @@
     "example": "[48, 48, 47].count(48)"
   },
   {
+    "term": ".find()",
+    "aliases": [
+      "find()"
+    ],
+    "plain": "Hands back the position where some text starts, counted from 0. When the text is not there, it hands back -1. Here -1 means *not found*. It is not the last letter.",
+    "example": "\"EXIT\".find(\"X\")   # 1"
+  },
+  {
     "term": ".get()",
     "aliases": [
       "get()"
@@ -39,6 +47,15 @@
     ],
     "plain": "Hands back each tag (key) of a dictionary together with its value, as a pair, like an (x, y) point in math class. A loop can give the pair two names.",
     "example": "for snack, price in menu.items():"
+  },
+  {
+    "term": ".join()",
+    "aliases": [
+      "join()",
+      "join"
+    ],
+    "plain": "Glues a list of texts into one text. Ask the glue, not the list: `\" \".join(bits)` puts a space between the pieces.",
+    "example": "\" \".join([\"Shield\", \"up.\"])"
   },
   {
     "term": ".keys()",
@@ -73,6 +90,49 @@
     ],
     "plain": "Takes a value out of a list: the first item that is the same as the value you hand it. You give the value, not its position. If the value isn't in the list, Python stops with a ValueError.",
     "example": "wall.remove(99)"
+  },
+  {
+    "term": ".replace()",
+    "aliases": [
+      "replace()"
+    ],
+    "plain": "Hands back a copy with every old piece swapped for a new one, like Find and Replace in a document: `.replace(old, new)`. Capitals must match exactly.",
+    "example": "\"Rust Ward\".replace(\"Rust\", \"Moon\")"
+  },
+  {
+    "term": ".split()",
+    "aliases": [
+      "split()",
+      "split"
+    ],
+    "plain": "Cuts text into a list of pieces. With empty parentheses, it cuts at every space. `.split(\", \")` cuts at each comma and space.",
+    "example": "\"Shield up.\".split()   # ['Shield', 'up.']"
+  },
+  {
+    "term": ".strip()",
+    "aliases": [
+      "strip()",
+      "strip"
+    ],
+    "plain": "Hands back a copy with the spaces cut off both ends, like trimming the edges of a page. Spaces between the words stay.",
+    "example": "\"  hi  \".strip()   # hi"
+  },
+  {
+    "term": ".title()",
+    "aliases": [
+      "title()"
+    ],
+    "plain": "Hands back a copy of the text with a capital at the start of every word, like a book title.",
+    "example": "\"moon step\".title()   # Moon Step"
+  },
+  {
+    "term": ".upper()",
+    "aliases": [
+      "upper()",
+      "upper"
+    ],
+    "plain": "Hands back a copy of the text in capital letters. The text in the variable does not change.",
+    "example": "\"teal\".upper()   # TEAL"
   },
   {
     "term": ".values()",
@@ -184,11 +244,40 @@
     "example": "say_hi()"
   },
   {
+    "term": "campaign mode",
+    "aliases": [
+      "the campaign's help"
+    ],
+    "plain": "A way to work with only the help the campaign gives: the numbered comments, the check messages, the error box, and Mar'tu's version after 5 minutes. Help stops before the answer.",
+    "example": "# 1. If the hero's affinity is lower ..."
+  },
+  {
+    "term": "chain",
+    "aliases": [
+      "chains",
+      "chained",
+      "chaining",
+      "method chain"
+    ],
+    "plain": "Methods one right after another, like `cry.lower().capitalize()`. Python works left to right. Each method works on the copy the one before it handed back.",
+    "example": "cry.lower().capitalize()"
+  },
+  {
     "term": "checkpoint",
     "aliases": [
       "checkpoints"
     ],
     "plain": "One small task in an exercise. It turns green when your code does it."
+  },
+  {
+    "term": "cipher",
+    "aliases": [
+      "ciphers",
+      "ley shift",
+      "secret code"
+    ],
+    "plain": "A secret code. In a shift cipher, each letter moves the same number of steps along the alphabet. That number is the key, and it moves the letters back too.",
+    "example": "\"abc\" shifted by 1 is \"bcd\""
   },
   {
     "term": "colon",
@@ -250,6 +339,17 @@
     "example": "def say_hi():"
   },
   {
+    "term": "default value",
+    "aliases": [
+      "default",
+      "defaults",
+      "default values",
+      "default argument"
+    ],
+    "plain": "The usual value for a parameter, used when the call hands over nothing, like your phone's default ringtone. You write it on the `def` line with `=`. A value handed over in the call wins.",
+    "example": "def pour(cups=2):"
+  },
+  {
     "term": "defined",
     "aliases": [
       "not defined",
@@ -296,6 +396,28 @@
     "example": "SyntaxError: unterminated string literal"
   },
   {
+    "term": "escape mark",
+    "aliases": [
+      "escape marks",
+      "escape",
+      "escapes",
+      "backslash",
+      "new line"
+    ],
+    "plain": "A backslash inside text, with one mark or letter after it. `\\\"` puts a quote mark in the text. `\\n` starts a new line, like pressing Enter. The backslash itself never shows.",
+    "example": "print(\"Gold\\nTeal\")"
+  },
+  {
+    "term": "f-string",
+    "aliases": [
+      "f-strings",
+      "f string",
+      "f strings"
+    ],
+    "plain": "Text with an `f` right before the quotes. Each `{name}` inside it is a blank, like in Mad Libs: Python fills it with what the variable holds. No `+` or `str()` is needed.",
+    "example": "f\"{hero} has {coins} coins\""
+  },
+  {
     "term": "floor division",
     "aliases": [
       "whole division"
@@ -314,6 +436,16 @@
     "example": "for snack in snacks:\n    print(snack)"
   },
   {
+    "term": "function as a value",
+    "aliases": [
+      "functions as values",
+      "hand over a function",
+      "handing over a function"
+    ],
+    "plain": "A function's name with no `()` is the function itself, like a recipe card you can pass around without cooking. A variable or a dictionary can hold it, and you can hand it to another function. Add `()` later to run it.",
+    "example": "pick = wave\npick(moth)"
+  },
+  {
     "term": "glue",
     "aliases": [
       "glues",
@@ -325,6 +457,26 @@
     "example": "\"Shield\" + \" up.\""
   },
   {
+    "term": "guard",
+    "aliases": [
+      "guards",
+      "guard clause",
+      "early return"
+    ],
+    "plain": "An `if` at the top of a function that checks first, like a form that says \"Stop here if you are under 13.\" When something is wrong, it shows a line and stops the function with `return`, so the lines below it never run.",
+    "example": "if name not in guests:\n    print(name + \" waits.\")\n    return"
+  },
+  {
+    "term": "helper",
+    "aliases": [
+      "helpers",
+      "helper function",
+      "finished helper"
+    ],
+    "plain": "A finished function that someone else wrote for you to call, like a calculator key you press without opening the calculator. Read its `def` line to see what to hand it, and in what order.",
+    "example": "show_badge(moth, \"★★\")"
+  },
+  {
     "term": "if",
     "aliases": [
       "if statement",
@@ -332,6 +484,16 @@
     ],
     "plain": "A line that asks a yes-or-no question, like *If it rains, take a coat.* When the answer is `True`, Python runs the indented lines under it. When it is `False`, Python skips them.",
     "example": "if hours_left < 3:\n    print(\"Get inside!\")"
+  },
+  {
+    "term": "immutable",
+    "aliases": [
+      "can't change in place",
+      "cannot change",
+      "unchangeable"
+    ],
+    "plain": "A programmer's word for *can't change*. You can't swap one letter of a string: `tag[0] = \"R\"` is an error. Build a new string and put it in the variable instead.",
+    "example": "tag = \"R\" + tag[1:]"
   },
   {
     "term": "import",
@@ -436,6 +598,24 @@
     "example": "KeyError: 'Max_Mana'"
   },
   {
+    "term": "keyword argument",
+    "aliases": [
+      "keyword arguments",
+      "named argument",
+      "by name"
+    ],
+    "plain": "A value handed over in a call with its parameter's name in front, like `pour(cups=5)`. Python calls what you hand over an argument. With names, the order of the values doesn't matter.",
+    "example": "pour(cups=5)"
+  },
+  {
+    "term": "lambda",
+    "aliases": [
+      "lambdas"
+    ],
+    "plain": "A whole function on one line, with no name and no `return`, like a rule in math: n → n × 2. Before the colon is the parameter. After it is the value it hands back: `lambda n: n * 2`.",
+    "example": "double = lambda n: n * 2"
+  },
+  {
     "term": "len()",
     "aliases": [
       "len",
@@ -503,6 +683,14 @@
     "example": "for snack in snacks:"
   },
   {
+    "term": "map()",
+    "aliases": [
+      "map"
+    ],
+    "plain": "Calls a function on every item of a list, and collects what each call hands back, like filling in an input-output table. Hand it the function with no `()`, then the list. Wrap it in `list()` to see the results.",
+    "example": "list(map(double, [2, 6]))   # [4, 12]"
+  },
+  {
     "term": "match",
     "aliases": [
       "match statement",
@@ -510,6 +698,15 @@
     ],
     "plain": "Another way to choose between options: `match choice:`, then one `case` line for each value. `case _:` catches anything else, like `else`.",
     "example": "match choice:\n    case \"option 1\":\n        print(\"Then we leave at dawn.\")\n    case _:\n        print(\"Hm.\")"
+  },
+  {
+    "term": "matching parameter",
+    "aliases": [
+      "matching parameters",
+      "matching"
+    ],
+    "plain": "The parameter with exactly the same name as the key, letter for letter. The key keeps its quotes, and the parameter has none, so Python looks inside it.",
+    "example": "\"fuel\": fuel,"
   },
   {
     "term": "math signs",
@@ -540,6 +737,16 @@
     ],
     "plain": "An older word for fix: to mend a line is to fix a small mistake in it, the way you mend a small tear in a sleeve. A slip is a small mistake.",
     "example": "print(\"Hi)   becomes   print(\"Hi\")"
+  },
+  {
+    "term": "method",
+    "aliases": [
+      "methods",
+      "string method",
+      "string methods"
+    ],
+    "plain": "A tool you use with a dot, like `motto.upper()`. The dot asks the text to do a job, and the text hands back a new copy. The variable doesn't change, so keep the copy with `=`.",
+    "example": "motto = motto.upper()"
   },
   {
     "term": "NameError",
@@ -768,6 +975,26 @@
     "example": "total = 0\nfor coins in [3, 5]:\n    total = total + coins"
   },
   {
+    "term": "same sheet",
+    "aliases": [
+      "in place",
+      "changes in place",
+      "change in place"
+    ],
+    "plain": "A function that is handed a dictionary gets that very dictionary, not a copy, like a shared doc instead of a printout. A change it makes by key shows up for the line that called it, with no `return` needed.",
+    "example": "def wake(robot):\n    robot[\"awake\"] = True"
+  },
+  {
+    "term": "scope",
+    "aliases": [
+      "inside stays inside",
+      "local variable",
+      "local variables"
+    ],
+    "plain": "Where a name can be used. A function's parameters and the variables made inside it exist only inside it, while it runs. They're like scratch work that never gets handed in. Outside, Python has never heard of them.",
+    "example": "def brew(cups):\n    pot = cups * 2\n\nprint(pot)   # NameError"
+  },
+  {
     "term": "show your work",
     "aliases": [
       "show your working",
@@ -891,6 +1118,15 @@
     ],
     "plain": "Two values that don't fit together, like adding 5 meters to 3 seconds in math. Most often it is text glued to a number. Turn the number into text with `str()`, or take the quotes off the number.",
     "example": "print(\"Gold: \" + 7)\nTypeError: can only concatenate str (not \"int\") to str"
+  },
+  {
+    "term": "unpacking",
+    "aliases": [
+      "unpack",
+      "unpacks"
+    ],
+    "plain": "Catching each value of a tuple in its own name, in order. It's like reading x and y off a point (x, y): `share, spare = (4, 1)`.",
+    "example": "share, spare = split_loot(17, 4)"
   },
   {
     "term": "value",

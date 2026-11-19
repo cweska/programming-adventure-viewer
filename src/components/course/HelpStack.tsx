@@ -43,6 +43,7 @@ export function HelpStack({
   moreAfterRun = false,
   crashIsTask = false,
   crashInStarter = false,
+  compareAfterMinutesOnly = null,
   startInCode = () => false,
   startNote = () => "It goes on a new line of its own.",
   onReveal,
@@ -78,6 +79,11 @@ export function HelpStack({
   moreAfterRun?: boolean;
   /** The crash is part of the task (Mar'tu's version switches that line off): read the message, don't fix it. */
   crashIsTask?: boolean;
+  /**
+   * Campaign mode (the Readiness Check's mini-bosses and trial): Mar'tu's version opens after this many minutes on the
+   * page only, never after a count of runs, so the locked note says so. Null: the usual note (tries or minutes).
+   */
+  compareAfterMinutesOnly?: number | null;
   /** With crashIsTask: the line was in the code from the start, so reading the message is part of the steps. */
   crashInStarter?: boolean;
   /** Whether the code already starts the step's line (Start me off then has nothing to add). */
@@ -349,7 +355,14 @@ export function HelpStack({
       </div>
       {state.nextLocked ? (
         <p className="ex-help-note ex-muted" data-testid="help-show-locked">
-          Mar&apos;tu&apos;s version opens after a few more tries, or a few more minutes. Each change you run counts.
+          {compareAfterMinutesOnly !== null ? (
+            <>
+              Mar&apos;tu&apos;s version opens after {compareAfterMinutesOnly} {compareAfterMinutesOnly === 1 ? "minute" : "minutes"} on this
+              page. Pressing Run more does not open it sooner.
+            </>
+          ) : (
+            <>Mar&apos;tu&apos;s version opens after a few more tries, or a few more minutes. Each change you run counts.</>
+          )}
         </p>
       ) : null}
       {moreAfterRun && !next ? (

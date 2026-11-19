@@ -380,8 +380,10 @@
   color: #f4f7fb;
   background: var(--course-code-bg, #121417);
   border: 1px solid var(--course-code-line, #3c4452);
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
+  /* Lines never wrap: a wrapped line inside quotes reads like Enter pressed inside text (Unit 9's slip). A long line
+     scrolls sideways, with the glow below, like every other code block. */
+  white-space: pre;
+  overflow-x: auto;
 }
 
 .ex-predict-choices {
@@ -1877,7 +1879,8 @@
   .quiz-code,
   .cheatsheet-code,
   .ex-example-code,
-  .ex-campaign-code {
+  .ex-campaign-code,
+  .ex-predict-code {
     --scroll-cover: var(--course-code-bg, #121417);
     background-color: var(--scroll-cover);
     background-image:
@@ -1906,7 +1909,8 @@
   .quiz-code,
   .cheatsheet-code,
   .ex-example-code,
-  .ex-campaign-code {
+  .ex-campaign-code,
+  .ex-predict-code {
     font-size: 0.84rem;
   }
 }

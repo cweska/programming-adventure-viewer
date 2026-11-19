@@ -11,6 +11,7 @@ import { COURSE_HREF, itemHref, unitHref } from "../../components/course/course-
 import { findGlossaryEntry, glossaryRefs } from "../../components/course/prose-format";
 import type { ProgressUnit } from "./progress";
 import type { ItemPageProps, UnitSummary } from "./contracts";
+import { isReadinessUnit, READINESS_ITEMS } from "./readiness";
 import {
   courseMetaSchema,
   glossaryEntrySchema,
@@ -95,10 +96,19 @@ export { COURSE_HREF, itemHref, unitHref };
 
 /**
  * Where "Next" goes after an item: the next item in the unit, skipping the Quick Check (it is offered up
- * front on the unit page), or the unit page when this is the last one.
+ * front on the unit page), or the unit page when this is the last one. In a readiness unit (one that holds a required
+ * test-out) the forms are items like any other: a form's questions lead to its tasks, and every other item leads to
+ * the next core item (Part 1, the mini-boss, the explain question), or back to the unit page. The page itself sends
+ * Continue after Part 1 to Mar'tu's notes only when something was missed (LessonPlayer, readiness.ts afterPart1).
  */
 export function nextHref(unit: Pick<Unit, "id" | "items">, item: Pick<Item, "id">): string {
   const at = unit.items.findIndex((candidate) => candidate.id === item.id);
+  if (at >= 0 && isReadinessUnit(unit.items)) {
+    const form = unit.items.find((candidate) => candidate.kind === "testout" && `${candidate.id}-questions` === item.id);
+    if (form) return itemHref(unit.id, form.id);
+    const next = unit.items.slice(at + 1).find((candidate) => !candidate.optional);
+    return next ? itemHref(unit.id, next.id) : unitHref(unit.id);
+  }
   if (at >= 0) {
     const next = unit.items.slice(at + 1).find((candidate) => candidate.kind !== "testout");
     if (next) return itemHref(unit.id, next.id);
@@ -116,22 +126,41 @@ export function unitSummary(unit: Unit): UnitSummary {
     order: unit.order,
     title: unit.title,
     ...(unit.subtitle ? { subtitle: unit.subtitle } : {}),
-    items: unit.items.map((item) => ({ id: item.id, kind: item.kind, title: item.title, optional: item.optional, ...gateFields(item) })),
+    items: unit.items.map((item) => ({
+      id: item.id,
+      kind: item.kind,
+      title: item.title,
+      optional: item.optional,
+      ...gateFields(item, isReadinessUnit(unit.items)),
+    })),
   };
 }
 
-/** What a Quick Check's pass needs to know: a form's tasks and question count to pass, a quiz's size. */
-function gateFields(item: Item): { exercises?: { id: string }[]; questionsToPass?: number; questionCount?: number } {
+/**
+ * What a Quick Check's pass needs to know: a form's tasks and question count to pass, a quiz's size. A readiness
+ * unit also needs every exercise's id (its mini-bosses' Compare and result) and its quizzes' question ids (twins).
+ */
+function gateFields(
+  item: Item,
+  readiness = false,
+): { exercises?: { id: string; title?: string }[]; questionsToPass?: number; questionCount?: number; questionIds?: string[] } {
   if (item.kind === "testout") {
-    return { exercises: exerciseIdsOf(item).map((id) => ({ id })), ...(item.questionsToPass ? { questionsToPass: item.questionsToPass } : {}) };
+    return { exercises: exerciseOutline(item, readiness), ...(item.questionsToPass ? { questionsToPass: item.questionsToPass } : {}) };
   }
-  if (item.kind === "quiz") return { questionCount: item.questions.length };
+  if (item.kind === "quiz") {
+    return { questionCount: item.questions.length, ...(readiness ? { questionIds: item.questions.map((question) => question.id) } : {}) };
+  }
   return {};
 }
 
-/** The exercise ids an item contains (lessons, test-outs, articles); empty for one-exercise items. */
-function exerciseIdsOf(item: Item): string[] {
-  return "exercises" in item ? item.exercises.map((exercise) => exercise.id) : [];
+/**
+ * The exercises an item contains (lessons, test-outs, articles; empty for one-exercise items) as the outline carries
+ * them: their ids, and in a readiness unit a test-out's task titles too (the
+ * unit page and the form's end name a task not tried yet: readiness.ts lockReason).
+ */
+function exerciseOutline(item: Item, readiness: boolean): { id: string; title?: string }[] {
+  if (!("exercises" in item)) return [];
+  return item.exercises.map((exercise) => (readiness && item.kind === "testout" ? { id: exercise.id, title: exercise.title } : { id: exercise.id }));
 }
 
 /** A unit as the course map and unit page need it: no exercise content, just enough for progress maths. */
@@ -149,11 +178,42 @@ export function unitOutline(unit: Unit): ProgressUnit {
       optional: item.optional,
       ...(item.summary ? { summary: item.summary } : {}),
       ...(item.minutes ? { minutes: item.minutes } : {}),
-      exercises: exerciseIdsOf(item).map((id) => ({ id })),
+      exercises: exerciseOutline(item, isReadinessUnit(unit.items)),
       ...(item.kind === "testout" && item.questionsToPass ? { questionsToPass: item.questionsToPass } : {}),
       ...(item.kind === "quiz" ? { questionCount: item.questions.length } : {}),
+      ...(item.kind === "quiz" && isReadinessUnit(unit.items) ? { questionIds: item.questions.map((question) => question.id) } : {}),
     })),
   };
+}
+
+/**
+ * A Readiness Check skill's "Start here" lesson, resolved: where it is and what the student saw it called, and the
+ * skill's own parts in form A as the student saw them ("Question 2 and *Store, then pass it on*").
+ */
+export type ReadinessRoute = { n: number; href: string; label: string; seen: string };
+
+/**
+ * The "Start here" lesson of every Part 1 skill of a readiness unit (readiness.ts READINESS_ITEMS), with the label the
+ * student knows it by: "Unit 3 · Recipes With Names · Replace pass". Throws on a route to nothing (CI catches it).
+ */
+export function readinessRoutes(unitId: string, units: readonly Unit[] = allUnits): ReadinessRoute[] {
+  const home = findUnit(unitId, units);
+  const required = home?.items.find((item) => item.kind === "testout" && !item.optional);
+  return (READINESS_ITEMS[unitId] ?? []).map((skill) => {
+    const questions = (skill.questions ?? []).map((at) => at + 1);
+    const asked = questions.length === 0 ? [] : [`${questions.length === 1 ? "Question" : "Questions"} ${questions.join(" and ")}`];
+    const tasks = (skill.tasks ?? []).flatMap((at) => (required && "exercises" in required && required.exercises[at] ? [`*${required.exercises[at].title}*`] : []));
+    const seen = [...asked, ...tasks].join(" and ");
+    const unit = findUnit(skill.start.unit, units);
+    const item = unit?.items.find((candidate) => candidate.id === skill.start.item);
+    const exercise = item && "exercises" in item ? item.exercises.find((candidate) => candidate.id === skill.start.exercise) : undefined;
+    if (!unit || !item || (skill.start.exercise && !exercise)) {
+      throw new Error(`Intro to Python: readiness route ${skill.n} of "${unitId}" points to nothing.`);
+    }
+    const href = `${itemHref(unit.id, item.id)}${exercise ? `#${exercise.id}` : ""}`;
+    const label = [`Unit ${unit.order}`, item.title, ...(exercise ? [exercise.title] : [])].join(" · ");
+    return { n: skill.n, href, label, seen };
+  });
 }
 
 /** Fields that hold code or answers, not prose: never scanned for [[glossary]] links. */

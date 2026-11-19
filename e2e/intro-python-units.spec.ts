@@ -6,7 +6,9 @@
  * must pass, exactly as docs/intro-to-python/prototypes/harness.py proved with python3. The starter must not pass
  * (unless the exercise is "run this and read it"). This is the proof that Pyodide, course_helpers.py, the grading
  * and the player agree with the harness. Every quiz is answered with its keyed answers (100%), and each unit's
- * Quick Check is passed to test out of the unit.
+ * Quick Check is passed to test out of the unit. A readiness unit (one that holds a required test-out: Unit 10's
+ * Readiness Check, src/lib/course/readiness.ts) has no Quick Check: its required form is a core row, passing it tests
+ * nothing out, and its other forms are locked or hidden rows. Its own behaviour is in intro-python-unit10.spec.ts.
  *
  * The tests are independent pages: playwright.config.ts runs this file in its own project, several at a time.
  */
@@ -15,6 +17,8 @@ import path from "node:path";
 import { expect, test, type Page } from "@playwright/test";
 import { plainText } from "../src/components/course/prose-format";
 import { questionsNeeded } from "../src/components/course/quiz-grading";
+import type { ProgressItem } from "../src/lib/course/progress";
+import { readinessPlan } from "../src/lib/course/readiness";
 import { buildParsons, checkpoint, PROGRESS_KEY } from "./course";
 import { pythonReady, replaceEditor } from "./editor";
 
@@ -62,6 +66,10 @@ const codeText = (value: Code | undefined) => (Array.isArray(value) ? `${value.j
 
 /** `optional` as schema.ts fills it in: challenges, cheatsheets and Quick Checks default to optional. */
 const isOptional = (item: RawItem) => item.optional ?? ["challenge", "cheatsheet", "testout"].includes(item.kind);
+
+/** The unit's readiness plan (a required test-out), or null for a Quick Check unit. */
+const planOf = (unit: RawUnit) =>
+  readinessPlan(unit.items.map((item) => ({ ...item, kind: item.kind as ProgressItem["kind"], optional: isOptional(item) })));
 
 /** Every played item (lesson, project, challenge, Quick Check, article try-it) with its exercises. */
 function playablesOf(unit: RawUnit) {
@@ -211,7 +219,11 @@ for (const unit of units) {
   const itemPath = (itemId: string) => `/intro-python/${unit.id}/${itemId}`;
 
   test.describe(`Intro to Python, Unit ${unit.order}: ${unit.title}`, () => {
-    test("the map shows it without ?preview=1, and its page lists its items and offers its Quick Check", async ({ page }) => {
+    const readiness = planOf(unit);
+    const listTitle = readiness
+      ? "the map shows it without ?preview=1, and its page lists its items, its forms among them, with no Quick Check offer"
+      : "the map shows it without ?preview=1, and its page lists its items and offers its Quick Check";
+    test(listTitle, async ({ page }) => {
       await page.goto("/intro-python");
       await expect(page.getByTestId(`unit-card-${unit.id}`)).toBeVisible();
       await expect(page.getByTestId(`unit-card-${unit.id}`)).toContainText(unit.title);
@@ -222,18 +234,26 @@ for (const unit of units) {
       await expect(page.getByTestId("unpublished-banner")).toHaveCount(0);
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(unit.title);
 
-      // Every item but the Quick Check (its forms and their question quizzes) is listed, in order.
+      // Every item but the Quick Check (its forms and their question quizzes) is listed, in order. A readiness unit
+      // lists its forms too, in ITEMS order: the parallel forms as locked rows, the re-check not at all (not due yet).
       const testouts = unit.items.filter((item) => item.kind === "testout");
       const quickCheckIds = new Set(testouts.flatMap((form) => [form.id, `${form.id}-questions`]));
-      const listed = unit.items.filter((item) => !quickCheckIds.has(item.id));
+      const hidden = new Set(readiness ? readiness.rechecks.flatMap((id) => [id, `${id}-questions`]) : []);
+      const locked = new Set(readiness ? readiness.forms.slice(1).flatMap((id) => [id, `${id}-questions`]) : []);
+      const listed = unit.items.filter((item) => (readiness ? !hidden.has(item.id) : !quickCheckIds.has(item.id)));
       const rows = page.locator('[data-testid^="item-row-"]');
       await expect(rows).toHaveCount(listed.length);
       expect(await rows.evaluateAll((els) => els.map((el) => el.getAttribute("data-testid")))).toEqual(
         listed.map((item) => `item-row-${item.id}`),
       );
-      for (const item of listed) await expect(page.getByTestId(`item-link-${item.id}`)).toHaveText(item.title);
+      for (const item of listed) {
+        if (locked.has(item.id)) await expect(page.getByTestId(`item-locked-${item.id}`)).toBeVisible();
+        else await expect(page.getByTestId(`item-link-${item.id}`)).toHaveText(item.title);
+      }
 
-      if (testouts.length > 0) {
+      if (readiness) {
+        await expect(page.getByTestId("quick-check-offer")).toHaveCount(0);
+      } else if (testouts.length > 0) {
         await expect(page.getByTestId("quick-check-offer")).toBeVisible();
         await expect(page.getByTestId("testout-start")).toHaveAttribute("href", new RegExp(`/${unit.id}/${testouts[0]?.id}/?$`));
         const offered = [...quickCheckIds].filter((id) => id !== testouts[0]?.id && unit.items.some((item) => item.id === id));
@@ -281,7 +301,40 @@ for (const unit of units) {
     });
 
     const quickCheck = unit.items.find((item) => item.kind === "testout");
-    if (quickCheck) {
+    if (readiness) {
+      const form = unit.items.find((item) => item.id === readiness.required);
+      test(`passing the required form ${readiness.required} tests nothing out: the core stays the student's to do`, async ({ page }) => {
+        const tasks = form?.exercises ?? [];
+        test.setTimeout(60_000 + tasks.length * 45_000);
+        await page.goto(`/intro-python/${unit.id}/${readiness.required}`);
+        await expect(page.getByTestId("testout-intro")).toHaveAttribute("data-readiness", "true");
+        for (const [at, task] of tasks.entries()) {
+          await page.goto(`/intro-python/${unit.id}/${readiness.required}#${task.id}`);
+          await expect(page.getByTestId("exercise-label")).toHaveText(`Task ${at + 1} of ${tasks.length}`);
+          await pythonReady(page);
+          await expect(page.getByTestId("help-button")).toHaveCount(0);
+          await setCode(page, codeText(task.solution));
+          await runAndWait(page, 1);
+          await expect(page.getByTestId("all-passed"), `${unit.id}/${readiness.required}/${task.id}: ${await whyNot(page)}`).toBeVisible();
+        }
+        const quiz = unit.items.find((entry) => entry.id === readiness.questions[readiness.required]);
+        if (quiz) await answerQuiz(page, unit, quiz);
+        await expect
+          .poll(() =>
+            page.evaluate(([key, unitId]) => JSON.parse(window.localStorage.getItem(key) ?? "{}")?.testedOut?.[unitId] ?? false, [
+              PROGRESS_KEY,
+              unit.id,
+            ] as const),
+          )
+          .toBe(false);
+        await page.goto(`/intro-python/${unit.id}`);
+        await expect(page.getByTestId(`unit-status-${unit.id}`)).not.toContainText("Tested out");
+        await expect(page.getByTestId(`item-status-${readiness.required}`)).toHaveAttribute("data-status", "done");
+        for (const id of [readiness.miniBoss, readiness.explain].filter((entry): entry is string => Boolean(entry))) {
+          await expect(page.getByTestId(`item-status-${id}`), id).toHaveAttribute("data-status", "not-started");
+        }
+      });
+    } else if (quickCheck) {
       test(`passing Quick Check ${quickCheck.id} marks the unit as tested out`, async ({ page }) => {
         const tasks = quickCheck.exercises ?? [];
         test.setTimeout(60_000 + tasks.length * 45_000);

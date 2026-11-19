@@ -17,7 +17,9 @@ import type {
   ExerciseProgress,
   ItemStatus,
   QuizProgress,
+  ReadinessProgress,
 } from "./contracts";
+import { readinessNextUp, readinessPlan, readinessStatus, type ReadinessPlan } from "./readiness";
 import type { Item } from "./schema";
 
 export const PROGRESS_KEY = "intro-python:v1";
@@ -37,11 +39,13 @@ export type ProgressItem = {
   summary?: string;
   minutes?: number;
   /** Lessons, test-outs and articles: their exercise ids. Projects and challenges have none. */
-  exercises?: readonly { id: string }[];
+  exercises?: readonly { id: string; title?: string }[];
   /** A test-out form that also needs this many of its questions (the quiz `<id>-questions`) right. */
   questionsToPass?: number;
   /** A quiz: how many questions it has (a Quick Check's questions are scored against questionsToPass). */
   questionCount?: number;
+  /** A quiz in a readiness unit: its question ids, in order (readiness.ts pairs twins by position). */
+  questionIds?: readonly string[];
 };
 
 export type ProgressUnit = {
@@ -96,7 +100,7 @@ function cleanExercise(value: unknown): ExerciseProgress | null {
     if (number !== undefined && number >= 0) out[field] = number;
     else delete out[field];
   }
-  for (const field of ["solutionShown", "copiedSolution", "bonusDone"] as const) {
+  for (const field of ["solutionShown", "copiedSolution", "bonusDone", "doneWithCompare"] as const) {
     if (typeof value[field] === "boolean") out[field] = value[field] as boolean;
     else delete out[field];
   }
@@ -122,6 +126,29 @@ function cleanQuiz(value: unknown): QuizProgress | null {
       if (typeof answer === "string") answers[id] = answer;
     }
     out.lastAnswers = answers;
+  }
+  for (const field of ["right", "explained"] as const) {
+    const ids = value[field];
+    if (Array.isArray(ids)) out[field] = [...new Set(ids.filter((id): id is string => typeof id === "string"))];
+  }
+  if (isRecord(value.ownWords)) {
+    const words: Record<string, string> = {};
+    for (const [id, text] of Object.entries(value.ownWords)) if (typeof text === "string") words[id] = text.slice(0, 2000);
+    out.ownWords = words;
+  }
+  return out;
+}
+
+function cleanReadiness(value: unknown): Record<string, ReadinessProgress> | undefined {
+  if (!isRecord(value)) return undefined;
+  const out: Record<string, ReadinessProgress> = {};
+  for (const [unitId, entry] of Object.entries(value)) {
+    if (!isRecord(entry)) continue;
+    const clean: ReadinessProgress = {};
+    const at = finiteNumber(entry.coreDoneAt);
+    if (at !== undefined && at >= 0) clean.coreDoneAt = at;
+    if (entry.recheckOpen === true) clean.recheckOpen = true;
+    out[unitId] = clean;
   }
   return out;
 }
@@ -209,6 +236,8 @@ export function normalizeProgress(value: unknown): CourseProgress {
   progress.read = cleanFlags(value.read);
   progress.testedOut = cleanFlags(value.testedOut);
   progress.settings = cleanSettings(value.settings);
+  const readiness = cleanReadiness(value.readiness);
+  if (readiness) progress.readiness = readiness;
   return progress;
 }
 
@@ -277,17 +306,65 @@ export function withExercise(key: string, fn: (previous: ExerciseProgress) => Ex
   };
 }
 
-/** Count one finished attempt; keep the best percent (0 to 100). */
-export function withQuiz(key: string, percent: number, lastAnswers?: Record<string, string>): ProgressUpdate {
+/**
+ * Count one finished attempt; keep the best percent (0 to 100). `right` (the Readiness Check) adds the question ids
+ * answered right in this attempt to the ones right before.
+ */
+export function withQuiz(key: string, percent: number, lastAnswers?: Record<string, string>, right?: readonly string[]): ProgressUpdate {
   return (progress) => {
     const previous = progress.quizzes[key];
     const score = Math.min(100, Math.max(0, Math.round(Number.isFinite(percent) ? percent : 0)));
     const next: QuizProgress = {
+      ...previous,
       best: Math.max(previous?.best ?? 0, score),
       attempts: (previous?.attempts ?? 0) + 1,
       ...(lastAnswers ? { lastAnswers: { ...lastAnswers } } : previous?.lastAnswers ? { lastAnswers: previous.lastAnswers } : {}),
+      ...(right ? { right: [...new Set([...(previous?.right ?? []), ...right])] } : {}),
     };
+    if (!next.lastAnswers) delete next.lastAnswers;
     return { ...progress, quizzes: { ...progress.quizzes, [key]: next } };
+  };
+}
+
+/** The Readiness Check: a question's answer and explanation were shown, so a retake never shows them again. */
+export function withQuizExplained(key: string, questionId: string): ProgressUpdate {
+  return (progress) => {
+    const previous = progress.quizzes[key] ?? { best: 0, attempts: 0 };
+    if (previous.explained?.includes(questionId)) return progress;
+    const next: QuizProgress = { ...previous, explained: [...(previous.explained ?? []), questionId] };
+    return { ...progress, quizzes: { ...progress.quizzes, [key]: next } };
+  };
+}
+
+/**
+ * The Readiness Check: a question answered right, saved as soon as it is checked (a twin can be answered alone, and a
+ * bell before "See my score" loses nothing). It never counts an attempt or changes the best score.
+ */
+export function withQuizRight(key: string, questionId: string): ProgressUpdate {
+  return (progress) => {
+    const previous = progress.quizzes[key] ?? { best: 0, attempts: 0 };
+    if (previous.right?.includes(questionId)) return progress;
+    const next: QuizProgress = { ...previous, right: [...(previous.right ?? []), questionId] };
+    return { ...progress, quizzes: { ...progress.quizzes, [key]: next } };
+  };
+}
+
+/** The Readiness Check's "Explain a line you wrote": the student's own words first, kept for them, never graded. */
+export function withOwnWords(key: string, questionId: string, text: string): ProgressUpdate {
+  return (progress) => {
+    const previous = progress.quizzes[key] ?? { best: 0, attempts: 0 };
+    const next: QuizProgress = { ...previous, ownWords: { ...previous.ownWords, [questionId]: text.slice(0, 2000) } };
+    return { ...progress, quizzes: { ...progress.quizzes, [key]: next } };
+  };
+}
+
+/** The Readiness Check's dates and the teacher's re-check switch, for one unit. */
+export function withReadiness(unitId: string, patch: ReadinessProgress): ProgressUpdate {
+  return (progress) => {
+    const previous = progress.readiness?.[unitId];
+    const same = previous !== undefined && (Object.keys(patch) as (keyof ReadinessProgress)[]).every((field) => previous[field] === patch[field]);
+    if (same) return progress;
+    return { ...progress, readiness: { ...progress.readiness, [unitId]: { ...previous, ...patch } } };
   };
 }
 
@@ -566,8 +643,28 @@ export function updateExercise(key: string, fn: (previous: ExerciseProgress) => 
 }
 
 /** Record a finished quiz attempt (key = `${unitId}/${itemId}`, percent 0 to 100). */
-export function recordQuiz(key: string, percent: number, lastAnswers?: Record<string, string>): CourseProgress {
-  return store.update(withQuiz(key, percent, lastAnswers));
+export function recordQuiz(key: string, percent: number, lastAnswers?: Record<string, string>, right?: readonly string[]): CourseProgress {
+  return store.update(withQuiz(key, percent, lastAnswers, right));
+}
+
+/** The Readiness Check: this question's answer and explanation were shown (withQuizExplained). */
+export function markQuizExplained(key: string, questionId: string): CourseProgress {
+  return store.update(withQuizExplained(key, questionId));
+}
+
+/** The Readiness Check: this question was answered right (withQuizRight). */
+export function markQuizRight(key: string, questionId: string): CourseProgress {
+  return store.update(withQuizRight(key, questionId));
+}
+
+/** The Readiness Check: the student's own words before the choices (withOwnWords). */
+export function saveOwnWords(key: string, questionId: string, text: string): CourseProgress {
+  return store.update(withOwnWords(key, questionId, text));
+}
+
+/** The Readiness Check: the core's date, or the teacher's re-check switch (withReadiness). */
+export function markReadiness(unitId: string, patch: ReadinessProgress): CourseProgress {
+  return store.update(withReadiness(unitId, patch));
 }
 
 /** Mark an article or cheatsheet as read (key = `${unitId}/${itemId}`). */
@@ -661,12 +758,20 @@ function rawStatus(unitId: string, item: ProgressItem, progress: CourseProgress)
 
 /**
  * An item's status. A core item in a unit the student tested out of reads "tested-out" (unless they did it
- * anyway, then "done").
+ * anyway, then "done"). With the unit's items, a readiness unit (one that holds a required test-out) never reads
+ * "tested-out", and its required form is done when every task passed, in that form or a twin (readiness.ts).
  */
-export function itemStatus(unitId: string, item: ProgressItem, progress: CourseProgress): ItemStatus {
+export function itemStatus(unitId: string, item: ProgressItem, progress: CourseProgress, unitItems?: readonly ProgressItem[]): ItemStatus {
+  const plan = unitItems ? readinessPlan(unitItems) : null;
+  if (plan && unitItems) return readinessStatus(unitId, unitItems, plan, item, progress, rawStatus(unitId, item, progress));
   const status = rawStatus(unitId, item, progress);
   if (status !== "done" && progress.testedOut[unitId] && !item.optional && item.kind !== "testout") return "tested-out";
   return status;
+}
+
+/** The readiness plan of a unit's items, or null for every other unit (readiness.ts). */
+export function unitReadiness(items: readonly ProgressItem[]): ReadinessPlan | null {
+  return readinessPlan(items);
 }
 
 /**
@@ -710,6 +815,20 @@ export type UnitProgress = {
 };
 
 export function unitProgress(unit: Pick<ProgressUnit, "id" | "items">, progress: CourseProgress): UnitProgress {
+  // A readiness unit: its required form is a core item, and nothing tests the unit out.
+  if (readinessPlan(unit.items)) {
+    const core = unit.items.filter((item) => !item.optional);
+    const statuses = unit.items.map((item) => ({ item, status: itemStatus(unit.id, item, progress, unit.items) }));
+    const done = statuses.filter(({ item, status }) => !item.optional && status === "done").length;
+    return {
+      done,
+      total: core.length,
+      percent: core.length === 0 ? 0 : Math.round((done / core.length) * 100),
+      testedOut: false,
+      started: statuses.some(({ status }) => status !== "not-started"),
+      complete: core.length > 0 && done === core.length,
+    };
+  }
   const core = unit.items.filter((item) => !item.optional && item.kind !== "testout");
   const testedOut = progress.testedOut[unit.id] === true;
   const statuses = unit.items.map((item) => ({ item, status: itemStatus(unit.id, item, progress) }));
@@ -728,8 +847,14 @@ export function unitProgress(unit: Pick<ProgressUnit, "id" | "items">, progress:
   };
 }
 
-/** The first core item not done yet: the "Next up" marker. Undefined when the unit is complete. */
+/**
+ * The first core item not done yet: the "Next up" marker. Undefined when the unit is complete. A readiness unit (all
+ * its items passed in) follows its own order: the intro, the questions, the tasks, Mar'tu's notes after a miss, the
+ * mini-boss, the explain question (readiness.ts).
+ */
 export function nextUpItem<T extends ProgressItem>(unitId: string, items: readonly T[], progress: CourseProgress): T | undefined {
+  const plan = readinessPlan(items);
+  if (plan) return readinessNextUp(unitId, items, plan, progress, (item) => itemStatus(unitId, item, progress, items));
   if (progress.testedOut[unitId]) return undefined;
   return items.find(
     (item) => !item.optional && item.kind !== "testout" && itemStatus(unitId, item, progress) !== "done",

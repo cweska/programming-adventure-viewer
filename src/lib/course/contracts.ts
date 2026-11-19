@@ -102,9 +102,32 @@ export type ExerciseProgress = {
   bonusDone?: boolean;
   /** Predict before Run: the chosen choice index, or -1 when skipped. Absent: not answered yet. */
   predicted?: number;
+  /**
+   * The exercise was first passed after Mar'tu's version was opened (Compare): the Readiness Check records that pass
+   * as "with Mar'tu's version" (curriculum §5.5). Set once, when the exercise turns done.
+   */
+  doneWithCompare?: boolean;
 };
 
-export type QuizProgress = { best: number; attempts: number; lastAnswers?: Record<string, string> };
+export type QuizProgress = {
+  best: number;
+  attempts: number;
+  lastAnswers?: Record<string, string>;
+  /** The Readiness Check: the question ids answered right at least once (a twin in another form counts, readiness.ts). */
+  right?: string[];
+  /** The Readiness Check: the question ids whose answer and explanation were shown once, never again on a retake. */
+  explained?: string[];
+  /** The Readiness Check's "Explain a line you wrote": what the student wrote in their own words first (never graded). */
+  ownWords?: Record<string, string>;
+};
+
+/** The Readiness Check's dates and the teacher's switch (readiness.ts). */
+export type ReadinessProgress = {
+  /** ms since epoch when the unit's core was first all done: the spaced re-check opens about a week later. */
+  coreDoneAt?: number;
+  /** The teacher opened the re-check (the unit page with `?recheck=open`). */
+  recheckOpen?: true;
+};
 
 export type CourseSettings = {
   /**
@@ -130,6 +153,8 @@ export type CourseProgress = {
   /** unitId -> passed the unit's Quick Check */
   testedOut: Record<string, true>;
   settings: CourseSettings;
+  /** unitId -> the Readiness Check's dates (only a readiness unit writes it; absent in older saves). */
+  readiness?: Record<string, ReadinessProgress>;
 };
 
 export type ItemStatus = "not-started" | "in-progress" | "done" | "tested-out";
@@ -149,11 +174,13 @@ export type UnitSummary = {
     kind: Item["kind"];
     title: string;
     optional: boolean;
-    /** A Quick Check form: its task ids, and how many of its questions must be right (see progress.ts). */
-    exercises?: { id: string }[];
+    /** A Quick Check form: its task ids (a readiness unit's: their titles too), and how many of its questions must be right (see progress.ts). */
+    exercises?: { id: string; title?: string }[];
     questionsToPass?: number;
     /** A quiz: how many questions it has. */
     questionCount?: number;
+    /** A quiz in a readiness unit: its question ids, in order (a twin in another form is the same position). */
+    questionIds?: string[];
   }[];
 };
 

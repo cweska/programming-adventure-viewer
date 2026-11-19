@@ -12,7 +12,12 @@ import {
   GOT_FURTHER_LINE,
   leanExplanation,
   LOOPS_UNIT_ORDER,
+  ONE_FIXED_PREFIX,
+  READINESS_UNIT_ORDER,
   slipName,
+  SPELL_RECIPES_UNIT_ORDER,
+  STRINGS_UNIT_ORDER,
+  TEXT_POSITION_WORD,
   type ExplainContext,
 } from "./explain";
 import { flattenChecks, gradeCheckpoints } from "./grading";
@@ -1836,7 +1841,13 @@ function unitWrongAnswers(unitId: string) {
   const exercise = (key: string) => {
     const found = exercises.get(key);
     expect(found, key).toBeTruthy();
-    return { context: contextOf(found!), setup: found?.setup ? text(found.setup) : "", stdin: found?.stdin, solution: text(found?.solution) };
+    return {
+      context: contextOf(found!),
+      setup: found?.setup ? text(found.setup) : "",
+      stdin: found?.stdin,
+      solution: text(found?.solution),
+      starter: text(found?.starter),
+    };
   };
   return { find, crashes, exercise, order: unit.order };
 }
@@ -3008,3 +3019,1022 @@ describe("explainCourseError: the merged branch's review (one fix, on the line i
     expect(explainCourseError(crashOf(newest), newest.code, newest.context).hint).toContain("Write: `newest = chalk_wall[-1]`");
   });
 });
+
+/* ---------------------------------------------------------------------------------------------- */
+/* Unit 7 ("Functions II: Spells You Can Hand Over"): the teacher's site requests                    */
+/* ---------------------------------------------------------------------------------------------- */
+
+const unit7 = unitWrongAnswers("spell-recipes");
+
+describe("explainCourseError: Unit 7's slips (functions II), from the unit's own wrong answers", () => {
+  it("is Unit 7 on the course map, and its rows open there", () => {
+    expect(unit7.order).toBe(SPELL_RECIPES_UNIT_ORDER);
+    expect(SPELL_RECIPES_UNIT_ORDER).toBe(LOOPS_UNIT_ORDER + 1);
+  });
+
+  // [exercise, the wrong answer's `why`, Python 3.13's own words, kind, the full hint, the line the crash banner names]
+  const rows: [string, string, string, string, string, number | undefined][] = [
+    // (1) A guard that lets the key through: never "Use a key that is already there" (the test call stays).
+    ["recipes-read-sheets/guard-at-the-door", "starter: no guard (the predict's KeyError)", "KeyError: 'Star Glow'", "missing-key",
+      '`hero["spell_book"]` has no key "Star Glow", so line 5 stops the program. The call that hands over "Star Glow" is the test: keep it. Add your guard above line 5, so `cast_glow` asks first.', undefined],
+    ["recipes-read-sheets/guard-at-the-door", "a guard with no return: shows the line, then carries on to the spell", "KeyError", "missing-key",
+      'Your guard lets "Star Glow" through to line 7. Its `if` shows the line, but nothing stops the function, so line 7 still reads the key. Put `return` on a new line under line 6, with the same spaces in front.', undefined],
+    ["recipes-read-sheets/guard-at-the-door", "an if/else guard that never returns: the work below still runs", "KeyError", "missing-key",
+      'Your guard lets "Star Glow" through to line 9. Its `if` shows the line, but nothing stops the function, so line 9 still reads the key. Put `return` on a new line under line 6, with the same spaces in front.', undefined],
+    ["recipes-read-sheets/guard-at-the-door", "the early return placed after the work (the guard comes too late)", "KeyError", "missing-key",
+      'Your guard lets "Star Glow" through to line 5: it is on line 6, below line 5, which reads the key first, so "Star Glow" stops the program before the guard can ask. Move the guard, its `if` and the lines under it, above line 5.', 6],
+    ["recipes-read-sheets/guard-at-the-door", "`in` for `not in`", "KeyError", "missing-key",
+      'Your guard lets "Star Glow" through to line 8. Line 5 asks `in`, so it stops the spells the book has and lets the others go on. Ask `not in`: `if spell_name not in hero["spell_book"]:`', 5],
+    // (2) The bar row: `"░" * hero["max_mana"] - hero["mana"]` gets the parentheses, never "use int()".
+    ["recipes-read-sheets/broken-spell-6b", "two mended; the precedence slip", "unsupported operand", "bar-needs-brackets",
+      'Python does `*` before `-` on line 12, like PEMDAS in math. So it stamps the text first, then tries to take a number away from text. Put parentheses around the subtraction so it happens first: `empty = "░" * (hero["max_mana"] - hero["mana"])`', undefined],
+    ["recipes-read-sheets/bar-then-draw", 'no brackets: "▯" * a - b', "unsupported operand type(s) for -: 'str' and 'int'", "bar-needs-brackets",
+      'Python does `*` before `-` on line 13, like PEMDAS in math. So it stamps the text first, then tries to take a number away from text. Put parentheses around the subtraction so it happens first: `empty = "▯" * (robot["max_fuel"] - robot["fuel"])`', undefined],
+    ["recipes-read-sheets/broken-spell-6b", "brackets in the wrong place: still text minus a number", "unsupported operand", "bar-needs-brackets",
+      'Line 12 puts parentheses around the stamp, `("░" * hero["max_mana"])`, so Python still stamps the text first, then tries to take a number away from text. Put the parentheses around the subtraction instead: `empty = "░" * (hero["max_mana"] - hero["mana"])`', undefined],
+    // (3) `None` called: a function handed over with `()`, traced to the line that handed it over.
+    ["spells-you-can-hand-over/name-without-parentheses", "stored the call (None), then called it: the explainer's NoneType row", "'NoneType' object is not callable", "not-a-function",
+      "Line 16 calls `chosen_spell`, and it holds `None`, Python's word for nothing. Line 13 puts `warm_hands(lucky)` in `chosen_spell`: the `(lucky)` runs `warm_hands` right there, and `warm_hands` hands back nothing. Hand the function over by its name, with no `()`: `chosen_spell = warm_hands`", 13],
+    ["spells-you-can-hand-over/hand-it-over", "handed over the result of a call: warm_hands(lucky) hands over None", "'NoneType' object is not callable", "not-a-function",
+      "Line 7 calls `effect`, and it holds `None`, Python's word for nothing. The call on line 13 hands over `warm_hands(lucky)`: the `(lucky)` runs `warm_hands` right there, and `warm_hands` hands back nothing. Hand the function over by its name, with no `()`: `cast_on_everyone(roster, warm_hands)`", 13],
+    ["spells-you-can-hand-over/broken-spell-6c", "the effect called first while the loop still hands over None (the chain: NoneType)", "'NoneType' object is not callable", "not-a-function",
+      "Line 20 calls `spell[\"effect\"]`, and it holds `None`, Python's word for nothing. Line 26 hands over `lantern_ward(hero)`: the `(hero)` runs `lantern_ward` right there, and `lantern_ward` hands back nothing. Hand the function over by its name, with no `()`: `learn_spell(hero[\"spell_book\"], \"Lantern Ward\", 6, 9, lantern_ward)`", 26],
+    ["spell-book-from-blank", "a test line hands the ward over WITH (): lantern_ward(lucky) stores None, then the cast crashes", "'NoneType' object is not callable", "not-a-function",
+      "Line 20 calls `spell[\"effect\"]`, and it holds `None`, Python's word for nothing. Line 25 hands over `lantern_ward(lucky)`", 25],
+    // (4) `None` glued to text: the older row names the function, and the line the `return` goes under (never "Fix line 1",
+    // the `def` line, which is right).
+    ["recipes-read-sheets/broken-spell-6b", "starter: the missing return (spec: the NoneType TypeError)", '(not "NoneType")', "math-with-none",
+      "Line 26 uses what `mana_line` hands back, and that is `None`, Python's word for nothing. `mana_line`, made on line 1, has no `return`, so it hands nothing back. Under line 2, add `return line`, with the same spaces in front.", undefined],
+    // (5) Text read as a sheet: the quotes on the parameter, the order of the call, or the name for the sheet.
+    ["recipes-read-sheets/hand-over-a-sheet", "the parameter in quotes", "string indices", "quoted-name",
+      'Line 2 reads `"hero"[...]`. With quotes, `"hero"` is the text hero, not the parameter `hero`. Quotes mean these exact letters. No quotes means look inside the box with this label. Take the quotes off: `return hero["name"] + ": " + str(hero["mana"]) + "/" + str(hero["max_mana"])`', undefined],
+    ["recipes-read-sheets/read-the-helper", "the values in the wrong order", "string indices", "swapped-values",
+      "The call on line 15 hands its values over in the wrong order. `draw_bar` takes the sheet as `hero`, and the call puts `lucky` where `bar` goes, so line 5 reads text as a sheet. Swap the two values on line 15.", 15],
+    ["recipes-read-sheets/bar-then-draw", "the values swapped (crashes in the helper)", "string indices", "swapped-values",
+      "The call on line 25 hands its values over in the wrong order. `draw_bar` takes the sheet as `robot`, and the call puts `robot` where `bar` goes, so line 5 reads text as a sheet. Swap the two values on line 25: `draw_bar(robot, fuel_bar)`", 25],
+    ["recipes-read-sheets/read-the-helper", "Lucky's name typed where his sheet goes", "string indices", "text-as-sheet",
+      'The call on line 15 hands over the text `"Lucky"` for `hero`, and line 5 reads `hero` as a sheet. Hand over the sheet `lucky` itself, with no quotes: `draw_bar(lucky, "███░")`', 15],
+    ["spells-you-can-hand-over/name-without-parentheses", "CP2 the name typed as text (string indices)", "string indices must be integers", "text-as-sheet",
+      'The call on line 16 hands over the text `"Lucky"` for `hero`, and line 2 reads `hero` as a sheet. Hand over the sheet `lucky` itself, with no quotes: `chosen_spell(lucky)`', 16],
+    // (6) A number (or text) called: the call handed over a result, not the function. Never "use * to multiply".
+    ["lambda/a-dial-in-one-line", "CP2 the result of a call handed over, not the function ('int' is not callable)", "'int' object is not callable", "not-a-function",
+      "Line 4 calls `dial`, and it holds a number. The call on line 15 hands over `max_mana_dial(lucky)`: the `(lucky)` runs `max_mana_dial` right there, and its answer, a number, goes over in place of the function. Hand the function over by its name, with no `()`: `run_array(roster, max_mana_dial)`", 15],
+    ["map/every-hero-at-once", "CP3 the result of one call handed over ('int' is not callable)", "'int' object is not callable", "not-a-function",
+      "Line 17 hands `get_mana(lucky)` to `map`. The `()` runs `get_mana` right there, so `map` gets a number, not the function. Hand the function over by its name, with no `()`: `manas = list(map(get_mana, roster))`", undefined],
+    ["the-resonance-array", "CP6 the result of a call handed over (text, not a function)", "'str' object is not callable", "not-a-function",
+      "Line 64 calls `dial`, and it holds text. The call on line 69 hands over `mana_dial(lucky)`: the `(lucky)` runs `mana_dial` right there, and its answer, text, goes over in place of the function. Hand the function over by its name, with no `()`: `run_array(roster, mana_dial)`", 69],
+    ["spells-you-can-hand-over/hand-it-over", "the function's name in quotes", "'str' object is not callable", "not-a-function",
+      "Line 7 calls `effect`, and it holds text. The call on line 13 hands over `\"warm_hands\"`, in quotes: quotes make it text, the letters of the name, not the function. Take the quotes off: `cast_on_everyone(roster, warm_hands)`", 13],
+    // (7) Handed over WITH an empty `()`: never "hand over one value per parameter", which only gives `warm_hands(lucky)`.
+    ["spells-you-can-hand-over/hand-it-over", "handed over WITH () (missing argument)", "missing 1 required positional argument: 'hero'", "wrong-number-of-values",
+      "Line 13 hands `warm_hands()` to `cast_on_everyone`. The `()` runs `warm_hands` right there, with nothing in its parentheses, so Python stops. Hand the function over by its name, with no `()`: `cast_on_everyone(roster, warm_hands)`", undefined],
+    ["spells-you-can-hand-over/name-without-parentheses", "() with nothing inside (missing argument)", "missing 1 required positional argument: 'hero'", "wrong-number-of-values",
+      "Line 13 puts `warm_hands()` in `chosen_spell`. The `()` runs `warm_hands` right there, with nothing in its parentheses, so Python stops. Hand the function over by its name, with no `()`: `chosen_spell = warm_hands`", undefined],
+    // (8) A page called whole, a function's values in the wrong order, the wrong sheet, a parameter's name as a key.
+    ["spells-you-can-hand-over/recipe-in-a-box", "CP2 the page called without \"effect\" (the page is a dict)", "'dict' object is not callable", "not-a-function",
+      'Line 23 calls `lucky_book["Glow"]`, a whole dictionary, with ( ). The function is inside it, under the key `"effect"`: read it, then call it: `lucky_book["Glow"]["effect"](lucky)`', undefined],
+    ["spells-you-can-hand-over/recipe-in-a-box", "round brackets on the dictionary", "'dict' object is not callable", "list-needs-square-brackets",
+      'Line 17 puts parentheses ( ) after `glow`, so Python tries to run it like a function. `glow` is a dictionary: read a key with square brackets [ ], not parentheses. Line 17, with square brackets: `glow["effect"](lucky)`', undefined],
+    ["spells-you-can-hand-over/hand-it-over", "the two values in the wrong order", "'function' object is not iterable", "swapped-values",
+      "The call on line 13 hands its values over in the wrong order: `heroes` gets the function `warm_hands`, and `effect` gets `roster`. Line 6 then loops over `heroes`, and a function is not a list. Swap the two values on line 13, so `heroes` gets `roster`.", 13],
+    ["map/every-hero-at-once", "the two values in the wrong order", "'function' object is not iterable", "swapped-values",
+      "Line 8 hands `map` its values in the wrong order. `map` takes the function first, then the list. Swap them: `names = list(map(get_name, roster))`", undefined],
+    ["spells-you-can-hand-over/recipe-in-a-box", "the dictionary handed to its own effect (KeyError)", "KeyError: 'name'", "missing-key",
+      '`light_lantern` reads the key "name" from the sheet it is handed. Line 17 hands over `glow`, a dictionary with no "name". Hand over `lucky` there: `glow["effect"](lucky)`', undefined],
+    ["recipes-read-sheets/broken-spell-6b", "return mended; the quoted key shows as a KeyError on the read", "KeyError: 'Glow'", "missing-key",
+      '`lucky_book` has no "Glow": line 7, inside `add_to_book`, stores under `"spell_name"`, the letters of the parameter\'s name, not the name handed in. Quotes mean these exact letters. No quotes means look inside the box with this label. Take the quotes off on line 7: `book[spell_name] = spell`', 7],
+    // (9) A number in quotes handed over: the quotes are on the call's line, never "use int()".
+    ["recipes-read-sheets/recipes-change-sheets", "the cost in quotes on the bottom call", "unsupported operand", "number-in-quotes",
+      'Line 6 does math with `cost`, and the call on line 16 hands over `"4"` for it, in quotes. Quotes make text, even when it looks like a number. Take the quotes off on line 16: `spend(lucky, 4)`', 16],
+    // (10) Whole sheets, and the function handed over where its answer goes.
+    ["recipes-read-sheets/bar-then-draw", "the block times the whole sheet (the starter's print line runs it", "can't multiply sequence by non-int", "whole-card-compared",
+      'Line 10 stamps text by `robot`, a whole sheet. The stamp needs a number: stamp by one number from the sheet, read by its key, like `robot["fuel"]`.', undefined],
+    ["spells-you-can-hand-over/hand-it-over", "CP2 the whole sheet glued to text, handed over (the loop crashes)", "unsupported operand type(s) for +: 'dict' and 'str'", "whole-card-compared",
+      '`hero` is a whole sheet, not text, so it can\'t be glued to text. Glue on one value from it by its key, like `hero["name"]`.', undefined],
+    ["recipes-read-sheets/bar-then-draw", "the function handed to draw_bar, not the bar", '(not "function")', "wrong-kind-of-value",
+      "Line 5 glues `bar` to text, and `bar` holds the function `get_fuel_bar` itself: the call on line 25 hands it over by its name. Hand over what it makes instead, `fuel_bar`: `draw_bar(robot, fuel_bar)`", 25],
+    // (11) Unit 3's names, in Unit 7's words: a key with no quotes, a line that fell out of its function, a spell not made yet.
+    ["recipes-read-sheets/hand-over-a-sheet", "a key with no quotes", "name 'name' is not defined", "unquoted-key",
+      'A key is text, so it needs quotes: `"name"`. Without quotes, Python looks for a variable called `name`. Line 2, with the quotes put in: `return hero["name"] + ": " + str(hero["mana"]) + "/" + str(hero["max_mana"])`', undefined],
+    ["spells-you-can-hand-over/write-the-spell-book", "CP2 the store line not indented (outside the function: NameError)", "name 'spell' is not defined", "made-inside-recipe",
+      "Line 13 has no spaces in front, so it is outside `learn_spell`, and `spell` only exists inside that function. Indent line 13 to line up with line 9, 4 spaces in, so it is inside `learn_spell`.", undefined],
+    ["recipes-read-sheets/store-by-name", "the second call written with no warm_hands made first", "name 'warm_hands' is not defined", "not-made-yet",
+      "`warm_hands` is one of your step's boxes, but no line makes it yet. Make it above line 14, on a line that starts with `warm_hands = `", undefined],
+    // (12) The extra practice (defaults, keywords, lambda, two values back): one fix each, never "look for a missing quote".
+    ["extra-defaults-and-scope/defaults-and-names", "CP2 a keyword that is not the parameter's name", "unexpected keyword argument 'size'", "spelling",
+      "`roll_die` has no parameter called `size`: its parameter is `die_size`. A name before `=` in a call is a parameter's name, letter for letter: write `die_size=`, so the line reads `print(roll_die(die_size=6))`.", undefined],
+    ["extra-defaults-and-scope/defaults-and-names", "CP2 the parameter's name in quotes", "expression cannot contain assignment", "quoted-name",
+      "Line 13 puts quotes around `die_size` before `=`. Python's last line guesses `==`, but that guess is wrong here. A name before `=` in a call is the parameter's name, with no quotes: `print(roll_die(die_size=6))`", undefined],
+    ["extra-defaults-and-scope/defaults-and-names", "== for = on the def line", "invalid syntax", "compare-with-double-equals",
+      "Line 4 has `==` inside the `def` line's parentheses. A default value takes one `=`, the way a variable gets a value: `def roll_die(die_size=20):`", undefined],
+    ["extra-defaults-and-scope/defaults-and-names", "CP2 the 6 in quotes", "can only concatenate str", "number-in-quotes",
+      'Line 5 does math with `die_size`, and the call on line 13 hands over `"6"` for it, in quotes. Quotes make text, even when it looks like a number. Take the quotes off on line 13: `print(roll_die(die_size=6))`', 13],
+    ["lambda/a-dial-in-one-line", "return inside a lambda", "invalid syntax", "cant-read-line",
+      'Line 12 has `return` inside a `lambda`. A `lambda` hands its answer back by itself, so it never says `return`: `max_mana_dial = lambda hero: hero["magical_affinity"] * 2`', undefined],
+    ["two-things-back/the-bars-two-numbers", "CP2 one name catches the whole tuple", "can't multiply sequence by non-int of type 'tuple'", "wrong-kind-of-value",
+      "Line 16 stamps text by `full`, and `full` holds both values `bar_parts` hands back, as one pair. Line 15 catches them in one name. Catch them in two names, one per value: `full, empty = bar_parts(lucky)`", 15],
+    ["two-things-back/the-bars-two-numbers", "CP2 the function stored, not called", "cannot unpack non-iterable function object", "wrong-kind-of-value",
+      "Line 15 catches two values from `bar_parts`, the function itself: with no `( )`, it never runs, so nothing comes back to catch. Call it: `full, empty = bar_parts(lucky)`", undefined],
+    ["extra-defaults-and-scope/defaults-and-names", "the starter: roll_die() hands over nothing (no default yet)", "missing 1 required positional argument: 'die_size'", "wrong-number-of-values",
+      "`roll_die` has the parameter `die_size`, and line 9 hands over nothing for it, so Python stops. Give `die_size` a default on line 4, the `def` line: `def roll_die(die_size=20):`", 4],
+    ["extra-defaults-and-scope/defaults-and-names", "a colon for = (an annotation, not a default)", "missing 1 required positional argument", "wrong-number-of-values",
+      "Line 4 has a colon after `die_size` in the `def` line. A default value takes `=`, so `die_size` has no default, and line 9 hands over nothing for it. Write: `def roll_die(die_size=20):`", 4],
+    ["two-things-back/the-bars-two-numbers", "CP2 the print inside bar_parts never gets the bar (None unpacked)", "cannot unpack non-iterable NoneType object", "math-with-none",
+      'Line 15 catches two values from `bar_parts(lucky)`, but `bar_parts` hands back `None`, Python\'s word for nothing: it has no `return` line that hands values back. On line 5, write `return hero["mana"], hero["max_mana"] - hero["mana"]` in place of the `print` line.', 5],
+    // (13) The fixer's pass: a key read from the function's own sheets (the caster's sheet, the spell's page), never a
+    // path through the name the test call typed ("Lantern Ward"); a near miss that is part of the key's name.
+    ["spells-you-can-hand-over/cast-from-the-book", "CP2 the cost read from the hero's sheet (the wrong sheet: KeyError)", "KeyError: 'mana_cost'", "missing-key",
+      '`hero` has no key `"mana_cost"`. That key is on `spell`: `spell["mana_cost"]`', undefined],
+    ["spells-you-can-hand-over/cast-from-the-book", "CP3 the required affinity read from the hero's sheet (the wrong sheet: KeyError)", "KeyError: 'required_affinity'", "missing-key",
+      '`hero` has no key `"required_affinity"`. That key is on `spell`: `spell["required_affinity"]`', undefined],
+    ["spells-you-can-hand-over/cast-from-the-book", "CP3 the affinity read from the spell's page (the wrong sheet: KeyError)", "KeyError: 'magical_affinity'", "missing-key",
+      '`spell` has no key `"magical_affinity"`. That key is on `hero["abilities"]`: `hero["abilities"]["magical_affinity"]`', undefined],
+    ["spells-you-can-hand-over/cast-from-the-book", "CP4 the mana read from the spell's page (the wrong sheet: KeyError)", "KeyError: 'mana'", "missing-key",
+      '`spell` has no key `"mana"`. That key is on `hero`: `hero["mana"]`', undefined],
+    ["spells-you-can-hand-over/cast-from-the-book", 'hero["magical_affinity"]: a skipped level (KeyError)', "KeyError: 'magical_affinity'", "missing-key",
+      '`"magical_affinity"` is inside `"abilities"`: read the outer key first: `hero["abilities"]["magical_affinity"]`', undefined],
+    ["spells-you-can-hand-over/cast-from-the-book", 'CP3 a part of the key\'s name: "magic" for "magical_affinity" (KeyError)', "KeyError: 'magic'", "missing-key",
+      'Line 25 reads the key `"magic"` from `hero["abilities"]`. That dictionary spells it `"magical_affinity"`. Keys match letter for letter: `hero["abilities"]["magical_affinity"]`', undefined],
+    ["spells-you-can-hand-over/cast-from-the-book", 'CP4 a part of the key\'s name: "cost" for "mana_cost" (KeyError)', "KeyError: 'cost'", "missing-key",
+      'Line 27 reads the key `"cost"` from `spell`. That dictionary spells it `"mana_cost"`. Keys match letter for letter: `spell["mana_cost"]`', undefined],
+    ["spells-you-can-hand-over/cast-from-the-book", "CP2 show_mana handed the spell's page (KeyError inside the finished helper)", "KeyError: 'mana'", "missing-key",
+      '`show_mana` reads the key "mana" from the sheet it is handed. Line 32 hands over `spell`, a dictionary with no "mana". Hand over `hero` there: `show_mana(hero)`', undefined],
+    ["spells-you-can-hand-over/cast-from-the-book", "the campaign's name caster copied", "name 'caster' is not defined", "unknown-name",
+      "Line 25 uses `caster`, and no line makes it. Python's last line guesses `cast`, but that is the name of this function. The sheet it was handed is its parameter `hero`:", undefined],
+    ["spells-you-can-hand-over/recipe-in-a-box", 'CP2 the page skipped: lucky_book["effect"] (KeyError)', "KeyError: 'effect'", "missing-key",
+      '`"effect"` is inside `"Glow"`: read the outer key first: `lucky_book["Glow"]["effect"]`', undefined],
+    // (14) A function handed over with its parameter copied from its `def` line: never "put quotes around it".
+    ["spells-you-can-hand-over/hand-it-over", "CP1 handed over with its parameter copied from the def line (warm_hands(hero): NameError)", "name 'hero' is not defined", "not-a-function",
+      "Line 13 hands `warm_hands(hero)` to `cast_on_everyone`. The `(hero)` runs `warm_hands` right there, and `hero` only exists inside the function. Hand the function over by its name, with no `()`: `cast_on_everyone(roster, warm_hands)`", undefined],
+    ["spells-you-can-hand-over/hand-it-over", "CP2 cool_down handed over with its parameter (cool_down(hero): NameError)", "name 'hero' is not defined", "not-a-function",
+      "Line 23 hands `cool_down(hero)` to `cast_on_everyone`. The `(hero)` runs `cool_down` right there, and `hero` only exists inside the function. Hand the function over by its name, with no `()`: `cast_on_everyone(roster, cool_down)`", undefined],
+    ["spells-you-can-hand-over/name-without-parentheses", "CP1 handed over with its parameter copied from the def line (warm_hands(hero): NameError)", "name 'hero' is not defined", "not-a-function",
+      "Line 13 puts `warm_hands(hero)` in `chosen_spell`. The `(hero)` runs `warm_hands` right there, and `hero` only exists inside the function. Hand the function over by its name, with no `()`: `chosen_spell = warm_hands`", undefined],
+    ["map/every-hero-at-once", "handed over WITH () (runs now, with no hero)", "missing 1 required positional argument: 'hero'", "wrong-number-of-values",
+      "Line 8 hands `get_name()` to `map`. The `()` runs `get_name` right there, with nothing in its parentheses, so Python stops. Hand the function over by its name, with no `()`: `names = list(map(get_name, roster))`", undefined],
+    // (15) The line the fix goes on: the `def` line of a function handed over, the line that stored the function itself,
+    // the call that handed a number where text goes, the `def` line's quoted default.
+    ["spells-you-can-hand-over/hand-it-over", "CP2 no parameter, but handed over", "takes 0 positional arguments but 1 was given", "wrong-number-of-values",
+      "`cool_down` is handed `hero` on line 7, but its `def` line has no parameters. Change line 19, the `def` line: `def cool_down(hero):`", 19],
+    ["recipes-read-sheets/bar-then-draw", "the function stored with no (), then passed on (both lines written before a Run)", '(not "function")', "wrong-kind-of-value",
+      "Line 24 stores `get_fuel_bar` itself in `fuel_bar`, with no `(robot)`, so it never runs. Call it and keep its answer: `fuel_bar = get_fuel_bar(robot)`", 24],
+    ["recipes-read-sheets/bar-then-draw", "a number read from the sheet handed to draw_bar where the bar goes", "can only concatenate", "text-plus-number",
+      'The call on line 25 hands over `robot["fuel"]`, a number, for `bar`, and line 5 glues `bar` to text. Hand over `fuel_bar` there: `draw_bar(robot, fuel_bar)`', 25],
+    ["recipes-read-sheets/read-the-helper", "a number where the bar text goes", "can only concatenate", "text-plus-number",
+      'The call on line 15 hands over `20`, a number, for `bar`, and line 5 glues `bar` to text. Hand over text there, in quotes, like `draw_bar(lucky, "███░")`', 15],
+    ["recipes-read-sheets/read-the-helper", "the mana read from the sheet where the bar text goes", "can only concatenate", "text-plus-number",
+      'The call on line 15 hands over `lucky["mana"]`, a number, for `bar`, and line 5 glues `bar` to text. Hand over text there, in quotes, like `draw_bar(lucky, "███░")`', 15],
+    ["extra-defaults-and-scope/defaults-and-names", "the default in quotes (text, not a number)", "can only concatenate", "number-in-quotes",
+      'Line 5 does math with `die_size`, and its default on line 4 is `"20"`, in quotes. Quotes make text, even when it looks like a number. Take the quotes off on line 4: `def roll_die(die_size=20):`', 4],
+    ["extra-defaults-and-scope/defaults-and-names", "the number in place of the parameter", "invalid syntax", "quoted-ingredient",
+      "Line 4 has a number where a parameter's name goes. A default goes after the parameter's name, with `=`: `def roll_die(die_size=20):`", undefined],
+    ["extra-defaults-and-scope/defaults-and-names", "CP2 == in the call (a question, not a name)", "name 'die_size' is not defined", "compare-with-double-equals",
+      "Line 13 has `==` after `die_size` in the call. To name the value, use one `=`: `print(roll_die(die_size=6))`", undefined],
+    ["recipes-read-sheets/many-ingredients", "return placed before the dict is built (crashes at the bottom call)", "UnboundLocalError", "variable-in-function",
+      "Line 2 hands back `spell` before line 3 makes it. Move `return spell` below line 7, as the function's last line.", undefined],
+    ["extra-defaults-and-scope/inside-stays-inside", "the parameter printed outside (scope)", "name 'hero' is not defined", "made-inside-recipe",
+      "`hero` is the name of `rest`'s parameter, so it only exists inside the function. Out here, catch what `rest` hands back in a variable of your own: the call goes on the right of `=`.", undefined],
+  ];
+
+  it("explains each slip in the unit's words, with one fix, and names the line the fix goes on", async () => {
+    for (const [at, [key, why, python, kind, hint, slipLine]] of rows.entries()) {
+      // Python runs block the test worker: let it answer vitest between them (its heartbeat, "onTaskUpdate").
+      if (at % 10 === 0) await new Promise((resume) => setImmediate(resume));
+      const found = unit7.find(key, why);
+      expect(found.failsAt, `${key}: ${why} crashes`).toBe(0);
+      const raw = crashOf(found);
+      expect(raw, `${key}: ${why}`).toContain(python);
+      const result = explainCourseError(raw, found.code, found.context);
+      expect(result.kind, `${key}: ${why}`).toBe(kind);
+      expect(result.hint.startsWith(hint), `${key}: ${why}: ${result.hint}`).toBe(true);
+      if (slipLine !== undefined) expect(result.slipLine, `${key}: ${why}`).toBe(slipLine);
+      // A guard with no `return`, or a function whose last line makes its answer: the line goes under a right line,
+      // so the banner says "or a line above it".
+      if (/guard with no return|never returns|starter: the missing return/.test(why)) {
+        expect(result.slipLine, `${key}: ${why}`).toBeUndefined();
+        expect(result.fixAbove, `${key}: ${why}`).toBe(true);
+      }
+      // The unit's words (curriculum §2.9): function, parameter, key. `NoneType` and "use int()" never stand as the help.
+      expect(result.hint, `${key}: ${why}`).not.toMatch(/\b(recipe|ingredient|tag)s?\b/i);
+      expect(result.title, `${key}: ${why}`).not.toMatch(/\b(recipe|ingredient|tag)s?\b/i);
+      expect(result.hint, `${key}: ${why}`).not.toContain("NoneType");
+      expect(result.hint, `${key}: ${why}`).not.toContain("use `int()`");
+      expect(result.hint, `${key}: ${why}`).not.toContain("Use a key that is already there");
+      expect(result.hint, `${key}: ${why}`).not.toContain("Use * to multiply");
+      // One fix: never "..., or ...".
+      expect(result.hint, `${key}: ${why}`).not.toMatch(/, or /);
+    }
+  });
+
+  it("keeps the lean explainer to the slip and its evidence: the Quick Check and the SOLOs", async () => {
+    // [exercise, why, kind, the lean hint's start (its own sentence, never the fix), the fix the full hint gives]
+    const lean: [string, string, string, string, string][] = [
+      ["spells-you-can-hand-over/solo-6c", "stored the call: shout(lucky) puts None in the dict", "not-a-function",
+        "Line 14 puts `shout(lucky)` in `roar[\"effect\"]`, with `(lucky)`, so line 15 calls `None`, Python's word for nothing. Python's last line, below, says what it found.", 'roar = {"effect": shout}'],
+      ["recipes-read-sheets/solo-6b", "sips in quotes on the bottom call", "number-in-quotes",
+        'The call on line 11 hands over `"5"`, a number in quotes, for `sips`, and line 3 does math with it.', "drink_glug(lucky, 5)"],
+      ["qc-r2-a/learn-a-ward", "CP3 the function handed over WITH () (it runs now, with no hero)", "wrong-number-of-values",
+        "Line 22 hands `ash_ward()` to `learn_ward`, with `()`, so `ash_ward` ran there with nothing in its parentheses.", 'learn_ward(wards, "Ash Ward", 4, ash_ward)'],
+      ["qc-r2-b/learn-a-charm", "CP3 the function handed over WITH () (it runs now, with no hero)", "wrong-number-of-values",
+        "Line 22 hands `teal_shield()` to `learn_charm`, with `()`, so `teal_shield` ran there with nothing in its parentheses.", 'learn_charm(charms, "Teal Shield", 5, teal_shield)'],
+      ["qc-r2-a/learn-a-ward", "CP1 the effect called while the dict is made, before step 3 (the 0 placeholder is called)", "not-a-function",
+        "Line 14 calls `effect` with `()`, and it holds 0, the number the call on line 22 hands over.", ""],
+      ["qc-r2-a/learn-a-ward", "CP1 the effect called while the dict is made (with ())", "wrong-number-of-values",
+        "Line 14 puts `effect()` in the dictionary, with `()`, so `effect` ran there with nothing in its parentheses.", '"effect": effect,'],
+      ["qc-r2-a/learn-a-ward", "CP3 called on the book in the call (the wrong sheet: the empty book has no name)", "missing-key",
+        "Line 22 hands `ash_ward(wards)` to `learn_ward`, with `()`, so `ash_ward` ran there, on `wards`.", 'learn_ward(wards, "Ash Ward", 4, ash_ward)'],
+      ["qc-r2-a/cast-from-the-wards", "CP1 the page called, not its effect", "not-a-function",
+        "Line 30 calls `wards[name]`, a whole dictionary, not the function inside it.", 'wards[name]["effect"](hero)'],
+      ["qc-r2-b/cast-from-the-charms", "CP1 the call's result stored where the function was wanted, then called (NoneType)", "not-a-function",
+        "Line 30 puts `charms[name][\"effect\"](hero)` in `effect`, with `(hero)`, so line 31 calls `None`, Python's word for nothing.", 'effect = charms[name]["effect"]'],
+      ["qc-r2-a/learn-a-ward", "CP2 .append on a dictionary", "dot-on-a-sheet", "Line 16 uses `.append()` on `wards`, a dictionary.", "wards[ward_name] = ward"],
+      // A parameter's name in quotes keeps Unit 5's row (the quotes), never "the wrong sheet".
+      ["qc-r2-a/cast-from-the-wards", "CP1 the parameter in quotes", "quoted-name", "The mistake is on line 30: a parameter's name in quotes.", "wards[name]"],
+      // A key read from the wrong sheet is named so, never "a skipped level"; the full hint reads the page by the name handed in.
+      ["qc-r2-a/cast-from-the-wards", "CP2 the cost read from the hero's sheet (a key from the wrong sheet)", "missing-key",
+        "The mistake is on line 31: a key read from the wrong sheet.", 'wards[name]["mana_cost"]'],
+      ["qc-r2-b/cast-from-the-charms", "CP2 the cost read from the hero's sheet (a key from the wrong sheet)", "missing-key",
+        "The mistake is on line 31: a key read from the wrong sheet.", 'charms[name]["mana_cost"]'],
+    ];
+    for (const [key, why, kind, start, fix] of lean) {
+      await new Promise((resume) => setImmediate(resume));
+      const found = unit7.find(key, why);
+      expect(found.context.explainer, `${key} is a lean exercise`).toBe("lean");
+      const raw = crashOf(found);
+      const result = explainCourseError(raw, found.code, found.context);
+      expect(result.kind, `${key}: ${why}`).toBe(kind);
+      expect(result.explainer).toBe("lean");
+      expect(result.hint.startsWith(start), `${key}: ${why}: ${result.hint}`).toBe(true);
+      expect(result.hint).toContain("Fix it yourself, then press Run again.");
+      expect(result.title, `${key}: ${why}`).not.toContain("`");
+      if (fix) {
+        expect(result.hint, `${key}: ${why}`).not.toContain(fix);
+        expect(explainCourseError(raw, found.code, { ...found.context, explainer: "full" }).hint, `${key}: the full hint has the fix`).toContain(fix);
+      }
+    }
+    // The new kinds have lean names; the kinds this unit extends keep their earlier ones (Units 1-6 say exactly that).
+    expect(slipName("text-as-sheet")).toBe("text handed over where a sheet goes");
+    expect(slipName("swapped-values")).toBe("two values handed over in the wrong order");
+    expect(slipName("not-a-function")).toBe("parentheses after something that can't use them");
+    expect(slipName("missing-key")).toBe("a missing key");
+    expect(slipName("math-with-none")).toBe("math with `None`");
+    expect(slipName("bar-needs-brackets")).toBe("math in the wrong order");
+    // Each extended row carries its own lean name, in the unit's words.
+    const guard = unit7.find("recipes-read-sheets/guard-at-the-door", "a guard with no return: shows the line, then carries on to the spell");
+    const leanGuard = explainCourseError(crashOf(guard), guard.code, { ...guard.context, explainer: "lean" });
+    expect(leanGuard.title).toBe("Guard with no return");
+    expect(leanGuard.hint).toBe(
+      "The guard on line 5 has no `return`, so \"Star Glow\" went on to line 7. Python's last line, below, says what it found. Fix it yourself, then press Run again.",
+    );
+    const handed = unit7.find("spells-you-can-hand-over/hand-it-over", "handed over the result of a call: warm_hands(lucky) hands over None");
+    expect(explainCourseError(crashOf(handed), handed.code, { ...handed.context, explainer: "lean" }).slip).toBe("a function handed over with `()`");
+  });
+
+  it("says no \"One fixed!\" when the same error comes back on the same line of code, moved down by lines added above it", () => {
+    const starter = unit7.find("recipes-read-sheets/guard-at-the-door", "starter: no guard (the predict's KeyError)");
+    const previous = crashOf(starter);
+    for (const why of ["a guard with no return: shows the line, then carries on to the spell", "`in` for `not in`"]) {
+      const found = unit7.find("recipes-read-sheets/guard-at-the-door", why);
+      const raw = crashOf(found);
+      // The line number moved (the guard went in above it), the error and the line's code did not.
+      expect(raw).toContain("KeyError: 'Star Glow'");
+      expect(raw).not.toContain("line 5, in cast_glow");
+      const result = explainCourseError(raw, found.code, { ...found.context, previous });
+      expect(result.gotFurther, why).toBeUndefined();
+      expect(result.hint.startsWith(ONE_FIXED_PREFIX), why).toBe(false);
+      expect(explainCourseError(raw, found.code, { ...found.context, previous, debugging: true }).gotFurther).toBeUndefined();
+    }
+    // A real fix still says so: the guard-with-no-return's KeyError, then a NameError further down (a new error).
+    const unit6Context: ExplainContext = { unitOrder: LOOPS_UNIT_ORDER };
+    const first = tracebackOf('book = {}\nprint(book["Star Glow"])\nprint(mana)\n');
+    const next = runCourseChecks('book = {"Star Glow": 1}\nprint(book["Star Glow"])\nprint(mana)\n', []);
+    expect(next.ok).toBe(false);
+    const fixed = explainCourseError(next.traceback, 'book = {"Star Glow": 1}\nprint(book["Star Glow"])\nprint(mana)\n', { ...unit6Context, previous: first });
+    expect(fixed.gotFurther).toBe(true);
+    // The same KeyError on the same code, two lines lower in any unit: not a fix either.
+    const before = tracebackOf('book = {}\nprint(book["Star Glow"])\n');
+    const lower = runCourseChecks('book = {}\nx = 1\ny = 2\nprint(book["Star Glow"])\n', []);
+    expect(explainCourseError(lower.traceback, 'book = {}\nx = 1\ny = 2\nprint(book["Star Glow"])\n', { ...unit6Context, previous: before }).gotFurther).toBeUndefined();
+  });
+
+  it("opens only from Unit 7 on: Units 1 to 6 keep their older advice for the same code", () => {
+    // [exercise, why, the kind the explainer gave before Unit 7 (and still gives below it), its words]
+    const cases: [string, string, string, string][] = [
+      ["recipes-read-sheets/guard-at-the-door", "a guard with no return: shows the line, then carries on to the spell", "missing-key", 'The dictionary has no key "Star Glow". Use a key that is already there.'],
+      ["spells-you-can-hand-over/name-without-parentheses", "stored the call (None), then called it", "not-a-function", "so it is a box, not a recipe (function)"],
+      ["spells-you-can-hand-over/hand-it-over", "handed over the result of a call: warm_hands(lucky) hands over None", "not-a-function", "Only tools like `print`, and recipes made with `def`, take parentheses"],
+      ["lambda/a-dial-in-one-line", "CP2 the result of a call handed over, not the function ('int' is not callable)", "use-star-to-multiply", "Python needs the `*` sign"],
+      ["recipes-read-sheets/read-the-helper", "the values in the wrong order", "wrong-kind-of-value", "mixes kinds of values"],
+      ["recipes-read-sheets/broken-spell-6b", "brackets in the wrong place: still text minus a number", "math-with-text", "use `int()`"],
+      ["recipes-read-sheets/broken-spell-6b", "return mended; the quoted key shows as a KeyError on the read", "missing-key", "Read a key the sheet has"],
+      ["spells-you-can-hand-over/hand-it-over", "handed over WITH () (missing argument)", "wrong-number-of-values", "Hand over one value per ingredient"],
+      ["recipes-read-sheets/recipes-change-sheets", "the cost in quotes on the bottom call", "math-with-text", "use `int()`"],
+      ["spells-you-can-hand-over/write-the-spell-book", "CP2 the store line not indented", "made-inside-recipe", "catch what the recipe hands back"],
+      ["recipes-read-sheets/hand-over-a-sheet", "a key with no quotes", "not-in-recipe", "has no box or ingredient by that name"],
+    ];
+    for (const [key, why, before, words] of cases) {
+      const found = unit7.find(key, why);
+      const raw = crashOf(found);
+      const older = explainCourseError(raw, found.code, { ...found.context, unitOrder: LOOPS_UNIT_ORDER, explainer: "full" });
+      expect(older.kind, `${key}: ${why}, unit 6`).toBe(before);
+      expect(older.hint, `${key}: ${why}, unit 6`).toContain(words);
+    }
+    // Unit 3's words stay below Unit 7, Unit 7's words from it; a code span is never touched.
+    const value = unit7.find("recipes-read-sheets/read-the-helper", "one value only");
+    const raw = crashOf(value);
+    expect(explainCourseError(raw, value.code, { ...value.context, unitOrder: LOOPS_UNIT_ORDER }).hint).toBe(
+      "`draw_bar` has 2 ingredients, `hero` and `bar`, but the call on line 15 hands over 1. Hand over one value per ingredient, the way each blank in a Mad Lib gets one word.",
+    );
+    expect(explainCourseError(raw, value.code, value.context).hint).toBe(
+      "`draw_bar` has 2 parameters, `hero` and `bar`, but the call on line 15 hands over 1. Hand over one value per parameter, the way each blank in a Mad Lib gets one word.",
+    );
+    const recipe = explainRun("def recipe(ingredient):\n    return ingredient\nprint(recipe())\n", [], { unitOrder: SPELL_RECIPES_UNIT_ORDER });
+    expect(recipe.hint).toBe(
+      "`recipe` has 1 parameter, `ingredient`, but the call on line 3 hands over nothing. Hand over one value per parameter, the way each blank in a Mad Lib gets one word.",
+    );
+  });
+
+  it("keeps the older rows where nothing was handed over: a number times parentheses, a box made with = from a number", () => {
+    const unit7Context: ExplainContext = { unitOrder: SPELL_RECIPES_UNIT_ORDER };
+    expect(explainRun("print(2(3 + 4))\n", [], unit7Context).kind).toBe("use-star-to-multiply");
+    const box = explainRun("x = 5\nprint(x(2))\n", [], unit7Context);
+    expect(box.kind).toBe("not-a-function");
+    expect(box.hint).toContain("To multiply by it, write `*` between them.");
+    // A parameter that holds a number, handed over some other way: the teacher's words, one fix.
+    const param = explainRun("def run(dial):\n    return dial(1)\n\n\nvalues = [3]\nprint(run(values[0]))\n", [], unit7Context);
+    expect(param.hint).toBe("Line 2 calls `dial`, and it holds a number. The call handed over a result, not the function: hand over the function's name, with no `()`.");
+    // A placeholder number handed in and called inside the function: the number and the call that handed it over.
+    const placeholder = explainRun("def run(dial):\n    return dial(1)\n\n\nprint(run(0))\n", [], unit7Context);
+    expect(placeholder.hint).toContain("`dial` holds 0, the number the call on line 5 hands over. A number can't be called: only a function can.");
+    // `None` from nowhere the explainer can trace: the teacher's words, `None` translated.
+    const none = explainRun("box = {}\nbox.get(\"spell\")()\n", [], unit7Context);
+    expect(none.hint).not.toContain("NoneType");
+  });
+
+  it("keeps every Unit 1-6 explanation exactly as it was before Unit 7 (kind, title and hint)", async () => {
+    const before = JSON.parse(readFileSync(path.join(process.cwd(), "src/lib/course/explain.before-unit7.json"), "utf8")) as Record<string, string>;
+    const now: Record<string, string> = {};
+    for (const unitId of ["hello-world", "control-flow", "first-recipes", "lists", "dictionaries", "loops"]) {
+      for (const [at, wrong] of unitWrongAnswers(unitId).crashes().entries()) {
+        // Hundreds of python3 runs, each one blocking: let the test worker answer vitest between them (a worker that
+        // stays blocked misses its heartbeat, "Timeout calling onTaskUpdate", and fails the whole run).
+        if (at % 10 === 0) await new Promise((resume) => setImmediate(resume));
+        // The game's random is seeded, so a wrong answer that rolls a die crashes on the same line every time.
+        const result = runCourseChecks(wrong.code, [], { setup: `import random as _seeded\n_seeded.seed(5)\n${wrong.setup}`, stdin: wrong.stdin });
+        if (result.ok) continue;
+        const got = explainCourseError(result.traceback, wrong.code, wrong.context);
+        const hash = createHash("sha256").update(`${got.title}\n${got.hint}`).digest("hex").slice(0, 16);
+        now[`${unitId}:${wrong.key}:${wrong.why}`] = `${got.kind} ${hash}`;
+      }
+    }
+    const { _about: about, ...expected } = before;
+    expect(about).toContain("before Unit 7");
+    expect(Object.keys(now).length).toBe(Object.keys(expected).length);
+    expect(now).toEqual(expected);
+  }, 240_000);
+
+  it("explains every crash wrong answer of Unit 7 in the unit's words, with no raw NoneType and no generic row it could name", async () => {
+    let generic = 0;
+    for (const [at, wrong] of unit7.crashes().entries()) {
+      if (at % 10 === 0) await new Promise((resume) => setImmediate(resume));
+      const result = runCourseChecks(wrong.code, [], { setup: wrong.setup, stdin: wrong.stdin });
+      if (result.ok) continue;
+      const got = explainCourseError(result.traceback, wrong.code, wrong.context);
+      const said = `${got.title} ${got.hint} ${got.lean ?? ""}`;
+      expect(said, `${wrong.key}: ${wrong.why}`).not.toMatch(/\b(recipe|ingredient)s?\b|\btags? \(key/i);
+      expect(said, `${wrong.key}: ${wrong.why}`).not.toContain("NoneType");
+      expect(said, `${wrong.key}: ${wrong.why}`).not.toContain("Use a key that is already there");
+      if (got.kind === "wrong-kind-of-value" && /mixes kinds of values/.test(got.hint)) generic += 1;
+    }
+    // Every crash the unit plans names its slip: none is left to Python's general words.
+    expect(generic).toBe(0);
+  }, 120_000);
+});
+
+/* ---------------------------------------------------------------------------------------------- */
+/* Unit 10 ("Campaign Readiness Check"): the teacher's site requests 6-9, from the unit's own wrong answers */
+/* ---------------------------------------------------------------------------------------------- */
+
+describe("explainCourseError: Unit 10's slips (the Readiness Check), from the unit's own wrong answers", () => {
+  const unit10 = unitWrongAnswers("readiness-check");
+
+  // [exercise, why, kind, slip (the lean title's words), lean words: the slip and its evidence, never the fix]
+  const cases: [string, string, string, string, string][] = [
+    // Site request 6: text read like a sheet. The call is right; the read is the slip, and the variable is named.
+    ["rc-miniboss-a", "the ward's name read as if it were the page", "text-as-sheet", "text read like a sheet", "Line 37 reads `ward_name` like a sheet: `ward_name` holds text, not a sheet."],
+    ["rc-miniboss-b", "the effect read from the name, not the page: ward_name", "text-as-sheet", "text read like a sheet", "Line 37 reads `ward_name` like a sheet: `ward_name` holds text, not a sheet."],
+    ["rc-trial-ember-ward", "the effect read from the name, not the page (TypeError)", "text-as-sheet", "text read like a sheet", "Line 21 reads `ward_name` like a sheet: `ward_name` holds text, not a sheet."],
+    // Site request 7: a name from the campaign or another mini-boss, with this program's own names as the evidence.
+    ["rc-miniboss-a", "the campaign's name caster copied", "borrowed-name", "a name from the campaign, not this program", "Line 32 uses `caster`, a name from the campaign, not from this program. `cast_ward` has `hero`, `ward_name` and `ward`."],
+    ["rc-miniboss-b", "form A's name hero copied", "borrowed-name", "a name from another mini-boss, not this program", "Line 32 uses `hero`, a name from another mini-boss, not from this program. `use_ward` has `caster`, `ward_name` and `page`."],
+    ["rc-miniboss-b", "form A's habit: the effect read from `ward`", "borrowed-name", "a name from another mini-boss, not this program", "Line 37 uses `ward`, a name from another mini-boss, not from this program. `use_ward` has `caster`, `ward_name` and `page`."],
+    ["rc-miniboss-b", "the campaign's spell copied for page", "borrowed-name", "a name from the campaign, not this program", "Line 32 uses `spell`, a name from the campaign, not from this program."],
+    ["rc-trial-ember-ward", "form B's page name copied", "borrowed-name", "a name from another mini-boss, not this program", "Line 21 uses `page`, a name from another mini-boss, not from this program. `raise_ward` has `mage`, `ward_name` and `ward`."],
+    ["rc-part1-a/step-west", "the campaign's party.move (with the test call: the run stops)", "borrowed-name", "a name from the campaign, not this program", "Line 6 uses `party`, a name from the campaign, not from this program. This program has `scout`."],
+    ["rc-part1-b/step-east", "the campaign's engine name copied", "borrowed-name", "a name from the campaign, not this program", "Line 4 uses `party`, a name from the campaign, not from this program. This program has `scout`."],
+    ["rc-part1-c/step-north", "the campaign's party.move copied (the run stops at the test call)", "borrowed-name", "a name from the campaign, not this program", "Line 6 uses `party`, a name from the campaign, not from this program. This program has `scout`."],
+    ["rc-part1-a/present-warning", "the campaign's print_prompt", "borrowed-name", "a name from the campaign, not this program", "Line 16 uses `print_prompt`, a name from the campaign, not from this program. This program's functions are `show_on_ley_board` and `get_warning`."],
+    // Site request 8: a key with no quotes, on the line that makes the same name.
+    ["rc-part1-a/read-the-sheet", "(a) the key unquoted (a variable, not text)", "unquoted-key", "a key with no quotes", "The mistake is on line 15: a key with no quotes."],
+    // Site request 9: Python stopped inside random.py; the student's line is named, with the name in quotes.
+    ["rc-part1-a/roll-the-die", "the parameter's name in quotes", "quoted-name", "a parameter's name in quotes", "Line 7 hands `random.randint` the text `\"die_size\"`: with quotes, it is text, not the parameter `die_size`."],
+    ["rc-part1-b/throw-the-die", "the parameter in quotes", "quoted-name", "a parameter's name in quotes", "Line 5 hands `random.randint` the text `\"die_size\"`: with quotes, it is text, not the parameter `die_size`."],
+    ["rc-part1-c/toss-the-die", "the parameter in quotes", "quoted-name", "a parameter's name in quotes", "Line 5 hands `random.randint` the text `\"sides\"`: with quotes, it is text, not the parameter `sides`."],
+  ];
+
+  it("names each slip with its lean kind and its evidence, never the fix (site requests 6-9)", () => {
+    for (const [key, why, kind, slip, lean] of cases) {
+      const found = unit10.find(key, why);
+      expect(found.context.explainer, `${key}: lean`).toBe("lean");
+      const got = explainCourseError(crashOf(found), found.code, found.context);
+      expect(got.kind, `${key}: ${why}`).toBe(kind);
+      expect(got.slip ?? slipName(got.kind), `${key}: ${why}`).toBe(slip);
+      expect(got.explainer, `${key}: ${why}`).toBe("lean");
+      expect(got.hint, `${key}: ${why}`).toContain(lean);
+      // Lean: no line to type, no "Use ...", no "Take the quotes off", no "Read from it".
+      expect(got.hint, `${key}: ${why}`).not.toMatch(/\b(Use|Take|Read from|Swap|Hand over|Write)\b/);
+      expect(got.title.toLowerCase(), `${key}: ${why}`).toContain(slip.replace(/^(a|an|the) /, "").toLowerCase().slice(0, 12));
+    }
+  });
+
+  it("gives the full explainer one fix, on the line it goes on, for the same slips", () => {
+    const full = (key: string, why: string) => {
+      const found = unit10.find(key, why);
+      return explainCourseError(crashOf(found), found.code, { ...found.context, explainer: "full" });
+    };
+    expect(full("rc-miniboss-a", "the ward's name read as if it were the page").hint).toBe(
+      "Line 37 reads `ward_name` like a sheet, but `ward_name` holds text: a name, not a sheet. The sheet that name opens is `ward`. Read from it: `ward[\"effect\"](hero)`",
+    );
+    expect(full("rc-miniboss-a", "the campaign's name caster copied").hint).toContain("Use `hero`, this program's name for it:");
+    expect(full("rc-miniboss-b", "form A's habit: the effect read from `ward`").hint).toContain("Use `page`, this program's name for it:");
+    expect(full("rc-part1-a/roll-the-die", "the parameter's name in quotes").hint).toContain("Take the quotes off: `return random.randint(1, die_size)`");
+    expect(full("rc-part1-a/read-the-sheet", "(a) the key unquoted (a variable, not text)").hint).toContain('`mana = hero["mana"]`');
+  });
+
+  it("opens only from Unit 10 on: Units 1 to 7 keep their older advice for the same code", () => {
+    // [exercise, why, the kind the explainer gave before Unit 10 (and still gives below it)]
+    const older: [string, string, string][] = [
+      ["rc-miniboss-a", "the ward's name read as if it were the page", "swapped-values"],
+      ["rc-miniboss-a", "the campaign's name caster copied", "unknown-name"],
+      ["rc-part1-a/present-warning", "the campaign's print_prompt", "unknown-function"],
+      ["rc-part1-a/read-the-sheet", "(a) the key unquoted (a variable, not text)", "unknown-name"],
+      ["rc-part1-a/roll-the-die", "the parameter's name in quotes", "text-plus-number"],
+      ["rc-trial-ember-ward", "form B's page name copied", "spelling"],
+    ];
+    for (const [key, why, before] of older) {
+      const found = unit10.find(key, why);
+      const got = explainCourseError(crashOf(found), found.code, { ...found.context, unitOrder: SPELL_RECIPES_UNIT_ORDER });
+      expect(got.kind, `${key}: ${why}, unit 7`).toBe(before);
+      expect(got.shownLine, `${key}: ${why}, unit 7`).toBeUndefined();
+    }
+    expect(READINESS_UNIT_ORDER).toBe(10);
+  });
+
+  it("leaves Python's 'Did you mean' off the shown last line when it names something this student never met", () => {
+    const caster = unit10.find("rc-miniboss-a", "the campaign's name caster copied");
+    const got = explainCourseError(crashOf(caster), caster.code, caster.context);
+    expect(got.raw).toContain("Did you mean: 'aiter'?");
+    expect(got.shownLine).toBe("NameError: name 'caster' is not defined.");
+    // A suggestion from the student's own code stays: `mana_cost` is on screen.
+    const spelling = unit10.find("rc-part1-a/mend-three", "line 11 left (spec: the NameError)");
+    const kept = explainCourseError(crashOf(spelling), spelling.code, spelling.context);
+    expect(kept.raw).toContain("Did you mean: 'mana_cost'?");
+    expect(kept.shownLine).toBeUndefined();
+  });
+
+  it("keeps the task's own name, not made yet, on its own row (a skipped `ward` is not borrowed)", () => {
+    const skipped = unit10.find("rc-trial-ember-ward", "Get it skipped: no page variable made");
+    const got = explainCourseError(crashOf(skipped), skipped.code, skipped.context);
+    // Mar'tu's version makes `ward` inside `raise_ward`: the missing line goes on line 15 or above it, never "Fix line 15".
+    expect(got.kind).toBe("not-made-yet");
+    expect(got.fixAbove).toBe(true);
+    expect(got.hint).toContain("The mistake is on line 15 or a line above it: a box that is not made yet.");
+    // A name the program really makes is never "from the campaign".
+    const unit10Context: ExplainContext = { unitOrder: READINESS_UNIT_ORDER };
+    expect(explainRun("def go(caster):\n    print(caster)\n\n\ngo(spell)\n", [], unit10Context).kind).toBe("borrowed-name");
+    expect(explainRun("spell = 3\nprint(spel)\n", [], unit10Context).kind).not.toBe("borrowed-name");
+  });
+
+  it("explains every crash wrong answer of Unit 10 lean, with no raw NoneType and no swapped values for a right call", async () => {
+    let generic = 0;
+    for (const [at, wrong] of unit10.crashes().entries()) {
+      if (at % 10 === 0) await new Promise((resume) => setImmediate(resume));
+      const result = runCourseChecks(wrong.code, [], { setup: wrong.setup, stdin: wrong.stdin });
+      if (result.ok) continue;
+      const got = explainCourseError(result.traceback, wrong.code, wrong.context);
+      const said = `${got.title} ${got.hint}`;
+      expect(got.explainer, `${wrong.key}: ${wrong.why}`).toBe("lean");
+      expect(said, `${wrong.key}: ${wrong.why}`).not.toContain("NoneType");
+      expect(said, `${wrong.key}: ${wrong.why}`).not.toMatch(/\b(recipe|ingredient)s?\b/i);
+      expect(got.kind, `${wrong.key}: ${wrong.why}`).not.toBe("swapped-values");
+      expect(said, `${wrong.key}: ${wrong.why}`).not.toContain("random.py");
+      // "in quotes" only when the line it names has a quote on it: never a slip that is not on screen.
+      if (/\bin quotes\b/.test(said)) {
+        const named = got.slipLine ?? Number(result.traceback.match(/line (\d+)/g)?.at(-1)?.slice(5));
+        expect(wrong.code.split("\n")[named - 1] ?? "", `${wrong.key}: ${wrong.why}`).toMatch(/["']/);
+      }
+      if (got.kind === "wrong-kind-of-value" && !got.slip) generic += 1;
+    }
+    // Every crash the unit plans names its slip: none is left to the catch-all "values of kinds that don't go together".
+    expect(generic).toBe(0);
+  }, 120_000);
+
+  it("names the slips the fixer's review found, on the line the fix goes on", () => {
+    const lean = (key: string, why: string) => {
+      const found = unit10.find(key, why);
+      return explainCourseError(crashOf(found), found.code, found.context);
+    };
+    const full = (key: string, why: string) => {
+      const found = unit10.find(key, why);
+      return explainCourseError(crashOf(found), found.code, { ...found.context, explainer: "full" });
+    };
+    const written = (key: string, code: string, explainer?: "full") => {
+      const found = unit10.exercise(key);
+      return explainCourseError(crashOf({ code, setup: found.setup, stdin: found.stdin }), code, { ...found.context, ...(explainer ? { explainer } : {}) });
+    };
+    // Numbers on the def line: the lean box names the numbers, never quotes that are not there.
+    for (const [key, at] of [["rc-part1-b/shield-cost", 5], ["rc-part1-c/fuel-cost", 6]] as const) {
+      const got = lean(key, "numbers on the def line");
+      expect(got.title, key).toBe("Number where a parameter's name goes");
+      expect(got.hint, key).toContain(`The mistake is on line ${at}: a number where a parameter's name goes.`);
+      expect(got.hint, key).not.toContain("quotes");
+    }
+    // A stored call's answer called with `()`: line 16 is Mar'tu's own store, so the slip is named on line 17.
+    for (const [key, name] of [["rc-part1-b/present-farewell", "farewell"], ["rc-part1-c/present-reading", "reading"]] as const) {
+      const got = lean(key, "the variable called like a function");
+      expect(got.slipLine, key).toBeUndefined();
+      expect(got.title, key).toBe("Text called like a function");
+      expect(got.hint, key).toContain(`Line 17 calls \`${name}\` with \`()\`, and \`${name}\` holds text, not a function.`);
+      expect(full(key, "the variable called like a function").hint, key).toContain(`\`show_on_ley_board(${name})\``);
+    }
+    const renamed = unit10.exercise("rc-part1-b/present-farewell").solution.replace("farewell = get_farewell()", "words = get_farewell()").replace("show_on_ley_board(farewell)", "show_on_ley_board(words())");
+    expect(written("rc-part1-b/present-farewell", renamed).slipLine).toBeUndefined();
+    // The store written backwards, with a function already made by `def`: no "function written like math", and
+    // Python's `==` guess is called wrong.
+    const reversed = lean("rc-part1-b/present-farewell", "the store line reversed");
+    expect(reversed.kind).toBe("store-backwards");
+    expect(reversed.hint).toContain("The mistake is on line 16: a box filled the wrong way around. Python's last line guesses `==`, but that guess is wrong here.");
+    expect(full("rc-part1-c/present-reading", "the store line reversed").hint).toContain("`reading = get_reading()`");
+    // The whole sheet replaced by a number: the store above is named, not the print Python stopped on.
+    const replaced = [
+      ["rc-part1-a/spend-the-cost", "the whole sheet replaced by the number", 4, "hero"],
+      ["rc-part1-b/spend-the-mana", "the sheet replaced by a number", 8, "oogrish"],
+      ["rc-part1-c/spend-the-mana", "the sheet replaced by a number", 8, "lucky"],
+    ] as const;
+    for (const [key, why, at, sheet] of replaced) {
+      const got = lean(key, why);
+      expect(got.slipLine, key).toBe(at);
+      expect(got.title, key).toBe("Sheet replaced by a number");
+      expect(got.hint, key).toContain(`Line ${at} puts a number in \`${sheet}\`, so \`${sheet}\` is no longer a sheet: a number can't be read with \`[ ]\`.`);
+    }
+    expect(full("rc-part1-a/spend-the-cost", "the whole sheet replaced by the number").hint).toContain('`hero["mana"] = hero["mana"] - cost`');
+    // `==` where one `=` stores, with the key in a variable (`book[spell_name] == spell`).
+    for (const [key, why] of [["rc-part1-a/read-the-sheet", "(c) == for ="], ["rc-part1-b/read-and-write-the-sheets", "CP3 == for ="], ["rc-part1-c/read-the-fuel-sheet", "CP3 == for ="]] as const) {
+      const got = lean(key, why);
+      expect(got.kind, key).toBe("comparison-alone");
+      expect(got.hint, key).toContain("`==` where one `=` stores a key.");
+    }
+    // A function not made yet, and a box Mar'tu makes inside the function: "line N or a line above it".
+    const warning = lean("rc-part1-a/present-warning", "a variable never stored");
+    expect(warning.fixAbove).toBe(true);
+    expect(warning.hint).toContain("The mistake is on line 15 or a line above it: a box that is not made yet.");
+    const starter = written("rc-part1-a/glug-cost", unit10.exercise("rc-part1-a/glug-cost").starter);
+    expect(starter.kind).toBe("recipe-not-made-yet");
+    expect(starter.fixAbove).toBe(true);
+    expect(starter.hint).toContain("The mistake is on line 8 or a line above it: a function that is not made yet.");
+    // The trial: the page read before any page line exists, guarded by `ward_name not in mage["wards"]`.
+    const trial = unit10.exercise("rc-trial-ember-ward").starter.replace("    # Get it, compare, act.\n", '    # Get it, compare, act.\n    ward_name["effect"](mage)\n');
+    const readEarly = written("rc-trial-ember-ward", trial);
+    expect(readEarly.kind).toBe("text-as-sheet");
+    expect(readEarly.hint).toContain("Line 15 reads `ward_name` like a sheet");
+    expect(readEarly.slipLine).toBeUndefined();
+    // A key with no quotes inside a function (UnboundLocalError), when Mar'tu reads that key with quotes.
+    const boss = unit10.exercise("rc-miniboss-a").solution.replace('    ward = hero["wards"][ward_name]\n', '    ward = hero["wards"][ward_name]\n    mana = hero[mana]\n');
+    expect(written("rc-miniboss-a", boss).kind).toBe("unquoted-key");
+    const page = unit10.exercise("rc-trial-ember-ward").solution.replace('ward = mage["wards"][ward_name]', 'ward = mage["wards"][ward]');
+    expect(written("rc-trial-ember-ward", page).kind).toBe("variable-in-function");
+    // "A name from another mini-boss" only in a mini-boss: the re-check's bar_gap gets the older row.
+    const gap = unit10.exercise("rc-recheck/bar-gap").solution.replace("max_mana - mana", 'hero["max_mana"] - hero["mana"]');
+    expect(written("rc-recheck/bar-gap", gap).kind).not.toBe("borrowed-name");
+    // Python's guess 'print' for `price`, a name that is not called: left off the shown last line.
+    const price = lean("rc-part1-a/glug-cost", "price * sips (spec: PNM), with the call");
+    expect(price.raw).toContain("Did you mean: 'print'?");
+    expect(price.shownLine).toBe("NameError: name 'price' is not defined.");
+    // A call misspelled (`prnt(...)`) keeps Python's right guess.
+    const prnt = written("rc-part1-a/glug-cost", unit10.exercise("rc-part1-a/glug-cost").solution.replace("print(glug", "prnt(glug"));
+    expect(prnt.shownLine).toBeUndefined();
+  });
+
+  it("keeps every Unit 1-7 explanation exactly as it was before Unit 10 (kind, title and hint)", async () => {
+    const before = JSON.parse(readFileSync(path.join(process.cwd(), "src/lib/course/explain.before-unit10.json"), "utf8")) as Record<string, string>;
+    const now: Record<string, string> = {};
+    for (const unitId of ["hello-world", "control-flow", "first-recipes", "lists", "dictionaries", "loops", "spell-recipes"]) {
+      for (const [at, wrong] of unitWrongAnswers(unitId).crashes().entries()) {
+        // Hundreds of python3 runs, each one blocking: let the test worker answer vitest between them.
+        if (at % 10 === 0) await new Promise((resume) => setImmediate(resume));
+        const result = runCourseChecks(wrong.code, [], { setup: `import random as _seeded\n_seeded.seed(5)\n${wrong.setup}`, stdin: wrong.stdin });
+        if (result.ok) continue;
+        const got = explainCourseError(result.traceback, wrong.code, wrong.context);
+        const hash = createHash("sha256").update(`${got.title}\n${got.hint}`).digest("hex").slice(0, 16);
+        now[`${unitId}:${wrong.key}:${wrong.why}`] = `${got.kind} ${hash}`;
+        expect(got.shownLine, `${unitId}:${wrong.key}`).toBeUndefined();
+      }
+    }
+    const { _about: about, ...expected } = before;
+    expect(about).toContain("before Unit 10");
+    expect(Object.keys(now).length).toBe(Object.keys(expected).length);
+    expect(now).toEqual(expected);
+  }, 300_000);
+});
+
+/* ---------------------------------------------------------------------------------------------- */
+/* Unit 9 ("Strings: Runes and Ribbons"): the teacher's site requests 1 and 2, from the unit's own wrong answers */
+/* ---------------------------------------------------------------------------------------------- */
+
+describe("explainCourseError: Unit 9's slips (strings), from the unit's own wrong answers", () => {
+  const unit9 = unitWrongAnswers("strings");
+
+  it("is Unit 9 on the course map, and its rows open there (Unit 10, order 10, reaches them too)", () => {
+    expect(unit9.order).toBe(STRINGS_UNIT_ORDER);
+    expect(STRINGS_UNIT_ORDER).toBeGreaterThan(SPELL_RECIPES_UNIT_ORDER);
+    expect(STRINGS_UNIT_ORDER).toBeLessThan(READINESS_UNIT_ORDER);
+    // Site request 2: the strings lessons' word for an index in text, after the plain-language pass.
+    expect(TEXT_POSITION_WORD).toBe("position");
+  });
+
+  // [exercise, the wrong answer's `why`, Python 3.13's own words, kind, the full hint, the line the crash banner names]
+  const rows: [string, string, string, string, string, number | undefined][] = [
+    // (1) Text changed in place: build a new one and put it back, in the line's own names (Mar'tu's line when it has one).
+    ["strings-are-rows-of-letters/letters-cant-change", "the starter: a letter changed in place (TypeError)", "does not support item assignment", "text-changed-in-place",
+      'Line 4 tries to change one letter of `word`, but text can\'t change one letter. Build a new one and put it back: `word = "G" + word[1:]`', undefined],
+    ["strings-are-rows-of-letters/letters-have-places", "a letter changed in place: initials[0] = name[0] (TypeError)", "does not support item assignment", "text-changed-in-place",
+      "Line 18 tries to change one letter of `initials`, but text can't change one letter. Build a new one and put it back: `initials = initials + name[0]`", undefined],
+    ["extra-letter-by-letter/broken-spell-8a", "line 2 mended, a letter still changed in place", "does not support item assignment", "text-changed-in-place",
+      'Line 4 tries to change one letter of `tag`, but text can\'t change one letter. Build a new one and put it back: `tag = "L" + tag[1:]`', undefined],
+    ["the-institute-cipher", "a letter changed in place inside encode (TypeError)", "does not support item assignment", "text-changed-in-place",
+      'Line 21 tries to change one letter of `message`, but text can\'t change one letter. Build new text instead: start with empty text, `""`, and glue each new letter on with `+`.', undefined],
+    // (2) A list asked to join itself: ask the glue, with the line's own glue and list.
+    ["words-that-change-shape/split-the-clipped", "join called the wrong way round (AttributeError)", "'list' object has no attribute 'join'", "join-on-list",
+      'Line 19 asks the list `words` to join itself, but a list can\'t join. Ask the glue instead: `joined = " ".join(words)`', undefined],
+    ["words-that-change-shape/whats-in-it-for-me", "clip: join called the wrong way round (AttributeError)", "'list' object has no attribute 'join'", "join-on-list",
+      'Line 10 asks the list `words[:3]` to join itself, but a list can\'t join. Ask the glue instead: `short = " ".join(words[:3])`', undefined],
+    ["words-that-change-shape/broken-spell-8b", "bug 1 mended, the join still the wrong way round", "'list' object has no attribute 'join'", "join-on-list",
+      'Line 9 asks the list `words` to join itself, but a list can\'t join. Ask the glue instead: `print(" ".join(words))`', undefined],
+    ["the-water-stained-log", "join called the wrong way round (AttributeError)", "'list' object has no attribute 'join'", "join-on-list",
+      'Line 37 asks the list `clean_marks` to join itself, but a list can\'t join. Ask the glue instead: `clean_line = ", ".join(clean_marks)`', undefined],
+    // (3) A method with no `()`: in the chain, asked `in`, or stored on a line above (that line is the one to fix).
+    ["words-that-change-shape/chain-the-spells", "no () in the middle of the chain (AttributeError on the student's own Run)", "'builtin_function_or_method' object has no attribute 'capitalize'", "method-without-brackets",
+      "`.lower` has no `()`, so the method never ran: `raw.lower` is the method itself, not text. Python runs a method only with `()`. Add `()` after `.lower`: `return raw.lower().capitalize()`", undefined],
+    ["words-that-change-shape/broken-spell-8b", "the starter: .lower with no () (AttributeError on line 4)", "'builtin_function_or_method' object has no attribute 'capitalize'", "method-without-brackets",
+      "Line 3 wrote `.lower` with no `()`, so the method never ran: `note` holds the method itself, not text. Python runs a method only with `()`. Add `()` on line 3: `note = note.lower()`", 3],
+    ["words-that-change-shape/strip-and-replace", "no (): the method itself, then glued into the print (TypeError)", 'can only concatenate str (not "builtin_function_or_method") to str', "method-without-brackets",
+      "Line 3 wrote `.strip` with no `()`, so the method never ran: `note` holds the method itself, not text. Python runs a method only with `()`. Add `()` on line 3: `note = note.strip()`", 3],
+    // `.replace` needs its values: Mar'tu's line, never an empty `()` that would stop the code again.
+    ["words-that-change-shape/strip-and-replace", "replace with no (), the print kept: glued into the print (TypeError on the student's own Run)", "builtin_function_or_method", "method-without-brackets",
+      'Line 6 wrote `.replace` with no `()`, so the method never ran: `note` holds the method itself, not text. Python runs a method only with `()`. Add `()` on line 6: `note = note.replace("compass", "Ley Clock")`', 6],
+    ["extra-letter-by-letter/is-it-in-there", ".lower with no () (the method itself)", "argument of type 'builtin_function_or_method' is not iterable", "method-without-brackets",
+      '`.lower` has no `()`, so the method never ran: `report.lower` is the method itself, not text. Python runs a method only with `()`. Add `()` after `.lower`: `return "red" in report.lower()`', undefined],
+    // (4) A list used like text: the loop's item, or one item; `int()` handed the whole list.
+    ["words-that-change-shape/split-the-clipped", "the list treated as text: .lower() on a list (AttributeError)", "'list' object has no attribute 'lower'", "list-as-text",
+      "Line 4 asks `sentences` for `.lower()`, but `.split()` handed back a list, so `sentences` holds a list, not text, and a list has no `.lower()`. Use `.lower()` on one item: `sentences[0].lower()`", undefined],
+    ["the-water-stained-log", ".split() hands back a list, then treated as text (marks.replace inside the loop)", "'list' object has no attribute 'replace'", "list-as-text",
+      'Line 13 asks `marks` for `.replace()`, but `.split()` handed back a list, so `marks` holds a list, not text. Inside the loop, `mark` holds one item: `clean = mark.replace("hrs", "")`', undefined],
+    ["the-water-stained-log", "int() on the whole list", "not 'list'", "list-as-text",
+      "Line 20 hands `clean_marks` to `int()`, but `clean_marks` holds a list, not text. `int()` turns one piece of text into a number: use it on one item at a time, in a loop over `clean_marks`.", undefined],
+    // (5) `.append()` on text: glue it on with `+`.
+    ["strings-are-rows-of-letters/letters-have-places", "a list method on text: initials.append(name[0])", "'str' object has no attribute 'append'", "append-on-text",
+      "Line 17 asks `initials` for `.append()`, but `initials` holds text, and text has no `.append()`. Glue it on with `+`: `initials = initials + name[0]`", undefined],
+    // (6) A comma inside `[ ]` on text: a slice takes a colon (site request 2: "positions", the lessons' word).
+    ["strings-are-rows-of-letters/letters-have-places", "a comma for the colon (TypeError)", "string indices must be integers, not 'tuple'", "comma-in-brackets",
+      `Inside \`[ ]\`, a slice takes a colon: \`word = sign[0:9]\`. A comma asks for two ${TEXT_POSITION_WORD}s at once.`, undefined],
+    // (7) `len()` of a number: nothing to count (Mar'tu's line counts the bar).
+    ["extra-letter-by-letter/broken-spell-8a", "lines 2 and 4 mended, len(26) left", "object of type 'int' has no len()", "len-of-number",
+      '`len()` counts the letters in text or the items in a list. `26` is a number, so there is nothing to count. Count `bar`: `print("Blocks: " + str(len(bar)))`', undefined],
+    // (8) Numbers handed to `.join()`: join the list that holds text.
+    ["the-water-stained-log", "the numbers joined (join needs text)", "sequence item 0: expected str instance, int found", "join-needs-text",
+      '`.join()` glues text only, and `hours` holds numbers. Join the list that holds text: `clean_line = ", ".join(clean_marks)`', undefined],
+    // (9) A curly brace with no partner in an f-string, the line mended.
+    ["words-that-change-shape/f-strings", "a closing brace missing (SyntaxError)", "f-string: expecting '}'", "f-string-brace",
+      'Line 4 opens a `{` in an f-string and never closes it. Each `{` in an f-string needs its `}`: `line = f"{name}: {mana}"`', undefined],
+    ["words-that-change-shape/f-strings", "a brace too many (SyntaxError)", "f-string: single '}' is not allowed", "f-string-brace",
+      'Line 4 has a `}` with no `{` in an f-string. Each `{` in an f-string needs its `}`, and each `}` its `{`: `line = f"{name}: {mana}"`', undefined],
+    ["the-water-stained-log", "a brace left open (SyntaxError)", "f-string: expecting '}'", "f-string-brace",
+      'Line 43 opens a `{` in an f-string and never closes it. Each `{` in an f-string needs its `}`: `print(f"{len(hours)} gaps, {total} hours.")`', undefined],
+    ["the-water-stained-log", "a brace never opened (SyntaxError)", "f-string: single '}' is not allowed", "f-string-brace",
+      'Line 43 has a `}` with no `{` in an f-string. Each `{` in an f-string needs its `}`, and each `}` its `{`: `print(f"{len(hours)} gaps, {total} hours.")`', undefined],
+    ["tag-from-blank", "a brace left open (SyntaxError)", "f-string: expecting '}', or format specs", "f-string-brace",
+      'Line 4 opens a `{` in an f-string and never closes it. Each `{` in an f-string needs its `}`: `return f"{caps}: {hours} hrs"`', undefined],
+    // (10) A method name with a capital letter.
+    ["words-that-change-shape/loud-and-quiet", "a capital U (AttributeError)", "has no attribute 'Upper'", "method-capital",
+      "Line 2 writes `.Upper` with a capital letter. Method names are all small letters: `line = line.upper()`", undefined],
+    // A method used like a function: nested, and the unit's new methods (never "write the function with def").
+    ["words-that-change-shape/chain-the-spells", "lower(raw) as if it were a function (NameError)", "name 'capitalize' is not defined", "method-as-function",
+      "Line 4 puts the text inside `capitalize( )` and `lower( )`, but each method goes after the text, with a dot: the text first, then `.lower()`, then `.capitalize()`. Write: `return raw.lower().capitalize()`", undefined],
+    ["words-that-change-shape/split-the-clipped", "split(report) as if it were a function (NameError)", "name 'split' is not defined", "method-as-function",
+      'Line 3 puts the text inside `split( )`, but `split` goes after the text, with a dot: the text first, then `.split(". ")`. Write: `sentences = report.split(". ")`', undefined],
+    ["the-water-stained-log", 'split(log, "|") as if it were a function', "name 'split' is not defined", "method-as-function",
+      'Line 6 puts the text inside `split( )`, but `split` goes after the text, with a dot: the text first, then `.split("|")`. Write: `marks = log.split("|")`', undefined],
+    // Escape marks: one fix, never a copy-wrong example (`"Mar'tu: "NOT a compass.""`) and never "put a comma between them".
+    // Python's guess (a comma) is wrong here, and the box says so (guide §4.2).
+    ["strings-are-rows-of-letters/escape-marks", "inner quotes with no backslash (SyntaxError)", "invalid syntax", "quote-inside-text",
+      'Line 3 has `"` marks inside text that starts with `"`, so the first one inside ends the text early. Python\'s last line guesses a comma, but that guess is wrong here. Put a backslash in front of each `"` inside: `print("Mar\'tu: \\"NOT a compass.\\"")`', undefined],
+    ["strings-are-rows-of-letters/escape-marks", "the backslash doubled: the quote mark ends the text (SyntaxError)", "invalid syntax", "quote-inside-text",
+      '`\\\\` shows one backslash, so the `"` after it still ends the text. Python\'s last line guesses a comma, but that guess is wrong here. One backslash goes in front of each `"` inside the text: `print("Mar\'tu: \\"NOT a compass.\\"")`', undefined],
+    // A text that never closes, read from the student's line (never "Enter inside text", which would glue the notes and
+    // line 8's `print("")` into line 3): one backslash missed, the closing quote escaped, and a slash for the backslash.
+    ["strings-are-rows-of-letters/escape-marks", "one backslash missed: a bare quote mark left inside (SyntaxError)", "unterminated string literal", "quote-inside-text",
+      'Line 3 has a `"` inside the text with no backslash in front, so it ends the text early. Put a backslash in front of each `"` inside: `print("Mar\'tu: \\"NOT a compass.\\"")`', undefined],
+    ["strings-are-rows-of-letters/escape-marks", "the closing quote escaped: the text never closes (SyntaxError)", "perhaps you escaped the end quote?", "quote-inside-text",
+      'On line 3, the backslash in front of the last `"` turned your closing quote into a quote inside the text, so the text never closes. A backslash goes only in front of each `"` inside the text: `print("Mar\'tu: \\"NOT a compass.\\"")`', undefined],
+    ["strings-are-rows-of-letters/escape-marks", "slashes where the backslashes go (SyntaxError)", "invalid syntax", "quote-inside-text",
+      'Line 3 has a slash `/` in front of a `"` inside the text, so that `"` still ends the text. Python\'s last line guesses a comma, but that guess is wrong here. Use a backslash, `\\`, not the slash `/`: `print("Mar\'tu: \\"NOT a compass.\\"")`', undefined],
+    ["strings-are-rows-of-letters/escape-marks", "single outer quotes: the apostrophe in Mar'tu ends the text", "unterminated string literal", "apostrophe",
+      'The apostrophe in `Mar\'tu` ends the text early, because the text starts with `\'`. Put the text in double quotes, with a backslash in front of each `"` inside it: `print("Mar\'tu: \\"NOT a compass.\\"")`', undefined],
+    ["strings-are-rows-of-letters/escape-marks", "a typed new line inside ordinary quotes (SyntaxError)", "unterminated string literal", "new-line-in-text",
+      'Text in quotes stays on one line, so pressing Enter inside it ends line 8 before the text closes. For a new line inside text, type `\\n`: `print("48\\n48")`', undefined],
+    // A slice with parentheses, `int("hours_text")`, and the text IndexError (site request 2: its letters and positions).
+    ["strings-are-rows-of-letters/letters-have-places", "round brackets for a slice (SyntaxError)", "invalid syntax", "list-needs-square-brackets",
+      "Line 4 cuts a slice of `sign` with parentheses `( )`, which Python can't read. A slice takes square brackets, like a list's: `word = sign[0:9]`", undefined],
+    ["words-that-change-shape/split-the-clipped", "int() of the name in quotes (ValueError)", "invalid literal for int() with base 10: 'hours_text'", "quoted-name",
+      'Line 13 hands `int()` the text `"hours_text"`. With quotes, `"hours_text"` is the text hours_text, not the variable `hours_text`. Quotes mean these exact letters. No quotes means look inside the box with this label. Take the quotes off: `next_hours = int(hours_text) + 1`', undefined],
+    ["extra-letter-by-letter/broken-spell-8a", "the starter: place 5 is past the end (IndexError first)", "string index out of range", "nothing-at-position",
+      `Line 2 asks \`tag\` for ${TEXT_POSITION_WORD} 5, but \`tag\` has 5 letters, at ${TEXT_POSITION_WORD}s 0 to 4. Positions start at 0, like a ruler. Write: \`last = tag[-1]\``, undefined],
+    ["extra-letter-by-letter/broken-spell-8a", "len(tag) used as the place (one past the end)", "string index out of range", "nothing-at-position",
+      `Line 2 uses \`len(tag)\` as a ${TEXT_POSITION_WORD}. \`len(tag)\` counts the letters, but ${TEXT_POSITION_WORD}s start at 0, like a ruler, so the count is one past the last letter. Write: \`last = tag[-1]\``, undefined],
+    // `+` between text and a number in the step's own way: text that holds digits gets `int()` (Mar'tu's line), a call is
+    // wrapped whole (never a made-up `str(score)`), a letter gets its position first, an f-string step gets Mar'tu's
+    // f-string, and a number in quotes handed on through two calls names the line that made it.
+    ["words-that-change-shape/split-the-clipped", "text plus a number, no int() (TypeError)", 'can only concatenate str (not "int") to str', "math-with-text",
+      '`hours_text` holds text, `"48"` in quotes, so `+ 1` can\'t add to it. Turn it into a number first with `int()`: `next_hours = int(hours_text) + 1`', undefined],
+    ["extra-letter-by-letter/broken-spell-8a", "+ between text and a number, no str()", 'can only concatenate str (not "int") to str', "text-plus-number",
+      'Line 7 glues text to a number with `+`, but `+` only glues text to text. Turn the number into text first with `str()`: `print("Blocks: " + str(len(bar)))`', undefined],
+    ["the-institute-cipher", "a letter and a number added (text + int)", 'can only concatenate str (not "int") to str', "text-plus-number",
+      "Line 9 adds `key`, a number, to `letter`, which holds text, and `+` can't do that. Find its position first, `alphabet.find(letter)`: a number you can add `key` to.", undefined],
+    ["the-water-stained-log", "+ between text and a number, no str()", 'can only concatenate str (not "int") to str', "text-plus-number",
+      'Line 43 glues text to a number with `+`, but `+` only glues text to text. This step builds the line with an f-string, which shows a number in curly braces: `print(f"{len(hours)} gaps, {total} hours in all.")`', undefined],
+    ["the-institute-cipher", "the key in quotes (text + number inside shift_letter)", "unsupported operand type(s) for +: 'int' and 'str'", "number-in-quotes",
+      'Line 12 does math with `key`, and `key` holds `my_key`, which line 45 makes with quotes: `my_key = "7"`. Quotes make text, even when it looks like a number. Take the quotes off on line 45: `my_key = 7`', 45],
+    // `sum()` of text: no `+` on the line, so never the `+` row; Mar'tu's line adds up the numbers.
+    ["the-water-stained-log", "the text added up (sum of clean_marks: TypeError)", "unsupported operand type(s) for +: 'int' and 'str'", "sum-of-text",
+      "`clean_marks` holds text, and `sum()` adds numbers only. Add up the list of numbers: `total = sum(hours)`", undefined],
+    // `int()` of a mark straight from `.split()`: the loop walks the marks before they were cleaned (its line is the slip).
+    ["the-water-stained-log", "int() on the raw mark (ValueError)", "invalid literal for int() with base 10: ' 48 hrs'", "not-a-number",
+      "Line 21 hands `int()` a mark straight from `.split()`, with `hrs` and spaces still in it, so `int()` can't turn it into a number. The loop on line 20 walks `marks`. Walk the clean marks instead: `for mark in clean_marks:`", 20],
+    // A list from `.split()` glued to text: join it first (never `.append()`); words read by position where a slice keeps
+    // what is there (never `[-1]`).
+    ["words-that-change-shape/whats-in-it-for-me", "clip: the sliced list glued to text with + (TypeError on the student's own Run)", 'can only concatenate list (not "str") to list', "list-as-text",
+      '`words[:3]` is a list, not text: `.split()` hands back a list, and `+` can\'t glue text onto it. Glue the list into one text first: `return " ".join(words[:3]) + "."`', undefined],
+    ["words-that-change-shape/whats-in-it-for-me", "clip: three words read by place: the bottom call", "list index out of range", "nothing-at-position",
+      'Line 10 reads `words` by position, but `words` comes from `sentence`, so a short one gives fewer words. A slice keeps what is there and never runs past the end: `short = " ".join(words[:3])`', undefined],
+    // A name copied from Mar'tu's example (his text, or the Example) into a function with its own parameter.
+    ["words-that-change-shape/chain-the-spells", "Mar'tu's two steps copied, the calls kept: the student's own Run stops (UnboundLocalError, the explainer's row)", "cannot access local variable 'said'", "variable-in-function",
+      "Line 4 uses `said` before the line that makes it: Python runs a function from the top down. `said` comes from Mar'tu's example, and `tidy_line`'s parameter is `raw`. Write `raw` where it says `said`: `raw = raw.lower()`", undefined],
+    ["words-that-change-shape/whats-in-it-for-me", "lucky_reply: the Example's order copied, the calls kept (UnboundLocalError on the student's own Run)", "cannot access local variable 'order'", "variable-in-function",
+      "Line 2 uses `order` before the line that makes it: Python runs a function from the top down. `order` comes from the Example, and `lucky_reply`'s parameter is `request`. Write `request` where it says `order`: `request = request.strip()`", undefined],
+    ["words-that-change-shape/chain-the-spells", "said with the calls kept: the student's own Run stops (NameError, the explainer's row)", "name 'said' is not defined", "not-in-recipe",
+      "`said` comes from Mar'tu's example, not from your task. `tidy_line` has no box by that name. Its parameter is `raw`: work the answer out from that.", undefined],
+    // The apostrophe fix keeps the text's own space in front (the whole line).
+    ["words-that-change-shape/whats-in-it-for-me", "an apostrophe inside single quotes (SyntaxError)", "unterminated string literal", "apostrophe",
+      "The apostrophe ' in your text on line 4 ends the text too early, because Python reads it as the closing quote. Put double quotes around text that has an apostrophe: `ask = \" What's in it for me?\"`", undefined],
+    // A return line that calls its own function, where Mar'tu's calls another: his line, never "move the call below".
+    ["the-institute-cipher", "decode calls itself forever (RecursionError)", "maximum recursion depth exceeded", "never-ending-calls",
+      "Line 31 calls `decode` inside `decode` itself, so it starts again and again and never stops. Call `encode` here: `return encode(message, -key)`", undefined],
+    // A near-miss of a parameter is a parameter, never a box.
+    ["strings-are-rows-of-letters/bars-one-more-time", "curent with the calls kept", "name 'curent' is not defined", "spelling",
+      "Line 8 uses `curent`, but your step's parameter is `current`. To Python those are two different names. On line 8, write `current`, letter for letter.", undefined],
+    // A number where a method's text goes: the call one frame out handed its values over in the wrong order.
+    ["tag-from-blank", "the values handed over the wrong way round (a number has no .upper())", "'int' object has no attribute 'upper'", "swapped-values",
+      "The call on line 7 hands its values over in the wrong order. `name_tag` takes the text as `name`, and the call puts `48` there, so line 3 asks a number for `.upper()`. Swap the two values on line 7.", 7],
+  ];
+
+  it("explains each slip in the unit's words, with the student's own names and one fix", async () => {
+    for (const [at, [key, why, python, kind, hint, slipLine]] of rows.entries()) {
+      if (at % 10 === 0) await new Promise((resume) => setImmediate(resume));
+      const found = unit9.find(key, why);
+      expect(found.failsAt, `${key}: ${why} crashes`).toBe(0);
+      const raw = crashOf(found);
+      expect(raw, `${key}: ${why}`).toContain(python);
+      const result = explainCourseError(raw, found.code, found.context);
+      expect(result.kind, `${key}: ${why}`).toBe(kind);
+      expect(result.hint, `${key}: ${why}`).toBe(hint);
+      expect(result.slipLine, `${key}: ${why}`).toBe(slipLine);
+      // Python's words translated; one fix, never "..., or ..."; never "write the function with def" for a method.
+      expect(`${result.title} ${result.hint}`, `${key}: ${why}`).not.toMatch(/builtin_function_or_method|NoneType|, or |with `def`|mixes kinds/);
+    }
+  });
+
+  it("shows fixes that run when pasted in as they read: the slip is gone (no copy-wrong example)", async () => {
+    let pasted = 0;
+    for (const [at, [key, why, , , hint, slipLine]] of rows.entries()) {
+      if (at % 10 === 0) await new Promise((resume) => setImmediate(resume));
+      // The fix: the last code span that is a whole line (a store, a print, a return) or a method on one item.
+      const spans = [...hint.matchAll(/`([^`]+)`/g)].map((found) => found[1]);
+      const fixed = spans.filter((span) => /=|^print\(|^return |^[A-Za-z_]\w*\[\d+\]\.\w+\(/.test(span) && span.length > 6).at(-1);
+      if (!fixed) continue;
+      const found = unit9.find(key, why);
+      const before = crashOf(found);
+      const line = slipLine ?? errorLineOf(before);
+      const lines = found.code.split("\n");
+      const indent = lines[line - 1]?.match(/^\s*/)?.[0] ?? "";
+      // Enter inside text: the fix joins the two lines back into one.
+      lines.splice(line - 1, /new line inside/.test(why) ? 2 : 1, `${indent}${fixed}`);
+      const result = runCourseChecks(lines.join("\n"), [], { setup: found.setup, stdin: found.stdin });
+      pasted += 1;
+      // The run passes, or stops on another slip of the same wrong answer: never the same error on the same line.
+      if (!result.ok) {
+        const same = errorLineOf(result.traceback) === errorLineOf(before) && result.traceback.trim().split("\n").at(-1) === before.trim().split("\n").at(-1);
+        expect(same, `${key}: ${why}: ${fixed}\n${result.traceback}`).toBe(false);
+        expect(result.traceback, `${key}: ${why}: ${fixed}`).not.toMatch(/SyntaxError/);
+      }
+    }
+    expect(pasted).toBeGreaterThan(25);
+  });
+
+  it("explains the review's other likely slips with the exercise's own context (Mar'tu's version edited one line)", async () => {
+    // [exercise, any wrong answer of it (for its context), line number, the line written in Mar'tu's version, kind, the hint]
+    const edits: [string, string, number, string, string, string][] = [
+      // The number glued to text is the piece that holds a number (never `bar`, already text).
+      ["strings-are-rows-of-letters/bars-one-more-time", "curent with the calls kept", 7, '    bar = "Glug [" + bar + "] " + current + "/" + maximum', "text-plus-number",
+        "Line 7 glues text to a number with `+`, but `+` only glues text to text. Turn the number into text first with `str()`: `str(current)`"],
+      ["strings-are-rows-of-letters/bars-one-more-time", "curent with the calls kept", 7, '    bar = "Glug [" + bar + "] " + str(current) + "/" + maximum', "text-plus-number",
+        "Line 7 glues text to a number with `+`, but `+` only glues text to text. Turn the number into text first with `str()`: `str(maximum)`"],
+      // Every form of `"48" + 1` gets `int()`, never `str(hours_text)` or `str(score)`.
+      ["words-that-change-shape/split-the-clipped", "text plus a number, no int() (TypeError)", 13, "next_hours = int(hours_text + 1)", "math-with-text",
+        '`hours_text` holds text, `"48"` in quotes, so `+ 1` can\'t add to it. Turn it into a number first with `int()`: `next_hours = int(hours_text) + 1`'],
+      ["words-that-change-shape/split-the-clipped", "text plus a number, no int() (TypeError)", 13, "next_hours = str(hours_text) + 1", "math-with-text",
+        '`hours_text` holds text, `"48"` in quotes, so `+ 1` can\'t add to it. Turn it into a number first with `int()`: `next_hours = int(hours_text) + 1`'],
+      // `.split()` then a text method in the same chain; a tool after a dot, on text or on the list `.split()` hands back.
+      ["words-that-change-shape/split-the-clipped", "text plus a number, no int() (TypeError)", 3, 'sentences = report.split(". ").upper()', "list-as-text",
+        'Line 3 asks for `.upper()` after `.split()`, but `.split()` hands back a list, so `.upper()` has no text to work on. Use `.upper()` before `.split`, on the text itself: `sentences = report.upper().split(". ")`'],
+      ["words-that-change-shape/split-the-clipped", "text plus a number, no int() (TypeError)", 7, "word_count = report.len()", "tool-after-dot",
+        "Line 7 writes `len` after a dot. `len` goes in front: `len(report)`. It counts the letters."],
+      ["words-that-change-shape/split-the-clipped", "text plus a number, no int() (TypeError)", 7, "word_count = report.split().len()", "tool-after-dot",
+        "Line 7 writes `len` after a dot. `len` goes in front: `len(report.split())`. It hands back how many items there are."],
+      // join used like a function: the glue first, with a dot (never "write the function with def").
+      ["words-that-change-shape/split-the-clipped", "text plus a number, no int() (TypeError)", 19, 'joined = join(" ", words)', "method-as-function",
+        'Line 19 puts the list inside `join( )`, but `join` goes after the glue, with a dot: the glue in quotes first, then `.join(words)`. Write: `joined = " ".join(words)`'],
+      ["words-that-change-shape/split-the-clipped", "text plus a number, no int() (TypeError)", 19, "joined = join(words)", "method-as-function",
+        'Line 19 puts the list inside `join( )`, but `join` goes after the glue, with a dot: the glue in quotes first, then `.join(words)`. Write: `joined = " ".join(words)`'],
+      // The copy stored the wrong way round: never "use ==".
+      ["words-that-change-shape/loud-and-quiet", "a capital U (AttributeError)", 2, "line.upper() = line", "store-backwards",
+        "Line 2 has the copy, `line.upper()`, on the left of `=` and `line` on the right: the wrong way around. Python's last line guesses `==`, but that guess is wrong here. The copy goes on the right: `line = line.upper()`"],
+      // `.replace()` with no comma, and with no quotes: never "mixes kinds of values", every bare word quoted.
+      ["words-that-change-shape/strip-and-replace", "no (): the method itself, then glued into the print (TypeError)", 6, 'note = note.replace("compass" "Ley Clock")', "wrong-number-of-values",
+        'Line 6 has two pieces of text side by side inside `.replace( )`, with no comma, so Python reads them as one. Put a comma between the old words and the new ones: `note = note.replace("compass", "Ley Clock")`'],
+      ["words-that-change-shape/strip-and-replace", "no (): the method itself, then glued into the print (TypeError)", 6, "note = note.replace(compass, Ley Clock)", "unquoted-words",
+        'Line 6 has words with no quotes around them, so Python tries to read them as code. Put quotes around the words, the way you quote someone\'s exact words in English: `note = note.replace("compass", "Ley Clock")`'],
+    ];
+    for (const [at, [key, why, line, text, kind, hint]] of edits.entries()) {
+      if (at % 5 === 0) await new Promise((resume) => setImmediate(resume));
+      const found = unit9.find(key, why);
+      const rows = (found.context.solution ?? "").split("\n");
+      rows[line - 1] = text;
+      const code = rows.join("\n");
+      const result = runCourseChecks(code, [], { setup: found.setup, stdin: found.stdin });
+      expect(result.ok, `${key}: ${text}`).toBe(false);
+      const got = explainCourseError(result.traceback, code, found.context);
+      expect(got.kind, `${key}: ${text}`).toBe(kind);
+      expect(got.hint, `${key}: ${text}`).toBe(hint);
+      expect(got.hint, `${key}: ${text}`).not.toMatch(/str\(score\)|chalk_wall|mixes kinds|with `def`/);
+    }
+    // `upper(line)`: Python's "Did you mean: 'super'?" (a built-in the course never teaches) is left off the box's line.
+    const loud = unit9.find("words-that-change-shape/loud-and-quiet", "a capital U (AttributeError)");
+    const upper = 'line = "shield up."\nline = upper(line)\nprint(line)\n';
+    const raw = runCourseChecks(upper, [], { setup: loud.setup }).traceback;
+    expect(raw).toContain("Did you mean: 'super'?");
+    const shown = explainCourseError(raw, upper, loud.context);
+    expect(shown.kind).toBe("method-as-function");
+    expect(shown.shownLine).toBe("NameError: name 'upper' is not defined.");
+  });
+
+  it("keeps the lean explainer to the slip and its evidence: the SOLOs and the Quick Check", async () => {
+    // [exercise, why, kind, the lean title, the lean hint's own sentence (the slip and its evidence, never the fix)]
+    const lean: [string, string, string, string, string][] = [
+      ["strings-are-rows-of-letters/solo-8a", "seat B's slip shape: a letter changed in place (TypeError)", "text-changed-in-place", "Text changed in place",
+        "Line 8 changes one letter of `bar` in place, and text can't change one letter."],
+      ["words-that-change-shape/solo-8b", "lower(line) as if it were a function (NameError on the student's own Run)", "method-as-function", "Method used like a function",
+        "Line 3 uses `lower` like a function: `lower` is a method."],
+      ["words-that-change-shape/solo-8b", "seat B's slip shape: join called the wrong way round (AttributeError)", "join-on-list", "List asked to join itself",
+        "Line 3 asks a list, `words`, to `.join()`."],
+      ["qc8-a/tidy-the-line", ".lower with no () in the middle of the chain (AttributeError on the student's own Run)", "method-without-brackets", "Method with no ()",
+        "Line 6 has `.lower` with no `()`: `raw.lower` is the method itself, not text."],
+      ["qc8-b/tidy-the-line", ".strip with no () (AttributeError on the student's own Run)", "method-without-brackets", "Method with no ()",
+        "Line 5 wrote `.strip` with no `()`: `raw` holds the method itself, not text."],
+      ["qc8-a/tidy-the-line", "every method as a function (NameError)", "method-as-function", "Method used like a function",
+        "Line 5 uses `capitalize` like a function: `capitalize` is a method."],
+      ["qc8-b/tidy-the-line", "a letter changed in place (TypeError)", "text-changed-in-place", "Text changed in place",
+        "Line 6 changes one letter of `raw` in place, and text can't change one letter."],
+      ["qc8-a/clip-the-log", "split(said) as if it were a function (NameError)", "method-as-function", "Method used like a function",
+        "Line 4 uses `split` like a function: `split` is a method."],
+      ["qc8-b/clip-the-log", "the list treated as text: .lower() on a list (AttributeError)", "list-as-text", "List used like text",
+        "Line 5 asks `words`, a list, for `.lower()`: a list is not text."],
+      ["qc8-a/clip-the-log", "join called the wrong way round, on the slice (spec: crash)", "join-on-list", "List asked to join itself",
+        "Line 9 asks a list, `words[:3]`, to `.join()`."],
+      ["qc8-b/a-bar-for-any-values", "a brace missing in the f-string (SyntaxError)", "f-string-brace", "Curly brace with no partner in an f-string",
+        "Line 17 opens a `{` in an f-string and never closes it."],
+      ["qc8-a/tidy-the-line", "the hint's cry copied, the calls kept", "variable-in-function", "Name used before it has a value",
+        "Line 5 uses `cry` before it has a value: `cry` is a name from Mar'tu's example, not a parameter of `hush_line`."],
+    ];
+    for (const [at, [key, why, kind, title, said]] of lean.entries()) {
+      if (at % 5 === 0) await new Promise((resume) => setImmediate(resume));
+      const found = unit9.find(key, why);
+      expect(found.context.explainer, key).toBe("lean");
+      const raw = crashOf(found);
+      const result = explainCourseError(raw, found.code, found.context);
+      const full = explainCourseError(raw, found.code, { ...found.context, explainer: "full" });
+      expect(result.kind, `${key}: ${why}`).toBe(kind);
+      expect(result.title, `${key}: ${why}`).toBe(title);
+      expect(result.hint, `${key}: ${why}`).toBe(`${said} Python's last line, below, says what it found. Fix it yourself, then press Run again.`);
+      // Never the fix: the full hint's fixed line is not in the lean one.
+      const fix = full.hint.match(/`([^`]+)`$/)?.[1];
+      expect(fix, `${key}: ${why}: the full hint ends with its fix`).toBeTruthy();
+      expect(result.hint, `${key}: ${why}`).not.toContain(fix!);
+    }
+  });
+
+  it("keeps each row closed below Unit 9: the same slips get the older words there (and in Unit 7's words)", async () => {
+    // [exercise, why, the kind below Unit 9]
+    const older: [string, string, string][] = [
+      ["strings-are-rows-of-letters/letters-cant-change", "the starter: a letter changed in place (TypeError)", "wrong-kind-of-value"],
+      ["words-that-change-shape/split-the-clipped", "join called the wrong way round (AttributeError)", "other"],
+      ["words-that-change-shape/broken-spell-8b", "the starter: .lower with no () (AttributeError on line 4)", "other"],
+      ["words-that-change-shape/split-the-clipped", "the list treated as text: .lower() on a list (AttributeError)", "other"],
+      ["strings-are-rows-of-letters/letters-have-places", "a list method on text: initials.append(name[0])", "other"],
+      ["strings-are-rows-of-letters/letters-have-places", "a comma for the colon (TypeError)", "wrong-kind-of-value"],
+      ["extra-letter-by-letter/broken-spell-8a", "lines 2 and 4 mended, len(26) left", "wrong-kind-of-value"],
+      ["the-water-stained-log", "the numbers joined (join needs text)", "wrong-kind-of-value"],
+      ["words-that-change-shape/f-strings", "a closing brace missing (SyntaxError)", "cant-read-line"],
+      ["words-that-change-shape/loud-and-quiet", "a capital U (AttributeError)", "attribute-spelling"],
+      ["words-that-change-shape/chain-the-spells", "lower(raw) as if it were a function (NameError)", "unknown-function"],
+      ["strings-are-rows-of-letters/escape-marks", "inner quotes with no backslash (SyntaxError)", "missing-comma"],
+      ["strings-are-rows-of-letters/escape-marks", "a typed new line inside ordinary quotes (SyntaxError)", "missing-quote"],
+      ["tag-from-blank", "the values handed over the wrong way round (a number has no .upper())", "other"],
+      ["strings-are-rows-of-letters/escape-marks", "one backslash missed: a bare quote mark left inside (SyntaxError)", "missing-quote"],
+      ["words-that-change-shape/chain-the-spells", "Mar'tu's two steps copied, the calls kept", "variable-in-function"],
+      ["words-that-change-shape/whats-in-it-for-me", "clip: the sliced list glued to text with +", "list-plus-item"],
+      ["words-that-change-shape/split-the-clipped", "text plus a number, no int() (TypeError)", "text-plus-number"],
+      ["the-institute-cipher", "the key in quotes (text + number inside shift_letter)", "number-plus-text"],
+    ];
+    for (const [at, [key, why, kind]] of older.entries()) {
+      if (at % 5 === 0) await new Promise((resume) => setImmediate(resume));
+      const found = unit9.find(key, why);
+      const raw = crashOf(found);
+      const below = explainCourseError(raw, found.code, { ...found.context, unitOrder: SPELL_RECIPES_UNIT_ORDER });
+      expect(below.kind, `${key}: ${why}`).toBe(kind);
+    }
+    // Site request 2: below Unit 9 the text IndexError keeps the older words; a list's keeps Unit 4's words in Unit 9 too.
+    const text = unit9.find("extra-letter-by-letter/broken-spell-8a", "the starter: place 5 is past the end (IndexError first)");
+    expect(explainCourseError(crashOf(text), text.code, { ...text.context, unitOrder: SPELL_RECIPES_UNIT_ORDER }).hint).toBe(
+      "Line 2 asks for a position the text doesn't have. Positions start at 0, like a ruler, so 3 items have positions 0, 1 and 2.",
+    );
+    // The new Unit 9 words stay closed below it too: the older str() advice, the generic "box inside a function".
+    const said = unit9.find("words-that-change-shape/chain-the-spells", "Mar'tu's two steps copied, the calls kept");
+    expect(explainCourseError(crashOf(said), said.code, { ...said.context, unitOrder: SPELL_RECIPES_UNIT_ORDER }).title).toBe("A box inside a function");
+    const list = unit9.find("words-that-change-shape/broken-spell-8b", "bugs 1-2 mended, the index still past the end");
+    const listRaw = crashOf(list);
+    expect(listRaw).toContain("list index out of range");
+    expect(explainCourseError(listRaw, list.code, list.context).hint).toBe(
+      explainCourseError(listRaw, list.code, { ...list.context, unitOrder: SPELL_RECIPES_UNIT_ORDER }).hint,
+    );
+  });
+
+  it("explains every crash wrong answer of Unit 9 by its own row: none is left to Python's general words", async () => {
+    for (const [at, wrong] of unit9.crashes().entries()) {
+      if (at % 10 === 0) await new Promise((resume) => setImmediate(resume));
+      const result = runCourseChecks(wrong.code, [], { setup: wrong.setup, stdin: wrong.stdin });
+      if (result.ok) continue;
+      const got = explainCourseError(result.traceback, wrong.code, wrong.context);
+      const said = `${got.title} ${got.hint} ${got.lean ?? ""}`;
+      expect(got.kind, `${wrong.key}: ${wrong.why}`).not.toBe("other");
+      expect(said, `${wrong.key}: ${wrong.why}`).not.toMatch(/mixes kinds of values|builtin_function_or_method|NoneType|write the function with `def`/);
+      expect(said, `${wrong.key}: ${wrong.why}`).not.toMatch(/Look for a missing quote/);
+      expect(said, `${wrong.key}: ${wrong.why}`).not.toMatch(/\b(recipe|ingredient)s?\b|\btags? \(key/i);
+    }
+  }, 120_000);
+
+  it("keeps every Unit 1-7 and Unit 10 explanation exactly as it was before Unit 9 (kind, title and hint)", async () => {
+    const before = JSON.parse(readFileSync(path.join(process.cwd(), "src/lib/course/explain.before-unit9.json"), "utf8")) as Record<string, string>;
+    const now: Record<string, string> = {};
+    for (const unitId of ["hello-world", "control-flow", "first-recipes", "lists", "dictionaries", "loops", "spell-recipes", "readiness-check"]) {
+      for (const [at, wrong] of unitWrongAnswers(unitId).crashes().entries()) {
+        // Hundreds of python3 runs, each one blocking: let the test worker answer vitest between them.
+        if (at % 10 === 0) await new Promise((resume) => setImmediate(resume));
+        const result = runCourseChecks(wrong.code, [], { setup: `import random as _seeded\n_seeded.seed(5)\n${wrong.setup}`, stdin: wrong.stdin });
+        if (result.ok) continue;
+        const got = explainCourseError(result.traceback, wrong.code, wrong.context);
+        const hash = createHash("sha256").update(`${got.title}\n${got.hint}`).digest("hex").slice(0, 16);
+        now[`${unitId}:${wrong.key}:${wrong.why}`] = `${got.kind} ${hash}`;
+      }
+    }
+    const { _about: about, ...expected } = before;
+    expect(about).toContain("before Unit 9");
+    expect(Object.keys(expected).some((key) => key.startsWith("readiness-check:"))).toBe(true);
+    expect(Object.keys(now).length).toBe(Object.keys(expected).length);
+    expect(now).toEqual(expected);
+  }, 360_000);
+});
+
+/** The student's line in a traceback (the last `line N`). */
+function errorLineOf(traceback: string): number {
+  return Number(traceback.match(/line (\d+)/g)?.at(-1)?.split(" ")[1]);
+}

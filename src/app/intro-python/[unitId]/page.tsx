@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { UnitPage } from "../../../components/course/UnitPage";
-import { allUnits, findUnit, glossaryForUnit, unitOutline } from "../../../lib/course/registry";
+import { allUnits, findUnit, glossaryForUnit, readinessRoutes, unitOutline } from "../../../lib/course/registry";
 import { studentModules } from "../../../lib/lesson/modules";
 
 export const dynamicParams = false;
@@ -33,6 +33,7 @@ export default async function UnitRoute({ params }: Params) {
       unit={{ ...unitOutline(unit), martuIntro: unit.martuIntro, goals: unit.goals }}
       campaign={campaign}
       glossary={glossaryForUnit(unit)}
+      readinessRoutes={readinessRoutes(unit.id)}
     />
   );
 }

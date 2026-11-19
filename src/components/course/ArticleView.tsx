@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect } from "react";
 import type { ItemPageProps } from "../../lib/course/contracts";
 import { itemKey, markRead, useCourseProgress, useProgressReady } from "../../lib/course/progress";
+import { readinessPlan } from "../../lib/course/readiness";
 import { exerciseKey, type ArticleItem } from "../../lib/course/schema";
 import { KindBadge } from "./CourseBits";
 import { ExercisePlayer } from "./ExercisePlayer";
@@ -40,6 +42,11 @@ export function ArticleView(props: ItemPageProps<ArticleItem>) {
   const ready = useProgressReady();
   const key = itemKey(unit.id, item.id);
   const read = progress.read[key] === true;
+  // The Readiness Check's notes count as opened once they are on screen: the other forms open after them.
+  const notes = readinessPlan(unit.items)?.review === item.id;
+  useEffect(() => {
+    if (notes && ready && !read) markRead(key);
+  }, [notes, ready, read, key]);
 
   return (
     <div className="course-reading article" data-testid="article">

@@ -5,7 +5,7 @@
  */
 import { createElement } from "react";
 import { renderToString } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import type { ExerciseProgress } from "../../lib/course/contracts";
 import { flattenChecks, gradeCheckpoints } from "../../lib/course/grading";
 import { allUnits, itemPageProps } from "../../lib/course/registry";
@@ -53,6 +53,10 @@ function press(exercise: Playable, code: string, progress: ExerciseProgress) {
 }
 
 const fresh = (): ExerciseProgress => ({ passed: [], done: false, hintsUsed: {}, failedRuns: 0 });
+
+// Hundreds of tests here each block on python3: between them, let the test worker answer vitest (a worker that only
+// ever awaits resolved promises misses its heartbeat, "Timeout calling onTaskUpdate", and fails the whole run).
+afterEach(() => new Promise<void>((resume) => setImmediate(resume)));
 
 describe("the run loop on course content", () => {
   it("has content to test", () => {

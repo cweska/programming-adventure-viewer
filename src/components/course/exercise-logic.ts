@@ -237,7 +237,12 @@ export function withPlannedErrors(
 export function applyRun(
   previous: ExerciseProgress,
   outcome: RunOutcome,
-  extra: { code?: string; bonusPassed?: boolean } = {},
+  extra: {
+    code?: string;
+    bonusPassed?: boolean;
+    /** Mar'tu's version of a twin exercise was opened (the Readiness Check's other mini-boss: the same program). */
+    compareElsewhere?: boolean;
+  } = {},
 ): ExerciseProgress {
   const passed = [...previous.passed];
   for (const id of outcome.passedNow) if (!passed.includes(id)) passed.push(id);
@@ -250,6 +255,9 @@ export function applyRun(
   if (extra.code !== undefined) next.code = extra.code;
   // The side quest counts once the exercise itself is done (now or earlier).
   if (extra.bonusPassed && next.done) next.bonusDone = true;
+  // A first pass after Mar'tu's version was opened, here or on its twin: the Readiness Check records it as "with
+  // Mar'tu's version".
+  if (next.done && !previous.done && (previous.solutionShown === true || extra.compareElsewhere === true)) next.doneWithCompare = true;
   return next;
 }
 
@@ -424,6 +432,14 @@ export function startNote(code: string, start: string, target: InsertTarget | nu
   return `It goes on a new line under ${tick(lineOf(Math.max(0, plan.from - 1)))}.`;
 }
 
+/** The last rung's label in campaign mode (helpRungs). */
+export const LAST_HINT_LABEL = "Last hint";
+
+/** Campaign mode: a SOLO project or challenge with light support (the Readiness Check's mini-bosses and trial). */
+export function isCampaignMode(exercise: { solo?: boolean }, support: string, mode: string): boolean {
+  return exercise.solo === true && support === "light" && (mode === "project" || mode === "challenge");
+}
+
 /**
  * The Help rungs for one step, in the curriculum's order (§2.2): Start me off (derived, see startOfLine),
  * Where to look (hints[0]), Another way (the exercise's angles), Teach me (the middle hints), More structure
@@ -434,7 +450,17 @@ export function startNote(code: string, start: string, target: InsertTarget | nu
  */
 export function helpRungs(
   checkpoint: Pick<Checkpoint, "hints">,
-  exercise: { anotherWayCount: number; hasAssemble: boolean; solo: boolean; solution?: string },
+  exercise: {
+    anotherWayCount: number;
+    hasAssemble: boolean;
+    solo: boolean;
+    solution?: string;
+    /**
+     * Campaign mode (a SOLO project or challenge with light support: the Readiness Check's mini-bosses and trial): the
+     * last rung holds no finished line by design, so it is "Last hint", never "Show me how" (teacher site request 5).
+     */
+    campaignMode?: boolean;
+  },
 ): Rung[] {
   const hints = checkpoint.hints ?? [];
   const rungs: Rung[] = [];
@@ -446,7 +472,7 @@ export function helpRungs(
     rungs.push({ kind: "teach", label: index === 1 ? "Teach me" : "Teach me more", hint: index });
   }
   if (exercise.hasAssemble) rungs.push({ kind: "structure", label: "More structure" });
-  if (hints.length > 1) rungs.push({ kind: "how", label: "Show me how", hint: hints.length - 1 });
+  if (hints.length > 1) rungs.push({ kind: "how", label: exercise.campaignMode ? LAST_HINT_LABEL : "Show me how", hint: hints.length - 1 });
   rungs.push({ kind: "show", label: "Compare with Mar'tu's version" });
   return rungs;
 }

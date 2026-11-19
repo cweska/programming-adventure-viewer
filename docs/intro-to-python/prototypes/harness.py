@@ -10,7 +10,8 @@ Every unit lives in a file named ``uNN_<slug>.py`` beside this one. A big unit m
 It checks, for every exercise / project / challenge / test-out item:
   * the solution passes every checkpoint,
   * the starter code fails at least one checkpoint (unless ``starter_passes=True``),
-  * each staged partial solution passes checkpoints 1..k and fails k+1,
+  * each staged partial solution passes checkpoints 1..k and fails k+1 (and a WARNING when it already passes a later
+    checkpoint: the site records every checkpoint a run passes, so that step turns green before its turn),
   * each known wrong answer fails at the checkpoint it names (and with the message it names),
   * the worked example prints exactly ``example_output``,
   * the bonus side quest passes with its own solution,
@@ -19,7 +20,8 @@ It checks, for every exercise / project / challenge / test-out item:
     only number a goal-only step accepts, as in a trace ledger: More structure would hand the answer over),
   * no code a student SEES (starter, solution, example, partials, quiz code) uses a concept that has not been
     introduced yet, in course order (see CONCEPT TOKENS below),
-  * every checkpoint has a hint ladder of at least two hints,
+  * every checkpoint has a hint ladder of at least two hints (and a WARNING when a pass line says every step passes:
+    the site shows a step's pass line the first run that step passes, which can be before the steps above it),
   * an exercise ``predict`` has 2+ choices, an explanation, and an answer that IS what its code prints,
   * the exercise fields ``names`` (every name is used by the solution), ``pick``, ``pair_talk``, ``solo`` and
     ``explainer`` ("full" or "lean"), and the checkpoint field ``dictated``, have the right types,
@@ -413,6 +415,11 @@ def verify_exercise(ex: dict, where: str, gate: ConceptGate, report: Report, kin
                 report.error(where, f"checkpoint {i} planned_error must be dict(line=<1 or more>, error=\"SyntaxError\")")
             elif not any(wa.get("fails_at") == 0 for wa in ex.get("wrong_answers") or []):
                 report.error(where, f"checkpoint {i} has a planned_error but no wrong answer shows that error (fails_at=0)")
+        # The site shows a step's pass line the first run that step passes, which can be before the steps above it
+        # (a dictated step 2 that already does step 6): a pass line that says every step passes can be false there.
+        if re.search(r"\b[Aa]ll (\w+ )?(tasks|steps) pass\b", cp.get("pass_line") or ""):
+            report.warn(where, f"checkpoint {i} pass line says every step passes: the site shows it when this step first "
+                               "passes, maybe before the others; say what this step did, and leave 'all done' to the finish")
         words, grade = reading_stats(cp.get("text", ""))
         if grade > 9:
             report.warn(where, f"checkpoint {i} text reads at grade {grade}")
@@ -444,6 +451,12 @@ def verify_exercise(ex: dict, where: str, gate: ConceptGate, report: Report, kin
             report.error(where, f"partial {k} should pass checkpoints 1..{k} but got {st} ({first_failure(result)[1]})")
         if k < len(checkpoints) and st[k]:
             report.error(where, f"partial {k} unexpectedly passes checkpoint {k + 1}")
+        # The site records every checkpoint a run passes, not only the open one, and shows each one's pass line: a
+        # later step that already passes here turns green (with its "Done!") before its turn.
+        early = [j + 1 for j in range(k + 1, len(checkpoints)) if st[j]]
+        if early:
+            report.warn(where, f"partial {k} already passes checkpoint(s) {early}: on the site they turn green, "
+                               "with their pass lines, before their turn")
 
     for wrong in ex.get("wrong_answers") or []:
         report.stats["wrong_answers"] += 1
@@ -715,11 +728,22 @@ def ladder_warnings(ex: dict, where: str, report: Report) -> None:
             last = hints[-1]
             placed = re.search(r"\b(in place of|on the line after|under|above)\s+(?:the\s+)?`[^`\n]+`", last)
             vague = re.search(r"\b(Change (?:line \d+|the last line) to|[Uu]nder (?:comment \d+|the (?:first|second|last) "
-                              r"comment|the comment)|above the `?print`?|below the (?:comments|sheet))", last)
+                              r"comment|the comment)|above the `?print`?|below the (?:comments|sheet)|on line \d+|in place "
+                              r"of line \d+|(?:right )?below line \d+|as the last line|in place of your `)", last)
             if vague and not placed:
                 report.warn(where, f"{label}: the last hint says where the line goes ({vague.group(0)!r}) in words Start "
                                    "me off cannot read, so it lands at the end of the code. Say it with in place of "
                                    "`...`, under `# N.`, on the line after `...` or above `...` (FORMAT.md, hints)")
+            # No place at all, for a line Mar'tu's version indents (a function's body, a loop's): Start me off puts it
+            # at the end of the code, with no spaces in front, outside the function (Unit 9's review).
+            if not vague and not placed and isinstance(solution, str) and not re.search(r"\b(at the bottom|at the end)\b", last):
+                head = squash(start)
+                hit = next((row for row in solution.split("\n") if squash(row).startswith(head)), None)
+                if hit is not None and hit[:1] in (" ", "\t"):
+                    report.warn(where, f"{label}: the last hint names no place for `{start}`, which Mar'tu's version "
+                                       "indents, so Start me off puts it at the end of the code, outside its block. "
+                                       "Say where with in place of `...`, under `...`, on the line after `...` or above "
+                                       "`...` (FORMAT.md, hints)")
 
 
 def verify_unit(path: Path, gate: ConceptGate, report: Report) -> None:
