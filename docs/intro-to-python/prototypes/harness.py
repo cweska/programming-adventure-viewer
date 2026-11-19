@@ -20,7 +20,8 @@ It checks, for every exercise / project / challenge / test-out item:
     only number a goal-only step accepts, as in a trace ledger: More structure would hand the answer over),
   * no code a student SEES (starter, solution, example, partials, quiz code) uses a concept that has not been
     introduced yet, in course order (see CONCEPT TOKENS below),
-  * every checkpoint has a hint ladder of at least two hints,
+  * every checkpoint has a hint ladder of at least two hints (and a WARNING when a pass line says every step passes:
+    the site shows a step's pass line the first run that step passes, which can be before the steps above it),
   * an exercise ``predict`` has 2+ choices, an explanation, and an answer that IS what its code prints,
   * the exercise fields ``names`` (every name is used by the solution), ``pick``, ``pair_talk``, ``solo`` and
     ``explainer`` ("full" or "lean"), and the checkpoint field ``dictated``, have the right types,
@@ -414,6 +415,11 @@ def verify_exercise(ex: dict, where: str, gate: ConceptGate, report: Report, kin
                 report.error(where, f"checkpoint {i} planned_error must be dict(line=<1 or more>, error=\"SyntaxError\")")
             elif not any(wa.get("fails_at") == 0 for wa in ex.get("wrong_answers") or []):
                 report.error(where, f"checkpoint {i} has a planned_error but no wrong answer shows that error (fails_at=0)")
+        # The site shows a step's pass line the first run that step passes, which can be before the steps above it
+        # (a dictated step 2 that already does step 6): a pass line that says every step passes can be false there.
+        if re.search(r"\b[Aa]ll (\w+ )?(tasks|steps) pass\b", cp.get("pass_line") or ""):
+            report.warn(where, f"checkpoint {i} pass line says every step passes: the site shows it when this step first "
+                               "passes, maybe before the others; say what this step did, and leave 'all done' to the finish")
         words, grade = reading_stats(cp.get("text", ""))
         if grade > 9:
             report.warn(where, f"checkpoint {i} text reads at grade {grade}")

@@ -3,7 +3,20 @@
 import Link from "next/link";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import type { ItemPageProps } from "../../lib/course/contracts";
-import { itemKey, markTestedOut, quickCheckPassed, quickCheckQuestions, recordQuiz, useCourseProgress } from "../../lib/course/progress";
+import {
+  getCourseProgress,
+  itemKey,
+  markQuizExplained,
+  markQuizRight,
+  markTestedOut,
+  quickCheckPassed,
+  quickCheckQuestions,
+  recordQuiz,
+  saveOwnWords,
+  useCourseProgress,
+  useProgressReady,
+} from "../../lib/course/progress";
+import { formName, formOfQuestions, formsUnlocked, nextQuestionsForm, readinessPlan, readinessQuestions } from "../../lib/course/readiness";
 import type { GlossaryEntry, Question, QuizItem } from "../../lib/course/schema";
 import { useStudentSeed } from "../../lib/course/student-seed";
 import { runCourse } from "../../lib/languages/python/run";
@@ -225,25 +238,44 @@ function Feedback({
   response,
   checked,
   glossary,
+  seenBefore = false,
 }: {
   question: Question;
   response: QuizResponse | undefined;
   checked: Checked;
   glossary: readonly GlossaryEntry[];
+  /**
+   * The Readiness Check: this question's answer and explanation were shown on an earlier try, so they stay hidden (a
+   * retake is not passed from memory: teacher site request 2).
+   */
+  seenBefore?: boolean;
 }) {
   const whyWrong =
     question.type === "mc" && response?.type === "mc" && response.choice !== null && !checked.correct
       ? question.whyWrong[String(response.choice)]
       : undefined;
   return (
-    <div className={`quiz-feedback ${checked.correct ? "is-right" : "is-wrong"}`} data-testid="quiz-feedback" data-correct={checked.correct}>
+    <div
+      className={`quiz-feedback ${checked.correct ? "is-right" : "is-wrong"}`}
+      data-testid="quiz-feedback"
+      data-correct={checked.correct}
+      data-seen-before={seenBefore ? "true" : undefined}
+    >
       <p className="quiz-verdict">
         <span aria-hidden="true">{checked.correct ? "✓" : "✗"}</span> {checked.correct ? "Right!" : "Not quite."}
       </p>
       {checked.note ? <p className="quiz-note">{checked.note}</p> : null}
-      {whyWrong ? <Prose text={whyWrong} glossary={glossary} className="quiz-why-wrong" /> : null}
-      {!checked.correct ? <CorrectAnswer question={question} /> : null}
-      <Prose text={question.explain} glossary={glossary} className="quiz-explain" />
+      {seenBefore ? (
+        <p className="quiz-note" data-testid="quiz-seen-before">
+          You met this question before, so its answer stays hidden this time.
+        </p>
+      ) : (
+        <>
+          {whyWrong ? <Prose text={whyWrong} glossary={glossary} className="quiz-why-wrong" /> : null}
+          {!checked.correct ? <CorrectAnswer question={question} /> : null}
+          <Prose text={question.explain} glossary={glossary} className="quiz-explain" />
+        </>
+      )}
     </div>
   );
 }
@@ -274,15 +306,38 @@ function QuizRun({ unit, item, glossary, nextHref, settings }: ItemPageProps<Qui
   const resultRef = useRef<HTMLHeadingElement>(null);
   const moved = useRef(false);
 
+  // A readiness unit (a required test-out, readiness.ts): its questions never test the unit out. A form's questions
+  // count for Part 1 (a twin in another form counts), a retake draws the next form's questions, and a question's answer
+  // and explanation show once.
+  const plan = readinessPlan(unit.items);
+  const formQuestions = plan !== null && unit.items.some((entry) => entry.kind === "testout" && `${entry.id}-questions` === item.id);
+  const readinessForm = plan ? formOfQuestions(plan, item.id) : undefined;
+  const part1 = plan && readinessForm ? readinessQuestions(unit.id, unit.items, plan, progress) : null;
+  // A retake draws the next form's questions, once forms B and C are open (after Part 1 A and Mar'tu's notes): until
+  // then no link pulls the student out of the core order, and a retake of these same questions would count nothing new.
+  const formsOpen = plan ? formsUnlocked(unit.id, unit.items, plan, progress) : false;
+  const nextForm = plan && readinessForm ? nextQuestionsForm(plan, item.id) : undefined;
+  const nextFormItem = nextForm && formsOpen ? unit.items.find((entry) => entry.id === nextForm) : undefined;
+  const nextFormName = nextForm ? formName(unit.items.find((entry) => entry.id === nextForm)?.title) : undefined;
+  // "Explain a line you wrote": an ungraded box for the student's own words, before the choices (teacher site request 10).
+  const ownWordsFirst = plan?.explain === item.id;
   // A Quick Check form's questions (the quiz `<form>-questions`, when the form needs them): a pass here can
   // finish the Quick Check.
-  const form = unit.items.find((entry) => entry.kind === "testout" && `${entry.id}-questions` === item.id && entry.questionsToPass);
+  const form = plan
+    ? undefined
+    : unit.items.find((entry) => entry.kind === "testout" && `${entry.id}-questions` === item.id && entry.questionsToPass);
   const gate = form ? quickCheckQuestions(unit.id, form, unit.items, progress) : null;
   const formPassed = form ? quickCheckPassed(unit.id, form, unit.items, progress) : false;
-  const testedOut = progress.testedOut[unit.id] === true;
+  const testedOut = plan === null && progress.testedOut[unit.id] === true;
   useEffect(() => {
     if (formPassed && !testedOut) markTestedOut(unit.id);
   }, [formPassed, testedOut, unit.id]);
+  // The questions whose answer was already shown, read once the save is loaded and again at each retake.
+  const progressReady = useProgressReady();
+  const [seenBefore, setSeenBefore] = useState<ReadonlySet<string>>(() => new Set());
+  useEffect(() => {
+    if (formQuestions && progressReady) setSeenBefore(new Set(getCourseProgress().quizzes[key]?.explained ?? []));
+  }, [formQuestions, progressReady, attempt, key]);
 
   const needsPython = questions.some((question) => question.type === "bug" || question.type === "parsons");
   const pythonStatus = usePythonStatus(needsPython);
@@ -312,7 +367,12 @@ function QuizRun({ unit, item, glossary, nextHref, settings }: ItemPageProps<Qui
     const percent = quizPercent(correct, total);
     const answers: Record<string, string> = {};
     for (const entry of questions) answers[entry.id] = responseText(entry, responses[entry.id] ?? emptyResponse(entry));
-    recordQuiz(key, percent, answers);
+    // A readiness unit keeps which questions were right, at least once: a twin in another form counts for Part 1. A
+    // question whose answer was shown on an earlier try never counts (a retake is not passed from memory).
+    const right = plan
+      ? questions.filter((entry) => allChecked[entry.id]?.correct && !seenBefore.has(entry.id)).map((entry) => entry.id)
+      : undefined;
+    recordQuiz(key, percent, answers, right);
     moved.current = true;
     setFinished({ correct, percent });
   };
@@ -356,6 +416,10 @@ function QuizRun({ unit, item, glossary, nextHref, settings }: ItemPageProps<Qui
         outcome = { correct: false };
       }
       setChecked((all) => ({ ...all, [question.id]: outcome }));
+      // A right answer counts at once (a twin can be answered alone), unless its answer was shown on an earlier try.
+      if (formQuestions && outcome.correct && !seenBefore.has(question.id)) markQuizRight(key, question.id);
+      // The answer and explanation show now, so never again on a retake of these questions.
+      if (formQuestions) markQuizExplained(key, question.id);
       window.setTimeout(() => feedbackRef.current?.focus(), 0);
     } finally {
       setChecking(false);
@@ -404,7 +468,8 @@ function QuizRun({ unit, item, glossary, nextHref, settings }: ItemPageProps<Qui
         <p className="quiz-score" data-testid="quiz-score" aria-live="polite">
           {finished.correct} of {total} right ({finished.percent}%)
         </p>
-        {finished.percent >= ready ? (
+        {plan ? null : finished.percent >= ready ? (
+          // A readiness unit has its own rule (Part 1's questions) and its own "Ready": no quiz badge to contradict it.
           <p className="quiz-ready" data-testid="quiz-ready">
             <span aria-hidden="true">★</span> Ready! You know this well enough to move on.
           </p>
@@ -436,6 +501,23 @@ function QuizRun({ unit, item, glossary, nextHref, settings }: ItemPageProps<Qui
             )}
           </p>
         ) : null}
+        {part1 ? (
+          <div className="quiz-quick-check" data-testid="quiz-readiness" data-met={part1.met ? "true" : "false"}>
+            {part1.met ? (
+              <p>
+                <span aria-hidden="true">✓</span> <strong>Part 1&apos;s questions: {part1.right} of {part1.total} right.</strong> That is
+                enough. A question counts once it is right in any form.
+              </p>
+            ) : (
+              <p>
+                Part 1 needs {questionsNeeded(part1.needed, part1.total)} questions right. {part1.right}{" "}
+                {part1.right === 1 ? "is" : "are"} right so far. A question counts once it is right in any form, so a question you get
+                right in {nextFormName ?? "another form"} counts here too.
+                {formsOpen ? null : ` ${nextFormName ?? "The other forms"} opens after Part 1 A and Mar'tu's notes.`}
+              </p>
+            )}
+          </div>
+        ) : null}
         <ol className="quiz-review" data-testid="quiz-review">
           {questions.map((entry, at) => {
             const right = checked[entry.id]?.correct === true;
@@ -449,9 +531,16 @@ function QuizRun({ unit, item, glossary, nextHref, settings }: ItemPageProps<Qui
           })}
         </ol>
         <div className="quiz-actions">
-          <button type="button" onClick={retake} data-testid="quiz-retake">
-            Try the quiz again
-          </button>
+          {nextFormItem ? (
+            // The Readiness Check: a retake draws new questions, the next form's, never the same ones reshuffled.
+            <Link className="quiet-button" href={itemHref(unit.id, nextFormItem.id)} data-testid="quiz-retake-next-form">
+              Try new questions: {formName(nextFormItem.title)}
+            </Link>
+          ) : readinessForm ? null : (
+            <button type="button" onClick={retake} data-testid="quiz-retake">
+              Try the quiz again
+            </button>
+          )}
           <Link className="course-button" href={nextHref} data-testid="quiz-next-item">
             Next
           </Link>
@@ -477,7 +566,7 @@ function QuizRun({ unit, item, glossary, nextHref, settings }: ItemPageProps<Qui
         </p>
         {saved && saved.attempts > 0 ? (
           <p className="quiz-best-small">
-            Your best: {saved.best}%{saved.best >= ready ? " · Ready" : ""}
+            Your best: {saved.best}%{saved.best >= ready && !plan ? " · Ready" : ""}
           </p>
         ) : null}
       </div>
@@ -506,6 +595,18 @@ function QuizRun({ unit, item, glossary, nextHref, settings }: ItemPageProps<Qui
 
         {question.type === "mc" && question.code ? <CodeBlock code={question.code} /> : null}
         {question.type === "predict" ? <CodeBlock code={question.code} /> : null}
+
+        {ownWordsFirst && question.type === "mc" ? (
+          <label className="quiz-typed quiz-own-words">
+            <span>Say it in your own words first, if you like. Mar&apos;tu doesn&apos;t check this box: it is only for you.</span>
+            <textarea
+              value={saved?.ownWords?.[question.id] ?? ""}
+              rows={2}
+              onChange={(event) => saveOwnWords(key, question.id, event.target.value)}
+              data-testid="quiz-own-words"
+            />
+          </label>
+        ) : null}
 
         {choices ? (
           <ChoiceList
@@ -592,7 +693,7 @@ function QuizRun({ unit, item, glossary, nextHref, settings }: ItemPageProps<Qui
         <div ref={feedbackRef} tabIndex={-1} className="quiz-feedback-wrap" aria-live="polite">
           {result ? (
             <>
-              <Feedback question={question} response={response} checked={result} glossary={glossary} />
+              <Feedback question={question} response={response} checked={result} glossary={glossary} seenBefore={seenBefore.has(question.id)} />
               {question.type === "parsons" && result.view && !result.correct ? (
                 <RunOutput view={result.view} label="Your order printed" />
               ) : null}

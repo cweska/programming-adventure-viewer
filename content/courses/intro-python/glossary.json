@@ -184,6 +184,14 @@
     "example": "say_hi()"
   },
   {
+    "term": "campaign mode",
+    "aliases": [
+      "the campaign's help"
+    ],
+    "plain": "A way to work with only the help the campaign gives: the numbered comments, the check messages, the error box, and Mar'tu's version after 5 minutes. Help stops before the answer.",
+    "example": "# 1. If the hero's affinity is lower ..."
+  },
+  {
     "term": "checkpoint",
     "aliases": [
       "checkpoints"

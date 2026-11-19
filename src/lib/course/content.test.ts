@@ -6,6 +6,7 @@ import { afterAll, describe, expect, it } from "vitest";
 import courseJson from "../../../content/courses/intro-python/course.json";
 import glossaryJson from "../../../content/courses/intro-python/glossary.json";
 import { proseBlocks, type InlinePart } from "../../components/course/prose-format";
+import { readinessPlan } from "./readiness";
 import { courseMetaSchema, glossaryEntrySchema, playablesOf, unitSchema, type Item, type Unit } from "./schema";
 import { rawUnits } from "./units.generated";
 
@@ -567,13 +568,17 @@ describe("exported course content", () => {
 
   it("gates every Quick Check form from Unit 2 on to its questions: all but one, or both of two", () => {
     for (const unit of parsedUnits().filter((entry) => entry.published && entry.order >= 2)) {
+      // The Readiness Check (Unit 10) is not a Quick Check: Part 1's forms let two of their 12 questions go (curriculum
+      // §5.5, Part 1 at 11 of 13 items), and its re-check is all but one, like every Quick Check.
+      const readiness = readinessPlan(unit.items);
       for (const form of unit.items.filter((item) => item.kind === "testout")) {
         if (form.kind !== "testout") continue;
         const quiz = unit.items.find((item) => item.id === `${form.id}-questions`);
         expect(form.questionsToPass, `${unit.id}/${form.id} sets questions_to_pass`).toBeGreaterThan(0);
         const total = quiz?.kind === "quiz" ? quiz.questions.length : 0;
         // QC2 and Recipes I: 3 of 4; Lists: both of 2; Dictionaries: 2 of 3 (all but one, at least two).
-        expect(form.questionsToPass, `${unit.id}/${form.id}`).toBe(Math.max(2, total - 1));
+        const part1 = readiness?.forms.includes(form.id) === true;
+        expect(form.questionsToPass, `${unit.id}/${form.id}`).toBe(part1 ? total - 2 : Math.max(2, total - 1));
         // Every Quick Check exercise is lean, with no hints shown.
         for (const exercise of form.exercises) {
           expect(exercise.explainer, `${unit.id}/${form.id}/${exercise.id}`).toBe("lean");

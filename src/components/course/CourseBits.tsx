@@ -28,9 +28,13 @@ const STATUS_MARK: Record<ItemStatus, string> = {
   "tested-out": "✓",
 };
 
-export function KindBadge({ kind }: { kind: Item["kind"] }) {
-  return <span className={`kind-badge kind-${kind}`}>{KIND_LABEL[kind]}</span>;
+/** An item's kind. `label` replaces the kind's word where it would mislead (a readiness unit's forms are not Quick Checks). */
+export function KindBadge({ kind, label }: { kind: Item["kind"]; label?: string }) {
+  return <span className={`kind-badge kind-${kind}`}>{label ?? KIND_LABEL[kind]}</span>;
 }
+
+/** The kind word for a readiness unit's test-out: its tasks (Part 1, a re-check), never "Quick Check". */
+export const READINESS_TESTOUT_LABEL = "Tasks";
 
 /** Status as an icon and words (never colour alone). */
 export function StatusBadge({ status, testId }: { status: ItemStatus; testId?: string }) {

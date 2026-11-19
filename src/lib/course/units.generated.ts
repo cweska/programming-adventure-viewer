@@ -7,6 +7,7 @@ import unit_lists from "../../../content/courses/intro-python/units/lists.json";
 import unit_dictionaries from "../../../content/courses/intro-python/units/dictionaries.json";
 import unit_loops from "../../../content/courses/intro-python/units/loops.json";
 import unit_spell_recipes from "../../../content/courses/intro-python/units/spell-recipes.json";
+import unit_readiness_check from "../../../content/courses/intro-python/units/readiness-check.json";
 import unit_sample from "../../../content/courses/intro-python/units/sample.json";
 
 /** Every content/courses/intro-python/units/*.json in course order (unpublished ones too). Parse with unitSchema. */
@@ -18,5 +19,6 @@ export const rawUnits: unknown[] = [
   unit_dictionaries,
   unit_loops,
   unit_spell_recipes,
+  unit_readiness_check,
   unit_sample,
 ];

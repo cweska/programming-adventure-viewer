@@ -13,6 +13,7 @@ import {
   leanExplanation,
   LOOPS_UNIT_ORDER,
   ONE_FIXED_PREFIX,
+  READINESS_UNIT_ORDER,
   slipName,
   SPELL_RECIPES_UNIT_ORDER,
   type ExplainContext,
@@ -1838,7 +1839,13 @@ function unitWrongAnswers(unitId: string) {
   const exercise = (key: string) => {
     const found = exercises.get(key);
     expect(found, key).toBeTruthy();
-    return { context: contextOf(found!), setup: found?.setup ? text(found.setup) : "", stdin: found?.stdin, solution: text(found?.solution) };
+    return {
+      context: contextOf(found!),
+      setup: found?.setup ? text(found.setup) : "",
+      stdin: found?.stdin,
+      solution: text(found?.solution),
+      starter: text(found?.starter),
+    };
   };
   return { find, crashes, exercise, order: unit.order };
 }
@@ -3400,4 +3407,240 @@ describe("explainCourseError: Unit 7's slips (functions II), from the unit's own
     // Every crash the unit plans names its slip: none is left to Python's general words.
     expect(generic).toBe(0);
   }, 120_000);
+});
+
+/* ---------------------------------------------------------------------------------------------- */
+/* Unit 10 ("Campaign Readiness Check"): the teacher's site requests 6-9, from the unit's own wrong answers */
+/* ---------------------------------------------------------------------------------------------- */
+
+describe("explainCourseError: Unit 10's slips (the Readiness Check), from the unit's own wrong answers", () => {
+  const unit10 = unitWrongAnswers("readiness-check");
+
+  // [exercise, why, kind, slip (the lean title's words), lean words: the slip and its evidence, never the fix]
+  const cases: [string, string, string, string, string][] = [
+    // Site request 6: text read like a sheet. The call is right; the read is the slip, and the variable is named.
+    ["rc-miniboss-a", "the ward's name read as if it were the page", "text-as-sheet", "text read like a sheet", "Line 37 reads `ward_name` like a sheet: `ward_name` holds text, not a sheet."],
+    ["rc-miniboss-b", "the effect read from the name, not the page: ward_name", "text-as-sheet", "text read like a sheet", "Line 37 reads `ward_name` like a sheet: `ward_name` holds text, not a sheet."],
+    ["rc-trial-ember-ward", "the effect read from the name, not the page (TypeError)", "text-as-sheet", "text read like a sheet", "Line 21 reads `ward_name` like a sheet: `ward_name` holds text, not a sheet."],
+    // Site request 7: a name from the campaign or another mini-boss, with this program's own names as the evidence.
+    ["rc-miniboss-a", "the campaign's name caster copied", "borrowed-name", "a name from the campaign, not this program", "Line 32 uses `caster`, a name from the campaign, not from this program. `cast_ward` has `hero`, `ward_name` and `ward`."],
+    ["rc-miniboss-b", "form A's name hero copied", "borrowed-name", "a name from another mini-boss, not this program", "Line 32 uses `hero`, a name from another mini-boss, not from this program. `use_ward` has `caster`, `ward_name` and `page`."],
+    ["rc-miniboss-b", "form A's habit: the effect read from `ward`", "borrowed-name", "a name from another mini-boss, not this program", "Line 37 uses `ward`, a name from another mini-boss, not from this program. `use_ward` has `caster`, `ward_name` and `page`."],
+    ["rc-miniboss-b", "the campaign's spell copied for page", "borrowed-name", "a name from the campaign, not this program", "Line 32 uses `spell`, a name from the campaign, not from this program."],
+    ["rc-trial-ember-ward", "form B's page name copied", "borrowed-name", "a name from another mini-boss, not this program", "Line 21 uses `page`, a name from another mini-boss, not from this program. `raise_ward` has `mage`, `ward_name` and `ward`."],
+    ["rc-part1-a/step-west", "the campaign's party.move (with the test call: the run stops)", "borrowed-name", "a name from the campaign, not this program", "Line 6 uses `party`, a name from the campaign, not from this program. This program has `scout`."],
+    ["rc-part1-b/step-east", "the campaign's engine name copied", "borrowed-name", "a name from the campaign, not this program", "Line 4 uses `party`, a name from the campaign, not from this program. This program has `scout`."],
+    ["rc-part1-c/step-north", "the campaign's party.move copied (the run stops at the test call)", "borrowed-name", "a name from the campaign, not this program", "Line 6 uses `party`, a name from the campaign, not from this program. This program has `scout`."],
+    ["rc-part1-a/present-warning", "the campaign's print_prompt", "borrowed-name", "a name from the campaign, not this program", "Line 16 uses `print_prompt`, a name from the campaign, not from this program. This program's functions are `show_on_ley_board` and `get_warning`."],
+    // Site request 8: a key with no quotes, on the line that makes the same name.
+    ["rc-part1-a/read-the-sheet", "(a) the key unquoted (a variable, not text)", "unquoted-key", "a key with no quotes", "The mistake is on line 15: a key with no quotes."],
+    // Site request 9: Python stopped inside random.py; the student's line is named, with the name in quotes.
+    ["rc-part1-a/roll-the-die", "the parameter's name in quotes", "quoted-name", "a parameter's name in quotes", "Line 7 hands `random.randint` the text `\"die_size\"`: with quotes, it is text, not the parameter `die_size`."],
+    ["rc-part1-b/throw-the-die", "the parameter in quotes", "quoted-name", "a parameter's name in quotes", "Line 5 hands `random.randint` the text `\"die_size\"`: with quotes, it is text, not the parameter `die_size`."],
+    ["rc-part1-c/toss-the-die", "the parameter in quotes", "quoted-name", "a parameter's name in quotes", "Line 5 hands `random.randint` the text `\"sides\"`: with quotes, it is text, not the parameter `sides`."],
+  ];
+
+  it("names each slip with its lean kind and its evidence, never the fix (site requests 6-9)", () => {
+    for (const [key, why, kind, slip, lean] of cases) {
+      const found = unit10.find(key, why);
+      expect(found.context.explainer, `${key}: lean`).toBe("lean");
+      const got = explainCourseError(crashOf(found), found.code, found.context);
+      expect(got.kind, `${key}: ${why}`).toBe(kind);
+      expect(got.slip ?? slipName(got.kind), `${key}: ${why}`).toBe(slip);
+      expect(got.explainer, `${key}: ${why}`).toBe("lean");
+      expect(got.hint, `${key}: ${why}`).toContain(lean);
+      // Lean: no line to type, no "Use ...", no "Take the quotes off", no "Read from it".
+      expect(got.hint, `${key}: ${why}`).not.toMatch(/\b(Use|Take|Read from|Swap|Hand over|Write)\b/);
+      expect(got.title.toLowerCase(), `${key}: ${why}`).toContain(slip.replace(/^(a|an|the) /, "").toLowerCase().slice(0, 12));
+    }
+  });
+
+  it("gives the full explainer one fix, on the line it goes on, for the same slips", () => {
+    const full = (key: string, why: string) => {
+      const found = unit10.find(key, why);
+      return explainCourseError(crashOf(found), found.code, { ...found.context, explainer: "full" });
+    };
+    expect(full("rc-miniboss-a", "the ward's name read as if it were the page").hint).toBe(
+      "Line 37 reads `ward_name` like a sheet, but `ward_name` holds text: a name, not a sheet. The sheet that name opens is `ward`. Read from it: `ward[\"effect\"](hero)`",
+    );
+    expect(full("rc-miniboss-a", "the campaign's name caster copied").hint).toContain("Use `hero`, this program's name for it:");
+    expect(full("rc-miniboss-b", "form A's habit: the effect read from `ward`").hint).toContain("Use `page`, this program's name for it:");
+    expect(full("rc-part1-a/roll-the-die", "the parameter's name in quotes").hint).toContain("Take the quotes off: `return random.randint(1, die_size)`");
+    expect(full("rc-part1-a/read-the-sheet", "(a) the key unquoted (a variable, not text)").hint).toContain('`mana = hero["mana"]`');
+  });
+
+  it("opens only from Unit 10 on: Units 1 to 7 keep their older advice for the same code", () => {
+    // [exercise, why, the kind the explainer gave before Unit 10 (and still gives below it)]
+    const older: [string, string, string][] = [
+      ["rc-miniboss-a", "the ward's name read as if it were the page", "swapped-values"],
+      ["rc-miniboss-a", "the campaign's name caster copied", "unknown-name"],
+      ["rc-part1-a/present-warning", "the campaign's print_prompt", "unknown-function"],
+      ["rc-part1-a/read-the-sheet", "(a) the key unquoted (a variable, not text)", "unknown-name"],
+      ["rc-part1-a/roll-the-die", "the parameter's name in quotes", "text-plus-number"],
+      ["rc-trial-ember-ward", "form B's page name copied", "spelling"],
+    ];
+    for (const [key, why, before] of older) {
+      const found = unit10.find(key, why);
+      const got = explainCourseError(crashOf(found), found.code, { ...found.context, unitOrder: SPELL_RECIPES_UNIT_ORDER });
+      expect(got.kind, `${key}: ${why}, unit 7`).toBe(before);
+      expect(got.shownLine, `${key}: ${why}, unit 7`).toBeUndefined();
+    }
+    expect(READINESS_UNIT_ORDER).toBe(10);
+  });
+
+  it("leaves Python's 'Did you mean' off the shown last line when it names something this student never met", () => {
+    const caster = unit10.find("rc-miniboss-a", "the campaign's name caster copied");
+    const got = explainCourseError(crashOf(caster), caster.code, caster.context);
+    expect(got.raw).toContain("Did you mean: 'aiter'?");
+    expect(got.shownLine).toBe("NameError: name 'caster' is not defined.");
+    // A suggestion from the student's own code stays: `mana_cost` is on screen.
+    const spelling = unit10.find("rc-part1-a/mend-three", "line 11 left (spec: the NameError)");
+    const kept = explainCourseError(crashOf(spelling), spelling.code, spelling.context);
+    expect(kept.raw).toContain("Did you mean: 'mana_cost'?");
+    expect(kept.shownLine).toBeUndefined();
+  });
+
+  it("keeps the task's own name, not made yet, on its own row (a skipped `ward` is not borrowed)", () => {
+    const skipped = unit10.find("rc-trial-ember-ward", "Get it skipped: no page variable made");
+    const got = explainCourseError(crashOf(skipped), skipped.code, skipped.context);
+    // Mar'tu's version makes `ward` inside `raise_ward`: the missing line goes on line 15 or above it, never "Fix line 15".
+    expect(got.kind).toBe("not-made-yet");
+    expect(got.fixAbove).toBe(true);
+    expect(got.hint).toContain("The mistake is on line 15 or a line above it: a box that is not made yet.");
+    // A name the program really makes is never "from the campaign".
+    const unit10Context: ExplainContext = { unitOrder: READINESS_UNIT_ORDER };
+    expect(explainRun("def go(caster):\n    print(caster)\n\n\ngo(spell)\n", [], unit10Context).kind).toBe("borrowed-name");
+    expect(explainRun("spell = 3\nprint(spel)\n", [], unit10Context).kind).not.toBe("borrowed-name");
+  });
+
+  it("explains every crash wrong answer of Unit 10 lean, with no raw NoneType and no swapped values for a right call", async () => {
+    let generic = 0;
+    for (const [at, wrong] of unit10.crashes().entries()) {
+      if (at % 10 === 0) await new Promise((resume) => setImmediate(resume));
+      const result = runCourseChecks(wrong.code, [], { setup: wrong.setup, stdin: wrong.stdin });
+      if (result.ok) continue;
+      const got = explainCourseError(result.traceback, wrong.code, wrong.context);
+      const said = `${got.title} ${got.hint}`;
+      expect(got.explainer, `${wrong.key}: ${wrong.why}`).toBe("lean");
+      expect(said, `${wrong.key}: ${wrong.why}`).not.toContain("NoneType");
+      expect(said, `${wrong.key}: ${wrong.why}`).not.toMatch(/\b(recipe|ingredient)s?\b/i);
+      expect(got.kind, `${wrong.key}: ${wrong.why}`).not.toBe("swapped-values");
+      expect(said, `${wrong.key}: ${wrong.why}`).not.toContain("random.py");
+      // "in quotes" only when the line it names has a quote on it: never a slip that is not on screen.
+      if (/\bin quotes\b/.test(said)) {
+        const named = got.slipLine ?? Number(result.traceback.match(/line (\d+)/g)?.at(-1)?.slice(5));
+        expect(wrong.code.split("\n")[named - 1] ?? "", `${wrong.key}: ${wrong.why}`).toMatch(/["']/);
+      }
+      if (got.kind === "wrong-kind-of-value" && !got.slip) generic += 1;
+    }
+    // Every crash the unit plans names its slip: none is left to the catch-all "values of kinds that don't go together".
+    expect(generic).toBe(0);
+  }, 120_000);
+
+  it("names the slips the fixer's review found, on the line the fix goes on", () => {
+    const lean = (key: string, why: string) => {
+      const found = unit10.find(key, why);
+      return explainCourseError(crashOf(found), found.code, found.context);
+    };
+    const full = (key: string, why: string) => {
+      const found = unit10.find(key, why);
+      return explainCourseError(crashOf(found), found.code, { ...found.context, explainer: "full" });
+    };
+    const written = (key: string, code: string, explainer?: "full") => {
+      const found = unit10.exercise(key);
+      return explainCourseError(crashOf({ code, setup: found.setup, stdin: found.stdin }), code, { ...found.context, ...(explainer ? { explainer } : {}) });
+    };
+    // Numbers on the def line: the lean box names the numbers, never quotes that are not there.
+    for (const [key, at] of [["rc-part1-b/shield-cost", 5], ["rc-part1-c/fuel-cost", 6]] as const) {
+      const got = lean(key, "numbers on the def line");
+      expect(got.title, key).toBe("Number where a parameter's name goes");
+      expect(got.hint, key).toContain(`The mistake is on line ${at}: a number where a parameter's name goes.`);
+      expect(got.hint, key).not.toContain("quotes");
+    }
+    // A stored call's answer called with `()`: line 16 is Mar'tu's own store, so the slip is named on line 17.
+    for (const [key, name] of [["rc-part1-b/present-farewell", "farewell"], ["rc-part1-c/present-reading", "reading"]] as const) {
+      const got = lean(key, "the variable called like a function");
+      expect(got.slipLine, key).toBeUndefined();
+      expect(got.title, key).toBe("Text called like a function");
+      expect(got.hint, key).toContain(`Line 17 calls \`${name}\` with \`()\`, and \`${name}\` holds text, not a function.`);
+      expect(full(key, "the variable called like a function").hint, key).toContain(`\`show_on_ley_board(${name})\``);
+    }
+    const renamed = unit10.exercise("rc-part1-b/present-farewell").solution.replace("farewell = get_farewell()", "words = get_farewell()").replace("show_on_ley_board(farewell)", "show_on_ley_board(words())");
+    expect(written("rc-part1-b/present-farewell", renamed).slipLine).toBeUndefined();
+    // The store written backwards, with a function already made by `def`: no "function written like math", and
+    // Python's `==` guess is called wrong.
+    const reversed = lean("rc-part1-b/present-farewell", "the store line reversed");
+    expect(reversed.kind).toBe("store-backwards");
+    expect(reversed.hint).toContain("The mistake is on line 16: a box filled the wrong way around. Python's last line guesses `==`, but that guess is wrong here.");
+    expect(full("rc-part1-c/present-reading", "the store line reversed").hint).toContain("`reading = get_reading()`");
+    // The whole sheet replaced by a number: the store above is named, not the print Python stopped on.
+    const replaced = [
+      ["rc-part1-a/spend-the-cost", "the whole sheet replaced by the number", 4, "hero"],
+      ["rc-part1-b/spend-the-mana", "the sheet replaced by a number", 8, "oogrish"],
+      ["rc-part1-c/spend-the-mana", "the sheet replaced by a number", 8, "lucky"],
+    ] as const;
+    for (const [key, why, at, sheet] of replaced) {
+      const got = lean(key, why);
+      expect(got.slipLine, key).toBe(at);
+      expect(got.title, key).toBe("Sheet replaced by a number");
+      expect(got.hint, key).toContain(`Line ${at} puts a number in \`${sheet}\`, so \`${sheet}\` is no longer a sheet: a number can't be read with \`[ ]\`.`);
+    }
+    expect(full("rc-part1-a/spend-the-cost", "the whole sheet replaced by the number").hint).toContain('`hero["mana"] = hero["mana"] - cost`');
+    // `==` where one `=` stores, with the key in a variable (`book[spell_name] == spell`).
+    for (const [key, why] of [["rc-part1-a/read-the-sheet", "(c) == for ="], ["rc-part1-b/read-and-write-the-sheets", "CP3 == for ="], ["rc-part1-c/read-the-fuel-sheet", "CP3 == for ="]] as const) {
+      const got = lean(key, why);
+      expect(got.kind, key).toBe("comparison-alone");
+      expect(got.hint, key).toContain("`==` where one `=` stores a key.");
+    }
+    // A function not made yet, and a box Mar'tu makes inside the function: "line N or a line above it".
+    const warning = lean("rc-part1-a/present-warning", "a variable never stored");
+    expect(warning.fixAbove).toBe(true);
+    expect(warning.hint).toContain("The mistake is on line 15 or a line above it: a box that is not made yet.");
+    const starter = written("rc-part1-a/glug-cost", unit10.exercise("rc-part1-a/glug-cost").starter);
+    expect(starter.kind).toBe("recipe-not-made-yet");
+    expect(starter.fixAbove).toBe(true);
+    expect(starter.hint).toContain("The mistake is on line 8 or a line above it: a function that is not made yet.");
+    // The trial: the page read before any page line exists, guarded by `ward_name not in mage["wards"]`.
+    const trial = unit10.exercise("rc-trial-ember-ward").starter.replace("    # Get it, compare, act.\n", '    # Get it, compare, act.\n    ward_name["effect"](mage)\n');
+    const readEarly = written("rc-trial-ember-ward", trial);
+    expect(readEarly.kind).toBe("text-as-sheet");
+    expect(readEarly.hint).toContain("Line 15 reads `ward_name` like a sheet");
+    expect(readEarly.slipLine).toBeUndefined();
+    // A key with no quotes inside a function (UnboundLocalError), when Mar'tu reads that key with quotes.
+    const boss = unit10.exercise("rc-miniboss-a").solution.replace('    ward = hero["wards"][ward_name]\n', '    ward = hero["wards"][ward_name]\n    mana = hero[mana]\n');
+    expect(written("rc-miniboss-a", boss).kind).toBe("unquoted-key");
+    const page = unit10.exercise("rc-trial-ember-ward").solution.replace('ward = mage["wards"][ward_name]', 'ward = mage["wards"][ward]');
+    expect(written("rc-trial-ember-ward", page).kind).toBe("variable-in-function");
+    // "A name from another mini-boss" only in a mini-boss: the re-check's bar_gap gets the older row.
+    const gap = unit10.exercise("rc-recheck/bar-gap").solution.replace("max_mana - mana", 'hero["max_mana"] - hero["mana"]');
+    expect(written("rc-recheck/bar-gap", gap).kind).not.toBe("borrowed-name");
+    // Python's guess 'print' for `price`, a name that is not called: left off the shown last line.
+    const price = lean("rc-part1-a/glug-cost", "price * sips (spec: PNM), with the call");
+    expect(price.raw).toContain("Did you mean: 'print'?");
+    expect(price.shownLine).toBe("NameError: name 'price' is not defined.");
+    // A call misspelled (`prnt(...)`) keeps Python's right guess.
+    const prnt = written("rc-part1-a/glug-cost", unit10.exercise("rc-part1-a/glug-cost").solution.replace("print(glug", "prnt(glug"));
+    expect(prnt.shownLine).toBeUndefined();
+  });
+
+  it("keeps every Unit 1-7 explanation exactly as it was before Unit 10 (kind, title and hint)", async () => {
+    const before = JSON.parse(readFileSync(path.join(process.cwd(), "src/lib/course/explain.before-unit10.json"), "utf8")) as Record<string, string>;
+    const now: Record<string, string> = {};
+    for (const unitId of ["hello-world", "control-flow", "first-recipes", "lists", "dictionaries", "loops", "spell-recipes"]) {
+      for (const [at, wrong] of unitWrongAnswers(unitId).crashes().entries()) {
+        // Hundreds of python3 runs, each one blocking: let the test worker answer vitest between them.
+        if (at % 10 === 0) await new Promise((resume) => setImmediate(resume));
+        const result = runCourseChecks(wrong.code, [], { setup: `import random as _seeded\n_seeded.seed(5)\n${wrong.setup}`, stdin: wrong.stdin });
+        if (result.ok) continue;
+        const got = explainCourseError(result.traceback, wrong.code, wrong.context);
+        const hash = createHash("sha256").update(`${got.title}\n${got.hint}`).digest("hex").slice(0, 16);
+        now[`${unitId}:${wrong.key}:${wrong.why}`] = `${got.kind} ${hash}`;
+        expect(got.shownLine, `${unitId}:${wrong.key}`).toBeUndefined();
+      }
+    }
+    const { _about: about, ...expected } = before;
+    expect(about).toContain("before Unit 10");
+    expect(Object.keys(now).length).toBe(Object.keys(expected).length);
+    expect(now).toEqual(expected);
+  }, 300_000);
 });

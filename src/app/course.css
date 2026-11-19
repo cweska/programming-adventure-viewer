@@ -805,6 +805,65 @@
   color: var(--course-violet-soft);
 }
 
+/* The Readiness Check's result (Unit 10): Part 1 skill by skill, the mini-boss, and the verdict. */
+.readiness-result {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 18px;
+  background: var(--course-violet-bg);
+  border: 1px solid var(--course-violet);
+}
+
+.readiness-result h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.readiness-result p {
+  margin: 0;
+}
+
+.readiness-result .readiness-verdict {
+  font-weight: 600;
+}
+
+.readiness-result.is-ready .readiness-verdict {
+  color: var(--course-right);
+}
+
+.readiness-result .readiness-list-title {
+  color: var(--course-muted);
+}
+
+.readiness-missed {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding-left: 1.2em;
+}
+
+.readiness-result a {
+  color: var(--course-focus);
+  text-underline-offset: 3px;
+}
+
+/* A readiness form that opens later: no link, and the lock says when it opens. */
+.item-row.is-locked {
+  border-style: dashed;
+}
+
+.item-row.is-locked h3 {
+  color: var(--course-muted);
+}
+
+.status-badge.status-locked {
+  white-space: normal;
+  text-align: left;
+  border-radius: 12px;
+}
+
 .unit-items {
   display: flex;
   flex-direction: column;

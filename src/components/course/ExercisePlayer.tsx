@@ -46,6 +46,7 @@ import {
   hintButtonLabel,
   hintsOpen,
   isBlankOrStarter,
+  isCampaignMode,
   isDebugExercise,
   isSolutionCode,
   namesALine,
@@ -133,6 +134,11 @@ export type ExercisePlayerProps = {
   next?: ExerciseNext;
   /** Called once when a run passes every checkpoint. */
   onDone?: () => void;
+  /**
+   * Progress keys of twin exercises whose Mar'tu's version, opened before this one's pass, makes the pass "with Mar'tu's
+   * version" (the Readiness Check's two mini-bosses are one program with other names: readiness.ts).
+   */
+  compareFrom?: readonly string[];
 };
 
 type RunView = {
@@ -442,6 +448,7 @@ export function ExercisePlayer({
   mode,
   next,
   onDone,
+  compareFrom,
 }: ExercisePlayerProps) {
   const progress = useCourseProgress();
   const saved: ExerciseProgress | undefined = progress.exercises[key];
@@ -689,12 +696,13 @@ export function ExercisePlayer({
       hasAssemble: Boolean(exercise.assemble),
       solo: exercise.solo === true,
       solution: exercise.solution,
+      campaignMode: isCampaignMode(exercise, support, mode),
     });
     // Before the first Run under light support: the ladder up to Where to look (a prefix, so the saved count
     // still lines up once the rest opens).
     const point = all.findIndex((rung) => rung.kind === "point");
     return lightBeforeRun && point >= 0 ? all.slice(0, point + 1) : all;
-  }, [helpCheckpoint, exercise.anotherWay.length, exercise.assemble, exercise.solo, exercise.solution, lightBeforeRun]);
+  }, [helpCheckpoint, exercise, support, mode, lightBeforeRun]);
   /**
    * Start me off has nothing to give when the step's line is already begun, or right after a crash (fix that first).
    * Mar'tu's other finished lines (the starter's, an earlier step's) are not this step's line begun. On a step that
@@ -881,7 +889,10 @@ export function ExercisePlayer({
       lastRunSource.current = source;
       helpSinceRun.current = false;
       ranSinceRung.current = true;
-      updateExercise(key, (previous) => applyRun(previous, outcome, { code: source, bonusPassed: revealPass ? false : bonusGrade?.allPassed }));
+      const compareElsewhere = (compareFrom ?? []).some((other) => getCourseProgress().exercises[other]?.solutionShown === true);
+      updateExercise(key, (previous) =>
+        applyRun(previous, outcome, { code: source, bonusPassed: revealPass ? false : bonusGrade?.allPassed, compareElsewhere }),
+      );
       if (outcome.newlyPassed.length > 0) progressAtSessionMs.current = sessionNow.current;
       // The student's own pass: Mar'tu's version is no longer what is in the editor.
       if (outcome.allPassed && copiedSolution.current) forgetCopiedSolution();
@@ -1531,6 +1542,7 @@ export function ExercisePlayer({
               moreAfterRun={lightBeforeRun}
               crashIsTask={view?.crashSwitchOff === true}
               crashInStarter={view?.crashInStarter === true}
+              compareAfterMinutesOnly={Number.isFinite(settings.solutionAfterFailedRuns) ? null : settings.solutionAfterMinutes}
               startInCode={startInCode}
               startNote={(start) => startNote(code, start, startTarget(helpCheckpoint), editorPlaced)}
               onReveal={revealRung}
@@ -1691,10 +1703,11 @@ function ExerciseConsole({
             <p className="ex-explainer-title">{view.explanation.title}</p>
             <Prose text={view.explanation.hint} className="ex-explainer-hint" testId="explainer-hint" />
             {pythonLastLine(view.explanation.raw) ? (
-              // Mar'tu teaches "read the last line of Python's message first": it is on screen, not folded away.
+              // Mar'tu teaches "read the last line of Python's message first": it is on screen, not folded away. A
+              // "Did you mean" that suggests a name this student never met is left off it (shownLine, Unit 10).
               <p className="ex-explainer-python" data-testid="python-last-line">
                 <span className="ex-explainer-python-label">Python&apos;s last line:</span>{" "}
-                <code className="inline-code">{pythonLastLine(view.explanation.raw)}</code>
+                <code className="inline-code">{view.explanation.shownLine ?? pythonLastLine(view.explanation.raw)}</code>
               </p>
             ) : null}
             {view.explanation.raw ? (
