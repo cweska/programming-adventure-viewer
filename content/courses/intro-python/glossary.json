@@ -17,6 +17,14 @@
     "example": "[48, 48, 47].count(48)"
   },
   {
+    "term": ".find()",
+    "aliases": [
+      "find()"
+    ],
+    "plain": "Hands back the position where some text starts, counted from 0. When the text is not there, it hands back -1. Here -1 means *not found*. It is not the last letter.",
+    "example": "\"EXIT\".find(\"X\")   # 1"
+  },
+  {
     "term": ".get()",
     "aliases": [
       "get()"
@@ -39,6 +47,15 @@
     ],
     "plain": "Hands back each tag (key) of a dictionary together with its value, as a pair, like an (x, y) point in math class. A loop can give the pair two names.",
     "example": "for snack, price in menu.items():"
+  },
+  {
+    "term": ".join()",
+    "aliases": [
+      "join()",
+      "join"
+    ],
+    "plain": "Glues a list of texts into one text. Ask the glue, not the list: `\" \".join(bits)` puts a space between the pieces.",
+    "example": "\" \".join([\"Shield\", \"up.\"])"
   },
   {
     "term": ".keys()",
@@ -73,6 +90,49 @@
     ],
     "plain": "Takes a value out of a list: the first item that is the same as the value you hand it. You give the value, not its position. If the value isn't in the list, Python stops with a ValueError.",
     "example": "wall.remove(99)"
+  },
+  {
+    "term": ".replace()",
+    "aliases": [
+      "replace()"
+    ],
+    "plain": "Hands back a copy with every old piece swapped for a new one, like Find and Replace in a document: `.replace(old, new)`. Capitals must match exactly.",
+    "example": "\"Rust Ward\".replace(\"Rust\", \"Moon\")"
+  },
+  {
+    "term": ".split()",
+    "aliases": [
+      "split()",
+      "split"
+    ],
+    "plain": "Cuts text into a list of pieces. With empty parentheses, it cuts at every space. `.split(\", \")` cuts at each comma and space.",
+    "example": "\"Shield up.\".split()   # ['Shield', 'up.']"
+  },
+  {
+    "term": ".strip()",
+    "aliases": [
+      "strip()",
+      "strip"
+    ],
+    "plain": "Hands back a copy with the spaces cut off both ends, like trimming the edges of a page. Spaces between the words stay.",
+    "example": "\"  hi  \".strip()   # hi"
+  },
+  {
+    "term": ".title()",
+    "aliases": [
+      "title()"
+    ],
+    "plain": "Hands back a copy of the text with a capital at the start of every word, like a book title.",
+    "example": "\"moon step\".title()   # Moon Step"
+  },
+  {
+    "term": ".upper()",
+    "aliases": [
+      "upper()",
+      "upper"
+    ],
+    "plain": "Hands back a copy of the text in capital letters. The text in the variable does not change.",
+    "example": "\"teal\".upper()   # TEAL"
   },
   {
     "term": ".values()",
@@ -192,11 +252,32 @@
     "example": "# 1. If the hero's affinity is lower ..."
   },
   {
+    "term": "chain",
+    "aliases": [
+      "chains",
+      "chained",
+      "chaining",
+      "method chain"
+    ],
+    "plain": "Methods one right after another, like `cry.lower().capitalize()`. Python works left to right. Each method works on the copy the one before it handed back.",
+    "example": "cry.lower().capitalize()"
+  },
+  {
     "term": "checkpoint",
     "aliases": [
       "checkpoints"
     ],
     "plain": "One small task in an exercise. It turns green when your code does it."
+  },
+  {
+    "term": "cipher",
+    "aliases": [
+      "ciphers",
+      "ley shift",
+      "secret code"
+    ],
+    "plain": "A secret code. In a shift cipher, each letter moves the same number of steps along the alphabet. That number is the key, and it moves the letters back too.",
+    "example": "\"abc\" shifted by 1 is \"bcd\""
   },
   {
     "term": "colon",
@@ -315,6 +396,28 @@
     "example": "SyntaxError: unterminated string literal"
   },
   {
+    "term": "escape mark",
+    "aliases": [
+      "escape marks",
+      "escape",
+      "escapes",
+      "backslash",
+      "new line"
+    ],
+    "plain": "A backslash inside text, with one mark or letter after it. `\\\"` puts a quote mark in the text. `\\n` starts a new line, like pressing Enter. The backslash itself never shows.",
+    "example": "print(\"Gold\\nTeal\")"
+  },
+  {
+    "term": "f-string",
+    "aliases": [
+      "f-strings",
+      "f string",
+      "f strings"
+    ],
+    "plain": "Text with an `f` right before the quotes. Each `{name}` inside it is a blank, like in Mad Libs: Python fills it with what the variable holds. No `+` or `str()` is needed.",
+    "example": "f\"{hero} has {coins} coins\""
+  },
+  {
     "term": "floor division",
     "aliases": [
       "whole division"
@@ -381,6 +484,16 @@
     ],
     "plain": "A line that asks a yes-or-no question, like *If it rains, take a coat.* When the answer is `True`, Python runs the indented lines under it. When it is `False`, Python skips them.",
     "example": "if hours_left < 3:\n    print(\"Get inside!\")"
+  },
+  {
+    "term": "immutable",
+    "aliases": [
+      "can't change in place",
+      "cannot change",
+      "unchangeable"
+    ],
+    "plain": "A programmer's word for *can't change*. You can't swap one letter of a string: `tag[0] = \"R\"` is an error. Build a new string and put it in the variable instead.",
+    "example": "tag = \"R\" + tag[1:]"
   },
   {
     "term": "import",
@@ -624,6 +737,16 @@
     ],
     "plain": "An older word for fix: to mend a line is to fix a small mistake in it, the way you mend a small tear in a sleeve. A slip is a small mistake.",
     "example": "print(\"Hi)   becomes   print(\"Hi\")"
+  },
+  {
+    "term": "method",
+    "aliases": [
+      "methods",
+      "string method",
+      "string methods"
+    ],
+    "plain": "A tool you use with a dot, like `motto.upper()`. The dot asks the text to do a job, and the text hands back a new copy. The variable doesn't change, so keep the copy with `=`.",
+    "example": "motto = motto.upper()"
   },
   {
     "term": "NameError",

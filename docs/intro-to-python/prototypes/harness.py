@@ -728,11 +728,22 @@ def ladder_warnings(ex: dict, where: str, report: Report) -> None:
             last = hints[-1]
             placed = re.search(r"\b(in place of|on the line after|under|above)\s+(?:the\s+)?`[^`\n]+`", last)
             vague = re.search(r"\b(Change (?:line \d+|the last line) to|[Uu]nder (?:comment \d+|the (?:first|second|last) "
-                              r"comment|the comment)|above the `?print`?|below the (?:comments|sheet))", last)
+                              r"comment|the comment)|above the `?print`?|below the (?:comments|sheet)|on line \d+|in place "
+                              r"of line \d+|(?:right )?below line \d+|as the last line|in place of your `)", last)
             if vague and not placed:
                 report.warn(where, f"{label}: the last hint says where the line goes ({vague.group(0)!r}) in words Start "
                                    "me off cannot read, so it lands at the end of the code. Say it with in place of "
                                    "`...`, under `# N.`, on the line after `...` or above `...` (FORMAT.md, hints)")
+            # No place at all, for a line Mar'tu's version indents (a function's body, a loop's): Start me off puts it
+            # at the end of the code, with no spaces in front, outside the function (Unit 9's review).
+            if not vague and not placed and isinstance(solution, str) and not re.search(r"\b(at the bottom|at the end)\b", last):
+                head = squash(start)
+                hit = next((row for row in solution.split("\n") if squash(row).startswith(head)), None)
+                if hit is not None and hit[:1] in (" ", "\t"):
+                    report.warn(where, f"{label}: the last hint names no place for `{start}`, which Mar'tu's version "
+                                       "indents, so Start me off puts it at the end of the code, outside its block. "
+                                       "Say where with in place of `...`, under `...`, on the line after `...` or above "
+                                       "`...` (FORMAT.md, hints)")
 
 
 def verify_unit(path: Path, gate: ConceptGate, report: Report) -> None:

@@ -16,6 +16,8 @@ import {
   READINESS_UNIT_ORDER,
   slipName,
   SPELL_RECIPES_UNIT_ORDER,
+  STRINGS_UNIT_ORDER,
+  TEXT_POSITION_WORD,
   type ExplainContext,
 } from "./explain";
 import { flattenChecks, gradeCheckpoints } from "./grading";
@@ -3644,3 +3646,395 @@ describe("explainCourseError: Unit 10's slips (the Readiness Check), from the un
     expect(now).toEqual(expected);
   }, 300_000);
 });
+
+/* ---------------------------------------------------------------------------------------------- */
+/* Unit 9 ("Strings: Runes and Ribbons"): the teacher's site requests 1 and 2, from the unit's own wrong answers */
+/* ---------------------------------------------------------------------------------------------- */
+
+describe("explainCourseError: Unit 9's slips (strings), from the unit's own wrong answers", () => {
+  const unit9 = unitWrongAnswers("strings");
+
+  it("is Unit 9 on the course map, and its rows open there (Unit 10, order 10, reaches them too)", () => {
+    expect(unit9.order).toBe(STRINGS_UNIT_ORDER);
+    expect(STRINGS_UNIT_ORDER).toBeGreaterThan(SPELL_RECIPES_UNIT_ORDER);
+    expect(STRINGS_UNIT_ORDER).toBeLessThan(READINESS_UNIT_ORDER);
+    // Site request 2: the strings lessons' word for an index in text, after the plain-language pass.
+    expect(TEXT_POSITION_WORD).toBe("position");
+  });
+
+  // [exercise, the wrong answer's `why`, Python 3.13's own words, kind, the full hint, the line the crash banner names]
+  const rows: [string, string, string, string, string, number | undefined][] = [
+    // (1) Text changed in place: build a new one and put it back, in the line's own names (Mar'tu's line when it has one).
+    ["strings-are-rows-of-letters/letters-cant-change", "the starter: a letter changed in place (TypeError)", "does not support item assignment", "text-changed-in-place",
+      'Line 4 tries to change one letter of `word`, but text can\'t change one letter. Build a new one and put it back: `word = "G" + word[1:]`', undefined],
+    ["strings-are-rows-of-letters/letters-have-places", "a letter changed in place: initials[0] = name[0] (TypeError)", "does not support item assignment", "text-changed-in-place",
+      "Line 18 tries to change one letter of `initials`, but text can't change one letter. Build a new one and put it back: `initials = initials + name[0]`", undefined],
+    ["extra-letter-by-letter/broken-spell-8a", "line 2 mended, a letter still changed in place", "does not support item assignment", "text-changed-in-place",
+      'Line 4 tries to change one letter of `tag`, but text can\'t change one letter. Build a new one and put it back: `tag = "L" + tag[1:]`', undefined],
+    ["the-institute-cipher", "a letter changed in place inside encode (TypeError)", "does not support item assignment", "text-changed-in-place",
+      'Line 21 tries to change one letter of `message`, but text can\'t change one letter. Build new text instead: start with empty text, `""`, and glue each new letter on with `+`.', undefined],
+    // (2) A list asked to join itself: ask the glue, with the line's own glue and list.
+    ["words-that-change-shape/split-the-clipped", "join called the wrong way round (AttributeError)", "'list' object has no attribute 'join'", "join-on-list",
+      'Line 19 asks the list `words` to join itself, but a list can\'t join. Ask the glue instead: `joined = " ".join(words)`', undefined],
+    ["words-that-change-shape/whats-in-it-for-me", "clip: join called the wrong way round (AttributeError)", "'list' object has no attribute 'join'", "join-on-list",
+      'Line 10 asks the list `words[:3]` to join itself, but a list can\'t join. Ask the glue instead: `short = " ".join(words[:3])`', undefined],
+    ["words-that-change-shape/broken-spell-8b", "bug 1 mended, the join still the wrong way round", "'list' object has no attribute 'join'", "join-on-list",
+      'Line 9 asks the list `words` to join itself, but a list can\'t join. Ask the glue instead: `print(" ".join(words))`', undefined],
+    ["the-water-stained-log", "join called the wrong way round (AttributeError)", "'list' object has no attribute 'join'", "join-on-list",
+      'Line 37 asks the list `clean_marks` to join itself, but a list can\'t join. Ask the glue instead: `clean_line = ", ".join(clean_marks)`', undefined],
+    // (3) A method with no `()`: in the chain, asked `in`, or stored on a line above (that line is the one to fix).
+    ["words-that-change-shape/chain-the-spells", "no () in the middle of the chain (AttributeError on the student's own Run)", "'builtin_function_or_method' object has no attribute 'capitalize'", "method-without-brackets",
+      "`.lower` has no `()`, so the method never ran: `raw.lower` is the method itself, not text. Python runs a method only with `()`. Add `()` after `.lower`: `return raw.lower().capitalize()`", undefined],
+    ["words-that-change-shape/broken-spell-8b", "the starter: .lower with no () (AttributeError on line 4)", "'builtin_function_or_method' object has no attribute 'capitalize'", "method-without-brackets",
+      "Line 3 wrote `.lower` with no `()`, so the method never ran: `note` holds the method itself, not text. Python runs a method only with `()`. Add `()` on line 3: `note = note.lower()`", 3],
+    ["words-that-change-shape/strip-and-replace", "no (): the method itself, then glued into the print (TypeError)", 'can only concatenate str (not "builtin_function_or_method") to str', "method-without-brackets",
+      "Line 3 wrote `.strip` with no `()`, so the method never ran: `note` holds the method itself, not text. Python runs a method only with `()`. Add `()` on line 3: `note = note.strip()`", 3],
+    // `.replace` needs its values: Mar'tu's line, never an empty `()` that would stop the code again.
+    ["words-that-change-shape/strip-and-replace", "replace with no (), the print kept: glued into the print (TypeError on the student's own Run)", "builtin_function_or_method", "method-without-brackets",
+      'Line 6 wrote `.replace` with no `()`, so the method never ran: `note` holds the method itself, not text. Python runs a method only with `()`. Add `()` on line 6: `note = note.replace("compass", "Ley Clock")`', 6],
+    ["extra-letter-by-letter/is-it-in-there", ".lower with no () (the method itself)", "argument of type 'builtin_function_or_method' is not iterable", "method-without-brackets",
+      '`.lower` has no `()`, so the method never ran: `report.lower` is the method itself, not text. Python runs a method only with `()`. Add `()` after `.lower`: `return "red" in report.lower()`', undefined],
+    // (4) A list used like text: the loop's item, or one item; `int()` handed the whole list.
+    ["words-that-change-shape/split-the-clipped", "the list treated as text: .lower() on a list (AttributeError)", "'list' object has no attribute 'lower'", "list-as-text",
+      "Line 4 asks `sentences` for `.lower()`, but `.split()` handed back a list, so `sentences` holds a list, not text, and a list has no `.lower()`. Use `.lower()` on one item: `sentences[0].lower()`", undefined],
+    ["the-water-stained-log", ".split() hands back a list, then treated as text (marks.replace inside the loop)", "'list' object has no attribute 'replace'", "list-as-text",
+      'Line 13 asks `marks` for `.replace()`, but `.split()` handed back a list, so `marks` holds a list, not text. Inside the loop, `mark` holds one item: `clean = mark.replace("hrs", "")`', undefined],
+    ["the-water-stained-log", "int() on the whole list", "not 'list'", "list-as-text",
+      "Line 20 hands `clean_marks` to `int()`, but `clean_marks` holds a list, not text. `int()` turns one piece of text into a number: use it on one item at a time, in a loop over `clean_marks`.", undefined],
+    // (5) `.append()` on text: glue it on with `+`.
+    ["strings-are-rows-of-letters/letters-have-places", "a list method on text: initials.append(name[0])", "'str' object has no attribute 'append'", "append-on-text",
+      "Line 17 asks `initials` for `.append()`, but `initials` holds text, and text has no `.append()`. Glue it on with `+`: `initials = initials + name[0]`", undefined],
+    // (6) A comma inside `[ ]` on text: a slice takes a colon (site request 2: "positions", the lessons' word).
+    ["strings-are-rows-of-letters/letters-have-places", "a comma for the colon (TypeError)", "string indices must be integers, not 'tuple'", "comma-in-brackets",
+      `Inside \`[ ]\`, a slice takes a colon: \`word = sign[0:9]\`. A comma asks for two ${TEXT_POSITION_WORD}s at once.`, undefined],
+    // (7) `len()` of a number: nothing to count (Mar'tu's line counts the bar).
+    ["extra-letter-by-letter/broken-spell-8a", "lines 2 and 4 mended, len(26) left", "object of type 'int' has no len()", "len-of-number",
+      '`len()` counts the letters in text or the items in a list. `26` is a number, so there is nothing to count. Count `bar`: `print("Blocks: " + str(len(bar)))`', undefined],
+    // (8) Numbers handed to `.join()`: join the list that holds text.
+    ["the-water-stained-log", "the numbers joined (join needs text)", "sequence item 0: expected str instance, int found", "join-needs-text",
+      '`.join()` glues text only, and `hours` holds numbers. Join the list that holds text: `clean_line = ", ".join(clean_marks)`', undefined],
+    // (9) A curly brace with no partner in an f-string, the line mended.
+    ["words-that-change-shape/f-strings", "a closing brace missing (SyntaxError)", "f-string: expecting '}'", "f-string-brace",
+      'Line 4 opens a `{` in an f-string and never closes it. Each `{` in an f-string needs its `}`: `line = f"{name}: {mana}"`', undefined],
+    ["words-that-change-shape/f-strings", "a brace too many (SyntaxError)", "f-string: single '}' is not allowed", "f-string-brace",
+      'Line 4 has a `}` with no `{` in an f-string. Each `{` in an f-string needs its `}`, and each `}` its `{`: `line = f"{name}: {mana}"`', undefined],
+    ["the-water-stained-log", "a brace left open (SyntaxError)", "f-string: expecting '}'", "f-string-brace",
+      'Line 43 opens a `{` in an f-string and never closes it. Each `{` in an f-string needs its `}`: `print(f"{len(hours)} gaps, {total} hours.")`', undefined],
+    ["the-water-stained-log", "a brace never opened (SyntaxError)", "f-string: single '}' is not allowed", "f-string-brace",
+      'Line 43 has a `}` with no `{` in an f-string. Each `{` in an f-string needs its `}`, and each `}` its `{`: `print(f"{len(hours)} gaps, {total} hours.")`', undefined],
+    ["tag-from-blank", "a brace left open (SyntaxError)", "f-string: expecting '}', or format specs", "f-string-brace",
+      'Line 4 opens a `{` in an f-string and never closes it. Each `{` in an f-string needs its `}`: `return f"{caps}: {hours} hrs"`', undefined],
+    // (10) A method name with a capital letter.
+    ["words-that-change-shape/loud-and-quiet", "a capital U (AttributeError)", "has no attribute 'Upper'", "method-capital",
+      "Line 2 writes `.Upper` with a capital letter. Method names are all small letters: `line = line.upper()`", undefined],
+    // A method used like a function: nested, and the unit's new methods (never "write the function with def").
+    ["words-that-change-shape/chain-the-spells", "lower(raw) as if it were a function (NameError)", "name 'capitalize' is not defined", "method-as-function",
+      "Line 4 puts the text inside `capitalize( )` and `lower( )`, but each method goes after the text, with a dot: the text first, then `.lower()`, then `.capitalize()`. Write: `return raw.lower().capitalize()`", undefined],
+    ["words-that-change-shape/split-the-clipped", "split(report) as if it were a function (NameError)", "name 'split' is not defined", "method-as-function",
+      'Line 3 puts the text inside `split( )`, but `split` goes after the text, with a dot: the text first, then `.split(". ")`. Write: `sentences = report.split(". ")`', undefined],
+    ["the-water-stained-log", 'split(log, "|") as if it were a function', "name 'split' is not defined", "method-as-function",
+      'Line 6 puts the text inside `split( )`, but `split` goes after the text, with a dot: the text first, then `.split("|")`. Write: `marks = log.split("|")`', undefined],
+    // Escape marks: one fix, never a copy-wrong example (`"Mar'tu: "NOT a compass.""`) and never "put a comma between them".
+    // Python's guess (a comma) is wrong here, and the box says so (guide §4.2).
+    ["strings-are-rows-of-letters/escape-marks", "inner quotes with no backslash (SyntaxError)", "invalid syntax", "quote-inside-text",
+      'Line 3 has `"` marks inside text that starts with `"`, so the first one inside ends the text early. Python\'s last line guesses a comma, but that guess is wrong here. Put a backslash in front of each `"` inside: `print("Mar\'tu: \\"NOT a compass.\\"")`', undefined],
+    ["strings-are-rows-of-letters/escape-marks", "the backslash doubled: the quote mark ends the text (SyntaxError)", "invalid syntax", "quote-inside-text",
+      '`\\\\` shows one backslash, so the `"` after it still ends the text. Python\'s last line guesses a comma, but that guess is wrong here. One backslash goes in front of each `"` inside the text: `print("Mar\'tu: \\"NOT a compass.\\"")`', undefined],
+    // A text that never closes, read from the student's line (never "Enter inside text", which would glue the notes and
+    // line 8's `print("")` into line 3): one backslash missed, the closing quote escaped, and a slash for the backslash.
+    ["strings-are-rows-of-letters/escape-marks", "one backslash missed: a bare quote mark left inside (SyntaxError)", "unterminated string literal", "quote-inside-text",
+      'Line 3 has a `"` inside the text with no backslash in front, so it ends the text early. Put a backslash in front of each `"` inside: `print("Mar\'tu: \\"NOT a compass.\\"")`', undefined],
+    ["strings-are-rows-of-letters/escape-marks", "the closing quote escaped: the text never closes (SyntaxError)", "perhaps you escaped the end quote?", "quote-inside-text",
+      'On line 3, the backslash in front of the last `"` turned your closing quote into a quote inside the text, so the text never closes. A backslash goes only in front of each `"` inside the text: `print("Mar\'tu: \\"NOT a compass.\\"")`', undefined],
+    ["strings-are-rows-of-letters/escape-marks", "slashes where the backslashes go (SyntaxError)", "invalid syntax", "quote-inside-text",
+      'Line 3 has a slash `/` in front of a `"` inside the text, so that `"` still ends the text. Python\'s last line guesses a comma, but that guess is wrong here. Use a backslash, `\\`, not the slash `/`: `print("Mar\'tu: \\"NOT a compass.\\"")`', undefined],
+    ["strings-are-rows-of-letters/escape-marks", "single outer quotes: the apostrophe in Mar'tu ends the text", "unterminated string literal", "apostrophe",
+      'The apostrophe in `Mar\'tu` ends the text early, because the text starts with `\'`. Put the text in double quotes, with a backslash in front of each `"` inside it: `print("Mar\'tu: \\"NOT a compass.\\"")`', undefined],
+    ["strings-are-rows-of-letters/escape-marks", "a typed new line inside ordinary quotes (SyntaxError)", "unterminated string literal", "new-line-in-text",
+      'Text in quotes stays on one line, so pressing Enter inside it ends line 8 before the text closes. For a new line inside text, type `\\n`: `print("48\\n48")`', undefined],
+    // A slice with parentheses, `int("hours_text")`, and the text IndexError (site request 2: its letters and positions).
+    ["strings-are-rows-of-letters/letters-have-places", "round brackets for a slice (SyntaxError)", "invalid syntax", "list-needs-square-brackets",
+      "Line 4 cuts a slice of `sign` with parentheses `( )`, which Python can't read. A slice takes square brackets, like a list's: `word = sign[0:9]`", undefined],
+    ["words-that-change-shape/split-the-clipped", "int() of the name in quotes (ValueError)", "invalid literal for int() with base 10: 'hours_text'", "quoted-name",
+      'Line 13 hands `int()` the text `"hours_text"`. With quotes, `"hours_text"` is the text hours_text, not the variable `hours_text`. Quotes mean these exact letters. No quotes means look inside the box with this label. Take the quotes off: `next_hours = int(hours_text) + 1`', undefined],
+    ["extra-letter-by-letter/broken-spell-8a", "the starter: place 5 is past the end (IndexError first)", "string index out of range", "nothing-at-position",
+      `Line 2 asks \`tag\` for ${TEXT_POSITION_WORD} 5, but \`tag\` has 5 letters, at ${TEXT_POSITION_WORD}s 0 to 4. Positions start at 0, like a ruler. Write: \`last = tag[-1]\``, undefined],
+    ["extra-letter-by-letter/broken-spell-8a", "len(tag) used as the place (one past the end)", "string index out of range", "nothing-at-position",
+      `Line 2 uses \`len(tag)\` as a ${TEXT_POSITION_WORD}. \`len(tag)\` counts the letters, but ${TEXT_POSITION_WORD}s start at 0, like a ruler, so the count is one past the last letter. Write: \`last = tag[-1]\``, undefined],
+    // `+` between text and a number in the step's own way: text that holds digits gets `int()` (Mar'tu's line), a call is
+    // wrapped whole (never a made-up `str(score)`), a letter gets its position first, an f-string step gets Mar'tu's
+    // f-string, and a number in quotes handed on through two calls names the line that made it.
+    ["words-that-change-shape/split-the-clipped", "text plus a number, no int() (TypeError)", 'can only concatenate str (not "int") to str', "math-with-text",
+      '`hours_text` holds text, `"48"` in quotes, so `+ 1` can\'t add to it. Turn it into a number first with `int()`: `next_hours = int(hours_text) + 1`', undefined],
+    ["extra-letter-by-letter/broken-spell-8a", "+ between text and a number, no str()", 'can only concatenate str (not "int") to str', "text-plus-number",
+      'Line 7 glues text to a number with `+`, but `+` only glues text to text. Turn the number into text first with `str()`: `print("Blocks: " + str(len(bar)))`', undefined],
+    ["the-institute-cipher", "a letter and a number added (text + int)", 'can only concatenate str (not "int") to str', "text-plus-number",
+      "Line 9 adds `key`, a number, to `letter`, which holds text, and `+` can't do that. Find its position first, `alphabet.find(letter)`: a number you can add `key` to.", undefined],
+    ["the-water-stained-log", "+ between text and a number, no str()", 'can only concatenate str (not "int") to str', "text-plus-number",
+      'Line 43 glues text to a number with `+`, but `+` only glues text to text. This step builds the line with an f-string, which shows a number in curly braces: `print(f"{len(hours)} gaps, {total} hours in all.")`', undefined],
+    ["the-institute-cipher", "the key in quotes (text + number inside shift_letter)", "unsupported operand type(s) for +: 'int' and 'str'", "number-in-quotes",
+      'Line 12 does math with `key`, and `key` holds `my_key`, which line 45 makes with quotes: `my_key = "7"`. Quotes make text, even when it looks like a number. Take the quotes off on line 45: `my_key = 7`', 45],
+    // `sum()` of text: no `+` on the line, so never the `+` row; Mar'tu's line adds up the numbers.
+    ["the-water-stained-log", "the text added up (sum of clean_marks: TypeError)", "unsupported operand type(s) for +: 'int' and 'str'", "sum-of-text",
+      "`clean_marks` holds text, and `sum()` adds numbers only. Add up the list of numbers: `total = sum(hours)`", undefined],
+    // `int()` of a mark straight from `.split()`: the loop walks the marks before they were cleaned (its line is the slip).
+    ["the-water-stained-log", "int() on the raw mark (ValueError)", "invalid literal for int() with base 10: ' 48 hrs'", "not-a-number",
+      "Line 21 hands `int()` a mark straight from `.split()`, with `hrs` and spaces still in it, so `int()` can't turn it into a number. The loop on line 20 walks `marks`. Walk the clean marks instead: `for mark in clean_marks:`", 20],
+    // A list from `.split()` glued to text: join it first (never `.append()`); words read by position where a slice keeps
+    // what is there (never `[-1]`).
+    ["words-that-change-shape/whats-in-it-for-me", "clip: the sliced list glued to text with + (TypeError on the student's own Run)", 'can only concatenate list (not "str") to list', "list-as-text",
+      '`words[:3]` is a list, not text: `.split()` hands back a list, and `+` can\'t glue text onto it. Glue the list into one text first: `return " ".join(words[:3]) + "."`', undefined],
+    ["words-that-change-shape/whats-in-it-for-me", "clip: three words read by place: the bottom call", "list index out of range", "nothing-at-position",
+      'Line 10 reads `words` by position, but `words` comes from `sentence`, so a short one gives fewer words. A slice keeps what is there and never runs past the end: `short = " ".join(words[:3])`', undefined],
+    // A name copied from Mar'tu's example (his text, or the Example) into a function with its own parameter.
+    ["words-that-change-shape/chain-the-spells", "Mar'tu's two steps copied, the calls kept: the student's own Run stops (UnboundLocalError, the explainer's row)", "cannot access local variable 'said'", "variable-in-function",
+      "Line 4 uses `said` before the line that makes it: Python runs a function from the top down. `said` comes from Mar'tu's example, and `tidy_line`'s parameter is `raw`. Write `raw` where it says `said`: `raw = raw.lower()`", undefined],
+    ["words-that-change-shape/whats-in-it-for-me", "lucky_reply: the Example's order copied, the calls kept (UnboundLocalError on the student's own Run)", "cannot access local variable 'order'", "variable-in-function",
+      "Line 2 uses `order` before the line that makes it: Python runs a function from the top down. `order` comes from the Example, and `lucky_reply`'s parameter is `request`. Write `request` where it says `order`: `request = request.strip()`", undefined],
+    ["words-that-change-shape/chain-the-spells", "said with the calls kept: the student's own Run stops (NameError, the explainer's row)", "name 'said' is not defined", "not-in-recipe",
+      "`said` comes from Mar'tu's example, not from your task. `tidy_line` has no box by that name. Its parameter is `raw`: work the answer out from that.", undefined],
+    // The apostrophe fix keeps the text's own space in front (the whole line).
+    ["words-that-change-shape/whats-in-it-for-me", "an apostrophe inside single quotes (SyntaxError)", "unterminated string literal", "apostrophe",
+      "The apostrophe ' in your text on line 4 ends the text too early, because Python reads it as the closing quote. Put double quotes around text that has an apostrophe: `ask = \" What's in it for me?\"`", undefined],
+    // A return line that calls its own function, where Mar'tu's calls another: his line, never "move the call below".
+    ["the-institute-cipher", "decode calls itself forever (RecursionError)", "maximum recursion depth exceeded", "never-ending-calls",
+      "Line 31 calls `decode` inside `decode` itself, so it starts again and again and never stops. Call `encode` here: `return encode(message, -key)`", undefined],
+    // A near-miss of a parameter is a parameter, never a box.
+    ["strings-are-rows-of-letters/bars-one-more-time", "curent with the calls kept", "name 'curent' is not defined", "spelling",
+      "Line 8 uses `curent`, but your step's parameter is `current`. To Python those are two different names. On line 8, write `current`, letter for letter.", undefined],
+    // A number where a method's text goes: the call one frame out handed its values over in the wrong order.
+    ["tag-from-blank", "the values handed over the wrong way round (a number has no .upper())", "'int' object has no attribute 'upper'", "swapped-values",
+      "The call on line 7 hands its values over in the wrong order. `name_tag` takes the text as `name`, and the call puts `48` there, so line 3 asks a number for `.upper()`. Swap the two values on line 7.", 7],
+  ];
+
+  it("explains each slip in the unit's words, with the student's own names and one fix", async () => {
+    for (const [at, [key, why, python, kind, hint, slipLine]] of rows.entries()) {
+      if (at % 10 === 0) await new Promise((resume) => setImmediate(resume));
+      const found = unit9.find(key, why);
+      expect(found.failsAt, `${key}: ${why} crashes`).toBe(0);
+      const raw = crashOf(found);
+      expect(raw, `${key}: ${why}`).toContain(python);
+      const result = explainCourseError(raw, found.code, found.context);
+      expect(result.kind, `${key}: ${why}`).toBe(kind);
+      expect(result.hint, `${key}: ${why}`).toBe(hint);
+      expect(result.slipLine, `${key}: ${why}`).toBe(slipLine);
+      // Python's words translated; one fix, never "..., or ..."; never "write the function with def" for a method.
+      expect(`${result.title} ${result.hint}`, `${key}: ${why}`).not.toMatch(/builtin_function_or_method|NoneType|, or |with `def`|mixes kinds/);
+    }
+  });
+
+  it("shows fixes that run when pasted in as they read: the slip is gone (no copy-wrong example)", async () => {
+    let pasted = 0;
+    for (const [at, [key, why, , , hint, slipLine]] of rows.entries()) {
+      if (at % 10 === 0) await new Promise((resume) => setImmediate(resume));
+      // The fix: the last code span that is a whole line (a store, a print, a return) or a method on one item.
+      const spans = [...hint.matchAll(/`([^`]+)`/g)].map((found) => found[1]);
+      const fixed = spans.filter((span) => /=|^print\(|^return |^[A-Za-z_]\w*\[\d+\]\.\w+\(/.test(span) && span.length > 6).at(-1);
+      if (!fixed) continue;
+      const found = unit9.find(key, why);
+      const before = crashOf(found);
+      const line = slipLine ?? errorLineOf(before);
+      const lines = found.code.split("\n");
+      const indent = lines[line - 1]?.match(/^\s*/)?.[0] ?? "";
+      // Enter inside text: the fix joins the two lines back into one.
+      lines.splice(line - 1, /new line inside/.test(why) ? 2 : 1, `${indent}${fixed}`);
+      const result = runCourseChecks(lines.join("\n"), [], { setup: found.setup, stdin: found.stdin });
+      pasted += 1;
+      // The run passes, or stops on another slip of the same wrong answer: never the same error on the same line.
+      if (!result.ok) {
+        const same = errorLineOf(result.traceback) === errorLineOf(before) && result.traceback.trim().split("\n").at(-1) === before.trim().split("\n").at(-1);
+        expect(same, `${key}: ${why}: ${fixed}\n${result.traceback}`).toBe(false);
+        expect(result.traceback, `${key}: ${why}: ${fixed}`).not.toMatch(/SyntaxError/);
+      }
+    }
+    expect(pasted).toBeGreaterThan(25);
+  });
+
+  it("explains the review's other likely slips with the exercise's own context (Mar'tu's version edited one line)", async () => {
+    // [exercise, any wrong answer of it (for its context), line number, the line written in Mar'tu's version, kind, the hint]
+    const edits: [string, string, number, string, string, string][] = [
+      // The number glued to text is the piece that holds a number (never `bar`, already text).
+      ["strings-are-rows-of-letters/bars-one-more-time", "curent with the calls kept", 7, '    bar = "Glug [" + bar + "] " + current + "/" + maximum', "text-plus-number",
+        "Line 7 glues text to a number with `+`, but `+` only glues text to text. Turn the number into text first with `str()`: `str(current)`"],
+      ["strings-are-rows-of-letters/bars-one-more-time", "curent with the calls kept", 7, '    bar = "Glug [" + bar + "] " + str(current) + "/" + maximum', "text-plus-number",
+        "Line 7 glues text to a number with `+`, but `+` only glues text to text. Turn the number into text first with `str()`: `str(maximum)`"],
+      // Every form of `"48" + 1` gets `int()`, never `str(hours_text)` or `str(score)`.
+      ["words-that-change-shape/split-the-clipped", "text plus a number, no int() (TypeError)", 13, "next_hours = int(hours_text + 1)", "math-with-text",
+        '`hours_text` holds text, `"48"` in quotes, so `+ 1` can\'t add to it. Turn it into a number first with `int()`: `next_hours = int(hours_text) + 1`'],
+      ["words-that-change-shape/split-the-clipped", "text plus a number, no int() (TypeError)", 13, "next_hours = str(hours_text) + 1", "math-with-text",
+        '`hours_text` holds text, `"48"` in quotes, so `+ 1` can\'t add to it. Turn it into a number first with `int()`: `next_hours = int(hours_text) + 1`'],
+      // `.split()` then a text method in the same chain; a tool after a dot, on text or on the list `.split()` hands back.
+      ["words-that-change-shape/split-the-clipped", "text plus a number, no int() (TypeError)", 3, 'sentences = report.split(". ").upper()', "list-as-text",
+        'Line 3 asks for `.upper()` after `.split()`, but `.split()` hands back a list, so `.upper()` has no text to work on. Use `.upper()` before `.split`, on the text itself: `sentences = report.upper().split(". ")`'],
+      ["words-that-change-shape/split-the-clipped", "text plus a number, no int() (TypeError)", 7, "word_count = report.len()", "tool-after-dot",
+        "Line 7 writes `len` after a dot. `len` goes in front: `len(report)`. It counts the letters."],
+      ["words-that-change-shape/split-the-clipped", "text plus a number, no int() (TypeError)", 7, "word_count = report.split().len()", "tool-after-dot",
+        "Line 7 writes `len` after a dot. `len` goes in front: `len(report.split())`. It hands back how many items there are."],
+      // join used like a function: the glue first, with a dot (never "write the function with def").
+      ["words-that-change-shape/split-the-clipped", "text plus a number, no int() (TypeError)", 19, 'joined = join(" ", words)', "method-as-function",
+        'Line 19 puts the list inside `join( )`, but `join` goes after the glue, with a dot: the glue in quotes first, then `.join(words)`. Write: `joined = " ".join(words)`'],
+      ["words-that-change-shape/split-the-clipped", "text plus a number, no int() (TypeError)", 19, "joined = join(words)", "method-as-function",
+        'Line 19 puts the list inside `join( )`, but `join` goes after the glue, with a dot: the glue in quotes first, then `.join(words)`. Write: `joined = " ".join(words)`'],
+      // The copy stored the wrong way round: never "use ==".
+      ["words-that-change-shape/loud-and-quiet", "a capital U (AttributeError)", 2, "line.upper() = line", "store-backwards",
+        "Line 2 has the copy, `line.upper()`, on the left of `=` and `line` on the right: the wrong way around. Python's last line guesses `==`, but that guess is wrong here. The copy goes on the right: `line = line.upper()`"],
+      // `.replace()` with no comma, and with no quotes: never "mixes kinds of values", every bare word quoted.
+      ["words-that-change-shape/strip-and-replace", "no (): the method itself, then glued into the print (TypeError)", 6, 'note = note.replace("compass" "Ley Clock")', "wrong-number-of-values",
+        'Line 6 has two pieces of text side by side inside `.replace( )`, with no comma, so Python reads them as one. Put a comma between the old words and the new ones: `note = note.replace("compass", "Ley Clock")`'],
+      ["words-that-change-shape/strip-and-replace", "no (): the method itself, then glued into the print (TypeError)", 6, "note = note.replace(compass, Ley Clock)", "unquoted-words",
+        'Line 6 has words with no quotes around them, so Python tries to read them as code. Put quotes around the words, the way you quote someone\'s exact words in English: `note = note.replace("compass", "Ley Clock")`'],
+    ];
+    for (const [at, [key, why, line, text, kind, hint]] of edits.entries()) {
+      if (at % 5 === 0) await new Promise((resume) => setImmediate(resume));
+      const found = unit9.find(key, why);
+      const rows = (found.context.solution ?? "").split("\n");
+      rows[line - 1] = text;
+      const code = rows.join("\n");
+      const result = runCourseChecks(code, [], { setup: found.setup, stdin: found.stdin });
+      expect(result.ok, `${key}: ${text}`).toBe(false);
+      const got = explainCourseError(result.traceback, code, found.context);
+      expect(got.kind, `${key}: ${text}`).toBe(kind);
+      expect(got.hint, `${key}: ${text}`).toBe(hint);
+      expect(got.hint, `${key}: ${text}`).not.toMatch(/str\(score\)|chalk_wall|mixes kinds|with `def`/);
+    }
+    // `upper(line)`: Python's "Did you mean: 'super'?" (a built-in the course never teaches) is left off the box's line.
+    const loud = unit9.find("words-that-change-shape/loud-and-quiet", "a capital U (AttributeError)");
+    const upper = 'line = "shield up."\nline = upper(line)\nprint(line)\n';
+    const raw = runCourseChecks(upper, [], { setup: loud.setup }).traceback;
+    expect(raw).toContain("Did you mean: 'super'?");
+    const shown = explainCourseError(raw, upper, loud.context);
+    expect(shown.kind).toBe("method-as-function");
+    expect(shown.shownLine).toBe("NameError: name 'upper' is not defined.");
+  });
+
+  it("keeps the lean explainer to the slip and its evidence: the SOLOs and the Quick Check", async () => {
+    // [exercise, why, kind, the lean title, the lean hint's own sentence (the slip and its evidence, never the fix)]
+    const lean: [string, string, string, string, string][] = [
+      ["strings-are-rows-of-letters/solo-8a", "seat B's slip shape: a letter changed in place (TypeError)", "text-changed-in-place", "Text changed in place",
+        "Line 8 changes one letter of `bar` in place, and text can't change one letter."],
+      ["words-that-change-shape/solo-8b", "lower(line) as if it were a function (NameError on the student's own Run)", "method-as-function", "Method used like a function",
+        "Line 3 uses `lower` like a function: `lower` is a method."],
+      ["words-that-change-shape/solo-8b", "seat B's slip shape: join called the wrong way round (AttributeError)", "join-on-list", "List asked to join itself",
+        "Line 3 asks a list, `words`, to `.join()`."],
+      ["qc8-a/tidy-the-line", ".lower with no () in the middle of the chain (AttributeError on the student's own Run)", "method-without-brackets", "Method with no ()",
+        "Line 6 has `.lower` with no `()`: `raw.lower` is the method itself, not text."],
+      ["qc8-b/tidy-the-line", ".strip with no () (AttributeError on the student's own Run)", "method-without-brackets", "Method with no ()",
+        "Line 5 wrote `.strip` with no `()`: `raw` holds the method itself, not text."],
+      ["qc8-a/tidy-the-line", "every method as a function (NameError)", "method-as-function", "Method used like a function",
+        "Line 5 uses `capitalize` like a function: `capitalize` is a method."],
+      ["qc8-b/tidy-the-line", "a letter changed in place (TypeError)", "text-changed-in-place", "Text changed in place",
+        "Line 6 changes one letter of `raw` in place, and text can't change one letter."],
+      ["qc8-a/clip-the-log", "split(said) as if it were a function (NameError)", "method-as-function", "Method used like a function",
+        "Line 4 uses `split` like a function: `split` is a method."],
+      ["qc8-b/clip-the-log", "the list treated as text: .lower() on a list (AttributeError)", "list-as-text", "List used like text",
+        "Line 5 asks `words`, a list, for `.lower()`: a list is not text."],
+      ["qc8-a/clip-the-log", "join called the wrong way round, on the slice (spec: crash)", "join-on-list", "List asked to join itself",
+        "Line 9 asks a list, `words[:3]`, to `.join()`."],
+      ["qc8-b/a-bar-for-any-values", "a brace missing in the f-string (SyntaxError)", "f-string-brace", "Curly brace with no partner in an f-string",
+        "Line 17 opens a `{` in an f-string and never closes it."],
+      ["qc8-a/tidy-the-line", "the hint's cry copied, the calls kept", "variable-in-function", "Name used before it has a value",
+        "Line 5 uses `cry` before it has a value: `cry` is a name from Mar'tu's example, not a parameter of `hush_line`."],
+    ];
+    for (const [at, [key, why, kind, title, said]] of lean.entries()) {
+      if (at % 5 === 0) await new Promise((resume) => setImmediate(resume));
+      const found = unit9.find(key, why);
+      expect(found.context.explainer, key).toBe("lean");
+      const raw = crashOf(found);
+      const result = explainCourseError(raw, found.code, found.context);
+      const full = explainCourseError(raw, found.code, { ...found.context, explainer: "full" });
+      expect(result.kind, `${key}: ${why}`).toBe(kind);
+      expect(result.title, `${key}: ${why}`).toBe(title);
+      expect(result.hint, `${key}: ${why}`).toBe(`${said} Python's last line, below, says what it found. Fix it yourself, then press Run again.`);
+      // Never the fix: the full hint's fixed line is not in the lean one.
+      const fix = full.hint.match(/`([^`]+)`$/)?.[1];
+      expect(fix, `${key}: ${why}: the full hint ends with its fix`).toBeTruthy();
+      expect(result.hint, `${key}: ${why}`).not.toContain(fix!);
+    }
+  });
+
+  it("keeps each row closed below Unit 9: the same slips get the older words there (and in Unit 7's words)", async () => {
+    // [exercise, why, the kind below Unit 9]
+    const older: [string, string, string][] = [
+      ["strings-are-rows-of-letters/letters-cant-change", "the starter: a letter changed in place (TypeError)", "wrong-kind-of-value"],
+      ["words-that-change-shape/split-the-clipped", "join called the wrong way round (AttributeError)", "other"],
+      ["words-that-change-shape/broken-spell-8b", "the starter: .lower with no () (AttributeError on line 4)", "other"],
+      ["words-that-change-shape/split-the-clipped", "the list treated as text: .lower() on a list (AttributeError)", "other"],
+      ["strings-are-rows-of-letters/letters-have-places", "a list method on text: initials.append(name[0])", "other"],
+      ["strings-are-rows-of-letters/letters-have-places", "a comma for the colon (TypeError)", "wrong-kind-of-value"],
+      ["extra-letter-by-letter/broken-spell-8a", "lines 2 and 4 mended, len(26) left", "wrong-kind-of-value"],
+      ["the-water-stained-log", "the numbers joined (join needs text)", "wrong-kind-of-value"],
+      ["words-that-change-shape/f-strings", "a closing brace missing (SyntaxError)", "cant-read-line"],
+      ["words-that-change-shape/loud-and-quiet", "a capital U (AttributeError)", "attribute-spelling"],
+      ["words-that-change-shape/chain-the-spells", "lower(raw) as if it were a function (NameError)", "unknown-function"],
+      ["strings-are-rows-of-letters/escape-marks", "inner quotes with no backslash (SyntaxError)", "missing-comma"],
+      ["strings-are-rows-of-letters/escape-marks", "a typed new line inside ordinary quotes (SyntaxError)", "missing-quote"],
+      ["tag-from-blank", "the values handed over the wrong way round (a number has no .upper())", "other"],
+      ["strings-are-rows-of-letters/escape-marks", "one backslash missed: a bare quote mark left inside (SyntaxError)", "missing-quote"],
+      ["words-that-change-shape/chain-the-spells", "Mar'tu's two steps copied, the calls kept", "variable-in-function"],
+      ["words-that-change-shape/whats-in-it-for-me", "clip: the sliced list glued to text with +", "list-plus-item"],
+      ["words-that-change-shape/split-the-clipped", "text plus a number, no int() (TypeError)", "text-plus-number"],
+      ["the-institute-cipher", "the key in quotes (text + number inside shift_letter)", "number-plus-text"],
+    ];
+    for (const [at, [key, why, kind]] of older.entries()) {
+      if (at % 5 === 0) await new Promise((resume) => setImmediate(resume));
+      const found = unit9.find(key, why);
+      const raw = crashOf(found);
+      const below = explainCourseError(raw, found.code, { ...found.context, unitOrder: SPELL_RECIPES_UNIT_ORDER });
+      expect(below.kind, `${key}: ${why}`).toBe(kind);
+    }
+    // Site request 2: below Unit 9 the text IndexError keeps the older words; a list's keeps Unit 4's words in Unit 9 too.
+    const text = unit9.find("extra-letter-by-letter/broken-spell-8a", "the starter: place 5 is past the end (IndexError first)");
+    expect(explainCourseError(crashOf(text), text.code, { ...text.context, unitOrder: SPELL_RECIPES_UNIT_ORDER }).hint).toBe(
+      "Line 2 asks for a position the text doesn't have. Positions start at 0, like a ruler, so 3 items have positions 0, 1 and 2.",
+    );
+    // The new Unit 9 words stay closed below it too: the older str() advice, the generic "box inside a function".
+    const said = unit9.find("words-that-change-shape/chain-the-spells", "Mar'tu's two steps copied, the calls kept");
+    expect(explainCourseError(crashOf(said), said.code, { ...said.context, unitOrder: SPELL_RECIPES_UNIT_ORDER }).title).toBe("A box inside a function");
+    const list = unit9.find("words-that-change-shape/broken-spell-8b", "bugs 1-2 mended, the index still past the end");
+    const listRaw = crashOf(list);
+    expect(listRaw).toContain("list index out of range");
+    expect(explainCourseError(listRaw, list.code, list.context).hint).toBe(
+      explainCourseError(listRaw, list.code, { ...list.context, unitOrder: SPELL_RECIPES_UNIT_ORDER }).hint,
+    );
+  });
+
+  it("explains every crash wrong answer of Unit 9 by its own row: none is left to Python's general words", async () => {
+    for (const [at, wrong] of unit9.crashes().entries()) {
+      if (at % 10 === 0) await new Promise((resume) => setImmediate(resume));
+      const result = runCourseChecks(wrong.code, [], { setup: wrong.setup, stdin: wrong.stdin });
+      if (result.ok) continue;
+      const got = explainCourseError(result.traceback, wrong.code, wrong.context);
+      const said = `${got.title} ${got.hint} ${got.lean ?? ""}`;
+      expect(got.kind, `${wrong.key}: ${wrong.why}`).not.toBe("other");
+      expect(said, `${wrong.key}: ${wrong.why}`).not.toMatch(/mixes kinds of values|builtin_function_or_method|NoneType|write the function with `def`/);
+      expect(said, `${wrong.key}: ${wrong.why}`).not.toMatch(/Look for a missing quote/);
+      expect(said, `${wrong.key}: ${wrong.why}`).not.toMatch(/\b(recipe|ingredient)s?\b|\btags? \(key/i);
+    }
+  }, 120_000);
+
+  it("keeps every Unit 1-7 and Unit 10 explanation exactly as it was before Unit 9 (kind, title and hint)", async () => {
+    const before = JSON.parse(readFileSync(path.join(process.cwd(), "src/lib/course/explain.before-unit9.json"), "utf8")) as Record<string, string>;
+    const now: Record<string, string> = {};
+    for (const unitId of ["hello-world", "control-flow", "first-recipes", "lists", "dictionaries", "loops", "spell-recipes", "readiness-check"]) {
+      for (const [at, wrong] of unitWrongAnswers(unitId).crashes().entries()) {
+        // Hundreds of python3 runs, each one blocking: let the test worker answer vitest between them.
+        if (at % 10 === 0) await new Promise((resume) => setImmediate(resume));
+        const result = runCourseChecks(wrong.code, [], { setup: `import random as _seeded\n_seeded.seed(5)\n${wrong.setup}`, stdin: wrong.stdin });
+        if (result.ok) continue;
+        const got = explainCourseError(result.traceback, wrong.code, wrong.context);
+        const hash = createHash("sha256").update(`${got.title}\n${got.hint}`).digest("hex").slice(0, 16);
+        now[`${unitId}:${wrong.key}:${wrong.why}`] = `${got.kind} ${hash}`;
+      }
+    }
+    const { _about: about, ...expected } = before;
+    expect(about).toContain("before Unit 9");
+    expect(Object.keys(expected).some((key) => key.startsWith("readiness-check:"))).toBe(true);
+    expect(Object.keys(now).length).toBe(Object.keys(expected).length);
+    expect(now).toEqual(expected);
+  }, 360_000);
+});
+
+/** The student's line in a traceback (the last `line N`). */
+function errorLineOf(traceback: string): number {
+  return Number(traceback.match(/line (\d+)/g)?.at(-1)?.split(" ")[1]);
+}

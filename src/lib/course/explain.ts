@@ -51,7 +51,13 @@
  * sheet goes, a number in quotes handed over, the function handed over where its answer goes, a parameter's name in
  * quotes as a key, and a guard that lets a key through (no `return`, `in` for `not in`, below the read, or no guard
  * yet: never "use a key that is already there", the test call stays); the same error on the same line of code, moved
- * down, is no "One fixed!"; and from Unit 7 every row says "function", "parameter" and "key". Every unit: a line indented
+ * down, is no "One fixed!"; and from Unit 7 every row says "function", "parameter" and "key". Unit 9 (strings) adds the
+ * text slips, with the student's own names (STRINGS_UNIT_ORDER): a letter of text changed in place, a list asked to join
+ * itself, a method with no `()` (in a chain, or stored on a line above), a list used like text, `.append()` on text, a
+ * comma or parentheses where a slice takes a colon in square brackets, `len()` of a number, numbers handed to `.join()`,
+ * a curly brace with no partner in an f-string, `.Upper()`, methods used like functions (`capitalize(lower(raw))`), a
+ * quote mark inside text with no backslash, Enter pressed inside text, a variable's name in quotes in `int()`, and a
+ * position past a text's last letter (in the strings lessons' word, TEXT_POSITION_WORD). Every unit: a line indented
  * under a header that is itself indented counts that header's spaces, the line that makes a box with quotes is the
  * line to fix (`slipLine`), and a recipe that prints its answer hands back `None`, "Python's word for nothing". Some of
  * these rows say the slip in a sentence of their own when the explainer is lean (`lean`), still never the fix.
@@ -184,6 +190,19 @@ export type CourseErrorKind =
   | "swapped-values"
   // the Readiness Check (Unit 10)
   | "borrowed-name"
+  // strings (Unit 9)
+  | "text-changed-in-place"
+  | "join-on-list"
+  | "method-without-brackets"
+  | "list-as-text"
+  | "append-on-text"
+  | "len-of-number"
+  | "join-needs-text"
+  | "f-string-brace"
+  | "method-capital"
+  | "quote-inside-text"
+  | "new-line-in-text"
+  | "sum-of-text"
   // values
   | "input-is-text"
   | "text-plus-number"
@@ -317,6 +336,38 @@ export const SPELL_RECIPES_UNIT_ORDER = 7;
  */
 export const READINESS_UNIT_ORDER = 10;
 
+/**
+ * Unit 9 ("Strings: Runes and Ribbons") teaches text as a row of letters: a letter read by its position and a slice
+ * (`sign[0:9]`), text that can't change one letter (`word = "G" + word[1:]`), escape marks (`\"`, `\n`), methods with a
+ * dot and `()` (`.upper()`, `.strip()`, `.replace()`, `.find()`, a chain), `.split()` that hands back a list and
+ * `" ".join(words)` that glues one back, and f-strings. Its rows (the teacher's site requests 1 and 2) name those slips
+ * in the unit's own words, with the student's own names: text changed in place, a list asked to join itself, a method
+ * with no `()` (in a chain, or stored on the line above), a list used like text, `.append()` on text, a comma inside
+ * `[ ]` where a slice takes a colon, `len()` of a number, numbers handed to `.join()`, a curly brace with no partner in
+ * an f-string, a method name with a capital letter, a method used like a function (`capitalize(lower(raw))`,
+ * `split(report, ". ")`), a quote mark inside text with no backslash, Enter pressed inside text, a position past the
+ * end of a text, and a number handed over where a method's text goes. The Unit 9 review added: a text that never
+ * closes read from the student's line (one backslash missed, the closing quote escaped, a slash for the backslash; Enter
+ * inside text only when the text really goes on to a later line), `+` between text and a number in the step's own way
+ * (`int()` for digits in text, a letter's position first, Mar'tu's f-string line, the piece that holds the number, never
+ * a made-up `str(score)`), a number in quotes handed on through calls, `sum()` of text (open from Unit 4), a list from
+ * `.split()` glued to text, positions where a slice keeps what is there, a name copied from Mar'tu's example used
+ * before it has a value, `join(" ", words)`, `.len()` after a dot, a copy stored the wrong way round, `.replace()` with
+ * no comma, and a self-call on a `return` line with Mar'tu's other function (open in every unit). Every row is open
+ * from this unit on, so Unit 10 (order 10) reaches them too: explain.before-unit9.json proves no explanation of Units
+ * 1-7 or Unit 10 changes.
+ */
+export const STRINGS_UNIT_ORDER = 9;
+
+/**
+ * The word the strings rows use for an index in text (site request 2: the text IndexError and comma rows speak the
+ * strings lessons' word, never the list rows' wording, which Units 4-7 keep). The request asked for "place", to match
+ * Lessons 8A and 8B as they read then; the plain-language pass has since moved both lessons to "position" (the guide's
+ * word for an index, §5.2; u09a's terminology note: "position (never 'place')"), so the rows say what the lessons say
+ * now. One word, here: if the lessons go back to "place", change it once.
+ */
+export const TEXT_POSITION_WORD = "position";
+
 /** What the player knows about the exercise. Every field is optional; more context gives more exact help. */
 export type ExplainContext = {
   /** The worked example's code: a name copied from it gets "this name is from the example". */
@@ -345,7 +396,9 @@ export type ExplainContext = {
    * variable, `range(...)` and a pass (and nothing a later unit teaches: no f-strings, no `None` written in code); from
    * Unit 7 (SPELL_RECIPES_UNIT_ORDER) the function rows trace a value to the call that handed it over (a function handed
    * over with `()`, its name in quotes, values in the wrong order, the wrong sheet, a guard that lets a key through) and
-   * every row says "function", "parameter" and "key", the unit's own words.
+   * every row says "function", "parameter" and "key", the unit's own words; from Unit 9 (STRINGS_UNIT_ORDER) the text
+   * rows name what the strings unit teaches (methods with a dot and `()`, `.split()` and `.join()`, escape marks,
+   * f-strings, a text's letters and positions), and nothing later: Unit 10's rows (READINESS_UNIT_ORDER) stay closed there.
    * Without a unit, those rows stay closed and the older advice is unchanged.
    */
   unitOrder?: number;
@@ -790,12 +843,20 @@ function nameAgainstTask(
     const madeText = codePart(sourceLine(code, made.line)).trim();
     const renamed = madeText.replace(new RegExp(`^${escapeRegExp(close)}(?![\\w])`), name);
     const fix = renamed !== madeText ? `Change line ${made.line} to \`${renamed}\`` : `Rename it to \`${name}\` on line ${made.line}.`;
+    // Unit 7: a name on a `def` line is a parameter (`def make_bar(curent, maximum):`), never a box.
+    const word = unitAtLeast(context, SPELL_RECIPES_UNIT_ORDER) && /^def\b/.test(madeText) ? "parameter" : "box";
     // The fix is on the line that made the box: the crash banner names that line, never only the one Python stopped at.
-    return { ...explain(kind, title, `Line ${made.line} makes \`${close}\`, but your step's box is \`${name}\`. ${differ} ${fix}`, raw), slipLine: made.line };
+    return { ...explain(kind, title, `Line ${made.line} makes \`${close}\`, but your step's ${word} is \`${name}\`. ${differ} ${fix}`, raw), slipLine: made.line };
   }
   if (task.includes(close) && !task.includes(name)) {
     // Unit 7: a function is never called a box (`show_man(hero)` for `show_mana`).
-    const word = unitAtLeast(context, SPELL_RECIPES_UNIT_ORDER) && boxKindWord(close, `${context?.setup ?? ""}\n${code}`) === "recipe" ? "function" : "box";
+    const word = !unitAtLeast(context, SPELL_RECIPES_UNIT_ORDER)
+      ? "box"
+      : boxKindWord(close, `${context?.setup ?? ""}\n${code}`) === "recipe"
+        ? "function"
+        : paramHere(mainFrames(raw), close, programFunctions(code, context))
+          ? "parameter"
+          : "box";
     return explain(
       kind,
       title,
@@ -831,6 +892,16 @@ function exampleOnlyNames(context: ExplainContext | undefined): string[] {
   const made = context?.example ? definedNames(context.example).map((entry) => entry.name) : [];
   const taught = unitAtLeast(context, FUNCTIONS_UNIT_ORDER) ? (context?.foreign ?? []) : [];
   return [...new Set([...made, ...taught])].filter((name) => !task.has(name));
+}
+
+/**
+ * Where a copied name comes from, in the box's words: "the Example" (the figure tagged "Example — not your task") when
+ * its code has the name; from the strings unit on, a name only in Mar'tu's text or a hint's Teach me is "Mar'tu's
+ * example", the teacher's ruled words (`said` in chain-the-spells), never "the Example", which does not show it.
+ */
+function exampleWord(name: string, context?: ExplainContext): string {
+  if (!unitAtLeast(context, STRINGS_UNIT_ORDER)) return "the Example";
+  return identifiersIn(context?.example ?? "").includes(name) ? "the Example" : "Mar'tu's example";
 }
 
 /** Every name a piece of code reads, makes or calls (not Python's words, not the text inside quotes). */
@@ -1073,6 +1144,17 @@ function quotesProblem(text: string, line: number | null, raw: string, code = ""
     // `print('It's fun')`: the apostrophe ended the text early, and the last quote opened a new one.
     if (quote === "'" && /[A-Za-z]'[A-Za-z]/.test(text)) {
       const first = text.indexOf("'");
+      const last = text.lastIndexOf("'");
+      // Unit 9: the text keeps its own spaces (`' What's in it for me?'` keeps its space in front), shown as the whole line.
+      if (unitAtLeast(context, STRINGS_UNIT_ORDER) && last > first && !text.slice(first + 1, last).includes('"')) {
+        const fixed = `${text.slice(0, first)}"${text.slice(first + 1, last)}"${text.slice(last + 1)}`.trim();
+        return explain(
+          "apostrophe",
+          "Apostrophe in text",
+          `The apostrophe ' in your text${onLine(line)} ends the text too early, because Python reads it as the closing quote. Put double quotes around text that has an apostrophe: \`${fixed}\``,
+          raw,
+        );
+      }
       const words = text.slice(first + 1, text.lastIndexOf("'")).trim();
       return explain(
         "apostrophe",
@@ -1255,7 +1337,7 @@ function splitTopLevel(expr: string): { parts: string[]; marks: string[] } | nul
 }
 
 /** `print("Name:", spartan rage)` -> `print("Name:", "spartan rage")`: quote the runs of plain words. */
-function quoteWordRuns(expr: string, names: string[]): string | null {
+function quoteWordRuns(expr: string, names: string[], quotable: readonly string[] = []): string | null {
   const split = splitTopLevel(expr);
   if (!split) return null;
   let changed = false;
@@ -1263,7 +1345,7 @@ function quoteWordRuns(expr: string, names: string[]): string | null {
   for (const part of split.parts) {
     const words = part.split(/\s+/).filter(Boolean);
     const plain = words.length > 0 && words.every((word) => BARE_WORD.test(word)) && words.some((word) => /[A-Za-z]/.test(word));
-    const sentence = words.length >= 2 || /[.!?]$/.test(part);
+    const sentence = words.length >= 2 || /[.!?]$/.test(part) || (words.length === 1 && quotable.includes(words[0]));
     if (plain && sentence) {
       if (words.some((word) => names.includes(word))) return null;
       parts.push(`"${words.length === 1 ? part.replace(/[.!?]+$/, "") : words.join(" ")}"`);
@@ -1281,14 +1363,14 @@ function quoteWordRuns(expr: string, names: string[]): string | null {
  * `print("Name:", spartan rage)`. Returns the student's own line with the quotes put in, or null when the
  * line is not that slip.
  */
-function unquotedWords(text: string, names: string[]): { fixed: string; comma: boolean } | null {
+function unquotedWords(text: string, names: string[], quotable: readonly string[] = []): { fixed: string; comma: boolean } | null {
   const body = codePart(text);
   // A call that takes several values (`heal(Moth Queen, 5)`, `cheer_on("Captain Glug", Go now)`): split the
   // brackets on their top-level commas and quote ONLY the bare run of words. Numbers, the program's own names and
   // quoted values stay as they are. (print keeps its own rows below: a comma there is often part of the sentence.)
   const several = body.match(/^(\s*(?:[A-Za-z_]\w*\s*=(?!=)\s*)?([A-Za-z_][\w.]*)\s*\()(.*)\)\s*$/);
   if (several && several[2] !== "print" && splitTopLevel(several[3])?.marks.includes(",")) {
-    const fixed = quoteWordRuns(several[3].trim(), names);
+    const fixed = quoteWordRuns(several[3].trim(), names, quotable);
     return fixed ? { fixed: `${several[1].trim()}${fixed})`, comma: false } : null;
   }
   const assign = body.match(/^(\s*[A-Za-z_]\w*\s*=)(?!=)\s*(.+?)\s*$/);
@@ -1338,8 +1420,13 @@ function unquotedWords(text: string, names: string[]): { fixed: string; comma: b
   return null;
 }
 
-function explainUnquoted(text: string, code: string, line: number | null, raw: string): CourseExplanation | null {
-  const found = unquotedWords(text, namesBefore(code, line));
+function explainUnquoted(text: string, code: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  // Unit 9: `note.replace(compass, Ley Clock)` quotes `compass` too, a word Mar'tu's version has in quotes and no line makes.
+  const names = namesBefore(code, line);
+  const quotable = unitAtLeast(context, STRINGS_UNIT_ORDER)
+    ? [...(context?.solution ?? "").matchAll(/(["'])([A-Za-z]+)\1/g)].map((found) => found[2]).filter((word) => !names.includes(word))
+    : [];
+  const found = unquotedWords(text, names, quotable);
   if (!found) return null;
   if (found.comma) {
     return explain(
@@ -2199,12 +2286,35 @@ function explainRandintBackwards(text: string, line: number | null, raw: string)
  * RecursionError: a recipe that calls itself (`def say_steady():` with `say_steady()` indented under it). Says which
  * line, and that the call belongs below the recipe; any other endless calling keeps the plain words.
  */
-function explainRecursion(code: string, raw: string): CourseExplanation {
+function explainRecursion(code: string, raw: string, context?: ExplainContext): CourseExplanation {
   const lines = (code ?? "").split("\n");
   for (const block of recipeBlocks(code)) {
     const self = new RegExp(`(^|[^\\w.])${escapeRegExp(block.recipe)}\\s*\\(`);
     for (let at = block.start; at < block.end; at += 1) {
-      if (!self.test(maskStrings(codePart(lines[at] ?? "")))) continue;
+      const row = codePart(lines[at] ?? "").trim();
+      if (!self.test(maskStrings(row))) continue;
+      // `return decode(message, -key)` where Mar'tu's `decode` calls `encode`: the call names the wrong function. A
+      // `return` or a store is never a test call to move below the function.
+      if (/^return\b|^[A-Za-z_]\w*\s*=(?!=)/.test(row)) {
+        const theirs = functionsIn(context?.solution ?? "").get(block.recipe);
+        const head = row.match(/^return\b|^[A-Za-z_]\w*\s*=(?!=)/)?.[0] ?? "";
+        const other = theirs
+          ? (context?.solution ?? "")
+              .split("\n")
+              .slice(theirs.start, theirs.end)
+              .map((entry) => codePart(entry).trim())
+              .find((entry) => squashed(entry).startsWith(squashed(head)) && callsOnLine(entry).some((call) => call.callee !== block.recipe && /^[A-Za-z_]\w*$/.test(call.callee) && !CALLED_TOOLS.has(call.callee)))
+          : undefined;
+        const callee = other ? callsOnLine(other).find((call) => call.callee !== block.recipe && /^[A-Za-z_]\w*$/.test(call.callee) && !CALLED_TOOLS.has(call.callee))?.callee : undefined;
+        return explain(
+          "never-ending-calls",
+          "A recipe that calls itself",
+          `Line ${at + 1} calls \`${block.recipe}\` inside \`${block.recipe}\` itself, so it starts again and again and never stops. ${
+            other && callee ? `Call \`${callee}\` here: \`${other}\`` : "Make sure it can finish with a `return` that doesn't call it again."
+          }`,
+          raw,
+        );
+      }
       return explain(
         "never-ending-calls",
         "A recipe that calls itself",
@@ -2324,7 +2434,7 @@ function explainRecipeName(
       // One or two letters off one of the recipe's own names: a spelling slip, which keeps its own row.
       if (!fromExample && closeName(name, [...boxes, ...ingredients])) return null;
       const lead = fromExample
-        ? `\`${name}\` comes from the Example, not from your task.`
+        ? `\`${name}\` comes from ${exampleWord(name, context)}, not from your task.`
         : `${lineWord(line)} hands back \`${name}\`, but no line in \`${inside.recipe}\` makes a box by that name.`;
       if (boxes.length > 0) {
         return explain(
@@ -2434,6 +2544,9 @@ function explainSyntax(
   // Unit 7: a keyword in quotes, `==` for a default, `return` inside a `lambda`.
   const functionsTwo = unitAtLeast(context, SPELL_RECIPES_UNIT_ORDER) ? explainFunctionsTwoSyntax(message, text, line, raw) : null;
   if (functionsTwo) return functionsTwo;
+  // Unit 9: a curly brace with no partner in an f-string, a quote mark inside text, Enter pressed inside text.
+  const strings = unitAtLeast(context, STRINGS_UNIT_ORDER) ? explainStringsSyntax(message, code, text, line, raw, context) : null;
+  if (strings) return strings;
 
   if (/unterminated triple-quoted string/.test(lower)) {
     return explain(
@@ -2680,7 +2793,7 @@ function explainSyntax(
     }
     const option = explainUnquotedOption(text, line, raw);
     if (option) return option;
-    const unquoted = explainUnquoted(text, code, line, raw);
+    const unquoted = explainUnquoted(text, code, line, raw, context);
     if (unquoted) return unquoted;
     // Unit 4: `chalk_wall = [48 48, 47]`, numbers side by side in a list (never "or + to join text").
     if (unitAtLeast(context, LISTS_UNIT_ORDER)) {
@@ -2807,7 +2920,7 @@ function explainSyntax(
     if (/;\s*$/.test(codePart(text)) && headerWithColon(code, text, line)) return explainMissingColon(code, text, line, raw, context?.solution);
     const option = explainUnquotedOption(text, line, raw);
     if (option) return option;
-    const unquoted = explainUnquoted(text, code, line, raw);
+    const unquoted = explainUnquoted(text, code, line, raw, context);
     if (unquoted) return unquoted;
     const body = codePart(text).trim();
     // `Night watch`: plain words on a line. One fix, from Mar'tu's version: a note where his line is a note (the
@@ -2967,6 +3080,12 @@ function explainName(
         : `${lineWord(line)} uses \`randint\` on its own, but it lives inside \`random\`, and this code never brings \`random\` in. Add \`import random\` as the first line, then write: \`${fixed}\``,
       raw,
     );
+  }
+
+  // Unit 9: a method used like a function, nested (`capitalize(lower(raw))`) or with more values (`split(report, ". ")`).
+  if (unitAtLeast(context, STRINGS_UNIT_ORDER) && TEXT_METHODS.has(name)) {
+    const methods = explainMethodsAsFunctions(name, text, line, raw, context);
+    if (methods) return methods;
   }
 
   // `lower(answer)`: lower belongs to the text, after a dot.
@@ -8433,6 +8552,10 @@ function explainType(
   // print hands back `None`. Never "values of kinds that don't go together" with Python's 'NoneType'.
   const outside = explainOutsidePrint(message, text, line, raw);
   if (outside) return outside;
+  // Unit 9: text changed in place, `len()` of a number, numbers handed to `.join()`, a comma in a slice, a method with
+  // no `()` glued or asked `in`, a whole list handed to `int()`.
+  const strings = unitAtLeast(context, STRINGS_UNIT_ORDER) ? explainStringsType(message, code, text, line, raw, context) : null;
+  if (strings) return strings;
   // Unit 3 on: a recipe that prints its answer and has no `return`, its `None` compared or glued (`ore_left >= daily`).
   const none = unitAtLeast(context, FUNCTIONS_UNIT_ORDER) ? explainNoneValue(message, code, text, line, raw, context) : null;
   if (none) return none;
@@ -8476,15 +8599,22 @@ function explainType(
     const number = text.match(/\+\s*([A-Za-z_]\w*)\b(?!\s*\()/)?.[1] ?? text.match(/\b([A-Za-z_]\w*)\s*\+/)?.[1];
     // Unit 5: a number read from a sheet is shown whole, `str(gearshift["mana"])`, never `str(gearshift)`.
     const read = unitAtLeast(context, DICTS_UNIT_ORDER) ? sheetNumberRead(code, text, context) : null;
-    const example = read ? `str(${read})` : number ? `str(${number})` : "str(score)";
+    // No name beside a `+` (`"Blocks: " + len(bar)`): never a made-up name, the number itself goes inside `str( )`.
+    const example = read ? `str(${read})` : number ? `str(${number})` : null;
     return explain(
       "text-plus-number",
       "Text + number",
-      `${lineWord(line)} glues text to a number with \`+\`, but \`+\` only glues text to text. Turn the number into text first with \`str()\`: \`${example}\``,
+      `${lineWord(line)} glues text to a number with \`+\`, but \`+\` only glues text to text. Turn the number into text first with \`str()\`${example ? `: \`${example}\`` : ": put the number inside `str( )`."}`,
       raw,
     );
   }
-  if (addToNumber) {
+  // `total = sum(clean_marks)`: Python's `+` is inside `sum()`, never on the line, so never the `+` row below.
+  const plusOnLine = /\+/.test(maskStrings(codePart(text)));
+  if (addToNumber && !plusOnLine) {
+    const summed = unitAtLeast(context, LISTS_UNIT_ORDER) ? explainSumOfText(text, line, raw, context) : null;
+    if (summed) return summed;
+  }
+  if (addToNumber && plusOnLine) {
     const number = text.match(/\b([A-Za-z_]\w*)\s*\+/)?.[1];
     const example = number && number !== "print" ? `str(${number})` : "str()";
     return explain(
@@ -8700,6 +8830,1330 @@ const BLOCKED_MODULES = new Set([
   "requests", "httpx", "aiohttp",
 ]);
 
+/* ---------------------------------------------------------------------------------------------- */
+/* Strings (Unit 9): the teacher's site requests 1 and 2                                           */
+/* ---------------------------------------------------------------------------------------------- */
+
+/** The text methods the strings unit teaches (with Unit 2's `.lower()` and Unit 3's `.capitalize()`). */
+const TEXT_METHODS: ReadonlySet<string> = new Set(["lower", "upper", "capitalize", "title", "strip", "split", "join", "replace", "find"]);
+
+/** "position" or "positions", in the strings unit's word (TEXT_POSITION_WORD). */
+function textPosition(plural = false): string {
+  return plural ? `${TEXT_POSITION_WORD}s` : TEXT_POSITION_WORD;
+}
+
+/** Code with every space taken out, to compare a student's line with Mar'tu's however each is spaced. */
+function squashed(text: string): string {
+  return (text ?? "").replace(/\s+/g, "");
+}
+
+/** Mar'tu's version, one line at a time: no comments, no indent. */
+function solutionRows(context?: ExplainContext): string[] {
+  return (context?.solution ?? "").split("\n").map((row) => codePart(row).trim()).filter(Boolean);
+}
+
+/**
+ * Mar'tu's version of the student's line where only `piece` differs: the line of the solution that reads the same
+ * before and after it (spaces ignored), with its own `want` in the middle. Null when no line fits.
+ */
+function solutionLineAround(body: string, piece: string, want: RegExp, context?: ExplainContext): { row: string; middle: string } | null {
+  const line = squashed(body);
+  const cut = squashed(piece);
+  const at = line.indexOf(cut);
+  if (at < 0 || line.indexOf(cut, at + 1) >= 0) return null;
+  const before = line.slice(0, at);
+  const after = line.slice(at + cut.length);
+  for (const row of solutionRows(context)) {
+    const flat = squashed(row);
+    if (flat.length <= before.length + after.length || !flat.startsWith(before) || !flat.endsWith(after)) continue;
+    const middle = flat.slice(before.length, flat.length - after.length);
+    if (middle !== cut && want.test(middle)) return { row, middle };
+  }
+  return null;
+}
+
+/** The text a name was cut from by `.split()` on the nearest line above that makes it (`words = report.split()`). */
+function splitFrom(code: string, name: string, line: number): string | null {
+  const rows = (code ?? "").split("\n");
+  for (let at = line - 1; at >= 1; at -= 1) {
+    const made = codePart(rows[at - 1] ?? "").match(new RegExp(`^\\s*${escapeRegExp(name)}\\s*=(?!=)\\s*(.+)$`));
+    if (!made) continue;
+    return made[1].match(/^([A-Za-z_][\w.]*?)\s*\.\s*split\s*\(/)?.[1] ?? null;
+  }
+  return null;
+}
+
+/**
+ * Site request 1 (1): "'str' object does not support item assignment" (`word[0] = "G"`). Text can't change one letter:
+ * build a new one and put it back, in the line's own names. Mar'tu's version of that line when it has one (`initials =
+ * initials + name[0]`), else the first letter glued onto the rest (`word = "G" + word[1:]`).
+ */
+function explainTextChangedInPlace(message: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  if (!/^'str' object does not support item assignment/.test(message)) return null;
+  const found = codePart(text).trim().match(/^([A-Za-z_]\w*)\s*\[\s*([^\]]+?)\s*\]\s*=(?!=)\s*(.+)$/);
+  if (!found) return null;
+  const [, name, at, value] = found;
+  const built = solutionRows(context).find(
+    (row) => new RegExp(`^${escapeRegExp(name)}\\s*=(?!=)`).test(row) && squashed(row).includes(squashed(value)),
+  );
+  const fixed = built ?? (at === "0" ? `${name} = ${value} + ${name}[1:]` : null);
+  return {
+    ...explain(
+      "text-changed-in-place",
+      "Text can't change one letter",
+      `${lineWord(line)} tries to change one letter of \`${name}\`, but text can't change one letter. ${
+        fixed
+          ? `Build a new one and put it back: \`${fixed}\``
+          : 'Build new text instead: start with empty text, `""`, and glue each new letter on with `+`.'
+      }`,
+      raw,
+    ),
+    lean: `${lineWord(line)} changes one letter of \`${name}\` in place, and text can't change one letter.`,
+  };
+}
+
+/**
+ * Site request 1 (2): "'list' object has no attribute 'join'" (`words.join(" ")`, `words[:3].join(" ")`). A list can't
+ * join itself: ask the glue, with the line's own glue and list.
+ */
+function explainJoinOnList(message: string, text: string, line: number | null, raw: string): CourseExplanation | null {
+  if (!/^'list' object has no attribute 'join'/.test(message)) return null;
+  const body = codePart(text).trim();
+  const mask = maskStrings(body);
+  const dot = mask.search(/\.\s*join\s*\(/);
+  if (dot < 0) return null;
+  // The list: the read just before the dot (a name, with any `[...]` after it).
+  const left = mask.slice(0, dot).match(/([A-Za-z_]\w*(?:\s*\[[^\]]*\])*)\s*$/);
+  const open = mask.indexOf("(", dot);
+  const close = matchingBracket(mask, open);
+  if (!left || close < 0) return null;
+  const listStart = dot - left[0].length;
+  const list = body.slice(listStart, dot).trim();
+  const glue = body.slice(open + 1, close).trim();
+  if (!glue || splitArguments(glue)?.length !== 1) return null;
+  const fixed = `${body.slice(0, listStart)}${glue}.join(${list})${body.slice(close + 1)}`;
+  return {
+    ...explain(
+      "join-on-list",
+      "Ask the glue to join",
+      `${lineWord(line)} asks the list \`${list}\` to join itself, but a list can't join. Ask the glue instead: \`${fixed}\``,
+      raw,
+    ),
+    lean: `${lineWord(line)} asks a list, \`${list}\`, to \`.join()\`.`,
+  };
+}
+
+/**
+ * Site request 1 (3): a method named with no `()` ("'builtin_function_or_method' object has no attribute 'capitalize'",
+ * and its TypeError twins: glued to text, or asked `in`). On the same line (`raw.lower.capitalize()`, `"red" in
+ * report.lower`), or on the line above that stored it (`note = note.lower`, then `note.capitalize()`), which is the line
+ * the crash banner names. The lessons' words: the method never ran, so the name holds the method itself, not text.
+ */
+function explainMethodWithoutBrackets(message: string, code: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  if (!/builtin_function_or_method/.test(message) || line === null) return null;
+  const isMethod = (name: string) => TEXT_METHODS.has(name) || LIST_TOOLS.has(name);
+  // The line with `()` added after the method. A method that needs values (`.replace`, `.join`, `.find`, `.append`)
+  // is never shown with an empty `()`, which would stop the code again: Mar'tu's version of that line, or words only.
+  const withBrackets = (row: string, end: number, method: string): string | null => {
+    if (!METHODS_WITH_VALUES.has(method)) return `${row.slice(0, end)}()${row.slice(end)}`.trim();
+    const head = `${squashed(row.slice(0, end))}(`;
+    return solutionRows(context).find((entry) => squashed(entry).startsWith(head)) ?? null;
+  };
+  const addThem = (method: string, where: string, fixed: string | null) =>
+    fixed ? `Add \`()\` ${where}: \`${fixed}\`` : `Add \`()\` ${where}, with the values \`.${method}()\` needs inside.`;
+  const body = codePart(text);
+  const mask = maskStrings(body);
+  for (const found of mask.matchAll(/\.\s*([A-Za-z_]\w*)(?![\w(])(?!\s*\()/g)) {
+    const method = found[1];
+    if (!isMethod(method)) continue;
+    const end = (found.index ?? 0) + found[0].length;
+    const owner = mask.slice(0, found.index ?? 0).match(/(?<![\w.])([A-Za-z_]\w*)\s*$/)?.[1];
+    const what = owner ? `\`${owner}.${method}\`` : `\`.${method}\` with no \`()\``;
+    return {
+      ...explain(
+        "method-without-brackets",
+        "A method with no ( )",
+        `\`.${method}\` has no \`()\`, so the method never ran: ${what} is the method itself, not text. Python runs a method only with \`()\`. ${addThem(method, `after \`.${method}\``, withBrackets(body, end, method))}`,
+        raw,
+      ),
+      lean: `${lineWord(line)} has \`.${method}\` with no \`()\`: ${what} is the method itself, not text.`,
+    };
+  }
+  // A name that holds the method: the line that stored it, followed back through plain copies (`note = note`).
+  const rows = (code ?? "").split("\n");
+  const names = [...mask.matchAll(/(?<![\w.])([A-Za-z_]\w*)/g)].map((found) => found[1]).filter((name) => !KEYWORDS.has(name));
+  for (const first of new Set(names)) {
+    let name = first;
+    let at = line - 1;
+    while (at >= 1) {
+      const row = codePart(rows[at - 1] ?? "");
+      const made = row.match(new RegExp(`^\\s*${escapeRegExp(name)}\\s*=(?!=)\\s*(.+)$`));
+      if (!made) {
+        at -= 1;
+        continue;
+      }
+      const value = made[1].trim();
+      if (/^[A-Za-z_]\w*$/.test(value) && !KEYWORDS.has(value)) {
+        name = value;
+        at -= 1;
+        continue;
+      }
+      const method = value.match(/\.\s*([A-Za-z_]\w*)\s*$/)?.[1];
+      if (!method || !isMethod(method)) break;
+      const fixed = withBrackets(row.trim(), row.trim().length, method);
+      return {
+        ...explain(
+          "method-without-brackets",
+          "A method with no ( )",
+          `Line ${at} wrote \`.${method}\` with no \`()\`, so the method never ran: \`${first}\` holds the method itself, not text. Python runs a method only with \`()\`. ${addThem(method, `on line ${at}`, fixed)}`,
+          raw,
+        ),
+        lean: `Line ${at} wrote \`.${method}\` with no \`()\`: \`${first}\` holds the method itself, not text.`,
+        ...(at !== line ? { slipLine: at } : {}),
+      };
+    }
+  }
+  return null;
+}
+
+/** Methods that need values inside their `()`: never shown with an empty `()`. */
+const METHODS_WITH_VALUES: ReadonlySet<string> = new Set(["replace", "join", "find", "append", "insert", "remove", "count", "index", "extend"]);
+
+/**
+ * Site request 1 (4): a list used like text ("'list' object has no attribute 'lower'", and `int()` handed a whole list):
+ * `.split()` handed back a list. Inside a loop over that list, the loop variable holds one item (`mark.replace(...)`);
+ * otherwise use the method on one item (`words[0].upper()`).
+ */
+function explainListAsText(message: string, code: string, text: string, line: number | null, raw: string): CourseExplanation | null {
+  const attr = message.match(/^'list' object has no attribute '([A-Za-z_]\w*)'/)?.[1];
+  const toInt = /^int\(\) argument must be .*, not 'list'/.test(message);
+  if (line === null || (!toInt && (!attr || !TEXT_METHODS.has(attr) || attr === "join"))) return null;
+  const body = codePart(text);
+  const mask = maskStrings(body);
+  // `report.split(". ").upper()`: the list `.split()` hands back, asked for a text method in the same chain. The text
+  // method goes before `.split`, on the text itself.
+  const chained = attr ? mask.match(new RegExp(`(?<![\\w.])([A-Za-z_]\\w*)\\s*\\.\\s*split\\s*\\(([^()]*)\\)\\s*\\.\\s*${attr}\\s*\\(([^()]*)\\)`)) : null;
+  if (attr && chained) {
+    const at = chained.index ?? 0;
+    const piece = (from: number, to: number) => body.slice(at + from, at + to);
+    const splitArgs = piece(chained[0].indexOf("(") + 1, chained[0].indexOf("(") + 1 + chained[2].length);
+    const methodOpen = chained[0].lastIndexOf("(");
+    const methodArgs = piece(methodOpen + 1, methodOpen + 1 + chained[3].length);
+    const fixed = `${body.slice(0, at)}${chained[1]}.${attr}(${methodArgs}).split(${splitArgs})${body.slice(at + chained[0].length)}`.trim();
+    return {
+      ...explain(
+        "list-as-text",
+        "A list, not text",
+        `${lineWord(line)} asks for \`.${attr}()\` after \`.split()\`, but \`.split()\` hands back a list, so \`.${attr}()\` has no text to work on. Use \`.${attr}()\` before \`.split\`, on the text itself: \`${fixed}\``,
+        raw,
+      ),
+      lean: `${lineWord(line)} asks the list from \`.split()\` for \`.${attr}()\`: a list is not text.`,
+    };
+  }
+  const name = attr
+    ? mask.match(new RegExp(`(?<![\\w.])([A-Za-z_]\\w*)\\s*\\.\\s*${attr}\\s*\\(`))?.[1]
+    : callsOnLine(text).find((call) => call.callee === "int" && call.args.length === 1 && /^[A-Za-z_]\w*$/.test(call.args[0]))?.args[0];
+  if (!name) return null;
+  const from = splitFrom(code, name, line);
+  const holds = from !== null ? `\`.split()\` handed back a list, so \`${name}\` holds a list, not text` : `\`${name}\` holds a list, not text`;
+  const loop = loopOver(code, line, name);
+  const tool = attr ? `\`.${attr}()\`` : "`int()`";
+  const asks = attr ? `asks \`${name}\` for ${tool}` : `hands \`${name}\` to \`int()\``;
+  const lean = attr
+    ? `${lineWord(line)} asks \`${name}\`, a list, for ${tool}: a list is not text.`
+    : `${lineWord(line)} hands \`int()\` \`${name}\`, a list: \`int()\` turns one piece of text into a number.`;
+  if (loop) {
+    const swap = attr ? new RegExp(`(?<![\\w.])${escapeRegExp(name)}(?=\\s*\\.\\s*${attr}\\s*\\()`) : new RegExp(`(?<=int\\(\\s*)${escapeRegExp(name)}(?=\\s*\\))`);
+    const fixed = body.trim().replace(swap, loop.variable);
+    return {
+      ...explain(
+        "list-as-text",
+        "A list, not text",
+        `${lineWord(line)} ${asks}, but ${holds}. Inside the loop, \`${loop.variable}\` holds one item: \`${fixed}\``,
+        raw,
+      ),
+      lean,
+    };
+  }
+  if (attr) {
+    const call = body.slice(mask.search(new RegExp(`(?<![\\w.])${escapeRegExp(name)}\\s*\\.\\s*${attr}\\s*\\(`)));
+    const open = maskStrings(call).indexOf("(");
+    const close = matchingBracket(maskStrings(call), open);
+    const args = close > open ? call.slice(open + 1, close) : "";
+    return {
+      ...explain(
+        "list-as-text",
+        "A list, not text",
+        `${lineWord(line)} ${asks}, but ${holds}, and a list has no ${tool}. Use ${tool} on one item: \`${name}[0].${attr}(${args})\``,
+        raw,
+      ),
+      lean,
+    };
+  }
+  return {
+    ...explain(
+      "list-as-text",
+      "A list, not text",
+      `${lineWord(line)} ${asks}, but ${holds}. \`int()\` turns one piece of text into a number: use it on one item at a time, in a loop over \`${name}\`.`,
+      raw,
+    ),
+    lean,
+  };
+}
+
+/** Site request 1 (5): "'str' object has no attribute 'append'" (`initials.append(name[0])`): glue it on with `+`. */
+function explainAppendOnText(message: string, text: string, line: number | null, raw: string): CourseExplanation | null {
+  if (!/^'str' object has no attribute 'append'/.test(message)) return null;
+  const found = codePart(text).trim().match(/^([A-Za-z_]\w*)\s*\.\s*append\s*\(\s*(.+?)\s*\)$/);
+  if (!found || splitArguments(found[2])?.length !== 1) return null;
+  const [, name, value] = found;
+  return {
+    ...explain(
+      "append-on-text",
+      "Text has no .append()",
+      `${lineWord(line)} asks \`${name}\` for \`.append()\`, but \`${name}\` holds text, and text has no \`.append()\`. Glue it on with \`+\`: \`${name} = ${name} + ${value}\``,
+      raw,
+    ),
+    lean: `${lineWord(line)} asks \`${name}\`, which holds text, for \`.append()\`: text has no \`.append()\`.`,
+  };
+}
+
+/**
+ * Site requests 1 (6) and 2: "string indices must be integers, not 'tuple'" (`sign[0, 9]`): the comma-in-brackets help,
+ * for text. A slice takes a colon; a comma asks for two positions at once (TEXT_POSITION_WORD).
+ */
+function explainCommaInText(message: string, text: string, line: number | null, raw: string): CourseExplanation | null {
+  if (!/^string indices must be integers, not 'tuple'/.test(message)) return null;
+  const body = codePart(text).trim();
+  const mask = maskStrings(body);
+  for (const found of mask.matchAll(/(?<![\w.])([A-Za-z_]\w*)\s*\[/g)) {
+    const open = (found.index ?? 0) + found[0].length - 1;
+    const close = matchingBracket(mask, open);
+    const parts = close < 0 ? null : splitTopLevel(body.slice(open + 1, close));
+    if (!parts || parts.parts.length !== 2 || parts.marks[0] !== ",") continue;
+    const fixed = `${body.slice(0, open + 1)}${parts.parts[0]}:${parts.parts[1]}${body.slice(close)}`;
+    return {
+      ...explain(
+        "comma-in-brackets",
+        "A slice takes a colon",
+        `Inside \`[ ]\`, a slice takes a colon: \`${fixed}\`. A comma asks for two ${textPosition(true)} at once.`,
+        raw,
+      ),
+      slip: "a comma inside [ ] where a slice takes a colon",
+      lean: `${lineWord(line)} has a comma inside \`[ ]\`: a comma asks for two ${textPosition(true)} at once.`,
+    };
+  }
+  return null;
+}
+
+/**
+ * Site request 1 (7): "object of type 'int' has no len()" (`len(26)`): `len()` counts letters or items, and a number
+ * has none. Mar'tu's version of the line when it counts something else (`len(bar)`).
+ */
+function explainLenOfNumber(message: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  if (!/^object of type '(int|float)' has no len\(\)/.test(message)) return null;
+  const call = callsOnLine(text).find((entry) => entry.callee === "len" && entry.args.length === 1);
+  if (!call) return null;
+  const counted = call.args[0];
+  const what = /^-?\d+(\.\d+)?$/.test(counted) ? `\`${counted}\` is a number` : `\`${counted}\` holds a number`;
+  const theirs = solutionLineAround(codePart(text).trim(), call.text, /^len\([A-Za-z_]\w*\)$/, context);
+  const other = theirs?.middle.match(/^len\(([A-Za-z_]\w*)\)$/)?.[1];
+  return {
+    ...explain(
+      "len-of-number",
+      "Nothing to count",
+      `\`len()\` counts the letters in text or the items in a list. ${what}, so there is nothing to count.${
+        theirs && other ? ` Count \`${other}\`: \`${theirs.row}\`` : ""
+      }`,
+      raw,
+    ),
+    lean: `${lineWord(line)} hands \`len()\` a number, \`${counted}\`: there is nothing to count.`,
+  };
+}
+
+/**
+ * Site request 1 (8): "sequence item 0: expected str instance, int found" (`", ".join(hours)`): `.join()` glues text
+ * only. Mar'tu's version of the line, joining the list that holds text, when it has one.
+ */
+function explainJoinNeedsText(message: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  const found = message.match(/^sequence item \d+: expected str instance, (\w+) found/);
+  if (!found) return null;
+  const body = codePart(text).trim();
+  const mask = maskStrings(body);
+  const dot = mask.search(/\.\s*join\s*\(/);
+  if (dot < 0) return null;
+  const open = mask.indexOf("(", dot);
+  const close = matchingBracket(mask, open);
+  const list = close > open ? body.slice(open + 1, close).trim() : "";
+  if (!list) return null;
+  const kinds = found[1] === "int" || found[1] === "float" ? "numbers" : found[1] === "list" ? "lists" : "values that are not text";
+  const theirs = solutionLineAround(body, `(${list})`, /^\([A-Za-z_]\w*\)$/, context);
+  return {
+    ...explain(
+      "join-needs-text",
+      ".join() glues text",
+      `\`.join()\` glues text only, and \`${list}\` holds ${kinds}. ${theirs ? `Join the list that holds text: \`${theirs.row}\`` : "Join a list of text instead."}`,
+      raw,
+    ),
+    lean: `${lineWord(line)} hands \`.join()\` \`${list}\`, a list of ${kinds}: \`.join()\` glues text only.`,
+  };
+}
+
+/** The f-string on a line, with where its text starts and ends in the line. */
+function fStringsOn(body: string): { start: number; end: number; inner: string }[] {
+  return [...body.matchAll(/(?<![\w])[fF](["'])((?:(?!\1)[^\\]|\\.)*)\1/g)].map((found) => {
+    const start = (found.index ?? 0) + 2;
+    return { start, end: start + found[2].length, inner: found[2] };
+  });
+}
+
+/** The line with the `{` that never closes closed (`{mana` -> `{mana}`, `{caps: ` -> `{caps}: `), or null. */
+function closeFStringBrace(body: string): string | null {
+  for (const fstring of fStringsOn(body)) {
+    const open = fstring.inner.match(/\{([A-Za-z_]\w*(?:\.\w+)*(?:\([^(){}]*\))?(?:\[[^[\]{}]*\])?)(?![\w.([])(?!\s*\})/);
+    if (!open) continue;
+    const at = fstring.start + (open.index ?? 0) + open[0].length;
+    return `${body.slice(0, at)}}${body.slice(at)}`;
+  }
+  return null;
+}
+
+/** The line with the `}` that closes nothing mended: a `}` too many taken out, or the missing `{` put in, or null. */
+function mendFStringCloser(body: string): string | null {
+  for (const fstring of fStringsOn(body)) {
+    const inner = fstring.inner;
+    let depth = 0;
+    for (let at = 0; at < inner.length; at += 1) {
+      const char = inner[at];
+      if (char === "{") {
+        if (depth === 0 && inner[at + 1] === "{") {
+          at += 1;
+          continue;
+        }
+        depth += 1;
+      } else if (char === "}") {
+        if (depth > 0) {
+          depth -= 1;
+          continue;
+        }
+        if (inner[at + 1] === "}") {
+          at += 1;
+          continue;
+        }
+        const where = fstring.start + at;
+        if (inner[at - 1] === "}") return `${body.slice(0, where)}${body.slice(where + 1)}`;
+        const word = inner.slice(0, at).match(/[A-Za-z_]\w*$/);
+        if (!word) return null;
+        const from = where - word[0].length;
+        return `${body.slice(0, from)}{${body.slice(from)}`;
+      }
+    }
+  }
+  return null;
+}
+
+/**
+ * Site request 1 (9): "f-string: expecting '}'" (a `{` that never closes, also "..., or format specs" after a colon)
+ * and its twin "f-string: single '}' is not allowed" (a `}` with no `{`). Each `{` needs its `}`; the line mended when
+ * the explainer can see where.
+ */
+function explainFStringBrace(message: string, text: string, line: number | null, raw: string): CourseExplanation | null {
+  const opened = /^f-string: expecting '}'/.test(message);
+  const closed = /^f-string: single '}' is not allowed/.test(message);
+  if (!opened && !closed) return null;
+  const body = text.trim();
+  const fixed = opened ? closeFStringBrace(body) : mendFStringCloser(body);
+  const show = fixed ? `: \`${fixed}\`` : ".";
+  return opened
+    ? {
+        ...explain("f-string-brace", "Curly braces come in pairs", `${lineWord(line)} opens a \`{\` in an f-string and never closes it. Each \`{\` in an f-string needs its \`}\`${show}`, raw),
+        lean: `${lineWord(line)} opens a \`{\` in an f-string and never closes it.`,
+      }
+    : {
+        ...explain("f-string-brace", "Curly braces come in pairs", `${lineWord(line)} has a \`}\` with no \`{\` in an f-string. Each \`{\` in an f-string needs its \`}\`, and each \`}\` its \`{\`${show}`, raw),
+        lean: `${lineWord(line)} has a \`}\` with no \`{\` in an f-string.`,
+      };
+}
+
+/**
+ * Site request 1 (10): "'str' object has no attribute 'Upper'" (a method name with a capital letter): method names are
+ * all small letters.
+ */
+function explainMethodCapital(message: string, code: string, line: number | null, raw: string): CourseExplanation | null {
+  const attr = message.match(/^'str' object has no attribute '([A-Za-z_]\w*)'/)?.[1];
+  if (!attr || line === null || attr === attr.toLowerCase() || !TEXT_METHODS.has(attr.toLowerCase())) return null;
+  const small = attr.toLowerCase();
+  const fixed = lineWith(code, line, `.${attr}`, `.${small}`);
+  return {
+    ...explain(
+      "method-capital",
+      "Small letters for a method",
+      `${lineWord(line)} writes \`.${attr}\` with a capital letter. Method names are all small letters: \`${fixed ?? `.${small}()`}\``,
+      raw,
+    ),
+    lean: `${lineWord(line)} writes \`.${attr}\` with a capital letter.`,
+  };
+}
+
+/**
+ * A number has no text methods ("'int' object has no attribute 'upper'") because the call one frame out handed its
+ * values over in the wrong order (`name_tag(48, "Lucky")`): Unit 7's swapped-values row, for a method on text.
+ */
+function explainSwappedMethodOwner(message: string, code: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  const found = message.match(/^'(int|float)' object has no attribute '([A-Za-z_]\w*)'/);
+  if (!found || line === null || !TEXT_METHODS.has(found[2])) return null;
+  const method = found[2];
+  const functions = programFunctions(code, context);
+  const program = `${context?.setup ?? ""}\n${code ?? ""}`;
+  const frames = mainFrames(raw);
+  const owner = maskStrings(codePart(text)).match(new RegExp(`(?<![\\w.])([A-Za-z_]\\w*)\\s*\\.\\s*${method}\\s*\\(`))?.[1];
+  if (!owner || !paramHere(frames, owner, functions)) return null;
+  const handed = handedValue(code, frames, owner, functions);
+  if (!handed || handed.call.args.length !== handed.params.length || kindOfValue(handed.value, program, functions) !== "number") return null;
+  const textAt = handed.call.args.findIndex((arg, index) => index !== handed.index && kindOfValue(arg, program, functions) === "text");
+  if (textAt < 0) return null;
+  // The call written back with the two values swapped, when it holds no text of the student's own.
+  const swapped = handed.call.args.map((arg, index) => (index === handed.index ? handed.call.args[textAt] : index === textAt ? handed.value : arg));
+  const plain = handed.call.args.every((arg) => !/["']/.test(arg));
+  const fixed = plain ? lineWith(code, handed.line, handed.call.text, `${handed.call.callee}(${swapped.join(", ")})`) : null;
+  return {
+    ...explain(
+      "swapped-values",
+      "Values in the wrong order",
+      `The call on line ${handed.line} hands its values over in the wrong order. \`${handed.call.callee}\` takes the text as \`${owner}\`, and the call puts \`${handed.value}\` there, so ${lineWord(line).toLowerCase()} asks a number for \`.${method}()\`. Swap the two values on line ${handed.line}${fixed ? `: \`${fixed}\`` : "."}`,
+      raw,
+    ),
+    slip: "two values handed over in the wrong order",
+    lean: `The call on line ${handed.line} puts \`${handed.value}\`, a number, where \`${owner}\` goes, so \`${owner}\` gets a number.`,
+    ...(handed.line !== line ? { slipLine: handed.line } : {}),
+  };
+}
+
+/**
+ * A method used like a function, in the strings unit: nested (`capitalize(lower(raw))`) or with more values
+ * (`split(report, ". ")`), and the unit's new methods (`split`, `replace`, `find`). The text goes first, then each
+ * method in order, with a dot: `raw.lower().capitalize()`, `report.split(". ")`. Null for `join(...)` (its text is
+ * the glue, which the line can't tell) and anything else it can't rebuild.
+ */
+function explainMethodsAsFunctions(name: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  const body = codePart(text).trim();
+  const mask = maskStrings(body);
+  if (name === "join") return explainJoinAsFunction(body, mask, line, raw, context);
+  const methods: { name: string; call: string }[] = [];
+  const toChain = (expression: string, depth = 0): string | null => {
+    const value = expression.trim();
+    const call = value.match(/^([A-Za-z_]\w*)\s*\(/);
+    if (!call || !TEXT_METHODS.has(call[1])) {
+      if (depth === 0) return null;
+      return /^[A-Za-z_][\w.]*(\(.*\))?$|^(["']).*\2$|^[A-Za-z_]\w*(\s*\[[^\]]*\])+$/.test(value) ? value : `(${value})`;
+    }
+    if (call[1] === "join") return null;
+    const open = call[0].length - 1;
+    const close = matchingBracket(maskStrings(value), open);
+    if (close !== value.length - 1) return null;
+    const args = splitArguments(value.slice(open + 1, close));
+    if (!args || args.length === 0 || !args[0]) return null;
+    const owner = toChain(args[0], depth + 1);
+    if (owner === null) return null;
+    const called = `.${call[1]}(${args.slice(1).join(", ")})`;
+    methods.push({ name: call[1], call: called });
+    return `${owner}${called}`;
+  };
+  const found = mask.match(new RegExp(`(^|[^\\w.])${escapeRegExp(name)}\\s*\\(`));
+  if (!found) return null;
+  const start = (found.index ?? 0) + found[1].length;
+  const open = mask.indexOf("(", start);
+  const close = matchingBracket(mask, open);
+  if (close < 0) return null;
+  const chain = toChain(body.slice(start, close + 1));
+  if (!chain) return null;
+  const fixed = `${body.slice(0, start)}${chain}${body.slice(close + 1)}`;
+  const inOrder = methods.map((method) => `\`${method.call}\``);
+  const said =
+    methods.length === 1
+      ? `${lineWord(line)} puts the text inside \`${name}( )\`, but \`${name}\` goes after the text, with a dot: the text first, then ${inOrder[0]}. Write: \`${fixed}\``
+      : `${lineWord(line)} puts the text inside ${codeList(methods.slice().reverse().map((method) => `${method.name}( )`))}, but each method goes after the text, with a dot: the text first, then ${inOrder.join(", then ")}. Write: \`${fixed}\``;
+  return {
+    ...explain("method-as-function", `${name} goes after a dot`, said, raw),
+    slip: "a method used like a function",
+    lean: `${lineWord(line)} uses \`${name}\` like a function: \`${name}\` is a method.`,
+  };
+}
+
+/**
+ * `join(" ", words)`, `join(words, " ")`, `join(words)`: join used like a function. `join` goes after the glue, with a
+ * dot (`" ".join(words)`): the glue is the value in quotes, else the glue Mar'tu's version joins with, else words only.
+ */
+function explainJoinAsFunction(body: string, mask: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  const found = mask.match(/(^|[^\w.])join\s*\(/);
+  if (!found) return null;
+  const start = (found.index ?? 0) + found[1].length;
+  const open = mask.indexOf("(", start);
+  const close = matchingBracket(mask, open);
+  const args = close > open ? splitArguments(body.slice(open + 1, close)) : null;
+  if (!args || args.length === 0 || args.length > 2 || !args.every(Boolean)) return null;
+  const quoted = args.filter((arg) => /^(["']).*\1$/.test(arg.trim()));
+  const lists = args.filter((arg) => !/^(["']).*\1$/.test(arg.trim()));
+  if (lists.length !== 1 || quoted.length > 1) return null;
+  const glue = quoted[0]?.trim() ?? (context?.solution ?? "").match(/(["'])[^"'\n]*\1(?=\s*\.\s*join\s*\()/)?.[0];
+  const list = lists[0].trim();
+  const fixed = glue ? `${body.slice(0, start)}${glue}.join(${list})${body.slice(close + 1)}` : null;
+  return {
+    ...explain(
+      "method-as-function",
+      "join goes after a dot",
+      `${lineWord(line)} puts the list inside \`join( )\`, but \`join\` goes after the glue, with a dot: the glue in quotes first, then \`.join(${list})\`.${fixed ? ` Write: \`${fixed}\`` : ""}`,
+      raw,
+    ),
+    slip: "a method used like a function",
+    lean: `${lineWord(line)} uses \`join\` like a function: \`join\` is a method.`,
+  };
+}
+
+/**
+ * The strings unit's quote marks: a `"` inside text that starts with `"` (`print("Mar'tu: "NOT a compass."")`), the
+ * backslash doubled (`\\"` shows one backslash, then the `"` ends the text), or an apostrophe ending text that starts
+ * with `'` (`print('Mar'tu: "NOT a compass."')`). Only where Mar'tu's version uses an escape mark (`\"`), so no other
+ * unit hears of backslashes. One fix: double quotes outside, a backslash in front of each `"` inside. Python's own
+ * guess (a comma) is wrong here, and the box says so (guide §4.2). The text that never closes (Python's "unterminated
+ * string literal") is read from the student's line, never from Python's "perhaps you escaped the end quote?", which it
+ * also adds for Enter pressed after a `\"`: a bare `"` left inside after a `\"` (one backslash put in, one missed), a
+ * `\"` right before the final `)` (the backslash turned the closing quote into a quote inside the text), and a slash
+ * `/` where the backslash goes (the unit's `/n` slip, for a quote mark: "Use a backslash, `\`, not the slash `/`").
+ */
+function explainQuoteInsideText(message: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  if (!/\\["']/.test(context?.solution ?? "") || line === null) return null;
+  const body = text.trim();
+  const call = body.match(/^(.*?\()\s*(["'])(.*)\2\s*\)$/);
+  if (!call) return null;
+  const [, head, quote, inner] = call;
+  const invalid = /^invalid syntax/.test(message);
+  const unterminated = /unterminated string literal/.test(message);
+  const afterBackslash = /^unexpected character after line continuation character/.test(message);
+  const doubled = /\\\\"/.test(inner);
+  const bare = /(?<![\\/])"/.test(inner);
+  const slash = quote === '"' && /\/"/.test(inner);
+  // The last `"` has one backslash in front (an odd run): it is a quote inside the text, and the text never closes.
+  const endEscaped = quote === '"' && unterminated && (inner.match(/\\+$/)?.[0].length ?? 0) % 2 === 1;
+  const escaped = /(?<!\\)\\"/.test(inner);
+  const apostrophe = quote === "'" && /[A-Za-z]'[A-Za-z]/.test(inner) && unterminated;
+  const leftBare = quote === '"' && bare && ((unterminated && escaped) || afterBackslash);
+  if (!(quote === '"' && (doubled || bare || slash) && invalid) && !apostrophe && !endEscaped && !leftBare && !(slash && (unterminated || afterBackslash))) {
+    return null;
+  }
+  // The text's own letters, each quote mark inside it with one backslash in front (a slash or extra backslashes out).
+  const letters = (endEscaped ? `${inner.slice(0, -1)}"` : inner).replace(/[\\/]*"/g, '"');
+  const fixed = apostrophe ? `${head}"${inner.replace(/\\*"/g, '\\"')}")` : `${head}"${letters.replace(/"/g, '\\"')}")`;
+  const guess = /Perhaps you forgot a comma\?/.test(message) ? " Python's last line guesses a comma, but that guess is wrong here." : "";
+  if (apostrophe) {
+    const word = inner.match(/[A-Za-z]+'[A-Za-z]+/)?.[0] ?? "it's";
+    return {
+      ...explain(
+        "apostrophe",
+        "Apostrophe in text",
+        `The apostrophe in \`${word}\` ends the text early, because the text starts with \`'\`. Put the text in double quotes, with a backslash in front of each \`"\` inside it: \`${fixed}\``,
+        raw,
+      ),
+      lean: `${lineWord(line)}: the apostrophe in \`${word}\` ends text that starts with \`'\`.`,
+    };
+  }
+  if (slash) {
+    return {
+      ...explain(
+        "quote-inside-text",
+        "A backslash, not a slash",
+        `${lineWord(line)} has a slash \`/\` in front of a \`"\` inside the text, so that \`"\` still ends the text.${guess} Use a backslash, \`\\\`, not the slash \`/\`: \`${fixed}\``,
+        raw,
+      ),
+      slip: "a slash where a backslash goes",
+      lean: `${lineWord(line)} has a slash \`/\` where a backslash \`\\\` goes, in front of a \`"\` inside the text.`,
+    };
+  }
+  if (doubled && invalid) {
+    return {
+      ...explain(
+        "quote-inside-text",
+        "One backslash",
+        `\`\\\\\` shows one backslash, so the \`"\` after it still ends the text.${guess} One backslash goes in front of each \`"\` inside the text: \`${fixed}\``,
+        raw,
+      ),
+      slip: "two backslashes before a quote mark",
+      lean: `${lineWord(line)} has two backslashes before a \`"\` inside the text.`,
+    };
+  }
+  if (endEscaped) {
+    return {
+      ...explain(
+        "quote-inside-text",
+        "The closing quote has a backslash",
+        `On ${lineWord(line).toLowerCase()}, the backslash in front of the last \`"\` turned your closing quote into a quote inside the text, so the text never closes. A backslash goes only in front of each \`"\` inside the text: \`${fixed}\``,
+        raw,
+      ),
+      slip: "a backslash in front of the closing quote",
+      lean: `On ${lineWord(line).toLowerCase()}, a backslash in front of the last \`"\` makes it a quote inside the text, so the text never closes.`,
+    };
+  }
+  if (leftBare) {
+    return {
+      ...explain(
+        "quote-inside-text",
+        "A quote mark inside text",
+        `${lineWord(line)} has a \`"\` inside the text with no backslash in front, so it ends the text early. Put a backslash in front of each \`"\` inside: \`${fixed}\``,
+        raw,
+      ),
+      lean: `${lineWord(line)} has a \`"\` inside the text with no backslash in front.`,
+    };
+  }
+  return {
+    ...explain(
+      "quote-inside-text",
+      "A quote mark inside text",
+      `${lineWord(line)} has \`"\` marks inside text that starts with \`"\`, so the first one inside ends the text early.${guess} Put a backslash in front of each \`"\` inside: \`${fixed}\``,
+      raw,
+    ),
+    lean: `${lineWord(line)} has a \`"\` inside text that starts with \`"\`, with no backslash in front.`,
+  };
+}
+
+/** A line that starts a statement of its own (`print(...)`, `x = ...`, `return ...`): never the rest of a text. */
+const NEW_STATEMENT = /^(?:(?:print|return|def|if|elif|else|for|while|import|from)\b|[A-Za-z_]\w*\s*=(?!=)|[A-Za-z_][\w.]*\s*\()/;
+
+/**
+ * The strings unit's new line: Enter pressed inside text (`print("48` on one line, `48")` on the next), where Mar'tu's
+ * version types `\n`. The text joined back onto one line, with `\n` where Enter was. Only real Enter-in-text: the text
+ * closes on a later line (the wall typed one gap a line closes seven lines down), with no blank line or note between,
+ * and the closing line is not a statement of its own (`print("")`, which a quote slip on a line above reaches).
+ */
+function explainNewLineInText(text: string, line: number | null, raw: string, code: string, context?: ExplainContext): CourseExplanation | null {
+  if (!/\\n/.test(context?.solution ?? "") || line === null) return null;
+  const bad = scanLine(text).unterminated;
+  if (!bad || bad.quote.length !== 1) return null;
+  const rows = (code ?? "").split("\n");
+  const pieces = [text.slice(bad.start + 1)];
+  for (let at = line; at < Math.min(rows.length, line + 12); at += 1) {
+    const row = rows[at] ?? "";
+    const closeAt = row.indexOf(bad.quote);
+    if (closeAt < 0) {
+      if (!row.trim() || row.trim().startsWith("#")) return null;
+      pieces.push(row);
+      continue;
+    }
+    if (NEW_STATEMENT.test(row.trim())) return null;
+    pieces.push(row.slice(0, closeAt));
+    const fixed = `${text.slice(0, bad.start + 1)}${pieces.join("\\n")}${row.slice(closeAt)}`.trim();
+    return {
+      ...explain(
+        "new-line-in-text",
+        "Enter inside text",
+        `Text in quotes stays on one line, so pressing Enter inside it ends ${lineWord(line).toLowerCase()} before the text closes. For a new line inside text, type \`\\n\`: \`${fixed}\``,
+        raw,
+      ),
+      lean: `${lineWord(line)} has Enter pressed inside text, so the text never closes on its line.`,
+    };
+  }
+  return null;
+}
+
+/**
+ * Site requests 1 and 2: "string index out of range" in the strings unit's words: the text's own letters and
+ * positions (TEXT_POSITION_WORD), `len(tag)` used as a position, and Mar'tu's version of the line when it has one.
+ */
+function explainTextOutOfRange(message: string, code: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  if (!/^string index out of range/.test(message) || line === null) return null;
+  const body = codePart(text).trim();
+  const mask = maskStrings(body);
+  const read = mask.match(/(?<![\w.\]"'])([A-Za-z_]\w*)\s*\[([^\]:]+)\]/);
+  if (!read || KEYWORDS.has(read[1])) return null;
+  const name = read[1];
+  const at = read.index ?? 0;
+  const index = body.slice(at, at + read[0].length).replace(/^[A-Za-z_]\w*\s*\[/, "").replace(/\]$/, "").trim();
+  const literal = (code ?? "")
+    .split("\n")
+    .slice(0, line - 1)
+    .map((row) => codePart(row).match(new RegExp(`^\\s*${escapeRegExp(name)}\\s*=(?!=)\\s*(["'])((?:(?!\\1)[^\\\\])*)\\1\\s*$`)))
+    .filter((found): found is RegExpMatchArray => found !== null)
+    .at(-1);
+  const letters = literal ? literal[2].length : null;
+  const theirs = solutionLineAround(body, `[${index}]`, /^\[[^\]]+\]$/, context);
+  const fix = theirs ? ` Write: \`${theirs.row}\`` : ` The last letter is \`${name}[-1]\`.`;
+  const pos = textPosition();
+  const Pos = `${pos.charAt(0).toUpperCase()}${pos.slice(1)}`;
+  const counted = new RegExp(`^len\\s*\\(\\s*${escapeRegExp(name)}\\s*\\)$`).test(index);
+  const said = counted
+    ? `${lineWord(line)} uses \`len(${name})\` as a ${pos}. \`len(${name})\` counts the letters, but ${pos}s start at 0, like a ruler, so the count is one past the last letter.${fix}`
+    : `${lineWord(line)} asks \`${name}\` for ${pos} ${index}, but ${
+        letters !== null && letters > 0 ? `\`${name}\` has ${letters} letter${letters === 1 ? "" : "s"}, at ${pos}s 0 to ${letters - 1}` : `\`${name}\` has no letter there`
+      }. ${Pos}s start at 0, like a ruler.${fix}`;
+  return {
+    ...explain("nothing-at-position", "Past the last letter", said, raw),
+    slip: `a ${pos} past the end of the text`,
+    lean: `${lineWord(line)} asks \`${name}\` for a ${pos} past its last letter.`,
+  };
+}
+
+/**
+ * A slice written with parentheses (`word = sign(0:9)`), which Python can't read: a slice of text takes square
+ * brackets, like a list's. Only for a name the program makes as text (or a list), never a function's call.
+ */
+function explainSliceInParentheses(message: string, code: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  if (!/^invalid syntax/.test(message) || line === null) return null;
+  const body = codePart(text).trim();
+  const found = maskStrings(body).match(/(?<![\w.])([A-Za-z_]\w*)\s*\(([^():]*:[^():]*)\)/);
+  if (!found) return null;
+  const name = found[1];
+  const functions = programFunctions(code, context);
+  const kind = kindOfValue(name, `${context?.setup ?? ""}\n${code ?? ""}`, functions);
+  if (functions.has(name) || (kind !== "text" && kind !== "list")) return null;
+  const at = found.index ?? 0;
+  const fixed = `${body.slice(0, at)}${name}[${body.slice(at + found[0].indexOf("(") + 1, at + found[0].length - 1)}]${body.slice(at + found[0].length)}`;
+  return {
+    ...explain(
+      "list-needs-square-brackets",
+      "Square brackets for a slice",
+      `${lineWord(line)} cuts a slice of \`${name}\` with parentheses \`( )\`, which Python can't read. A slice takes square brackets, like a list's: \`${fixed}\``,
+      raw,
+    ),
+    slip: "parentheses where a slice needs square brackets",
+    lean: `${lineWord(line)} cuts a slice of \`${name}\` with parentheses \`( )\`.`,
+  };
+}
+
+/**
+ * `int("hours_text")`: a variable's name in quotes handed to `int()` ("invalid literal for int() with base 10:
+ * 'hours_text'"), when the program makes a variable by that name. The quotes make it the letters of the name.
+ */
+function explainQuotedNameToInt(message: string, code: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  const got = message.match(/^invalid literal for int\(\) with base 10: '([A-Za-z_]\w*)'$/)?.[1];
+  if (!got || line === null) return null;
+  const program = `${context?.setup ?? ""}\n${code ?? ""}`;
+  if (!definedNames(program).some((entry) => entry.name === got)) return null;
+  const quoted = codePart(text).match(new RegExp(`(["'])${escapeRegExp(got)}\\1`))?.[0];
+  if (!quoted) return null;
+  const fixed = lineWith(code, line, quoted, got);
+  return {
+    ...explain(
+      "quoted-name",
+      "Quotes around a name",
+      `${lineWord(line)} hands \`int()\` the text \`${quoted}\`. With quotes, \`${quoted}\` is the text ${got}, not the variable \`${got}\`. Quotes mean these exact letters. No quotes means look inside the box with this label. Take the quotes off${fixed ? `: \`${fixed}\`` : "."}`,
+      raw,
+    ),
+    slip: "a variable's name in quotes",
+    lean: `${lineWord(line)} hands \`int()\` \`${quoted}\`: with quotes, it is text, not the variable \`${got}\`.`,
+  };
+}
+
+/** The solution row that makes `name` with `=` and passes `test` (spaces ignored), or undefined. */
+function solutionRowMaking(name: string | undefined, test: RegExp, context?: ExplainContext): string | undefined {
+  if (!name) return undefined;
+  return solutionRows(context).find((row) => new RegExp(`^${escapeRegExp(name)}\\s*=(?!=)`).test(row) && test.test(squashed(row)));
+}
+
+/** The pieces of a line's `+` chain at the top level (`"Glug [" + bar + "] "` gives three), as written. */
+function plusPieces(expression: string): string[] {
+  const mask = maskStrings(expression);
+  const pieces: string[] = [];
+  let depth = 0;
+  let from = 0;
+  for (let at = 0; at < mask.length; at += 1) {
+    const char = mask[at];
+    if ("([{".includes(char)) depth += 1;
+    else if (")]}".includes(char)) depth -= 1;
+    else if (char === "+" && depth === 0) {
+      pieces.push(expression.slice(from, at).trim());
+      from = at + 1;
+    }
+  }
+  pieces.push(expression.slice(from).trim());
+  return pieces;
+}
+
+/**
+ * The strings unit's `+` between text and a number, in the step's own way, before the older "turn the number into text
+ * with `str()`" row (whose name is the first beside a `+`, and whose last resort was a made-up `str(score)`):
+ * - text that holds digits (`hours_text = "48"`, or a name Mar'tu's version hands to `int()`) with a number added
+ *   (`hours_text + 1`, `str(hours_text) + 1`, `int(hours_text + 1)`): turn it into a number first, Mar'tu's line;
+ * - a letter added to a number inside a function whose Mar'tu's version finds the letter's position first
+ *   (`letter + key`, where Mar'tu writes `alphabet.find(letter)`): the position, never `str(key)`;
+ * - a step whose Mar'tu's version shows the number in an f-string, never with `str()` (`print("Total: " + total)` under
+ *   "with an f-string"): Mar'tu's f-string line;
+ * - otherwise the piece that really holds a number (a name Mar'tu's version wraps in `str()`, a name made as a number,
+ *   a call like `len(bar)`), with Mar'tu's version of the line when it has one, and never a name the code makes as text.
+ */
+function explainStringsPlus(message: string, code: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  if (!/can only concatenate str \(not "(int|float)"\) to str/.test(message) || line === null) return null;
+  const body = codePart(text).trim();
+  const mask = maskStrings(body);
+  const solution = context?.solution ?? "";
+  const program = `${context?.setup ?? ""}\n${code ?? ""}`;
+  const functions = programFunctions(code, context);
+  const made = body.match(/^([A-Za-z_]\w*)\s*=(?!=)/)?.[1];
+  const rows = (code ?? "").split("\n").slice(0, line - 1);
+  for (const name of namesOnLine(text)) {
+    const n = escapeRegExp(name);
+    const added = mask.match(new RegExp(`(?<![\\w.])(?:str\\(\\s*)?${n}\\s*\\)?\\s*\\+\\s*(\\d+(?:\\.\\d+)?)(?![\\w.])`));
+    if (!added || (/\)\s*\+/.test(added[0]) && !/^str\(/.test(added[0]))) continue;
+    const digits = rows
+      .map((row) => codePart(row).match(new RegExp(`^\\s*${n}\\s*=(?!=)\\s*(["'])(\\d+(?:\\.\\d+)?)\\1\\s*$`)))
+      .filter((found): found is RegExpMatchArray => found !== null)
+      .at(-1)?.[2];
+    const toInt = new RegExp(`(?<![\\w.])int\\(\\s*${n}\\s*\\)`).test(solution);
+    if (!digits && !toInt) continue;
+    const theirs = solutionRowMaking(made, new RegExp(`int\\(${n}\\)`), context);
+    const holds = digits ? `\`${name}\` holds text, \`"${digits}"\` in quotes` : `\`${name}\` holds text`;
+    return {
+      ...explain(
+        "math-with-text",
+        "Math with text",
+        `${holds}, so \`+ ${added[1]}\` can't add to it. Turn it into a number first with \`int()\`: \`${theirs ?? `int(${name})`}\``,
+        raw,
+      ),
+      slip: "text added to a number",
+      lean: `${lineWord(line)} adds \`${added[1]}\` to \`${name}\`, which holds text.`,
+    };
+  }
+  // A letter added to a number, where Mar'tu's version of the function finds the letter's position first.
+  const inner = mainFrames(raw).at(-1);
+  const theirsFn = inner && inner.func !== "<module>" ? functionsIn(solution).get(inner.func) : undefined;
+  const params = inner ? (functions.get(inner.func)?.params ?? []) : [];
+  if (theirsFn) {
+    const theirBody = solution.split("\n").slice(theirsFn.start, theirsFn.end).join("\n");
+    for (const found of mask.matchAll(/(?<![\w.])([A-Za-z_]\w*)\s*\+\s*([A-Za-z_]\w*)(?![\w(.[])/g)) {
+      const [, letter, number] = found;
+      if (!params.includes(letter)) continue;
+      const finder = theirBody.match(new RegExp(`(?<![\\w.])([A-Za-z_]\\w*)\\s*\\.\\s*find\\(\\s*${escapeRegExp(letter)}\\s*\\)`))?.[0];
+      if (!finder) continue;
+      return {
+        ...explain(
+          "text-plus-number",
+          "Text + number",
+          `${lineWord(line)} adds \`${number}\`, a number, to \`${letter}\`, which holds text, and \`+\` can't do that. Find its position first, \`${finder.replace(/\s+/g, "")}\`: a number you can add \`${number}\` to.`,
+          raw,
+        ),
+        lean: `${lineWord(line)} adds a number, \`${number}\`, to text, \`${letter}\`.`,
+      };
+    }
+  }
+  const pieces = plusPieces(body.replace(/^(?:[A-Za-z_]\w*\s*=(?!=)|return\b|print\s*\()\s*/, "").replace(/\)\s*$/, ""));
+  const named = pieces.filter((piece) => /^[A-Za-z_]\w*$/.test(piece) && !KEYWORDS.has(piece));
+  // A step whose Mar'tu's version shows the number in an f-string, and never with `str()`.
+  for (const name of named) {
+    const n = escapeRegExp(name);
+    if (new RegExp(`(?<![\\w.])str\\(\\s*${n}\\s*\\)`).test(solution)) continue;
+    const head = body.match(/^([A-Za-z_]\w*\s*=(?!=)|return\b|print\s*\()/)?.[1];
+    if (!head) continue;
+    const theirs = solutionRows(context).find(
+      (row) => squashed(row).startsWith(squashed(head)) && fStringsOn(row).some((fstring) => new RegExp(`\\{[^{}]*(?<![\\w.])${n}(?![\\w(])[^{}]*\\}`).test(fstring.inner)),
+    );
+    if (!theirs) continue;
+    return {
+      ...explain(
+        "text-plus-number",
+        "Text + number",
+        `${lineWord(line)} glues text to a number with \`+\`, but \`+\` only glues text to text. This step builds the line with an f-string, which shows a number in curly braces: \`${theirs}\``,
+        raw,
+      ),
+      lean: `${lineWord(line)} glues text to a number, \`${name}\`, with \`+\`.`,
+    };
+  }
+  // The piece that really holds a number: never a name the code makes as text (`bar = full * current`).
+  const number =
+    named.find((name) => new RegExp(`(?<![\\w.])str\\(\\s*${escapeRegExp(name)}\\s*\\)`).test(solution)) ??
+    named.find((name) => kindOfValue(name, program, functions) === "number") ??
+    pieces.find((piece) => /^[A-Za-z_]\w*\s*\(.*\)$/.test(piece) && kindOfValue(piece, program, functions) === "number") ??
+    named.find((name) => params.includes(name) && kindOfValue(name, program, functions) === "unknown" && !(code ?? "").split("\n").some((row) => new RegExp(`^\\s*${escapeRegExp(name)}\\s*=(?!=)`).test(codePart(row))));
+  if (!number) return null;
+  const theirs = solutionLineAround(body, number, /^str\(.+\)$/, context);
+  // The older row already names this piece (the first name beside a `+`): its words stay as they were.
+  const older = text.match(/\+\s*([A-Za-z_]\w*)\b(?!\s*\()/)?.[1] ?? text.match(/\b([A-Za-z_]\w*)\s*\+/)?.[1];
+  if (older === number) return null;
+  return {
+    ...explain(
+      "text-plus-number",
+      "Text + number",
+      `${lineWord(line)} glues text to a number with \`+\`, but \`+\` only glues text to text. Turn the number into text first with \`str()\`: \`${theirs ? theirs.row : `str(${number})`}\``,
+      raw,
+    ),
+    lean: `${lineWord(line)} glues text to a number, \`${number}\`, with \`+\`.`,
+  };
+}
+
+/**
+ * A number in quotes made in a variable and handed on through calls (`my_key = "7"`, then `encode(my_note, my_key)`,
+ * then `shift_letter(letter, key)`), as Unit 7's row does for one call with the number in quotes on its own line: the
+ * line that makes the variable is the slip (`slipLine`), its one fix the quotes taken off.
+ */
+function explainQuotedNumberTraced(message: string, code: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  if (!/unsupported operand type\(s\) for [-+*/%]+: '(int|float)' and 'str'|unsupported operand type\(s\) for [-*/%]+: 'str' and '(int|float)'|can only concatenate str \(not "(int|float)"\) to str/.test(message) || line === null) return null;
+  const functions = programFunctions(code, context);
+  const frames = mainFrames(raw);
+  const rows = (code ?? "").split("\n");
+  for (const name of namesOnLine(text)) {
+    let param = name;
+    let depth = frames.length;
+    while (depth >= 2) {
+      const here = frames.slice(0, depth);
+      if (!paramHere(here, param, functions)) break;
+      const handed = handedValue(code, here, param, functions);
+      const value = handed?.value.trim() ?? "";
+      if (!handed || !/^[A-Za-z_]\w*$/.test(value) || KEYWORDS.has(value)) break;
+      if (paramHere(frames.slice(0, depth - 1), value, functions)) {
+        param = value;
+        depth -= 1;
+        continue;
+      }
+      // The variable handed over: the nearest line above the call that makes it.
+      for (let at = handed.line - 1; at >= 1; at -= 1) {
+        const made = codePart(rows[at - 1] ?? "").match(new RegExp(`^\\s*${escapeRegExp(value)}\\s*=(?!=)\\s*((["'])(\\d+(?:\\.\\d+)?)\\2)\\s*$`));
+        if (!made && !new RegExp(`^\\s*${escapeRegExp(value)}\\s*=(?!=)`).test(codePart(rows[at - 1] ?? ""))) continue;
+        if (!made) break;
+        const fixed = lineWith(code, at, made[1], made[3]);
+        return {
+          ...explain(
+            "number-in-quotes",
+            "A number in quotes",
+            `${lineWord(line)} does math with \`${name}\`, and \`${name}\` holds \`${value}\`, which line ${at} makes with quotes: \`${codePart(rows[at - 1] ?? "").trim()}\`. Quotes make text, even when it looks like a number. Take the quotes off on line ${at}${fixed ? `: \`${fixed}\`` : "."}`,
+            raw,
+          ),
+          slip: "a number in quotes",
+          lean: `Line ${at} makes \`${value}\` as \`${made[1]}\`, a number in quotes, and ${lineWord(line).toLowerCase()} does math with it.`,
+          ...(at !== line ? { slipLine: at } : {}),
+        };
+      }
+      break;
+    }
+  }
+  return null;
+}
+
+/**
+ * The list a name holds came from `.split()`: the separator of that split (`"|"`, or null for the default, a space),
+ * followed back through slices (`short = words[:3]`) and read straight off a chain (`sentence.split()[:3]`).
+ */
+function splitSeparator(code: string, list: string, line: number): { glue: string } | null {
+  const direct = list.match(/\.\s*split\s*\(([^()]*)\)/);
+  if (direct) return { glue: /^(["']).+\1$/.test(direct[1].trim()) ? direct[1].trim() : '" "' };
+  const name = list.match(/^([A-Za-z_]\w*)/)?.[1];
+  if (!name) return null;
+  const rows = (code ?? "").split("\n");
+  for (let at = line - 1; at >= 1; at -= 1) {
+    const made = codePart(rows[at - 1] ?? "").match(new RegExp(`^\\s*${escapeRegExp(name)}\\s*=(?!=)\\s*(.+)$`));
+    if (!made) continue;
+    const value = made[1].trim();
+    if (/\.\s*split\s*\(/.test(value)) return splitSeparator(code, value, at);
+    const sliced = value.match(/^([A-Za-z_]\w*)\s*\[[^\]]*:[^\]]*\]$/);
+    return sliced && sliced[1] !== name ? splitSeparator(code, sliced[1], at) : null;
+  }
+  return null;
+}
+
+/**
+ * 'can only concatenate list (not "str") to list' where the list comes from `.split()` (`return words[:3] + "."`):
+ * `.split()` handed back a list, and `+` can't glue text onto it. Glue the list into one text first, with the split's
+ * own glue (`" ".join(words[:3]) + "."`). A list started with `[ ]` keeps Unit 4's `.append()` row.
+ */
+function explainSplitListPlusText(message: string, code: string, text: string, line: number | null, raw: string): CourseExplanation | null {
+  if (!/^can only concatenate list \(not "str"\) to list/.test(message) || line === null) return null;
+  const body = codePart(text).trim();
+  const mask = maskStrings(body);
+  const found = mask.match(/(?<![\w.\]])([A-Za-z_]\w*(?:\s*\.\s*split\s*\([^()]*\))?(?:\s*\[[^\]]*\])*)\s*\+\s*(?=["'])/);
+  if (!found) return null;
+  const start = found.index ?? 0;
+  const list = body.slice(start, start + found[1].length).trim();
+  const source = splitSeparator(code, list, line);
+  if (!source) return null;
+  const fixed = `${body.slice(0, start)}${source.glue}.join(${list})${body.slice(start + found[1].length)}`;
+  const what = /^[A-Za-z_]\w*$/.test(list) ? `\`${list}\` holds a list` : `\`${list}\` is a list`;
+  return {
+    ...explain(
+      "list-as-text",
+      "A list, not text",
+      `${what}, not text: \`.split()\` hands back a list, and \`+\` can't glue text onto it. Glue the list into one text first: \`${fixed}\``,
+      raw,
+    ),
+    lean: `${lineWord(line)} glues text onto \`${list}\`, a list: a list is not text.`,
+  };
+}
+
+/** What each text method takes inside its `( )`, for the wrong-number-of-values row. */
+const METHOD_VALUES: Record<string, string> = {
+  replace: "2 values, the old words and then the new ones, with a comma between them",
+  find: "the text to look for, inside its `( )`",
+  join: "one list, the list to glue",
+};
+
+/**
+ * A text method handed the wrong number of values ("replace() takes at least 2 positional arguments (1 given)", "find
+ * expected at least 1 argument, got 0"), which the older rows called "mixes kinds of values": what the method takes,
+ * and two pieces of text side by side with no comma (`.replace("compass" "Ley Clock")`) named. Mar'tu's line.
+ */
+function explainMethodValueCount(message: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  const found = message.match(/^(?:str\.)?(\w+)\(\) takes (?:at least |exactly )?(?:\d+|one) (?:positional )?arguments? \((\d+) given\)|^(\w+) expected at least \d+ arguments?, got (\d+)/);
+  const method = found?.[1] ?? found?.[3];
+  if (!found || !method || !METHOD_VALUES[method] || line === null) return null;
+  const body = codePart(text).trim();
+  const mask = maskStrings(body);
+  const dot = mask.search(new RegExp(`\\.\\s*${method}\\s*\\(`));
+  if (dot < 0) return null;
+  const open = mask.indexOf("(", dot);
+  const close = matchingBracket(mask, open);
+  const inside = close > open ? body.slice(open + 1, close).trim() : "";
+  const head = squashed(body.slice(0, open + 1));
+  const theirs = solutionRows(context).find((row) => squashed(row).startsWith(head));
+  const fix = theirs ? `: \`${theirs}\`` : ".";
+  const sideBySide = /^(["'])[^"']*\1\s+(["'])[^"']*\2$/.test(inside);
+  return {
+    ...explain(
+      "wrong-number-of-values",
+      "Wrong number of values",
+      sideBySide
+        ? `${lineWord(line)} has two pieces of text side by side inside \`.${method}( )\`, with no comma, so Python reads them as one. Put a comma between the old words and the new ones${fix}`
+        : `\`.${method}()\` takes ${METHOD_VALUES[method]}. ${lineWord(line)} hands over ${inside ? "too few" : "nothing"}${fix}`,
+      raw,
+    ),
+    slip: sideBySide ? "two pieces of text with no comma between them" : "the wrong number of values for a method",
+    lean: sideBySide
+      ? `${lineWord(line)} has two pieces of text side by side inside \`.${method}( )\`, with no comma.`
+      : `${lineWord(line)} hands \`.${method}()\` the wrong number of values.`,
+  };
+}
+
+/**
+ * "list index out of range" on a line that reads a list by position (`words[0] + " " + words[1] + " " + words[2]`)
+ * where Mar'tu's version takes a slice of the same list (`words[:3]`): the list may hold fewer items (a short sentence
+ * gives fewer words), and a slice keeps what is there. Mar'tu's line with the slice.
+ */
+function explainPositionsForSlice(code: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  if (line === null) return null;
+  const mask = maskStrings(codePart(text));
+  const read = mask.match(/(?<![\w.\]])([A-Za-z_]\w*)\s*\[\s*\d+\s*\]/);
+  if (!read || KEYWORDS.has(read[1])) return null;
+  const name = read[1];
+  const slice = new RegExp(`(?<![\\w.])${escapeRegExp(name)}\\[[^\\]]*:[^\\]]*\\]`);
+  const rows = solutionRows(context).filter((row) => slice.test(row));
+  if (rows.length === 0) return null;
+  const made = codePart(text).trim().match(/^([A-Za-z_]\w*)\s*=(?!=)|^(return)\b/);
+  const head = made ? squashed(made[0]) : null;
+  const theirs = (head ? rows.find((row) => squashed(row).startsWith(head)) : undefined) ?? rows[0];
+  const from = splitFrom(code, name, line);
+  const why = from ? `\`${name}\` comes from \`${from}\`, so a short one gives fewer words` : `\`${name}\` may hold fewer items than that`;
+  return {
+    ...explain(
+      "nothing-at-position",
+      "Nothing at that position",
+      `${lineWord(line)} reads \`${name}\` by position, but ${why}. A slice keeps what is there and never runs past the end: \`${theirs}\``,
+      raw,
+    ),
+    slip: "positions read where a slice keeps what is there",
+    lean: `${lineWord(line)} reads \`${name}\` by position, and \`${name}\` holds fewer items than that.`,
+  };
+}
+
+/**
+ * UnboundLocalError for a name copied from Mar'tu's example (his text, a hint, or the Example) into a function that has
+ * parameters of its own (`said = said.lower()` in `tidy_line(raw)`): `said` is used before the line that makes it, and
+ * the function's text is its parameter. Never for a name of the task's, a parameter, or a variable the program makes
+ * at the top (the classic "changed inside a function" keeps its row).
+ */
+function explainCopiedNameUnbound(variable: string, code: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  const inner = mainFrames(raw).at(-1);
+  if (!inner || inner.func === "<module>" || line === null) return null;
+  const params = programFunctions(code, context).get(inner.func)?.params ?? [];
+  if (params.length === 0 || params.includes(variable) || (context?.names ?? []).includes(variable)) return null;
+  if (!exampleOnlyNames(context).includes(variable)) return null;
+  if ((code ?? "").split("\n").some((row) => new RegExp(`^${escapeRegExp(variable)}\\s*=(?!=)`).test(codePart(row)))) return null;
+  const its = params.length === 1 ? `\`${inner.func}\`'s parameter is \`${params[0]}\`` : `\`${inner.func}\`'s parameters are ${codeList(params)}`;
+  // One parameter: the student's own line with the parameter where the copied name is (`raw = raw.lower()`).
+  const mended = params.length === 1 ? codePart(sourceLine(code, line)).trim().replace(new RegExp(`(?<![\\w.])${escapeRegExp(variable)}(?!\\w)`, "g"), params[0]) : "";
+  const write =
+    params.length === 1
+      ? `Write \`${params[0]}\` where it says \`${variable}\`${mended ? `: \`${mended}\`` : "."}`
+      : `Write the one that holds the text where it says \`${variable}\`.`;
+  return {
+    ...explain(
+      "variable-in-function",
+      "A name from the example",
+      `${lineWord(line)} uses \`${variable}\` before the line that makes it: Python runs a function from the top down. \`${variable}\` comes from ${exampleWord(variable, context)}, and ${its}. ${write}`,
+      raw,
+    ),
+    slip: "a name used before it has a value",
+    lean: `${lineWord(line)} uses \`${variable}\` before it has a value: \`${variable}\` is a name from ${exampleWord(variable, context)}, not a parameter of \`${inner.func}\`.`,
+  };
+}
+
+/**
+ * "invalid literal for int()" on `int(mark)` inside `for mark in marks:`, where `marks` came straight from `.split()`
+ * and Mar'tu's version turns the items of another list into numbers (`for clean in clean_marks:`): the loop walks the
+ * marks before they were cleaned. One fix, on the `for` line, with the student's own loop name.
+ */
+function explainIntOfRawItem(message: string, code: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  if (!/^invalid literal for int\(\) with base 10/.test(message) || line === null) return null;
+  const arg = callsOnLine(text).find((call) => call.callee === "int" && call.args.length === 1)?.args[0]?.trim();
+  if (!arg || !/^[A-Za-z_]\w*$/.test(arg)) return null;
+  const loop = enclosingLoops(code, line).find((entry) => entry.variable === arg);
+  if (!loop || !/^[A-Za-z_]\w*$/.test(loop.iterable) || splitFrom(code, loop.iterable, loop.line) === null) return null;
+  const solution = (context?.solution ?? "").split("\n");
+  const theirs = solution
+    .map((row, index) => ({ header: codePart(row).match(/^\s*for\s+([A-Za-z_]\w*)\s+in\s+([A-Za-z_]\w*)\s*:/), index }))
+    .find(
+      (entry) =>
+        entry.header &&
+        entry.header[2] !== loop.iterable &&
+        solution.slice(entry.index + 1, entry.index + 4).some((row) => new RegExp(`int\\(\\s*${escapeRegExp(entry.header![1])}\\s*\\)`).test(row)),
+    );
+  if (!theirs?.header) return null;
+  const fixed = lineWith(code, loop.line, `in ${loop.iterable}`, `in ${theirs.header[2]}`) ?? `for ${arg} in ${theirs.header[2]}:`;
+  return {
+    ...explain(
+      "not-a-number",
+      "Not a number",
+      `${lineWord(line)} hands \`int()\` a mark straight from \`.split()\`, with \`hrs\` and spaces still in it, so \`int()\` can't turn it into a number. The loop on line ${loop.line} walks \`${loop.iterable}\`. Walk the clean marks instead: \`${fixed}\``,
+      raw,
+    ),
+    slip: "a loop over the items before they were cleaned",
+    lean: `The loop on line ${loop.line} walks \`${loop.iterable}\`, straight from \`.split()\`, so \`int()\` gets a mark that is not clean.`,
+    ...(loop.line !== line ? { slipLine: loop.line } : {}),
+  };
+}
+
+/** The strings unit's TypeError rows, in order (each is null when the message is not its own). */
+function explainStringsType(message: string, code: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  return (
+    explainTextChangedInPlace(message, text, line, raw, context) ??
+    explainQuotedNumberTraced(message, code, text, line, raw, context) ??
+    explainStringsPlus(message, code, text, line, raw, context) ??
+    explainSplitListPlusText(message, code, text, line, raw) ??
+    explainMethodValueCount(message, text, line, raw, context) ??
+    explainLenOfNumber(message, text, line, raw, context) ??
+    explainJoinNeedsText(message, text, line, raw, context) ??
+    explainCommaInText(message, text, line, raw) ??
+    explainMethodWithoutBrackets(message, code, text, line, raw, context) ??
+    explainListAsText(message, code, text, line, raw)
+  );
+}
+
+/**
+ * `total = sum(clean_marks)` where the list holds text ("unsupported operand type(s) for +: 'int' and 'str'", with no `+`
+ * on the line): `sum()` adds numbers only. Mar'tu's line that makes the same name with `sum()` (`total = sum(hours)`).
+ */
+function explainSumOfText(text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  const body = codePart(text).trim();
+  const call = callsOnLine(text).find((entry) => entry.callee === "sum" && entry.args.length === 1);
+  if (!call) return null;
+  const list = call.args[0];
+  const made = body.match(/^([A-Za-z_]\w*)\s*=(?!=)/)?.[1];
+  const theirs = solutionRowMaking(made, /sum\(/, context);
+  return {
+    ...explain(
+      "sum-of-text",
+      "sum() adds numbers",
+      `\`${list}\` holds text, and \`sum()\` adds numbers only. ${theirs ? `Add up the list of numbers: \`${theirs}\`` : "Add up a list of numbers instead."}`,
+      raw,
+    ),
+    lean: `${lineWord(line)} hands \`sum()\` \`${list}\`, which holds text: \`sum()\` adds numbers only.`,
+  };
+}
+
+/** Where the value before a dot starts: a name, with any `(...)`, `[...]` and `.name` reads before it (`report.split()`). */
+function ownerStart(mask: string, dot: number): number {
+  let at = dot;
+  while (at > 0 && /\s/.test(mask[at - 1])) at -= 1;
+  for (;;) {
+    const close = mask[at - 1];
+    if (close === ")" || close === "]") {
+      const open = close === ")" ? "(" : "[";
+      let depth = 0;
+      let from = at - 1;
+      for (; from >= 0; from -= 1) {
+        if (mask[from] === close) depth += 1;
+        else if (mask[from] === open && --depth === 0) break;
+      }
+      if (from < 0) return -1;
+      at = from;
+      continue;
+    }
+    const word = mask.slice(0, at).match(/[A-Za-z_]\w*$/);
+    if (!word) return at;
+    at -= word[0].length;
+    if (mask[at - 1] === ".") {
+      at -= 1;
+      continue;
+    }
+    return at;
+  }
+}
+
+/**
+ * The strings unit's tool written after a dot: `report.len()`, `report.split().len()` ("'str' object has no attribute
+ * 'len'", "'list' object has no attribute 'len'"), with the whole value before the dot inside the tool
+ * (`len(report.split())`), and no `()` needed after it (`report.len`). Never a name from another unit.
+ */
+function explainToolAfterDotText(message: string, text: string, line: number | null, raw: string): CourseExplanation | null {
+  const found = message.match(/^'(str|list)' object has no attribute '(sorted|max|min|sum|len)'/);
+  if (!found || (found[1] === "str" && found[2] !== "len")) return null;
+  const tool = found[2];
+  const body = codePart(text);
+  const mask = maskStrings(body);
+  const dotted = mask.match(new RegExp(`\\.\\s*${tool}(?!\\w)(\\s*\\(\\s*\\))?`));
+  if (!dotted) return null;
+  const dot = dotted.index ?? 0;
+  const start = ownerStart(mask, dot);
+  const owner = start >= 0 ? body.slice(start, dot).trim() : "";
+  const counts = found[1] === "str" ? "It counts the letters." : IN_FRONT[tool];
+  const fix = owner ? `\`${tool}(${owner})\`` : `put the value inside \`${tool}( )\``;
+  return {
+    ...explain("tool-after-dot", `${tool} goes in front`, `${lineWord(line)} writes \`${tool}\` after a dot. \`${tool}\` goes in front: ${fix}. ${counts}`, raw),
+    lean: `${lineWord(line)} writes \`${tool}\` after a dot.`,
+  };
+}
+
+/** The strings unit's AttributeError rows, in order. */
+function explainStringsAttribute(message: string, code: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  return (
+    explainToolAfterDotText(message, text, line, raw) ??
+    explainJoinOnList(message, text, line, raw) ??
+    explainMethodWithoutBrackets(message, code, text, line, raw, context) ??
+    explainListAsText(message, code, text, line, raw) ??
+    explainAppendOnText(message, text, line, raw) ??
+    explainMethodCapital(message, code, line, raw) ??
+    explainSwappedMethodOwner(message, code, text, line, raw, context)
+  );
+}
+
+/**
+ * `line.upper() = line` ("cannot assign to function call here. Maybe you meant '=='"): the copy stored the wrong way
+ * round, never "use ==" (a question would store nothing). The name goes on the left, the copy on the right.
+ */
+function explainCopyStoredBackwards(message: string, text: string, line: number | null, raw: string): CourseExplanation | null {
+  if (!/cannot assign to function call/i.test(message) || line === null) return null;
+  const body = codePart(text).trim();
+  const at = singleEquals(maskStrings(body))[0];
+  if (at === undefined) return null;
+  const left = body.slice(0, at).trim();
+  const right = body.slice(at + 1).trim();
+  const method = left.match(/^([A-Za-z_]\w*)\s*\.\s*([A-Za-z_]\w*)\s*\(.*\)$/);
+  if (!method || !TEXT_METHODS.has(method[2]) || !/^[A-Za-z_]\w*$/.test(right) || KEYWORDS.has(right)) return null;
+  return {
+    ...explain(
+      "store-backwards",
+      "Store it the other way",
+      `${lineWord(line)} has the copy, \`${left}\`, on the left of \`=\` and \`${right}\` on the right: the wrong way around.${wrongGuess(message)} The copy goes on the right: \`${right} = ${left}\``,
+      raw,
+    ),
+    lean: `${lineWord(line)} stores the copy the wrong way around: \`${left}\` is on the left of \`=\`.${wrongGuess(message)}`,
+  };
+}
+
+/** The strings unit's SyntaxError rows, in order. */
+function explainStringsSyntax(message: string, code: string, text: string, line: number | null, raw: string, context?: ExplainContext): CourseExplanation | null {
+  return (
+    explainCopyStoredBackwards(message, text, line, raw) ??
+    explainFStringBrace(message, text, line, raw) ??
+    explainQuoteInsideText(message, text, line, raw, context) ??
+    explainSliceInParentheses(message, code, text, line, raw, context) ??
+    (/unterminated string literal/.test(message) ? explainNewLineInText(text, line, raw, code, context) : null)
+  );
+}
+
 function explainParsed(parsed: Parsed, raw: string, code: string, context?: ExplainContext): CourseExplanation {
   const { type, message } = parsed;
   const line = errorLine(raw);
@@ -8758,6 +10212,12 @@ function explainParsed(parsed: Parsed, raw: string, code: string, context?: Expl
         code,
       );
     case "ValueError": {
+      // Unit 9: `int("hours_text")`, a variable's name in quotes.
+      const quotedInt = unitAtLeast(context, STRINGS_UNIT_ORDER) ? explainQuotedNameToInt(message, code, text, line, raw, context) : null;
+      if (quotedInt) return quotedInt;
+      // Unit 9: `int(mark)` in a loop over the marks straight from `.split()`, where Mar'tu loops over the clean ones.
+      const rawItem = unitAtLeast(context, STRINGS_UNIT_ORDER) ? explainIntOfRawItem(message, code, text, line, raw, context) : null;
+      if (rawItem) return rawItem;
       const notNumber = message.match(/invalid literal for int\(\) with base 10: (.+)$|could not convert string to float: (.+)$/);
       if (notNumber) {
         const got = notNumber[1] ?? notNumber[2];
@@ -8787,6 +10247,12 @@ function explainParsed(parsed: Parsed, raw: string, code: string, context?: Expl
     }
     case "IndexError":
       if (/out of range/.test(message)) {
+        // Unit 9: a text's own letters and positions (`tag[5]` on "Pucky", `tag[len(tag)]`).
+        const textRead = unitAtLeast(context, STRINGS_UNIT_ORDER) ? explainTextOutOfRange(message, code, text, line, raw, context) : null;
+        if (textRead) return textRead;
+        // Unit 9: words read by position where Mar'tu's version takes a slice (`words[:3]`), which never runs past the end.
+        const sliced = unitAtLeast(context, STRINGS_UNIT_ORDER) && /list/.test(message) ? explainPositionsForSlice(code, text, line, raw, context) : null;
+        if (sliced) return sliced;
         // Unit 6: in a loop, the item used as a position (`chalk_wall[gap]`), or `[i + 1]` one past the end.
         const loop = unitAtLeast(context, LOOPS_UNIT_ORDER) && /list/.test(message) ? explainLoopIndex(code, text, line, raw, context) : null;
         if (loop) return loop;
@@ -8827,6 +10293,9 @@ function explainParsed(parsed: Parsed, raw: string, code: string, context?: Expl
       const meant = message.match(/Did you mean: '([^']+)'/)?.[1];
       const attribute = message.match(/attribute '([^']+)'/)?.[1];
       if (attribute && /^_{2,}$/.test(attribute)) return blankLeft(attribute, line, raw);
+      // Unit 9: a list asked to join, a method with no `()`, a list used like text, `.append()` on text, `.Upper()`.
+      const strings = unitAtLeast(context, STRINGS_UNIT_ORDER) ? explainStringsAttribute(message, code, text, line, raw, context) : null;
+      if (strings) return strings;
       // Unit 7: `wards.append(ward)`: a dictionary stores by key.
       const appended = unitAtLeast(context, SPELL_RECIPES_UNIT_ORDER) ? explainAppendToSheet(message, code, text, line, raw, context) : null;
       if (appended) return appended;
@@ -8870,7 +10339,7 @@ function explainParsed(parsed: Parsed, raw: string, code: string, context?: Expl
       break;
     }
     case "RecursionError":
-      return explainRecursion(code, raw);
+      return explainRecursion(code, raw, context);
     case "UnboundLocalError": {
       // Only a recipe (Unit 3 on) can raise this, so the words are the unit's: ingredient, hand back.
       const variable = message.match(/variable '([^']+)'/)?.[1] ?? "a variable";
@@ -8891,6 +10360,10 @@ function explainParsed(parsed: Parsed, raw: string, code: string, context?: Expl
         const sheet = keyed && makesHere && quoted ? explainSheetName(variable, code, text, line, raw, context) : null;
         if (sheet) return sheet;
       }
+      // Unit 9: `said = said.lower()` copied from Mar'tu's text into `tidy_line(raw)`: the name is his example's, and
+      // the function's own text is its parameter (never "hand it over as a parameter").
+      const copied = unitAtLeast(context, STRINGS_UNIT_ORDER) ? explainCopiedNameUnbound(variable, code, line, raw, context) : null;
+      if (copied) return copied;
       return explain(
         "variable-in-function",
         "A box inside a recipe",
@@ -9101,6 +10574,18 @@ const SLIP_NAMES: Record<CourseErrorKind, string> = {
   "text-as-sheet": "text handed over where a sheet goes",
   "swapped-values": "two values handed over in the wrong order",
   "borrowed-name": "a name from the campaign, not this program",
+  "text-changed-in-place": "text changed in place",
+  "join-on-list": "a list asked to join itself",
+  "method-without-brackets": "a method with no `()`",
+  "list-as-text": "a list used like text",
+  "append-on-text": "`.append()` used on text",
+  "len-of-number": "a number handed to `len()`",
+  "join-needs-text": "numbers handed to `.join()`",
+  "f-string-brace": "a curly brace with no partner in an f-string",
+  "method-capital": "a method name with a capital letter",
+  "quote-inside-text": "a quote mark inside text with no backslash",
+  "sum-of-text": "text handed to `sum()`",
+  "new-line-in-text": "Enter pressed inside text",
   "input-is-text": "an input() answer used as a number",
   "text-plus-number": "text joined to a number",
   "number-plus-text": "a number added to text",
@@ -9409,7 +10894,7 @@ function explainQuotedNameToLibrary(code: string, text: string, line: number | n
  * code, the exercise's setup, Mar'tu's version or the task's names stays.
  */
 function withShownLine(result: CourseExplanation, parsed: Parsed, code: string, context?: ExplainContext): CourseExplanation {
-  if (!unitAtLeast(context, READINESS_UNIT_ORDER) || parsed.type !== "NameError") return result;
+  if (!unitAtLeast(context, STRINGS_UNIT_ORDER) || parsed.type !== "NameError") return result;
   const suggested = parsed.message.match(/\s*Did you mean: '([^']+)'\?\s*$/);
   if (!suggested) return result;
   const word = suggested[1];
